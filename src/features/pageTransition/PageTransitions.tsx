@@ -16,7 +16,7 @@ export const PRESETS = ['rise', 'fade', 'slide', 'zoom', 'blur', 'wipe', 'none']
 export type Preset = (typeof PRESETS)[number]
 
 const CONFIG = {
-  preset: { type: 'select' as const, options: [...PRESETS], default: 'rise' },
+  preset: { type: 'select' as const, options: [...PRESETS], default: 'wipe' },
   preview: { type: 'action' as const, label: 'Preview (go to other page)' },
   timing: {
     out: { type: 'easing' as const, duration: 0.32, ease: [0.4, 0, 1, 1] as [number, number, number, number] },
