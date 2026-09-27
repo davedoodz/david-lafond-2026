@@ -46,6 +46,13 @@
   contain: layout paint;
 }
 
+.works__mesh {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 .works__title {
   --title-size: var(--works-title-d);
   --title-x: 45px;

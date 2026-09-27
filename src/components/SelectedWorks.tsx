@@ -15,6 +15,7 @@ import { useEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
 import { useTuning } from '../tuning/useTuning'
 import { ArrowDownIcon } from './icons'
+import { MeshCard } from './MeshCard'
 import './SelectedWorks.css'
 
 type Tuple = [number, number, number, number]
@@ -141,6 +142,7 @@ export function SelectedWorks() {
                   style={{ backgroundColor: t.cards[work.id] }}
                   aria-label={t.titles[desktopKey]}
                 >
+                  {work.id === 'unwind' && <MeshCard />}
                   <div className="card-shade" />
                   <h3 className="card-title works__title">
                     <span className="works__title-desktop">{t.titles[desktopKey]}</span>
