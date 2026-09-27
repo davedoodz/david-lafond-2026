@@ -1,0 +1,177 @@
+/*
+ * Page transition presets. `data-vt` on <html> selects the preset for the
+ * duration of one transition; timing and look come from --vt-* variables set by
+ * the "Page transition" DialKit panel. Only transform, opacity, filter and (for
+ * `wipe`) clip-path animate, all on snapshots rather than live layout.
+ */
+:root {
+  --vt-dir: 1;
+}
+
+:root[data-vt-dir='back'] {
+  --vt-dir: -1;
+}
+
+:root[data-vt]::view-transition-old(root),
+:root[data-vt]::view-transition-new(root) {
+  mix-blend-mode: normal;
+  animation-fill-mode: both;
+}
+
+:root[data-vt]::view-transition-old(root) {
+  animation-duration: var(--vt-out-dur);
+  animation-timing-function: var(--vt-out-ease);
+}
+
+:root[data-vt]::view-transition-new(root) {
+  animation-duration: var(--vt-in-dur);
+  animation-timing-function: var(--vt-in-ease);
+  animation-delay: var(--vt-in-delay);
+}
+
+/* Pinned elements hold still and only crossfade their own look (dark ↔ light). */
+:root[data-vt-pin-nav] .nav {
+  view-transition-name: site-nav;
+}
+
+:root[data-vt-pin-shader] .dither-band--header {
+  view-transition-name: site-header-shader;
+}
+
+:root[data-vt]::view-transition-group(site-nav),
+:root[data-vt]::view-transition-group(site-header-shader),
+:root[data-vt]::view-transition-old(site-nav),
+:root[data-vt]::view-transition-new(site-nav),
+:root[data-vt]::view-transition-old(site-header-shader),
+:root[data-vt]::view-transition-new(site-header-shader) {
+  animation-duration: var(--vt-in-dur);
+  animation-timing-function: var(--vt-in-ease);
+}
+
+/* fade — straight crossfade */
+:root[data-vt='fade']::view-transition-old(root) {
+  mix-blend-mode: plus-lighter;
+  animation-name: vt-fade-out;
+}
+:root[data-vt='fade']::view-transition-new(root) {
+  mix-blend-mode: plus-lighter;
+  animation-name: vt-fade-in;
+}
+
+/* rise — old page settles back, new page rises into place */
+:root[data-vt='rise']::view-transition-old(root) {
+  animation-name: vt-shrink-out;
+}
+:root[data-vt='rise']::view-transition-new(root) {
+  animation-name: vt-rise-in;
+}
+
+/* slide — horizontal push, mirrored on the way back */
+:root[data-vt='slide']::view-transition-old(root) {
+  animation-name: vt-slide-out;
+}
+:root[data-vt='slide']::view-transition-new(root) {
+  animation-name: vt-slide-in;
+}
+
+/* zoom — old page recedes, new page lands from slightly closer */
+:root[data-vt='zoom']::view-transition-old(root) {
+  animation-name: vt-shrink-out;
+}
+:root[data-vt='zoom']::view-transition-new(root) {
+  animation-name: vt-zoom-in;
+}
+
+/* blur — defocus out, focus in */
+:root[data-vt='blur']::view-transition-old(root) {
+  animation-name: vt-blur-out;
+}
+:root[data-vt='blur']::view-transition-new(root) {
+  animation-name: vt-blur-in;
+}
+
+/* wipe — new page is revealed bottom→top (top→bottom on the way back) over a drifting old page */
+:root[data-vt='wipe']::view-transition-old(root) {
+  animation-name: vt-drift-out;
+}
+:root[data-vt='wipe']::view-transition-new(root) {
+  animation-name: vt-wipe-up;
+}
+:root[data-vt='wipe'][data-vt-dir='back']::view-transition-new(root) {
+  animation-name: vt-wipe-down;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: var(--vt-out-opacity);
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-shrink-out {
+  to {
+    opacity: var(--vt-out-opacity);
+    transform: scale(var(--vt-scale));
+  }
+}
+@keyframes vt-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--vt-dist) * var(--vt-dir)));
+  }
+}
+@keyframes vt-slide-out {
+  to {
+    opacity: var(--vt-out-opacity);
+    transform: translateX(calc(var(--vt-dist) * -1 * var(--vt-dir)));
+  }
+}
+@keyframes vt-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--vt-dist) * var(--vt-dir)));
+  }
+}
+@keyframes vt-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(calc(2 - var(--vt-scale)));
+  }
+}
+@keyframes vt-blur-out {
+  to {
+    opacity: var(--vt-out-opacity);
+    filter: blur(var(--vt-blur));
+  }
+}
+@keyframes vt-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(var(--vt-blur));
+  }
+}
+@keyframes vt-drift-out {
+  to {
+    opacity: max(var(--vt-out-opacity), 0.35);
+    transform: translateY(calc(var(--vt-dist) * -1 * var(--vt-dir)));
+  }
+}
+@keyframes vt-wipe-up {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes vt-wipe-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}

@@ -3,14 +3,15 @@ import { DitherBand } from './components/DitherBand'
 import { Footer } from './components/Footer'
 import { CursorLayer } from './features/cursor/CursorLayer'
 import { useDavebotOpen } from './features/ghost/davebotStore'
+import { PageTransitions } from './features/pageTransition/PageTransitions'
 import { useRoute } from './lib/router'
+import { aboutChunk } from './lib/routeChunks'
 import { WorkPage } from './pages/WorkPage'
 
 // Code the landing view does not need ships as separate chunks. They are fetched
 // once the browser goes idle, so later navigation and Davebot feel instant.
-const loadAbout = () => import('./pages/AboutPage')
 const loadDavebot = () => import('./features/ghost/DavebotLayer')
-const AboutPage = lazy(() => loadAbout().then((m) => ({ default: m.AboutPage })))
+const LazyAboutPage = lazy(() => aboutChunk.load().then((m) => ({ default: m.AboutPage })))
 const DavebotLayer = lazy(() => loadDavebot().then((m) => ({ default: m.DavebotLayer })))
 
 const DevRoot = import.meta.env.DEV ? lazy(() => import('./tuning/DevRoot')) : null
@@ -44,7 +45,7 @@ export function App() {
   }, [route])
 
   useEffect(() => {
-    if (idle) void loadAbout()
+    if (idle) void aboutChunk.load()
   }, [idle])
 
   return (
@@ -52,9 +53,14 @@ export function App() {
       <div className="site" data-surface={route === 'about' ? 'light' : 'dark'}>
         <DitherBand position="header" />
         {route === 'about' ? (
-          <Suspense fallback={null}>
-            <AboutPage />
-          </Suspense>
+          // Render the loaded module directly so page transitions never capture a fallback.
+          aboutChunk.module ? (
+            <aboutChunk.module.AboutPage />
+          ) : (
+            <Suspense fallback={null}>
+              <LazyAboutPage />
+            </Suspense>
+          )
         ) : (
           <>
             <WorkPage />
@@ -68,6 +74,7 @@ export function App() {
         </Suspense>
       )}
       <CursorLayer />
+      <PageTransitions />
       {DevRoot && (
         <Suspense fallback={null}>
           <DevRoot />
