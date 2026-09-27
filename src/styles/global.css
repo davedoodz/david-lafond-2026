@@ -137,7 +137,8 @@ h3 {
 }
 
 .column {
-  width: min(var(--column), 100% - 2 * var(--column-inset));
+  /* --column-fit: widest text line on the page (useFitColumn), so blocks stay centered. */
+  width: min(var(--column-fit, var(--column)), 100% - 2 * var(--column-inset));
   margin-inline: auto;
 }
 
@@ -209,4 +210,21 @@ h3 {
 
 .eyebrow.column {
   display: flex;
+}
+
+/* Text selection: white highlight with black text on dark surfaces; inverted on
+   light surfaces, where a white highlight would disappear. */
+::selection {
+  background: var(--paper);
+  color: var(--ink-950);
+}
+
+[data-surface='light'] ::selection {
+  background: var(--ink-900);
+  color: var(--paper);
+}
+
+[data-surface='light'] [data-surface='dark'] ::selection {
+  background: var(--paper);
+  color: var(--ink-950);
 }

@@ -24,6 +24,7 @@ function scrollToContact(event: MouseEvent<HTMLAnchorElement>) {
 export function Nav({ route }: Props) {
   return (
     <header className="nav">
+      <GhostButton className="nav__ghost" />
       <nav className="nav__links" aria-label="Primary">
         <a href="/" aria-current={route === 'work' ? 'page' : undefined} onClick={internalLink('work')}>
           Work
@@ -38,7 +39,6 @@ export function Nav({ route }: Props) {
           Contact
         </a>
       </nav>
-      <GhostButton className="nav__ghost" />
     </header>
   )
 }

@@ -16,6 +16,10 @@
   pointer-events: none;
 }
 
+/* The element only carries the pointer position (transform). The visible circle
+   is ::before, so the press scale never multiplies the translate — combining the
+   `scale` property with a translate transform pulls the dot toward the viewport
+   origin on click. */
 .cur-dot {
   --cur-size: 10px;
   --cur-pressed-scale: 0.55;
@@ -25,14 +29,19 @@
   z-index: 200;
   width: var(--cur-size);
   height: var(--cur-size);
-  border-radius: 50%;
-  background: var(--cur-color-dark, #f5f5f5);
   pointer-events: none;
   opacity: 0;
-  scale: 1;
   will-change: transform;
+  transition: opacity 140ms ease;
+}
+
+.cur-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--cur-color-dark, #f5f5f5);
   transition:
-    opacity 140ms ease,
     scale 150ms cubic-bezier(0.22, 1, 0.36, 1),
     background-color 140ms ease;
 }
@@ -41,18 +50,16 @@
   opacity: 1;
 }
 
-.cur-dot.is-pressed {
+.cur-dot.is-pressed::before {
   scale: var(--cur-pressed-scale);
 }
 
-.cur-dot.is-light {
+.cur-dot.is-light::before {
   background: var(--cur-color-light, #171717);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cur-dot {
-    transition:
-      opacity 140ms ease,
-      background-color 140ms ease;
+  .cur-dot::before {
+    transition: background-color 140ms ease;
   }
 }

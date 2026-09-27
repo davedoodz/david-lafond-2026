@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
@@ -6,6 +6,7 @@ import { ArrowDownIcon } from '../components/icons'
 import { Nav } from '../components/Nav'
 import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
+import { useFitColumn } from '../lib/useFitColumn'
 import { useTuningController } from '../tuning/useTuning'
 import './AboutPage.css'
 
@@ -34,6 +35,9 @@ const CONFIG = {
 export function AboutPage() {
   const { values: t, setValue } = useTuningController('About', CONFIG)
 
+  const mainRef = useRef<HTMLElement>(null)
+  useFitColumn(mainRef)
+
   useEffect(() => {
     document.body.dataset.page = 'about'
     return () => {
@@ -49,7 +53,7 @@ export function AboutPage() {
   } as CSSProperties
 
   return (
-    <main className="about" style={style}>
+    <main ref={mainRef} className="about" style={style}>
       <div className="about__light" data-surface="light">
         <Nav route="about" />
         <PhotoStack className="about__stack" />

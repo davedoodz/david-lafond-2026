@@ -26,6 +26,8 @@
 }
 
 .about__text {
+  /* Keep Paper's wrap width even when the heading widens the shared column. */
+  max-width: var(--column);
   margin-top: 40px;
   font-size: var(--text-body);
   line-height: 1.2;
@@ -87,9 +89,6 @@
   }
   .about__play {
     padding-top: 25px;
-  }
-  .about__play .eyebrow {
-    width: min(var(--column), 100% - 2 * clamp(24px, 19.5vw, 78px));
   }
   .about .cta {
     padding-top: 84px;

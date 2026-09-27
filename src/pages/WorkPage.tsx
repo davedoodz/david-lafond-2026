@@ -1,8 +1,9 @@
-import type { CSSProperties } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
 import { Signature } from '../features/signature/Signature'
+import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
 import './WorkPage.css'
 
@@ -25,8 +26,10 @@ const CONFIG = {
 
 export function WorkPage() {
   const t = useTuning('Hero', CONFIG)
+  const mainRef = useRef<HTMLElement>(null)
+  useFitColumn(mainRef)
   return (
-    <main className="work">
+    <main ref={mainRef} className="work">
       <div
         className="landing"
         style={{ '--peek-d': `${t.peekDesktop}px`, '--peek-m': `${t.peekMobile}px` } as CSSProperties}
