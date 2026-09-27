@@ -1,0 +1,32 @@
+.cta {
+  position: relative;
+  z-index: 1;
+  padding-block: 230px 102px;
+  color: var(--paper);
+}
+
+.cta__title {
+  max-width: 632px;
+  font-size: var(--text-display);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.cta__subtitle {
+  margin: 17px 0 35px;
+  font-size: var(--text-body);
+  line-height: 1.4;
+  color: var(--stone-400);
+}
+
+@media (max-width: 640px) {
+  .cta {
+    padding-block: 84px 27px;
+  }
+  .cta__title {
+    max-width: 242px;
+  }
+  .cta__subtitle {
+    margin: 14px 0 22px;
+  }
+}

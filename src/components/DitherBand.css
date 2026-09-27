@@ -1,0 +1,50 @@
+.dither-band {
+  position: absolute;
+  inset-inline: 0;
+  overflow: clip;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dither-band--header {
+  top: 0;
+  height: calc(var(--band-h-d) + 40px);
+}
+
+.dither-band--footer {
+  bottom: 0;
+  height: calc(var(--band-h-d) + 40px);
+}
+
+.dither-band__canvas {
+  position: absolute;
+  left: 50%;
+  width: var(--band-w-d);
+  height: var(--band-h-d);
+  translate: calc(-50% + var(--band-x-d)) var(--band-y-d);
+}
+
+.dither-band--header .dither-band__canvas {
+  top: 0;
+}
+
+.dither-band--footer .dither-band__canvas {
+  bottom: 0;
+}
+
+/* Paper rotates the header band 180deg so the dense edge sits at the top of the page. */
+.dither-band__canvas.is-flipped {
+  rotate: 180deg;
+}
+
+@media (max-width: 640px) {
+  .dither-band__canvas {
+    width: var(--band-w-m);
+    height: var(--band-h-m);
+    translate: calc(-50% + var(--band-x-m)) var(--band-y-m);
+  }
+  .dither-band--header,
+  .dither-band--footer {
+    height: calc(var(--band-h-m) + 40px);
+  }
+}

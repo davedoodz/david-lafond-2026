@@ -1,0 +1,58 @@
+/* Custom cursor dot + ink layer — ported in spirit from ditto's app.js/draw.js. */
+
+@media (hover: hover) and (pointer: fine) {
+  html.cur-active,
+  html.cur-active * {
+    cursor: none;
+  }
+}
+
+.cur-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.cur-dot {
+  --cur-size: 10px;
+  --cur-pressed-scale: 0.55;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  width: var(--cur-size);
+  height: var(--cur-size);
+  border-radius: 50%;
+  background: var(--cur-color-dark, #f5f5f5);
+  pointer-events: none;
+  opacity: 0;
+  scale: 1;
+  will-change: transform;
+  transition:
+    opacity 140ms ease,
+    scale 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 140ms ease;
+}
+
+.cur-dot.is-visible {
+  opacity: 1;
+}
+
+.cur-dot.is-pressed {
+  scale: var(--cur-pressed-scale);
+}
+
+.cur-dot.is-light {
+  background: var(--cur-color-light, #171717);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cur-dot {
+    transition:
+      opacity 140ms ease,
+      background-color 140ms ease;
+  }
+}

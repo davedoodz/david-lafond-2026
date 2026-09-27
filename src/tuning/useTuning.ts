@@ -123,17 +123,21 @@ function useTuningControllerDev<T extends DialConfig>(name: string, config: T, o
     onAction: (action) => onActionRef.current?.(action),
   })
 
+  // Save only when a control actually moves. A baseline change (HMR of a code
+  // default) or DialKit's first-render step rounding must never be written
+  // back as an override, or stale in-memory values would pin old defaults.
+  const valuesKey = JSON.stringify(dial.values)
+  const lastValues = useRef(valuesKey)
   const overrides = diff(dial.values, baseline) as Overrides | undefined
   const serialized = JSON.stringify(overrides ?? {})
-  const lastSaved = useRef(JSON.stringify(SAVED[name] ?? {}))
   useEffect(() => {
-    if (serialized === lastSaved.current) return
+    if (valuesKey === lastValues.current) return
+    lastValues.current = valuesKey
     const timer = window.setTimeout(() => {
-      lastSaved.current = serialized
       void devSave({ file: 'tuning', key: name, data: JSON.parse(serialized) })
     }, 500)
     return () => window.clearTimeout(timer)
-  }, [name, serialized])
+  }, [name, serialized, valuesKey])
 
   return { values: dial.values, setValue: dial.setValue }
 }

@@ -1,0 +1,94 @@
+.chat {
+  --chat-h: 51px;
+  --chat-arrow: 24px;
+  display: inline-block;
+  position: relative;
+  border-radius: 999px;
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--paper);
+}
+
+.chat__body {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--chat-h);
+  padding: 0 calc((var(--chat-h) - var(--chat-arrow)) / 2) 0 27px;
+  border: 1px solid var(--paper);
+  border-radius: inherit;
+  background-color: transparent;
+  color: var(--paper);
+  clip-path: inset(0 0 0 0 round 999px);
+  /* Leaving: expand first, then drop the fill. */
+  transition:
+    clip-path var(--chat-expand) var(--chat-expand-ease),
+    background-color var(--chat-fill) ease var(--chat-expand),
+    color var(--chat-fill) ease var(--chat-expand);
+}
+
+.chat__label {
+  white-space: nowrap;
+  transition: opacity var(--chat-expand) ease;
+}
+
+.chat__arrow {
+  width: var(--chat-arrow);
+  height: var(--chat-arrow);
+  flex-shrink: 0;
+  transition: translate var(--chat-nudge-ms) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (hover: hover) {
+  .chat:hover .chat__label {
+    opacity: 0;
+    transition: opacity var(--chat-collapse) ease var(--chat-delay);
+  }
+  .chat:hover .chat__body {
+    background-color: var(--paper);
+    color: var(--ink-900);
+    clip-path: inset(0 0 0 calc(100% - var(--chat-h)) round 999px);
+    transition:
+      background-color var(--chat-fill) ease,
+      color var(--chat-fill) ease,
+      clip-path var(--chat-collapse) var(--chat-collapse-ease) var(--chat-delay);
+  }
+}
+
+.chat:focus-visible {
+  border-radius: 999px;
+  outline-offset: 4px;
+}
+
+.chat:focus-visible .chat__body,
+.chat.is-armed .chat__body {
+  background-color: var(--paper);
+  color: var(--ink-900);
+  clip-path: inset(0 0 0 calc(100% - var(--chat-h)) round 999px);
+  transition:
+    background-color var(--chat-fill) ease,
+    color var(--chat-fill) ease,
+    clip-path var(--chat-collapse) var(--chat-collapse-ease) var(--chat-delay);
+}
+
+.chat:focus-visible .chat__label,
+.chat.is-armed .chat__label {
+  opacity: 0;
+  transition: opacity var(--chat-collapse) ease var(--chat-delay);
+}
+
+.chat.is-sending .chat__arrow {
+  translate: var(--chat-nudge) 0;
+}
+
+@media (max-width: 640px) {
+  .chat {
+    --chat-h: 30px;
+    --chat-arrow: 16px;
+    font-size: 14px;
+  }
+  .chat__body {
+    gap: 5px;
+    padding-left: 15px;
+  }
+}

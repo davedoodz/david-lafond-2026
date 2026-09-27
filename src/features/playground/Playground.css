@@ -1,0 +1,216 @@
+.pg-root {
+  position: relative;
+}
+
+.pg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--pg-gap-y) var(--pg-gap-x);
+  width: min(962px, 100% - 2 * 159px);
+  margin-inline: auto;
+  margin-top: var(--pg-top-desktop);
+}
+
+@media (max-width: 640px) {
+  .pg-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px 11px;
+    width: min(295px, 100% - 2 * 53px);
+    margin-top: var(--pg-top-mobile);
+  }
+}
+
+.pg-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 230 / 208;
+  border-radius: var(--pg-radius);
+  overflow: hidden;
+  background: var(--placeholder);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 640px) {
+  .pg-card {
+    aspect-ratio: 142 / 129;
+  }
+}
+
+.pg-card:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+
+.pg-card[data-active='true'] {
+  visibility: hidden;
+}
+
+.pg-card-media {
+  position: absolute;
+  inset: 0;
+}
+
+.pg-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pg-card .card-shade,
+.pg-card .card-title {
+  opacity: 0;
+  transition:
+    opacity 0.25s var(--ease-out),
+    transform 0.25s var(--ease-out);
+}
+
+.pg-card .card-title {
+  transform: translateY(4px);
+  text-align: left;
+}
+
+.pg-card[data-pressed='true'] .card-shade,
+.pg-card[data-pressed='true'] .card-title {
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pg-card:hover .card-shade,
+  .pg-card:focus-visible .card-shade,
+  .pg-card:hover .card-title,
+  .pg-card:focus-visible .card-title {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pg-card:focus-visible .card-shade,
+.pg-card:focus-visible .card-title {
+  opacity: 1;
+  transform: none;
+}
+
+/* Reuse the shared gradient shape but let the color itself be tuned. */
+.pg-card .card-shade,
+.pg-zoom-card .card-shade {
+  background-image: linear-gradient(
+    in oklab 180deg,
+    color-mix(in oklab, var(--pg-shade-color, #0b0a09) 0%, transparent) var(--shade-start, 55%),
+    var(--pg-shade-color, #0b0a09) var(--shade-end, 92%)
+  );
+}
+
+.pg-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.pg-zoom-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(11 10 9 / var(--pg-dim-opacity, 0.6));
+  backdrop-filter: blur(var(--pg-zoom-blur, 20px));
+  -webkit-backdrop-filter: blur(var(--pg-zoom-blur, 20px));
+}
+
+.pg-zoom-stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pg-zoom-card {
+  position: fixed;
+  background: var(--placeholder);
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.45);
+  outline: none;
+}
+
+.pg-zoom-content {
+  position: absolute;
+  inset: 0;
+}
+
+.pg-zoom-card .card-shade,
+.pg-zoom-card .card-title {
+  opacity: 1;
+  transform: none;
+}
+
+.pg-zoom-nav,
+.pg-zoom-close {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  background: rgb(245 245 245 / 0.12);
+  color: var(--paper);
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out);
+}
+
+.pg-zoom-nav:hover,
+.pg-zoom-close:hover,
+.pg-zoom-nav:focus-visible,
+.pg-zoom-close:focus-visible {
+  background: rgb(245 245 245 / 0.22);
+}
+
+.pg-zoom-nav svg,
+.pg-zoom-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pg-zoom-prev {
+  left: max(24px, calc(50% - min(80vw, 100vh) / 2 - 68px));
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pg-zoom-next {
+  right: max(24px, calc(50% - min(80vw, 100vh) / 2 - 68px));
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pg-zoom-close {
+  top: 24px;
+  right: 24px;
+}
+
+@media (max-width: 640px) {
+  .pg-zoom-prev {
+    left: 12px;
+  }
+  .pg-zoom-next {
+    right: 12px;
+  }
+  .pg-zoom-nav,
+  .pg-zoom-close {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-card .card-shade,
+  .pg-card .card-title {
+    transition: none;
+  }
+}

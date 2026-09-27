@@ -1,0 +1,391 @@
+/* Davebot palette — ported in spirit from ditto's public/ask.css. */
+
+:root {
+  --davebot-veil: rgb(0 0 0 / 66%);
+  --davebot-surface: #141414;
+  --davebot-surface-hover: rgb(255 255 255 / 6%);
+  --davebot-edge: rgb(255 255 255 / 18%);
+  --davebot-ink: #f6f6f6;
+  --davebot-ink-muted: #c4c4c4;
+  --davebot-ink-dim: rgb(255 255 255 / 35%);
+  --davebot-placeholder: rgb(255 255 255 / 36%);
+}
+
+body.davebot-open {
+  overflow: hidden;
+  padding-right: var(--davebot-scrollbar, 0px);
+}
+
+.davebot-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  font-family: var(--font);
+}
+
+.davebot-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--davebot-veil);
+  cursor: pointer;
+}
+
+.davebot-stack {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  pointer-events: none;
+}
+
+.davebot-ghost {
+  --davebot-ghost-size: 160px;
+  width: var(--davebot-ghost-size);
+  height: var(--davebot-ghost-size);
+  flex: none;
+  /* The 32-grid mark leaves ~15% empty below the body, so the boxes overlap
+     to seat the character on the panel edge rather than float above it. */
+  margin-bottom: calc(var(--davebot-ghost-size) * -0.11);
+}
+
+.davebot-ghost .ghost-mark {
+  width: 100%;
+  height: 100%;
+}
+
+.davebot-panel {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(520px, calc(100dvh - 112px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--davebot-edge);
+  border-radius: 12px;
+  background: var(--davebot-surface);
+  color: var(--davebot-ink);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 76%);
+  pointer-events: auto;
+}
+
+.davebot-panel:focus-visible {
+  outline: 1px solid var(--davebot-edge);
+  outline-offset: -2px;
+}
+
+.davebot-form {
+  position: relative;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--davebot-edge);
+}
+
+.davebot-form input.davebot-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.davebot-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--davebot-ink);
+  caret-color: var(--davebot-highlight, #f2b544);
+  font: 400 15px/20px var(--font);
+}
+
+.davebot-input::placeholder {
+  color: var(--davebot-placeholder);
+  opacity: 1;
+}
+
+.davebot-input[readonly] {
+  color: var(--davebot-ink-muted);
+}
+
+.davebot-kbd,
+.davebot-close {
+  flex: 0 0 auto;
+  color: var(--davebot-ink-dim);
+  font: 400 10px/16px var(--font-mono);
+}
+
+.davebot-kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--davebot-edge);
+  border-radius: 5px;
+}
+
+.davebot-close {
+  display: none;
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.davebot-close:focus-visible,
+.davebot-source:focus-visible {
+  outline: 1px solid var(--davebot-ink);
+  outline-offset: 2px;
+}
+
+.davebot-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--davebot-edge) transparent;
+}
+
+.davebot-group {
+  display: block;
+  padding: 10px 14px 5px;
+  color: var(--davebot-ink-dim);
+  font: 500 10px/16px var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.davebot-options {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.davebot-row {
+  position: relative;
+  width: 100%;
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 56px;
+  align-items: center;
+  column-gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--davebot-ink-muted);
+  text-align: left;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.davebot-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: transparent;
+}
+
+.davebot-row__icon {
+  width: 18px;
+  color: var(--davebot-ink-dim);
+  font: 400 11px/1 var(--font-mono);
+  text-align: center;
+}
+
+.davebot-row__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.davebot-row__hint {
+  width: 56px;
+  overflow: hidden;
+  color: var(--davebot-ink-dim);
+  font: 400 10px/16px var(--font-mono);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.davebot-row[aria-selected='true'] {
+  background: var(--davebot-surface-hover);
+  color: var(--davebot-ink);
+}
+
+.davebot-row[aria-selected='true']::before {
+  background: var(--davebot-highlight, #f2b544);
+}
+
+@media (hover: hover) {
+  .davebot-row:hover {
+    background: var(--davebot-surface-hover);
+    color: var(--davebot-ink);
+  }
+}
+
+.davebot-row:focus-visible {
+  outline: 1px solid var(--davebot-ink);
+  outline-offset: -2px;
+}
+
+.davebot-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 16px;
+  color: var(--davebot-ink-muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.davebot-status__line {
+  width: 18px;
+  height: 1px;
+  flex: 0 0 18px;
+  background: var(--davebot-highlight, #f2b544);
+}
+
+.davebot-answer {
+  padding: 16px;
+}
+
+.davebot-answer__copy {
+  max-width: 62ch;
+  color: var(--davebot-ink-muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.davebot-answer__copy strong {
+  color: var(--davebot-ink);
+  font-weight: 500;
+}
+
+.davebot-answer__copy.is-streaming::after {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 14px;
+  margin-left: 3px;
+  translate: 0 2px;
+  background: var(--davebot-highlight, #f2b544);
+  animation: davebot-caret 900ms steps(1) infinite;
+}
+
+@keyframes davebot-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.davebot-answer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.davebot-source {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid var(--davebot-edge);
+  border-radius: 999px;
+  color: var(--davebot-ink-muted);
+  font-size: 11px;
+  line-height: 18px;
+  user-select: none;
+}
+
+.davebot-source__arrow {
+  color: var(--davebot-highlight, #f2b544);
+}
+
+@media (hover: hover) {
+  .davebot-source:hover {
+    border-color: var(--davebot-ink-dim);
+    color: var(--davebot-ink);
+  }
+}
+
+.davebot-recovery {
+  padding: 6px;
+  border-top: 1px solid var(--davebot-edge);
+}
+
+.davebot-footer {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 14px;
+  border-top: 1px solid var(--davebot-edge);
+  color: var(--davebot-ink-dim);
+  font: 400 10px/16px var(--font-mono);
+}
+
+.davebot-footer__keys {
+  display: flex;
+  gap: 12px;
+}
+
+@media (max-width: 639px) {
+  .davebot-stack {
+    justify-content: flex-start;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+  }
+  /* The palette docks to the top edge so the software keyboard cannot bury
+     the rows; there is no room above it for the scaled ghost. */
+  .davebot-ghost {
+    display: none;
+  }
+  .davebot-panel {
+    width: 100% !important;
+    max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  }
+  .davebot-form {
+    min-height: 52px;
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .davebot-input {
+    font-size: 17px;
+    line-height: 22px;
+  }
+  .davebot-kbd {
+    display: none;
+  }
+  .davebot-close {
+    display: grid;
+    place-items: center;
+  }
+  .davebot-row {
+    min-height: 48px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .davebot-options .davebot-row:nth-of-type(n + 4) {
+    display: none;
+  }
+  .davebot-footer {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .davebot-answer__copy.is-streaming::after {
+    animation: none;
+  }
+}

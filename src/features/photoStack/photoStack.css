@@ -1,0 +1,42 @@
+.ps-root {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ps-scale {
+  position: relative;
+  pointer-events: none;
+}
+
+.ps-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  overflow: hidden;
+  will-change: transform;
+  padding: 0;
+  border: 0;
+  background: var(--placeholder, #d9d9d9);
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.ps-card--active {
+  cursor: pointer;
+}
+
+.ps-card:focus-visible {
+  outline: 2px solid var(--ink-900, #171717);
+  outline-offset: 3px;
+}
+
+.ps-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

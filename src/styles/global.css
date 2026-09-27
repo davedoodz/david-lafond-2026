@@ -49,7 +49,7 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Card title (shared by Selected Works + Playground) */
-  --card-title-shadow: 0 1px 14px rgb(0 0 0 / 0.35);
+  --card-title-shadow: 0 0 14px rgb(255 255 255 / 0.35);
 
   color-scheme: dark;
 }
@@ -205,4 +205,8 @@ h3 {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+.eyebrow.column {
+  display: flex;
 }

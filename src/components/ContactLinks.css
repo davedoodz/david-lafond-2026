@@ -1,0 +1,101 @@
+.contact-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  row-gap: calc(30px - 1.2em);
+  font-size: var(--text-small);
+  line-height: 1.2;
+}
+
+.contact-links__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-links__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  color: var(--link-idle);
+  transition: color 180ms ease;
+  /* Generous hit area without changing the visual rhythm. */
+  padding-block: 4px;
+  margin-block: -4px;
+}
+
+.contact-links__icon {
+  width: 1em;
+  height: 1em;
+  opacity: 0;
+  translate: -3px 0;
+  transition:
+    opacity 180ms ease,
+    translate 220ms var(--ease-out);
+}
+
+.contact-links__icon--copy {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+@media (hover: hover) {
+  .contact-links__link:hover {
+    color: var(--link-hover);
+  }
+  .contact-links__link:hover .contact-links__icon {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.contact-links__link:focus-visible {
+  color: var(--link-hover);
+}
+.contact-links__link:focus-visible .contact-links__icon {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* No hover on touch: keep the affordance visible (matches the mobile mock). */
+@media (hover: none) {
+  .contact-links__icon {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.contact-links__toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--link-hover);
+  white-space: nowrap;
+  pointer-events: none;
+  /* Hidden state doubles as the exit: fade out while sinking top-to-bottom. */
+  opacity: 0;
+  transform: translateY(var(--toast-rise));
+  transition:
+    opacity var(--toast-out) cubic-bezier(0.4, 0, 1, 1),
+    transform var(--toast-out) cubic-bezier(0.4, 0, 1, 1);
+}
+
+.contact-links__toast[data-visible='true'] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--toast-in) cubic-bezier(0.22, 1, 0.36, 1),
+    transform var(--toast-in) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.contact-links__check {
+  width: 1.15em;
+  height: 1.15em;
+}
+
+@media (max-width: 640px) {
+  .contact-links {
+    row-gap: calc(22px - 1.2em);
+  }
+}
