@@ -19,7 +19,7 @@ const CONFIG = {
     default: 'Now, I’m bringing this experience to product design — where ideas can move faster and reach further.',
   },
   name: { type: 'text' as const, default: 'David Lafond' },
-  role: { type: 'text' as const, default: 'Architect & ex-MIT researcher\nnow focused on product design' },
+  role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
   peekDesktop: [76, 0, 240, 1] as [number, number, number, number],
   peekMobile: [64, 0, 240, 1] as [number, number, number, number],
 }

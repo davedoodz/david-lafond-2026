@@ -72,7 +72,7 @@ export const DAVEBOT_ENTRIES: DavebotEntry[] = [
     keys: ['about', 'who is david', 'background', 'architect', 'researcher', 'bio', 'career path'],
     answer: [
       { text: 'David is an ' },
-      { text: 'architect and ex-MIT researcher now focused on product design', emphasis: true },
+      { text: 'architect and ex-MIT UX researcher now focused on product design', emphasis: true },
       { text: '. His path ran from pre-med, to architecture, to product design — three ways of asking the same question about how people actually use the things built for them.' },
     ],
   },
