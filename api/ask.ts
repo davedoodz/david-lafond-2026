@@ -5,7 +5,7 @@
  * is absent (any static/preview deploy without the AI Gateway wired up),
  * this responds 503 and the client falls back to its offline notice.
  */
-import { DAVEBOT_ENTRIES } from '../src/features/ghost/davebotIndex'
+import { DAVEBOT_ENTRIES } from '../src/features/ghost/davebotIndex.js'
 
 const GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1/chat/completions'
 const DEFAULT_MODEL = 'minimax/minimax-m3-free'
