@@ -27,6 +27,8 @@ const STORY = [
 
 const CONFIG = {
   heading: { type: 'text' as const, default: 'Aw, flattered you wanna hear my story.' },
+  /** Mobile heading: kept on one line or two balanced lines; the type shrinks only as far as that needs. */
+  headingLinesMobile: { type: 'select' as const, options: ['one', 'two'], default: 'one' },
   story: { type: 'text' as const, default: STORY, placeholder: 'Blank lines = paragraph breaks' },
   playgroundLabel: { type: 'text' as const, default: 'My playground' },
   /** Vertical file-sheet presets for the dark playground panel. */
@@ -153,6 +155,38 @@ export function AboutPage() {
     }
   }, [snap])
 
+  // Mobile heading fit: the largest size (up to the display size) that keeps it on the chosen line count.
+  const headingLines = t.headingLinesMobile === 'two' ? 2 : 1
+  useLayoutEffect(() => {
+    const heading = mainRef.current?.querySelector<HTMLElement>('.about__heading')
+    const column = heading?.parentElement
+    if (!heading || !column) return
+    const mobile = window.matchMedia('(max-width: 640px)')
+    const fit = () => {
+      heading.style.removeProperty('--heading-fit-m')
+      if (!mobile.matches) return
+      const probe = heading.cloneNode(true) as HTMLElement
+      probe.removeAttribute('id')
+      probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;width:max-content;max-width:none'
+      column.appendChild(probe)
+      const full = probe.scrollWidth
+      const base = parseFloat(getComputedStyle(probe).fontSize)
+      probe.remove()
+      // Two lines: half the text plus slack, since lines only break between words.
+      const need = headingLines === 1 ? full : (full / 2) * 1.15
+      heading.style.setProperty('--heading-fit-m', `${Math.min(base, (base * column.clientWidth) / need).toFixed(2)}px`)
+    }
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(column)
+    mobile.addEventListener('change', fit)
+    return () => {
+      observer.disconnect()
+      mobile.removeEventListener('change', fit)
+      heading.style.removeProperty('--heading-fit-m')
+    }
+  }, [headingLines, t.heading])
+
   useEffect(() => {
     document.body.dataset.page = 'about'
     return () => {
@@ -175,7 +209,7 @@ export function AboutPage() {
   } as CSSProperties
 
   return (
-    <main ref={mainRef} className="about" style={style}>
+    <main ref={mainRef} className="about" style={style} data-heading-m={headingLines}>
       <div ref={lightRef} className="about__light" data-surface="light">
         {/* Snap stops 1 and 2: page top, and the story's end with the sheet tip peeking. */}
         <div className="about__top-stop" aria-hidden="true" />

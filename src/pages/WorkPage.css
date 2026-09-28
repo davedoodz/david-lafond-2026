@@ -59,6 +59,10 @@
   .hero {
     padding-block: 72px 64px;
   }
+  /* The desktop nudge would push the block off-centre on a phone; mobile has its own. */
+  .hero[data-align] {
+    translate: var(--align-x-m, 0px) 0;
+  }
   .hero__intro {
     max-width: 260px;
     margin-top: var(--gap-title-intro-m);

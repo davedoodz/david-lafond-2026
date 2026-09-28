@@ -21,10 +21,11 @@ const CONFIG = {
   },
   name: { type: 'text' as const, default: 'David Lafond' },
   role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
-  /** Text block: left- or centre-aligned; `x` nudges it from the page centre (px). */
+  /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
   align: {
     text: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     x: [0, -400, 400, 1] as [number, number, number, number],
+    xMobile: [0, -200, 200, 1] as [number, number, number, number],
   },
   /** Vertical gaps between the hero text elements (px). */
   spacing: {
@@ -62,6 +63,7 @@ export function WorkPage() {
             {
               ...entrance.style,
               '--align-x': `${t.align.x}px`,
+              '--align-x-m': `${t.align.xMobile}px`,
               '--gap-title-intro-d': `${t.spacing.titleToIntroDesktop}px`,
               '--gap-intro-intro-d': `${t.spacing.introToIntroDesktop}px`,
               '--gap-intro-name-d': `${t.spacing.introToNameDesktop}px`,

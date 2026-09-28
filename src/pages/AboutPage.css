@@ -78,8 +78,13 @@
   }
   .about__heading {
     width: auto;
-    max-width: 252px;
-    text-wrap: wrap;
+    max-width: none;
+    /* Size set by the fit in AboutPage.tsx for the chosen line count (About → headingLinesMobile). */
+    font-size: var(--heading-fit-m, var(--text-display));
+    text-wrap: balance;
+  }
+  .about[data-heading-m='1'] .about__heading {
+    white-space: nowrap;
   }
   .about__text {
     margin-top: 33px;
