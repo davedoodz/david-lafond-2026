@@ -271,17 +271,12 @@ export function PhotoStack({ className }: { className?: string }) {
       moveTo(cardId, aroundCentre(base, fx, values.card.width, values.card.height), toMotionTransition(values.topHover.spring))
       return
     }
-    const peek = values.backHover
-    const depth = slot - 1
+    const { second, third, back, spring } = values.backHover
+    const peek = [second, third, back][slot - 1]
     moveTo(
       cardId,
-      {
-        x: base.x + peek.pullX + depth * peek.pullXPerDepth,
-        y: base.y + peek.pullY,
-        rotate: base.rotate + peek.extraRotate + depth * peek.rotatePerDepth,
-        scale: 1,
-      },
-      toMotionTransition(peek.spring),
+      { x: base.x + peek.pullX, y: base.y + peek.pullY, rotate: base.rotate + peek.rotate, scale: 1 },
+      toMotionTransition(spring),
     )
   }
 

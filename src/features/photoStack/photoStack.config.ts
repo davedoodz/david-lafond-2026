@@ -68,14 +68,27 @@ export const PHOTO_STACK_CONFIG = {
     scale: [1.03, 0.9, 1.2, 0.005] as [number, number, number, number],
     spring: { type: 'spring' as const, visualDuration: 0.35, bounce: 0.25 },
   },
-  /** Hovering a card behind the front one: it slides out of the stack to be seen. */
+  /**
+   * Hovering a card behind the front one: it slides out of the stack to be seen.
+   * One group per position behind the front (second, third, back), since photos
+   * rotate through positions as the stack cycles.
+   */
   backHover: {
-    pullX: [18, -100, 320, 1] as [number, number, number, number],
-    pullY: [-6, -200, 200, 1] as [number, number, number, number],
-    extraRotate: [-4, -45, 45, 0.1] as [number, number, number, number],
-    /** Added per slot beyond the second, so deeper (more hidden) cards come out further. */
-    pullXPerDepth: [0, 0, 200, 1] as [number, number, number, number],
-    rotatePerDepth: [0, -20, 20, 0.1] as [number, number, number, number],
+    second: {
+      pullX: [60, -100, 320, 1] as [number, number, number, number],
+      pullY: [-1, -200, 200, 1] as [number, number, number, number],
+      rotate: [5.2, -45, 45, 0.1] as [number, number, number, number],
+    },
+    third: {
+      pullX: [97, -100, 320, 1] as [number, number, number, number],
+      pullY: [-1, -200, 200, 1] as [number, number, number, number],
+      rotate: [2.7, -45, 45, 0.1] as [number, number, number, number],
+    },
+    back: {
+      pullX: [134, -100, 320, 1] as [number, number, number, number],
+      pullY: [-1, -200, 200, 1] as [number, number, number, number],
+      rotate: [0.2, -45, 45, 0.1] as [number, number, number, number],
+    },
     spring: { type: 'spring' as const, visualDuration: 0.4, bounce: 0.3 },
   },
   cycle: {
