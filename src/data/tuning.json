@@ -32,7 +32,12 @@
   },
   "Dither bands": {
     "header": {
-      "color": "#676767"
+      "color": "#676767",
+      "mouse": {
+        "radius": 309,
+        "boost": -0.99,
+        "warp": 0.34
+      }
     }
   }
 }

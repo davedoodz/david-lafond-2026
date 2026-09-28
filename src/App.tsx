@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { DitherBand } from './components/DitherBand'
 import { Footer } from './components/Footer'
+import { SelectionHighlight } from './components/SelectionHighlight'
 import { CursorLayer } from './features/cursor/CursorLayer'
 import { useDavebotOpen } from './features/ghost/davebotStore'
 import { PageTransitions } from './features/pageTransition/PageTransitions'
@@ -73,6 +74,7 @@ export function App() {
           <DavebotLayer />
         </Suspense>
       )}
+      <SelectionHighlight />
       <CursorLayer />
       <PageTransitions />
       {DevRoot && (

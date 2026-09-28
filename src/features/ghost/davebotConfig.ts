@@ -10,10 +10,19 @@ const springField = (visualDuration: number, bounce: number) => ({ type: 'spring
 const colorField = (value: string) => ({ type: 'color' as const, default: value })
 const textField = (value: string) => ({ type: 'text' as const, default: value })
 
+/** Chat box looks, switchable from the DialKit 'Davebot → box → style' select. */
+export const DAVEBOT_STYLES = ['classic', 'glass', 'minimal', 'soft', 'paper'] as const
+
 export const DAVEBOT_CONFIG = {
+  box: {
+    style: { type: 'select' as const, options: [...DAVEBOT_STYLES], default: 'classic' },
+    _collapsed: false,
+  },
   ghost: {
     navSize: [28, 20, 40, 1] as [number, number, number, number],
     zoomSize: [160, 96, 240, 2] as [number, number, number, number],
+    offsetX: [0, -300, 300, 1] as [number, number, number, number],
+    offsetY: [0, -200, 200, 1] as [number, number, number, number],
     paletteWidth: [560, 360, 720, 4] as [number, number, number, number],
     morph: springField(0.4, 0.15),
     _collapsed: false,
@@ -25,7 +34,6 @@ export const DAVEBOT_CONFIG = {
   },
   text: {
     placeholder: textField('Ask Davebot anything…'),
-    escChip: textField('esc'),
     suggestedLabel: textField('Suggested'),
     suggestion1: textField('What work is here?'),
     suggestion2: textField('Tell me about Unwind'),
@@ -38,13 +46,11 @@ export const DAVEBOT_CONFIG = {
     _collapsed: true,
   },
   visible: {
-    escChip: true,
     suggestedLabel: true,
     suggestion1: true,
     suggestion2: true,
     suggestion3: true,
     askLabel: true,
-    questionGlyph: true,
     footer: true,
     footerLeftText: true,
     footerHintMove: true,

@@ -214,21 +214,44 @@ h3 {
   display: flex;
 }
 
-/* Text selection: white highlight with black text on dark surfaces; inverted on
-   light surfaces, where a white highlight would disappear. */
+/* Text selection. The fill is drawn by <SelectionHighlight> (one white layer in
+   `difference` blend, sized to each run's full glyph box) because the native fill
+   is only line-height tall — with this type's tight leading it clipped
+   descenders and let the next line paint over them. Natively we only force the
+   text to pure white (dark surfaces) / black (light) so the blend lands it on
+   solid black / white. */
 ::selection {
-  background: var(--paper);
-  color: var(--ink-950);
+  background: transparent;
+  color: #fff;
 }
 
 [data-surface='light'] ::selection {
-  background: var(--ink-900);
-  color: var(--paper);
+  color: #000;
 }
 
 [data-surface='light'] [data-surface='dark'] ::selection {
+  color: #fff;
+}
+
+/* Form fields keep a native fill: their text isn't reachable by the overlay. */
+input::selection,
+textarea::selection {
   background: var(--paper);
   color: var(--ink-950);
+}
+
+.selection-hl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2147483000; /* over content and Davebot; under the cursor ink (…646) and dot */
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+
+.selection-hl > div {
+  position: absolute;
+  background: #fff;
 }
 
 /* Labels, titles and chrome are not highlightable — only reading copy is. */

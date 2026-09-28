@@ -122,6 +122,8 @@ function DavebotPanel() {
   const [phase, setPhase] = useState<Phase>('suggestions')
   const [inputValue, setInputValue] = useState('')
   const [readOnly, setReadOnly] = useState(false)
+  // Clicking the field clears the placeholder so only the caret shows.
+  const [engaged, setEngaged] = useState(false)
   const [rows, setRows] = useState<Row[]>(() => buildSuggestionRows(tuning))
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [answer, setAnswer] = useState<Answer | null>(null)
@@ -422,6 +424,13 @@ function DavebotPanel() {
   }
 
   const groupLabel = phase === 'suggestions' ? (tuning.visible.suggestedLabel ? tuning.text.suggestedLabel : '') : 'Ask or jump'
+  const footerLeft = tuning.visible.footerLeftText ? tuning.text.footerLeft : ''
+  const footerHints = [
+    tuning.visible.footerHintMove ? tuning.text.footerHintMove : '',
+    tuning.visible.footerHintSelect ? tuning.text.footerHintSelect : '',
+    tuning.visible.footerHintClose ? tuning.text.footerHintClose : '',
+  ].filter(Boolean)
+  const showFooter = tuning.visible.footer && Boolean(footerLeft || footerHints.length)
 
   return (
     <div
@@ -438,6 +447,7 @@ function DavebotPanel() {
           className="davebot-ghost"
           style={{
             ['--davebot-ghost-size' as string]: `${tuning.ghost.zoomSize}px`,
+            translate: `${tuning.ghost.offsetX}px ${tuning.ghost.offsetY}px`,
             x: ghostX,
             y: ghostY,
             scale: ghostScale,
@@ -448,6 +458,7 @@ function DavebotPanel() {
         <motion.section
           ref={panelRef}
           className="davebot-panel"
+          data-style={tuning.box.style}
           style={{ width: `min(${tuning.ghost.paletteWidth}px, 100%)`, opacity: panelOpacity, scale: panelScale, y: panelY }}
           tabIndex={-1}
           role="dialog"
@@ -461,7 +472,7 @@ function DavebotPanel() {
             <input
               id="davebot-query"
               ref={inputRef}
-              className="davebot-input"
+              className={`davebot-input${engaged ? ' is-engaged' : ''}`}
               type="search"
               role="combobox"
               aria-expanded="true"
@@ -474,12 +485,8 @@ function DavebotPanel() {
               readOnly={readOnly}
               value={inputValue}
               onChange={onInputChange}
+              onPointerDown={() => setEngaged(true)}
             />
-            {tuning.visible.escChip && (
-              <span className="davebot-kbd" aria-hidden="true">
-                {tuning.text.escChip}
-              </span>
-            )}
             <button type="button" className="davebot-close" aria-label="Close Davebot" onClick={requestClose}>
               &#10005;
             </button>
@@ -543,13 +550,13 @@ function DavebotPanel() {
             )}
           </div>
 
-          {tuning.visible.footer && (
+          {showFooter && (
             <div className="davebot-footer" aria-hidden="true">
-              {tuning.visible.footerLeftText && <span>{tuning.text.footerLeft}</span>}
+              {footerLeft && <span>{footerLeft}</span>}
               <span className="davebot-footer__keys">
-                {tuning.visible.footerHintMove && <span>{tuning.text.footerHintMove}</span>}
-                {tuning.visible.footerHintSelect && <span>{tuning.text.footerHintSelect}</span>}
-                {tuning.visible.footerHintClose && <span>{tuning.text.footerHintClose}</span>}
+                {footerHints.map(hint => (
+                  <span key={hint}>{hint}</span>
+                ))}
               </span>
             </div>
           )}
@@ -576,7 +583,7 @@ function DavebotRow({
   onPick: (row: Row) => void
 }) {
   const isAsk = row.action === 'ask'
-  const showGlyph = isAsk ? tuning.visible.questionGlyph : true
+  const glyph = isAsk ? '' : '\u2197'
   const showHint = isAsk ? tuning.visible.askLabel : true
   const hintText = isAsk ? tuning.text.askRowLabel : row.hint
 
@@ -587,12 +594,14 @@ function DavebotRow({
       type="button"
       tabIndex={-1}
       aria-selected={selected}
-      className="davebot-row"
+      className={`davebot-row${glyph ? '' : ' davebot-row--bare'}`}
       onClick={() => onPick(row)}
     >
-      <span className="davebot-row__icon" aria-hidden="true">
-        {showGlyph ? (isAsk ? '?' : '\u2197') : ''}
-      </span>
+      {glyph && (
+        <span className="davebot-row__icon" aria-hidden="true">
+          {glyph}
+        </span>
+      )}
       <span className="davebot-row__label">{row.label}</span>
       <span className="davebot-row__hint" aria-hidden="true">
         {showHint ? hintText : ''}
