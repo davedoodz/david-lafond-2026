@@ -3,11 +3,12 @@
  * them stroke-by-stroke on a rAF loop. Used by both the hero signature and the dev-only studio
  * (edit preview + "Replay preview"), so pen/playback tuning always looks identical in both.
  *
- * Perf: only the in-progress stroke's path is touched every frame, and it's written straight to
- * the DOM via a ref — no React re-render on the hot path. Re-renders only happen when a stroke
- * finishes or the pen/playback dials change. The rAF loop stops as soon as playback completes.
+ * Perf + smoothness: one <path> per stroke, all written straight to the DOM from a single rAF
+ * pass — no React state on the hot path. A stroke's hand-off from "growing tip" to "finished" is
+ * the same element in the same frame, so nothing can blink between two renders, and playback
+ * never restarts mid-way. The rAF loop stops as soon as playback completes.
  */
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef } from 'react'
 import type { SignatureData, SignatureStroke } from './types'
 import { strokeOutlinePath, type PenOptions } from './stroke'
 import { buildTimeline, samplePrefix } from './playback'
@@ -47,77 +48,73 @@ export function SignatureCanvas({
   liveStroke,
 }: SignatureCanvasProps) {
   const strokes = data.strokes
-  const [doneCount, setDoneCount] = useState(mode === 'instant' ? strokes.length : 0)
-  const activePathRef = useRef<SVGPathElement | null>(null)
-  const elapsedRef = useRef(-startDelayMs)
+  const pathRefs = useRef<(SVGPathElement | null)[]>([])
+  const elapsedRef = useRef(mode === 'instant' ? Infinity : -startDelayMs)
+  const doneRef = useRef(false)
   const onDoneRef = useRef(onDone)
   onDoneRef.current = onDone
-  const finished = doneCount >= strokes.length
   const filterId = useId().replace(/:/g, '')
 
-  useEffect(() => {
-    setDoneCount(mode === 'instant' ? strokes.length : 0)
-    elapsedRef.current = -startDelayMs
-    activePathRef.current?.setAttribute('d', '')
+  const timeline = useMemo(() => buildTimeline(strokes, speed, maxGapMs), [strokes, speed, maxGapMs])
+  const fullPaths = useMemo(() => strokes.map((stroke) => strokeOutlinePath(stroke.points, pen, stroke.pen)), [strokes, pen])
+
+  /** Writes every stroke's path for playback time `elapsed`: done → full, active → tip prefix, not yet → empty.
+   * Empty strokes have no timeline segment; they only appear once everything is done. */
+  const paintRef = useRef((_elapsed: number) => {})
+  paintRef.current = (elapsed: number) => {
+    const d = strokes.map((_, i) => (elapsed >= timeline.totalMs ? fullPaths[i] : ''))
+    for (const segment of timeline.segments) {
+      const i = segment.strokeIndex
+      if (elapsed >= segment.endMs) d[i] = fullPaths[i]
+      else if (elapsed >= segment.startMs) {
+        const points = strokes[i].points
+        const rawStart = points[0][3]
+        const progress = (elapsed - segment.startMs) / (segment.endMs - segment.startMs || 1)
+        const rawT = rawStart + progress * (points[points.length - 1][3] - rawStart)
+        d[i] = strokeOutlinePath(samplePrefix(points, rawT), pen, strokes[i].pen)
+      }
+    }
+    pathRefs.current.forEach((el, i) => {
+      if (el && el.getAttribute('d') !== d[i]) el.setAttribute('d', d[i])
+    })
+  }
+
+  // Restart on new data/mode/delay (and on a Replay, which remounts via key).
+  useLayoutEffect(() => {
+    elapsedRef.current = mode === 'instant' ? Infinity : -startDelayMs
+    doneRef.current = mode === 'instant'
+    paintRef.current(elapsedRef.current)
   }, [strokes, mode, startDelayMs])
 
+  // Dial changes (pen, speed) repaint in place at the current playback time — no restart, no blank frame.
+  useLayoutEffect(() => {
+    paintRef.current(elapsedRef.current)
+  }, [fullPaths, timeline])
+
   useEffect(() => {
-    if (mode !== 'live' || !play || finished) return
+    if (mode !== 'live' || !play || doneRef.current) return
     let raf = 0
     let last = performance.now()
-    let cancelled = false
 
     function tick(now: number) {
-      if (cancelled) return
       elapsedRef.current += now - last
       last = now
       const elapsed = elapsedRef.current
-
-      if (elapsed >= 0) {
-        const timeline = buildTimeline(strokes, speed, maxGapMs)
-        let completed = 0
-        let active: (typeof timeline.segments)[number] | undefined
-        for (const segment of timeline.segments) {
-          if (elapsed >= segment.endMs) completed = segment.strokeIndex + 1
-          else if (elapsed >= segment.startMs) {
-            active = segment
-            break
-          } else break
-        }
-        setDoneCount((prev) => (prev === completed ? prev : completed))
-
-        if (active) {
-          const points = strokes[active.strokeIndex].points
-          const span = active.endMs - active.startMs || 1
-          const rawStart = points[0][3]
-          const rawEnd = points[points.length - 1][3]
-          const rawT = rawStart + ((elapsed - active.startMs) / span) * (rawEnd - rawStart)
-          const path = strokeOutlinePath(samplePrefix(points, rawT), pen, strokes[active.strokeIndex].pen)
-          activePathRef.current?.setAttribute('d', path)
-        } else {
-          activePathRef.current?.setAttribute('d', '')
-        }
-
-        if (elapsed >= timeline.totalMs) {
-          setDoneCount(strokes.length)
-          onDoneRef.current?.()
-          return
-        }
+      if (elapsed >= timeline.totalMs) {
+        elapsedRef.current = Infinity
+        doneRef.current = true
+        paintRef.current(Infinity)
+        onDoneRef.current?.()
+        return
       }
+      if (elapsed >= 0) paintRef.current(elapsed)
       raf = requestAnimationFrame(tick)
     }
 
     raf = requestAnimationFrame(tick)
-    return () => {
-      cancelled = true
-      cancelAnimationFrame(raf)
-    }
-  }, [mode, play, finished, strokes, speed, maxGapMs, pen])
+    return () => cancelAnimationFrame(raf)
+  }, [mode, play, timeline])
 
-  const finishedPaths = useMemo(
-    () => strokes.slice(0, doneCount).map((stroke) => strokeOutlinePath(stroke.points, pen, stroke.pen)),
-    [strokes, doneCount, pen],
-  )
   const liveStrokePath = useMemo(
     () => (liveStroke ? strokeOutlinePath(liveStroke.points, pen, liveStroke.pen) : ''),
     [liveStroke, pen],
@@ -137,10 +134,14 @@ export function SignatureCanvas({
         </defs>
       )}
       <g fill={color} fillOpacity={opacity} filter={grain > 0 ? `url(#${filterId})` : undefined}>
-        {finishedPaths.map((d, i) => (
-          <path key={i} d={d} />
+        {strokes.map((_, i) => (
+          <path
+            key={i}
+            ref={(el) => {
+              pathRefs.current[i] = el
+            }}
+          />
         ))}
-        <path ref={activePathRef} d="" />
         {liveStrokePath && <path d={liveStrokePath} />}
       </g>
     </svg>
