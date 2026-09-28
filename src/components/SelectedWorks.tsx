@@ -1,15 +1,17 @@
 /**
  * White "Selected works" panel.
  *
- * Its background width is scroll-linked: at landing only the top edge peeks
- * out at the WIDE width; scrolling in narrows it toward the cards (focus), and
- * once the bottom edge comes into view it widens back out.
+ * Its background shape is scroll-linked: at landing only the top edge peeks
+ * out; scrolling in morphs it toward the "focused" shape, and once the bottom
+ * edge comes into view it morphs back.
  *
- *   n = ease(enter) · (1 − ease(exit))        0 = wide, 1 = narrow
+ *   n = curve(enter) · (1 − curve(exit))       0 = rest shape, 1 = focused shape
  *   enter: panel top travels `shrinkDistance`·vh up from its landing position
  *   exit:  panel bottom travels `widenDistance`·vh up from `widenStart`·vh
  *
- * Only a clip-path on a flat background layer changes, so cards never re-layout.
+ * `morph.preset` picks what rest → focused means (side inset + corner radius);
+ * 'custom' uses the morph dials. Only a clip-path on a flat background layer
+ * changes, so cards never re-layout.
  */
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
@@ -19,6 +21,25 @@ import { MeshCard } from './MeshCard'
 import './SelectedWorks.css'
 
 type Tuple = [number, number, number, number]
+
+/** Side inset in % of viewport width, radius as a multiple of the shape → radius dial. */
+type MorphSpec = { side: [number, number] | 'dials'; radius: [number, number] }
+
+const MORPH_PRESETS: Record<string, MorphSpec> = {
+  narrow: { side: 'dials', radius: [1, 1] },
+  'full-bleed': { side: [2.8, 0], radius: [1, 0] },
+  bloom: { side: [14, 0], radius: [2.4, 0.4] },
+  pill: { side: 'dials', radius: [1, 2.6] },
+  settle: { side: [0, 7.7], radius: [0, 1] },
+  none: { side: [2.8, 2.8], radius: [1, 1] },
+}
+
+const CURVES: Record<string, (x: number) => number> = {
+  smooth: (x) => x * x * (3 - 2 * x),
+  linear: (x) => x,
+  'expo-out': (x) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x)),
+  smoother: (x) => x * x * x * (x * (x * 6 - 15) + 10),
+}
 
 const CONFIG = {
   cards: {
@@ -40,6 +61,19 @@ const CONFIG = {
     shadeOpacity: [0.45, 0, 1, 0.01] as Tuple,
     shadeStart: [50, 0, 100, 1] as Tuple,
     _collapsed: true,
+  },
+  morph: {
+    preset: {
+      type: 'select' as const,
+      options: [...Object.keys(MORPH_PRESETS), 'custom'],
+      default: 'narrow',
+    },
+    curve: { type: 'select' as const, options: Object.keys(CURVES), default: 'smooth' },
+    customSideStart: [2.8, 0, 20, 0.1] as Tuple,
+    customSideEnd: [7.7, 0, 20, 0.1] as Tuple,
+    customRadiusStart: [45, 0, 200, 1] as Tuple,
+    customRadiusEnd: [45, 0, 200, 1] as Tuple,
+    _collapsed: false,
   },
   width: {
     desktopWideInset: [2.8, 0, 12, 0.1] as Tuple,
@@ -71,14 +105,14 @@ const TITLE_KEYS = {
   'harvard-mit': ['harvardMitDesktop', 'harvardMitMobile'],
 } as const
 
-const smooth = (x: number) => x * x * (3 - 2 * x)
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x)
+const lerp = (a: number, b: number, n: number) => a + (b - a) * n
 
 export function SelectedWorks() {
   const t = useTuning('Selected works', CONFIG)
   const sectionRef = useRef<HTMLElement>(null)
-  const width = t.width
-  const widthKey = JSON.stringify(width)
+  const morphDials = { width: t.width, morph: t.morph, shape: t.shape }
+  const morphKey = JSON.stringify(morphDials)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -88,16 +122,34 @@ export function SelectedWorks() {
 
     const update = () => {
       frame = 0
-      const w = width
+      const { width: w, morph, shape } = morphDials
       const vh = window.innerHeight
       const vw = document.documentElement.clientWidth
       const rect = section.getBoundingClientRect()
+      const curve = CURVES[morph.curve] ?? CURVES.smooth
       const enter = clamp01((vh - w.peek - rect.top) / (w.shrinkDistance * vh))
       const exit = clamp01((vh * (1 - w.widenStart) - rect.bottom) / (w.widenDistance * vh))
-      const n = smooth(enter) * (1 - smooth(exit))
-      const [wide, narrow] = mobileQuery.matches ? [w.mobileWideInset, w.mobileNarrowInset] : [w.desktopWideInset, w.desktopNarrowInset]
-      const inset = ((wide + (narrow - wide) * n) / 100) * vw
-      section.style.setProperty('--works-inset', `${inset.toFixed(2)}px`)
+      const n = curve(enter) * (1 - curve(exit))
+
+      const mobile = mobileQuery.matches
+      const baseRadius = mobile ? shape.radiusMobile : shape.radiusDesktop
+      let side: [number, number]
+      let radius: [number, number]
+      if (morph.preset === 'custom') {
+        side = [morph.customSideStart, morph.customSideEnd]
+        radius = [morph.customRadiusStart, morph.customRadiusEnd]
+      } else {
+        const spec = MORPH_PRESETS[morph.preset] ?? MORPH_PRESETS.narrow
+        side =
+          spec.side === 'dials'
+            ? mobile
+              ? [w.mobileWideInset, w.mobileNarrowInset]
+              : [w.desktopWideInset, w.desktopNarrowInset]
+            : spec.side
+        radius = [spec.radius[0] * baseRadius, spec.radius[1] * baseRadius]
+      }
+      section.style.setProperty('--works-inset', `${((lerp(side[0], side[1], n) / 100) * vw).toFixed(2)}px`)
+      section.style.setProperty('--works-radius-live', `${lerp(radius[0], radius[1], n).toFixed(2)}px`)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
@@ -113,8 +165,8 @@ export function SelectedWorks() {
       window.removeEventListener('resize', schedule)
       mobileQuery.removeEventListener('change', schedule)
     }
-    // `width` is captured fresh whenever any width dial changes.
-  }, [widthKey])
+    // Dials are captured fresh whenever any morph-related dial changes.
+  }, [morphKey])
 
   const style = {
     '--works-radius-d': `${t.shape.radiusDesktop}px`,

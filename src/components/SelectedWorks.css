@@ -12,7 +12,7 @@
   inset: 0;
   z-index: -1;
   background: var(--paper);
-  clip-path: inset(0 var(--works-inset) round var(--works-radius));
+  clip-path: inset(0 var(--works-inset) round var(--works-radius-live, var(--works-radius)));
   will-change: clip-path;
 }
 
