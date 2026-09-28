@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useRoute } from '../../lib/router'
 import { useTuning } from '../../tuning/useTuning'
 import { CURSOR_CONFIG, CURSOR_PANEL } from './cursorConfig'
 import { allowsSelectionStart, createInkEngine, type InkEngine } from './inkEngine'
@@ -35,10 +36,13 @@ export function CursorLayer() {
   const tuningRef = useRef(tuning)
   tuningRef.current = tuning
   const fine = useFinePointer()
+  const route = useRoute()
 
   const dotRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const engineRef = useRef<InkEngine | null>(null)
+  /** Re-reads the surface under a resting pointer; set while the cursor is mounted. */
+  const resyncRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('cur-active', fine)
@@ -105,13 +109,15 @@ export function CursorLayer() {
       dot.classList.remove('is-visible')
     }
 
-    const applySurface = (target: EventTarget | null): void => {
-      const owner = target instanceof Element ? target.closest<HTMLElement>('[data-surface]') : null
+    const applyOwner = (owner: HTMLElement | null): void => {
       const light = owner?.dataset.surface === 'light'
       if (light === isLight) return
       isLight = light
       dot.classList.toggle('is-light', light)
       canvas.classList.toggle('is-light', light)
+    }
+    const applySurface = (target: EventTarget | null): void => {
+      applyOwner(target instanceof Element ? target.closest<HTMLElement>('[data-surface]') : null)
     }
 
     const applyHover = (target: EventTarget | null): void => {
@@ -169,6 +175,25 @@ export function CursorLayer() {
       engine.resize()
       engine.refreshExclusions()
     }
+    // A page switch swaps the surface under a pointer that has not moved, so no
+    // pointer event fires. Hit-testing is useless here (during a View Transition
+    // it lands on the transition overlay), so find the innermost visible surface
+    // whose box holds the pointer. The style flush commits the new colour while
+    // `is-instant` has the fade off.
+    resyncRef.current = (): void => {
+      if (!visible) return
+      let owner: HTMLElement | null = null
+      for (const el of document.querySelectorAll<HTMLElement>('[data-surface]')) {
+        const r = el.getBoundingClientRect()
+        if (rawX < r.left || rawX >= r.right || rawY < r.top || rawY >= r.bottom) continue
+        if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue
+        if (!owner || owner.contains(el)) owner = el
+      }
+      dot.classList.add('is-instant')
+      applyOwner(owner)
+      void getComputedStyle(dot, '::before').backgroundColor
+      dot.classList.remove('is-instant')
+    }
 
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerover', onPointerOver, { passive: true })
@@ -193,8 +218,15 @@ export function CursorLayer() {
       if (frame) cancelAnimationFrame(frame)
       engine.destroy()
       engineRef.current = null
+      resyncRef.current = null
     }
   }, [fine])
+
+  // Runs inside the route commit (also inside a View Transition's update), so the
+  // colour is already right when the new page is first painted.
+  useLayoutEffect(() => {
+    resyncRef.current?.()
+  }, [route])
 
   if (!fine) return null
 

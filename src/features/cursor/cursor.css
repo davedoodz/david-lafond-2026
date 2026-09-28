@@ -63,6 +63,11 @@
     background-color 140ms ease;
 }
 
+/* Page switch: the colour flips with the new page instead of fading (see resync in CursorLayer). */
+.cur-dot.is-instant::before {
+  transition: none;
+}
+
 .cur-dot.is-visible {
   opacity: 1;
 }
