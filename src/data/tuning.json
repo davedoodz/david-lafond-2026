@@ -52,7 +52,7 @@
   },
   "Signature": {
     "pen": {
-      "opacity": 0.54
+      "color": "#A6A09C"
     },
     "playback": {
       "startDelayMs": 2000

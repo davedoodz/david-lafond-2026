@@ -26,8 +26,9 @@ const CONFIG = {
         'Hi David,\n\nI just spent some time with your portfolio and would love to find a moment to chat.\n\nA little about me and what I have in mind:\n\n\nWould a quick call sometime next week work for you?\n\nBest,\n',
     },
   },
-  /** Hover (and keyboard focus) fill. */
+  /** Hover (and keyboard focus). `gray` uses the colour dials below. */
   hover: {
+    preset: { type: 'select' as const, options: ['gray', 'invert', 'ghost', 'lift', 'arrow', 'none'], default: 'gray' },
     fill: { type: 'color' as const, default: '#3a3a3a' },
     border: { type: 'color' as const, default: '#f5f5f5' },
     text: { type: 'color' as const, default: '#f5f5f5' },
@@ -42,6 +43,8 @@ const CONFIG = {
     expand: { type: 'easing' as const, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   },
   click: {
+    /** roll: circle slides to the start · circle: collapses in place · fill: pill fills white · press: quick squeeze. */
+    preset: { type: 'select' as const, options: ['roll', 'circle', 'fill', 'press'], default: 'roll' },
     /** Pause after the circle arrives, before the mail app opens. */
     openDelayMs: [0, 0, 1200, 10] as [number, number, number, number],
     /** How long the circle rests at the start before fading back. */
@@ -57,7 +60,7 @@ function cssTransition(curve: TransitionConfig) {
   return { duration: `${curve.visualDuration ?? 0.5}s`, ease: 'cubic-bezier(0.22, 1, 0.36, 1)' }
 }
 
-type Phase = 'idle' | 'armed' | 'travel' | 'return'
+type Phase = 'idle' | 'armed' | 'travel' | 'return' | 'filled' | 'pressed'
 
 export function LetsChat() {
   const t = useTuning('Let’s chat', CONFIG)
@@ -74,15 +77,35 @@ export function LetsChat() {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
     if (phase !== 'idle') return
+    const mail = () => {
+      window.location.href = href
+    }
+    const preset = t.click.preset
+    if (preset === 'fill' || preset === 'press') {
+      setPhase(preset === 'fill' ? 'filled' : 'pressed')
+      const settled = preset === 'fill' ? t.motion.fillMs : 140
+      timers.current.push(
+        window.setTimeout(mail, settled + t.click.openDelayMs),
+        window.setTimeout(() => setPhase('idle'), settled + (preset === 'fill' ? t.click.holdMs : 0)),
+      )
+      return
+    }
     setPhase('armed')
+    const circleAt = t.motion.collapseDelayMs + parseFloat(collapse.duration) * 1000
+    if (preset === 'circle') {
+      timers.current.push(
+        window.setTimeout(mail, circleAt + t.click.openDelayMs),
+        window.setTimeout(() => setPhase('return'), circleAt + t.click.holdMs),
+        window.setTimeout(() => setPhase('idle'), circleAt + t.click.holdMs + t.click.fadeMs),
+      )
+      return
+    }
     const travelAt = t.motion.collapseDelayMs + parseFloat(collapse.duration) * 1000
     const arriveAt = travelAt + parseFloat(travel.duration) * 1000
     const returnAt = arriveAt + t.click.holdMs
     timers.current.push(
       window.setTimeout(() => setPhase('travel'), travelAt),
-      window.setTimeout(() => {
-        window.location.href = href
-      }, arriveAt + t.click.openDelayMs),
+      window.setTimeout(mail, arriveAt + t.click.openDelayMs),
       window.setTimeout(() => setPhase('return'), returnAt),
       window.setTimeout(() => setPhase('idle'), returnAt + t.click.fadeMs),
     )
@@ -107,6 +130,8 @@ export function LetsChat() {
     <a
       className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}`}
       href={href}
+      data-hover={t.hover.preset}
+      data-click={t.click.preset}
       onClick={onClick}
       style={style}
       data-no-ink
