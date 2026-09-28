@@ -2,11 +2,11 @@
  * Load-in animation for the hero copy (Work) and the story (About).
  *
  * Mark elements with `data-enter={n}`; element n starts `delay + n × stagger` after mount and
- * rises/fades/unblurs in (opacity, translate, filter only). It plays once per page load — for
- * whichever page you land on — not on in-app navigation, where the page wipe already runs.
+ * rises/fades/unblurs in (opacity, translate, filter only). It plays every time the page mounts:
+ * on load/refresh and when switching between Work and About (it runs inside the page wipe).
  * Tuned in the DialKit "Entrance" panel; "Replay" re-runs it in place.
  */
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { useTuningController } from '../tuning/useTuning'
 import { usePrefersReducedMotion } from './viewport'
 
@@ -33,11 +33,9 @@ const EASES: Record<string, string> = {
   'linear-ish': 'cubic-bezier(0.4, 0.2, 0.6, 0.8)',
 }
 
-let playedThisLoad = false
-
 export function useEntrance(): { className: string; style: CSSProperties } {
   const reducedMotion = usePrefersReducedMotion()
-  const [playing, setPlaying] = useState(() => !playedThisLoad)
+  const [playing, setPlaying] = useState(true)
   const { values } = useTuningController('Entrance', CONFIG, {
     onAction: (action) => {
       if (action !== 'replay') return
@@ -46,10 +44,6 @@ export function useEntrance(): { className: string; style: CSSProperties } {
       requestAnimationFrame(() => requestAnimationFrame(() => setPlaying(true)))
     },
   })
-
-  useEffect(() => {
-    playedThisLoad = true
-  }, [])
 
   return {
     className: playing && !reducedMotion ? 'entrance' : '',
