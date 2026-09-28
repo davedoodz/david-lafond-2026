@@ -4,6 +4,11 @@
  * Uses the framework-free ShaderMount (one small WebGL canvas per band). ShaderMount
  * already pauses when the band is offscreen or the tab is hidden, so the two bands
  * cost nothing while you read the middle of the page.
+ *
+ * Mouse interaction: Paper's dithering shader is extended with a soft cursor field
+ * that boosts (or clears) the dither and warps the pattern around the pointer.
+ * Pointer uniforms are only pushed while the cursor is near a band or the effect
+ * is still easing out, so an idle page never pays for it.
  */
 import { useEffect, useRef, type CSSProperties } from 'react'
 import {
@@ -17,6 +22,36 @@ import {
 import { useTuning } from '../tuning/useTuning'
 import './DitherBand.css'
 
+type Tuple = [number, number, number, number]
+
+/** Paper's shader + a cursor field. Anchors are asserted so a package update can't silently drop the effect. */
+function withMouseField(source: string): string {
+  const inject = (src: string, anchor: string, add: string, before = false) => {
+    if (!src.includes(anchor)) throw new Error(`DitherBand: shader anchor missing: ${anchor}`)
+    return src.replace(anchor, before ? `${add}\n${anchor}` : `${anchor}\n${add}`)
+  }
+  let out = inject(
+    source,
+    'uniform float u_type;',
+    `uniform vec2 u_mouse;        // drawing-buffer px, gl_FragCoord space
+uniform float u_mouseAmt;     // 0..1 presence
+uniform float u_mouseRadius;  // drawing-buffer px
+uniform float u_mouseBoost;   // + fills dots in, - clears them
+uniform float u_mouseWarp;    // + pushes pattern out, - pulls in`,
+  )
+  out = inject(
+    out,
+    'vec2 shapeUV = normalizedUV;',
+    `  vec2 mDelta = (canvasPixelizedUV + .5 * u_resolution) - u_mouse;
+  float mDist = length(mDelta) / max(u_mouseRadius, 1.);
+  float mFall = u_mouseAmt * exp(-2. * mDist * mDist);
+  shapeUV -= (mDelta / max(length(mDelta), 1e-3)) * mFall * u_mouseWarp * u_mouseRadius / u_resolution;`,
+  )
+  out = inject(out, 'int type = int(floor(u_type));', '  shape = clamp(shape + mFall * u_mouseBoost, 0., 1.);', true)
+  return out
+}
+
+const interactiveDitheringShader = withMouseField(ditheringFragmentShader)
 const band = (flip: boolean, frame: number) => ({
   color: { type: 'color' as const, default: '#706B68' },
   opacity: [0.25, 0, 1, 0.01] as [number, number, number, number],
@@ -27,6 +62,13 @@ const band = (flip: boolean, frame: number) => ({
   pattern: { type: 'select' as const, options: ['4x4', '2x2', '8x8', 'random'], default: '4x4' },
   flip,
   frame: [frame, 0, 1_000_000, 1] as [number, number, number, number],
+  mouse: {
+    enabled: true,
+    radius: [160, 20, 600, 1] as Tuple,
+    boost: [0.5, -1, 1, 0.01] as Tuple,
+    warp: [0.4, -2, 2, 0.01] as Tuple,
+    follow: [0.15, 0.02, 1, 0.01] as Tuple,
+  },
   desktop: {
     height: [287, 60, 600, 1] as [number, number, number, number],
     widthScale: [100, 50, 200, 1] as [number, number, number, number],
@@ -68,15 +110,21 @@ export function DitherBand({ position }: Props) {
     u_originY: 0.5,
     u_worldWidth: 0,
     u_worldHeight: 0,
+    u_mouseBoost: values.mouse.boost,
+    u_mouseWarp: values.mouse.warp,
   }
   const uniformsRef = useRef(uniforms)
   uniformsRef.current = uniforms
+  // Read by the pointer loop without re-subscribing listeners on every dial change.
+  const mouseRef = useRef({ ...values.mouse, flip: values.flip })
+  mouseRef.current = { ...values.mouse, flip: values.flip }
 
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const mount = new ShaderMount(host, ditheringFragmentShader, uniformsRef.current, undefined, reduced ? 0 : values.speed, values.frame, 1)
+    const initial = { ...uniformsRef.current, u_mouse: [0, 0], u_mouseAmt: 0, u_mouseRadius: 1 }
+    const mount = new ShaderMount(host, interactiveDitheringShader, initial, undefined, reduced ? 0 : values.speed, values.frame, 1)
     mountRef.current = mount
     return () => {
       mount.dispose()
@@ -98,6 +146,82 @@ export function DitherBand({ position }: Props) {
   useEffect(() => {
     mountRef.current?.setFrame(values.frame)
   }, [values.frame])
+
+  // Cursor field: eases toward the pointer, fades in near the band, fades out away from it.
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    let targetX = 0
+    let targetY = 0
+    let hasPointer = false
+    let x = 0
+    let y = 0
+    let amt = 0
+    let raf = 0
+
+    const tick = (): void => {
+      raf = 0
+      const mount = mountRef.current
+      const canvas = host.querySelector('canvas')
+      if (!mount || !canvas) return
+      const m = mouseRef.current
+      const rect = host.getBoundingClientRect()
+      const inside =
+        hasPointer &&
+        m.enabled &&
+        targetX > rect.left - m.radius &&
+        targetX < rect.right + m.radius &&
+        targetY > rect.top - m.radius &&
+        targetY < rect.bottom + m.radius
+      if (!inside && amt === 0) return
+
+      if (amt === 0) {
+        // Entering: start at the pointer instead of sweeping in from the last exit point.
+        x = targetX
+        y = targetY
+      }
+      x += (targetX - x) * m.follow
+      y += (targetY - y) * m.follow
+      const goal = inside ? 1 : 0
+      amt += (goal - amt) * m.follow
+      if (Math.abs(goal - amt) < 0.002) amt = goal
+
+      const sx = canvas.width / rect.width
+      const sy = canvas.height / rect.height
+      // gl_FragCoord is bottom-left origin; the flipped band is rotated 180° in CSS.
+      const gx = (m.flip ? rect.right - x : x - rect.left) * sx
+      const gy = (m.flip ? y - rect.top : rect.bottom - y) * sy
+      mount.setUniforms({ u_mouse: [gx, gy], u_mouseAmt: amt, u_mouseRadius: m.radius * sx })
+
+      const settled = amt === goal && Math.abs(targetX - x) < 0.3 && Math.abs(targetY - y) < 0.3
+      if (!settled) raf = requestAnimationFrame(tick)
+    }
+    const kick = (): void => {
+      if (!raf) raf = requestAnimationFrame(tick)
+    }
+    const onMove = (event: PointerEvent): void => {
+      if (event.pointerType !== 'mouse') return
+      targetX = event.clientX
+      targetY = event.clientY
+      hasPointer = true
+      kick()
+    }
+    const onLeave = (event: PointerEvent): void => {
+      if (event.relatedTarget !== null) return
+      hasPointer = false
+      kick()
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    document.addEventListener('pointerout', onLeave)
+    window.addEventListener('scroll', kick, { passive: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerout', onLeave)
+      window.removeEventListener('scroll', kick)
+    }
+  }, [])
 
   const style = {
     '--band-h-d': `${values.desktop.height}px`,
