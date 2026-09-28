@@ -6,8 +6,9 @@
   },
   "Playground": {
     "shade": {
+      "start": 0,
       "end": 100,
-      "opacity": 0.83
+      "opacity": 0.27
     }
   },
   "Davebot": {
@@ -62,13 +63,19 @@
     "morph": {
       "preset": "custom",
       "curve": "smoother",
-      "customSideStart": 8.6,
-      "customSideEnd": 8.6,
-      "customRadiusStart": 200,
-      "customRadiusEnd": 137
+      "customSideStart": 12.7,
+      "customSideEnd": 0,
+      "customRadiusStart": 33,
+      "customRadiusEnd": 30
+    },
+    "width": {
+      "shrinkDistance": 0.61,
+      "widenStart": 0,
+      "widenDistance": 1.5,
+      "peek": 240
     },
     "hover": {
-      "durationMs": 840
+      "durationMs": 410
     }
   }
 }
