@@ -6,6 +6,7 @@ import { ArrowDownIcon } from '../components/icons'
 import { Nav } from '../components/Nav'
 import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
+import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuningController } from '../tuning/useTuning'
@@ -25,6 +26,8 @@ const CONFIG = {
   heading: { type: 'text' as const, default: 'Aw, flattered you wanna hear my story.' },
   story: { type: 'text' as const, default: STORY, placeholder: 'Blank lines = paragraph breaks' },
   playgroundLabel: { type: 'text' as const, default: 'My playground' },
+  /** Vertical file-sheet presets for the dark playground panel. */
+  sheet: sheetDials(),
   spacing: {
     gapDesktop: [214, 40, 600, 1] as [number, number, number, number],
     gapMobile: [149, 24, 500, 1] as [number, number, number, number],
@@ -37,6 +40,9 @@ export function AboutPage() {
   const { values: t, setValue } = useTuningController('About', CONFIG)
 
   const mainRef = useRef<HTMLElement>(null)
+  const lightRef = useRef<HTMLDivElement>(null)
+  const darkRef = useRef<HTMLDivElement>(null)
+  useSheetDepth(darkRef, lightRef, { values: t.sheet, radius: [45, 20] })
   useFitColumn(mainRef)
   const entrance = useEntrance()
 
@@ -56,7 +62,7 @@ export function AboutPage() {
 
   return (
     <main ref={mainRef} className="about" style={style}>
-      <div className="about__light" data-surface="light">
+      <div ref={lightRef} className="about__light" data-surface="light">
         <Nav route="about" />
         <PhotoStack className="about__stack" />
         <section className={`about__story column ${entrance.className}`} style={entrance.style} aria-labelledby="about-title">
@@ -78,7 +84,8 @@ export function AboutPage() {
           />
         </section>
       </div>
-      <div className="about__dark" data-surface="dark">
+      <div ref={darkRef} className="about__dark" data-surface="dark">
+        <SheetLayers preset={t.sheet.preset} />
         <section className="about__play" aria-labelledby="play-title">
           <h2 id="play-title" className="eyebrow column">
             {t.playgroundLabel} <ArrowDownIcon />

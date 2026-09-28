@@ -1,16 +1,8 @@
-type Easing = { type: 'easing'; duration: number; ease: readonly number[] }
-type Spring = { type: 'spring'; stiffness?: number; damping?: number; mass?: number; visualDuration?: number; bounce?: number }
+export type Easing = { type: 'easing'; duration: number; ease: readonly number[] }
+export type Spring = { type: 'spring'; stiffness?: number; damping?: number; mass?: number; visualDuration?: number; bounce?: number }
 
-/**
- * DialKit's transition control can be switched between a bezier easing and a
- * spring. CSS animations have no springs, so a spring is simulated once and
- * sampled into a `linear()` easing over its settle time.
- */
-export function toCssTiming(value: Easing | Spring): { duration: string; easing: string } {
-  if (value.type === 'easing') {
-    return { duration: `${value.duration}s`, easing: `cubic-bezier(${value.ease.join(', ')})` }
-  }
-
+/** Simulate a unit spring (0 → 1) at 240 Hz until it settles. `samples[i]` is the value at i/240 s. */
+export function sampleSpring(value: Spring): { samples: number[]; duration: number } {
   let stiffness = value.stiffness ?? 100
   let damping = value.damping ?? 10
   const mass = value.mass ?? 1
@@ -35,12 +27,25 @@ export function toCssTiming(value: Easing | Spring): { duration: string; easing:
     settledFor = Math.abs(x - 1) < 0.001 && Math.abs(v) < 0.01 ? settledFor + dt : 0
     if (settledFor > 0.05) break
   }
+  return { samples, duration: t }
+}
 
+/**
+ * DialKit's transition control can be switched between a bezier easing and a
+ * spring. CSS animations have no springs, so a spring is simulated once and
+ * sampled into a `linear()` easing over its settle time.
+ */
+export function toCssTiming(value: Easing | Spring): { duration: string; easing: string } {
+  if (value.type === 'easing') {
+    return { duration: `${value.duration}s`, easing: `cubic-bezier(${value.ease.join(', ')})` }
+  }
+
+  const { samples, duration } = sampleSpring(value)
   const points = 48
   const stops = Array.from({ length: points + 1 }, (_, i) => {
     const sample = samples[Math.round((i / points) * (samples.length - 1))]
     return Number(sample.toFixed(4))
   })
   stops[points] = 1
-  return { duration: `${t.toFixed(3)}s`, easing: `linear(${stops.join(', ')})` }
+  return { duration: `${duration.toFixed(3)}s`, easing: `linear(${stops.join(', ')})` }
 }

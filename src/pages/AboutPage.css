@@ -99,3 +99,15 @@
   position: relative;
   z-index: 1;
 }
+
+.about__dark {
+  --sheet-color: var(--ink-900);
+  --sheet-under: var(--paper);
+  --sheet-layer-radius: 45px;
+  isolation: isolate;
+}
+
+.about__dark[data-sheet]:not([data-sheet='none']) {
+  background: none;
+  border-radius: 0;
+}

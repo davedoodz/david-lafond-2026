@@ -1,0 +1,26 @@
+/* Full-screen layer for the card → project expansion; above the page and Davebot, below the cursor. */
+.project-open {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.project-open__dim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+}
+
+.project-open__card {
+  position: absolute;
+  inset: 0;
+  will-change: clip-path;
+}
+
+.project-open__title {
+  position: absolute;
+  margin: 0;
+  text-wrap: balance;
+  will-change: transform, opacity;
+}

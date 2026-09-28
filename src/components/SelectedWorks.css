@@ -109,3 +109,58 @@ li:last-child > .works__card .card-shade {
     display: inline;
   }
 }
+
+.works {
+  --sheet-color: var(--paper);
+  --sheet-under: var(--ink-900);
+  --sheet-layer-radius: var(--works-radius);
+}
+
+.works__eyebrow {
+  font-size: var(--label-size-d);
+}
+
+.works__eyebrow svg {
+  width: var(--label-arrow);
+  height: var(--label-arrow);
+}
+
+/* Folder: the label rides on the tab, in front of the lower right edge. */
+.works[data-sheet='folder'] .works__eyebrow {
+  position: absolute;
+  z-index: 1;
+  left: var(--label-x-d);
+  top: var(--label-y-d);
+  margin: 0;
+  width: max-content;
+}
+
+.works[data-sheet='folder'] .works__inner {
+  padding-top: calc(50px + var(--folder-tab));
+}
+
+@media (max-width: 640px) {
+  .works__eyebrow {
+    font-size: var(--label-size-m);
+  }
+  .works[data-sheet='folder'] .works__eyebrow {
+    left: var(--label-x-m);
+    top: var(--label-y-m);
+  }
+  .works[data-sheet='folder'] .works__inner {
+    padding-top: calc(29px + var(--folder-tab) * 0.6);
+  }
+}
+
+/* Whole-card link for works with a project page. */
+.works__card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+}
+
+.works__card-link:focus-visible {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 4px;
+}

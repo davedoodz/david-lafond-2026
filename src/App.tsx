@@ -6,13 +6,14 @@ import { CursorLayer } from './features/cursor/CursorLayer'
 import { useDavebotOpen } from './features/ghost/davebotStore'
 import { PageTransitions } from './features/pageTransition/PageTransitions'
 import { useRoute } from './lib/router'
-import { aboutChunk } from './lib/routeChunks'
+import { aboutChunk, harvardMitChunk } from './lib/routeChunks'
 import { WorkPage } from './pages/WorkPage'
 
 // Code the landing view does not need ships as separate chunks. They are fetched
 // once the browser goes idle, so later navigation and Davebot feel instant.
 const loadDavebot = () => import('./features/ghost/DavebotLayer')
 const LazyAboutPage = lazy(() => aboutChunk.load().then((m) => ({ default: m.AboutPage })))
+const LazyHarvardMitPage = lazy(() => harvardMitChunk.load().then((m) => ({ default: m.HarvardMitPage })))
 const DavebotLayer = lazy(() => loadDavebot().then((m) => ({ default: m.DavebotLayer })))
 
 const DevRoot = import.meta.env.DEV ? lazy(() => import('./tuning/DevRoot')) : null
@@ -34,6 +35,7 @@ function useIdle() {
 const TITLES = {
   work: 'David Lafond — Architect × Product Designer',
   about: 'About — David Lafond',
+  'harvard-mit': 'The Design Portfolio that Got Me Into Harvard & MIT — David Lafond',
 }
 
 export function App() {
@@ -46,7 +48,9 @@ export function App() {
   }, [route])
 
   useEffect(() => {
-    if (idle) void aboutChunk.load()
+    if (!idle) return
+    void aboutChunk.load()
+    void harvardMitChunk.load()
   }, [idle])
 
   return (
@@ -62,6 +66,17 @@ export function App() {
               <LazyAboutPage />
             </Suspense>
           )
+        ) : route === 'harvard-mit' ? (
+          <>
+            {harvardMitChunk.module ? (
+              <harvardMitChunk.module.HarvardMitPage />
+            ) : (
+              <Suspense fallback={null}>
+                <LazyHarvardMitPage />
+              </Suspense>
+            )}
+            <Footer />
+          </>
         ) : (
           <>
             <WorkPage />

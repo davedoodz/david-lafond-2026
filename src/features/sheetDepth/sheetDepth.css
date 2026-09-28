@@ -1,0 +1,80 @@
+/*
+ * Sheet depth layers. The sheet element sets --sheet-color (its fill) and
+ * --sheet-under (the colour it is pulled over); useSheetDepth drives the rest.
+ */
+[data-sheet]:not([data-sheet='none']) {
+  transform: var(--sheet-tf, none);
+  transform-origin: 50% 0;
+}
+
+.sheet__depth {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* The shadow follows the clipped shape (filter runs after the child clip). */
+  filter: drop-shadow(0 -18px 40px rgb(0 0 0 / var(--sheet-shadow, 0)));
+}
+
+.sheet__bg {
+  position: absolute;
+  inset: 0;
+  background: var(--sheet-color);
+  clip-path: var(--sheet-clip);
+}
+
+.sheet__layer {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--sheet-layer-radius, 40px);
+  opacity: 0;
+}
+
+[data-sheet='folder'][data-folder='files'] .sheet__layer,
+[data-sheet='stack'] .sheet__layer,
+[data-sheet='deck'] .sheet__layer {
+  opacity: 1;
+}
+
+.sheet__layer[data-layer='1'] {
+  inset-inline: 3%;
+  translate: 0 calc(-1 * var(--sheet-layer-gap, 0px));
+  background: color-mix(in srgb, var(--sheet-color) 72%, var(--sheet-under));
+}
+
+.sheet__layer[data-layer='2'] {
+  inset-inline: 6%;
+  translate: 0 calc(-2 * var(--sheet-layer-gap, 0px));
+  background: color-mix(in srgb, var(--sheet-color) 42%, var(--sheet-under));
+}
+
+/* The section the sheet is pulled over: recedes and dims. */
+.sheet-under {
+  position: relative;
+  transform: var(--under-tf, none);
+  transform-origin: 50% 100%;
+}
+
+.sheet-under::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: var(--under-dim, 0);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Folder ghosts: full width, same folder outline with the tab moved right. */
+[data-sheet='folder'] .sheet__layer {
+  inset-inline: 0;
+  border-radius: 0;
+}
+
+[data-sheet='folder'] .sheet__layer[data-layer='1'] {
+  clip-path: var(--sheet-clip-1);
+}
+
+[data-sheet='folder'] .sheet__layer[data-layer='2'] {
+  clip-path: var(--sheet-clip-2);
+}

@@ -1,3 +1,5 @@
+import type { Route } from '../lib/router'
+
 /** Selected works. Media (image/video loops) plugs in per card once assets exist. */
 export type Work = {
   id: 'unwind' | 'ecofabriq' | 'harvard-mit'
@@ -5,6 +7,8 @@ export type Work = {
   shortTitle: string
   /** Surface under the card for the custom cursor (white dot on dark, black on light). */
   surface: 'dark' | 'light'
+  /** Project page the card opens, when it has one. */
+  route?: Route
 }
 
 export const WORKS: Work[] = [
@@ -25,5 +29,6 @@ export const WORKS: Work[] = [
     title: 'The Design Portfolio that Got Me Into Harvard & MIT',
     shortTitle: 'Harvard & MIT Design Portfolio',
     surface: 'dark',
+    route: 'harvard-mit',
   },
 ]

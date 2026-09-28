@@ -1,5 +1,5 @@
 /**
- * Tiny History-API router: two routes do not justify a routing dependency.
+ * Tiny History-API router: three routes do not justify a routing dependency.
  * Internal links call `navigate`; back/forward is handled via popstate.
  *
  * Every route change goes through a transition runner, so a page transition
@@ -9,10 +9,15 @@
  */
 import { useSyncExternalStore } from 'react'
 
-export type Route = 'work' | 'about'
+export type Route = 'work' | 'about' | 'harvard-mit'
 
-const ROUTE_BY_PATH: Record<string, Route> = { '/': 'work', '/work': 'work', '/about': 'about' }
-export const PATH_BY_ROUTE: Record<Route, string> = { work: '/', about: '/about' }
+const ROUTE_BY_PATH: Record<string, Route> = {
+  '/': 'work',
+  '/work': 'work',
+  '/about': 'about',
+  '/work/harvard-mit': 'harvard-mit',
+}
+export const PATH_BY_ROUTE: Record<Route, string> = { work: '/', about: '/about', 'harvard-mit': '/work/harvard-mit' }
 
 const normalize = (path: string) => path.replace(/\/+$/, '') || '/'
 const routeOf = (path: string): Route => ROUTE_BY_PATH[normalize(path)] ?? 'work'
@@ -57,20 +62,22 @@ export function useRoute(): Route {
   return routeOf(useSyncExternalStore(subscribe, () => committedPath))
 }
 
-export function navigate(route: Route) {
+/**
+ * `transition: false` commits without the page-transition runner, for callers
+ * that already animated the change themselves (the project card expansion).
+ */
+export function navigate(route: Route, { transition = true }: { transition?: boolean } = {}) {
   const path = PATH_BY_ROUTE[route]
   const from = routeOf(committedPath)
   if (normalize(window.location.pathname) === path) {
     window.scrollTo(0, 0)
     return
   }
-  runner(
-    () => {
-      window.history.replaceState({ scrollY: window.scrollY }, '')
-      window.history.pushState({ scrollY: 0 }, '', path)
-      commit(0)
-    },
-    route,
-    from,
-  )
+  const update = () => {
+    window.history.replaceState({ scrollY: window.scrollY }, '')
+    window.history.pushState({ scrollY: 0 }, '', path)
+    commit(0)
+  }
+  if (transition) runner(update, route, from)
+  else update()
 }

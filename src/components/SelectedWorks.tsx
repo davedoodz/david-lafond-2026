@@ -13,11 +13,14 @@
  * 'custom' uses the morph dials. Only a clip-path on a flat background layer
  * changes, so cards never re-layout.
  */
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import { WORKS } from '../data/works'
 import { useTuningController } from '../tuning/useTuning'
-import { ArrowDownIcon } from './icons'
+import { ArrowDownIcon, ArrowDownLeftIcon } from './icons'
 import { MeshCard } from './MeshCard'
+import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
+import { useProjectOpen } from '../features/projectOpen/useProjectOpen'
+import { PATH_BY_ROUTE } from '../lib/router'
 import './SelectedWorks.css'
 
 type Tuple = [number, number, number, number]
@@ -93,6 +96,20 @@ const CONFIG = {
     cardRadiusMobile: [11, 0, 40, 1] as Tuple,
     _collapsed: true,
   },
+  /** Vertical file-sheet presets; anything but `none` replaces the morph above. */
+  sheet: sheetDials(),
+  /** "Selected works" label. With the folder preset it sits on the tab; x/y are from the folder's top-left. */
+  label: {
+    arrow: { type: 'select' as const, options: ['down', 'down-left'], default: 'down' },
+    size: [14, 8, 40, 0.5] as Tuple,
+    sizeMobile: [10, 6, 30, 0.5] as Tuple,
+    arrowSize: [0.7, 0.3, 2, 0.05] as Tuple,
+    x: [48, 0, 800, 1] as Tuple,
+    y: [18, -40, 160, 1] as Tuple,
+    xMobile: [20, 0, 400, 1] as Tuple,
+    yMobile: [12, -40, 120, 1] as Tuple,
+    _collapsed: false,
+  },
   hover: {
     scale: [1.03, 1, 1.15, 0.005] as Tuple,
     durationMs: [450, 0, 1200, 10] as Tuple,
@@ -108,8 +125,9 @@ const TITLE_KEYS = {
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x)
 const lerp = (a: number, b: number, n: number) => a + (b - a) * n
 
-export function SelectedWorks() {
+export function SelectedWorks({ underRef }: { underRef: RefObject<HTMLElement | null> }) {
   const { values: t, setValue } = useTuningController('Selected works', CONFIG)
+  const openProject = useProjectOpen()
 
   // Moving any custom dial means "use my numbers": flip the preset to 'custom'
   // so the change is visible instead of being ignored by a named preset.
@@ -122,6 +140,18 @@ export function SelectedWorks() {
     if (t.morph.preset !== 'custom') setValue('morph.preset', 'custom')
   }, [customKey, t.morph.preset, setValue])
   const sectionRef = useRef<HTMLElement>(null)
+  useSheetDepth(sectionRef, underRef, {
+    values: t.sheet,
+    radius: [t.shape.radiusDesktop, t.shape.radiusMobile],
+    bottomRadius: [t.shape.radiusDesktop, t.shape.radiusMobile],
+    // Same enter/exit window as the morph, so the sheet settles and lets go at the same points.
+    progress: (rect, vh) => {
+      const curve = CURVES[t.morph.curve] ?? CURVES.smooth
+      const enter = clamp01((vh - t.width.peek - rect.top) / (t.sheet.travel * vh))
+      const exit = clamp01((vh * (1 - t.width.widenStart) - rect.bottom) / (t.width.widenDistance * vh))
+      return curve(enter) * (1 - curve(exit))
+    },
+  })
   const morphDials = { width: t.width, morph: t.morph, shape: t.shape }
   const morphKey = JSON.stringify(morphDials)
 
@@ -191,14 +221,22 @@ export function SelectedWorks() {
     '--shade-start': `${t.titles.shadeStart}%`,
     '--works-hover-scale': t.hover.scale,
     '--works-hover-ms': `${t.hover.durationMs}ms`,
+    '--label-size-d': `${t.label.size}px`,
+    '--label-size-m': `${t.label.sizeMobile}px`,
+    '--label-arrow': `${t.label.arrowSize}em`,
+    '--label-x-d': `${t.label.x}px`,
+    '--label-y-d': `${t.label.y}px`,
+    '--label-x-m': `${t.label.xMobile}px`,
+    '--label-y-m': `${t.label.yMobile}px`,
+    '--folder-tab': `${t.sheet.folder.tabHeight}px`,
   } as CSSProperties
 
   return (
     <section ref={sectionRef} className="works" data-surface="light" aria-labelledby="works-heading" style={style}>
-      <div className="works__bg" aria-hidden="true" />
+      {t.sheet.preset === 'none' ? <div className="works__bg" aria-hidden="true" /> : <SheetLayers preset={t.sheet.preset} />}
       <div className="works__inner">
         <h2 id="works-heading" className="eyebrow works__eyebrow column">
-          Selected works <ArrowDownIcon />
+          Selected works {t.label.arrow === 'down-left' ? <ArrowDownLeftIcon /> : <ArrowDownIcon />}
         </h2>
         <ul className="works__list">
           {WORKS.map((work) => {
@@ -208,9 +246,22 @@ export function SelectedWorks() {
                 <article
                   className="works__card"
                   data-surface={work.surface}
+                  data-work={work.id}
                   style={{ backgroundColor: t.cards[work.id] }}
                   aria-label={t.titles[desktopKey]}
                 >
+                  {work.route && (
+                    <a
+                      className="works__card-link"
+                      href={PATH_BY_ROUTE[work.route]}
+                      aria-label={`Open ${t.titles[desktopKey]}`}
+                      onClick={(event) => {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+                        event.preventDefault()
+                        openProject(event.currentTarget.parentElement!, work.route!)
+                      }}
+                    />
+                  )}
                   {work.id === 'unwind' && <MeshCard />}
                   <div className="card-shade" />
                   <h3 className="card-title works__title">

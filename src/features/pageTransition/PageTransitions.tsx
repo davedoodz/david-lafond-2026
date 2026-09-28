@@ -7,7 +7,7 @@ import { useTuning } from '../../tuning/useTuning'
 import './pageTransition.css'
 
 /**
- * Work ↔ About page transitions on the View Transitions API: the browser
+ * Page-to-page transitions on the View Transitions API: the browser
  * snapshots both pages and animates the snapshots on the compositor, so the
  * pages themselves never re-layout mid-animation. Browsers without the API,
  * reduced motion, and the `none` preset swap instantly.
@@ -37,7 +37,7 @@ const CONFIG = {
 }
 
 /** Page order sets the direction: Work → About plays forward, About → Work mirrors it. */
-const ORDER: Record<Route, number> = { work: 0, about: 1 }
+const ORDER: Record<Route, number> = { work: 0, 'harvard-mit': 1, about: 2 }
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 
 type Settings = { preset: Preset; mirror: boolean; pinNav: boolean; pinShader: boolean }

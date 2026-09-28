@@ -1,0 +1,402 @@
+/* ---------- Viewer shell ---------- */
+
+.viewer {
+  --viewer-h: max(520px, calc(100svh - 91px));
+  --switch-block: 48px;
+  position: relative;
+  z-index: 1;
+  color: var(--paper);
+  animation: viewer-in 700ms var(--ease-out) both;
+}
+
+.viewer[data-mode='book'] {
+  display: flex;
+  flex-direction: column;
+  height: var(--viewer-h);
+}
+
+@keyframes viewer-in {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+}
+
+.viewer button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Book / Grid switch: always visible, sticks to the top while the grid scrolls. */
+.viewer__switch {
+  position: sticky;
+  top: 14px;
+  z-index: 5;
+  display: flex;
+  width: max-content;
+  height: 44px;
+  margin: 4px auto 0;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  background: rgb(23 23 23 / 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.viewer__switch button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px 0 14px;
+  border-radius: 999px;
+  color: var(--stone-400);
+  font-size: var(--text-small);
+  font-weight: 500;
+  transition:
+    color 180ms ease,
+    background-color 220ms var(--ease-out);
+}
+
+.viewer__switch svg {
+  width: 18px;
+  height: 18px;
+}
+
+.viewer__switch button:hover {
+  color: var(--paper);
+}
+
+.viewer__switch button[aria-pressed='true'] {
+  background: var(--paper);
+  color: var(--ink-900);
+}
+
+/* ---------- Book mode ---------- */
+
+.viewer__book {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  transition:
+    opacity 320ms ease,
+    visibility 0s linear 0s;
+}
+
+/* Hidden, not unmounted: the book keeps its page and its size while the grid is open. */
+.viewer[data-mode='grid'] .viewer__book {
+  position: absolute;
+  top: var(--switch-block);
+  inset-inline: 0;
+  height: calc(var(--viewer-h) - var(--switch-block));
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 200ms ease,
+    visibility 0s linear 200ms;
+}
+
+.book {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 36px var(--edge) 24px;
+  perspective: 2200px;
+  overflow: clip;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.book__tilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.book__shift {
+  transition: translate var(--flip-ms, 700ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A lone cover sits on one side of the spine; slide it to the center. */
+.book__shift[data-spread='front'] {
+  translate: -25% 0;
+}
+
+.book__shift[data-spread='back'] {
+  translate: 25% 0;
+}
+
+.book__zoom {
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.book__mount {
+  position: relative;
+}
+
+.book__shadow {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  box-shadow:
+    0 50px 90px -10px rgb(0 0 0 / var(--book-shadow, 0.55)),
+    0 16px 30px rgb(0 0 0 / calc(var(--book-shadow, 0.55) * 0.5));
+  transition:
+    left var(--flip-ms, 700ms) cubic-bezier(0.22, 1, 0.36, 1),
+    right var(--flip-ms, 700ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.book__shift[data-spread='front'] .book__shadow {
+  left: 50%;
+}
+
+.book__shift[data-spread='back'] .book__shadow {
+  right: 50%;
+}
+
+.book.is-zoomed {
+  cursor: grab;
+  touch-action: none;
+}
+
+.book.is-panning {
+  cursor: grabbing;
+}
+
+.book.is-zoomed .book__host {
+  pointer-events: none;
+}
+
+.book-page {
+  overflow: hidden;
+  background: #f3f1ec;
+}
+
+.book-page img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* The black covers need a hairline to read against the black page. */
+.book-page[data-density='hard']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  pointer-events: none;
+}
+
+/* Spine shading on the inner edge of each soft page (page-flip tags sides with --left / --right). */
+.book-page[data-density='soft']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.book-page[data-density='soft'].--left::after {
+  background: linear-gradient(to left, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.04) 4%, transparent 10%);
+}
+
+.book-page[data-density='soft'].--right::after {
+  background: linear-gradient(to right, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.04) 4%, transparent 10%);
+}
+
+/* Bottom bar: first / prev / counter / next / last, zoom on the right. */
+.viewer__bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 var(--edge) 26px;
+}
+
+.viewer__nav {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.viewer__zoom {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.viewer__bar button {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--stone-400);
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.viewer__bar button:hover:not(:disabled) {
+  color: var(--paper);
+  background: rgb(255 255 255 / 0.07);
+}
+
+.viewer__bar button:disabled {
+  opacity: 0.3;
+}
+
+.viewer__bar svg {
+  width: 22px;
+  height: 22px;
+}
+
+.viewer__counter {
+  min-width: 104px;
+  font-size: var(--text-small);
+  font-weight: 500;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.viewer__total {
+  color: var(--stone-600);
+}
+
+.viewer__zoom-level {
+  padding-inline: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Grid mode ---------- */
+
+.viewer__grid {
+  padding: 44px var(--edge) 40px;
+  transition:
+    opacity 320ms ease,
+    display 320ms allow-discrete;
+}
+
+.viewer[data-mode='book'] .viewer__grid {
+  display: none;
+  opacity: 0;
+}
+
+@starting-style {
+  .viewer__grid {
+    opacity: 0;
+  }
+}
+
+.spread-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--grid-min, 300px)), 1fr));
+  gap: var(--grid-gap, 40px) calc(var(--grid-gap, 40px) * 0.8);
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.spread-grid__card {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.spread-grid__pages {
+  display: flex;
+  width: 100%;
+  border-radius: 3px;
+  box-shadow: 0 18px 34px -8px rgb(0 0 0 / 0.6);
+  transition:
+    translate 260ms var(--ease-out),
+    outline-color 200ms ease;
+  outline: 1.5px solid transparent;
+  outline-offset: 5px;
+}
+
+.spread-grid__card[data-side='front'] .spread-grid__pages {
+  width: 50%;
+  margin-left: auto;
+}
+
+.spread-grid__card[data-side='back'] .spread-grid__pages {
+  width: 50%;
+}
+
+.spread-grid__pages img {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1600 / 2263;
+  background: var(--ink-800);
+}
+
+.spread-grid__card[aria-current='true'] .spread-grid__pages {
+  outline-color: var(--paper);
+}
+
+.spread-grid__label {
+  font-size: 12px;
+  color: var(--stone-400);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  transition: color 160ms ease;
+}
+
+.spread-grid__card[aria-current='true'] .spread-grid__label {
+  color: var(--paper);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .spread-grid__card:hover .spread-grid__pages {
+    translate: 0 -4px;
+  }
+  .spread-grid__card:hover .spread-grid__label {
+    color: var(--paper);
+  }
+}
+
+@media (max-width: 640px) {
+  .viewer {
+    --viewer-h: max(460px, calc(100svh - 84px - env(safe-area-inset-top)));
+  }
+  .book {
+    padding: 24px 16px 12px;
+  }
+  .viewer__bar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding-bottom: 16px;
+  }
+  .viewer__nav {
+    grid-column: 1;
+  }
+  /* Touch zooms with a pinch. */
+  .viewer__zoom {
+    display: none;
+  }
+  .viewer__grid {
+    padding-top: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer {
+    animation: none;
+  }
+  .book__shift,
+  .book__shadow,
+  .spread-grid__pages {
+    transition: none;
+  }
+}

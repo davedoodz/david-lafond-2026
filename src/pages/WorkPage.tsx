@@ -28,11 +28,13 @@ const CONFIG = {
 export function WorkPage() {
   const t = useTuning('Hero', CONFIG)
   const mainRef = useRef<HTMLElement>(null)
+  const landingRef = useRef<HTMLDivElement>(null)
   const entrance = useEntrance()
   useFitColumn(mainRef)
   return (
     <main ref={mainRef} className="work">
       <div
+        ref={landingRef}
         className="landing"
         style={{ '--peek-d': `${t.peekDesktop}px`, '--peek-m': `${t.peekMobile}px` } as CSSProperties}
       >
@@ -48,7 +50,7 @@ export function WorkPage() {
           <Signature className="hero__signature" />
         </section>
       </div>
-      <SelectedWorks />
+      <SelectedWorks underRef={landingRef} />
       <ContactCta />
     </main>
   )
