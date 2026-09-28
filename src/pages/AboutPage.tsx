@@ -49,6 +49,14 @@ const CONFIG = {
     /** Top-corner radius (px), held until the sheet is almost at the top, then squared off. */
     radius: [45, 0, 200, 1] as [number, number, number, number],
   },
+  /** Same dome shape, used at ≤640px wide (peek stays in Dome). Starts from the tuned desktop values. */
+  domeMobile: {
+    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'expo-out' },
+    enterDistance: [1.75, 0.2, 2.5, 0.01] as [number, number, number, number],
+    side: [0, 0, 45, 0.5] as [number, number, number, number],
+    arch: [70, 0, 100, 1] as [number, number, number, number],
+    radius: [0, 0, 200, 1] as [number, number, number, number],
+  },
   /** How the playground label and cards arrive as they scroll into view. */
   reveal: revealDials(),
   spacing: {
@@ -62,17 +70,26 @@ const CONFIG = {
     /** Arrow next to "My playground": vertical nudge (px, negative = up). */
     labelArrowY: [-0.5, -8, 8, 0.25] as [number, number, number, number],
     /**
-     * Fit: the label + grid sit centred in one screen-tall panel (the snap view),
-     * cards shrinking if needed so every row fits. Off: labelTop + the Playground
-     * grid gap place them.
+     * Fit: the label, grid and contribution graph sit centred in one screen-tall panel
+     * (the snap view), cards shrinking if needed so every row and the graph fit.
+     * Off: labelTop + the Playground grid gap place them.
      */
     playFit: true,
-    /** Fit mode: space kept clear above and below the label + grid (px). */
+    /** Fit mode: space kept clear above and below the label + grid + graph (px). */
     playFitPadding: [56, 0, 200, 1] as [number, number, number, number],
     /** Fit mode: label to first row of cards (px). */
     playFitGap: [40, 0, 200, 1] as [number, number, number, number],
     /** Snap stops: page top (photos), story end (sheet tip peeking), playground, footer. */
     snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'mandatory' },
+  },
+  /** Playground grid inside the panel. Size multiplies the fitted width; x/y nudge it without moving anything else. */
+  grid: {
+    sizeDesktop: [1, 0.3, 1.5, 0.01] as [number, number, number, number],
+    sizeMobile: [1, 0.3, 1.5, 0.01] as [number, number, number, number],
+    xDesktop: [0, -400, 400, 1] as [number, number, number, number],
+    yDesktop: [0, -300, 300, 1] as [number, number, number, number],
+    xMobile: [0, -200, 200, 1] as [number, number, number, number],
+    yMobile: [0, -300, 300, 1] as [number, number, number, number],
   },
 }
 
@@ -94,7 +111,8 @@ export function AboutPage() {
   useReveal(playRef, '#play-title, .pg-card', t.reveal, revealRun)
 
   const dome = t.dome
-  const domeKey = JSON.stringify(dome)
+  const domeMobile = t.domeMobile
+  const domeKey = JSON.stringify([dome, domeMobile])
   useEffect(() => {
     const sheet = darkRef.current
     if (!sheet) return
@@ -108,25 +126,27 @@ export function AboutPage() {
       frame = 0
       const vh = window.innerHeight
       const vw = document.documentElement.clientWidth
-      const curve = DOME_CURVES[dome.curve] ?? DOME_CURVES.smooth
+      const mobile = window.matchMedia('(max-width: 640px)').matches
+      const shape = mobile ? domeMobile : dome
+      const curve = DOME_CURVES[shape.curve] ?? DOME_CURVES.smooth
       // 0 while only the peek shows (same full dome as the Work page's resting tip),
       // 1 once it has travelled enterDistance. Capped so it is always flat by the
       // time the sheet top reaches the top of the screen (the snap stop).
-      const peek = window.matchMedia('(max-width: 640px)').matches ? dome.peekMobile : dome.peekDesktop
+      const peek = mobile ? dome.peekMobile : dome.peekDesktop
       const rest = vh - peek
-      const travel = Math.min(dome.enterDistance * vh, rest)
+      const travel = Math.min(shape.enterDistance * vh, rest)
       const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / travel)))
       // Top corners stay rounded for the whole approach and only square off in the
       // last stretch, right as the sheet reaches the top (1 − p⁴ of the full travel).
       const p = reduced ? 1 : Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / rest))
-      const r = dome.radius * (1 - p ** 4)
-      const archPx = (dome.arch / 100) * vh * (1 - e)
+      const r = shape.radius * (1 - p ** 4)
+      const archPx = (shape.arch / 100) * vh * (1 - e)
       // While the arch is taller than the corners it spans the full width (50%);
       // as it sinks below the corner size the curve narrows into two corners.
       const k = r > 0 ? Math.min(1, Math.max(0, (archPx - r) / r)) : archPx > 0 ? 1 : 0
       const x = (r + (vw / 2 - r) * k).toFixed(2)
       const y = Math.max(r, archPx).toFixed(2)
-      const side = ((dome.side * (1 - e) * vw) / 100).toFixed(2)
+      const side = ((shape.side * (1 - e) * vw) / 100).toFixed(2)
       sheet.style.setProperty('--dome-clip', `inset(0 ${side}px round ${x}px ${x}px 0 0 / ${y}px ${y}px 0 0)`)
     }
     const schedule = () => {
@@ -187,6 +207,32 @@ export function AboutPage() {
     }
   }, [headingLines, t.heading])
 
+  // The fitted grid leaves room for the contribution graph below it (its height changes with its dials).
+  useLayoutEffect(() => {
+    const play = playRef.current
+    if (!play) return
+    const measure = () => {
+      const graph = play.querySelector<HTMLElement>('.cg')
+      play.style.setProperty('--cg-h', `${graph?.offsetHeight ?? 0}px`)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    const graph = play.querySelector<HTMLElement>('.cg')
+    if (graph) observer.observe(graph)
+    // The graph mounts/unmounts with its `show` dial.
+    const mutations = new MutationObserver(() => {
+      observer.disconnect()
+      const next = play.querySelector<HTMLElement>('.cg')
+      if (next) observer.observe(next)
+      measure()
+    })
+    mutations.observe(play, { childList: true })
+    return () => {
+      observer.disconnect()
+      mutations.disconnect()
+    }
+  }, [])
+
   useEffect(() => {
     document.body.dataset.page = 'about'
     return () => {
@@ -204,6 +250,12 @@ export function AboutPage() {
     '--play-arrow-y': `${t.spacing.labelArrowY}px`,
     '--play-fit-pad': `${t.spacing.playFitPadding}px`,
     '--play-fit-gap': `${t.spacing.playFitGap}px`,
+    '--grid-size-d': t.grid.sizeDesktop,
+    '--grid-size-m': t.grid.sizeMobile,
+    '--grid-x-d': `${t.grid.xDesktop}px`,
+    '--grid-y-d': `${t.grid.yDesktop}px`,
+    '--grid-x-m': `${t.grid.xMobile}px`,
+    '--grid-y-m': `${t.grid.yMobile}px`,
     '--dome-peek-d': `${t.dome.peekDesktop}px`,
     '--dome-peek-m': `${t.dome.peekMobile}px`,
   } as CSSProperties
@@ -242,8 +294,8 @@ export function AboutPage() {
             {t.playgroundLabel} <ArrowDownIcon />
           </h2>
           <Playground />
+          <ContributionGraph />
         </section>
-        <ContributionGraph />
         <ContactCta />
         <Footer />
       </div>
