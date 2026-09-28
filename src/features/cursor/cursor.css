@@ -35,6 +35,22 @@
   transition: opacity 140ms ease;
 }
 
+/* Page switches use a View Transition, which would otherwise bake the dot into
+   the page snapshot and carry it along with the page animation. Its own layer,
+   with no animation and no old snapshot, keeps the live dot under the pointer. */
+.cur-dot {
+  view-transition-name: cursor-dot;
+}
+
+::view-transition-group(cursor-dot),
+::view-transition-new(cursor-dot) {
+  animation: none;
+}
+
+::view-transition-old(cursor-dot) {
+  display: none;
+}
+
 .cur-dot::before {
   content: '';
   position: absolute;
