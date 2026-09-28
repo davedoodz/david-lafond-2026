@@ -9,5 +9,25 @@
       "end": 100,
       "opacity": 0.83
     }
+  },
+  "Davebot": {
+    "ghost": {
+      "zoomSize": 190,
+      "morph": {
+        "type": "spring",
+        "visualDuration": 0.7,
+        "bounce": 0.35
+      }
+    },
+    "highlight": {
+      "show": false
+    },
+    "text": {
+      "askRowLabel": "",
+      "footerLeft": "",
+      "footerHintMove": "",
+      "footerHintSelect": "",
+      "footerHintClose": ""
+    }
   }
 }
