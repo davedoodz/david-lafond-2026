@@ -60,6 +60,20 @@ const CONFIG = {
     endRadius: [45, 0, 200, 1] as Tuple,
     _collapsed: false,
   },
+  /** Same dome, used at ≤640px wide. Starts from the tuned desktop values. */
+  morphMobile: {
+    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'expo-out' },
+    enterDistance: [1.75, 0.2, 2.5, 0.01] as Tuple,
+    startSide: [0, 0, 45, 0.5] as Tuple,
+    startArch: [70, 0, 100, 1] as Tuple,
+    startRadius: [0, 0, 200, 1] as Tuple,
+    exitStart: [0.07, -0.5, 0.8, 0.01] as Tuple,
+    exitDistance: [2.5, 0.2, 2.5, 0.01] as Tuple,
+    endSide: [0, 0, 45, 0.5] as Tuple,
+    endArch: [70, 0, 100, 1] as Tuple,
+    endRadius: [0, 0, 200, 1] as Tuple,
+    _collapsed: false,
+  },
   /**
    * How the sheet tip arrives on page load (rises from below the fold).
    * Changing any dial replays it.
@@ -141,17 +155,20 @@ export function SelectedWorks() {
   const t = useTuning('Selected works', CONFIG)
   const openProject = useProjectOpen()
   const sectionRef = useRef<HTMLElement>(null)
-  const morph = t.morph
-  const morphKey = JSON.stringify(morph)
+  const morphDesktop = t.morph
+  const morphMobile = t.morphMobile
+  const morphKey = JSON.stringify([morphDesktop, morphMobile])
 
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const mobile = window.matchMedia('(max-width: 640px)')
     let frame = 0
 
     const update = () => {
       frame = 0
+      const morph = mobile.matches ? morphMobile : morphDesktop
       const vh = window.innerHeight
       const vw = document.documentElement.clientWidth
       const rect = section.getBoundingClientRect()
