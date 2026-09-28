@@ -32,6 +32,13 @@ type Mode = 'video' | 'book' | 'grid'
 const VIDEO_SRC = 'https://www.youtube.com/embed/Rv-e5doUc0E?si=EUWjaq_nuAePoblG&enablejsapi=1&rel=0'
 
 const CONFIG = {
+  video: {
+    /** Share of the largest 16:9 frame that fits under the switch. */
+    scaleDesktop: [1, 0.3, 1, 0.01] as Tuple,
+    scaleMobile: [1, 0.3, 1, 0.01] as Tuple,
+    radius: [12, 0, 40, 1] as Tuple,
+    hoverLabel: { type: 'text' as const, default: '180k+ views on Youtube!' },
+  },
   book: {
     flipMs: [700, 250, 1600, 10] as Tuple,
     tiltRestX: [8, -20, 30, 0.5] as Tuple,
@@ -56,11 +63,11 @@ const indexOfSpread = (spread: number) => (spread === 0 ? 0 : spread * 2 - 1)
 
 export function BookViewer() {
   const t = useTuning('Portfolio book', CONFIG)
-  const [mode, setMode] = useState<Mode>('book')
+  const [mode, setMode] = useState<Mode>('video')
   // The grid is only built the first time it is opened.
   const [gridMounted, setGridMounted] = useState(false)
-  // The YouTube player is only loaded the first time the video is opened, then kept so it resumes where it paused.
-  const [videoMounted, setVideoMounted] = useState(false)
+  // Video is the opening view; the player is kept mounted so it resumes where it paused.
+  const [videoStarted, setVideoStarted] = useState(false)
   const videoRef = useRef<HTMLIFrameElement>(null)
   const [state, setState] = useState<BookState>({ index: 0, orientation: 'landscape', zoom: 1 })
   const controller = useRef<BookController | null>(null)
@@ -76,9 +83,8 @@ export function BookViewer() {
     setMode(next)
     if (next === 'grid') setGridMounted(true)
     else window.scrollTo({ top: 0 })
-    if (next === 'video') setVideoMounted(true)
     // Leaving the video pauses it, so it never plays on behind the book or grid.
-    else
+    if (next !== 'video')
       videoRef.current?.contentWindow?.postMessage(
         JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
         'https://www.youtube.com',
@@ -115,6 +121,9 @@ export function BookViewer() {
   )
 
   const style = {
+    '--video-scale-d': t.video.scaleDesktop,
+    '--video-scale-m': t.video.scaleMobile,
+    '--video-radius': `${t.video.radius}px`,
     '--grid-min': `${t.grid.minCard}px`,
     '--grid-gap': `${t.grid.gap}px`,
   } as CSSProperties
@@ -193,20 +202,41 @@ export function BookViewer() {
         </div>
       </div>
 
-      {videoMounted && (
-        <div className="viewer__video" aria-hidden={mode !== 'video'} inert={mode !== 'video'}>
-          <div className="viewer__video-frame">
-            <iframe
-              ref={videoRef}
-              src={VIDEO_SRC}
-              title="The Design Portfolio that Got Me Into Harvard & MIT — video"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          </div>
+      <div className="viewer__video" aria-hidden={mode !== 'video'} inert={mode !== 'video'}>
+        <div className="viewer__video-frame">
+          {!videoStarted && (
+            // The page cannot see the pointer inside YouTube's iframe, so a shield
+            // carries the hover label until the first click starts the video.
+            <button
+              type="button"
+              className="viewer__video-shield"
+              aria-label="Play video"
+              onPointerMove={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect()
+                event.currentTarget.style.setProperty('--x', `${event.clientX - rect.left}px`)
+                event.currentTarget.style.setProperty('--y', `${event.clientY - rect.top}px`)
+              }}
+              onClick={() => {
+                setVideoStarted(true)
+                videoRef.current?.contentWindow?.postMessage(
+                  JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+                  'https://www.youtube.com',
+                )
+              }}
+            >
+              <span className="viewer__video-label">{t.video.hoverLabel}</span>
+            </button>
+          )}
+          <iframe
+            ref={videoRef}
+            src={VIDEO_SRC}
+            title="The Design Portfolio that Got Me Into Harvard & MIT — video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
         </div>
-      )}
+      </div>
 
       {gridMounted && (
         <div ref={gridRef} className="viewer__grid" aria-hidden={mode !== 'grid'} inert={mode !== 'grid'}>
