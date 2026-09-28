@@ -3,5 +3,11 @@
     "ink": {
       "fadeMs": 4000
     }
+  },
+  "Playground": {
+    "shade": {
+      "end": 100,
+      "opacity": 0.83
+    }
   }
 }

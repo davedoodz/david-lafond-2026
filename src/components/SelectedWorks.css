@@ -46,6 +46,22 @@
   contain: layout paint;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .works__card {
+    transition: scale var(--works-hover-ms, 450ms) var(--ease-out);
+  }
+
+  .works__card:hover {
+    scale: var(--works-hover-scale, 1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .works__card {
+    transition: none;
+  }
+}
+
 .works__mesh {
   position: absolute;
   inset: 0;

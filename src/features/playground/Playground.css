@@ -75,23 +75,40 @@
   text-align: left;
 }
 
-.pg-card[data-pressed='true'] .card-shade,
+/* Revealed states. The shade lands on the "shade → opacity" dial, not 1. */
+.pg-card[data-pressed='true'] .card-shade {
+  opacity: var(--shade-opacity, 1);
+}
+
 .pg-card[data-pressed='true'] .card-title {
   opacity: 1;
   transform: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .pg-card:hover .card-shade,
-  .pg-card:focus-visible .card-shade,
-  .pg-card:hover .card-title,
-  .pg-card:focus-visible .card-title {
+  .pg-card {
+    transition: scale var(--pg-hover-ms, 350ms) var(--ease-out);
+  }
+
+  .pg-card:hover {
+    z-index: 1;
+    scale: var(--pg-hover-scale, 1.04);
+  }
+
+  .pg-card:hover .card-shade {
+    opacity: var(--shade-opacity, 1);
+  }
+
+  .pg-card:hover .card-title {
     opacity: 1;
     transform: none;
   }
 }
 
-.pg-card:focus-visible .card-shade,
+.pg-card:focus-visible .card-shade {
+  opacity: var(--shade-opacity, 1);
+}
+
 .pg-card:focus-visible .card-title {
   opacity: 1;
   transform: none;
@@ -142,7 +159,14 @@
   inset: 0;
 }
 
-.pg-zoom-card .card-shade,
+.pg-zoom-vars {
+  display: contents;
+}
+
+.pg-zoom-card .card-shade {
+  opacity: var(--shade-opacity, 1);
+}
+
 .pg-zoom-card .card-title {
   opacity: 1;
   transform: none;
@@ -209,6 +233,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pg-card,
   .pg-card .card-shade,
   .pg-card .card-title {
     transition: none;

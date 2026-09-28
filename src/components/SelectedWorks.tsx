@@ -59,6 +59,10 @@ const CONFIG = {
     cardRadiusMobile: [11, 0, 40, 1] as Tuple,
     _collapsed: true,
   },
+  hover: {
+    scale: [1.03, 1, 1.15, 0.005] as Tuple,
+    durationMs: [450, 0, 1200, 10] as Tuple,
+  },
 }
 
 const TITLE_KEYS = {
@@ -122,6 +126,8 @@ export function SelectedWorks() {
     '--card-title-shadow': `0 0 ${t.titles.shadowBlur}px rgb(255 255 255 / ${t.titles.shadowOpacity})`,
     '--shade-opacity': t.titles.shadeOpacity,
     '--shade-start': `${t.titles.shadeStart}%`,
+    '--works-hover-scale': t.hover.scale,
+    '--works-hover-ms': `${t.hover.durationMs}ms`,
   } as CSSProperties
 
   return (

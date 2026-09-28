@@ -28,6 +28,10 @@ const PLAYGROUND_CONFIG = {
     end: [92, 0, 100, 1] as [number, number, number, number],
     opacity: [0.5, 0, 1, 0.01] as [number, number, number, number],
   },
+  hover: {
+    scale: [1.04, 1, 1.2, 0.005] as [number, number, number, number],
+    durationMs: [350, 0, 1000, 10] as [number, number, number, number],
+  },
   titles: { _collapsed: true, ...titleFields },
   grid: {
     gapX: [14, 0, 40, 1] as [number, number, number, number],
@@ -192,6 +196,8 @@ export function Playground({ className }: { className?: string }) {
         '--shade-end': `${values.shade.end}%`,
         '--shade-opacity': values.shade.opacity,
         '--pg-shade-color': values.shade.color,
+        '--pg-hover-scale': values.hover.scale,
+        '--pg-hover-ms': `${values.hover.durationMs}ms`,
       }) as CSSProperties,
     [values],
   )
@@ -233,28 +239,31 @@ export function Playground({ className }: { className?: string }) {
         })}
 
       {createPortal(
-        <AnimatePresence onExitComplete={handleExitComplete}>
-          {activeItem && originRect && (
-            <PlaygroundZoom
-              key="zoom"
-              item={activeItem}
-              title={activeTitle}
-              originRect={originRect}
-              transition={zoomTransition}
-              widthVw={values.zoom.widthVw}
-              maxHeightVh={values.zoom.maxHeightVh}
-              blurPx={values.zoom.blur}
-              dimOpacity={values.zoom.dimOpacity}
-              radiusPx={values.grid.radius}
-              hasSiblings={playgroundItems.length > 1}
-              onClose={closeZoom}
-              onPrev={onPrev}
-              onNext={onNext}
-              mediaHostRef={setZoomHost}
-              reducedMotion={reducedMotion}
-            />
-          )}
-        </AnimatePresence>,
+        // Portaled to <body>, outside .pg-root — re-supply the dial vars (shade, title) to the zoom card.
+        <div className="pg-zoom-vars" style={style}>
+          <AnimatePresence onExitComplete={handleExitComplete}>
+            {activeItem && originRect && (
+              <PlaygroundZoom
+                key="zoom"
+                item={activeItem}
+                title={activeTitle}
+                originRect={originRect}
+                transition={zoomTransition}
+                widthVw={values.zoom.widthVw}
+                maxHeightVh={values.zoom.maxHeightVh}
+                blurPx={values.zoom.blur}
+                dimOpacity={values.zoom.dimOpacity}
+                radiusPx={values.grid.radius}
+                hasSiblings={playgroundItems.length > 1}
+                onClose={closeZoom}
+                onPrev={onPrev}
+                onNext={onNext}
+                mediaHostRef={setZoomHost}
+                reducedMotion={reducedMotion}
+              />
+            )}
+          </AnimatePresence>
+        </div>,
         document.body,
       )}
     </div>
