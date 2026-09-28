@@ -261,6 +261,59 @@ export function PhotoStack({ className }: { className?: string }) {
     queueRef.current = queueRef.current.then(() => runCycle())
   }, [runCycle])
 
+  // Clicking a card behind the front one brings it straight to the front; the
+  // cards that were ahead of it each drop back one slot (via the order effect).
+  const runBringToFront = useCallback(
+    async (cardId: number) => {
+      const currentOrder = orderRef.current
+      if (currentOrder.indexOf(cardId) <= 0) return
+      const newOrder = [cardId, ...currentOrder.filter((id) => id !== cardId)]
+      setOrder(newOrder)
+      orderRef.current = newOrder
+
+      // Above everything while it travels, then settles to the front slot's z.
+      const nextZ = zIndicesRef.current.slice()
+      newOrder.forEach((id, slot) => {
+        nextZ[id] = 40 - slot * 10
+      })
+      nextZ[cardId] = 999
+      setZIndices(nextZ.slice())
+      zIndicesRef.current = nextZ
+      setCyclingIds((prev) => new Set(prev).add(cardId))
+
+      const front = { ...slotPoses[0], scale: 1 }
+      if (reducedMotion) {
+        const { x, y, rotate, scale } = mvRef.current[cardId]
+        x.set(front.x)
+        y.set(front.y)
+        rotate.set(front.rotate)
+        scale.set(1)
+      } else {
+        moveTo(cardId, front, toMotionTransition(values.cycle.springTuck))
+        await sleep(1000 * estimateSeconds(values.cycle.springTuck))
+      }
+
+      setZIndices((prev) => {
+        const next = prev.slice()
+        next[cardId] = 40
+        return next
+      })
+      setCyclingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(cardId)
+        return next
+      })
+    },
+    [moveTo, reducedMotion, slotPoses, values.cycle.springTuck],
+  )
+
+  const bringToFront = useCallback(
+    (cardId: number) => {
+      queueRef.current = queueRef.current.then(() => runBringToFront(cardId))
+    },
+    [runBringToFront],
+  )
+
   const handleHoverStart = (cardId: number) => {
     if (!finePointer || reducedMotion || cyclingIds.has(cardId)) return
     setHoveredId(cardId)
@@ -370,7 +423,7 @@ export function PhotoStack({ className }: { className?: string }) {
                 aria-label={isTop ? 'Next photo' : undefined}
                 aria-hidden={isTop ? undefined : true}
                 tabIndex={isTop ? 0 : -1}
-                onClick={isTop ? cycle : undefined}
+                onClick={isTop ? cycle : () => bringToFront(cardId)}
                 onMouseEnter={() => handleHoverStart(cardId)}
                 onMouseLeave={() => handleHoverEnd(cardId)}
               >

@@ -98,8 +98,12 @@
         "whiteCursor": true,
         "offsetX": -2,
         "offsetY": -58,
+        "textY": 0.25,
         "textSize": 12.5,
         "padX": 16
+      },
+      "text": {
+        "image1": "A Venezia! "
       }
     },
     "cycle": {
