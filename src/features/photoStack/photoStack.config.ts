@@ -27,6 +27,12 @@ export const PHOTO_STACK_CONFIG = {
     image5: {
       posX: [50, 0, 100, 0.01] as [number, number, number, number],
       posY: [50, 0, 100, 0.01] as [number, number, number, number],
+      /** Colour correction for this photo only (CSS filter on the image; 1 / 0 = unchanged). */
+      brightness: [1, 0.5, 1.5, 0.01] as [number, number, number, number],
+      contrast: [1, 0.5, 1.5, 0.01] as [number, number, number, number],
+      saturation: [1, 0, 2, 0.01] as [number, number, number, number],
+      warmth: [0, 0, 0.6, 0.01] as [number, number, number, number],
+      hue: [0, -45, 45, 0.5] as [number, number, number, number],
     },
   },
   slots: {

@@ -362,6 +362,13 @@ export function PhotoStack({ className }: { className?: string }) {
 
   // Caption for the hovered card. The last hovered id is kept so the text stays
   // put while the caption fades out.
+  // Photo 5 colour correction; no filter at all when every dial is at its neutral value.
+  const grade = values.images.image5
+  const gradeFilter =
+    grade.brightness === 1 && grade.contrast === 1 && grade.saturation === 1 && grade.warmth === 0 && grade.hue === 0
+      ? undefined
+      : `brightness(${grade.brightness}) contrast(${grade.contrast}) saturate(${grade.saturation}) sepia(${grade.warmth}) hue-rotate(${grade.hue}deg)`
+
   const captionStyle = values.caption.style
   const { image1, image2, image3, image4, image5 } = values.caption.text
   const captions = [image1, image2, image3, image4, image5]
@@ -437,7 +444,10 @@ export function PhotoStack({ className }: { className?: string }) {
                   decoding="async"
                   loading="eager"
                   fetchPriority={cardId === 0 ? 'high' : undefined}
-                  style={{ objectPosition: `${imagePos[cardId].posX}% ${imagePos[cardId].posY}%` }}
+                  style={{
+                    objectPosition: `${imagePos[cardId].posX}% ${imagePos[cardId].posY}%`,
+                    filter: cardId === 4 ? gradeFilter : undefined,
+                  }}
                 />
                 {onCard && (
                   <span aria-hidden="true" className={`ps-caption ps-caption--${captionStyle}${cardId === shownId ? ' is-shown' : ''}`}>
