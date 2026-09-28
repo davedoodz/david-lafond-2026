@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTuning } from '../../tuning/useTuning'
 import { CURSOR_CONFIG, CURSOR_PANEL } from './cursorConfig'
-import { createInkEngine, type InkEngine } from './inkEngine'
+import { allowsSelectionStart, createInkEngine, type InkEngine } from './inkEngine'
 import './cursor.css'
 
 /** Reactive to hover/pointer capability changes, e.g. a convertible laptop
@@ -143,6 +143,10 @@ export function CursorLayer() {
       hide()
       endPress()
     }
+    // Highlighting may only start on the text itself; elsewhere the drag is ink.
+    const onMouseDown = (event: MouseEvent): void => {
+      if (!allowsSelectionStart(event)) event.preventDefault()
+    }
     const onResize = (): void => {
       engine.resize()
       engine.refreshExclusions()
@@ -151,6 +155,7 @@ export function CursorLayer() {
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerover', onPointerOver, { passive: true })
     window.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('mousedown', onMouseDown)
     window.addEventListener('pointerup', endPress)
     window.addEventListener('pointercancel', endPress)
     window.addEventListener('pointerout', onPointerLeaveWindow)
@@ -161,6 +166,7 @@ export function CursorLayer() {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerover', onPointerOver)
       window.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('mousedown', onMouseDown)
       window.removeEventListener('pointerup', endPress)
       window.removeEventListener('pointercancel', endPress)
       window.removeEventListener('pointerout', onPointerLeaveWindow)

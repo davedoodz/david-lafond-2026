@@ -58,8 +58,9 @@ function isVisibleControl(element: Element): boolean {
   return style.display !== 'none' && style.visibility !== 'hidden'
 }
 
-/** Refuses to start a stroke on top of live text, so a drag there can become
- * a text selection instead of a drawing gesture. */
+/** True when (x, y) lies on the glyph box of selectable text under `target`.
+ * Strokes refuse to start there, so a drag on copy becomes a highlight;
+ * text marked `user-select: none` doesn't count, so ink can start on labels. */
 function isTextAtPoint(target: EventTarget | null, x: number, y: number): boolean {
   const element = target instanceof Element ? target : (target as Node | null)?.parentElement
   if (!element || element === document.body || element === document.documentElement) return false
@@ -67,7 +68,7 @@ function isTextAtPoint(target: EventTarget | null, x: number, y: number): boolea
   const range = document.createRange()
   let node = walker.nextNode()
   while (node) {
-    if (node.textContent?.trim()) {
+    if (node.textContent?.trim() && node.parentElement && getComputedStyle(node.parentElement).userSelect !== 'none') {
       range.selectNodeContents(node)
       for (const rect of range.getClientRects()) {
         if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) return true
@@ -76,6 +77,18 @@ function isTextAtPoint(target: EventTarget | null, x: number, y: number): boolea
     node = walker.nextNode()
   }
   return false
+}
+
+const EDITABLE_SELECTOR = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+
+/** A text highlight may only begin when the press lands on the text itself.
+ * Presses on empty space (even inside a paragraph's box) can't start a sweep
+ * selection; form fields and controls keep their native mouse behaviour. */
+export function allowsSelectionStart(event: MouseEvent): boolean {
+  if (event.button !== 0) return true
+  const element = event.target instanceof Element ? event.target : null
+  if (!element || element.closest(`${EDITABLE_SELECTOR}, ${PROTECTED_SELECTOR}`)) return true
+  return isTextAtPoint(event.target, event.clientX, event.clientY)
 }
 
 function widthForSpeed(speed: number, base: number): number {

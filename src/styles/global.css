@@ -228,3 +228,13 @@ h3 {
   background: var(--paper);
   color: var(--ink-950);
 }
+
+/* Labels, titles and chrome are not highlightable — only reading copy is. */
+.nav,
+.eyebrow,
+.card-title,
+.chat,
+.footer {
+  -webkit-user-select: none;
+  user-select: none;
+}
