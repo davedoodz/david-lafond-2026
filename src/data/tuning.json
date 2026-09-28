@@ -79,15 +79,18 @@
     }
   },
   "Photo stack": {
-    "cycle": {
-      "pullOutX": 283,
-      "liftY": -67,
-      "tilt": 27.5
+    "topHover": {
+      "preset": "peel"
     },
     "backHover": {
       "pullX": 60,
       "pullY": -1,
       "extraRotate": 5.2
+    },
+    "cycle": {
+      "pullOutX": 283,
+      "liftY": -67,
+      "tilt": 27.5
     }
   }
 }

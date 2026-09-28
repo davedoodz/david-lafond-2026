@@ -116,8 +116,23 @@ export function CursorLayer() {
       dot.classList.toggle('is-light', light)
       canvas.classList.toggle('is-light', light)
     }
+    // Innermost visible surface whose box holds the pointer. Needed wherever
+    // hit-testing can't be trusted: during a View Transition every hit (and the
+    // synthetic pointer events browsers send when the page changes under a still
+    // mouse) lands on <html>, which has no surface.
+    const surfaceAtPointer = (): HTMLElement | null => {
+      let owner: HTMLElement | null = null
+      for (const el of document.querySelectorAll<HTMLElement>('[data-surface]')) {
+        const r = el.getBoundingClientRect()
+        if (rawX < r.left || rawX >= r.right || rawY < r.top || rawY >= r.bottom) continue
+        if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue
+        if (!owner || owner.contains(el)) owner = el
+      }
+      return owner
+    }
     const applySurface = (target: EventTarget | null): void => {
-      applyOwner(target instanceof Element ? target.closest<HTMLElement>('[data-surface]') : null)
+      const owner = target instanceof Element ? target.closest<HTMLElement>('[data-surface]') : null
+      applyOwner(owner ?? surfaceAtPointer())
     }
 
     const applyHover = (target: EventTarget | null): void => {
@@ -176,21 +191,12 @@ export function CursorLayer() {
       engine.refreshExclusions()
     }
     // A page switch swaps the surface under a pointer that has not moved, so no
-    // pointer event fires. Hit-testing is useless here (during a View Transition
-    // it lands on the transition overlay), so find the innermost visible surface
-    // whose box holds the pointer. The style flush commits the new colour while
+    // pointer event fires. The style flush commits the new colour while
     // `is-instant` has the fade off.
     resyncRef.current = (): void => {
       if (!visible) return
-      let owner: HTMLElement | null = null
-      for (const el of document.querySelectorAll<HTMLElement>('[data-surface]')) {
-        const r = el.getBoundingClientRect()
-        if (rawX < r.left || rawX >= r.right || rawY < r.top || rawY >= r.bottom) continue
-        if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue
-        if (!owner || owner.contains(el)) owner = el
-      }
       dot.classList.add('is-instant')
-      applyOwner(owner)
+      applyOwner(surfaceAtPointer())
       void getComputedStyle(dot, '::before').backgroundColor
       dot.classList.remove('is-instant')
     }
