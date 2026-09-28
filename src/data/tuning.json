@@ -79,15 +79,15 @@
     }
   },
   "Photo stack": {
-    "hover": {
-      "pullX": 60,
-      "pullY": -1,
-      "extraRotate": 5.2
-    },
     "cycle": {
       "pullOutX": 283,
       "liftY": -67,
-      "tiltLeft": -27.5
+      "tilt": 27.5
+    },
+    "backHover": {
+      "pullX": 60,
+      "pullY": -1,
+      "extraRotate": 5.2
     }
   }
 }

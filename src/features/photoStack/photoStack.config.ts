@@ -55,16 +55,35 @@ export const PHOTO_STACK_CONFIG = {
     delay: [0.1, 0, 1, 0.01] as [number, number, number, number],
     replay: { type: 'action' as const, label: 'Replay entrance' },
   },
-  hover: {
-    pullX: [18, 0, 60, 1] as [number, number, number, number],
-    pullY: [-6, -40, 40, 1] as [number, number, number, number],
-    extraRotate: [-4, -20, 20, 0.1] as [number, number, number, number],
+  /** Hovering the front card. Offsets pivot on the card's centre; `preset` picks the effect, `custom` uses the dials. */
+  topHover: {
+    preset: {
+      type: 'select' as const,
+      options: ['lift', 'pop', 'tilt-left', 'tilt-right', 'nudge-left', 'peel', 'none', 'custom'],
+      default: 'lift',
+    },
+    x: [0, -80, 80, 1] as [number, number, number, number],
+    y: [-12, -80, 80, 1] as [number, number, number, number],
+    rotate: [0, -20, 20, 0.1] as [number, number, number, number],
+    scale: [1.03, 0.9, 1.2, 0.005] as [number, number, number, number],
+    spring: { type: 'spring' as const, visualDuration: 0.35, bounce: 0.25 },
+  },
+  /** Hovering a card behind the front one: it slides out of the stack to be seen. */
+  backHover: {
+    pullX: [18, -100, 320, 1] as [number, number, number, number],
+    pullY: [-6, -200, 200, 1] as [number, number, number, number],
+    extraRotate: [-4, -45, 45, 0.1] as [number, number, number, number],
+    /** Added per slot beyond the second, so deeper (more hidden) cards come out further. */
+    pullXPerDepth: [0, 0, 200, 1] as [number, number, number, number],
+    rotatePerDepth: [0, -20, 20, 0.1] as [number, number, number, number],
     spring: { type: 'spring' as const, visualDuration: 0.4, bounce: 0.3 },
   },
   cycle: {
+    /** Which side the front card leaves by when clicked; it leans the same way. */
+    direction: { type: 'select' as const, options: ['left', 'right'], default: 'left' },
     pullOutX: [150, 0, 400, 1] as [number, number, number, number],
     liftY: [-10, -100, 100, 1] as [number, number, number, number],
-    tiltLeft: [-18, -60, 0, 0.5] as [number, number, number, number],
+    tilt: [18, 0, 60, 0.5] as [number, number, number, number],
     springOut: { type: 'spring' as const, visualDuration: 0.3, bounce: 0.15 },
     springTuck: { type: 'spring' as const, visualDuration: 0.5, bounce: 0.35 },
     swapAt: [0.55, 0, 1, 0.01] as [number, number, number, number],

@@ -1,11 +1,44 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { animate, motion, useMotionValue, useReducedMotion, type Transition } from 'motion/react'
-import { useTuning } from '../../tuning/useTuning'
+import { useTuningController } from '../../tuning/useTuning'
 import { PHOTO_STACK_CONFIG } from './photoStack.config'
 import { toMotionTransition, estimateSeconds } from './toMotionTransition'
 import './photoStack.css'
 
 type Pose = { x: number; y: number; rotate: number }
+/** A pose plus scale; cards rest at scale 1. */
+type FullPose = Pose & { scale: number }
+type TopEffect = { x: number; y: number; rotate: number; scale: number }
+
+/** Front-card hover looks. Offsets and rotation pivot on the card's centre. */
+const TOP_PRESETS: Record<string, TopEffect> = {
+  lift: { x: 0, y: -12, rotate: 0, scale: 1.03 },
+  pop: { x: 0, y: 0, rotate: 0, scale: 1.07 },
+  'tilt-left': { x: -4, y: -4, rotate: -4, scale: 1.02 },
+  'tilt-right': { x: 4, y: -4, rotate: 4, scale: 1.02 },
+  'nudge-left': { x: -28, y: 0, rotate: -2, scale: 1 },
+  peel: { x: -10, y: -12, rotate: -6, scale: 1.04 },
+  none: { x: 0, y: 0, rotate: 0, scale: 1 },
+}
+
+const toRad = (deg: number) => (deg * Math.PI) / 180
+
+/**
+ * Cards transform from their top-left corner. Returns the top-left pose that
+ * moves the card's centre by (dx, dy) and rotates/scales it about that centre.
+ */
+function aroundCentre(base: Pose, fx: TopEffect, width: number, height: number): FullPose {
+  const cx = width / 2
+  const cy = height / 2
+  const rotate = base.rotate + fx.rotate
+  const a0 = toRad(base.rotate)
+  const a1 = toRad(rotate)
+  const restX = Math.cos(a0) * cx - Math.sin(a0) * cy
+  const restY = Math.sin(a0) * cx + Math.cos(a0) * cy
+  const nextX = fx.scale * (Math.cos(a1) * cx - Math.sin(a1) * cy)
+  const nextY = fx.scale * (Math.sin(a1) * cx + Math.cos(a1) * cy)
+  return { x: base.x + restX - nextX + fx.x, y: base.y + restY - nextY + fx.y, rotate, scale: fx.scale }
+}
 
 const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
 
@@ -17,19 +50,30 @@ function useCardMotionValues(initial: Pose) {
   const x = useMotionValue(initial.x)
   const y = useMotionValue(initial.y)
   const rotate = useMotionValue(initial.rotate)
+  const scale = useMotionValue(1)
   // Cards start hidden so their below-slot start pose never sits over the heading.
   const opacity = useMotionValue(0)
-  return useMemo(() => ({ x, y, rotate, opacity }), [x, y, rotate, opacity])
+  return useMemo(() => ({ x, y, rotate, scale, opacity }), [x, y, rotate, scale, opacity])
 }
 
 export function PhotoStack({ className }: { className?: string }) {
   const reducedMotion = useReducedMotion()
   const playEntranceRef = useRef<() => void>(() => {})
-  const values = useTuning('Photo stack', PHOTO_STACK_CONFIG, {
+  const { values, setValue } = useTuningController('Photo stack', PHOTO_STACK_CONFIG, {
     onAction: (action) => {
       if (action === 'entrance.replay') playEntranceRef.current()
     },
   })
+
+  // Moving a front-card dial means "use my numbers": flip the preset to 'custom'.
+  const { x: topX, y: topY, rotate: topRotate, scale: topScale } = values.topHover
+  const topKey = `${topX}|${topY}|${topRotate}|${topScale}`
+  const topKeyRef = useRef(topKey)
+  useEffect(() => {
+    if (topKeyRef.current === topKey) return
+    topKeyRef.current = topKey
+    if (values.topHover.preset !== 'custom') setValue('topHover.preset', 'custom')
+  }, [topKey, values.topHover.preset, setValue])
 
   const slotPoses = useMemo<Pose[]>(
     () => [values.slots.slot0, values.slots.slot1, values.slots.slot2, values.slots.slot3],
@@ -76,18 +120,19 @@ export function PhotoStack({ className }: { className?: string }) {
     return () => mq.removeEventListener('change', update)
   }, [])
 
+  const moveTo = useCallback((cardId: number, target: FullPose, transition: Transition) => {
+    const { x, y, rotate, scale } = mvRef.current[cardId]
+    animate(x, target.x, transition)
+    animate(y, target.y, transition)
+    animate(rotate, target.rotate, transition)
+    animate(scale, target.scale, transition)
+  }, [])
+
   const settle = useCallback(
-    (cardId: number, extra?: { x: number; y: number; rotate: number }, transitionOverride?: Transition) => {
-      const slot = orderRef.current.indexOf(cardId)
-      const base = slotPoses[slot]
-      const target = extra ? { x: base.x + extra.x, y: base.y + extra.y, rotate: base.rotate + extra.rotate } : base
-      const transition = transitionOverride ?? toMotionTransition(values.hover.spring)
-      const { x, y, rotate } = mvRef.current[cardId]
-      animate(x, target.x, transition)
-      animate(y, target.y, transition)
-      animate(rotate, target.rotate, transition)
+    (cardId: number, transition: Transition) => {
+      moveTo(cardId, { ...slotPoses[orderRef.current.indexOf(cardId)], scale: 1 }, transition)
     },
-    [slotPoses, values.hover.spring],
+    [moveTo, slotPoses],
   )
 
   // Entrance: jump every card below its slot, then spring up into place, staggered back-to-front.
@@ -134,7 +179,7 @@ export function PhotoStack({ className }: { className?: string }) {
     if (!entered) return
     for (let cardId = 0; cardId < CARD_COUNT; cardId++) {
       if (cyclingIds.has(cardId) || cardId === hoveredId) continue
-      settle(cardId, undefined, toMotionTransition(values.cycle.springTuck))
+      settle(cardId, toMotionTransition(values.cycle.springTuck))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order, entered])
@@ -159,15 +204,17 @@ export function PhotoStack({ className }: { className?: string }) {
 
     setCyclingIds((prev) => new Set(prev).add(frontId))
 
-    const { x, y, rotate } = mvRef.current[frontId]
+    const { x, y, rotate, scale } = mvRef.current[frontId]
     const frontPose = slotPoses[0]
     const backSlot = CARD_COUNT - 1
     const backPose = slotPoses[backSlot]
-
+    // Leaves by the chosen side, leaning the same way (negative rotation leans left).
+    const side = values.cycle.direction === 'right' ? 1 : -1
     if (reducedMotion) {
       x.set(backPose.x)
       y.set(backPose.y)
       rotate.set(backPose.rotate)
+      scale.set(1)
     } else {
       const outSpring = toMotionTransition(values.cycle.springOut)
       const tuckSpring = toMotionTransition(values.cycle.springTuck)
@@ -175,20 +222,16 @@ export function PhotoStack({ className }: { className?: string }) {
       const tuckMs = 1000 * estimateSeconds(values.cycle.springTuck)
       const totalMs = outMs + tuckMs
       const peak = {
-        x: frontPose.x + values.cycle.pullOutX,
+        x: frontPose.x + side * values.cycle.pullOutX,
         y: frontPose.y + values.cycle.liftY,
-        rotate: frontPose.rotate + values.cycle.tiltLeft,
+        rotate: frontPose.rotate + side * values.cycle.tilt,
       }
       // Sequence on the springs' visual durations, never on their promises: an
       // interrupted Motion animation never resolves, which would stall the queue.
       // Retargeting mid-flight keeps velocity, so the out→tuck handoff stays fluid.
-      animate(x, peak.x, outSpring)
-      animate(y, peak.y, outSpring)
-      animate(rotate, peak.rotate, outSpring)
+      moveTo(frontId, { ...peak, scale: 1 }, outSpring)
       await sleep(outMs)
-      animate(x, backPose.x, tuckSpring)
-      animate(y, backPose.y, tuckSpring)
-      animate(rotate, backPose.rotate, tuckSpring)
+      moveTo(frontId, { ...backPose, scale: 1 }, tuckSpring)
       await sleep(Math.max(0, totalMs * values.cycle.swapAt - outMs))
       setZIndices((prev) => {
         const next = prev.slice()
@@ -211,7 +254,7 @@ export function PhotoStack({ className }: { className?: string }) {
       return next
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reducedMotion, slotPoses, values.cycle])
+  }, [moveTo, reducedMotion, slotPoses, values.cycle])
 
   const cycle = useCallback(() => {
     queueRef.current = queueRef.current.then(() => runCycle())
@@ -220,10 +263,25 @@ export function PhotoStack({ className }: { className?: string }) {
   const handleHoverStart = (cardId: number) => {
     if (!finePointer || reducedMotion || cyclingIds.has(cardId)) return
     setHoveredId(cardId)
-    settle(
+    const slot = orderRef.current.indexOf(cardId)
+    const base = slotPoses[slot]
+    if (slot === 0) {
+      const { preset } = values.topHover
+      const fx = preset === 'custom' ? values.topHover : (TOP_PRESETS[preset] ?? TOP_PRESETS.lift)
+      moveTo(cardId, aroundCentre(base, fx, values.card.width, values.card.height), toMotionTransition(values.topHover.spring))
+      return
+    }
+    const peek = values.backHover
+    const depth = slot - 1
+    moveTo(
       cardId,
-      { x: values.hover.pullX, y: values.hover.pullY, rotate: values.hover.extraRotate },
-      toMotionTransition(values.hover.spring),
+      {
+        x: base.x + peek.pullX + depth * peek.pullXPerDepth,
+        y: base.y + peek.pullY,
+        rotate: base.rotate + peek.extraRotate + depth * peek.rotatePerDepth,
+        scale: 1,
+      },
+      toMotionTransition(peek.spring),
     )
   }
 
@@ -232,7 +290,8 @@ export function PhotoStack({ className }: { className?: string }) {
     setHoveredId(null)
     // A cycling card owns its motion values until the choreography ends.
     if (cyclingIds.has(cardId)) return
-    settle(cardId, undefined, toMotionTransition(values.hover.spring))
+    const wasTop = orderRef.current.indexOf(cardId) === 0
+    settle(cardId, toMotionTransition(wasTop ? values.topHover.spring : values.backHover.spring))
   }
 
   const width = values.card.width
@@ -267,7 +326,7 @@ export function PhotoStack({ className }: { className?: string }) {
         <div style={{ width: containerWidth, height: containerHeight, transform: `scale(${scale})`, transformOrigin: 'top center' }}>
           {Array.from({ length: CARD_COUNT }, (_, cardId) => {
             const isTop = order[0] === cardId && !cyclingIds.has(cardId)
-            const { x, y, rotate, opacity } = mv[cardId]
+            const { x, y, rotate, scale, opacity } = mv[cardId]
             // One element type for every card: swapping tags on cycle would remount
             // the node mid-flight. Only the top card is interactive to assistive tech.
             return (
@@ -283,6 +342,7 @@ export function PhotoStack({ className }: { className?: string }) {
                   x,
                   y,
                   rotate,
+                  scale,
                   opacity,
                 }}
                 type="button"
