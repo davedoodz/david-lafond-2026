@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { animate, motion, useMotionValue, useReducedMotion, type Transition } from 'motion/react'
 import { useTuningController } from '../../tuning/useTuning'
 import { PHOTO_STACK_CONFIG } from './photoStack.config'
@@ -305,10 +306,34 @@ export function PhotoStack({ className }: { className?: string }) {
   const scale = isMobile ? values.layout.mobileScale : values.layout.desktopScale
   const topOffset = isMobile ? values.layout.mobileTopOffset : values.layout.desktopTopOffset
 
+  // Caption for the hovered card. The last hovered id is kept so the text stays
+  // put while the caption fades out.
+  const captionStyle = values.caption.style
+  const { image1, image2, image3, image4 } = values.caption.text
+  const captions = [image1, image2, image3, image4]
+  const shownId = hoveredId !== null && !cyclingIds.has(hoveredId) && captions[hoveredId].trim() ? hoveredId : null
+  const lastCaptionIdRef = useRef(0)
+  if (shownId !== null) lastCaptionIdRef.current = shownId
+  const captionText = captions[lastCaptionIdRef.current]
+  const onCard = captionStyle === 'overlay' || captionStyle === 'chip'
+  const below = captionStyle === 'pill' || captionStyle === 'line'
+
+  // `cursor` style: position the label from pointermove directly, no re-render per move.
+  const followRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (captionStyle !== 'cursor') return
+    const onMove = (event: PointerEvent) => {
+      const el = followRef.current
+      if (el) el.style.transform = `translate3d(${event.clientX + 18}px, ${event.clientY + 16}px, 0)`
+    }
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => window.removeEventListener('pointermove', onMove)
+  }, [captionStyle])
+
   return (
     <div
       className={['ps-root', className].filter(Boolean).join(' ')}
-      style={{ boxSizing: 'content-box', paddingTop: topOffset, height: containerHeight * scale }}
+      style={{ boxSizing: 'content-box', paddingTop: topOffset, height: containerHeight * scale, ['--ps-caption-gap' as string]: `${values.caption.gap}px` } as CSSProperties}
       data-testid="photo-stack"
     >
       <div
@@ -359,11 +384,28 @@ export function PhotoStack({ className }: { className?: string }) {
                   fetchPriority={cardId === 0 ? 'high' : undefined}
                   style={{ objectPosition: `${imagePos[cardId].posX}% ${imagePos[cardId].posY}%` }}
                 />
+                {onCard && (
+                  <span aria-hidden="true" className={`ps-caption ps-caption--${captionStyle}${cardId === shownId ? ' is-shown' : ''}`}>
+                    {captions[cardId]}
+                  </span>
+                )}
               </motion.button>
             )
           })}
         </div>
       </div>
+      {below && (
+        <span aria-hidden="true" className={`ps-caption ps-caption--below ps-caption--${captionStyle}${shownId !== null ? ' is-shown' : ''}`}>
+          {captionText}
+        </span>
+      )}
+      {captionStyle === 'cursor' &&
+        createPortal(
+          <div ref={followRef} className="ps-caption-follow" aria-hidden="true">
+            <span className={`ps-caption ps-caption--cursor${shownId !== null ? ' is-shown' : ''}`}>{captionText}</span>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

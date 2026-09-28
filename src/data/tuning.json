@@ -82,6 +82,15 @@
     "topHover": {
       "preset": "peel"
     },
+    "backHover": {
+      "second": {
+        "pullX": 136,
+        "pullY": -38
+      },
+      "third": {
+        "pullX": 124
+      }
+    },
     "cycle": {
       "pullOutX": 283,
       "liftY": -67,

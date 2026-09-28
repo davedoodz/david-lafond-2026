@@ -40,3 +40,84 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* Hover captions — style picked in Photo stack → caption. Only opacity/transform animate. */
+.ps-caption {
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 200ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ps-caption.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+.ps-caption--overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 36px 16px 14px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0));
+  color: #fff;
+  text-align: left;
+  white-space: normal;
+}
+
+.ps-caption--chip {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #171717;
+  font-size: 12px;
+}
+
+/* Below the stack: one shared element that shows the hovered card's text. */
+.ps-caption--below {
+  position: absolute;
+  top: calc(100% + var(--ps-caption-gap, 16px));
+  left: 50%;
+  translate: -50% 0;
+}
+
+.ps-caption--pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #171717;
+  color: #f5f5f5;
+}
+
+.ps-caption--line {
+  color: #6b6b6b;
+  font-size: 14px;
+}
+
+/* Follows the pointer; the outer element carries the position, the inner the fade. */
+.ps-caption-follow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147482000;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.ps-caption--cursor {
+  display: block;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #171717;
+  color: #f5f5f5;
+  font-size: 12px;
+}

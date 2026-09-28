@@ -91,6 +91,18 @@ export const PHOTO_STACK_CONFIG = {
     },
     spring: { type: 'spring' as const, visualDuration: 0.4, bounce: 0.3 },
   },
+  /** One-line description shown while a card is hovered. Text stays with its photo as the stack cycles. */
+  caption: {
+    style: { type: 'select' as const, options: ['overlay', 'chip', 'pill', 'line', 'cursor', 'none'], default: 'pill' },
+    /** Space between the stack and the caption, for the `pill` and `line` styles. */
+    gap: [16, 0, 80, 1] as [number, number, number, number],
+    text: {
+      image1: { type: 'text' as const, default: 'City nights, red shades', placeholder: 'Caption for photo 1' },
+      image2: { type: 'text' as const, default: 'On the mic', placeholder: 'Caption for photo 2' },
+      image3: { type: 'text' as const, default: 'Up in the mountains', placeholder: 'Caption for photo 3' },
+      image4: { type: 'text' as const, default: 'In the workshop', placeholder: 'Caption for photo 4' },
+    },
+  },
   cycle: {
     /** Which side the front card leaves by when clicked; it leans the same way. */
     direction: { type: 'select' as const, options: ['left', 'right'], default: 'left' },
