@@ -11,12 +11,15 @@
     }
   },
   "Davebot": {
+    "box": {
+      "style": "soft"
+    },
     "ghost": {
       "zoomSize": 190,
       "offsetY": -85,
       "morph": {
         "type": "spring",
-        "visualDuration": 0.7,
+        "visualDuration": 0.65,
         "bounce": 0.25
       }
     },
@@ -29,41 +32,6 @@
       "footerHintMove": "",
       "footerHintSelect": "",
       "footerHintClose": ""
-    }
-  },
-  "Dither bands": {
-    "header": {
-      "color": "#676767",
-      "pixelSize": 6.2,
-      "scale": 1.17,
-      "mouse": {
-        "radius": 219,
-        "boost": -0.99,
-        "warp": 0.34
-      },
-      "desktop": {
-        "widthScale": 200,
-        "y": -63
-      },
-      "mobile": {
-        "widthScale": 626,
-        "y": -58
-      }
-    },
-    "footer": {
-      "mouse": {
-        "radius": 219,
-        "boost": -0.99,
-        "warp": 0.34
-      },
-      "desktop": {
-        "widthScale": 200,
-        "y": 63
-      },
-      "mobile": {
-        "widthScale": 626,
-        "y": 58
-      }
     }
   }
 }

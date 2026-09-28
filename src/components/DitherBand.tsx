@@ -52,40 +52,44 @@ uniform float u_mouseWarp;    // + pushes pattern out, - pulls in`,
 }
 
 const interactiveDitheringShader = withMouseField(ditheringFragmentShader)
-const band = (flip: boolean, frame: number) => ({
-  color: { type: 'color' as const, default: '#706B68' },
-  opacity: [0.25, 0, 1, 0.01] as [number, number, number, number],
-  speed: [1.15, 0, 4, 0.01] as [number, number, number, number],
-  pixelSize: [4.2, 1, 12, 0.1] as [number, number, number, number],
-  scale: [1.14, 0.2, 4, 0.01] as [number, number, number, number],
+
+type BandLook = { color: string; pixelSize: number; scale: number }
+
+/** Header is rotated 180° (`flip`), so its offsets mirror the footer's: −y hides band past the top edge, +y past the bottom. */
+const band = (flip: boolean, frame: number, look: BandLook) => ({
+  color: { type: 'color' as const, default: look.color },
+  opacity: [0.25, 0, 1, 0.01] as Tuple,
+  speed: [1.15, 0, 4, 0.01] as Tuple,
+  pixelSize: [look.pixelSize, 1, 12, 0.1] as Tuple,
+  scale: [look.scale, 0.2, 4, 0.01] as Tuple,
   shape: { type: 'select' as const, options: ['wave', 'simplex', 'warp', 'dots', 'ripple', 'swirl'], default: 'wave' },
   pattern: { type: 'select' as const, options: ['4x4', '2x2', '8x8', 'random'], default: '4x4' },
   flip,
-  frame: [frame, 0, 1_000_000, 1] as [number, number, number, number],
+  frame: [frame, 0, 1_000_000, 1] as Tuple,
   mouse: {
     enabled: true,
-    radius: [160, 20, 600, 1] as Tuple,
-    boost: [0.5, -1, 1, 0.01] as Tuple,
-    warp: [0.4, -2, 2, 0.01] as Tuple,
+    radius: [219, 20, 600, 1] as Tuple,
+    boost: [-0.99, -1, 1, 0.01] as Tuple,
+    warp: [0.34, -2, 2, 0.01] as Tuple,
     follow: [0.15, 0.02, 1, 0.01] as Tuple,
   },
   desktop: {
-    height: [287, 60, 600, 1] as [number, number, number, number],
-    widthScale: [100, 50, 200, 1] as [number, number, number, number],
-    x: [0, -600, 600, 1] as [number, number, number, number],
-    y: [flip ? -4 : 0, -300, 300, 1] as [number, number, number, number],
+    height: [287, 60, 600, 1] as Tuple,
+    widthScale: [200, 50, 200, 1] as Tuple,
+    x: [0, -600, 600, 1] as Tuple,
+    y: [flip ? -63 : 63, -300, 300, 1] as Tuple,
   },
   mobile: {
-    height: [265, 60, 600, 1] as [number, number, number, number],
-    widthScale: [313, 50, 800, 1] as [number, number, number, number],
-    x: [0, -600, 600, 1] as [number, number, number, number],
-    y: [0, -300, 300, 1] as [number, number, number, number],
+    height: [265, 60, 600, 1] as Tuple,
+    widthScale: [626, 50, 800, 1] as Tuple,
+    x: [0, -600, 600, 1] as Tuple,
+    y: [flip ? -58 : 58, -300, 300, 1] as Tuple,
   },
 })
 
 const CONFIG = {
-  header: { ...band(true, 554221), _collapsed: false },
-  footer: { ...band(false, 440992), _collapsed: true },
+  header: { ...band(true, 554221, { color: '#676767', pixelSize: 6.2, scale: 1.17 }), _collapsed: false },
+  footer: { ...band(false, 440992, { color: '#706B68', pixelSize: 4.2, scale: 1.14 }), _collapsed: true },
 }
 
 type Props = { position: 'header' | 'footer' }
