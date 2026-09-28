@@ -324,7 +324,7 @@ export function PhotoStack({ className }: { className?: string }) {
     if (captionStyle !== 'cursor') return
     const onMove = (event: PointerEvent) => {
       const el = followRef.current
-      if (el) el.style.transform = `translate3d(${event.clientX + 18}px, ${event.clientY + 16}px, 0)`
+      if (el) el.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
     }
     window.addEventListener('pointermove', onMove, { passive: true })
     return () => window.removeEventListener('pointermove', onMove)
@@ -401,7 +401,21 @@ export function PhotoStack({ className }: { className?: string }) {
       )}
       {captionStyle === 'cursor' &&
         createPortal(
-          <div ref={followRef} className="ps-caption-follow" aria-hidden="true">
+          <div
+            ref={followRef}
+            className="ps-caption-follow"
+            aria-hidden="true"
+            style={
+              {
+                '--ps-cur-x': `${values.caption.cursor.offsetX}px`,
+                '--ps-cur-y': `${values.caption.cursor.offsetY}px`,
+                '--ps-cur-size': `${values.caption.cursor.textSize}px`,
+                '--ps-cur-pad-x': `${values.caption.cursor.padX}px`,
+                '--ps-cur-pad-y': `${values.caption.cursor.padY}px`,
+                '--ps-cur-radius': `${values.caption.cursor.radius}px`,
+              } as CSSProperties
+            }
+          >
             <span className={`ps-caption ps-caption--cursor${shownId !== null ? ' is-shown' : ''}`}>{captionText}</span>
           </div>,
           document.body,

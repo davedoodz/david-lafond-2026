@@ -93,9 +93,18 @@ export const PHOTO_STACK_CONFIG = {
   },
   /** One-line description shown while a card is hovered. Text stays with its photo as the stack cycles. */
   caption: {
-    style: { type: 'select' as const, options: ['overlay', 'chip', 'pill', 'line', 'cursor', 'none'], default: 'pill' },
+    style: { type: 'select' as const, options: ['overlay', 'chip', 'pill', 'line', 'cursor', 'none'], default: 'cursor' },
     /** Space between the stack and the caption, for the `pill` and `line` styles. */
     gap: [16, 0, 80, 1] as [number, number, number, number],
+    /** `cursor` style: pill placement relative to the pointer, and its size. */
+    cursor: {
+      offsetX: [18, -200, 200, 1] as [number, number, number, number],
+      offsetY: [16, -200, 200, 1] as [number, number, number, number],
+      textSize: [12, 9, 28, 0.5] as [number, number, number, number],
+      padX: [11, 0, 40, 0.5] as [number, number, number, number],
+      padY: [6, 0, 30, 0.5] as [number, number, number, number],
+      radius: [999, 0, 999, 1] as [number, number, number, number],
+    },
     text: {
       image1: { type: 'text' as const, default: 'City nights, red shades', placeholder: 'Caption for photo 1' },
       image2: { type: 'text' as const, default: 'On the mic', placeholder: 'Caption for photo 2' },

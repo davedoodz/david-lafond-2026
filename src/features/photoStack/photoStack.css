@@ -113,11 +113,13 @@
   will-change: transform;
 }
 
+/* Offset from the pointer uses `translate`, which composes with the fade's `transform`. */
 .ps-caption--cursor {
   display: block;
-  padding: 6px 11px;
-  border-radius: 999px;
+  translate: var(--ps-cur-x, 18px) var(--ps-cur-y, 16px);
+  padding: var(--ps-cur-pad-y, 6px) var(--ps-cur-pad-x, 11px);
+  border-radius: var(--ps-cur-radius, 999px);
   background: #171717;
   color: #f5f5f5;
-  font-size: 12px;
+  font-size: var(--ps-cur-size, 12px);
 }

@@ -80,21 +80,31 @@
   },
   "Photo stack": {
     "topHover": {
-      "preset": "peel"
+      "preset": "tilt-left"
     },
     "backHover": {
       "second": {
         "pullX": 136,
-        "pullY": -38
+        "pullY": -34
       },
       "third": {
-        "pullX": 124
+        "pullX": 136
       }
+    },
+    "caption": {
+      "style": "cursor",
+      "gap": 0
     },
     "cycle": {
       "pullOutX": 283,
-      "liftY": -67,
-      "tilt": 27.5
+      "liftY": -79,
+      "tilt": 26,
+      "springTuck": {
+        "type": "spring",
+        "visualDuration": 0.65,
+        "bounce": 0.35
+      },
+      "swapAt": 0.09
     }
   }
 }
