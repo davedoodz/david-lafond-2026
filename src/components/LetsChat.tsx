@@ -9,7 +9,7 @@
  *              hold, then fade back to the outline                           (return)
  *              pill grows back out to the right from the start                (idle)
  */
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react'
 import type { TransitionConfig } from 'dialkit'
 import { mailtoUrl } from '../data/contact'
 import { useTuning } from '../tuning/useTuning'
@@ -28,10 +28,17 @@ const CONFIG = {
   },
   /** Hover (and keyboard focus). `gray` uses the colour dials below. */
   hover: {
-    preset: { type: 'select' as const, options: ['gray', 'invert', 'ghost', 'lift', 'arrow', 'none'], default: 'gray' },
+    preset: { type: 'select' as const, options: ['morph', 'gray', 'invert', 'ghost', 'lift', 'arrow', 'none'], default: 'morph' },
     fill: { type: 'color' as const, default: '#3a3a3a' },
     border: { type: 'color' as const, default: '#f5f5f5' },
     text: { type: 'color' as const, default: '#f5f5f5' },
+  },
+  /** `morph` hover: the pill becomes the arrow circle under the cursor; a click sends it off to the right. */
+  morph: {
+    shape: { type: 'easing' as const, duration: 0.35, ease: [0.3, 0, 0.2, 1] as [number, number, number, number] },
+    exitPx: [220, 40, 600, 1] as [number, number, number, number],
+    exit: { type: 'easing' as const, duration: 0.45, ease: [0.5, 0, 0.75, 0] as [number, number, number, number] },
+    fadeInMs: [350, 0, 1200, 10] as [number, number, number, number],
   },
   motion: {
     fillMs: [160, 0, 800, 10] as [number, number, number, number],
@@ -66,6 +73,12 @@ export function LetsChat() {
   const t = useTuning('Let’s chat', CONFIG)
   const [phase, setPhase] = useState<Phase>('idle')
   const timers = useRef<number[]>([])
+  // Morph hover: `morphX` is the body's shift that puts the arrow circle under the cursor.
+  const [morphX, setMorphX] = useState<number | null>(null)
+  const [exiting, setExiting] = useState(false)
+  const [fadingIn, setFadingIn] = useState(false)
+  const morphCentre = useRef(0)
+  const morphSpent = useRef(false)
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
 
   const href = mailtoUrl(t.email.subject, t.email.body)
@@ -73,10 +86,49 @@ export function LetsChat() {
   const expand = cssTransition(t.motion.expand)
   const travel = cssTransition(t.motion.travel)
 
+  const morphOn = t.hover.preset === 'morph'
+  const onPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
+    if (!morphOn || event.pointerType !== 'mouse' || phase !== 'idle' || exiting || fadingIn) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const h = rect.height
+    if (morphX !== null) {
+      // Left the circle: back to the pill until the pointer leaves the button.
+      if (Math.abs(event.clientX - morphCentre.current) > h / 2 || Math.abs(event.clientY - (rect.top + h / 2)) > h / 2) {
+        setMorphX(null)
+        morphSpent.current = true
+      }
+      return
+    }
+    if (morphSpent.current) return
+    const px = Math.min(Math.max(event.clientX - rect.left, h / 2), rect.width - h / 2)
+    morphCentre.current = rect.left + px
+    setMorphX(px - (rect.width - h / 2))
+  }
+  const onPointerLeave = () => {
+    morphSpent.current = false
+    if (!exiting) setMorphX(null)
+  }
+
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    if (phase !== 'idle') return
+    if (phase !== 'idle' || exiting || fadingIn) return
+    if (morphX !== null) {
+      // Circle slides off to the right and fades, then the mail app opens.
+      setExiting(true)
+      const exitMs = parseFloat(cssTransition(t.morph.exit).duration) * 1000
+      timers.current.push(
+        window.setTimeout(() => {
+          window.location.href = href
+          setExiting(false)
+          setMorphX(null)
+          morphSpent.current = true
+          setFadingIn(true)
+        }, exitMs + t.click.openDelayMs),
+        window.setTimeout(() => setFadingIn(false), exitMs + t.click.openDelayMs + t.morph.fadeInMs),
+      )
+      return
+    }
     const mail = () => {
       window.location.href = href
     }
@@ -124,11 +176,20 @@ export function LetsChat() {
     '--chat-expand': expand.duration,
     '--chat-expand-ease': expand.ease,
     '--chat-fade': `${t.click.fadeMs}ms`,
+    '--chat-morph-x': `${morphX ?? 0}px`,
+    '--chat-morph': cssTransition(t.morph.shape).duration,
+    '--chat-morph-ease': cssTransition(t.morph.shape).ease,
+    '--chat-exit-x': `${t.morph.exitPx}px`,
+    '--chat-exit': cssTransition(t.morph.exit).duration,
+    '--chat-exit-ease': cssTransition(t.morph.exit).ease,
+    '--chat-fade-in': `${t.morph.fadeInMs}ms`,
   } as CSSProperties
 
   return (
     <a
-      className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}`}
+      className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}${morphX !== null ? ' is-morph' : ''}${exiting ? ' is-exit' : ''}${fadingIn ? ' is-fadein' : ''}`}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
       href={href}
       data-hover={t.hover.preset}
       data-click={t.click.preset}

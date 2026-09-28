@@ -85,13 +85,13 @@
 }
 
 @media (hover: hover) {
-  .chat:hover:not(.is-playing) .chat__body {
+  .chat:hover:not(.is-playing):not(.is-morph) .chat__body {
     background-color: var(--hv-bg, transparent);
     border-color: var(--hv-border, var(--paper));
     color: var(--hv-text, var(--paper));
     translate: 0 var(--hv-y, 0px);
   }
-  .chat:hover:not(.is-playing) .chat__arrow {
+  .chat:hover:not(.is-playing):not(.is-morph) .chat__arrow {
     translate: var(--hv-arrow, 0px) 0;
   }
 }
@@ -168,6 +168,49 @@
 }
 .chat__body {
   scale: 1;
+}
+
+/* morph hover: the arrow circle sits under the cursor. */
+.chat.is-morph .chat__body {
+  background-color: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink-900);
+  clip-path: var(--chat-circle);
+  translate: var(--chat-morph-x) 0;
+  transition:
+    clip-path var(--chat-morph) var(--chat-morph-ease),
+    translate var(--chat-morph) var(--chat-morph-ease),
+    opacity var(--chat-exit) ease,
+    background-color var(--chat-fill) ease,
+    border-color var(--chat-fill) ease,
+    color var(--chat-fill) ease;
+}
+.chat.is-morph .chat__label {
+  opacity: 0;
+  transition: opacity var(--chat-morph) ease;
+}
+
+/* Click while morphed: the circle slides right and fades out. */
+.chat.is-morph.is-exit .chat__body {
+  translate: calc(var(--chat-morph-x) + var(--chat-exit-x)) 0;
+  opacity: 0;
+  transition:
+    translate var(--chat-exit) var(--chat-exit-ease),
+    opacity var(--chat-exit) ease;
+}
+
+/* Then the pill fades back in place, with no other motion. */
+.chat.is-fadein .chat__body,
+.chat.is-fadein .chat__label {
+  transition: none;
+}
+.chat.is-fadein .chat__body {
+  animation: chat-in var(--chat-fade-in) ease both;
+}
+@keyframes chat-in {
+  from {
+    opacity: 0;
+  }
 }
 
 @media (max-width: 640px) {

@@ -141,5 +141,11 @@
     "durationMs": 1400,
     "staggerMs": 200,
     "ease": "linear-ish"
+  },
+  "Contact CTA": {},
+  "Let’s chat": {
+    "click": {
+      "preset": "circle"
+    }
   }
 }
