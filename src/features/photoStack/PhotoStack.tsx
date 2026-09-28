@@ -85,14 +85,46 @@ export function PhotoStack({ className }: { className?: string }) {
     [values.images],
   )
 
-  // `order[slot] = cardId`. Card 0 starts front, card 4 starts back.
-  const [order, setOrder] = useState<number[]>([0, 1, 2, 3, 4])
+  // Starting order from the Order dials: first pick wins, unpicked photos fill the gaps.
+  const { order: picks } = values
+  const startKey = [picks.front, picks.second, picks.third, picks.fourth, picks.back].join('|')
+  const startOrder = useMemo(() => {
+    const out: number[] = []
+    for (const pick of startKey.split('|')) {
+      const id = Number(pick.replace('photo ', '')) - 1
+      if (id >= 0 && id < CARD_COUNT && !out.includes(id)) out.push(id)
+    }
+    for (let id = 0; id < CARD_COUNT; id++) if (!out.includes(id)) out.push(id)
+    return out
+  }, [startKey])
+  const zForOrder = (next: number[]) => {
+    const z: number[] = []
+    next.forEach((id, slot) => {
+      z[id] = 40 - slot * 10
+    })
+    return z
+  }
+
+  // `order[slot] = cardId`.
+  const [order, setOrder] = useState<number[]>(startOrder)
   const orderRef = useRef(order)
   orderRef.current = order
 
-  const [zIndices, setZIndices] = useState<number[]>(() => order.map((_, slot) => 40 - slot * 10))
+  const [zIndices, setZIndices] = useState<number[]>(() => zForOrder(startOrder))
   const zIndicesRef = useRef(zIndices)
   zIndicesRef.current = zIndices
+
+  // Re-stack when an Order dial changes (not on mount: state already starts there).
+  const startKeyRef = useRef(startKey)
+  useEffect(() => {
+    if (startKeyRef.current === startKey) return
+    startKeyRef.current = startKey
+    orderRef.current = startOrder
+    zIndicesRef.current = zForOrder(startOrder)
+    setOrder(startOrder)
+    setZIndices(zIndicesRef.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startKey, startOrder])
 
   const [cyclingIds, setCyclingIds] = useState<Set<number>>(() => new Set())
   const [hoveredId, setHoveredId] = useState<number | null>(null)
@@ -100,7 +132,7 @@ export function PhotoStack({ className }: { className?: string }) {
   const [entered, setEntered] = useState(false)
 
   const initialPoseFor = (cardId: number): Pose => {
-    const base = slotPoses[cardId]
+    const base = slotPoses[startOrder.indexOf(cardId)]
     return { x: base.x, y: base.y + values.entrance.startOffsetY, rotate: base.rotate }
   }
 
@@ -443,7 +475,7 @@ export function PhotoStack({ className }: { className?: string }) {
                   height={height}
                   decoding="async"
                   loading="eager"
-                  fetchPriority={cardId === 0 ? 'high' : undefined}
+                  fetchPriority={cardId === startOrder[0] ? 'high' : undefined}
                   style={{
                     objectPosition: `${imagePos[cardId].posX}% ${imagePos[cardId].posY}%`,
                     filter: cardId === 4 ? gradeFilter : undefined,

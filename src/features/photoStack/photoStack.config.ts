@@ -6,6 +6,14 @@ export const PHOTO_STACK_CONFIG = {
     radius: [20, 0, 40, 1] as [number, number, number, number],
     shadow: [0.22, 0, 1, 0.01] as [number, number, number, number],
   },
+  /** Which photo starts in each position. Duplicates resolve first-wins; unpicked photos fill the gaps. */
+  order: {
+    front: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 1' },
+    second: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 2' },
+    third: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 3' },
+    fourth: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 4' },
+    back: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 5' },
+  },
   images: {
     _collapsed: true,
     image1: {

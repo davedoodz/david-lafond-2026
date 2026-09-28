@@ -79,16 +79,24 @@
     }
   },
   "Photo stack": {
+    "images": {
+      "image5": {
+        "brightness": 1.29,
+        "contrast": 1.11,
+        "saturation": 1.18
+      }
+    },
     "topHover": {
       "preset": "tilt-left"
     },
     "backHover": {
       "second": {
         "pullX": 136,
-        "pullY": -34
+        "pullY": -24
       },
       "third": {
-        "pullX": 136
+        "pullX": 136,
+        "pullY": -7
       }
     },
     "caption": {
@@ -106,7 +114,8 @@
         "image1": "Bonjour! Meet a few of my many forms 👽 🌀",
         "image2": "Yo yo yo MC Dave on da mic 🎤 🪩",
         "image3": "Can't be Canadian and not skii ⛷️ ❄️",
-        "image4": "Sleep deprived @ MIT's MAD workshop 🦫 🛠️"
+        "image4": "Sleep deprived @ MIT's MAD workshop 🦫 🛠️",
+        "image5": "In my natural element 🌳 🌱"
       }
     },
     "cycle": {
