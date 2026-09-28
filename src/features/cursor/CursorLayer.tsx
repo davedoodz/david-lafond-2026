@@ -144,8 +144,12 @@ export function CursorLayer() {
       endPress()
     }
     // Highlighting may only start on the text itself; elsewhere the drag is ink.
+    // Blocking the default also blocks the native click-away deselect, so clear
+    // any highlight here — otherwise the ink sees a live selection and stops.
     const onMouseDown = (event: MouseEvent): void => {
-      if (!allowsSelectionStart(event)) event.preventDefault()
+      if (allowsSelectionStart(event)) return
+      event.preventDefault()
+      document.getSelection()?.removeAllRanges()
     }
     const onResize = (): void => {
       engine.resize()
