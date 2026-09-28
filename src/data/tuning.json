@@ -161,7 +161,7 @@
       "exitPx": 144,
       "exit": {
         "type": "easing",
-        "duration": 0.35,
+        "duration": 0.7,
         "ease": [
           0.5,
           0,
@@ -169,7 +169,7 @@
           0
         ]
       },
-      "fadeInMs": 700
+      "fadeInMs": 1400
     },
     "motion": {
       "fillMs": 270,

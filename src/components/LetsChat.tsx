@@ -41,7 +41,7 @@ const CONFIG = {
     /** After the circle exits: how long the button stays gone before fading back. */
     reappearDelayMs: [0, 0, 3000, 10] as [number, number, number, number],
     /** How long the button takes to fade back in. */
-    fadeInMs: [700, 0, 3000, 10] as [number, number, number, number],
+    fadeInMs: [1400, 0, 3000, 10] as [number, number, number, number],
     /** The cursor dot is pulled into the circle and drips back out on leave. */
     absorbCursor: true,
   },
