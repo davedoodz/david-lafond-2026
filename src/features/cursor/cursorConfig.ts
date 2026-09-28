@@ -9,6 +9,12 @@ export const CURSOR_CONFIG = {
     smoothing: [0.35, 0, 0.9, 0.01] as [number, number, number, number],
     _collapsed: false,
   },
+  hover: {
+    scale: [2, 1, 4, 0.05] as [number, number, number, number],
+    opacity: [0.5, 0.05, 1, 0.01] as [number, number, number, number],
+    durationMs: [220, 0, 800, 10] as [number, number, number, number],
+    _collapsed: false,
+  },
   ink: {
     enabled: true,
     width: [2.6, 0.5, 6, 0.1] as [number, number, number, number],

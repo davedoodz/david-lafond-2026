@@ -42,7 +42,8 @@
   border-radius: 50%;
   background: var(--cur-color-dark, #f5f5f5);
   transition:
-    scale 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    scale var(--cur-hover-ms, 220ms) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity var(--cur-hover-ms, 220ms) ease,
     background-color 140ms ease;
 }
 
@@ -54,12 +55,24 @@
   scale: var(--cur-pressed-scale);
 }
 
+/* Over anything clickable: grows and turns translucent (tuned in "Cursor & ink" → hover). */
+.cur-dot.is-hover::before {
+  scale: var(--cur-hover-scale);
+  opacity: var(--cur-hover-opacity);
+}
+
+.cur-dot.is-hover.is-pressed::before {
+  scale: calc(var(--cur-hover-scale) * var(--cur-pressed-scale));
+}
+
 .cur-dot.is-light::before {
   background: var(--cur-color-light, #171717);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cur-dot::before {
-    transition: background-color 140ms ease;
+    transition:
+      opacity 140ms ease,
+      background-color 140ms ease;
   }
 }

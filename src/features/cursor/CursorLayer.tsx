@@ -20,6 +20,10 @@ function useFinePointer(): boolean {
   return fine
 }
 
+/** Anything the dot should treat as clickable (grows + turns translucent over it). */
+const CLICKABLE_SELECTOR =
+  'a[href], button:not(:disabled), [role="button"], summary, select, label[for], input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"]'
+
 /**
  * The white dot cursor and its click-drag ink trail — ported in spirit from
  * ditto's `public/app.js` (cursor dot) and `public/draw.js` (ink). Mount once
@@ -76,6 +80,7 @@ export function CursorLayer() {
     let visible = false
     let pressed = false
     let isLight = false
+    let isHover = false
 
     const paint = (): void => {
       frame = 0
@@ -109,6 +114,13 @@ export function CursorLayer() {
       canvas.classList.toggle('is-light', light)
     }
 
+    const applyHover = (target: EventTarget | null): void => {
+      const hover = target instanceof Element && Boolean(target.closest(CLICKABLE_SELECTOR))
+      if (hover === isHover) return
+      isHover = hover
+      dot.classList.toggle('is-hover', hover)
+    }
+
     const onPointerMove = (event: PointerEvent): void => {
       if (event.pointerType !== 'mouse') return
       rawX = event.clientX
@@ -116,11 +128,13 @@ export function CursorLayer() {
       show()
       request()
       applySurface(event.target)
+      applyHover(event.target)
       engine.move(event)
     }
     const onPointerOver = (event: PointerEvent): void => {
       if (event.pointerType !== 'mouse') return
       applySurface(event.target)
+      applyHover(event.target)
     }
     const onPointerDown = (event: PointerEvent): void => {
       if (event.pointerType !== 'mouse' || event.button !== 0) return
@@ -196,6 +210,9 @@ export function CursorLayer() {
           ['--cur-pressed-scale' as string]: tuning.dot.pressedScale,
           ['--cur-color-dark' as string]: tuning.ink.colorDark,
           ['--cur-color-light' as string]: tuning.ink.colorLight,
+          ['--cur-hover-scale' as string]: tuning.hover.scale,
+          ['--cur-hover-opacity' as string]: tuning.hover.opacity,
+          ['--cur-hover-ms' as string]: `${tuning.hover.durationMs}ms`,
         }}
       />
     </>
