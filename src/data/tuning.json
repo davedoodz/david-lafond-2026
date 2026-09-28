@@ -29,5 +29,10 @@
       "footerHintSelect": "",
       "footerHintClose": ""
     }
+  },
+  "Dither bands": {
+    "header": {
+      "color": "#676767"
+    }
   }
 }
