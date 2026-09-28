@@ -136,3 +136,8 @@
     scale: 1.2 0.85;
   }
 }
+
+/* Hidden over a control that shows its own affordance (Let's chat). Beats the keyframes. */
+.cur-dot.is-hidden {
+  opacity: 0 !important;
+}

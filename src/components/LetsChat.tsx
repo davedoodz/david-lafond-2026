@@ -132,7 +132,11 @@ export function LetsChat() {
     setMorphPx(px)
     if (t.morph.absorbCursor) absorbCursor(rect.left + px, rect.top + h / 2)
   }
+  const onPointerEnter = (event: PointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType === 'mouse') window.dispatchEvent(new Event('cursor:hide'))
+  }
   const onPointerLeave = () => {
+    window.dispatchEvent(new Event('cursor:show'))
     if (exiting) return
     if (morphPx !== null) unmorph(false)
     morphSpent.current = false
@@ -248,6 +252,7 @@ export function LetsChat() {
     <a
       className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}${morphPx !== null ? ' is-morph' : ''}${white ? ' is-white' : ''}${exiting ? ' is-exit' : ''}${fadingIn ? ' is-fadein' : ''}`}
       onPointerMove={onPointerMove}
+      onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
       href={href}
       data-hover={t.hover.preset}

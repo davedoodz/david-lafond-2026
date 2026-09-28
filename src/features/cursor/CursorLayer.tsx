@@ -228,6 +228,11 @@ export function CursorLayer() {
       if (event.animationName === 'cur-emerge') dot.classList.remove('is-emerging')
     }
 
+    const onHide = (): void => dot.classList.add('is-hidden')
+    const onShow = (): void => dot.classList.remove('is-hidden')
+
+    window.addEventListener('cursor:hide', onHide)
+    window.addEventListener('cursor:show', onShow)
     window.addEventListener('cursor:absorb', onAbsorb)
     window.addEventListener('cursor:release', onRelease)
     dot.addEventListener('animationend', onEmerged)
@@ -242,6 +247,8 @@ export function CursorLayer() {
     window.addEventListener('resize', onResize)
 
     return () => {
+      window.removeEventListener('cursor:hide', onHide)
+      window.removeEventListener('cursor:show', onShow)
       window.removeEventListener('cursor:absorb', onAbsorb)
       window.removeEventListener('cursor:release', onRelease)
       dot.removeEventListener('animationend', onEmerged)
