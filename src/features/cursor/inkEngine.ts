@@ -42,6 +42,9 @@ type Stroke = {
   maxX: number
   maxY: number
   fadeAt: number
+  /** Page scroll when the stroke began; the stroke is drawn offset by any scroll since, so it stays put on the page. */
+  scrollX: number
+  scrollY: number
 }
 
 function isBlocked(target: EventTarget | null): boolean {
@@ -79,8 +82,9 @@ function widthForSpeed(speed: number, base: number): number {
   return Math.max(base * 0.5, Math.min(base * 1.35, base * 1.45 - speed * 1.5))
 }
 
-function position(event: PointerEvent): Point {
-  return { x: event.clientX, y: event.clientY, t: event.timeStamp }
+/** Pointer position in the stroke's own space: viewport coords at the scroll the stroke began with. */
+function position(event: PointerEvent, stroke: Stroke): Point {
+  return { x: event.clientX + window.scrollX - stroke.scrollX, y: event.clientY + window.scrollY - stroke.scrollY, t: event.timeStamp }
 }
 
 export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions): InkEngine {
@@ -121,12 +125,14 @@ export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions):
 
     let fading = false
     let nextFade = Infinity
+    const scrollX = window.scrollX
+    const scrollY = window.scrollY
     for (const stroke of strokes) {
       const fadeProgress = stroke.fadeAt === Infinity ? 0 : clamp01((now - stroke.fadeAt) / options.fadeMs)
       if (fadeProgress > 0) fading = true
       else nextFade = Math.min(nextFade, stroke.fadeAt)
       output.globalAlpha = 1 - smootherstep(fadeProgress)
-      output.drawImage(stroke.bitmap, stroke.x, stroke.y)
+      output.drawImage(stroke.bitmap, stroke.x + Math.round((stroke.scrollX - scrollX) * dpr), stroke.y + Math.round((stroke.scrollY - scrollY) * dpr))
     }
     output.globalAlpha = 1
 
@@ -162,7 +168,10 @@ export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions):
     context.setTransform(dpr, 0, 0, dpr, 0, 0)
     context.lineCap = 'round'
     context.lineJoin = 'round'
-    return { bitmap, context, color, x: 0, y: 0, minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity, fadeAt: Infinity }
+    return {
+      bitmap, context, color, x: 0, y: 0, minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity, fadeAt: Infinity,
+      scrollX: window.scrollX, scrollY: window.scrollY,
+    }
   }
 
   /** Graphite texture: a velocity-tapered core plus fine edge grain. */
@@ -216,6 +225,12 @@ export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions):
 
   sizeCanvas()
 
+  // Strokes are anchored to the page, so scrolling must repaint them at their new offset.
+  const onScroll = (): void => {
+    if (strokes.length) requestFrame()
+  }
+  window.addEventListener('scroll', onScroll, { passive: true })
+
   return {
     setOptions: next => {
       options = next
@@ -231,7 +246,7 @@ export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions):
       surfaceOnBegin = owner?.dataset.surface === 'light' ? 'light' : 'dark'
       active = makeStroke(surfaceOnBegin === 'light' ? options.colorLight : options.colorDark)
       strokes.push(active)
-      last = position(event)
+      last = position(event, active)
       lastWidth = options.width
       stamp(last, { ...last, x: last.x + 0.01, y: last.y + 0.01 }, lastWidth)
     },
@@ -243,7 +258,7 @@ export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions):
       }
       const events = event.getCoalescedEvents?.() ?? [event]
       for (const sample of events.length ? events : [event]) {
-        const point = position(sample)
+        const point = position(sample, active)
         if (!last) {
           last = point
           continue
@@ -280,6 +295,7 @@ export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions):
       requestFrame()
     },
     destroy: () => {
+      window.removeEventListener('scroll', onScroll)
       if (frame) cancelAnimationFrame(frame)
       clearTimeout(timer)
       strokes = []
