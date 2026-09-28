@@ -14,11 +14,11 @@ function internalLink(route: Route) {
   }
 }
 
+/** Contact lives in the footer, so the link goes all the way to the bottom of the page. */
 function scrollToContact(event: MouseEvent<HTMLAnchorElement>) {
-  const target = document.getElementById('contact')
-  if (!target) return
   event.preventDefault()
-  target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: reduce ? 'auto' : 'smooth' })
 }
 
 export function Nav({ route }: Props) {
