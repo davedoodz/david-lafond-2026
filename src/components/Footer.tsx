@@ -20,8 +20,8 @@ const CONFIG = {
 /** Each click flips the name to the next emoji, then back to the name after the fifth. */
 const PLACES = [
   { name: 'Boston', emoji: ['🦞', '🏛️', '⚾', '🍂', '🍩'] },
-  { name: 'Montréal', emoji: ['🥯', '🍁', '🏒', '❄️', '🍟'] },
-  { name: 'Saigon', emoji: ['🍜', '🛵', '☕', '🥖', '🌶️'] },
+  { name: 'Montréal', emoji: ['🫎', '🍁', '🏒', '❄️', '🇨🇦'] },
+  { name: 'Saigon', emoji: ['🍜', '🏮', '☕', '🥖', '🌶️'] },
 ]
 
 function Place({ name, emoji }: (typeof PLACES)[number]) {
@@ -43,7 +43,7 @@ function Place({ name, emoji }: (typeof PLACES)[number]) {
         {name}
       </span>
       {/* Keyed so each change replays the flip. */}
-      <span key={step} className={flipped ? 'footer__place-face is-flip' : 'footer__place-face'}>
+      <span key={step} className={`footer__place-face${flipped ? ' is-flip' : ''}${step ? ' is-emoji' : ''}`}>
         {label}
       </span>
     </button>

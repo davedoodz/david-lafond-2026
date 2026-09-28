@@ -66,6 +66,11 @@
 .footer__place-face {
   display: inline-block;
 }
+/* Emojis read small at text size; scaled (not resized) so the row never shifts. */
+.footer__place-face.is-emoji {
+  scale: 1.5;
+  transform-origin: right center;
+}
 .footer__place-face.is-flip {
   animation: footer-flip 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
