@@ -100,6 +100,33 @@ export function DavebotLayer() {
   return <AnimatePresence>{open && <DavebotPanel />}</AnimatePresence>
 }
 
+/**
+ * x/y/scale that land the big ghost's drawn mark exactly on the nav ghost's drawn mark
+ * (`.ghost-mark`, not the padded button box, so the hand-off has no size or position jump).
+ * `x`, `y`, `scale` are the wrap's current motion values; they're factored out so the
+ * measurement is correct even mid-animation. Scale pivots on the wrap's centre.
+ */
+function measureFlight(trigger: HTMLElement | null, wrap: HTMLElement | null, x: number, y: number, scale: number) {
+  const fromEl = trigger?.querySelector('.ghost-mark') ?? trigger
+  const toEl = wrap?.querySelector('.ghost-mark') ?? wrap
+  if (!fromEl || !toEl || !wrap || scale <= 0) return null
+  const from = fromEl.getBoundingClientRect()
+  const to = toEl.getBoundingClientRect()
+  const w = wrap.getBoundingClientRect()
+  if (!from.width || !to.width) return null
+  // Untransformed wrap centre, and the mark's centre offset from it at scale 1.
+  const wx = w.left + w.width / 2 - x
+  const wy = w.top + w.height / 2 - y
+  const ox = (to.left + to.width / 2 - (w.left + w.width / 2)) / scale
+  const oy = (to.top + to.height / 2 - (w.top + w.height / 2)) / scale
+  const nextScale = (from.width / to.width) * scale
+  return {
+    x: from.left + from.width / 2 - wx - ox * nextScale,
+    y: from.top + from.height / 2 - wy - oy * nextScale,
+    scale: nextScale,
+  }
+}
+
 function DavebotPanel() {
   const tuning = useTuning(DAVEBOT_PANEL, DAVEBOT_CONFIG)
   const reducedMotion = Boolean(useReducedMotion())
@@ -144,12 +171,11 @@ function DavebotPanel() {
     let raf1 = 0
     let raf2 = 0
     raf1 = requestAnimationFrame(() => {
-      const from = trigger?.getBoundingClientRect()
-      const to = ghostWrapRef.current?.getBoundingClientRect()
-      if (from && to && from.width && to.width) {
-        ghostX.set(from.left + from.width / 2 - (to.left + to.width / 2))
-        ghostY.set(from.top + from.height / 2 - (to.top + to.height / 2))
-        ghostScale.set(from.width / to.width)
+      const flight = measureFlight(trigger, ghostWrapRef.current, ghostX.get(), ghostY.get(), ghostScale.get())
+      if (flight) {
+        ghostX.set(flight.x)
+        ghostY.set(flight.y)
+        ghostScale.set(flight.scale)
       }
       raf2 = requestAnimationFrame(() => {
         const morph = reducedMotion ? { duration: 0.001 } : toMotionTransition(tuningRef.current.ghost.morph)
@@ -209,17 +235,10 @@ function DavebotPanel() {
     closingRef.current = true
     answerRunRef.current += 1
     abortRef.current?.abort()
-    const trigger = getDavebotTrigger()
-    const from = trigger?.getBoundingClientRect()
-    const to = ghostWrapRef.current?.getBoundingClientRect()
-    let dx = 0
-    let dy = 0
-    let scale = 1
-    if (from && to && from.width && to.width) {
-      dx = from.left + from.width / 2 - (to.left + to.width / 2)
-      dy = from.top + from.height / 2 - (to.top + to.height / 2)
-      scale = from.width / to.width
-    }
+    const flight = measureFlight(getDavebotTrigger(), ghostWrapRef.current, ghostX.get(), ghostY.get(), ghostScale.get())
+    const dx = flight?.x ?? 0
+    const dy = flight?.y ?? 0
+    const scale = flight?.scale ?? 1
     // Exit mirrors the entrance: same morph spring for the ghost flight and panel, same fade.
     const morph = reducedMotion ? { duration: 0.001 } : toMotionTransition(tuningRef.current.ghost.morph)
     const fade = reducedMotion ? { duration: 0.001 } : { duration: 0.22 }
