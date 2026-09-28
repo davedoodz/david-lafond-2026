@@ -30,7 +30,6 @@
   opacity: 0;
 }
 
-[data-sheet='folder'][data-folder='files'] .sheet__layer,
 [data-sheet='stack'] .sheet__layer,
 [data-sheet='deck'] .sheet__layer {
   opacity: 1;
@@ -65,16 +64,3 @@
   z-index: 2;
 }
 
-/* Folder ghosts: full width, same folder outline with the tab moved right. */
-[data-sheet='folder'] .sheet__layer {
-  inset-inline: 0;
-  border-radius: 0;
-}
-
-[data-sheet='folder'] .sheet__layer[data-layer='1'] {
-  clip-path: var(--sheet-clip-1);
-}
-
-[data-sheet='folder'] .sheet__layer[data-layer='2'] {
-  clip-path: var(--sheet-clip-2);
-}

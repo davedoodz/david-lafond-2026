@@ -1,6 +1,4 @@
 .works {
-  --works-inset: 2.8vw;
-  --works-radius: var(--works-radius-d);
   --works-card-radius: var(--works-card-radius-d);
   position: relative;
   color: var(--ink-900);
@@ -12,12 +10,12 @@
   inset: 0;
   z-index: -1;
   background: var(--paper);
-  clip-path: inset(0 var(--works-inset) round var(--works-radius-live, var(--works-radius)));
+  clip-path: var(--works-clip, inset(0));
   will-change: clip-path;
 }
 
 .works__inner {
-  padding: 33px 0 138px;
+  padding: var(--works-top-d) 0 var(--works-bottom-d);
 }
 
 .works__eyebrow {
@@ -26,10 +24,10 @@
 
 .works__list {
   list-style: none;
-  margin: 73px 0 0;
+  margin: var(--works-label-gap-d) 0 0;
   padding: 0;
   display: grid;
-  gap: 93px;
+  gap: var(--works-gap-d);
   justify-items: center;
 }
 
@@ -87,15 +85,14 @@ li:last-child > .works__card .card-shade {
 
 @media (max-width: 640px) {
   .works {
-    --works-radius: var(--works-radius-m);
     --works-card-radius: var(--works-card-radius-m);
   }
   .works__inner {
-    padding: 29px 0 41px;
+    padding: var(--works-top-m) 0 var(--works-bottom-m);
   }
   .works__list {
-    margin-top: 35px;
-    gap: 34px;
+    margin-top: var(--works-label-gap-m);
+    gap: var(--works-gap-m);
   }
   .works__title {
     --title-size: var(--works-title-m);
@@ -110,12 +107,6 @@ li:last-child > .works__card .card-shade {
   }
 }
 
-.works {
-  --sheet-color: var(--paper);
-  --sheet-under: var(--ink-900);
-  --sheet-layer-radius: var(--works-radius);
-}
-
 .works__eyebrow {
   font-size: var(--label-size-d);
 }
@@ -125,31 +116,27 @@ li:last-child > .works__card .card-shade {
   height: var(--label-arrow);
 }
 
-/* Folder: the label rides on the tab, in front of the lower right edge. */
-.works[data-sheet='folder'] .works__eyebrow {
-  position: absolute;
-  z-index: 1;
-  left: var(--label-x-d);
-  top: var(--label-y-d);
-  margin: 0;
-  width: max-content;
-}
-
-.works[data-sheet='folder'] .works__inner {
-  padding-top: calc(50px + var(--folder-tab));
-}
-
 @media (max-width: 640px) {
   .works__eyebrow {
     font-size: var(--label-size-m);
   }
-  .works[data-sheet='folder'] .works__eyebrow {
-    left: var(--label-x-m);
-    top: var(--label-y-m);
-  }
-  .works[data-sheet='folder'] .works__inner {
-    padding-top: calc(29px + var(--folder-tab) * 0.6);
-  }
+}
+
+/* Scroll snap (spacing → snap): one project centred per stop. */
+html[data-works-snap='proximity'] {
+  scroll-snap-type: y proximity;
+}
+
+html[data-works-snap='mandatory'] {
+  scroll-snap-type: y mandatory;
+}
+
+html[data-works-snap] .landing {
+  scroll-snap-align: start;
+}
+
+html[data-works-snap] .works__card {
+  scroll-snap-align: center;
 }
 
 /* Whole-card link for works with a project page. */

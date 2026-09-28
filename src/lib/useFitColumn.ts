@@ -18,10 +18,14 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
       root.style.removeProperty('--column-fit')
       const columns = root.querySelectorAll<HTMLElement>('.column')
       if (!columns.length) return
-      const left = Math.min(...Array.from(columns, (col) => col.getBoundingClientRect().left))
-      let right = left
+      // Measure every column left-aligned and from its own left edge, so the
+      // centre-align option and X offsets don't inflate the shared width.
+      root.dataset.fitMeasuring = ''
+      let width = 0
       const range = document.createRange()
       for (const col of columns) {
+        const left = col.getBoundingClientRect().left
+        let right = left
         const walker = document.createTreeWalker(col, NodeFilter.SHOW_TEXT)
         for (let node = walker.nextNode(); node; node = walker.nextNode()) {
           if (!node.textContent?.trim()) continue
@@ -29,9 +33,11 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
           for (const rect of range.getClientRects()) right = Math.max(right, rect.right)
         }
         for (const box of col.querySelectorAll(BOX_SELECTOR)) right = Math.max(right, box.getBoundingClientRect().right)
+        width = Math.max(width, right - left)
       }
       range.detach()
-      root.style.setProperty('--column-fit', `${Math.ceil(right - left)}px`)
+      delete root.dataset.fitMeasuring
+      root.style.setProperty('--column-fit', `${Math.ceil(width)}px`)
     }
 
     let frame = 0

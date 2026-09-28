@@ -144,6 +144,28 @@ h3 {
   margin-inline: auto;
 }
 
+/* Text block alignment option (Hero / Contact CTA → align). The block stays
+   centred on the page; --align-x nudges it from there. */
+.column[data-align] {
+  translate: var(--align-x, 0px) 0;
+}
+
+.column[data-align='center'] {
+  text-align: center;
+}
+
+.column[data-align='center'] > * {
+  margin-inline: auto;
+}
+
+[data-fit-measuring] .column {
+  text-align: left;
+}
+
+[data-fit-measuring] .column > * {
+  margin-inline: 0;
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;

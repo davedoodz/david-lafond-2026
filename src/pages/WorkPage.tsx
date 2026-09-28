@@ -21,25 +21,33 @@ const CONFIG = {
   },
   name: { type: 'text' as const, default: 'David Lafond' },
   role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
-  peekDesktop: [76, 0, 240, 1] as [number, number, number, number],
-  peekMobile: [64, 0, 240, 1] as [number, number, number, number],
+  /** Text block: left- or centre-aligned; `x` nudges it from the page centre (px). */
+  align: {
+    text: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    x: [0, -400, 400, 1] as [number, number, number, number],
+  },
+  peekDesktop: [40, 0, 240, 1] as [number, number, number, number],
+  peekMobile: [28, 0, 240, 1] as [number, number, number, number],
 }
 
 export function WorkPage() {
   const t = useTuning('Hero', CONFIG)
   const mainRef = useRef<HTMLElement>(null)
-  const landingRef = useRef<HTMLDivElement>(null)
   const entrance = useEntrance()
   useFitColumn(mainRef)
   return (
     <main ref={mainRef} className="work">
       <div
-        ref={landingRef}
         className="landing"
         style={{ '--peek-d': `${t.peekDesktop}px`, '--peek-m': `${t.peekMobile}px` } as CSSProperties}
       >
         <Nav route="work" />
-        <section className={`hero column ${entrance.className}`} style={entrance.style} aria-labelledby="hero-title">
+        <section
+          className={`hero column ${entrance.className}`}
+          data-align={t.align.text}
+          style={{ ...entrance.style, '--align-x': `${t.align.x}px` } as CSSProperties}
+          aria-labelledby="hero-title"
+        >
           <h1 id="hero-title" className="hero__title" data-enter="0">
             {t.headline} <em>{t.headlineEmphasis}</em>
           </h1>
@@ -50,7 +58,7 @@ export function WorkPage() {
           <Signature className="hero__signature" />
         </section>
       </div>
-      <SelectedWorks underRef={landingRef} />
+      <SelectedWorks />
       <ContactCta />
     </main>
   )

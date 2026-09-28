@@ -25,10 +25,10 @@ export function ArrowDownIcon({ className }: IconProps) {
   )
 }
 
-export function ArrowDownLeftIcon({ className }: IconProps) {
+export function ArrowDownRightIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="currentColor" d="M5 19V7h2v8.6L16.6 6 18 7.4 8.4 17H17v2z" />
+      <path fill="currentColor" d="M19 19V7h-2v8.6L7.4 6 6 7.4l9.6 9.6H7v2z" />
     </svg>
   )
 }

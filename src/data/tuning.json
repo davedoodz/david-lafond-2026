@@ -64,21 +64,11 @@
   },
   "Selected works": {
     "morph": {
-      "preset": "custom",
-      "curve": "smoother",
-      "customSideStart": 12.7,
-      "customSideEnd": 0,
-      "customRadiusStart": 33,
-      "customRadiusEnd": 30
+      "curve": "smoother"
     },
-    "width": {
-      "shrinkDistance": 0.61,
-      "widenStart": 0,
-      "widenDistance": 1.5,
-      "peek": 240
-    },
-    "sheet": {
-      "preset": "folder"
+    "label": {
+      "arrow": "down-right",
+      "arrowSize": 1
     },
     "hover": {
       "durationMs": 410
