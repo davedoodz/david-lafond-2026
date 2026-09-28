@@ -107,6 +107,12 @@ li:last-child > .works__card .card-shade {
   .works__list {
     gap: var(--works-gap-m);
   }
+  .works__list > li {
+    width: calc(100% - 2 * var(--works-card-margin-m));
+  }
+  .works__card {
+    aspect-ratio: var(--works-card-ratio-m);
+  }
   .works__title {
     --title-size: var(--works-title-m);
     --title-x: 16px;

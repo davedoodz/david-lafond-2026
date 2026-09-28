@@ -104,7 +104,11 @@ const CONFIG = {
   shape: {
     cardRadiusDesktop: [25, 0, 60, 1] as Tuple,
     cardRadiusMobile: [11, 0, 40, 1] as Tuple,
-    _collapsed: true,
+    /** Mobile thumbnail width: space left on each side of the screen (px). */
+    cardMarginMobile: [41, 0, 150, 1] as Tuple,
+    /** Mobile thumbnail height as % of its width (57 = desktop's 867 × 493). */
+    cardHeightMobile: [57, 25, 200, 1] as Tuple,
+    _collapsed: false,
   },
   /** "Selected works" label above the first project. */
   label: {
@@ -308,6 +312,8 @@ export function SelectedWorks() {
   const style = {
     '--works-card-radius-d': `${t.shape.cardRadiusDesktop}px`,
     '--works-card-radius-m': `${t.shape.cardRadiusMobile}px`,
+    '--works-card-margin-m': `${t.shape.cardMarginMobile}px`,
+    '--works-card-ratio-m': `100 / ${t.shape.cardHeightMobile}`,
     '--works-title-d': `${t.titles.sizeDesktop}px`,
     '--works-title-m': `${t.titles.sizeMobile}px`,
     '--card-title-shadow': `0 0 ${t.titles.shadowBlur}px rgb(255 255 255 / ${t.titles.shadowOpacity})`,
