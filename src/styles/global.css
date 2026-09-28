@@ -228,17 +228,3 @@ h3 {
   background: var(--paper);
   color: var(--ink-950);
 }
-
-/* TEST (may revert): no text highlighting anywhere; form fields stay selectable
-   so typing and caret placement still work. */
-html {
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-input,
-textarea,
-[contenteditable='true'] {
-  -webkit-user-select: text;
-  user-select: text;
-}
