@@ -1,14 +1,13 @@
 /**
- * "Let's chat" pill. Hover only tints it gray; the click plays the whole move
- * (fill → collapse from the left into a circle around the arrow, inspired by
- * cosmos.so → arrow slides right), and the visitor's mail app opens once the
- * arrow has arrived.
+ * "Let's chat" pill. Hover only tints it gray; the click plays the whole move,
+ * and the visitor's mail app opens once the circle has arrived.
  *
- *   hover      0ms                       gray fill                          (hover)
- *   click      0ms                       fill white, text turns dark        (fill)
- *              delay                     left edge sweeps right → circle    (collapse)
- *              delay+collapse            arrow slides right by `nudge`      (nudge)
- *              …+nudge+openDelay         mailto: opens
+ *   hover      gray fill                                                     (hover)
+ *   click      fill white; left edge sweeps right → circle around the arrow   (armed)
+ *              circle, arrow fixed inside it, slides to the pill's start      (travel)
+ *              mailto: opens (+openDelay)
+ *              hold, then fade back to the outline                           (return)
+ *              pill grows back out to the right from the start                (idle)
  */
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { TransitionConfig } from 'dialkit'
@@ -37,13 +36,18 @@ const CONFIG = {
     fillMs: [160, 0, 800, 10] as [number, number, number, number],
     collapseDelayMs: [110, 0, 800, 10] as [number, number, number, number],
     collapse: { type: 'easing' as const, duration: 0.5, ease: [0.65, 0, 0.25, 1] as [number, number, number, number] },
-    expand: { type: 'easing' as const, duration: 0.38, ease: [0.3, 0, 0.2, 1] as [number, number, number, number] },
+    /** The circle sliding to the start of the pill. */
+    travel: { type: 'easing' as const, duration: 0.6, ease: [0.65, 0, 0.35, 1] as [number, number, number, number] },
+    /** The pill growing back out from the start. */
+    expand: { type: 'easing' as const, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   },
   click: {
-    nudgePx: [7, 0, 40, 1] as [number, number, number, number],
-    nudgeMs: [220, 60, 800, 10] as [number, number, number, number],
-    /** Pause after the arrow arrives, before the mail app opens. */
+    /** Pause after the circle arrives, before the mail app opens. */
     openDelayMs: [0, 0, 1200, 10] as [number, number, number, number],
+    /** How long the circle rests at the start before fading back. */
+    holdMs: [500, 0, 2000, 10] as [number, number, number, number],
+    /** White circle → outline, before the pill grows back. */
+    fadeMs: [250, 0, 1000, 10] as [number, number, number, number],
   },
 }
 
@@ -53,34 +57,34 @@ function cssTransition(curve: TransitionConfig) {
   return { duration: `${curve.visualDuration ?? 0.5}s`, ease: 'cubic-bezier(0.22, 1, 0.36, 1)' }
 }
 
+type Phase = 'idle' | 'armed' | 'travel' | 'return'
+
 export function LetsChat() {
   const t = useTuning('Let’s chat', CONFIG)
-  const [armed, setArmed] = useState(false)
-  const [sending, setSending] = useState(false)
+  const [phase, setPhase] = useState<Phase>('idle')
   const timers = useRef<number[]>([])
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
 
   const href = mailtoUrl(t.email.subject, t.email.body)
   const collapse = cssTransition(t.motion.collapse)
   const expand = cssTransition(t.motion.expand)
+  const travel = cssTransition(t.motion.travel)
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    if (armed) return
-    // Circle first, then the arrow; the mail app opens once the arrow has arrived.
-    setArmed(true)
-    const circleMs = t.motion.collapseDelayMs + parseFloat(collapse.duration) * 1000
-    const openAt = circleMs + t.click.nudgeMs + t.click.openDelayMs
+    if (phase !== 'idle') return
+    setPhase('armed')
+    const travelAt = t.motion.collapseDelayMs + parseFloat(collapse.duration) * 1000
+    const arriveAt = travelAt + parseFloat(travel.duration) * 1000
+    const returnAt = arriveAt + t.click.holdMs
     timers.current.push(
-      window.setTimeout(() => setSending(true), circleMs),
+      window.setTimeout(() => setPhase('travel'), travelAt),
       window.setTimeout(() => {
         window.location.href = href
-      }, openAt),
-      window.setTimeout(() => {
-        setSending(false)
-        setArmed(false)
-      }, openAt + 600),
+      }, arriveAt + t.click.openDelayMs),
+      window.setTimeout(() => setPhase('return'), returnAt),
+      window.setTimeout(() => setPhase('idle'), returnAt + t.click.fadeMs),
     )
   }
 
@@ -92,15 +96,16 @@ export function LetsChat() {
     '--chat-delay': `${t.motion.collapseDelayMs}ms`,
     '--chat-collapse': collapse.duration,
     '--chat-collapse-ease': collapse.ease,
+    '--chat-travel': travel.duration,
+    '--chat-travel-ease': travel.ease,
     '--chat-expand': expand.duration,
     '--chat-expand-ease': expand.ease,
-    '--chat-nudge': `${t.click.nudgePx}px`,
-    '--chat-nudge-ms': `${t.click.nudgeMs}ms`,
+    '--chat-fade': `${t.click.fadeMs}ms`,
   } as CSSProperties
 
   return (
     <a
-      className={`chat${armed ? ' is-armed' : ''}${sending ? ' is-sending' : ''}`}
+      className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}`}
       href={href}
       onClick={onClick}
       style={style}

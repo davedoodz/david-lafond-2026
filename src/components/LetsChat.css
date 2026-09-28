@@ -1,3 +1,16 @@
+/*
+ * States (class on .chat, set by LetsChat.tsx):
+ *   idle        outline pill
+ *   :hover      gray fill only
+ *   is-armed    white fill, left edge sweeps right into a circle around the arrow
+ *   is-travel   the circle (arrow inside, never moving within it) slides to the pill's start
+ *   is-return   circle fades back to the outline, still at the start
+ *   → idle      pill grows back out to the right from the fixed left edge
+ *
+ * The circle is the body under a circular clip at its right end; travelling moves
+ * the whole body left by (width − height). Growing back animates translate and
+ * clip-path on the same curve, so the left edge stays put while the label slides in.
+ */
 .chat {
   --chat-h: 51px;
   --chat-arrow: 24px;
@@ -10,6 +23,8 @@
 }
 
 .chat__body {
+  --chat-circle: inset(0 0 0 calc(100% - var(--chat-h)) round 999px);
+  --chat-at-start: calc(var(--chat-h) - 100%);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -20,12 +35,13 @@
   background-color: transparent;
   color: var(--paper);
   clip-path: inset(0 0 0 0 round 999px);
-  /* Leaving: expand first, then drop the fill. */
+  translate: 0 0;
   transition:
     clip-path var(--chat-expand) var(--chat-expand-ease),
-    background-color var(--chat-fill) ease var(--chat-expand),
-    border-color var(--chat-fill) ease var(--chat-expand),
-    color var(--chat-fill) ease var(--chat-expand);
+    translate var(--chat-expand) var(--chat-expand-ease),
+    background-color var(--chat-fill) ease,
+    border-color var(--chat-fill) ease,
+    color var(--chat-fill) ease;
 }
 
 .chat__label {
@@ -37,21 +53,14 @@
   width: var(--chat-arrow);
   height: var(--chat-arrow);
   flex-shrink: 0;
-  /* No overshoot: the mail app opens once the arrow has fully arrived. */
-  transition: translate var(--chat-nudge-ms) cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* Hover / keyboard focus: a gray fill only. The circle morph is reserved for the click. */
+/* Hover / keyboard focus: a gray fill only. The motion is reserved for the click. */
 @media (hover: hover) {
-  .chat:hover:not(.is-armed) .chat__body {
+  .chat:hover:not(.is-playing) .chat__body {
     background-color: var(--chat-hover-fill);
     border-color: var(--chat-hover-border);
     color: var(--chat-hover-text);
-    transition:
-      clip-path var(--chat-expand) var(--chat-expand-ease),
-      background-color var(--chat-fill) ease,
-      border-color var(--chat-fill) ease,
-      color var(--chat-fill) ease;
   }
 }
 
@@ -60,18 +69,23 @@
   outline-offset: 4px;
 }
 
-.chat:focus-visible:not(.is-armed) .chat__body {
+.chat:focus-visible:not(.is-playing) .chat__body {
   background-color: var(--chat-hover-fill);
   border-color: var(--chat-hover-border);
   color: var(--chat-hover-text);
 }
 
-/* Click: fill white, then the left edge sweeps right into a circle around the arrow. */
+.chat.is-playing .chat__label {
+  opacity: 0;
+  transition: opacity var(--chat-collapse) ease var(--chat-delay);
+}
+
+/* Click: fill white, then collapse into the circle at the right end. */
 .chat.is-armed .chat__body {
   background-color: var(--paper);
   border-color: var(--paper);
   color: var(--ink-900);
-  clip-path: inset(0 0 0 calc(100% - var(--chat-h)) round 999px);
+  clip-path: var(--chat-circle);
   transition:
     background-color var(--chat-fill) ease,
     border-color var(--chat-fill) ease,
@@ -79,13 +93,24 @@
     clip-path var(--chat-collapse) var(--chat-collapse-ease) var(--chat-delay);
 }
 
-.chat.is-armed .chat__label {
-  opacity: 0;
-  transition: opacity var(--chat-collapse) ease var(--chat-delay);
+/* The circle, arrow inside, slides to where the pill starts. */
+.chat.is-travel .chat__body {
+  background-color: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink-900);
+  clip-path: var(--chat-circle);
+  translate: var(--chat-at-start) 0;
+  transition: translate var(--chat-travel) var(--chat-travel-ease);
 }
 
-.chat.is-sending .chat__arrow {
-  translate: var(--chat-nudge) 0;
+/* At the start: fade back to the outline before growing out again. */
+.chat.is-return .chat__body {
+  clip-path: var(--chat-circle);
+  translate: var(--chat-at-start) 0;
+  transition:
+    background-color var(--chat-fade) ease,
+    border-color var(--chat-fade) ease,
+    color var(--chat-fade) ease;
 }
 
 @media (max-width: 640px) {

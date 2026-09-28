@@ -51,8 +51,11 @@
     }
   },
   "Signature": {
+    "pen": {
+      "opacity": 0.54
+    },
     "playback": {
-      "startDelayMs": 900
+      "startDelayMs": 2000
     },
     "layout": {
       "offsetX": -66,
@@ -135,7 +138,7 @@
     }
   },
   "Entrance": {
-    "durationMs": 2260,
+    "durationMs": 1400,
     "staggerMs": 200,
     "ease": "linear-ish"
   }
