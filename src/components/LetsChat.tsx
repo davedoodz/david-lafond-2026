@@ -38,6 +38,9 @@ const CONFIG = {
     shape: { type: 'easing' as const, duration: 0.35, ease: [0.3, 0, 0.2, 1] as [number, number, number, number] },
     exitPx: [220, 40, 600, 1] as [number, number, number, number],
     exit: { type: 'easing' as const, duration: 0.45, ease: [0.5, 0, 0.75, 0] as [number, number, number, number] },
+    /** After the circle exits: how long the button stays gone before fading back. */
+    reappearDelayMs: [0, 0, 3000, 10] as [number, number, number, number],
+    /** How long the button takes to fade back in. */
     fadeInMs: [350, 0, 1200, 10] as [number, number, number, number],
     /** The cursor dot is pulled into the circle and drips back out on leave. */
     absorbCursor: true,
@@ -85,6 +88,8 @@ export function LetsChat() {
   const [exiting, setExiting] = useState(false)
   const [fadingIn, setFadingIn] = useState(false)
   const morphSpent = useRef(false)
+  // Leave radius for the current morph: at least the circle's, or wider when entering at an edge/corner.
+  const morphRadius = useRef(0)
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
 
   // The outline is drawn from measured size: caps move, only the straight lines scale.
@@ -123,11 +128,13 @@ export function LetsChat() {
       // Left the circle: back to the pill until the pointer leaves the button.
       const dx = event.clientX - (rect.left + morphPx)
       const dy = event.clientY - (rect.top + h / 2)
-      if (Math.hypot(dx, dy) > h / 2) unmorph(true)
+      if (Math.hypot(dx, dy) > morphRadius.current) unmorph(true)
       return
     }
     if (morphSpent.current) return
     const px = Math.min(Math.max(event.clientX - rect.left, h / 2), rect.width - h / 2)
+    const entry = Math.hypot(event.clientX - (rect.left + px), event.clientY - (rect.top + h / 2))
+    morphRadius.current = Math.max(h / 2, entry) + 4
     setCurve('morph')
     setMorphPx(px)
     if (t.morph.absorbCursor) absorbCursor(rect.left + px, rect.top + h / 2)
@@ -150,20 +157,23 @@ export function LetsChat() {
       // Circle slides off to the right and fades, then the mail app opens and the pill fades back.
       setExiting(true)
       const exitMs = parseFloat(exit.duration) * 1000 + t.click.openDelayMs
+      const backAt = exitMs + t.morph.reappearDelayMs
       timers.current.push(
         window.setTimeout(() => {
           window.location.href = href
+        }, exitMs),
+        window.setTimeout(() => {
           setCurve('none')
           setExiting(false)
           setMorphPx(null)
           morphSpent.current = true
           setFadingIn(true)
           releaseCursor()
-        }, exitMs),
+        }, backAt),
         window.setTimeout(() => {
           setFadingIn(false)
           setCurve('expand')
-        }, exitMs + t.morph.fadeInMs),
+        }, backAt + t.morph.fadeInMs),
       )
       return
     }
