@@ -103,6 +103,8 @@ export const PHOTO_STACK_CONFIG = {
       whiteCursor: false,
       offsetX: [18, -200, 200, 1] as [number, number, number, number],
       offsetY: [16, -200, 200, 1] as [number, number, number, number],
+      /** Nudges the text inside the pill (+ = down) without changing the pill's size. */
+      textY: [0, -10, 10, 0.25] as [number, number, number, number],
       textSize: [12, 9, 28, 0.5] as [number, number, number, number],
       padX: [11, 0, 40, 0.5] as [number, number, number, number],
       padY: [6, 0, 30, 0.5] as [number, number, number, number],

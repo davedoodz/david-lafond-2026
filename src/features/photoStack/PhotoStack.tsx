@@ -413,6 +413,7 @@ export function PhotoStack({ className }: { className?: string }) {
                 '--ps-cur-size': `${values.caption.cursor.textSize}px`,
                 '--ps-cur-pad-x': `${values.caption.cursor.padX}px`,
                 '--ps-cur-pad-y': `${values.caption.cursor.padY}px`,
+                '--ps-cur-text-y': `${values.caption.cursor.textY}px`,
                 '--ps-cur-radius': `${values.caption.cursor.radius}px`,
               } as CSSProperties
             }

@@ -117,7 +117,9 @@
 .ps-caption--cursor {
   display: block;
   translate: var(--ps-cur-x, 18px) var(--ps-cur-y, 16px);
-  padding: var(--ps-cur-pad-y, 6px) var(--ps-cur-pad-x, 11px);
+  /* textY shifts padding from one side to the other: text moves, pill height stays. */
+  padding: max(0px, calc(var(--ps-cur-pad-y, 6px) + var(--ps-cur-text-y, 0px))) var(--ps-cur-pad-x, 11px)
+    max(0px, calc(var(--ps-cur-pad-y, 6px) - var(--ps-cur-text-y, 0px)));
   border-radius: var(--ps-cur-radius, 999px);
   background: #171717;
   color: #f5f5f5;

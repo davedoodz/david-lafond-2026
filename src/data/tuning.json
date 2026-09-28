@@ -94,8 +94,11 @@
     "caption": {
       "gap": 0,
       "cursor": {
+        "theme": "light",
+        "whiteCursor": true,
         "offsetX": -2,
         "offsetY": -58,
+        "textSize": 12.5,
         "padX": 16
       }
     },
