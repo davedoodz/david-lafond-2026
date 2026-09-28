@@ -85,7 +85,9 @@
     "backHover": {
       "pullX": 60,
       "pullY": -1,
-      "extraRotate": 5.2
+      "extraRotate": 5.2,
+      "pullXPerDepth": 37,
+      "rotatePerDepth": -2.5
     },
     "cycle": {
       "pullOutX": 283,
