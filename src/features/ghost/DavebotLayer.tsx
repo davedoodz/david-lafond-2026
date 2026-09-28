@@ -202,7 +202,11 @@ function DavebotPanel() {
     }
   }, [])
 
+  const closingRef = useRef(false)
   function requestClose() {
+    // The exit spring can run for most of a second; a second Esc/veil click mustn't restart it.
+    if (closingRef.current) return
+    closingRef.current = true
     answerRunRef.current += 1
     abortRef.current?.abort()
     const trigger = getDavebotTrigger()
@@ -216,14 +220,17 @@ function DavebotPanel() {
       dy = from.top + from.height / 2 - (to.top + to.height / 2)
       scale = from.width / to.width
     }
-    const closeTransition = reducedMotion ? { duration: 0.001 } : { duration: 0.16, ease: [0.4, 0, 1, 1] as const }
+    // Exit mirrors the entrance: same morph spring for the ghost flight and panel, same fade.
+    const morph = reducedMotion ? { duration: 0.001 } : toMotionTransition(tuningRef.current.ghost.morph)
+    const fade = reducedMotion ? { duration: 0.001 } : { duration: 0.22 }
     void Promise.all([
-      animate(ghostX, dx, closeTransition),
-      animate(ghostY, dy, closeTransition),
-      animate(ghostScale, scale, closeTransition),
-      animate(veilOpacity, 0, closeTransition),
-      animate(panelOpacity, 0, closeTransition),
-      animate(panelY, 4, closeTransition),
+      animate(ghostX, dx, morph),
+      animate(ghostY, dy, morph),
+      animate(ghostScale, scale, morph),
+      animate(veilOpacity, 0, fade),
+      animate(panelOpacity, 0, fade),
+      animate(panelScale, 0.97, morph),
+      animate(panelY, -8, morph),
     ]).then(closeDavebot)
   }
 
@@ -438,7 +445,10 @@ function DavebotPanel() {
       className="davebot-layer"
       data-surface="dark"
       data-no-ink
-      style={{ ['--davebot-highlight' as string]: tuning.highlight.show ? tuning.highlight.color : 'transparent' }}
+      style={{
+        ['--davebot-highlight' as string]: tuning.highlight.show ? tuning.highlight.color : 'transparent',
+        ['--davebot-veil' as string]: `rgb(0 0 0 / ${tuning.box.backdropOpacity})`,
+      }}
     >
       <motion.div className="davebot-veil" style={{ opacity: veilOpacity }} onClick={requestClose} />
       <div className="davebot-stack">

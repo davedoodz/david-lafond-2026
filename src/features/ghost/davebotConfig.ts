@@ -16,6 +16,7 @@ export const DAVEBOT_STYLES = ['classic', 'glass', 'minimal', 'soft', 'paper'] a
 export const DAVEBOT_CONFIG = {
   box: {
     style: { type: 'select' as const, options: [...DAVEBOT_STYLES], default: 'classic' },
+    backdropOpacity: [0.66, 0, 1, 0.01] as [number, number, number, number],
     _collapsed: false,
   },
   ghost: {
