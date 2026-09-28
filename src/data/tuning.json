@@ -325,6 +325,17 @@
   "Header intro": {
     "shader": {
       "durationMs": 3040
+    },
+    "ghost": {
+      "preset": "spin",
+      "delayMs": 2000,
+      "durationMs": 1940,
+      "bounce": 0.65
+    },
+    "links": {
+      "preset": "drop",
+      "delayMs": 1360,
+      "durationMs": 1750
     }
   },
   "Contributions": {

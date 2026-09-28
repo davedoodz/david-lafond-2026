@@ -16,13 +16,19 @@ const CONFIG = {
   /** First day shown (most recent occurrence on or before the latest snapshot day). */
   startMonth: [7, 1, 12, 1] as Tuple,
   startDay: [1, 1, 31, 1] as Tuple,
-  cell: [12, 6, 24, 1] as Tuple,
-  gap: [3, 1, 8, 1] as Tuple,
+  /** Size: one day square (px). The About playground panel shrinks the grid above to make room. */
+  cellDesktop: [12, 4, 24, 0.5] as Tuple,
+  cellMobile: [10, 4, 20, 0.5] as Tuple,
+  gap: [3, 1, 8, 0.5] as Tuple,
   radius: [2, 0, 12, 0.5] as Tuple,
-  /** Space above the graph (below the playground), px. */
-  topGap: [120, 0, 400, 1] as Tuple,
-  /** Graph to the contact block below it (replaces that block's own top gap), px. */
-  bottomGap: [72, 0, 400, 1] as Tuple,
+  /** Space between the playground grid and the graph (px). */
+  topGapDesktop: [40, 0, 240, 1] as Tuple,
+  topGapMobile: [28, 0, 200, 1] as Tuple,
+  /** Position nudge from where it sits (px); moves it without shifting anything else. */
+  xDesktop: [0, -400, 400, 1] as Tuple,
+  yDesktop: [0, -300, 300, 1] as Tuple,
+  xMobile: [0, -200, 200, 1] as Tuple,
+  yMobile: [0, -300, 300, 1] as Tuple,
   palette: { type: 'select' as const, options: ['green', 'mono'], default: 'green' },
 }
 
@@ -70,11 +76,16 @@ export function ContributionGraph() {
   if (!t.show) return null
 
   const style = {
-    '--cg-cell': `${t.cell}px`,
+    '--cg-cell-d': `${t.cellDesktop}px`,
+    '--cg-cell-m': `${t.cellMobile}px`,
     '--cg-gap': `${t.gap}px`,
     '--cg-radius': `${t.radius}px`,
-    '--cg-top': `${t.topGap}px`,
-    '--cg-bottom': `${t.bottomGap}px`,
+    '--cg-top-d': `${t.topGapDesktop}px`,
+    '--cg-top-m': `${t.topGapMobile}px`,
+    '--cg-x-d': `${t.xDesktop}px`,
+    '--cg-y-d': `${t.yDesktop}px`,
+    '--cg-x-m': `${t.xMobile}px`,
+    '--cg-y-m': `${t.yMobile}px`,
   } as CSSProperties
 
   return (

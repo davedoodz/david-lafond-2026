@@ -1,10 +1,11 @@
 .cg {
+  --cg-cell: var(--cg-cell-d);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding-top: var(--cg-top);
-  padding-bottom: var(--cg-bottom);
+  padding-top: var(--cg-top-d);
+  translate: var(--cg-x-d) var(--cg-y-d);
   /* GitHub dark-theme greens. */
   --cg-0: #232323;
   --cg-1: #0e4429;
@@ -82,7 +83,10 @@
   background: var(--cg-4);
 }
 
-/* The graph sits right above the contact block, so both share the footer's snap view. */
-.cg[data-palette] + .cta {
-  padding-top: 0;
+@media (max-width: 640px) {
+  .cg {
+    --cg-cell: var(--cg-cell-m);
+    padding-top: var(--cg-top-m);
+    translate: var(--cg-x-m) var(--cg-y-m);
+  }
 }

@@ -190,7 +190,10 @@ html[data-about-snap] .about .footer {
    snap view shows every card. Cards shrink when the rows would not fit:
    available height → card height per row → card width (card aspect) → grid width. */
 .about__play[data-fit] {
-  --fit-avail: calc(100svh - 2 * var(--play-fit-pad) - 1.2 * var(--text-eyebrow) - var(--play-fit-gap));
+  /* --cg-h: the contribution graph's measured height (AboutPage.tsx), so it fits in the same view. */
+  --fit-avail: calc(
+    100svh - 2 * var(--play-fit-pad) - 1.2 * var(--text-eyebrow) - var(--play-fit-gap) - var(--cg-h, 0px)
+  );
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -199,23 +202,32 @@ html[data-about-snap] .about .footer {
   padding-block: var(--play-fit-pad);
 }
 
+/* About → grid: size multiplies the fitted width; x/y nudge the grid in place. */
 .about__play[data-fit] .pg-grid {
   margin-top: var(--play-fit-gap);
-  width: min(
-    var(--pg-cols-d) * var(--pg-card-d) + (var(--pg-cols-d) - 1) * var(--pg-gap-x),
-    100% - 2 * 159px,
-    var(--pg-cols-d) * (var(--fit-avail) - (var(--pg-rows-d) - 1) * var(--pg-gap-y)) / var(--pg-rows-d) * 230 / 208 +
-      (var(--pg-cols-d) - 1) * var(--pg-gap-x)
+  translate: var(--grid-x-d, 0px) var(--grid-y-d, 0px);
+  width: calc(
+    var(--grid-size-d, 1) *
+      min(
+        var(--pg-cols-d) * var(--pg-card-d) + (var(--pg-cols-d) - 1) * var(--pg-gap-x),
+        100% - 2 * 159px,
+        var(--pg-cols-d) * (var(--fit-avail) - (var(--pg-rows-d) - 1) * var(--pg-gap-y)) / var(--pg-rows-d) * 230 / 208 +
+          (var(--pg-cols-d) - 1) * var(--pg-gap-x)
+      )
   );
 }
 
 @media (max-width: 640px) {
   .about__play[data-fit] .pg-grid {
-    width: min(
-      var(--pg-cols-m) * var(--pg-card-m) + (var(--pg-cols-m) - 1) * 11px,
-      100% - 2 * 53px,
-      var(--pg-cols-m) * (var(--fit-avail) - (var(--pg-rows-m) - 1) * 13px) / var(--pg-rows-m) * 142 / 129 +
-        (var(--pg-cols-m) - 1) * 11px
+    translate: var(--grid-x-m, 0px) var(--grid-y-m, 0px);
+    width: calc(
+      var(--grid-size-m, 1) *
+        min(
+          var(--pg-cols-m) * var(--pg-card-m) + (var(--pg-cols-m) - 1) * 11px,
+          100% - 2 * 53px,
+          var(--pg-cols-m) * (var(--fit-avail) - (var(--pg-rows-m) - 1) * 13px) / var(--pg-rows-m) * 142 / 129 +
+            (var(--pg-cols-m) - 1) * 11px
+        )
     );
   }
 }
