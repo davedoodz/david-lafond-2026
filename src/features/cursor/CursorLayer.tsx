@@ -85,14 +85,20 @@ export function CursorLayer() {
     let pressed = false
     let isLight = false
     let isHover = false
+    // Set while a control (Let's chat) has swallowed the dot: the dot is pulled into this point.
+    let absorbAt: { x: number; y: number } | null = null
 
     const paint = (): void => {
       frame = 0
       const follow = reducedMotion ? 1 : 1 - tuningRef.current.dot.smoothing
-      curX += (rawX - curX) * follow
-      curY += (rawY - curY) * follow
+      const tx = absorbAt ? absorbAt.x : rawX
+      const ty = absorbAt ? absorbAt.y : rawY
+      // Absorbed: a softer pull, so the dot visibly drifts into the circle.
+      const k = absorbAt && !reducedMotion ? 0.18 : follow
+      curX += (tx - curX) * k
+      curY += (ty - curY) * k
       dot.style.transform = `translate3d(${curX.toFixed(2)}px, ${curY.toFixed(2)}px, 0) translate(-50%, -50%)`
-      if (Math.abs(rawX - curX) > 0.05 || Math.abs(rawY - curY) > 0.05) frame = requestAnimationFrame(paint)
+      if (Math.abs(tx - curX) > 0.05 || Math.abs(ty - curY) > 0.05) frame = requestAnimationFrame(paint)
     }
     const request = (): void => {
       if (!frame) frame = requestAnimationFrame(paint)
@@ -201,6 +207,30 @@ export function CursorLayer() {
       dot.classList.remove('is-instant')
     }
 
+    const onAbsorb = (event: Event): void => {
+      const { x, y } = (event as CustomEvent<{ x: number; y: number }>).detail
+      absorbAt = { x, y }
+      dot.classList.remove('is-emerging')
+      dot.classList.add('is-absorbed')
+      request()
+    }
+    const onRelease = (): void => {
+      if (!absorbAt) return
+      absorbAt = null
+      dot.classList.remove('is-absorbed')
+      // Restart the drip-out keyframes.
+      dot.classList.remove('is-emerging')
+      void dot.offsetWidth
+      dot.classList.add('is-emerging')
+      request()
+    }
+    const onEmerged = (event: AnimationEvent): void => {
+      if (event.animationName === 'cur-emerge') dot.classList.remove('is-emerging')
+    }
+
+    window.addEventListener('cursor:absorb', onAbsorb)
+    window.addEventListener('cursor:release', onRelease)
+    dot.addEventListener('animationend', onEmerged)
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerover', onPointerOver, { passive: true })
     window.addEventListener('pointerdown', onPointerDown)
@@ -212,6 +242,9 @@ export function CursorLayer() {
     window.addEventListener('resize', onResize)
 
     return () => {
+      window.removeEventListener('cursor:absorb', onAbsorb)
+      window.removeEventListener('cursor:release', onRelease)
+      dot.removeEventListener('animationend', onEmerged)
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerover', onPointerOver)
       window.removeEventListener('pointerdown', onPointerDown)

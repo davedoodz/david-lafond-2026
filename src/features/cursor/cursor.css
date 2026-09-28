@@ -97,3 +97,42 @@
       background-color 140ms ease;
   }
 }
+
+/*
+ * Absorbed by a control (Let's chat morph): squash toward the circle, then vanish.
+ * Released: drips back out with a stretch and an elastic settle. Keyframes on
+ * `scale`/`opacity` only.
+ */
+.cur-dot.is-absorbed::before {
+  animation: cur-absorb 320ms cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+
+.cur-dot.is-emerging::before {
+  animation: cur-emerge 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* No 0% / 100% frames on the resting side: they start from, and settle into, the
+   dot's current look (e.g. the 2× hover), so nothing snaps. */
+@keyframes cur-absorb {
+  45% {
+    scale: 1.35 0.7;
+  }
+  100% {
+    scale: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes cur-emerge {
+  0% {
+    scale: 0;
+    opacity: 0;
+  }
+  35% {
+    scale: 0.7 1.4;
+    opacity: 1;
+  }
+  65% {
+    scale: 1.2 0.85;
+  }
+}
