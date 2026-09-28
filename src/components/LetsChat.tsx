@@ -1,14 +1,14 @@
 /**
- * "Let's chat" pill (Paper components: outline → filled → collapses from the left
- * into a circle around the arrow, inspired by cosmos.so). Click nudges the arrow
- * right, then opens the visitor's mail app with a prefilled note.
+ * "Let's chat" pill. Hover only tints it gray; the click plays the whole move
+ * (fill → collapse from the left into a circle around the arrow, inspired by
+ * cosmos.so → arrow slides right), and the visitor's mail app opens once the
+ * arrow has arrived.
  *
- *   hover in   0ms          fill white, text turns dark        (fill)
- *              delay        left edge sweeps right → circle    (collapse)
- *   hover out  0ms          circle re-expands to the pill      (expand)
- *              expand       fill fades back to outline
- *   click      0ms          arrow slides right by `nudge`
- *              openDelay    mailto: opens
+ *   hover      0ms                       gray fill                          (hover)
+ *   click      0ms                       fill white, text turns dark        (fill)
+ *              delay                     left edge sweeps right → circle    (collapse)
+ *              delay+collapse            arrow slides right by `nudge`      (nudge)
+ *              …+nudge+openDelay         mailto: opens
  */
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { TransitionConfig } from 'dialkit'
@@ -27,6 +27,12 @@ const CONFIG = {
         'Hi David,\n\nI just spent some time with your portfolio and would love to find a moment to chat.\n\nA little about me and what I have in mind:\n\n\nWould a quick call sometime next week work for you?\n\nBest,\n',
     },
   },
+  /** Hover (and keyboard focus) fill. */
+  hover: {
+    fill: { type: 'color' as const, default: '#3a3a3a' },
+    border: { type: 'color' as const, default: '#f5f5f5' },
+    text: { type: 'color' as const, default: '#f5f5f5' },
+  },
   motion: {
     fillMs: [160, 0, 800, 10] as [number, number, number, number],
     collapseDelayMs: [110, 0, 800, 10] as [number, number, number, number],
@@ -34,9 +40,10 @@ const CONFIG = {
     expand: { type: 'easing' as const, duration: 0.38, ease: [0.3, 0, 0.2, 1] as [number, number, number, number] },
   },
   click: {
-    nudgePx: [7, 0, 24, 1] as [number, number, number, number],
+    nudgePx: [7, 0, 40, 1] as [number, number, number, number],
     nudgeMs: [220, 60, 800, 10] as [number, number, number, number],
-    openDelayMs: [260, 0, 1200, 10] as [number, number, number, number],
+    /** Pause after the arrow arrives, before the mail app opens. */
+    openDelayMs: [0, 0, 1200, 10] as [number, number, number, number],
   },
 }
 
@@ -60,24 +67,28 @@ export function LetsChat() {
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    // Touch has no hover: play the collapse first so the arrow nudge still reads.
-    const hasHover = window.matchMedia('(hover: hover)').matches
-    const lead = hasHover ? 0 : t.motion.collapseDelayMs + parseFloat(collapse.duration) * 1000
-    if (!hasHover) setArmed(true)
+    if (armed) return
+    // Circle first, then the arrow; the mail app opens once the arrow has arrived.
+    setArmed(true)
+    const circleMs = t.motion.collapseDelayMs + parseFloat(collapse.duration) * 1000
+    const openAt = circleMs + t.click.nudgeMs + t.click.openDelayMs
     timers.current.push(
-      window.setTimeout(() => setSending(true), lead),
+      window.setTimeout(() => setSending(true), circleMs),
       window.setTimeout(() => {
         window.location.href = href
-      }, lead + t.click.openDelayMs),
+      }, openAt),
       window.setTimeout(() => {
         setSending(false)
         setArmed(false)
-      }, lead + t.click.openDelayMs + t.click.nudgeMs + 400),
+      }, openAt + 600),
     )
   }
 
   const style = {
     '--chat-fill': `${t.motion.fillMs}ms`,
+    '--chat-hover-fill': t.hover.fill,
+    '--chat-hover-border': t.hover.border,
+    '--chat-hover-text': t.hover.text,
     '--chat-delay': `${t.motion.collapseDelayMs}ms`,
     '--chat-collapse': collapse.duration,
     '--chat-collapse-ease': collapse.ease,

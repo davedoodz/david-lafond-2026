@@ -133,5 +133,10 @@
       },
       "swapAt": 0.09
     }
+  },
+  "Entrance": {
+    "durationMs": 2260,
+    "staggerMs": 200,
+    "ease": "linear-ish"
   }
 }

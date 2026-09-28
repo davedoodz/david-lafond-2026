@@ -24,6 +24,7 @@
   transition:
     clip-path var(--chat-expand) var(--chat-expand-ease),
     background-color var(--chat-fill) ease var(--chat-expand),
+    border-color var(--chat-fill) ease var(--chat-expand),
     color var(--chat-fill) ease var(--chat-expand);
 }
 
@@ -36,22 +37,21 @@
   width: var(--chat-arrow);
   height: var(--chat-arrow);
   flex-shrink: 0;
-  transition: translate var(--chat-nudge-ms) cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* No overshoot: the mail app opens once the arrow has fully arrived. */
+  transition: translate var(--chat-nudge-ms) cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* Hover / keyboard focus: a gray fill only. The circle morph is reserved for the click. */
 @media (hover: hover) {
-  .chat:hover .chat__label {
-    opacity: 0;
-    transition: opacity var(--chat-collapse) ease var(--chat-delay);
-  }
-  .chat:hover .chat__body {
-    background-color: var(--paper);
-    color: var(--ink-900);
-    clip-path: inset(0 0 0 calc(100% - var(--chat-h)) round 999px);
+  .chat:hover:not(.is-armed) .chat__body {
+    background-color: var(--chat-hover-fill);
+    border-color: var(--chat-hover-border);
+    color: var(--chat-hover-text);
     transition:
+      clip-path var(--chat-expand) var(--chat-expand-ease),
       background-color var(--chat-fill) ease,
-      color var(--chat-fill) ease,
-      clip-path var(--chat-collapse) var(--chat-collapse-ease) var(--chat-delay);
+      border-color var(--chat-fill) ease,
+      color var(--chat-fill) ease;
   }
 }
 
@@ -60,18 +60,25 @@
   outline-offset: 4px;
 }
 
-.chat:focus-visible .chat__body,
+.chat:focus-visible:not(.is-armed) .chat__body {
+  background-color: var(--chat-hover-fill);
+  border-color: var(--chat-hover-border);
+  color: var(--chat-hover-text);
+}
+
+/* Click: fill white, then the left edge sweeps right into a circle around the arrow. */
 .chat.is-armed .chat__body {
   background-color: var(--paper);
+  border-color: var(--paper);
   color: var(--ink-900);
   clip-path: inset(0 0 0 calc(100% - var(--chat-h)) round 999px);
   transition:
     background-color var(--chat-fill) ease,
+    border-color var(--chat-fill) ease,
     color var(--chat-fill) ease,
     clip-path var(--chat-collapse) var(--chat-collapse-ease) var(--chat-delay);
 }
 
-.chat:focus-visible .chat__label,
 .chat.is-armed .chat__label {
   opacity: 0;
   transition: opacity var(--chat-collapse) ease var(--chat-delay);
