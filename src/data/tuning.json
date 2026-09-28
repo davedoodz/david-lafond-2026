@@ -15,7 +15,8 @@
       "opacity": 0.27
     },
     "grid": {
-      "count": 12
+      "count": 12,
+      "radius": 14
     }
   },
   "Davebot": {
@@ -66,6 +67,7 @@
       "startDelayMs": 1890
     },
     "layout": {
+      "mobileWidth": 373,
       "offsetX": -69,
       "offsetY": 10
     }
@@ -83,6 +85,11 @@
       "endArch": 70,
       "endRadius": 0
     },
+    "morphMobile": {
+      "startArch": 20,
+      "startRadius": 60,
+      "endArch": 35
+    },
     "intro": {
       "delayMs": 3620,
       "durationMs": 960,
@@ -93,12 +100,16 @@
       "firstDesktop": 277,
       "gapDesktop": 16,
       "lastDesktop": 277,
-      "firstMobile": 117,
-      "gapMobile": 5,
-      "lastMobile": 219
+      "firstMobile": 228,
+      "gapMobile": 15,
+      "lastMobile": 216
+    },
+    "shape": {
+      "cardHeightMobile": 134
     },
     "label": {
       "topDesktop": 110,
+      "topMobile": 135,
       "arrowSize": 1,
       "arrowY": -0.5
     },
@@ -170,7 +181,8 @@
   },
   "Contact CTA": {
     "spacing": {
-      "topDesktop": 310
+      "topDesktop": 310,
+      "bottomMobile": 198
     }
   },
   "Let’s chat": {
@@ -290,8 +302,15 @@
       "curve": "expo-out",
       "enterDistance": 1.75,
       "side": 0,
-      "arch": 70,
+      "arch": 62,
       "radius": 0
+    },
+    "domeMobile": {
+      "curve": "expo-out",
+      "enterDistance": 1.75,
+      "side": 0,
+      "arch": 20,
+      "radius": 60
     },
     "reveal": {
       "preset": "deal",
@@ -307,5 +326,11 @@
     "shader": {
       "durationMs": 3040
     }
+  },
+  "Contributions": {
+    "show": false,
+    "startMonth": 6,
+    "cellMobile": 6,
+    "yMobile": 36
   }
 }
