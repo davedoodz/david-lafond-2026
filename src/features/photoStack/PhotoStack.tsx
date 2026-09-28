@@ -353,6 +353,7 @@ export function PhotoStack({ className }: { className?: string }) {
               <motion.button
                 key={cardId}
                 className={`ps-card${isTop ? ' ps-card--active' : ''}`}
+                data-surface={values.caption.cursor.whiteCursor ? 'dark' : undefined}
                 style={{
                   width,
                   height,
@@ -416,7 +417,7 @@ export function PhotoStack({ className }: { className?: string }) {
               } as CSSProperties
             }
           >
-            <span className={`ps-caption ps-caption--cursor${shownId !== null ? ' is-shown' : ''}`}>{captionText}</span>
+            <span className={`ps-caption ps-caption--cursor${values.caption.cursor.theme === 'light' ? ' ps-caption--light' : ''}${shownId !== null ? ' is-shown' : ''}`}>{captionText}</span>
           </div>,
           document.body,
         )}

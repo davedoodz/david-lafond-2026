@@ -92,8 +92,12 @@
       }
     },
     "caption": {
-      "style": "cursor",
-      "gap": 0
+      "gap": 0,
+      "cursor": {
+        "offsetX": -2,
+        "offsetY": -58,
+        "padX": 16
+      }
     },
     "cycle": {
       "pullOutX": 283,

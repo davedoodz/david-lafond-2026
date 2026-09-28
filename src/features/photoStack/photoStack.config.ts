@@ -98,6 +98,9 @@ export const PHOTO_STACK_CONFIG = {
     gap: [16, 0, 80, 1] as [number, number, number, number],
     /** `cursor` style: pill placement relative to the pointer, and its size. */
     cursor: {
+      theme: { type: 'select' as const, options: ['dark', 'light'], default: 'dark' },
+      /** Cursor dot turns white over the photo cards (they count as a dark surface). */
+      whiteCursor: false,
       offsetX: [18, -200, 200, 1] as [number, number, number, number],
       offsetY: [16, -200, 200, 1] as [number, number, number, number],
       textSize: [12, 9, 28, 0.5] as [number, number, number, number],

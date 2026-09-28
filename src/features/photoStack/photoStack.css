@@ -123,3 +123,9 @@
   color: #f5f5f5;
   font-size: var(--ps-cur-size, 12px);
 }
+
+.ps-caption--cursor.ps-caption--light {
+  background: #fff;
+  color: #171717;
+  box-shadow: 0 2px 10px rgba(23, 23, 23, 0.12);
+}
