@@ -135,10 +135,13 @@ export function AboutPage() {
       const peek = mobile ? dome.peekMobile : dome.peekDesktop
       const rest = vh - peek
       if (mobile) {
-        // Mobile: exactly the Selected works morph — one progress value drives
-        // side, arch and corners together through the shared domeClip (no cap,
-        // no separate corner schedule), so the shape never steps mid-scroll.
-        const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / (shape.enterDistance * vh))))
+        // Mobile: the Selected works morph — one progress value drives side, arch
+        // and corners together through the shared domeClip, so the shape never
+        // steps mid-scroll. Travel is capped at the rest distance so it is fully
+        // flat when the sheet snaps to the top (no page showing at the corners).
+        const travel = Math.min(shape.enterDistance * vh, rest)
+        // +1px: a sub-pixel snap position still counts as fully flat.
+        const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest + 1 - sheet.getBoundingClientRect().top) / travel)))
         const side = (shape.side * (1 - e) * vw) / 100
         sheet.style.setProperty('--dome-clip', domeClip(side, { radius: shape.radius, arch: shape.arch }, 1 - e, { radius: 0, arch: 0 }, 0, vh))
         return
