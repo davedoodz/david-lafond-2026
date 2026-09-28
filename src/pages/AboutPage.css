@@ -59,7 +59,7 @@
 }
 
 .about__play {
-  padding-top: 39px;
+  padding-top: var(--play-top-d, 39px);
 }
 
 .about .cta {
@@ -88,7 +88,7 @@
     border-radius: 20px 20px 0 0;
   }
   .about__play {
-    padding-top: 25px;
+    padding-top: var(--play-top-m, 25px);
   }
   .about .cta {
     padding-top: 84px;
@@ -110,4 +110,107 @@
 .about__dark[data-sheet]:not([data-sheet='none']) {
   background: none;
   border-radius: 0;
+}
+
+/* Playground label matches the Selected works label: centred, 1em arrow. */
+.about__play .eyebrow {
+  justify-content: center;
+}
+
+[data-fit-measuring] .about__play .eyebrow {
+  justify-content: flex-start;
+}
+
+.about__play .eyebrow svg {
+  width: 1em;
+  height: 1em;
+  translate: 0 var(--play-arrow-y, -0.5px);
+}
+
+/* Scroll snap (spacing.snap): page top, story end, playground, footer. */
+html[data-about-snap='proximity'] {
+  scroll-snap-type: y proximity;
+}
+
+html[data-about-snap='mandatory'] {
+  scroll-snap-type: y mandatory;
+}
+
+/* Four stops only: no snap area is taller than the screen (the light section
+   and the dark sheet are not snap areas themselves), so there are no free
+   in-between rest points. */
+html[data-about-snap] .about__top-stop,
+html[data-about-snap] .about__play {
+  scroll-snap-align: start;
+}
+
+.about__top-stop {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+}
+
+.about__peek-stop {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+}
+
+html[data-about-snap] .about__peek-stop {
+  scroll-snap-align: end;
+}
+
+html[data-about-snap] .about .footer {
+  scroll-snap-align: end;
+}
+
+/* Dome (dome.show): the dark sheet peeks above the fold as an arched tip and
+   flattens as it scrolls up. Its own snap area starts at the peek, so the story's
+   end still leaves the tip showing. */
+.about__dark[data-dome] {
+  margin-top: calc(-1 * var(--dome-peek-d));
+  border-radius: 0;
+  clip-path: var(--dome-clip, none);
+}
+
+@media (max-width: 640px) {
+  .about__dark[data-dome] {
+    margin-top: calc(-1 * var(--dome-peek-m));
+  }
+}
+
+/* Fit (spacing.playFit): label + grid centred in one screen-tall panel, so the
+   snap view shows every card. Cards shrink when the rows would not fit:
+   available height → card height per row → card width (card aspect) → grid width. */
+.about__play[data-fit] {
+  --fit-avail: calc(100svh - 2 * var(--play-fit-pad) - 1.2 * var(--text-eyebrow) - var(--play-fit-gap));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding-block: var(--play-fit-pad);
+}
+
+.about__play[data-fit] .pg-grid {
+  margin-top: var(--play-fit-gap);
+  width: min(
+    var(--pg-cols-d) * var(--pg-card-d) + (var(--pg-cols-d) - 1) * var(--pg-gap-x),
+    100% - 2 * 159px,
+    var(--pg-cols-d) * (var(--fit-avail) - (var(--pg-rows-d) - 1) * var(--pg-gap-y)) / var(--pg-rows-d) * 230 / 208 +
+      (var(--pg-cols-d) - 1) * var(--pg-gap-x)
+  );
+}
+
+@media (max-width: 640px) {
+  .about__play[data-fit] .pg-grid {
+    width: min(
+      var(--pg-cols-m) * var(--pg-card-m) + (var(--pg-cols-m) - 1) * 11px,
+      100% - 2 * 53px,
+      var(--pg-cols-m) * (var(--fit-avail) - (var(--pg-rows-m) - 1) * 13px) / var(--pg-rows-m) * 142 / 129 +
+        (var(--pg-cols-m) - 1) * 11px
+    );
+  }
 }

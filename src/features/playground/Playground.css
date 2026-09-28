@@ -4,18 +4,18 @@
 
 .pg-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--pg-cols-d, 4), 1fr);
   gap: var(--pg-gap-y) var(--pg-gap-x);
-  width: min(962px, 100% - 2 * 159px);
+  width: min(var(--pg-cols-d, 4) * var(--pg-card-d, 230px) + (var(--pg-cols-d, 4) - 1) * var(--pg-gap-x), 100% - 2 * 159px);
   margin-inline: auto;
   margin-top: var(--pg-top-desktop);
 }
 
 @media (max-width: 640px) {
   .pg-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(var(--pg-cols-m, 2), 1fr);
     gap: 13px 11px;
-    width: min(295px, 100% - 2 * 53px);
+    width: min(var(--pg-cols-m, 2) * var(--pg-card-m, 142px) + (var(--pg-cols-m, 2) - 1) * 11px, 100% - 2 * 53px);
     margin-top: var(--pg-top-mobile);
   }
 }

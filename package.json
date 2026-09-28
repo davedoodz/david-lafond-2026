@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "contributions": "node scripts/fetch-contributions.mjs",
+    "prebuild": "node scripts/fetch-contributions.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",

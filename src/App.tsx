@@ -4,6 +4,7 @@ import { Footer } from './components/Footer'
 import { SelectionHighlight } from './components/SelectionHighlight'
 import { CursorLayer } from './features/cursor/CursorLayer'
 import { useDavebotOpen } from './features/ghost/davebotStore'
+import { useHeaderIntro } from './features/headerIntro/useHeaderIntro'
 import { PageTransitions } from './features/pageTransition/PageTransitions'
 import { useRoute } from './lib/router'
 import { aboutChunk, harvardMitChunk } from './lib/routeChunks'
@@ -42,6 +43,7 @@ export function App() {
   const route = useRoute()
   const idle = useIdle()
   const davebotOpen = useDavebotOpen()
+  useHeaderIntro()
 
   useEffect(() => {
     document.title = TITLES[route]

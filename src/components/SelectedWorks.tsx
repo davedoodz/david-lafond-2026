@@ -14,6 +14,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
+import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
 import { useTuning } from '../tuning/useTuning'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
@@ -23,13 +24,6 @@ import { PATH_BY_ROUTE } from '../lib/router'
 import './SelectedWorks.css'
 
 type Tuple = [number, number, number, number]
-
-const CURVES: Record<string, (x: number) => number> = {
-  smooth: (x) => x * x * (3 - 2 * x),
-  linear: (x) => x,
-  'expo-out': (x) => (x >= 1 ? 1 : 1 - 2 ** (-10 * x)),
-  smoother: (x) => x * x * x * (x * (x * 6 - 15) + 10),
-}
 
 const CONFIG = {
   cards: {
@@ -54,7 +48,7 @@ const CONFIG = {
   },
   /** Dome in at the top, dome out at the bottom. Sides in % of viewport width, arches in % of viewport height. */
   morph: {
-    curve: { type: 'select' as const, options: Object.keys(CURVES), default: 'smoother' },
+    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'smoother' },
     enterDistance: [1, 0.2, 2.5, 0.01] as Tuple,
     startSide: [14, 0, 45, 0.5] as Tuple,
     startArch: [40, 0, 100, 1] as Tuple,
@@ -72,7 +66,7 @@ const CONFIG = {
    */
   intro: {
     preset: { type: 'select' as const, options: ['rise', 'spring', 'bounce', 'float', 'none'], default: 'spring' },
-    delayMs: [400, 0, 3000, 10] as Tuple,
+    delayMs: [400, 0, 9000, 10] as Tuple,
     durationMs: [900, 150, 3000, 10] as Tuple,
     /** Start offset below the resting position (px). */
     distance: [140, 20, 600, 1] as Tuple,
@@ -161,28 +155,23 @@ export function SelectedWorks() {
       const vh = window.innerHeight
       const vw = document.documentElement.clientWidth
       const rect = section.getBoundingClientRect()
-      const curve = CURVES[morph.curve] ?? CURVES.smooth
+      const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
       // Enter starts from wherever the panel sits at scroll 0 (its peek), so the dome tip shows on load.
       const restTop = rect.top + window.scrollY
       const e = reduced ? 1 : curve(clamp01((restTop - rect.top) / (morph.enterDistance * vh)))
       const x = reduced ? 0 : curve(clamp01((vh * (1 - morph.exitStart) - rect.bottom) / (morph.exitDistance * vh)))
 
       const side = Math.max(morph.startSide * (1 - e), morph.endSide * x) * vw / 100
-      // Each edge: corner radius r plus an arch. With an arch the horizontal
-      // radius stays 50% so the two corners always meet in one continuous
-      // curve (no flat middle); only the arch depth animates.
-      const edge = (radius: number, arch: number, k: number) => {
-        const r = radius * k
-        return {
-          x: arch > 0 ? '50%' : `${r.toFixed(2)}px`,
-          y: `${Math.max(r, (arch / 100) * vh * k).toFixed(2)}px`,
-        }
-      }
-      const top = edge(morph.startRadius, morph.startArch, 1 - e)
-      const bottom = edge(morph.endRadius, morph.endArch, x)
       section.style.setProperty(
         '--works-clip',
-        `inset(0 ${side.toFixed(2)}px round ${top.x} ${top.x} ${bottom.x} ${bottom.x} / ${top.y} ${top.y} ${bottom.y} ${bottom.y})`,
+        domeClip(
+          side,
+          { radius: morph.startRadius, arch: morph.startArch },
+          1 - e,
+          { radius: morph.endRadius, arch: morph.endArch },
+          x,
+          vh,
+        ),
       )
     }
     const schedule = () => {

@@ -21,6 +21,8 @@ import {
 } from '../../components/icons'
 import { useTuning } from '../../tuning/useTuning'
 import { ViewSwitch, switchDials } from './ViewSwitch'
+import { SpreadZoom } from './SpreadZoom'
+import { toMotionTransition } from '../playground/motionTransition'
 import { FlipBook, type BookController, type BookState } from './FlipBook'
 import { PAGE_COUNT, SPREADS, pageLabel } from './bookPages'
 import { SpreadGrid } from './SpreadGrid'
@@ -66,24 +68,34 @@ const CONFIG = {
     minCard: [300, 180, 520, 1] as Tuple,
     gap: [40, 12, 96, 1] as Tuple,
     showPageNumbers: true,
+    /** Clicked spread opens enlarged over a blurred backdrop. */
+    zoom: {
+      widthVw: [86, 40, 100, 1] as Tuple,
+      maxHeightVh: [82, 40, 100, 1] as Tuple,
+      blur: [20, 0, 60, 1] as Tuple,
+      dimOpacity: [0.6, 0, 1, 0.01] as Tuple,
+      radius: [4, 0, 40, 1] as Tuple,
+      spring: { type: 'spring', visualDuration: 0.5, bounce: 0.15 } as const,
+      _collapsed: true,
+    },
     _collapsed: true,
   },
 }
 
 const spreadOfIndex = (index: number) => (index === 0 ? 0 : Math.ceil(index / 2))
-const indexOfSpread = (spread: number) => (spread === 0 ? 0 : spread * 2 - 1)
 
 export function BookViewer() {
   const t = useTuning('Portfolio book', CONFIG)
   const [mode, setMode] = useState<Mode>('video')
   // The grid is only built the first time it is opened.
   const [gridMounted, setGridMounted] = useState(false)
-  // Video is the opening view; the player is kept mounted so it resumes where it paused.
+  // Video is the opening view. Leaving it reloads the player, so coming back always shows
+  // YouTube's untouched start screen (title, thumbnail, play button) and nothing plays behind.
   const [videoStarted, setVideoStarted] = useState(false)
+  const [videoKey, setVideoKey] = useState(0)
   const videoRef = useRef<HTMLIFrameElement>(null)
   const [state, setState] = useState<BookState>({ index: 0, orientation: 'landscape', zoom: 1 })
   const controller = useRef<BookController | null>(null)
-  const gridRef = useRef<HTMLDivElement>(null)
 
   const spread = spreadOfIndex(state.index)
   const counter =
@@ -91,28 +103,25 @@ export function BookViewer() {
   const atStart = state.index === 0
   const atEnd = state.index >= PAGE_COUNT - 1 || (state.orientation === 'landscape' && spread === SPREADS.length - 1)
 
+  const modeRef = useRef(mode)
+  modeRef.current = mode
+
+  // Every view opens at the top; pressing Grid again while in the grid glides back up.
+  // Book always opens on the front cover (pressing it again while reading turns back to it).
   const switchTo = useCallback((next: Mode) => {
+    const same = next === modeRef.current
     setMode(next)
     if (next === 'grid') setGridMounted(true)
-    else window.scrollTo({ top: 0 })
-    // Leaving the video pauses it, so it never plays on behind the book or grid.
-    if (next !== 'video')
-      videoRef.current?.contentWindow?.postMessage(
-        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
-        'https://www.youtube.com',
-      )
+    if (next === 'book') {
+      if (same) controller.current?.first()
+      else controller.current?.jumpTo(0)
+    }
+    window.scrollTo({ top: 0, behavior: same ? 'smooth' : 'auto' })
+    if (next !== 'video' && modeRef.current === 'video') {
+      setVideoStarted(false)
+      setVideoKey((key) => key + 1)
+    }
   }, [])
-
-  // Opening the grid brings the spread you were reading into view.
-  useEffect(() => {
-    if (mode !== 'grid') return
-    const frame = requestAnimationFrame(() => {
-      const card = gridRef.current?.querySelector<HTMLElement>('[aria-current="true"]')
-      if (card && spread > 3) card.scrollIntoView({ block: 'center' })
-    })
-    return () => cancelAnimationFrame(frame)
-    // Only on entering grid mode, not on every page turn.
-  }, [mode])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -124,13 +133,12 @@ export function BookViewer() {
     return () => window.removeEventListener('keydown', onKey)
   }, [mode, switchTo])
 
-  const openSpread = useCallback(
-    (next: number) => {
-      controller.current?.jumpTo(indexOfSpread(next))
-      switchTo('book')
-    },
-    [switchTo],
-  )
+  const [zoom, setZoom] = useState<{ spread: number; source: HTMLElement; closing: boolean } | null>(null)
+  const openZoom = useCallback((next: number, source: HTMLElement) => {
+    setZoom({ spread: next, source, closing: false })
+  }, [])
+  const closeZoom = useCallback(() => setZoom((z) => (z ? { ...z, closing: true } : z)), [])
+  const clearZoom = useCallback(() => setZoom(null), [])
 
   const style = {
     '--video-scale-d': t.video.scaleDesktop,
@@ -239,6 +247,7 @@ export function BookViewer() {
             />
           )}
           <iframe
+            key={videoKey}
             ref={videoRef}
             src={VIDEO_SRC}
             title="The Design Portfolio that Got Me Into Harvard & MIT — video"
@@ -255,9 +264,25 @@ export function BookViewer() {
       </div>
 
       {gridMounted && (
-        <div ref={gridRef} className="viewer__grid" aria-hidden={mode !== 'grid'} inert={mode !== 'grid'}>
-          <SpreadGrid current={spread} onOpen={openSpread} showPageNumbers={t.grid.showPageNumbers} />
+        <div className="viewer__grid" aria-hidden={mode !== 'grid'} inert={mode !== 'grid'}>
+          <SpreadGrid
+            current={spread}
+            onOpen={openZoom}
+            showPageNumbers={t.grid.showPageNumbers}
+            zoomed={zoom?.spread ?? null}
+          />
         </div>
+      )}
+      {zoom && (
+        <SpreadZoom
+          pages={SPREADS[zoom.spread]}
+          source={zoom.source}
+          closing={zoom.closing}
+          look={t.grid.zoom}
+          transition={toMotionTransition(t.grid.zoom.spring)}
+          onClose={closeZoom}
+          onClosed={clearZoom}
+        />
       )}
     </section>
   )

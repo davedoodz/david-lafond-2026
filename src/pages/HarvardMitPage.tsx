@@ -10,7 +10,7 @@ export function HarvardMitPage() {
   useFitColumn(mainRef)
   return (
     <main ref={mainRef} className="project" data-surface="dark">
-      <Nav route="work" />
+      <Nav route="harvard-mit" />
       <h1 className="visually-hidden">The Design Portfolio that Got Me Into Harvard &amp; MIT</h1>
       <BookViewer />
       <ContactCta />

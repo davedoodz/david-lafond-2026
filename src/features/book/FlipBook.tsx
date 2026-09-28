@@ -170,6 +170,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       startPage: startIndex,
       mobileScrollSupport: true,
       showPageCorners: false,
+      // Clicks are turned by onClick below (page-flip misses many under the tilt); it still owns drags.
+      disableFlipByClick: true,
       swipeDistance: 24,
     })
     flipRef.current = flip
@@ -299,8 +301,11 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       report()
     })
     // Load the destination while a drag is still deciding which way to go.
+    // `libFlips` lets a click tell whether page-flip already turned it (corner hot zones).
+    let libFlips = 0
     flip.on('changeState', ({ data }) => {
       stage.dataset.flipState = data
+      if (data === 'flipping') libFlips++
       if (data === 'user_fold' || data === 'flipping') {
         const index = flip.getCurrentPageIndex()
         hydrate(clamp(index + 2, 0, PAGE_COUNT - 1))
@@ -357,14 +362,35 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       tiltTarget.x = lookRef.current.tiltRestX - ny * lookRef.current.tiltHover * 0.6
       schedule()
     }
+    let press: { x: number; y: number; libFlips: number } | null = null
     const onPointerDown = (event: PointerEvent) => {
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
       if (pointers.size === 2) pinchDistance = 0
+      press = event.isPrimary ? { x: event.clientX, y: event.clientY, libFlips } : null
       if (target.zoom > 1 && pointers.size === 1) {
         panStart = { x: event.clientX, y: event.clientY, panX: target.x, panY: target.y }
         stage.classList.add('is-panning')
         stage.setPointerCapture(event.pointerId)
       }
+    }
+    // A click anywhere on the right page turns forward, on the left page back. Drags, pans,
+    // pinches, and clicks page-flip already turned (its corner hot zones) are left alone.
+    const onClick = (event: MouseEvent) => {
+      const start = press
+      press = null
+      if (!start || start.libFlips !== libFlips) return
+      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) return
+      const rect = host.getBoundingClientRect()
+      const index = flip.getCurrentPageIndex()
+      const lone = orientation === 'landscape' && (index === 0 || index >= PAGE_COUNT - 1)
+      // A lone cover fills one half of the spread box; the other half is empty stage.
+      const left = lone && index === 0 ? rect.left + rect.width / 2 : rect.left
+      const right = lone && index !== 0 ? rect.left + rect.width / 2 : rect.right
+      if (event.clientX < left || event.clientX > right || event.clientY < rect.top || event.clientY > rect.bottom) return
+      const forward = lone ? index === 0 : event.clientX >= rect.left + rect.width / 2
+      if (target.zoom > 1) setZoom(1)
+      if (forward) flip.flipNext()
+      else flip.flipPrev()
     }
     const onPointerUp = (event: PointerEvent) => {
       pointers.delete(event.pointerId)
@@ -409,6 +435,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     stage.addEventListener('pointerleave', onPointerLeave)
     stage.addEventListener('wheel', onWheel, { passive: false })
     stage.addEventListener('dblclick', onDoubleClick)
+    stage.addEventListener('click', onClick)
     window.addEventListener('touchstart', onTouchCapture, { capture: true })
     window.addEventListener('touchmove', onTouchCapture, { capture: true })
 
@@ -471,6 +498,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       stage.removeEventListener('pointerleave', onPointerLeave)
       stage.removeEventListener('wheel', onWheel)
       stage.removeEventListener('dblclick', onDoubleClick)
+      stage.removeEventListener('click', onClick)
       window.removeEventListener('touchstart', onTouchCapture, { capture: true })
       window.removeEventListener('touchmove', onTouchCapture, { capture: true })
       window.removeEventListener('keydown', onKey)

@@ -1,13 +1,20 @@
 import { memo } from 'react'
 import { SPREADS, pageLabel, pageUrl, PAGE_COUNT } from './bookPages'
 
-type Props = { current: number; onOpen: (spread: number) => void; showPageNumbers: boolean }
+type Props = {
+  current: number
+  /** Spread clicked; `source` is its thumbnail, for the zoom to fly from. */
+  onOpen: (spread: number, source: HTMLElement) => void
+  showPageNumbers: boolean
+  /** Spread shown in the zoom; its thumbnail hides so the zoom reads as lifting it out. */
+  zoomed: number | null
+}
 
 /**
  * Every spread at a glance, laid out as the open book shows it: covers sit
  * alone on their side of the spine. Thumbs load lazily as the grid scrolls.
  */
-export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNumbers }: Props) {
+export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNumbers, zoomed }: Props) {
   return (
     <ol className="spread-grid">
       {SPREADS.map((pages, spread) => {
@@ -20,8 +27,9 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
               className="spread-grid__card"
               data-side={side}
               aria-current={spread === current ? 'true' : undefined}
-              aria-label={`Open ${label.toLowerCase()}`}
-              onClick={() => onOpen(spread)}
+              aria-label={`Enlarge ${label.toLowerCase()}`}
+              data-zoomed={spread === zoomed || undefined}
+              onClick={(event) => onOpen(spread, event.currentTarget.querySelector<HTMLElement>('.spread-grid__pages')!)}
             >
               <span className="spread-grid__pages">
                 {pages.map((page) => (

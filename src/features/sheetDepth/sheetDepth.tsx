@@ -26,6 +26,8 @@ export const sheetDials = () => ({
   travel: [0.6, 0.1, 1.5, 0.01] as Tuple,
   /** Multiplies every depth cue: recede, tilt, arch, layer gap. */
   depth: [1, 0, 2, 0.05] as Tuple,
+  /** Drop shadow above the sheet's top edge; 0 = none. */
+  shadow: [0, 0, 1, 0.01] as Tuple,
   _collapsed: false,
 })
 
@@ -33,6 +35,7 @@ export type SheetValues = {
   preset: string
   travel: number
   depth: number
+  shadow: number
 }
 
 type Look = {
@@ -89,7 +92,7 @@ export function useSheetDepth(
 ) {
   const progressRef = useRef(progress)
   progressRef.current = progress
-  const key = JSON.stringify([values.preset, values.travel, values.depth, radius, bottomRadius])
+  const key = JSON.stringify([values.preset, values.travel, values.depth, values.shadow, radius, bottomRadius])
 
   useEffect(() => {
     const sheet = sheetRef.current
@@ -129,7 +132,7 @@ export function useSheetDepth(
       sheet.style.setProperty('--sheet-clip', clip)
       sheet.style.setProperty('--sheet-tf', look.rotateX > 0.01 ? `perspective(1600px) rotateX(${look.rotateX.toFixed(2)}deg)` : 'none')
       sheet.style.setProperty('--sheet-layer-gap', px(look.layerGap))
-      sheet.style.setProperty('--sheet-shadow', look.shadow.toFixed(3))
+      sheet.style.setProperty('--sheet-shadow', (look.shadow * values.shadow).toFixed(3))
       if (under) {
         under.style.setProperty('--under-tf', `translateY(${px(look.underY)}) scale(${look.underScale.toFixed(4)})`)
         under.style.setProperty('--under-dim', look.underDim.toFixed(3))

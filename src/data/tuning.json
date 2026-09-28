@@ -5,10 +5,17 @@
     }
   },
   "Playground": {
+    "title": {
+      "x": 22,
+      "y": 24
+    },
     "shade": {
       "start": 0,
       "end": 100,
       "opacity": 0.27
+    },
+    "grid": {
+      "count": 12
     }
   },
   "Davebot": {
@@ -55,7 +62,8 @@
       "color": "#A6A09C"
     },
     "playback": {
-      "startDelayMs": 2000
+      "speed": 3.4,
+      "startDelayMs": 1890
     },
     "layout": {
       "offsetX": -69,
@@ -75,6 +83,11 @@
       "endArch": 70,
       "endRadius": 0
     },
+    "intro": {
+      "delayMs": 3620,
+      "durationMs": 960,
+      "bounce": 0.4
+    },
     "spacing": {
       "snap": "mandatory",
       "firstDesktop": 277,
@@ -83,6 +96,7 @@
       "lastMobile": 121
     },
     "label": {
+      "topDesktop": 110,
       "arrowSize": 1,
       "arrowY": -0.5
     },
@@ -149,6 +163,7 @@
   "Entrance": {
     "durationMs": 1400,
     "staggerMs": 200,
+    "blur": 6.5,
     "ease": "linear-ish"
   },
   "Contact CTA": {
@@ -226,6 +241,13 @@
     "align": {
       "x": 65
     },
+    "spacing": {
+      "titleToIntroDesktop": 28,
+      "introToIntroDesktop": 20,
+      "introToNameDesktop": 51,
+      "introToIntroMobile": 19,
+      "introToNameMobile": 32
+    },
     "peekDesktop": 95,
     "peekMobile": 95
   },
@@ -241,6 +263,47 @@
     "book": {
       "scale": 0.86,
       "shadowOpacity": 0
+    },
+    "grid": {
+      "scale": 0.88,
+      "minCard": 346,
+      "gap": 12,
+      "showPageNumbers": false
+    }
+  },
+  "Page transition": {
+    "look": {
+      "wipeRadius": 32
+    }
+  },
+  "About": {
+    "story": "My path to product design has been a rocky one.\n\nMy academic path began as a pre-med, only to realize that following strict protocols wasn’t meant for me.\n\nI believe the best designers are rebellious by nature.\n\nI’ve never truly felt like I belonged anywhere.\n\ndadwdawd\n\nMy whole life has been a series of pivots.\n\nI have quite the unconventional background.\n\nI started my studies\n\nHere are a few snippets that shed a bit of light into my too-many-too-count interests.\n\ndadwdawd\n\nWork hard. Play hard. \n\nNever stop learning.",
+    "sheet": {
+      "travel": 1.5,
+      "depth": 2
+    },
+    "dome": {
+      "peekDesktop": 95,
+      "peekMobile": 95,
+      "curve": "expo-out",
+      "enterDistance": 1.75,
+      "side": 0,
+      "arch": 70,
+      "radius": 0
+    },
+    "reveal": {
+      "preset": "deal",
+      "repeat": "always"
+    },
+    "spacing": {
+      "gapDesktop": 185,
+      "stackToHeadingDesktop": 76,
+      "labelTopDesktop": 94
+    }
+  },
+  "Header intro": {
+    "shader": {
+      "durationMs": 3040
     }
   }
 }

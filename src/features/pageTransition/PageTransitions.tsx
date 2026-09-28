@@ -28,7 +28,7 @@ const CONFIG = {
     scale: [0.96, 0.8, 1, 0.005] as [number, number, number, number],
     blur: [10, 0, 40, 0.5] as [number, number, number, number],
     outOpacity: [0, 0, 1, 0.05] as [number, number, number, number],
-    /** Corner radius of the wipe's leading edge (px); it squares off over the last 20% as the page lands. */
+    /** Radius of the two leading corners of the incoming page (px); they square off over the last 20% as it lands. */
     wipeRadius: [40, 0, 400, 1] as [number, number, number, number],
     /** slide: the page moves up (smoothest). reveal: the page stays put and is uncovered. */
     wipeStyle: { type: 'select' as const, options: ['slide', 'reveal'], default: 'slide' },

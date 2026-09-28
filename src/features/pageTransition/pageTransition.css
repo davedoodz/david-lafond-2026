@@ -95,12 +95,15 @@
      slide   the page itself moves (transform: compositor-smooth)
      reveal  the page stays put and a rounded edge uncovers it (clip-path)
    Motion is one eased segment; a short separate animation squares the corners
-   as the page lands, so the curve never stalls mid-way. */
+   as the page lands, so the curve never stalls mid-way.
+   Corners use a static clip-path, not border-radius: Chrome does not clip
+   view-transition snapshots to border-radius. The clip lives in the page's own
+   coordinates, so it rides along with the transform. */
 :root[data-vt='wipe']::view-transition-old(root) {
   animation-name: vt-drift-out;
 }
 :root[data-vt='wipe']::view-transition-new(root) {
-  border-radius: var(--vt-wipe-radius) var(--vt-wipe-radius) 0 0;
+  clip-path: inset(0 round var(--vt-wipe-radius) var(--vt-wipe-radius) 0 0);
   animation-name: vt-sheet-up, vt-square;
   animation-duration: var(--vt-in-dur), calc(var(--vt-in-dur) * 0.2);
   animation-delay: 0s, calc(var(--vt-in-dur) * 0.8);
@@ -108,11 +111,11 @@
   animation-fill-mode: both;
 }
 :root[data-vt='wipe'][data-vt-dir='back']::view-transition-new(root) {
-  border-radius: 0 0 var(--vt-wipe-radius) var(--vt-wipe-radius);
+  clip-path: inset(0 round 0 0 var(--vt-wipe-radius) var(--vt-wipe-radius));
   animation-name: vt-sheet-down, vt-square;
 }
 :root[data-vt='wipe'][data-vt-wipe='reveal']::view-transition-new(root) {
-  border-radius: 0;
+  clip-path: none;
   animation-name: vt-wipe-up;
 }
 :root[data-vt='wipe'][data-vt-wipe='reveal'][data-vt-dir='back']::view-transition-new(root) {
@@ -206,6 +209,6 @@
 }
 @keyframes vt-square {
   to {
-    border-radius: 0;
+    clip-path: inset(0 round 0);
   }
 }
