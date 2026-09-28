@@ -33,5 +33,25 @@
       "footerHintSelect": "",
       "footerHintClose": ""
     }
+  },
+  "Dither bands": {
+    "header": {
+      "pixelSize": 4.2,
+      "scale": 1.14,
+      "mouse": {
+        "radius": 250
+      }
+    },
+    "footer": {
+      "mouse": {
+        "radius": 250
+      }
+    }
+  },
+  "Signature": {
+    "layout": {
+      "offsetX": -33,
+      "offsetY": -3
+    }
   }
 }
