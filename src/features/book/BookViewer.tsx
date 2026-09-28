@@ -1,9 +1,10 @@
 /**
  * Book ↔ grid viewer for the Harvard & MIT portfolio.
  *
- * Book mode fills the first screen under the nav: a 3D flip book with
- * first / previous / counter / next / last and zoom controls. Grid mode shows
- * every spread and scrolls with the page. The mode switch is sticky, so it
+ * Video mode plays the portfolio walkthrough from YouTube. Book mode fills
+ * the first screen under the nav: a 3D flip book with first / previous /
+ * counter / next / last and zoom controls. Grid mode shows every spread and
+ * scrolls with the page. The mode switch is sticky, so it
  * stays in reach anywhere in the grid.
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
@@ -13,6 +14,7 @@ import {
   ChevronRightIcon,
   FirstPageIcon,
   GridIcon,
+  YouTubeIcon,
   LastPageIcon,
   ZoomInIcon,
   ZoomOutIcon,
@@ -24,7 +26,10 @@ import { SpreadGrid } from './SpreadGrid'
 import './book.css'
 
 type Tuple = [number, number, number, number]
-type Mode = 'book' | 'grid'
+type Mode = 'video' | 'book' | 'grid'
+
+/** `enablejsapi` lets the page pause the video when you switch away from it. */
+const VIDEO_SRC = 'https://www.youtube.com/embed/Rv-e5doUc0E?si=EUWjaq_nuAePoblG&enablejsapi=1&rel=0'
 
 const CONFIG = {
   book: {
@@ -54,6 +59,9 @@ export function BookViewer() {
   const [mode, setMode] = useState<Mode>('book')
   // The grid is only built the first time it is opened.
   const [gridMounted, setGridMounted] = useState(false)
+  // The YouTube player is only loaded the first time the video is opened, then kept so it resumes where it paused.
+  const [videoMounted, setVideoMounted] = useState(false)
+  const videoRef = useRef<HTMLIFrameElement>(null)
   const [state, setState] = useState<BookState>({ index: 0, orientation: 'landscape', zoom: 1 })
   const controller = useRef<BookController | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
@@ -68,6 +76,13 @@ export function BookViewer() {
     setMode(next)
     if (next === 'grid') setGridMounted(true)
     else window.scrollTo({ top: 0 })
+    if (next === 'video') setVideoMounted(true)
+    // Leaving the video pauses it, so it never plays on behind the book or grid.
+    else
+      videoRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
+        'https://www.youtube.com',
+      )
   }, [])
 
   // Opening the grid brings the spread you were reading into view.
@@ -107,6 +122,10 @@ export function BookViewer() {
   return (
     <section className="viewer" data-mode={mode} style={style} aria-label="Harvard & MIT design portfolio">
       <div className="viewer__switch" role="group" aria-label="View">
+        <button type="button" aria-pressed={mode === 'video'} onClick={() => switchTo('video')}>
+          <YouTubeIcon />
+          Video
+        </button>
         <button type="button" aria-pressed={mode === 'book'} onClick={() => switchTo('book')}>
           <BookIcon />
           Book
@@ -173,6 +192,21 @@ export function BookViewer() {
           </div>
         </div>
       </div>
+
+      {videoMounted && (
+        <div className="viewer__video" aria-hidden={mode !== 'video'} inert={mode !== 'video'}>
+          <div className="viewer__video-frame">
+            <iframe
+              ref={videoRef}
+              src={VIDEO_SRC}
+              title="The Design Portfolio that Got Me Into Harvard & MIT — video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
 
       {gridMounted && (
         <div ref={gridRef} className="viewer__grid" aria-hidden={mode !== 'grid'} inert={mode !== 'grid'}>

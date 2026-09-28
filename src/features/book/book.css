@@ -9,7 +9,7 @@
   animation: viewer-in 700ms var(--ease-out) both;
 }
 
-.viewer[data-mode='book'] {
+.viewer:not([data-mode='grid']) {
   display: flex;
   flex-direction: column;
   height: var(--viewer-h);
@@ -84,7 +84,7 @@
 }
 
 /* Hidden, not unmounted: the book keeps its page and its size while the grid is open. */
-.viewer[data-mode='grid'] .viewer__book {
+.viewer:not([data-mode='book']) .viewer__book {
   position: absolute;
   top: var(--switch-block);
   inset-inline: 0;
@@ -275,6 +275,48 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Video mode ---------- */
+
+.viewer__video {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 36px var(--edge) 48px;
+  container-type: size;
+  transition:
+    opacity 320ms ease,
+    display 320ms allow-discrete;
+}
+
+.viewer:not([data-mode='video']) .viewer__video {
+  display: none;
+  opacity: 0;
+}
+
+@starting-style {
+  .viewer__video {
+    opacity: 0;
+  }
+}
+
+/* Largest 16:9 frame that fits the pane. */
+.viewer__video-frame {
+  width: min(100cqw, 100cqh * 16 / 9);
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 40px 80px -12px rgb(0 0 0 / 0.6);
+}
+
+.viewer__video-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* ---------- Grid mode ---------- */
 
 .viewer__grid {
@@ -284,7 +326,7 @@
     display 320ms allow-discrete;
 }
 
-.viewer[data-mode='book'] .viewer__grid {
+.viewer:not([data-mode='grid']) .viewer__grid {
   display: none;
   opacity: 0;
 }
@@ -387,6 +429,12 @@
   }
   .viewer__grid {
     padding-top: 32px;
+  }
+  .viewer__video {
+    padding: 24px 16px 32px;
+  }
+  .viewer__switch button {
+    padding: 0 14px 0 11px;
   }
 }
 
