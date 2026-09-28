@@ -148,10 +148,20 @@
   "Contact CTA": {},
   "Let’s chat": {
     "morph": {
+      "shape": {
+        "type": "easing",
+        "duration": 0.3,
+        "ease": [
+          0.3,
+          0,
+          0.2,
+          1
+        ]
+      },
       "exitPx": 144,
       "exit": {
         "type": "easing",
-        "duration": 0.55,
+        "duration": 0.35,
         "ease": [
           0.5,
           0,
@@ -159,7 +169,7 @@
           0
         ]
       },
-      "fadeInMs": 370
+      "fadeInMs": 700
     },
     "motion": {
       "fillMs": 270,
@@ -197,9 +207,9 @@
     },
     "click": {
       "preset": "circle",
-      "openDelayMs": 400,
+      "openDelayMs": 100,
       "holdMs": 260,
-      "fadeMs": 160
+      "fadeMs": 630
     }
   }
 }
