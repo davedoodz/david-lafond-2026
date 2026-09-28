@@ -15,6 +15,9 @@ const CONFIG = {
   spacing: {
     topDesktop: [230, 0, 1000, 1] as [number, number, number, number],
     topMobile: [84, 0, 600, 1] as [number, number, number, number],
+    /** "Let's chat" → footer. */
+    bottomDesktop: [102, 0, 800, 1] as [number, number, number, number],
+    bottomMobile: [27, 0, 600, 1] as [number, number, number, number],
   },
 }
 
@@ -31,6 +34,8 @@ export function ContactCta() {
           '--align-x': `${t.align.x}px`,
           '--cta-top-d': `${t.spacing.topDesktop}px`,
           '--cta-top-m': `${t.spacing.topMobile}px`,
+          '--cta-bottom-d': `${t.spacing.bottomDesktop}px`,
+          '--cta-bottom-m': `${t.spacing.bottomMobile}px`,
         } as CSSProperties
       }
       aria-labelledby="cta-title"

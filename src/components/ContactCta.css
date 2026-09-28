@@ -2,7 +2,7 @@
   position: relative;
   z-index: 1;
   /* Top gap is a dial (Contact CTA → spacing); the About page sets its own. */
-  padding-block: var(--cta-top-d, 230px) 102px;
+  padding-block: var(--cta-top-d, 230px) var(--cta-bottom-d, 102px);
   color: var(--paper);
 }
 
@@ -22,7 +22,7 @@
 
 @media (max-width: 640px) {
   .cta {
-    padding-block: var(--cta-top-m, 84px) 27px;
+    padding-block: var(--cta-top-m, 84px) var(--cta-bottom-m, 27px);
   }
   .cta__title {
     max-width: 242px;
