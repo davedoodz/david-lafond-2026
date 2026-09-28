@@ -77,7 +77,7 @@ const band = (flip: boolean, frame: number) => ({
   },
   mobile: {
     height: [265, 60, 600, 1] as [number, number, number, number],
-    widthScale: [313, 50, 500, 1] as [number, number, number, number],
+    widthScale: [313, 50, 800, 1] as [number, number, number, number],
     x: [0, -600, 600, 1] as [number, number, number, number],
     y: [0, -300, 300, 1] as [number, number, number, number],
   },

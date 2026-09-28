@@ -13,10 +13,11 @@
   "Davebot": {
     "ghost": {
       "zoomSize": 190,
+      "offsetY": -85,
       "morph": {
         "type": "spring",
         "visualDuration": 0.7,
-        "bounce": 0.35
+        "bounce": 0.25
       }
     },
     "highlight": {
@@ -33,10 +34,35 @@
   "Dither bands": {
     "header": {
       "color": "#676767",
+      "pixelSize": 6.2,
+      "scale": 1.17,
       "mouse": {
-        "radius": 309,
+        "radius": 219,
         "boost": -0.99,
         "warp": 0.34
+      },
+      "desktop": {
+        "widthScale": 200,
+        "y": -63
+      },
+      "mobile": {
+        "widthScale": 626,
+        "y": -58
+      }
+    },
+    "footer": {
+      "mouse": {
+        "radius": 219,
+        "boost": -0.99,
+        "warp": 0.34
+      },
+      "desktop": {
+        "widthScale": 200,
+        "y": 63
+      },
+      "mobile": {
+        "widthScale": 626,
+        "y": 58
       }
     }
   }
