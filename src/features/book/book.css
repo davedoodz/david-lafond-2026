@@ -169,8 +169,11 @@
   -webkit-user-select: none;
 }
 
+/*
+ * Flat, not preserve-3d: the only child (.book__shift) is 2D anyway, and a 3D
+ * rendering context makes Chrome rasterize the pages at low resolution (blurry text).
+ */
 .book__tilt {
-  transform-style: preserve-3d;
   will-change: transform;
 }
 
