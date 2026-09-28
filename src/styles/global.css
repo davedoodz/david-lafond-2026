@@ -263,3 +263,32 @@ textarea::selection {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* Load-in (see src/lib/useEntrance.ts). Element n waits delay + n × stagger. */
+@keyframes enter-in {
+  from {
+    opacity: 0;
+    translate: 0 var(--enter-y);
+    filter: blur(var(--enter-blur));
+  }
+}
+
+.entrance [data-enter] {
+  animation: enter-in var(--enter-ms) var(--enter-ease) both;
+}
+
+.entrance [data-enter='0'] {
+  animation-delay: var(--enter-delay);
+}
+
+.entrance [data-enter='1'] {
+  animation-delay: calc(var(--enter-delay) + var(--enter-stagger));
+}
+
+.entrance [data-enter='2'] {
+  animation-delay: calc(var(--enter-delay) + 2 * var(--enter-stagger));
+}
+
+.entrance [data-enter='3'] {
+  animation-delay: calc(var(--enter-delay) + 3 * var(--enter-stagger));
+}

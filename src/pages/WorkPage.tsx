@@ -3,6 +3,7 @@ import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
 import { Signature } from '../features/signature/Signature'
+import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
 import './WorkPage.css'
@@ -27,6 +28,7 @@ const CONFIG = {
 export function WorkPage() {
   const t = useTuning('Hero', CONFIG)
   const mainRef = useRef<HTMLElement>(null)
+  const entrance = useEntrance()
   useFitColumn(mainRef)
   return (
     <main ref={mainRef} className="work">
@@ -35,14 +37,14 @@ export function WorkPage() {
         style={{ '--peek-d': `${t.peekDesktop}px`, '--peek-m': `${t.peekMobile}px` } as CSSProperties}
       >
         <Nav route="work" />
-        <section className="hero column" aria-labelledby="hero-title">
-          <h1 id="hero-title" className="hero__title">
+        <section className={`hero column ${entrance.className}`} style={entrance.style} aria-labelledby="hero-title">
+          <h1 id="hero-title" className="hero__title" data-enter="0">
             {t.headline} <em>{t.headlineEmphasis}</em>
           </h1>
-          <p className="hero__intro">{t.intro}</p>
-          <p className="hero__intro">{t.intro2}</p>
-          <p className="hero__name">{t.name}</p>
-          <p className="hero__role">{t.role}</p>
+          <p className="hero__intro" data-enter="1">{t.intro}</p>
+          <p className="hero__intro" data-enter="1">{t.intro2}</p>
+          <p className="hero__name" data-enter="2">{t.name}</p>
+          <p className="hero__role" data-enter="3">{t.role}</p>
           <Signature className="hero__signature" />
         </section>
       </div>

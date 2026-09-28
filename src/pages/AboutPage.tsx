@@ -6,6 +6,7 @@ import { ArrowDownIcon } from '../components/icons'
 import { Nav } from '../components/Nav'
 import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
+import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuningController } from '../tuning/useTuning'
 import './AboutPage.css'
@@ -37,6 +38,7 @@ export function AboutPage() {
 
   const mainRef = useRef<HTMLElement>(null)
   useFitColumn(mainRef)
+  const entrance = useEntrance()
 
   useEffect(() => {
     document.body.dataset.page = 'about'
@@ -57,18 +59,20 @@ export function AboutPage() {
       <div className="about__light" data-surface="light">
         <Nav route="about" />
         <PhotoStack className="about__stack" />
-        <section className="about__story column" aria-labelledby="about-title">
+        <section className={`about__story column ${entrance.className}`} style={entrance.style} aria-labelledby="about-title">
           <EditableText
             as="h1"
             id="about-title"
             className="about__heading"
             label="Heading"
+            enter={0}
             value={t.heading}
             onChange={(next) => setValue('heading', next)}
           />
           <EditableText
             className="about__text"
             label="Story"
+            enter={1}
             value={t.story}
             onChange={(next) => setValue('story', next)}
           />

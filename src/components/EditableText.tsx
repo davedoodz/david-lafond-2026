@@ -13,9 +13,11 @@ type Props = {
   className?: string
   id?: string
   label: string
+  /** Entrance order (`data-enter`, see src/lib/useEntrance.ts). */
+  enter?: number
 }
 
-export function EditableText({ as = 'div', value, onChange, className, id, label }: Props) {
+export function EditableText({ as = 'div', value, onChange, className, id, label, enter }: Props) {
   const ref = useRef<HTMLElement>(null)
 
   // Only push external edits (DialKit panel) into the DOM, never the user's own
@@ -25,11 +27,12 @@ export function EditableText({ as = 'div', value, onChange, className, id, label
     if (el && el.innerText !== value) el.innerText = value
   }, [value])
 
-  if (!import.meta.env.DEV) return createElement(as, { className, id }, value)
+  if (!import.meta.env.DEV) return createElement(as, { className, id, 'data-enter': enter }, value)
 
   return createElement(as, {
     ref,
     id,
+    'data-enter': enter,
     className: `${className ?? ''} is-editable`,
     contentEditable: 'plaintext-only',
     suppressContentEditableWarning: true,
