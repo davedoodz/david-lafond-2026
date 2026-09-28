@@ -253,6 +253,8 @@ export function createInkEngine(canvas: HTMLCanvasElement, initial: InkOptions):
     },
     begin: event => {
       if (!options.enabled || event.pointerType !== 'mouse' || event.button !== 0) return
+      // No sketching while the DialKit panel is open (flag set by DevRoot).
+      if (document.documentElement.hasAttribute('data-dialkit-open')) return
       if (isBlocked(event.target) || isTextAtPoint(event.target, event.clientX, event.clientY)) return
       protectedElements = [...document.querySelectorAll(PROTECTED_SELECTOR)]
       const owner = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-surface]') : null

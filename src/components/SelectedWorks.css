@@ -15,16 +15,21 @@
 }
 
 .works__inner {
-  padding: var(--works-top-d) 0 var(--works-bottom-d);
+  position: relative;
+  padding: var(--works-first-d) 0 var(--works-last-d);
 }
 
 .works__eyebrow {
   display: flex;
+  /* Out of flow: its position never moves the projects. */
+  position: absolute;
+  inset-inline: 0;
+  top: var(--label-top-d);
 }
 
 .works__list {
   list-style: none;
-  margin: var(--works-label-gap-d) 0 0;
+  margin: 0;
   padding: 0;
   display: grid;
   gap: var(--works-gap-d);
@@ -32,7 +37,13 @@
 }
 
 .works__list > li {
+  scale: var(--focus-scale, 1);
   width: min(867px, 100% - 2 * clamp(41px, 10.25vw, 206px));
+}
+
+/* Trigger mode animates between the two scales; scroll mode follows the wheel directly. */
+.works__list[data-focus='trigger'] > li {
+  transition: scale var(--focus-ms, 600ms) var(--ease-out);
 }
 
 .works__card {
@@ -88,10 +99,12 @@ li:last-child > .works__card .card-shade {
     --works-card-radius: var(--works-card-radius-m);
   }
   .works__inner {
-    padding: var(--works-top-m) 0 var(--works-bottom-m);
+    padding: var(--works-first-m) 0 var(--works-last-m);
+  }
+  .works__eyebrow {
+    top: var(--label-top-m);
   }
   .works__list {
-    margin-top: var(--works-label-gap-m);
     gap: var(--works-gap-m);
   }
   .works__title {
@@ -111,9 +124,18 @@ li:last-child > .works__card .card-shade {
   font-size: var(--label-size-d);
 }
 
+.works__eyebrow[data-align-label='center'] {
+  justify-content: center;
+}
+
+[data-fit-measuring] .works__eyebrow {
+  justify-content: flex-start;
+}
+
 .works__eyebrow svg {
   width: var(--label-arrow);
   height: var(--label-arrow);
+  translate: 0 var(--label-arrow-y, 0px);
 }
 
 @media (max-width: 640px) {
@@ -137,6 +159,11 @@ html[data-works-snap] .landing {
 
 html[data-works-snap] .works__card {
   scroll-snap-align: center;
+}
+
+/* The page end is always a stop, so snap never traps you above the footer. */
+html[data-works-snap] body:has(.works) .footer {
+  scroll-snap-align: end;
 }
 
 /* Whole-card link for works with a project page. */

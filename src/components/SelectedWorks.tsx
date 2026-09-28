@@ -12,8 +12,9 @@
  * Only a clip-path on a flat background layer changes, so cards never re-layout.
  * Optional scroll snap centres one project per stop.
  */
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
+import { springEasing } from '../lib/springEasing'
 import { useTuning } from '../tuning/useTuning'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
 import { MeshCard } from './MeshCard'
@@ -65,17 +66,31 @@ const CONFIG = {
     endRadius: [45, 0, 200, 1] as Tuple,
     _collapsed: false,
   },
+  /**
+   * How the sheet tip arrives on page load (rises from below the fold).
+   * Changing any dial replays it.
+   */
+  intro: {
+    preset: { type: 'select' as const, options: ['rise', 'spring', 'bounce', 'float', 'none'], default: 'spring' },
+    delayMs: [400, 0, 3000, 10] as Tuple,
+    durationMs: [900, 150, 3000, 10] as Tuple,
+    /** Start offset below the resting position (px). */
+    distance: [140, 20, 600, 1] as Tuple,
+    /** spring: overshoot amount. */
+    bounce: [0.3, 0, 0.9, 0.01] as Tuple,
+    _collapsed: false,
+  },
   /** Vertical rhythm. Gaps are in % of viewport height so one project fills each stop. */
   spacing: {
     snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'off' },
-    topDesktop: [120, 0, 400, 1] as Tuple,
-    labelToFirstDesktop: [73, 0, 300, 1] as Tuple,
+    /** Sheet top edge → first project. */
+    firstDesktop: [210, 0, 800, 1] as Tuple,
     gapDesktop: [35, 5, 100, 1] as Tuple,
-    bottomDesktop: [260, 0, 800, 1] as Tuple,
-    topMobile: [60, 0, 300, 1] as Tuple,
-    labelToFirstMobile: [35, 0, 200, 1] as Tuple,
+    /** Last project → sheet bottom edge. */
+    lastDesktop: [260, 0, 800, 1] as Tuple,
+    firstMobile: [107, 0, 500, 1] as Tuple,
     gapMobile: [25, 5, 100, 1] as Tuple,
-    bottomMobile: [140, 0, 600, 1] as Tuple,
+    lastMobile: [140, 0, 600, 1] as Tuple,
     _collapsed: false,
   },
   shape: {
@@ -86,10 +101,30 @@ const CONFIG = {
   /** "Selected works" label above the first project. */
   label: {
     show: true,
-    arrow: { type: 'select' as const, options: ['down', 'down-right'], default: 'down' },
+    align: { type: 'select' as const, options: ['center', 'left'], default: 'center' },
+    arrow: { type: 'select' as const, options: ['down', 'down-right', 'none'], default: 'down' },
+    /** Distance from the sheet top edge; independent of the project spacing. */
+    topDesktop: [120, 0, 800, 1] as Tuple,
+    topMobile: [60, 0, 500, 1] as Tuple,
     size: [14, 8, 40, 0.5] as Tuple,
     sizeMobile: [10, 6, 30, 0.5] as Tuple,
     arrowSize: [0.7, 0.3, 2, 0.05] as Tuple,
+    /** Nudges the arrow up (−) or down (+) against the text, in px. */
+    arrowY: [0, -20, 20, 0.5] as Tuple,
+    _collapsed: false,
+  },
+  /**
+   * Project focus: the card nearest the screen centre grows, the others shrink back.
+   *   scroll   scale follows scroll position continuously
+   *   trigger  the centred card animates up (durationMs), the previous one animates down
+   */
+  focus: {
+    mode: { type: 'select' as const, options: ['scroll', 'trigger', 'off'], default: 'scroll' },
+    restScale: [0.9, 0.6, 1, 0.005] as Tuple,
+    focusScale: [1.04, 1, 1.3, 0.005] as Tuple,
+    /** scroll: distance from centre (in screen heights) over which a card shrinks back to rest. */
+    range: [0.6, 0.1, 1.5, 0.01] as Tuple,
+    durationMs: [600, 100, 1500, 10] as Tuple,
     _collapsed: false,
   },
   hover: {
@@ -105,6 +140,8 @@ const TITLE_KEYS = {
 } as const
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x)
+const smooth = (x: number) => x * x * (3 - 2 * x)
+
 
 export function SelectedWorks() {
   const t = useTuning('Selected works', CONFIG)
@@ -131,13 +168,13 @@ export function SelectedWorks() {
       const x = reduced ? 0 : curve(clamp01((vh * (1 - morph.exitStart) - rect.bottom) / (morph.exitDistance * vh)))
 
       const side = Math.max(morph.startSide * (1 - e), morph.endSide * x) * vw / 100
-      // Each edge: corner radius r plus an arch. The horizontal radius slides from
-      // r to 50% (a full dome) and the vertical radius to the arch height.
+      // Each edge: corner radius r plus an arch. With an arch the horizontal
+      // radius stays 50% so the two corners always meet in one continuous
+      // curve (no flat middle); only the arch depth animates.
       const edge = (radius: number, arch: number, k: number) => {
         const r = radius * k
-        const a = arch > 0 ? k : 0
         return {
-          x: `calc(${r.toFixed(2)}px + (50% - ${r.toFixed(2)}px) * ${a.toFixed(4)})`,
+          x: arch > 0 ? '50%' : `${r.toFixed(2)}px`,
           y: `${Math.max(r, (arch / 100) * vh * k).toFixed(2)}px`,
         }
       }
@@ -164,9 +201,95 @@ export function SelectedWorks() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [morphKey])
 
-  // Scroll snap lives on <html>; only while this page is mounted.
-  const snap = t.spacing.snap
+  // Project focus scale, written as --focus-scale on each <li> (the card's own
+  // `scale` stays free for hover).
+  const listRef = useRef<HTMLUListElement>(null)
+  const focus = t.focus
+  const focusKey = JSON.stringify(focus)
   useEffect(() => {
+    const items = Array.from(listRef.current?.children ?? []) as HTMLElement[]
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const clear = () => items.forEach((li) => li.style.removeProperty('--focus-scale'))
+    if (focus.mode === 'off' || reduced) {
+      clear()
+      return
+    }
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const mid = window.innerHeight / 2
+      const distances = items.map((li) => {
+        const r = li.getBoundingClientRect()
+        return Math.abs(r.top + r.height / 2 - mid)
+      })
+      if (focus.mode === 'scroll') {
+        items.forEach((li, i) => {
+          const f = smooth(clamp01(1 - distances[i] / (focus.range * window.innerHeight)))
+          li.style.setProperty('--focus-scale', (focus.restScale + (focus.focusScale - focus.restScale) * f).toFixed(4))
+        })
+        return
+      }
+      // trigger: only the nearest card (and only once it is well on screen) is focused.
+      const nearest = distances.indexOf(Math.min(...distances))
+      items.forEach((li, i) => {
+        const on = i === nearest && distances[i] < window.innerHeight * 0.35
+        li.style.setProperty('--focus-scale', String(on ? focus.focusScale : focus.restScale))
+      })
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      clear()
+    }
+    // `focusKey` captures every focus dial.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey])
+
+  // Sheet intro: only the background layer moves, so cards and scroll math are untouched.
+  const intro = t.intro
+  const introKey = JSON.stringify(intro)
+  useEffect(() => {
+    const bg = sectionRef.current?.querySelector<HTMLElement>('.works__bg')
+    if (!bg || intro.preset === 'none') return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.scrollY > 10) return
+    const d = intro.distance
+    const frames: Keyframe[] =
+      intro.preset === 'bounce'
+        ? [
+            { translate: `0 ${d}px`, easing: 'cubic-bezier(0.3, 0, 0.6, 1)' },
+            { translate: `0 ${-d * 0.12}px`, offset: 0.55, easing: 'ease-in-out' },
+            { translate: `0 ${d * 0.05}px`, offset: 0.78, easing: 'ease-in-out' },
+            { translate: '0 0' },
+          ]
+        : intro.preset === 'float'
+          ? [{ translate: `0 ${d}px`, opacity: 0 }, { translate: '0 0', opacity: 1 }]
+          : [{ translate: `0 ${d}px` }, { translate: '0 0' }]
+    const easing =
+      intro.preset === 'spring'
+        ? springEasing(intro.bounce)
+        : intro.preset === 'float'
+          ? 'cubic-bezier(0.16, 1, 0.3, 1)'
+          : intro.preset === 'rise'
+            ? 'cubic-bezier(0.22, 1, 0.36, 1)'
+            : 'linear'
+    const animation = bg.animate(frames, { duration: intro.durationMs, delay: intro.delayMs, easing, fill: 'backwards' })
+    return () => animation.cancel()
+    // `introKey` captures every intro dial.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [introKey])
+
+  // Scroll snap lives on <html>; only while this page is mounted. Layout effect so
+  // the attribute is gone in the same commit that swaps pages: otherwise the next
+  // page would snap to its footer before this cleanup ran.
+  const snap = t.spacing.snap
+  useLayoutEffect(() => {
     if (snap === 'off') return
     const root = document.documentElement
     root.dataset.worksSnap = snap
@@ -189,14 +312,16 @@ export function SelectedWorks() {
     '--label-size-d': `${t.label.size}px`,
     '--label-size-m': `${t.label.sizeMobile}px`,
     '--label-arrow': `${t.label.arrowSize}em`,
-    '--works-top-d': `${sp.topDesktop}px`,
-    '--works-label-gap-d': `${sp.labelToFirstDesktop}px`,
+    '--label-arrow-y': `${t.label.arrowY}px`,
+    '--works-first-d': `${sp.firstDesktop}px`,
     '--works-gap-d': `${sp.gapDesktop}svh`,
-    '--works-bottom-d': `${sp.bottomDesktop}px`,
-    '--works-top-m': `${sp.topMobile}px`,
-    '--works-label-gap-m': `${sp.labelToFirstMobile}px`,
+    '--works-last-d': `${sp.lastDesktop}px`,
+    '--works-first-m': `${sp.firstMobile}px`,
     '--works-gap-m': `${sp.gapMobile}svh`,
-    '--works-bottom-m': `${sp.bottomMobile}px`,
+    '--works-last-m': `${sp.lastMobile}px`,
+    '--focus-ms': `${t.focus.durationMs}ms`,
+    '--label-top-d': `${t.label.topDesktop}px`,
+    '--label-top-m': `${t.label.topMobile}px`,
   } as CSSProperties
 
   return (
@@ -206,10 +331,13 @@ export function SelectedWorks() {
         <h2
           id="works-heading"
           className={`eyebrow works__eyebrow column${t.label.show ? '' : ' visually-hidden'}`}
+          data-align-label={t.label.align}
         >
-          Selected works {t.label.arrow === 'down-right' ? <ArrowDownRightIcon /> : <ArrowDownIcon />}
+          Selected works
+          {t.label.arrow === 'down' && <ArrowDownIcon />}
+          {t.label.arrow === 'down-right' && <ArrowDownRightIcon />}
         </h2>
-        <ul className="works__list">
+        <ul ref={listRef} className="works__list" data-focus={t.focus.mode}>
           {WORKS.map((work) => {
             const [desktopKey, mobileKey] = TITLE_KEYS[work.id]
             return (

@@ -26,6 +26,19 @@ const CONFIG = {
     text: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     x: [0, -400, 400, 1] as [number, number, number, number],
   },
+  /** Vertical gaps between the hero text elements (px). */
+  spacing: {
+    titleToIntroDesktop: [30, 0, 200, 1] as [number, number, number, number],
+    introToIntroDesktop: [24, 0, 200, 1] as [number, number, number, number],
+    introToNameDesktop: [42, 0, 200, 1] as [number, number, number, number],
+    nameToRoleDesktop: [10, 0, 120, 1] as [number, number, number, number],
+    roleToSignatureDesktop: [21, -40, 200, 1] as [number, number, number, number],
+    titleToIntroMobile: [19, 0, 160, 1] as [number, number, number, number],
+    introToIntroMobile: [17, 0, 160, 1] as [number, number, number, number],
+    introToNameMobile: [40, 0, 160, 1] as [number, number, number, number],
+    nameToRoleMobile: [3, 0, 100, 1] as [number, number, number, number],
+    roleToSignatureMobile: [19, -40, 160, 1] as [number, number, number, number],
+  },
   peekDesktop: [40, 0, 240, 1] as [number, number, number, number],
   peekMobile: [28, 0, 240, 1] as [number, number, number, number],
 }
@@ -45,7 +58,22 @@ export function WorkPage() {
         <section
           className={`hero column ${entrance.className}`}
           data-align={t.align.text}
-          style={{ ...entrance.style, '--align-x': `${t.align.x}px` } as CSSProperties}
+          style={
+            {
+              ...entrance.style,
+              '--align-x': `${t.align.x}px`,
+              '--gap-title-intro-d': `${t.spacing.titleToIntroDesktop}px`,
+              '--gap-intro-intro-d': `${t.spacing.introToIntroDesktop}px`,
+              '--gap-intro-name-d': `${t.spacing.introToNameDesktop}px`,
+              '--gap-name-role-d': `${t.spacing.nameToRoleDesktop}px`,
+              '--gap-role-sig-d': `${t.spacing.roleToSignatureDesktop}px`,
+              '--gap-title-intro-m': `${t.spacing.titleToIntroMobile}px`,
+              '--gap-intro-intro-m': `${t.spacing.introToIntroMobile}px`,
+              '--gap-intro-name-m': `${t.spacing.introToNameMobile}px`,
+              '--gap-name-role-m': `${t.spacing.nameToRoleMobile}px`,
+              '--gap-role-sig-m': `${t.spacing.roleToSignatureMobile}px`,
+            } as CSSProperties
+          }
           aria-labelledby="hero-title"
         >
           <h1 id="hero-title" className="hero__title" data-enter="0">

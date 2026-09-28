@@ -32,6 +32,8 @@ export type BookController = {
 }
 
 export type BookLook = {
+  /** Share of the largest size that fits the stage. */
+  scale: number
   flipMs: number
   tiltRestX: number
   tiltRestY: number
@@ -85,6 +87,12 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     if (flip) flip.getSettings().flippingTime = look.flipMs
   }, [look.flipMs])
 
+  // Book scale dial: re-fit without remounting.
+  const relayoutRef = useRef<(() => void) | null>(null)
+  useEffect(() => {
+    relayoutRef.current?.()
+  }, [look.scale])
+
   useEffect(() => {
     const stage = stageRef.current!
     const tilt = tiltRef.current!
@@ -135,8 +143,9 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     let orientation: Orientation = 'landscape'
     const layout = () => {
       const style = getComputedStyle(stage)
-      const w = stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
-      const h = stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+      const scale = lookRef.current.scale
+      const w = (stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)) * scale
+      const h = (stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) * scale
       const spread = Math.min(w, h * PAGE_ASPECT * 2)
       const width = spread >= MIN_PAGE_WIDTH * 2 ? spread : Math.min(w, h * PAGE_ASPECT)
       mount.style.width = `${Math.max(0, Math.floor(width))}px`
@@ -310,11 +319,13 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     tick()
     report()
 
-    const observer = new ResizeObserver(() => {
+    const relayout = () => {
       layout()
       flip.update()
       setZoom(1)
-    })
+    }
+    relayoutRef.current = relayout
+    const observer = new ResizeObserver(relayout)
     observer.observe(stage)
 
     // --- Pointer: tilt on hover, pan while zoomed, pinch on touch.
@@ -466,6 +477,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       controllerRef.current = null
       detailToken++
       flipRef.current = null
+      relayoutRef.current = null
       flip.destroy()
     }
     // One book per mount; live dials are read through lookRef.

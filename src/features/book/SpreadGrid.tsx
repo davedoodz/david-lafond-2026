@@ -1,13 +1,13 @@
 import { memo } from 'react'
 import { SPREADS, pageLabel, pageUrl, PAGE_COUNT } from './bookPages'
 
-type Props = { current: number; onOpen: (spread: number) => void }
+type Props = { current: number; onOpen: (spread: number) => void; showPageNumbers: boolean }
 
 /**
  * Every spread at a glance, laid out as the open book shows it: covers sit
  * alone on their side of the spine. Thumbs load lazily as the grid scrolls.
  */
-export const SpreadGrid = memo(function SpreadGrid({ current, onOpen }: Props) {
+export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNumbers }: Props) {
   return (
     <ol className="spread-grid">
       {SPREADS.map((pages, spread) => {
@@ -28,7 +28,7 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen }: Props) {
                   <img key={page} src={pageUrl(page, 'thumb')} alt="" loading="lazy" decoding="async" draggable={false} />
                 ))}
               </span>
-              <span className="spread-grid__label">{label}</span>
+              {showPageNumbers && <span className="spread-grid__label">{label}</span>}
             </button>
           </li>
         )

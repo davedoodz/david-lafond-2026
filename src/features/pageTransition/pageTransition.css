@@ -2,7 +2,7 @@
  * Page transition presets. `data-vt` on <html> selects the preset for the
  * duration of one transition; timing and look come from --vt-* variables set by
  * the "Page transition" DialKit panel. Only transform, opacity, filter and (for
- * `wipe`) clip-path animate, all on snapshots rather than live layout.
+ * `wipe` reveal) clip-path animate, all on snapshots rather than live layout.
  */
 :root {
   --vt-dir: 1;
@@ -90,14 +90,32 @@
   animation-name: vt-blur-in;
 }
 
-/* wipe — new page is revealed bottom→top (top→bottom on the way back) over a drifting old page */
+/* wipe — the new page comes up from the bottom (down from the top on the way back)
+   over a drifting old page, leading corners rounded (--vt-wipe-radius).
+     slide   the page itself moves (transform: compositor-smooth)
+     reveal  the page stays put and a rounded edge uncovers it (clip-path)
+   Motion is one eased segment; a short separate animation squares the corners
+   as the page lands, so the curve never stalls mid-way. */
 :root[data-vt='wipe']::view-transition-old(root) {
   animation-name: vt-drift-out;
 }
 :root[data-vt='wipe']::view-transition-new(root) {
-  animation-name: vt-wipe-up;
+  border-radius: var(--vt-wipe-radius) var(--vt-wipe-radius) 0 0;
+  animation-name: vt-sheet-up, vt-square;
+  animation-duration: var(--vt-in-dur), calc(var(--vt-in-dur) * 0.2);
+  animation-delay: 0s, calc(var(--vt-in-dur) * 0.8);
+  animation-timing-function: var(--vt-in-ease), ease-out;
+  animation-fill-mode: both;
 }
 :root[data-vt='wipe'][data-vt-dir='back']::view-transition-new(root) {
+  border-radius: 0 0 var(--vt-wipe-radius) var(--vt-wipe-radius);
+  animation-name: vt-sheet-down, vt-square;
+}
+:root[data-vt='wipe'][data-vt-wipe='reveal']::view-transition-new(root) {
+  border-radius: 0;
+  animation-name: vt-wipe-up;
+}
+:root[data-vt='wipe'][data-vt-wipe='reveal'][data-vt-dir='back']::view-transition-new(root) {
   animation-name: vt-wipe-down;
 }
 
@@ -159,19 +177,35 @@
     transform: translateY(calc(var(--vt-dist) * -1 * var(--vt-dir)));
   }
 }
+@keyframes vt-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes vt-sheet-down {
+  from {
+    transform: translateY(-100%);
+  }
+}
+/* Reveal: the rounded edge is part of the clip; radius eases to 0 in the same single segment. */
 @keyframes vt-wipe-up {
   from {
-    clip-path: inset(100% 0 0 0);
+    clip-path: inset(100% 0 0 0 round var(--vt-wipe-radius) var(--vt-wipe-radius) 0 0);
   }
   to {
-    clip-path: inset(0 0 0 0);
+    clip-path: inset(0 round 0);
   }
 }
 @keyframes vt-wipe-down {
   from {
-    clip-path: inset(0 0 100% 0);
+    clip-path: inset(0 0 100% 0 round 0 0 var(--vt-wipe-radius) var(--vt-wipe-radius));
   }
   to {
-    clip-path: inset(0 0 0 0);
+    clip-path: inset(0 round 0);
+  }
+}
+@keyframes vt-square {
+  to {
+    border-radius: 0;
   }
 }

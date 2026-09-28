@@ -20,6 +20,7 @@ import {
   ZoomOutIcon,
 } from '../../components/icons'
 import { useTuning } from '../../tuning/useTuning'
+import { ViewSwitch, switchDials } from './ViewSwitch'
 import { FlipBook, type BookController, type BookState } from './FlipBook'
 import { PAGE_COUNT, SPREADS, pageLabel } from './bookPages'
 import { SpreadGrid } from './SpreadGrid'
@@ -32,14 +33,22 @@ type Mode = 'video' | 'book' | 'grid'
 const VIDEO_SRC = 'https://www.youtube.com/embed/Rv-e5doUc0E?si=EUWjaq_nuAePoblG&enablejsapi=1&rel=0'
 
 const CONFIG = {
+  /** Video / Book / Grid switch animation. */
+  switch: switchDials(),
   video: {
     /** Share of the largest 16:9 frame that fits under the switch. */
     scaleDesktop: [1, 0.3, 1, 0.01] as Tuple,
     scaleMobile: [1, 0.3, 1, 0.01] as Tuple,
     radius: [12, 0, 40, 1] as Tuple,
     hoverLabel: { type: 'text' as const, default: '180k+ views on Youtube!' },
+    /** Hover pill colours: light = white pill, black text; dark = black pill, white text. */
+    pill: { type: 'select' as const, options: ['light', 'dark'], default: 'light' },
+    /** Colour of the custom cursor dot over the video. */
+    cursor: { type: 'select' as const, options: ['light', 'dark'], default: 'light' },
   },
   book: {
+    /** Share of the largest size that fits the stage. */
+    scale: [1, 0.4, 1, 0.01] as Tuple,
     flipMs: [700, 250, 1600, 10] as Tuple,
     tiltRestX: [8, -20, 30, 0.5] as Tuple,
     tiltRestY: [0, -20, 20, 0.5] as Tuple,
@@ -52,8 +61,11 @@ const CONFIG = {
     _collapsed: true,
   },
   grid: {
+    /** Multiplies spread size and spacing (fewer, larger spreads per row above 1). */
+    scale: [1, 0.5, 2, 0.01] as Tuple,
     minCard: [300, 180, 520, 1] as Tuple,
     gap: [40, 12, 96, 1] as Tuple,
+    showPageNumbers: true,
     _collapsed: true,
   },
 }
@@ -124,26 +136,22 @@ export function BookViewer() {
     '--video-scale-d': t.video.scaleDesktop,
     '--video-scale-m': t.video.scaleMobile,
     '--video-radius': `${t.video.radius}px`,
-    '--grid-min': `${t.grid.minCard}px`,
-    '--grid-gap': `${t.grid.gap}px`,
+    '--grid-min': `${t.grid.minCard * t.grid.scale}px`,
+    '--grid-gap': `${t.grid.gap * t.grid.scale}px`,
   } as CSSProperties
 
   return (
     <section className="viewer" data-mode={mode} style={style} aria-label="Harvard & MIT design portfolio">
-      <div className="viewer__switch" role="group" aria-label="View">
-        <button type="button" aria-pressed={mode === 'video'} onClick={() => switchTo('video')}>
-          <YouTubeIcon />
-          Video
-        </button>
-        <button type="button" aria-pressed={mode === 'book'} onClick={() => switchTo('book')}>
-          <BookIcon />
-          Book
-        </button>
-        <button type="button" aria-pressed={mode === 'grid'} onClick={() => switchTo('grid')}>
-          <GridIcon />
-          Grid
-        </button>
-      </div>
+      <ViewSwitch
+        items={[
+          { key: 'video', label: 'Video', icon: <YouTubeIcon /> },
+          { key: 'book', label: 'Book', icon: <BookIcon /> },
+          { key: 'grid', label: 'Grid', icon: <GridIcon /> },
+        ]}
+        active={mode}
+        onSelect={(key) => switchTo(key as Mode)}
+        look={t.switch}
+      />
 
       <div className="viewer__book" aria-hidden={mode !== 'book'} inert={mode !== 'book'}>
         <FlipBook
@@ -202,7 +210,16 @@ export function BookViewer() {
         </div>
       </div>
 
-      <div className="viewer__video" aria-hidden={mode !== 'video'} inert={mode !== 'video'}>
+      <div
+        className="viewer__video"
+        data-pill={t.video.pill}
+        onPointerMove={(event) => {
+          // The label lives on the pane (not the clipped frame) so it can spill past the video edge.
+          const rect = event.currentTarget.getBoundingClientRect()
+          event.currentTarget.style.setProperty('--x', `${event.clientX - rect.left}px`)
+          event.currentTarget.style.setProperty('--y', `${event.clientY - rect.top}px`)
+        }}
+        aria-hidden={mode !== 'video'} inert={mode !== 'video'}>
         <div className="viewer__video-frame">
           {!videoStarted && (
             // The page cannot see the pointer inside YouTube's iframe, so a shield
@@ -211,11 +228,7 @@ export function BookViewer() {
               type="button"
               className="viewer__video-shield"
               aria-label="Play video"
-              onPointerMove={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect()
-                event.currentTarget.style.setProperty('--x', `${event.clientX - rect.left}px`)
-                event.currentTarget.style.setProperty('--y', `${event.clientY - rect.top}px`)
-              }}
+              data-surface={t.video.cursor === 'dark' ? 'light' : 'dark'}
               onClick={() => {
                 setVideoStarted(true)
                 videoRef.current?.contentWindow?.postMessage(
@@ -223,9 +236,7 @@ export function BookViewer() {
                   'https://www.youtube.com',
                 )
               }}
-            >
-              <span className="viewer__video-label">{t.video.hoverLabel}</span>
-            </button>
+            />
           )}
           <iframe
             ref={videoRef}
@@ -236,11 +247,16 @@ export function BookViewer() {
             allowFullScreen
           />
         </div>
+        {!videoStarted && (
+          <span className="viewer__video-label" aria-hidden="true">
+            {t.video.hoverLabel}
+          </span>
+        )}
       </div>
 
       {gridMounted && (
         <div ref={gridRef} className="viewer__grid" aria-hidden={mode !== 'grid'} inert={mode !== 'grid'}>
-          <SpreadGrid current={spread} onOpen={openSpread} />
+          <SpreadGrid current={spread} onOpen={openSpread} showPageNumbers={t.grid.showPageNumbers} />
         </div>
       )}
     </section>

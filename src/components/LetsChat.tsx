@@ -87,7 +87,8 @@ export function LetsChat() {
   const [morphPx, setMorphPx] = useState<number | null>(null)
   const [exiting, setExiting] = useState(false)
   const [fadingIn, setFadingIn] = useState(false)
-  const morphSpent = useRef(false)
+  // Morph hover is paused until this time (ms, performance.now) — e.g. while the pill regrows after leaving the circle.
+  const morphPausedUntil = useRef(0)
   // Leave radius for the current morph: at least the circle's, or wider when entering at an edge/corner.
   const morphRadius = useRef(0)
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
@@ -112,16 +113,22 @@ export function LetsChat() {
   const shape = cssTransition(t.morph.shape)
   const exit = cssTransition(t.morph.exit)
 
-  const unmorph = (spent: boolean) => {
+  const unmorph = (pause: boolean) => {
     setCurve('morph')
     setMorphPx(null)
-    morphSpent.current = spent
+    // Let the pill finish regrowing, then the circle can form again under the cursor.
+    morphPausedUntil.current = pause ? performance.now() + parseFloat(shape.duration) * 1000 : 0
     releaseCursor()
   }
 
   const morphOn = t.hover.preset === 'morph'
   const onPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
-    if (!morphOn || event.pointerType !== 'mouse' || phase !== 'idle' || exiting || fadingIn) return
+    if (!morphOn || event.pointerType !== 'mouse' || phase !== 'idle' || exiting) return
+    if (fadingIn) {
+      // Hovering during the post-click fade-in ends it, so hover always responds.
+      setFadingIn(false)
+      setCurve('expand')
+    }
     const rect = event.currentTarget.getBoundingClientRect()
     const h = rect.height
     if (morphPx !== null) {
@@ -131,7 +138,7 @@ export function LetsChat() {
       if (Math.hypot(dx, dy) > morphRadius.current) unmorph(true)
       return
     }
-    if (morphSpent.current) return
+    if (performance.now() < morphPausedUntil.current) return
     const px = Math.min(Math.max(event.clientX - rect.left, h / 2), rect.width - h / 2)
     const entry = Math.hypot(event.clientX - (rect.left + px), event.clientY - (rect.top + h / 2))
     morphRadius.current = Math.max(h / 2, entry) + 4
@@ -140,13 +147,17 @@ export function LetsChat() {
     if (t.morph.absorbCursor) absorbCursor(rect.left + px, rect.top + h / 2)
   }
   const onPointerEnter = (event: PointerEvent<HTMLAnchorElement>) => {
-    if (event.pointerType === 'mouse') window.dispatchEvent(new Event('cursor:hide'))
+    if (event.pointerType !== 'mouse') return
+    window.dispatchEvent(new Event('cursor:hide'))
+    // A fresh hover always starts armed, whatever an earlier click or leave left behind.
+    morphPausedUntil.current = 0
+    onPointerMove(event)
   }
   const onPointerLeave = () => {
     window.dispatchEvent(new Event('cursor:show'))
     if (exiting) return
     if (morphPx !== null) unmorph(false)
-    morphSpent.current = false
+    morphPausedUntil.current = 0
   }
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -166,7 +177,6 @@ export function LetsChat() {
           setCurve('none')
           setExiting(false)
           setMorphPx(null)
-          morphSpent.current = true
           setFadingIn(true)
           releaseCursor()
         }, backAt),
