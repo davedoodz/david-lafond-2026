@@ -150,7 +150,7 @@
     "morph": {
       "shape": {
         "type": "easing",
-        "duration": 0.3,
+        "duration": 0.4,
         "ease": [
           0.3,
           0,
@@ -158,10 +158,10 @@
           1
         ]
       },
-      "exitPx": 144,
+      "exitPx": 500,
       "exit": {
         "type": "easing",
-        "duration": 0.7,
+        "duration": 0.4,
         "ease": [
           0.5,
           0,
@@ -169,7 +169,7 @@
           0
         ]
       },
-      "fadeInMs": 4500
+      "fadeInMs": 5000
     },
     "motion": {
       "fillMs": 270,
