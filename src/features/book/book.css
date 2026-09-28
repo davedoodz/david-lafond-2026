@@ -137,6 +137,7 @@
   min-height: 0;
   transition:
     opacity 320ms ease,
+    translate 420ms var(--ease-out),
     visibility 0s linear 0s;
 }
 
@@ -148,8 +149,10 @@
   height: calc(var(--viewer-h) - var(--switch-block));
   opacity: 0;
   visibility: hidden;
+  translate: 0 14px;
   transition:
     opacity 200ms ease,
+    translate 0s linear 200ms,
     visibility 0s linear 200ms;
 }
 
@@ -343,17 +346,32 @@
   container-type: size;
   transition:
     opacity 320ms ease,
+    translate 420ms var(--ease-out),
     display 320ms allow-discrete;
+}
+
+/* Leaving panes overlay instead of holding layout space while they fade, so the
+   incoming pane is full size from its first frame (no squeezed-then-resized book). */
+.viewer:not([data-mode='video']) .viewer__video,
+.viewer:not([data-mode='grid']) .viewer__grid {
+  position: absolute;
+  top: var(--switch-block);
+  inset-inline: 0;
+  height: calc(var(--viewer-h) - var(--switch-block));
+  overflow: clip;
+  pointer-events: none;
 }
 
 .viewer:not([data-mode='video']) .viewer__video {
   display: none;
   opacity: 0;
+  translate: 0 -10px;
 }
 
 @starting-style {
   .viewer__video {
     opacity: 0;
+    translate: 0 14px;
   }
 }
 
@@ -428,17 +446,20 @@
   padding: 44px var(--edge) 40px;
   transition:
     opacity 320ms ease,
+    translate 420ms var(--ease-out),
     display 320ms allow-discrete;
 }
 
 .viewer:not([data-mode='grid']) .viewer__grid {
   display: none;
   opacity: 0;
+  translate: 0 -10px;
 }
 
 @starting-style {
   .viewer__grid {
     opacity: 0;
+    translate: 0 14px;
   }
 }
 
