@@ -93,7 +93,9 @@
       "firstDesktop": 277,
       "gapDesktop": 16,
       "lastDesktop": 277,
-      "lastMobile": 121
+      "firstMobile": 117,
+      "gapMobile": 5,
+      "lastMobile": 219
     },
     "label": {
       "topDesktop": 110,
