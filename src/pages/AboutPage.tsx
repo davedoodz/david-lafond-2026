@@ -9,7 +9,7 @@ import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
 import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
 import { useEntrance } from '../lib/useEntrance'
-import { DOME_CURVES } from '../lib/domeClip'
+import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { useFitColumn } from '../lib/useFitColumn'
 import { revealDials, useReveal } from '../lib/useReveal'
 import { useTuningController } from '../tuning/useTuning'
@@ -134,6 +134,15 @@ export function AboutPage() {
       // time the sheet top reaches the top of the screen (the snap stop).
       const peek = mobile ? dome.peekMobile : dome.peekDesktop
       const rest = vh - peek
+      if (mobile) {
+        // Mobile: exactly the Selected works morph — one progress value drives
+        // side, arch and corners together through the shared domeClip (no cap,
+        // no separate corner schedule), so the shape never steps mid-scroll.
+        const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / (shape.enterDistance * vh))))
+        const side = (shape.side * (1 - e) * vw) / 100
+        sheet.style.setProperty('--dome-clip', domeClip(side, { radius: shape.radius, arch: shape.arch }, 1 - e, { radius: 0, arch: 0 }, 0, vh))
+        return
+      }
       const travel = Math.min(shape.enterDistance * vh, rest)
       const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / travel)))
       // Top corners stay rounded for the whole approach and only square off in the
