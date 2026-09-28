@@ -24,6 +24,10 @@ export const PHOTO_STACK_CONFIG = {
       posX: [47.88, 0, 100, 0.01] as [number, number, number, number],
       posY: [0, 0, 100, 0.01] as [number, number, number, number],
     },
+    image5: {
+      posX: [50, 0, 100, 0.01] as [number, number, number, number],
+      posY: [50, 0, 100, 0.01] as [number, number, number, number],
+    },
   },
   slots: {
     _collapsed: true,
@@ -46,6 +50,11 @@ export const PHOTO_STACK_CONFIG = {
       x: [127.1, -50, 200, 0.01] as [number, number, number, number],
       y: [0, -50, 200, 0.01] as [number, number, number, number],
       rotate: [12.9, -30, 30, 0.01] as [number, number, number, number],
+    },
+    slot4: {
+      x: [168, -50, 240, 0.01] as [number, number, number, number],
+      y: [-8, -50, 200, 0.01] as [number, number, number, number],
+      rotate: [17.5, -30, 30, 0.01] as [number, number, number, number],
     },
   },
   entrance: {
@@ -70,7 +79,7 @@ export const PHOTO_STACK_CONFIG = {
   },
   /**
    * Hovering a card behind the front one: it slides out of the stack to be seen.
-   * One group per position behind the front (second, third, back), since photos
+   * One group per position behind the front (second, third, fourth, back), since photos
    * rotate through positions as the stack cycles.
    */
   backHover: {
@@ -83,6 +92,11 @@ export const PHOTO_STACK_CONFIG = {
       pullX: [97, -100, 320, 1] as [number, number, number, number],
       pullY: [-1, -200, 200, 1] as [number, number, number, number],
       rotate: [2.7, -45, 45, 0.1] as [number, number, number, number],
+    },
+    fourth: {
+      pullX: [115, -100, 320, 1] as [number, number, number, number],
+      pullY: [-1, -200, 200, 1] as [number, number, number, number],
+      rotate: [1.5, -45, 45, 0.1] as [number, number, number, number],
     },
     back: {
       pullX: [134, -100, 320, 1] as [number, number, number, number],
@@ -115,6 +129,7 @@ export const PHOTO_STACK_CONFIG = {
       image2: { type: 'text' as const, default: 'On the mic', placeholder: 'Caption for photo 2' },
       image3: { type: 'text' as const, default: 'Up in the mountains', placeholder: 'Caption for photo 3' },
       image4: { type: 'text' as const, default: 'In the workshop', placeholder: 'Caption for photo 4' },
+      image5: { type: 'text' as const, default: 'Tulip season', placeholder: 'Caption for photo 5' },
     },
   },
   cycle: {

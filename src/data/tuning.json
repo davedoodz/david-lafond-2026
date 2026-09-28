@@ -96,14 +96,17 @@
       "cursor": {
         "theme": "light",
         "whiteCursor": true,
-        "offsetX": -2,
-        "offsetY": -58,
+        "offsetX": 16,
+        "offsetY": -51,
         "textY": 0.25,
         "textSize": 12.5,
         "padX": 16
       },
       "text": {
-        "image1": "A Venezia! "
+        "image1": "Bonjour! Meet a few of my many forms 👽 🌀",
+        "image2": "Yo yo yo MC Dave on da mic 🎤 🪩",
+        "image3": "Can't be Canadian and not skii ⛷️ ❄️",
+        "image4": "Sleep deprived @ MIT's MAD workshop 🦫 🛠️"
       }
     },
     "cycle": {

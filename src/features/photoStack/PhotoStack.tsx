@@ -43,9 +43,9 @@ function aroundCentre(base: Pose, fx: TopEffect, width: number, height: number):
 
 const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
 
-const IMAGES = ['/about/image1.webp', '/about/image2.webp', '/about/image3.webp', '/about/image4.webp']
-const IMAGE_ALT = ['David outdoors in the city, wearing red sunglasses', 'David speaking into a microphone, black and white', 'David skiing in the mountains', 'David smiling in front of a workshop tool wall']
-const CARD_COUNT = 4
+const IMAGES = ['/about/image1.webp', '/about/image2.webp', '/about/image3.webp', '/about/image4.webp', '/about/image5.webp']
+const IMAGE_ALT = ['David outdoors in the city, wearing red sunglasses', 'David speaking into a microphone, black and white', 'David skiing in the mountains', 'David smiling in front of a workshop tool wall', 'David in sunglasses standing in a tulip garden']
+const CARD_COUNT = 5
 
 function useCardMotionValues(initial: Pose) {
   const x = useMotionValue(initial.x)
@@ -77,16 +77,16 @@ export function PhotoStack({ className }: { className?: string }) {
   }, [topKey, values.topHover.preset, setValue])
 
   const slotPoses = useMemo<Pose[]>(
-    () => [values.slots.slot0, values.slots.slot1, values.slots.slot2, values.slots.slot3],
+    () => [values.slots.slot0, values.slots.slot1, values.slots.slot2, values.slots.slot3, values.slots.slot4],
     [values.slots],
   )
   const imagePos = useMemo(
-    () => [values.images.image1, values.images.image2, values.images.image3, values.images.image4],
+    () => [values.images.image1, values.images.image2, values.images.image3, values.images.image4, values.images.image5],
     [values.images],
   )
 
-  // `order[slot] = cardId`. Card 0 starts front, card 3 starts back, matching the design.
-  const [order, setOrder] = useState<number[]>([0, 1, 2, 3])
+  // `order[slot] = cardId`. Card 0 starts front, card 4 starts back.
+  const [order, setOrder] = useState<number[]>([0, 1, 2, 3, 4])
   const orderRef = useRef(order)
   orderRef.current = order
 
@@ -109,6 +109,7 @@ export function PhotoStack({ className }: { className?: string }) {
     useCardMotionValues(initialPoseFor(1)),
     useCardMotionValues(initialPoseFor(2)),
     useCardMotionValues(initialPoseFor(3)),
+    useCardMotionValues(initialPoseFor(4)),
   ]
   const mvRef = useRef(mv)
   mvRef.current = mv
@@ -325,8 +326,8 @@ export function PhotoStack({ className }: { className?: string }) {
       moveTo(cardId, aroundCentre(base, fx, values.card.width, values.card.height), toMotionTransition(values.topHover.spring))
       return
     }
-    const { second, third, back, spring } = values.backHover
-    const peek = [second, third, back][slot - 1]
+    const { second, third, fourth, back, spring } = values.backHover
+    const peek = [second, third, fourth, back][slot - 1]
     moveTo(
       cardId,
       { x: base.x + peek.pullX, y: base.y + peek.pullY, rotate: base.rotate + peek.rotate, scale: 1 },
@@ -362,8 +363,8 @@ export function PhotoStack({ className }: { className?: string }) {
   // Caption for the hovered card. The last hovered id is kept so the text stays
   // put while the caption fades out.
   const captionStyle = values.caption.style
-  const { image1, image2, image3, image4 } = values.caption.text
-  const captions = [image1, image2, image3, image4]
+  const { image1, image2, image3, image4, image5 } = values.caption.text
+  const captions = [image1, image2, image3, image4, image5]
   const shownId = hoveredId !== null && !cyclingIds.has(hoveredId) && captions[hoveredId].trim() ? hoveredId : null
   const lastCaptionIdRef = useRef(0)
   if (shownId !== null) lastCaptionIdRef.current = shownId
