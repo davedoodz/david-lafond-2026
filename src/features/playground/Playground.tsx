@@ -34,6 +34,13 @@ const PLAYGROUND_CONFIG = {
   },
   titles: { _collapsed: true, ...titleFields },
   grid: {
+    /** How many cards show, in data order (first N). */
+    count: [playgroundItems.length, 1, playgroundItems.length, 1] as [number, number, number, number],
+    columnsDesktop: [4, 1, 8, 1] as [number, number, number, number],
+    columnsMobile: [3, 1, 4, 1] as [number, number, number, number],
+    /** Card width (px); height follows the card's aspect ratio. Capped by the page margins. */
+    cardWidthDesktop: [230, 80, 600, 1] as [number, number, number, number],
+    cardWidthMobile: [142, 60, 400, 1] as [number, number, number, number],
     gapX: [14, 0, 40, 1] as [number, number, number, number],
     gapY: [18, 0, 40, 1] as [number, number, number, number],
     radius: [15, 0, 40, 1] as [number, number, number, number],
@@ -53,6 +60,8 @@ type HostRefs = { grid: HTMLDivElement | null; zoom: HTMLDivElement | null }
 
 export function Playground({ className }: { className?: string }) {
   const values = useTuning('Playground', PLAYGROUND_CONFIG)
+  const count = values.grid.count
+  const items = useMemo(() => playgroundItems.slice(0, count), [count])
   const reducedMotion = Boolean(useReducedMotion())
 
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -85,7 +94,7 @@ export function Playground({ className }: { className?: string }) {
 
   // Play/pause each grid video only while its card is on screen (or zoomed, handled below).
   useEffect(() => {
-    const withVideo = playgroundItems.filter((item) => item.video)
+    const withVideo = items.filter((item) => item.video)
     if (withVideo.length === 0) return
     const observer = new IntersectionObserver(
       (entries) => {
@@ -119,7 +128,7 @@ export function Playground({ className }: { className?: string }) {
       cancelAnimationFrame(raf)
       observer.disconnect()
     }
-  }, [])
+  }, [items])
 
   const openCard = useCallback((id: string, el: HTMLButtonElement) => {
     lastFocusedRef.current = el
@@ -140,11 +149,11 @@ export function Playground({ className }: { className?: string }) {
   const goTo = useCallback((delta: number) => {
     setActiveId((current) => {
       if (!current) return current
-      const idx = playgroundItems.findIndex((i) => i.id === current)
-      const next = playgroundItems[(idx + delta + playgroundItems.length) % playgroundItems.length]
+      const idx = items.findIndex((i) => i.id === current)
+      const next = items[(idx + delta + items.length) % items.length]
       return next.id
     })
-  }, [])
+  }, [items])
 
   const onPrev = useCallback(() => goTo(-1), [goTo])
   const onNext = useCallback(() => goTo(1), [goTo])
@@ -184,6 +193,12 @@ export function Playground({ className }: { className?: string }) {
     () =>
       ({
         '--pg-gap-x': `${values.grid.gapX}px`,
+        '--pg-cols-d': values.grid.columnsDesktop,
+        '--pg-cols-m': values.grid.columnsMobile,
+        '--pg-rows-d': Math.ceil(items.length / values.grid.columnsDesktop),
+        '--pg-rows-m': Math.ceil(items.length / values.grid.columnsMobile),
+        '--pg-card-d': `${values.grid.cardWidthDesktop}px`,
+        '--pg-card-m': `${values.grid.cardWidthMobile}px`,
         '--pg-gap-y': `${values.grid.gapY}px`,
         '--pg-radius': `${values.grid.radius}px`,
         '--pg-top-desktop': `${values.grid.topGapDesktop}px`,
@@ -199,11 +214,11 @@ export function Playground({ className }: { className?: string }) {
         '--pg-hover-scale': values.hover.scale,
         '--pg-hover-ms': `${values.hover.durationMs}ms`,
       }) as CSSProperties,
-    [values],
+    [values, items],
   )
 
-  const activeItem = activeId ? playgroundItems.find((i) => i.id === activeId) : undefined
-  const activeIndex = activeId ? playgroundItems.findIndex((i) => i.id === activeId) : -1
+  const activeItem = activeId ? items.find((i) => i.id === activeId) : undefined
+  const activeIndex = activeId ? items.findIndex((i) => i.id === activeId) : -1
   // dialkit's ResolvedValues type doesn't drop `_collapsed` from folder types; the runtime value does.
   const titles = values.titles as unknown as Record<string, string>
   const activeTitle = activeIndex >= 0 ? titles[`card${activeIndex + 1}`] : ''
@@ -212,7 +227,7 @@ export function Playground({ className }: { className?: string }) {
   return (
     <div className={['pg-root', className].filter(Boolean).join(' ')} style={style}>
       <div className="pg-grid">
-        {playgroundItems.map((item, i) => (
+        {items.map((item, i) => (
           <PlaygroundCard
             key={item.id}
             item={item}
@@ -225,7 +240,7 @@ export function Playground({ className }: { className?: string }) {
         ))}
       </div>
 
-      {playgroundItems
+      {items
         .filter((item) => item.video)
         .map((item) => {
           const entry = hostRefs.current.get(item.id)
@@ -254,7 +269,7 @@ export function Playground({ className }: { className?: string }) {
                 blurPx={values.zoom.blur}
                 dimOpacity={values.zoom.dimOpacity}
                 radiusPx={values.grid.radius}
-                hasSiblings={playgroundItems.length > 1}
+                hasSiblings={items.length > 1}
                 onClose={closeZoom}
                 onPrev={onPrev}
                 onNext={onNext}

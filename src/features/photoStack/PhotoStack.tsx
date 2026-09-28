@@ -436,7 +436,7 @@ export function PhotoStack({ className }: { className?: string }) {
           height: containerHeight * scale,
         }}
       >
-        <div style={{ width: containerWidth, height: containerHeight, transform: `scale(${scale})`, transformOrigin: 'top center' }}>
+        <div style={{ width: containerWidth, height: containerHeight, transform: `scale(${scale})`, transformOrigin: '0 0' }}>
           {Array.from({ length: CARD_COUNT }, (_, cardId) => {
             const isTop = order[0] === cardId && !cyclingIds.has(cardId)
             const { x, y, rotate, scale, opacity } = mv[cardId]
