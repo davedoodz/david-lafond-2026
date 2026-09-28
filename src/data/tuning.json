@@ -57,5 +57,18 @@
       "offsetX": -66,
       "offsetY": -1
     }
+  },
+  "Selected works": {
+    "morph": {
+      "preset": "custom",
+      "curve": "smoother",
+      "customSideStart": 8.6,
+      "customSideEnd": 8.6,
+      "customRadiusStart": 200,
+      "customRadiusEnd": 137
+    },
+    "hover": {
+      "durationMs": 840
+    }
   }
 }

@@ -15,7 +15,7 @@
  */
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
-import { useTuning } from '../tuning/useTuning'
+import { useTuningController } from '../tuning/useTuning'
 import { ArrowDownIcon } from './icons'
 import { MeshCard } from './MeshCard'
 import './SelectedWorks.css'
@@ -109,7 +109,18 @@ const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x)
 const lerp = (a: number, b: number, n: number) => a + (b - a) * n
 
 export function SelectedWorks() {
-  const t = useTuning('Selected works', CONFIG)
+  const { values: t, setValue } = useTuningController('Selected works', CONFIG)
+
+  // Moving any custom dial means "use my numbers": flip the preset to 'custom'
+  // so the change is visible instead of being ignored by a named preset.
+  const { customSideStart, customSideEnd, customRadiusStart, customRadiusEnd } = t.morph
+  const customKey = `${customSideStart}|${customSideEnd}|${customRadiusStart}|${customRadiusEnd}`
+  const lastCustomKey = useRef(customKey)
+  useEffect(() => {
+    if (customKey === lastCustomKey.current) return
+    lastCustomKey.current = customKey
+    if (t.morph.preset !== 'custom') setValue('morph.preset', 'custom')
+  }, [customKey, t.morph.preset, setValue])
   const sectionRef = useRef<HTMLElement>(null)
   const morphDials = { width: t.width, morph: t.morph, shape: t.shape }
   const morphKey = JSON.stringify(morphDials)
