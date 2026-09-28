@@ -79,6 +79,10 @@
     }
   },
   "Photo stack": {
+    "order": {
+      "second": "photo 3",
+      "third": "photo 2"
+    },
     "images": {
       "image5": {
         "brightness": 1.29,
@@ -92,7 +96,7 @@
     "backHover": {
       "second": {
         "pullX": 136,
-        "pullY": -24
+        "pullY": -9
       },
       "third": {
         "pullX": 136,
