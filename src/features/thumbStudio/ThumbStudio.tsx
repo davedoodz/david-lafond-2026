@@ -9,7 +9,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import saved from '../../data/tuning.json'
 import { useTuningController } from '../../tuning/useTuning'
-import { drawFrame, EASES, IDLES, ORDERS, PRESETS, type FrameValues, type MotionValues, type ShapeValues } from './motion'
+import { THUMB_CONFIG } from './config'
+import { drawFrame, type FrameValues, type MotionValues, type ShapeValues } from './motion'
 
 type Tuple = [number, number, number, number]
 type Format = 'desktop' | 'mobile'
@@ -36,62 +37,7 @@ const CARD = {
 } as const
 
 const CONFIG = {
-  motion: {
-    /** How the pieces travel between the two marks. */
-    preset: { type: 'select' as const, options: [...PRESETS], default: 'morph' },
-    loopSec: [6, 2, 20, 0.1] as Tuple,
-    /** Share of each half-loop spent holding a finished mark (0..0.45). */
-    hold: [0.24, 0, 0.45, 0.01] as Tuple,
-    /** 0 = all pieces move together, higher = a longer wave through them. */
-    stagger: [0.45, 0, 0.9, 0.01] as Tuple,
-    /** auto: construction presets build course by course from the ground, the rest sweep left to right. */
-    order: { type: 'select' as const, options: [...ORDERS], default: 'auto' },
-    ease: { type: 'select' as const, options: [...EASES], default: 'expo' },
-    /** Scatter / rise / drop travel, in logo heights. */
-    distance: [0.45, 0, 2, 0.01] as Tuple,
-    /** Scatter / drop spin (deg). */
-    rotation: [90, 0, 360, 1] as Tuple,
-    /** Back / spring bounce. */
-    overshoot: [0.4, 0, 1, 0.01] as Tuple,
-    seed: [7, 1, 99, 1] as Tuple,
-    /** Motion that runs through the holds too. */
-    idle: { type: 'select' as const, options: [...IDLES], default: 'still' },
-    idleAmount: [0.04, 0, 0.3, 0.005] as Tuple,
-    idleCycles: [2, 1, 8, 1] as Tuple,
-    /** Floors preset: levels per block. */
-    floors: [4, 2, 12, 1] as Tuple,
-    /** Which mark the loop starts on. */
-    lead: { type: 'select' as const, options: ['harvard', 'mit'], default: 'harvard' },
-  },
-  shapes: {
-    color: { type: 'color' as const, default: '#FFFFFF' },
-    /** Matches the card (Selected works → colors.harvard-mit). */
-    background: { type: 'color' as const, default: '#171717' },
-    harvardScale: [1, 0.3, 2, 0.01] as Tuple,
-    mitScale: [0.72, 0.3, 2, 0.01] as Tuple,
-    /** Gap between squares, relative to a square (the GSD mark ≈ 0.23). */
-    harvardGap: [0.23, 0, 1, 0.01] as Tuple,
-    /** Gap between bars, in half bar widths (the MIT mark = 1). */
-    mitGap: [1, 0.2, 3, 0.05] as Tuple,
-    /** Corner radius, as a share of each piece's short side. */
-    harvardRadius: [0, 0, 0.5, 0.01] as Tuple,
-    mitRadius: [0, 0, 0.5, 0.01] as Tuple,
-    /** Blueprint outline width (share of logo height). */
-    line: [0.012, 0.002, 0.05, 0.001] as Tuple,
-  },
-  /** Mark size (share of card height) and position (share of card width/height from centre). */
-  desktop: {
-    size: [0.42, 0.1, 1, 0.005] as Tuple,
-    x: [0, -0.5, 0.5, 0.005] as Tuple,
-    y: [-0.06, -0.5, 0.5, 0.005] as Tuple,
-    exportWidth: [1734, 600, 3840, 2] as Tuple,
-  },
-  mobile: {
-    size: [0.3, 0.1, 1, 0.005] as Tuple,
-    x: [0, -0.5, 0.5, 0.005] as Tuple,
-    y: [-0.06, -0.5, 0.5, 0.005] as Tuple,
-    exportWidth: [900, 300, 2160, 2] as Tuple,
-  },
+  ...THUMB_CONFIG,
   preview: {
     show: { type: 'select' as const, options: ['both', 'desktop', 'mobile'], default: 'both' },
     /** Card corners and title on top of the preview (never recorded). */
