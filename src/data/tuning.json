@@ -362,7 +362,7 @@
     "motion": {
       "preset": "rounded",
       "loopSec": 5.6,
-      "hold": 0.22,
+      "hold": 0.15,
       "stagger": 0.3,
       "order": "bottom → top",
       "ease": "smooth",
