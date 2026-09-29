@@ -343,5 +343,24 @@
     "startMonth": 6,
     "cellMobile": 6,
     "yMobile": 36
+  },
+  "Unwind Momo": {
+    "listening": {
+      "scale": 1.12
+    },
+    "floating": {
+      "y": -1.5
+    },
+    "transition": {
+      "preset": "custom",
+      "fadeMs": 1290,
+      "blur": 11.5,
+      "outScale": 1
+    }
+  },
+  "Thumbnail studio": {
+    "motion": {
+      "preset": "drop"
+    }
   }
 }
