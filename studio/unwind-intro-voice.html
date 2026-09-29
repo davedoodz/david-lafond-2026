@@ -23,6 +23,12 @@
       canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: var(--paper); box-shadow: 0 0 30px rgb(23 23 23 / 0.08); }
       .bar { position: absolute; left: 14px; right: 14px; bottom: 10px; height: 2px; border-radius: 2px; background: rgb(11 10 9 / 0.08); overflow: hidden; }
       .bar i { display: block; height: 100%; width: 100%; background: rgb(11 10 9 / 0.35); transform-origin: left; }
+      .scrub { display: flex; gap: 10px; align-items: center; padding: 10px 4px 0; font-size: 12px; color: var(--s6); font-variant-numeric: tabular-nums; }
+      .scrub button { width: 30px; height: 26px; flex-shrink: 0; padding: 0; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+      .scrub input { flex: 1; accent-color: #0b0a09; }
+      .scrub output { width: 64px; text-align: right; }
+      .focus .scrub { width: min(92vw, 150svh); color: #dcd9d6; }
+      .focus .scrub input { accent-color: #53bffe; }
       figcaption { display: grid; gap: 6px; padding: 14px 4px 0; }
       .name { display: flex; gap: 10px; align-items: baseline; font-size: 18px; }
       .num { color: var(--s4); font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -55,8 +61,9 @@
     <main class="grid" id="grid"></main>
     <div class="focus" id="focus" role="dialog" aria-modal="true">
       <canvas id="focusCanvas" width="1920" height="1080"></canvas>
+      <div class="scrub" id="focusScrub"></div>
       <div class="cap" id="focusCap"></div>
-      <div class="hint">Click to replay · ← → to switch · Esc to close</div>
+      <div class="hint">Space pause/play · , . step 0.1s · drag to scrub · ← → switch · Esc close</div>
     </div>
 
     <script type="module">
@@ -467,15 +474,35 @@
       DIRECTIONS.forEach((d, i) => {
         const fig = document.createElement('figure')
         fig.innerHTML = `<div class="frame"><canvas width="${W}" height="${H}"></canvas><div class="bar"><i></i></div></div>
+          <div class="scrub"></div>
           <figcaption><div class="name"><span class="num">${String(i + 1).padStart(2, '0')}</span>${d.name}</div>
           <div class="idea">${d.idea}</div><div class="meta">${d.vibe} · Handoff: ${d.handoff}</div></figcaption>`
         grid.append(fig)
         const canvas = fig.querySelector('canvas')
-        const tile = { d, i, ctx: canvas.getContext('2d'), bar: fig.querySelector('.bar i'), start: performance.now(), visible: true, scale: 1 }
+        const tile = { d, i, ctx: canvas.getContext('2d'), bar: fig.querySelector('.bar i'), start: performance.now(), visible: true, scale: 1, paused: null }
+        tile.ui = scrubber(fig.querySelector('.scrub'), tile)
         tiles.push(tile)
         fig.querySelector('.frame').addEventListener('click', () => openFocus(i))
         new IntersectionObserver(([e]) => (tile.visible = e.isIntersecting)).observe(canvas)
       })
+
+      /** Play/pause + time slider for a tile. `tile.paused` holds the frozen time (s) or null while playing. */
+      function scrubber(host, tile) {
+        host.innerHTML = `<button type="button" aria-label="Pause">❚❚</button><input type="range" min="0" max="${DUR}" step="0.01" value="0" aria-label="Time"><output>0.00s</output>`
+        const [btn, range, out] = host.children
+        const setPaused = (at) => {
+          if (at === null) tile.start = performance.now() - ((tile.paused ?? 0) / speed) * 1000
+          tile.paused = at
+          btn.textContent = at === null ? '❚❚' : '▶'
+          btn.setAttribute('aria-label', at === null ? 'Pause' : 'Play')
+        }
+        btn.addEventListener('click', (e) => { e.stopPropagation(); setPaused(tile.paused === null ? localT(tile, performance.now()) : null) })
+        range.addEventListener('input', () => setPaused(Number(range.value)))
+        return {
+          setPaused,
+          sync(t) { if (document.activeElement !== range) range.value = String(t); out.textContent = `${t.toFixed(2)}s` },
+        }
+      }
 
       function render(ctx, d, t, scale = 1) {
         ctx.setTransform(scale, 0, 0, scale, 0, 0)
@@ -486,23 +513,28 @@
         d.draw(ctx, t)
         ctx.restore()
       }
-      const localT = (tile, now) => Math.min(DUR, (((now - tile.start) / 1000) * speed) % (DUR + HOLD))
+      const localT = (tile, now) => (tile.paused !== null && tile.paused !== undefined ? tile.paused : Math.min(DUR, (((now - tile.start) / 1000) * speed) % (DUR + HOLD)))
 
       const focus = document.getElementById('focus'), fctx = document.getElementById('focusCanvas').getContext('2d')
-      const focusTile = { start: 0, i: 0 }
+      const focusTile = { start: 0, i: 0, paused: null }
+      focusTile.ui = scrubber(document.getElementById('focusScrub'), focusTile)
+      document.getElementById('focusScrub').addEventListener('click', (e) => e.stopPropagation())
       function openFocus(i) {
         focusTile.i = (i + DIRECTIONS.length) % DIRECTIONS.length
         focusTile.start = performance.now()
+        focusTile.ui.setPaused(null)
         const d = DIRECTIONS[focusTile.i]
         document.getElementById('focusCap').innerHTML = `<b>${String(focusTile.i + 1).padStart(2, '0')} · ${d.name}</b> — ${d.idea}<br><span style="color:#a6a09c">${d.vibe} · Handoff: ${d.handoff}</span>`
         focus.dataset.open = ''
       }
-      focus.addEventListener('click', () => (focusTile.start = performance.now()))
+      focus.addEventListener('click', () => { focusTile.paused = null; focusTile.ui.setPaused(null); focusTile.start = performance.now() })
       addEventListener('keydown', (e) => {
         if (!('open' in focus.dataset)) return
         if (e.key === 'Escape') delete focus.dataset.open
         if (e.key === 'ArrowRight') openFocus(focusTile.i + 1)
         if (e.key === 'ArrowLeft') openFocus(focusTile.i - 1)
+        if (e.key === ' ') { e.preventDefault(); focusTile.ui.setPaused(focusTile.paused === null ? localT(focusTile, performance.now()) : null) }
+        if (e.key === ',' || e.key === '.') focusTile.ui.setPaused(clamp(localT(focusTile, performance.now()) + (e.key === '.' ? 0.1 : -0.1), 0, DUR))
       })
       document.querySelectorAll('[data-speed]').forEach((b) =>
         b.addEventListener('click', () => {
@@ -510,7 +542,7 @@
           document.querySelectorAll('[data-speed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
         }),
       )
-      document.getElementById('replay').addEventListener('click', () => tiles.forEach((t) => (t.start = performance.now())))
+      document.getElementById('replay').addEventListener('click', () => tiles.forEach((t) => { t.paused = null; t.ui.setPaused(null); t.start = performance.now() }))
 
       // Debug hook for headless review: render direction `i` at time `t` into a data URL.
       window.renderAt = (i, t) => {
@@ -525,13 +557,14 @@
 
       await document.fonts.load(font(20)); await document.fonts.load(font(20, 500))
       const frame = (now) => {
-        if ('open' in focus.dataset) render(fctx, DIRECTIONS[focusTile.i], localT(focusTile, now), 2)
+        if ('open' in focus.dataset) { const t = localT(focusTile, now); render(fctx, DIRECTIONS[focusTile.i], t, 2); focusTile.ui.sync(t) }
         else
           for (const tile of tiles) {
             if (!tile.visible) continue
             const t = localT(tile, now)
             render(tile.ctx, tile.d, t)
             tile.bar.style.transform = `scaleX(${t / DUR})`
+            tile.ui.sync(t)
           }
         requestAnimationFrame(frame)
       }
