@@ -17,12 +17,14 @@ export const WORKS: Work[] = [
     title: 'Unwind – Novel Multimodal AI Reflection System for Behavioral Change',
     shortTitle: 'Unwind',
     surface: 'dark',
+    route: 'unwind',
   },
   {
     id: 'ecofabriq',
     title: 'EcoFabriq – Personalized AI-Driven Smart Product Discovery for Bio-Textiles',
     shortTitle: 'EcoFabriq',
     surface: 'light',
+    route: 'ecofabriq',
   },
   {
     id: 'harvard-mit',

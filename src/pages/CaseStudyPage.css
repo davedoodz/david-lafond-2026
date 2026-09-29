@@ -1,0 +1,39 @@
+.case {
+  background: var(--paper);
+}
+
+.case__light {
+  position: relative;
+  color: var(--ink-950);
+  min-height: 100svh;
+}
+
+.case__intro {
+  padding-top: 160px;
+  padding-bottom: 160px;
+}
+
+.case__title {
+  font-size: var(--text-display);
+  line-height: 1.2;
+  color: var(--ink-950);
+  text-wrap: balance;
+}
+
+/* Same dark sheet as the About page's bottom section. */
+.case__dark {
+  position: relative;
+  background: var(--ink-900);
+  border-radius: 45px 45px 0 0;
+  color: var(--paper);
+}
+
+@media (max-width: 640px) {
+  .case__intro {
+    padding-top: 110px;
+    padding-bottom: 100px;
+  }
+  .case__dark {
+    border-radius: 20px 20px 0 0;
+  }
+}

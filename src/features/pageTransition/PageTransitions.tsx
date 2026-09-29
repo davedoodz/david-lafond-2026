@@ -41,7 +41,7 @@ const CONFIG = {
 }
 
 /** Page order sets the direction: Work → About plays forward, About → Work mirrors it. */
-const ORDER: Record<Route, number> = { work: 0, 'harvard-mit': 1, about: 2 }
+const ORDER: Record<Route, number> = { work: 0, unwind: 1, ecofabriq: 1, 'harvard-mit': 1, about: 2 }
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 
 type Settings = { preset: Preset; mirror: boolean; pinNav: boolean; pinShader: boolean }

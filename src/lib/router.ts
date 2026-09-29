@@ -1,5 +1,5 @@
 /**
- * Tiny History-API router: three routes do not justify a routing dependency.
+ * Tiny History-API router: a handful of routes do not justify a routing dependency.
  * Internal links call `navigate`; back/forward is handled via popstate.
  *
  * Every route change goes through a transition runner, so a page transition
@@ -9,15 +9,23 @@
  */
 import { useSyncExternalStore } from 'react'
 
-export type Route = 'work' | 'about' | 'harvard-mit'
+export type Route = 'work' | 'about' | 'harvard-mit' | 'unwind' | 'ecofabriq'
 
 const ROUTE_BY_PATH: Record<string, Route> = {
   '/': 'work',
   '/work': 'work',
   '/about': 'about',
   '/work/harvard-mit': 'harvard-mit',
+  '/work/unwind': 'unwind',
+  '/work/ecofabriq': 'ecofabriq',
 }
-export const PATH_BY_ROUTE: Record<Route, string> = { work: '/', about: '/about', 'harvard-mit': '/work/harvard-mit' }
+export const PATH_BY_ROUTE: Record<Route, string> = {
+  work: '/',
+  about: '/about',
+  'harvard-mit': '/work/harvard-mit',
+  unwind: '/work/unwind',
+  ecofabriq: '/work/ecofabriq',
+}
 
 const normalize = (path: string) => path.replace(/\/+$/, '') || '/'
 const routeOf = (path: string): Route => ROUTE_BY_PATH[normalize(path)] ?? 'work'
@@ -31,6 +39,9 @@ export function setTransitionRunner(next: TransitionRunner) {
 }
 
 let committedPath = normalize(window.location.pathname)
+// True once the visitor has moved between pages in this tab, so Back can use history.
+let navigatedInApp = false
+export const hasInAppHistory = () => navigatedInApp
 const listeners = new Set<() => void>()
 
 function commit(scrollY: number) {
@@ -76,6 +87,7 @@ export function navigate(route: Route, { transition = true }: { transition?: boo
   const update = () => {
     window.history.replaceState({ scrollY: window.scrollY }, '')
     window.history.pushState({ scrollY: 0 }, '', path)
+    navigatedInApp = true
     commit(0)
   }
   if (transition) runner(update, route, from)

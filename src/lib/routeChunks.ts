@@ -21,9 +21,11 @@ function chunk<M>(importer: () => Promise<M>): Chunk<M> {
 
 export const aboutChunk = chunk(() => import('../pages/AboutPage'))
 export const harvardMitChunk = chunk(() => import('../pages/HarvardMitPage'))
+export const caseStudyChunk = chunk(() => import('../pages/CaseStudyPage'))
 
 export function preloadRoute(route: Route): Promise<unknown> {
   if (route === 'about') return aboutChunk.load()
   if (route === 'harvard-mit') return harvardMitChunk.load()
+  if (route === 'unwind' || route === 'ecofabriq') return caseStudyChunk.load()
   return Promise.resolve()
 }

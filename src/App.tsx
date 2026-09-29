@@ -7,7 +7,7 @@ import { useDavebotOpen } from './features/ghost/davebotStore'
 import { useHeaderIntro } from './features/headerIntro/useHeaderIntro'
 import { PageTransitions } from './features/pageTransition/PageTransitions'
 import { useRoute } from './lib/router'
-import { aboutChunk, harvardMitChunk } from './lib/routeChunks'
+import { aboutChunk, caseStudyChunk, harvardMitChunk } from './lib/routeChunks'
 import { WorkPage } from './pages/WorkPage'
 
 // Code the landing view does not need ships as separate chunks. They are fetched
@@ -15,6 +15,7 @@ import { WorkPage } from './pages/WorkPage'
 const loadDavebot = () => import('./features/ghost/DavebotLayer')
 const LazyAboutPage = lazy(() => aboutChunk.load().then((m) => ({ default: m.AboutPage })))
 const LazyHarvardMitPage = lazy(() => harvardMitChunk.load().then((m) => ({ default: m.HarvardMitPage })))
+const LazyCaseStudyPage = lazy(() => caseStudyChunk.load().then((m) => ({ default: m.CaseStudyPage })))
 const DavebotLayer = lazy(() => loadDavebot().then((m) => ({ default: m.DavebotLayer })))
 
 const DevRoot = import.meta.env.DEV ? lazy(() => import('./tuning/DevRoot')) : null
@@ -37,6 +38,8 @@ const TITLES = {
   work: 'David Lafond — Architect × Product Designer',
   about: 'About — David Lafond',
   'harvard-mit': 'The Design Portfolio that Got Me Into Harvard & MIT — David Lafond',
+  unwind: 'Unwind — David Lafond',
+  ecofabriq: 'EcoFabriq — David Lafond',
 }
 
 export function App() {
@@ -57,7 +60,7 @@ export function App() {
 
   return (
     <>
-      <div className="site" data-surface={route === 'about' ? 'light' : 'dark'}>
+      <div className="site" data-surface={route === 'about' || route === 'unwind' || route === 'ecofabriq' ? 'light' : 'dark'}>
         <DitherBand position="header" />
         {route === 'about' ? (
           // Render the loaded module directly so page transitions never capture a fallback.
@@ -66,6 +69,14 @@ export function App() {
           ) : (
             <Suspense fallback={null}>
               <LazyAboutPage />
+            </Suspense>
+          )
+        ) : route === 'unwind' || route === 'ecofabriq' ? (
+          caseStudyChunk.module ? (
+            <caseStudyChunk.module.CaseStudyPage id={route} />
+          ) : (
+            <Suspense fallback={null}>
+              <LazyCaseStudyPage id={route} />
             </Suspense>
           )
         ) : route === 'harvard-mit' ? (
