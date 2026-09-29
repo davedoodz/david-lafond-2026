@@ -19,6 +19,7 @@ import { springEasing } from '../lib/springEasing'
 import { useTuning } from '../tuning/useTuning'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
 import { MeshCard } from './MeshCard'
+import { MomoCard } from './MomoCard'
 import { useProjectOpen } from '../features/projectOpen/useProjectOpen'
 import { PATH_BY_ROUTE } from '../lib/router'
 import './SelectedWorks.css'
@@ -374,6 +375,7 @@ export function SelectedWorks() {
                     />
                   )}
                   {work.id === 'unwind' && <MeshCard />}
+                  {work.id === 'unwind' && <MomoCard />}
                   <div className="card-shade" />
                   <h3 className="card-title works__title">
                     <span className="works__title-desktop">{t.titles[desktopKey]}</span>

@@ -184,3 +184,23 @@ html[data-works-snap] body:has(.works) .footer {
   outline: 2px solid var(--ink-900);
   outline-offset: 4px;
 }
+
+/* Momo on the Unwind card: centred, sized by card height, nudged by the dials. */
+.momo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.momo__clip {
+  position: absolute;
+  /* Offsets are % of the card (static dial values, never animated). */
+  top: calc(50% + var(--momo-y, 0%));
+  left: calc(50% + var(--momo-x, 0%));
+  height: var(--momo-size, 40%);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  opacity: 0;
+}
+.momo__clip[data-active='true'] {
+  opacity: 1;
+}
