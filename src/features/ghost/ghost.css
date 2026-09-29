@@ -70,6 +70,24 @@
   transform: scaleY(0.08);
 }
 
+/* Happy hover (centred Davebot only): the body is the hover target. */
+.ghost-mark--happy .ghost-mark__shell {
+  pointer-events: auto;
+}
+
+.ghost-mark__blush,
+.ghost-mark__happy {
+  pointer-events: none;
+}
+
+.ghost-mark__arc {
+  fill: none;
+  stroke: var(--ink-900);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ghost-mark__body {
     animation: none;

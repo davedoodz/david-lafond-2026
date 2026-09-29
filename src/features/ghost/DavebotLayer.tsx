@@ -482,7 +482,7 @@ function DavebotPanel() {
             scale: ghostScale,
           }}
         >
-          <GhostMark size={tuning.ghost.zoomSize} />
+          <GhostMark size={tuning.ghost.zoomSize} happy={tuning.happy} />
         </motion.span>
         <motion.section
           ref={panelRef}

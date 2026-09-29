@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { getSharedGazeTracker } from './ghostGaze'
+import { attachHappy, shapeHappy, type HappyLook, type HappyParts } from './ghostHappy'
 import './ghost.css'
 
 /**
@@ -64,9 +65,11 @@ export type GhostMarkProps = {
   /** Mark size in px. Defaults to CSS-driven sizing via `--ghost-size`. */
   size?: number
   className?: string
+  /** Hovering the body makes him happy (^ ^ eyes, blush). Only the centred Davebot opts in. */
+  happy?: HappyLook & { blushColor: string }
 }
 
-export function GhostMark({ size, className }: GhostMarkProps) {
+export function GhostMark({ size, className, happy }: GhostMarkProps) {
   const clipId = `ghost-clip-${useId().replaceAll(':', '')}`
   const mountRef = useRef<HTMLSpanElement>(null)
   const eyesRef = useRef<SVGGElement>(null)
@@ -81,10 +84,46 @@ export function GhostMark({ size, className }: GhostMarkProps) {
 
   useBlink(eyesRef)
 
+  const shellRef = useRef<SVGPathElement>(null)
+  const arcLRef = useRef<SVGPathElement>(null)
+  const arcRRef = useRef<SVGPathElement>(null)
+  const blushLRef = useRef<SVGEllipseElement>(null)
+  const blushRRef = useRef<SVGEllipseElement>(null)
+  const blushCoreRef = useRef<SVGStopElement>(null)
+  const happyRef = useRef(happy)
+  happyRef.current = happy
+  const isHappy = happy !== undefined
+
+  const parts = (): HappyParts | null => {
+    const [shell, eyes, arcL, arcR, blushL, blushR, blushCore] = [
+      shellRef.current,
+      eyesRef.current,
+      arcLRef.current,
+      arcRRef.current,
+      blushLRef.current,
+      blushRRef.current,
+      blushCoreRef.current,
+    ]
+    if (!shell || !eyes || !arcL || !arcR || !blushL || !blushR || !blushCore) return null
+    return { shell, eyes, arcs: [arcL, arcR], blush: [blushL, blushR], blushCore }
+  }
+
+  useEffect(() => {
+    const found = isHappy ? parts() : null
+    if (!found) return
+    return attachHappy(found, () => happyRef.current!)
+  }, [isHappy])
+
+  // Geometry follows the dials without restarting the hover state.
+  useEffect(() => {
+    const found = happy ? parts() : null
+    if (found && happy) shapeHappy(found, happy)
+  })
+
   return (
     <span
       ref={mountRef}
-      className={`ghost-mark${className ? ` ${className}` : ''}`}
+      className={`ghost-mark${happy ? ' ghost-mark--happy' : ''}${className ? ` ${className}` : ''}`}
       style={size ? ({ '--ghost-size': `${size}px` } as React.CSSProperties) : undefined}
       aria-hidden="true"
     >
@@ -94,13 +133,32 @@ export function GhostMark({ size, className }: GhostMarkProps) {
             <clipPath id={clipId}>
               <path d={HEAD_CLIP} />
             </clipPath>
+            {happy && (
+              <radialGradient id={`${clipId}-blush`}>
+                <stop ref={blushCoreRef} offset="0" stopColor={happy.blushColor} />
+                <stop offset="1" stopColor={happy.blushColor} stopOpacity="0" />
+              </radialGradient>
+            )}
           </defs>
-          <path className="ghost-mark__shell" d={BODY} />
+          <path ref={shellRef} className="ghost-mark__shell" d={BODY} />
+          {happy && (
+            <>
+              <ellipse ref={blushLRef} className="ghost-mark__blush" fill={`url(#${clipId}-blush)`} opacity="0" />
+              <ellipse ref={blushRRef} className="ghost-mark__blush" fill={`url(#${clipId}-blush)`} opacity="0" />
+            </>
+          )}
           <g ref={eyesRef} className="ghost-mark__eyes" clipPath={`url(#${clipId})`}>
             {EYES.map((d, index) => (
               <path key={index} className="ghost-mark__pupil" d={d} />
             ))}
           </g>
+          {/* Outside the clipped group: the gaze tracker expects exactly two paths there. */}
+          {happy && (
+            <g className="ghost-mark__happy">
+              <path ref={arcLRef} className="ghost-mark__arc" pathLength={1} />
+              <path ref={arcRRef} className="ghost-mark__arc" pathLength={1} />
+            </g>
+          )}
         </svg>
       </span>
     </span>
