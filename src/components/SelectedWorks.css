@@ -199,8 +199,32 @@ html[data-works-snap] body:has(.works) .footer {
   height: var(--momo-size, 40%);
   aspect-ratio: 1;
   translate: -50% -50%;
+  /* idle: hidden in the incoming pose; snaps there with no transition. */
   opacity: 0;
+  scale: var(--momo-in-scale, 1);
+  filter: blur(var(--momo-blur, 0px));
 }
-.momo__clip[data-active='true'] {
+.momo__clip[data-state='active'],
+.momo__clip[data-state='out'] {
+  transition:
+    opacity var(--momo-fade) ease-in-out,
+    scale var(--momo-fade) cubic-bezier(0.22, 1, 0.36, 1),
+    filter var(--momo-fade) ease-in-out;
+}
+.momo__clip[data-state='active'] {
   opacity: 1;
+  scale: 1;
+  filter: none;
+}
+.momo__clip[data-state='out'] {
+  opacity: 0;
+  scale: var(--momo-out-scale, 1);
+}
+/* dip: the outgoing clip fades in the first half, the incoming one in the second. */
+.momo[data-dip] .momo__clip[data-state='out'] {
+  transition-duration: calc(var(--momo-fade) / 2);
+}
+.momo[data-dip] .momo__clip[data-state='active'] {
+  transition-duration: calc(var(--momo-fade) / 2);
+  transition-delay: calc(var(--momo-fade) / 2);
 }
