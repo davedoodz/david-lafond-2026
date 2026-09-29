@@ -1,11 +1,30 @@
-import type { MouseEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { GhostButton } from '../features/ghost/GhostButton'
+import { NavMomo } from './NavMomo'
 import { RESUME_URL } from '../data/contact'
 import { ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
+import { useTuning } from '../tuning/useTuning'
 import './Nav.css'
 
 type Props = { route: Route }
+
+type Tuple = [number, number, number, number]
+
+/** How the nav behaves on scroll. */
+const NAV_CONFIG = {
+  /**
+   * static: scrolls away. sticky: pins while its page section (hero / light section) is on
+   * screen, then leaves with it. fixed: always at the top of the window.
+   */
+  position: { type: 'select' as const, options: ['static', 'sticky', 'fixed'], default: 'static' },
+  /** What sits behind the nav while it is pinned over content. */
+  backdrop: { type: 'select' as const, options: ['none', 'blur', 'solid'], default: 'blur' },
+  backdropOpacity: [0.7, 0, 1, 0.01] as Tuple,
+  blur: [16, 0, 40, 1] as Tuple,
+  /** Space under the links while pinned, so the backdrop does not end tight on the text. */
+  padBottom: [16, 0, 48, 1] as Tuple,
+}
 
 function internalLink(route: Route) {
   return (event: MouseEvent<HTMLAnchorElement>) => {
@@ -15,11 +34,20 @@ function internalLink(route: Route) {
   }
 }
 
-/** Contact lives in the footer, so the link goes all the way to the bottom of the page. */
-function scrollToContact(event: MouseEvent<HTMLAnchorElement>) {
-  event.preventDefault()
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: reduce ? 'auto' : 'smooth' })
+/**
+ * Whether the page behind a point is light: the topmost opaque background in the paint stack
+ * under it, skipping the nav. The stack (not each hit's ancestors) catches sibling backdrop layers.
+ */
+function isLightUnder(nav: HTMLElement, x: number, y: number) {
+  for (const hit of document.elementsFromPoint(x, y)) {
+    // Skip the nav and full-page overlays (Momo zoom, Davebot), which sit over the page only briefly.
+    if (nav.contains(hit) || hit.closest('.momo-zoom, .davebot-layer')) continue
+    const match = getComputedStyle(hit).backgroundColor.match(/[\d.]+/g)
+    if (!match || (match.length > 3 && Number(match[3]) < 0.5)) continue
+    const [r, g, b] = match.map(Number)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 140
+  }
+  return null
 }
 
 const PROJECT_ROUTES: Route[] = ['unwind', 'ecofabriq', 'harvard-mit']
@@ -44,26 +72,77 @@ export function BackLink({ className = '' }: { className?: string }) {
 
 export function Nav({ route }: Props) {
   const isProject = PROJECT_ROUTES.includes(route)
+  const t = useTuning('Nav', NAV_CONFIG)
+  const pin = t.position === 'static' ? undefined : t.position
+  const navRef = useRef<HTMLElement>(null)
+
+  // Fixed modes leave the flow: a spacer of the nav's height keeps the page from jumping up.
+  const [height, setHeight] = useState(0)
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav || !pin) return
+    const observer = new ResizeObserver(() => setHeight(nav.offsetHeight))
+    observer.observe(nav)
+    return () => observer.disconnect()
+  }, [pin])
+
+  // Pinned over other sections, the links follow the page under them (light text on dark,
+  // dark on light), sampled behind the links on scroll.
+  const [under, setUnder] = useState<'light' | 'dark'>()
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav || !pin) return setUnder(undefined)
+    let frame = 0
+    const sample = () => {
+      frame = 0
+      const links = nav.querySelector('.nav__links')?.getBoundingClientRect()
+      if (!links) return
+      const light = isLightUnder(nav, links.left + links.width / 2, links.top + links.height / 2)
+      if (light !== null) setUnder(light ? 'light' : 'dark')
+    }
+    const queue = () => (frame ||= requestAnimationFrame(sample))
+    sample()
+    window.addEventListener('scroll', queue, { passive: true })
+    window.addEventListener('resize', queue)
+    // Sections also move without scrolling (reveals, snapping), so re-check a few times a second.
+    const timer = window.setInterval(queue, 300)
+    return () => {
+      window.clearInterval(timer)
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', queue)
+      window.removeEventListener('resize', queue)
+    }
+  }, [pin, route])
+
+  const style = pin
+    ? ({
+        '--nav-h': `${height}px`,
+        '--nav-backdrop-opacity': t.backdrop === 'none' ? 0 : t.backdropOpacity,
+        '--nav-blur': t.backdrop === 'blur' ? `${t.blur}px` : '0px',
+        '--nav-pad-bottom': `${t.padBottom}px`,
+      } as CSSProperties)
+    : undefined
+
   return (
-    <header className="nav">
-      <div className="nav__start">
-        <GhostButton className="nav__ghost" />
-        {route === 'harvard-mit' && <BackLink />}
-      </div>
-      <nav className="nav__links" aria-label="Primary">
-        <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
-          Work
-        </a>
-        <a href="/about" aria-current={route === 'about' ? 'page' : undefined} onClick={internalLink('about')}>
-          About
-        </a>
-        <a href={RESUME_URL} target="_blank" rel="noopener">
-          Resume
-        </a>
-        <a href="#contact" onClick={scrollToContact}>
-          Contact
-        </a>
-      </nav>
-    </header>
+    <>
+      {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
+      <header ref={navRef} className="nav" data-pin={pin} data-under={under} style={style}>
+        <div className="nav__start">
+          {route === 'unwind' ? <NavMomo className="nav__ghost" /> : <GhostButton className="nav__ghost" />}
+          {route === 'harvard-mit' && <BackLink />}
+        </div>
+        <nav className="nav__links" aria-label="Primary">
+          <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
+            Work
+          </a>
+          <a href="/about" aria-current={route === 'about' ? 'page' : undefined} onClick={internalLink('about')}>
+            About
+          </a>
+          <a href={RESUME_URL} target="_blank" rel="noopener">
+            Resume
+          </a>
+        </nav>
+      </header>
+    </>
   )
 }

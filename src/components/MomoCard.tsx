@@ -15,12 +15,17 @@
  * reads as one continuous animation.
  */
 import { useEffect, useRef, type CSSProperties } from 'react'
-import { useTuningController } from '../tuning/useTuning'
+import { useTuning, useTuningController } from '../tuning/useTuning'
+import './momo.css'
 
 type Tuple = [number, number, number, number]
 type Clip = 'listening' | 'floating'
 
 const CLIPS: Clip[] = ['listening', 'floating']
+
+export const MOMO_MODES = ['awake', 'asleep', 'both'] as const
+export type MomoMode = (typeof MOMO_MODES)[number]
+const CLIP_BY_MODE: Record<Exclude<MomoMode, 'both'>, Clip> = { awake: 'listening', asleep: 'floating' }
 
 const clipUrl = (clip: Clip) => `/work/unwind/momo-${clip}.mp4`
 
@@ -30,7 +35,7 @@ void main(){vec3 c=texture2D(t,vec2(uv.x,uv.y*.5)).rgb;float a=texture2D(t,vec2(
 a=clamp((a-.03)/.94,0.,1.);gl_FragColor=vec4(min(c,vec3(a)),a);}`
 
 /** Draws `video` (stacked colour/alpha) into `canvas` on every new frame. Returns a stop function. */
-function stackedAlpha(video: HTMLVideoElement, canvas: HTMLCanvasElement): () => void {
+export function stackedAlpha(video: HTMLVideoElement, canvas: HTMLCanvasElement): () => void {
   const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false })
   if (!gl) return () => {}
   const shader = (type: number, src: string) => {
@@ -92,7 +97,8 @@ function stackedAlpha(video: HTMLVideoElement, canvas: HTMLCanvasElement): () =>
 }
 
 const CONFIG = {
-  clip: { type: 'select' as const, options: ['listening', 'floating', 'both'], default: 'both' },
+  /** awake = the listening clip, asleep = the floating clip, both = one hands over to the other. */
+  clip: { type: 'select' as const, options: [...MOMO_MODES], default: 'both' },
   /** Video height as % of the card height. */
   size: [40, 5, 120, 0.5] as Tuple,
   /** Offset from the card centre, % of card width / height. */
@@ -142,6 +148,23 @@ const PRESETS: Record<string, Blend> = {
 }
 
 export function MomoCard() {
+  const t = useTuning('Unwind Momo', CONFIG)
+  return <Momo mode={t.clip as MomoMode} size={`${t.size}%`} x={`${t.x}%`} y={`${t.y}%`} />
+}
+
+type MomoProps = {
+  mode: MomoMode
+  /** Clip height and offsets from the host centre, as CSS lengths (% of the host, or px). */
+  size: string
+  x: string
+  y: string
+}
+
+/**
+ * Momo filling its positioned parent. Clip alignment and the hand-over blend always come
+ * from the 'Unwind Momo' dials, so every Momo on the site lines up and blends the same way.
+ */
+export function Momo({ mode, size, x, y }: MomoProps) {
   const { values: t, setValue } = useTuningController('Unwind Momo', CONFIG)
   const hostRef = useRef<HTMLDivElement>(null)
   const videos = useRef<Record<Clip, HTMLVideoElement | null>>({ listening: null, floating: null })
@@ -175,7 +198,7 @@ export function MomoCard() {
     const host = hostRef.current
     if (!host) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const order: Clip[] = t.clip === 'both' ? CLIPS : [t.clip as Clip]
+    const order: Clip[] = mode === 'both' ? CLIPS : [CLIP_BY_MODE[mode]]
     let active = 0
     let visible = false
     let handing = false
@@ -260,7 +283,7 @@ export function MomoCard() {
       window.clearTimeout(settle)
       pauseAll()
     }
-  }, [t.clip])
+  }, [mode])
 
   return (
     <div
@@ -270,9 +293,9 @@ export function MomoCard() {
       data-dip={blend.dip || undefined}
       style={
         {
-          '--momo-size': `${t.size}%`,
-          '--momo-x': `${t.x}%`,
-          '--momo-y': `${t.y}%`,
+          '--momo-size': size,
+          '--momo-x': x,
+          '--momo-y': y,
           '--momo-fade': `${blend.fadeMs}ms`,
           '--momo-blur': `${blend.blur}px`,
           '--momo-out-scale': blend.outScale,

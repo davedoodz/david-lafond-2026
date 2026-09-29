@@ -45,6 +45,11 @@ declare module 'page-flip' {
     flipNext(corner?: FlipCorner): void
     flipPrev(corner?: FlipCorner): void
     turnToPage(page: number): void
+    turnToNextPage(): void
+    turnToPrevPage(): void
+    getFlipController(): unknown
+    getRender(): unknown
+    getPage(index: number): unknown
     getCurrentPageIndex(): number
     getPageCount(): number
     getOrientation(): Orientation

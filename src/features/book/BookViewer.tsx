@@ -7,7 +7,7 @@
  * scrolls with the page. The mode switch is sticky, so it
  * stays in reach anywhere in the grid.
  */
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   BookIcon,
   ChevronLeftIcon,
@@ -19,7 +19,8 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from '../../components/icons'
-import { useTuning } from '../../tuning/useTuning'
+import { useTuningController } from '../../tuning/useTuning'
+import { GRID_ENTRANCES, GRID_HOVERS, playGridEntrance, type GridEntranceValues } from './gridEntrance'
 import { ViewSwitch, switchDials } from './ViewSwitch'
 import { SpreadZoom } from './SpreadZoom'
 import { toMotionTransition } from '../playground/motionTransition'
@@ -54,8 +55,16 @@ const CONFIG = {
     flipMs: [700, 250, 1600, 10] as Tuple,
     tiltRestX: [8, -20, 30, 0.5] as Tuple,
     tiltRestY: [0, -20, 20, 0.5] as Tuple,
-    tiltHover: [7, 0, 20, 0.5] as Tuple,
+    tiltHover: [12, 0, 30, 0.5] as Tuple,
+    /** Hover push: how far the book sinks under the pointer. */
+    push: [0.015, 0, 0.08, 0.001] as Tuple,
+    coverFlex: [0.2, 0, 1, 0.01] as Tuple,
     shadowOpacity: [0.55, 0, 1, 0.01] as Tuple,
+    /** Page-block thickness (px) under and beside the pages. */
+    thickness: [14, 0, 30, 0.5] as Tuple,
+    /** Fold shadow down the spine. */
+    /** Sheen across the pages that moves with the tilt. */
+    glare: [0.35, 0, 1, 0.01] as Tuple,
   },
   zoom: {
     maxZoom: [4, 1.5, 8, 0.1] as Tuple,
@@ -68,6 +77,25 @@ const CONFIG = {
     minCard: [300, 180, 520, 1] as Tuple,
     gap: [40, 12, 96, 1] as Tuple,
     showPageNumbers: true,
+    /** How the spreads arrive when Grid is pressed: as if taken out of the physical book. */
+    entrance: {
+      preset: { type: 'select' as const, options: [...GRID_ENTRANCES], default: 'open' },
+      duration: [900, 200, 2500, 10] as Tuple,
+      stagger: [70, 0, 300, 5] as Tuple,
+      distance: [1, 0, 3, 0.05] as Tuple,
+      perspective: [1400, 300, 4000, 10] as Tuple,
+      replay: { type: 'action' as const, label: 'Replay entrance' },
+      _collapsed: true,
+    },
+    /** How a spread reacts under the pointer. */
+    hover: {
+      preset: { type: 'select' as const, options: [...GRID_HOVERS], default: 'lift' },
+      strength: [1, 0, 3, 0.05] as Tuple,
+      duration: [260, 80, 900, 10] as Tuple,
+      /** Drop shadow under every spread (0 hides it). */
+      shadow: [1, 0, 2, 0.05] as Tuple,
+      _collapsed: true,
+    },
     /** Clicked spread opens enlarged over a blurred backdrop. */
     zoom: {
       widthVw: [86, 40, 100, 1] as Tuple,
@@ -85,7 +113,12 @@ const CONFIG = {
 const spreadOfIndex = (index: number) => (index === 0 ? 0 : Math.ceil(index / 2))
 
 export function BookViewer() {
-  const t = useTuning('Portfolio book', CONFIG)
+  const replayEntrance = useRef<() => void>(() => {})
+  const { values: t } = useTuningController('Portfolio book', CONFIG, {
+    onAction: (action) => {
+      if (action === 'grid.entrance.replay') replayEntrance.current()
+    },
+  })
   const [mode, setMode] = useState<Mode>('video')
   // The grid is only built the first time it is opened.
   const [gridMounted, setGridMounted] = useState(false)
@@ -103,6 +136,29 @@ export function BookViewer() {
   const atStart = state.index === 0
   const atEnd = state.index >= PAGE_COUNT - 1 || (state.orientation === 'landscape' && spread === SPREADS.length - 1)
 
+  // Bumped on every switch into the grid; the entrance plays once per bump.
+  const [entranceKey, setEntranceKey] = useState(0)
+  const gridRef = useRef<HTMLDivElement>(null)
+  // Tilt hover: the spread under the pointer leans toward it (-0.5..0.5 on each axis).
+  const onGridPointer = useCallback((event: React.PointerEvent) => {
+    const card = (event.target as Element).closest<HTMLElement>('.spread-grid__pages')
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    card.style.setProperty('--hx', ((event.clientX - rect.left) / rect.width - 0.5).toFixed(3))
+    card.style.setProperty('--hy', ((event.clientY - rect.top) / rect.height - 0.5).toFixed(3))
+  }, [])
+  const entranceRef = useRef(t.grid.entrance)
+  entranceRef.current = t.grid.entrance
+  useLayoutEffect(() => {
+    const grid = gridRef.current
+    if (!entranceKey || !grid) return
+    const animations = playGridEntrance(grid, entranceRef.current as GridEntranceValues)
+    return () => animations.forEach((animation) => animation.cancel())
+  }, [entranceKey])
+  replayEntrance.current = () => {
+    if (modeRef.current === 'grid') setEntranceKey((key) => key + 1)
+  }
+
   const modeRef = useRef(mode)
   modeRef.current = mode
 
@@ -111,7 +167,10 @@ export function BookViewer() {
   const switchTo = useCallback((next: Mode) => {
     const same = next === modeRef.current
     setMode(next)
-    if (next === 'grid') setGridMounted(true)
+    if (next === 'grid') {
+      setGridMounted(true)
+      if (!same) setEntranceKey((key) => key + 1)
+    }
     if (next === 'book') {
       if (same) controller.current?.first()
       else controller.current?.jumpTo(0)
@@ -264,7 +323,15 @@ export function BookViewer() {
       </div>
 
       {gridMounted && (
-        <div className="viewer__grid" aria-hidden={mode !== 'grid'} inert={mode !== 'grid'}>
+        <div
+          ref={gridRef}
+          className="viewer__grid"
+          aria-hidden={mode !== 'grid'}
+          inert={mode !== 'grid'}
+          data-hover={t.grid.hover.preset}
+          style={{ '--gh': t.grid.hover.strength, '--gh-ms': `${t.grid.hover.duration}ms`, '--gh-shadow': t.grid.hover.shadow } as CSSProperties}
+          onPointerMove={t.grid.hover.preset === 'tilt' ? onGridPointer : undefined}
+        >
           <SpreadGrid
             current={spread}
             onOpen={openZoom}

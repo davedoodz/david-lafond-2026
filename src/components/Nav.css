@@ -32,6 +32,49 @@
 [data-surface='light'] .nav {
   --nav-idle: var(--stone-400);
   --nav-active: var(--ink-900);
+  --nav-bg: var(--paper);
+}
+
+/* Pinned nav ('Nav → position'): sticky within its page section, or fixed to the window.
+   Case pages override .nav placement; see CaseStudyPage.css. */
+.nav[data-pin] {
+  z-index: 50;
+  padding-bottom: var(--nav-pad-bottom, 16px);
+  isolation: isolate;
+}
+.nav[data-pin='sticky'] {
+  position: sticky;
+  top: 0;
+}
+.nav[data-pin='fixed'] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+/* Pinned over another section: colours follow the page under the links (set in Nav.tsx). */
+.nav[data-under='dark'] {
+  --nav-idle: var(--stone-600);
+  --nav-active: var(--paper);
+  --nav-bg: var(--ink-900);
+}
+.nav[data-under='light'] {
+  --nav-idle: var(--stone-400);
+  --nav-active: var(--ink-900);
+  --nav-bg: var(--paper);
+}
+
+/* Backdrop on its own layer behind the links. */
+.nav[data-pin]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  /* Tint alpha via color-mix (not opacity), so the blur stays at full strength. */
+  background: color-mix(in srgb, var(--nav-bg, var(--ink-900)) calc(var(--nav-backdrop-opacity, 0) * 100%), transparent);
+  backdrop-filter: blur(var(--nav-blur, 0px));
+  -webkit-backdrop-filter: blur(var(--nav-blur, 0px));
+  pointer-events: none;
 }
 
 .nav__start {

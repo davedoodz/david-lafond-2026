@@ -38,7 +38,15 @@ export type BookLook = {
   tiltRestX: number
   tiltRestY: number
   tiltHover: number
+  /** Hover: how much the book sinks away under the pointer (share of its size). */
+  push: number
+  /** Cover turns: 0 swings stiff and flat, 1 curls like paper. */
+  coverFlex: number
   shadowOpacity: number
+  /** Page-block thickness at its thickest (px); splits between the sides as you read. */
+  thickness: number
+  /** Light sheen that slides across the pages with the tilt (0..1). */
+  glare: number
   maxZoom: number
   detailAtZoom: number
 }
@@ -108,7 +116,9 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     const pages = Array.from({ length: PAGE_COUNT }, (_, i) => {
       const page = document.createElement('div')
       page.className = 'book-page'
-      page.dataset.density = i === 0 || i === PAGE_COUNT - 1 ? 'hard' : 'soft'
+      // Covers turn soft too, on a gentler path (see turn); data-cover keeps their styling.
+      page.dataset.density = 'soft'
+      if (i === 0 || i === PAGE_COUNT - 1) page.dataset.cover = ''
       const img = document.createElement('img')
       img.alt = i === 0 ? 'Portfolio front cover' : i === PAGE_COUNT - 1 ? 'Portfolio back cover' : `Portfolio page ${i + 1}`
       img.decoding = 'async'
@@ -182,6 +192,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     const target = { zoom: 1, x: 0, y: 0 }
     const tiltNow = { x: lookRef.current.tiltRestX, y: lookRef.current.tiltRestY }
     const tiltTarget = { ...tiltNow }
+    let sinkNow = 0
+    let sinkTarget = 0
     let frame = 0
     let detailPages: number[] = []
     let detailToken = 0
@@ -241,8 +253,16 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
           moving = true
         } else tiltNow[key] = tiltTarget[key]
       }
+      const sinkDelta = sinkTarget - sinkNow
+      if (Math.abs(sinkDelta) > 0.0001) {
+        sinkNow += sinkDelta * (reducedMotion ? 1 : 0.1)
+        moving = true
+      } else sinkNow = sinkTarget
       zoomLayer.style.transform = `translate3d(${view.x.toFixed(2)}px, ${view.y.toFixed(2)}px, 0) scale(${view.zoom.toFixed(4)})`
-      tilt.style.transform = `rotateX(${tiltNow.x.toFixed(3)}deg) rotateY(${tiltNow.y.toFixed(3)}deg)`
+      tilt.style.transform = `rotateX(${tiltNow.x.toFixed(3)}deg) rotateY(${tiltNow.y.toFixed(3)}deg) scale(${(1 - sinkNow).toFixed(4)})`
+      // Shadow and sheen follow the hover part of the tilt (the light stays put, the book moves).
+      stage.style.setProperty('--tilt-x', (tiltNow.x - lookRef.current.tiltRestX).toFixed(3))
+      stage.style.setProperty('--tilt-y', (tiltNow.y - lookRef.current.tiltRestY).toFixed(3))
       if (moving) schedule()
     }
     const schedule = () => {
@@ -287,6 +307,12 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     const syncSpread = (index: number) => {
       const kind = orientation === 'portrait' ? 'single' : index === 0 ? 'front' : index === PAGE_COUNT - 1 ? 'back' : 'open'
       shift.dataset.spread = kind
+      // Share of the book already read: the left page block grows, the right one thins.
+      shift.style.setProperty('--read', String(PAGE_COUNT > 1 ? index / (PAGE_COUNT - 1) : 0))
+      // Only the cover board lies under the first and last spreads' outer pages: no page stack
+      // there, so nothing shows beside the cover while it turns.
+      shift.style.setProperty('--block-left', index > 1 ? '1' : '0')
+      shift.style.setProperty('--block-right', index < PAGE_COUNT - 3 ? '1' : '0')
       stage.dataset.orientation = orientation
     }
 
@@ -303,9 +329,67 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     // Load the destination while a drag is still deciding which way to go.
     // `libFlips` lets a click tell whether page-flip already turned it (corner hot zones).
     let libFlips = 0
+    // page-flip bug: turning onto a lone cover it uses the cover as both the turning leaf and
+    // the page revealed under it, so the page the leaf lifts off stays fully drawn beside it.
+    // While such a turn runs, clip that page to the part of the leaf still lying flat.
+    let flatFrame = 0
+    const flatPage = () => {
+      if (orientation !== 'landscape') return null
+      const index = flip.getCurrentPageIndex()
+      const calc = (flip.getFlipController() as unknown as FlipInternals).calc as FlipCalc | null
+      if (!calc) return null
+      const back = calc.getDirection() === 1
+      if (back && index === 1) return { page: pages[1], calc, back }
+      if (!back && index === PAGE_COUNT - 3) return { page: pages[PAGE_COUNT - 2], calc, back }
+      return null
+    }
+    const clipFlat = () => {
+      flatFrame = requestAnimationFrame(clipFlat)
+      const found = flatPage()
+      pages.forEach((page) => page !== found?.page && page.removeAttribute('data-flat'))
+      if (!found) return
+      const w = found.page.offsetWidth
+      const h = found.page.offsetHeight
+      const rect = (flip.getRender() as unknown as RenderInternals).getRect()
+      const pw = rect.pageWidth
+      const ph = rect.height
+      // Fold points: bottom-area points that are not the outer-edge corners (page-flip rounds
+      // its page size to whole pixels, hence the tolerance).
+      const fold = found.calc
+        .getBottomClipArea()
+        .filter((q): q is { x: number; y: number } => q !== null && !(Math.abs(q.x - pw) < 1.5 && (q.y < 1.5 || Math.abs(q.y - ph) < 1.5)))
+      if (fold.length < 2) return
+      // The area polygon closes on its first point, so take the fold point farthest from it.
+      const a = fold[0]
+      const b = fold.reduce((far, q) => (Math.hypot(q.x - a.x, q.y - a.y) > Math.hypot(far.x - a.x, far.y - a.y) ? q : far), a)
+      if (Math.hypot(b.x - a.x, b.y - a.y) < 1) return
+      // Keep the spine side (x = 0 in page-flip's page space) of the fold line.
+      const side = (q: { x: number; y: number }) => (b.x - a.x) * (q.y - a.y) - (b.y - a.y) * (q.x - a.x)
+      const keep = Math.sign(side({ x: 0, y: ph / 2 })) || 1
+      const corners = [{ x: 0, y: 0 }, { x: pw, y: 0 }, { x: pw, y: ph }, { x: 0, y: ph }]
+      const out: Array<{ x: number; y: number }> = []
+      corners.forEach((p, i) => {
+        const q = corners[(i + 1) % 4]
+        const sp = side(p) * keep
+        const sq = side(q) * keep
+        if (sp >= 0) out.push(p)
+        if (sp * sq < 0) {
+          const t = sp / (sp - sq)
+          out.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t })
+        }
+      })
+      const sx = w / pw
+      const sy = h / ph
+      const polygon = out.map((q) => `${((found.back ? pw - q.x : q.x) * sx).toFixed(1)}px ${(q.y * sy).toFixed(1)}px`).join(', ')
+      host.style.setProperty('--flat-clip', `polygon(${polygon || '0 0'})`)
+      found.page.setAttribute('data-flat', '')
+    }
     flip.on('changeState', ({ data }) => {
       stage.dataset.flipState = data
       if (data === 'flipping') libFlips++
+      cancelAnimationFrame(flatFrame)
+      if (data === 'read') pages.forEach((page) => page.removeAttribute('data-flat'))
+      else clipFlat()
       if (data === 'user_fold' || data === 'flipping') {
         const index = flip.getCurrentPageIndex()
         hydrate(clamp(index + 2, 0, PAGE_COUNT - 1))
@@ -319,6 +403,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       report()
     })
     flip.loadFromHTML(pages)
+    // showCover forces the covers hard (a rigid swing); make them paper so turn() can bend them.
+    for (const i of [0, PAGE_COUNT - 1]) (flip.getPage(i) as { setDensity: (d: 'soft') => void }).setDensity('soft')
     orientation = flip.getOrientation()
     syncSpread(startIndex)
     tick()
@@ -355,11 +441,15 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
         return
       }
       if (target.zoom > 1 || !finePointer.matches || stage.dataset.flipState === 'user_fold') return
-      const rect = stage.getBoundingClientRect()
-      const nx = (event.clientX - rect.left) / rect.width - 0.5
-      const ny = (event.clientY - rect.top) / rect.height - 0.5
-      tiltTarget.y = lookRef.current.tiltRestY + nx * lookRef.current.tiltHover
-      tiltTarget.x = lookRef.current.tiltRestX - ny * lookRef.current.tiltHover * 0.6
+      // Push: the part of the book under the pointer dips away, and the book sinks a touch.
+      const rect = host.getBoundingClientRect()
+      const nx = clamp((event.clientX - rect.left) / rect.width - 0.5, -0.6, 0.6)
+      const ny = clamp((event.clientY - rect.top) / rect.height - 0.5, -0.6, 0.6)
+      const over = Math.abs(nx) <= 0.5 && Math.abs(ny) <= 0.5
+      const reach = over ? 1 : 0.5
+      tiltTarget.y = lookRef.current.tiltRestY + nx * lookRef.current.tiltHover * reach
+      tiltTarget.x = lookRef.current.tiltRestX - ny * lookRef.current.tiltHover * 0.7 * reach
+      sinkTarget = over ? lookRef.current.push : 0
       schedule()
     }
     let press: { x: number; y: number; libFlips: number } | null = null
@@ -375,6 +465,41 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     }
     // A click anywhere on the right page turns forward, on the left page back. Drags, pans,
     // pinches, and clicks page-flip already turned (its corner hot zones) are left alone.
+    // Turns a leaf. Paper pages use page-flip's own path; a leaf carrying a cover is driven
+    // along our path instead: its corner stays near the bottom edge (a nearly upright fold
+    // swings like board) and lifts by `coverFlex` mid-turn (a diagonal fold curls like paper).
+    const turn = (forward: boolean) => {
+      const index = flip.getCurrentPageIndex()
+      const cover = forward ? index === 0 || index >= PAGE_COUNT - 3 : index <= 2 || index >= PAGE_COUNT - 1
+      if (!cover) return forward ? flip.flipNext() : flip.flipPrev()
+      // page-flip internals (public at runtime): the same steps as its Flip.flip(), other path.
+      const fc = flip.getFlipController() as unknown as FlipInternals
+      const render = flip.getRender() as unknown as RenderInternals
+      const rect = render.getRect()
+      if (fc.calc !== null) render.finishAnimation()
+      if (!fc.start({ x: forward ? rect.left + rect.pageWidth * 2 - 10 : 10, y: rect.height - 2 })) return
+      fc.setState('flipping')
+      const w = rect.pageWidth
+      const h = rect.height
+      const lift = h * 0.6 * lookRef.current.coverFlex
+      const steps = 60
+      const frames = Array.from({ length: steps + 1 }, (_, i) => {
+        const t = i / steps
+        const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2
+        const point = { x: w - 1 - (2 * w - 1) * e, y: h - 1 - lift * Math.sin(Math.PI * e) }
+        return () => fc.do(point)
+      })
+      render.startAnimation(frames, lookRef.current.flipMs, () => {
+        if (!fc.calc) return
+        if (forward) flip.turnToNextPage()
+        else flip.turnToPrevPage()
+        render.setBottomPage(null)
+        render.setFlippingPage(null)
+        render.clearShadow()
+        fc.setState('read')
+        fc.reset()
+      })
+    }
     const onClick = (event: MouseEvent) => {
       const start = press
       press = null
@@ -389,8 +514,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       if (event.clientX < left || event.clientX > right || event.clientY < rect.top || event.clientY > rect.bottom) return
       const forward = lone ? index === 0 : event.clientX >= rect.left + rect.width / 2
       if (target.zoom > 1) setZoom(1)
-      if (forward) flip.flipNext()
-      else flip.flipPrev()
+      turn(forward)
     }
     const onPointerUp = (event: PointerEvent) => {
       pointers.delete(event.pointerId)
@@ -404,6 +528,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       if (target.zoom > 1) return
       tiltTarget.x = lookRef.current.tiltRestX
       tiltTarget.y = lookRef.current.tiltRestY
+      sinkTarget = 0
       schedule()
     }
     // Trackpad pinch arrives as ctrl+wheel; plain wheel pans while zoomed and scrolls the page otherwise.
@@ -443,8 +568,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       if (!activeRef.current || event.metaKey || event.ctrlKey || event.altKey) return
       if ((event.target as HTMLElement | null)?.closest('input, textarea, [contenteditable="true"]')) return
       const actions: Record<string, () => void> = {
-        ArrowRight: () => flip.flipNext(),
-        ArrowLeft: () => flip.flipPrev(),
+        ArrowRight: () => turn(true),
+        ArrowLeft: () => turn(false),
         Home: () => controllerRef.current?.first(),
         End: () => controllerRef.current?.last(),
         '+': () => setZoom(target.zoom * 1.5),
@@ -469,11 +594,11 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     controllerRef.current = {
       next: () => {
         if (target.zoom > 1) setZoom(1)
-        flip.flipNext()
+        turn(true)
       },
       prev: () => {
         if (target.zoom > 1) setZoom(1)
-        flip.flipPrev()
+        turn(false)
       },
       first: () => flipTo(0),
       last: () => flipTo(PAGE_COUNT - 1),
@@ -506,6 +631,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       detailToken++
       flipRef.current = null
       relayoutRef.current = null
+      cancelAnimationFrame(flatFrame)
       flip.destroy()
     }
     // One book per mount; live dials are read through lookRef.
@@ -516,17 +642,49 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       ref={stageRef}
       className="book"
       data-no-ink
-      style={{ '--book-shadow': look.shadowOpacity } as CSSProperties}
+      style={
+        {
+          '--book-shadow': look.shadowOpacity,
+          '--book-thickness': `${look.thickness}px`,
+          '--book-glare': look.glare,
+        } as CSSProperties
+      }
     >
       <div ref={tiltRef} className="book__tilt">
         <div ref={shiftRef} className="book__shift" style={{ '--flip-ms': `${look.flipMs}ms` } as CSSProperties}>
           <div ref={zoomRef} className="book__zoom">
             <div ref={mountRef} className="book__mount">
               <div className="book__shadow" aria-hidden="true" />
+              <div className="book__block" aria-hidden="true">
+                <span className="book__block-left" />
+                <span className="book__block-right" />
+              </div>
+              <div className="book__glare" aria-hidden="true" />
             </div>
           </div>
         </div>
       </div>
     </div>
   )
+}
+
+/** page-flip internals the cover turn drives (TypeScript-private, public at runtime). */
+type FlipInternals = {
+  calc: object | null
+  start: (globalPos: { x: number; y: number }) => boolean
+  do: (pagePos: { x: number; y: number }) => void
+  setState: (state: 'read' | 'flipping') => void
+  reset: () => void
+}
+type RenderInternals = {
+  getRect: () => { left: number; top: number; width: number; height: number; pageWidth: number }
+  finishAnimation: () => void
+  startAnimation: (frames: Array<() => void>, duration: number, onDone: () => void) => void
+  setBottomPage: (page: null) => void
+  setFlippingPage: (page: null) => void
+  clearShadow: () => void
+}
+type FlipCalc = {
+  getDirection: () => number
+  getBottomClipArea: () => Array<{ x: number; y: number } | null>
 }

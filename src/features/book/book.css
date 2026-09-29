@@ -150,10 +150,8 @@
   opacity: 0;
   visibility: hidden;
   translate: 0 14px;
-  transition:
-    opacity 200ms ease,
-    translate 0s linear 200ms,
-    visibility 0s linear 200ms;
+  /* Leaves at once: only the incoming view animates, so fast switching never shows two. */
+  transition: none;
 }
 
 .book {
@@ -219,6 +217,86 @@
   right: 50%;
 }
 
+/* The shadow leans away from the pointer as the book tilts. */
+.book__shadow {
+  translate: calc(var(--tilt-y, 0) * -2px) calc(var(--tilt-x, 0) * 2px);
+}
+
+/* ---------- Depth: page block, spine fold, sheen ---------- */
+
+/* Stacked page edges peeking out below and beside the pages; read pages pile up on the left. */
+.book__block {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.book__block span {
+  --t: 0px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 2.5px),
+    linear-gradient(to bottom, #d9d4ca, #a9a398);
+  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.5);
+  transition:
+    translate var(--flip-ms, 700ms) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity var(--flip-ms, 700ms) ease;
+}
+
+.book__block .book__block-left {
+  --t: calc(var(--book-thickness, 10px) * var(--read, 0));
+  left: 0;
+  translate: calc(var(--t) * -0.45) var(--t);
+  /* Opacity clamps at 1: fully shown once a page or so has been read. */
+  opacity: min(calc(var(--read, 0) * 60), var(--block-left, 1));
+}
+
+.book__block .book__block-right {
+  --t: calc(var(--book-thickness, 10px) * (1 - var(--read, 0)));
+  right: 0;
+  translate: calc(var(--t) * 0.45) var(--t);
+  opacity: min(calc((1 - var(--read, 0)) * 60), var(--block-right, 1));
+}
+
+.book__glare {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+/* A soft light band that slides across the pages as the book tilts. */
+.book__glare {
+  opacity: var(--book-glare, 0.35);
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgb(255 255 255 / 0.35) calc(45% + var(--tilt-y, 0) * 2%),
+    transparent 70%
+  );
+  mix-blend-mode: soft-light;
+  transition:
+    left var(--flip-ms, 700ms) cubic-bezier(0.22, 1, 0.36, 1),
+    right var(--flip-ms, 700ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.book__shift[data-spread='front'] .book__glare {
+  left: 50%;
+}
+
+.book__shift[data-spread='back'] .book__glare {
+  right: 50%;
+}
+
+.book__shift[data-spread='single'] .book__block {
+  display: none;
+}
+
 .book.is-zoomed {
   cursor: grab;
   touch-action: none;
@@ -246,28 +324,12 @@
 }
 
 /* The black covers need a hairline to read against the black page. */
-.book-page[data-density='hard']::after {
+.book-page[data-cover]::after {
   content: '';
   position: absolute;
   inset: 0;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
   pointer-events: none;
-}
-
-/* Spine shading on the inner edge of each soft page (page-flip tags sides with --left / --right). */
-.book-page[data-density='soft']::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.book-page[data-density='soft'].--left::after {
-  background: linear-gradient(to left, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.04) 4%, transparent 10%);
-}
-
-.book-page[data-density='soft'].--right::after {
-  background: linear-gradient(to right, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.04) 4%, transparent 10%);
 }
 
 /* Bottom bar: first / prev / counter / next / last, zoom on the right. */
@@ -369,6 +431,7 @@
   display: none;
   opacity: 0;
   translate: 0 -10px;
+  transition: none;
 }
 
 @starting-style {
@@ -457,6 +520,7 @@
   display: none;
   opacity: 0;
   translate: 0 -10px;
+  transition: none;
 }
 
 @starting-style {
@@ -487,10 +551,7 @@
   display: flex;
   width: 100%;
   border-radius: 3px;
-  box-shadow: 0 18px 34px -8px rgb(0 0 0 / 0.6);
-  transition:
-    translate 260ms var(--ease-out),
-    opacity 0s linear;
+  box-shadow: 0 18px 34px -8px rgb(0 0 0 / calc(0.6 * var(--gh-shadow, 1)));
 }
 
 .spread-grid__card[data-side='front'] .spread-grid__pages {
@@ -518,12 +579,72 @@
   transition: color 160ms ease;
 }
 
+/* Grid hover presets (`data-hover` on .viewer__grid). --gh: strength, --gh-ms: duration. */
+.spread-grid__pages,
+.spread-grid__pages img {
+  transition:
+    translate var(--gh-ms, 260ms) var(--ease-out),
+    scale var(--gh-ms, 260ms) var(--ease-out),
+    rotate var(--gh-ms, 260ms) var(--ease-out),
+    transform var(--gh-ms, 260ms) var(--ease-out),
+    box-shadow var(--gh-ms, 260ms) var(--ease-out),
+    opacity 0s linear;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .spread-grid__card:hover .spread-grid__pages {
-    translate: 0 -4px;
-  }
   .spread-grid__card:hover .spread-grid__label {
     color: var(--paper);
+  }
+
+  /* lift: rises a little. */
+  [data-hover='lift'] .spread-grid__card:hover .spread-grid__pages {
+    translate: 0 calc(-4px * var(--gh, 1));
+  }
+
+  /* float: grows in place from its centre and casts a longer shadow. */
+  [data-hover='float'] .spread-grid__card:hover .spread-grid__pages {
+    transform-origin: center;
+    scale: calc(1 + 0.03 * var(--gh, 1));
+    box-shadow: 0 34px 48px -12px rgb(0 0 0 / calc(0.75 * var(--gh-shadow, 1)));
+  }
+
+  /* press: pushed down into the table. */
+  [data-hover='press'] .spread-grid__card:hover .spread-grid__pages {
+    scale: calc(1 - 0.025 * var(--gh, 1));
+    box-shadow: 0 8px 16px -6px rgb(0 0 0 / calc(0.55 * var(--gh-shadow, 1)));
+  }
+
+  /* tilt: leans toward the pointer in 3D (--hx/--hy set from the pointer, -0.5..0.5). */
+  [data-hover='tilt'] .spread-grid__card:hover .spread-grid__pages {
+    transform: perspective(1200px) rotateX(calc(var(--hy, 0) * -10deg * var(--gh, 1)))
+      rotateY(calc(var(--hx, 0) * 12deg * var(--gh, 1)));
+    box-shadow: calc(var(--hx, 0) * -24px) calc(24px - var(--hy, 0) * 16px) 40px -10px rgb(0 0 0 / calc(0.7 * var(--gh-shadow, 1)));
+  }
+  [data-hover='tilt'] .spread-grid__card:hover .spread-grid__pages,
+  [data-hover='tilt'] .spread-grid__card:hover .spread-grid__pages img {
+    transition-duration: calc(var(--gh-ms, 260ms) * 0.5);
+  }
+
+  /* fold: both pages bend up off the spine, like the book being picked up. */
+  [data-hover='fold'] .spread-grid__card:hover .spread-grid__pages {
+    translate: 0 calc(-3px * var(--gh, 1));
+  }
+  [data-hover='fold'] .spread-grid__card[data-side='open']:hover img:first-child,
+  [data-hover='fold'] .spread-grid__card[data-side='back']:hover img:first-child {
+    transform-origin: right center;
+    transform: perspective(1000px) rotateY(calc(14deg * var(--gh, 1)));
+  }
+  [data-hover='fold'] .spread-grid__card[data-side='open']:hover img:last-child,
+  [data-hover='fold'] .spread-grid__card[data-side='front']:hover img:last-child {
+    transform-origin: left center;
+    transform: perspective(1000px) rotateY(calc(-14deg * var(--gh, 1)));
+  }
+
+  /* peel: the right page starts to turn, as if about to be read. */
+  [data-hover='peel'] .spread-grid__card:hover .spread-grid__pages img:last-child {
+    transform-origin: left center;
+    transform: perspective(1000px) rotateY(calc(-22deg * var(--gh, 1)));
+    box-shadow: -10px 0 18px -8px rgb(0 0 0 / calc(0.5 * var(--gh-shadow, 1)));
   }
 }
 
@@ -622,4 +743,15 @@
 
 .spread-zoom__sharp[data-ready='true'] {
   opacity: 1;
+}
+
+/* A closed book only has pages under its visible cover; never paint the empty half. */
+.book__shift[data-spread='front'] .book__block-left,
+.book__shift[data-spread='back'] .book__block-right {
+  display: none;
+}
+
+/* The page a lone-cover turn lifts off: only its still-flat part shows (see clipFlat). */
+.book-page[data-flat] {
+  clip-path: var(--flat-clip);
 }

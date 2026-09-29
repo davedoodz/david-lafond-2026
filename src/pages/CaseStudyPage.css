@@ -16,6 +16,18 @@
   top: 0;
 }
 
+/* Pinned (Nav → position): still overlays the first stop, so no spacer and no pushed layout. */
+.case__light > .nav[data-pin='sticky'] {
+  position: sticky;
+  margin-bottom: calc(-1 * var(--nav-h, 0px));
+}
+.case__light > .nav[data-pin='fixed'] {
+  position: fixed;
+}
+.case__light > .nav__spacer {
+  display: none;
+}
+
 /* --- Sticky sidebar: Back + section list, in the left gutter. */
 .case__sidebar {
   position: fixed;
@@ -32,6 +44,12 @@
 
 .case__back {
   margin: 0 0 28px;
+}
+
+/* Back sits outside .nav here, so give it the nav's light-surface colours (hover was white on paper). */
+[data-surface='light'] .case__back {
+  --nav-idle: var(--stone-400);
+  --nav-active: var(--ink-900);
 }
 
 .case__toc {
