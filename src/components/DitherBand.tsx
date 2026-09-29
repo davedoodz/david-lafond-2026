@@ -19,7 +19,8 @@ import {
   ditheringFragmentShader,
   getShaderColorFromString,
 } from '@paper-design/shaders'
-import { useTuning } from '../tuning/useTuning'
+import { useRoute } from '../lib/router'
+import { useTuningController } from '../tuning/useTuning'
 import './DitherBand.css'
 
 type Tuple = [number, number, number, number]
@@ -87,15 +88,53 @@ const band = (flip: boolean, frame: number, look: BandLook) => ({
   },
 })
 
+/** Unwind page colour presets: header / footer band colour and opacity. `site` = the global bands above. */
+const UNWIND_PRESETS: Record<string, { header: string; footer: string; headerOpacity: number; footerOpacity: number } | null> = {
+  site: null,
+  'unwind blue': { header: '#53BFFE', footer: '#53BFFE', headerOpacity: 0.35, footerOpacity: 0.3 },
+  sky: { header: '#9ED8FF', footer: '#CBEFFE', headerOpacity: 0.45, footerOpacity: 0.3 },
+  'deep sea': { header: '#1E7FB8', footer: '#00D0FF', headerOpacity: 0.3, footerOpacity: 0.28 },
+  lilac: { header: '#B9A7F5', footer: '#C8B8FF', headerOpacity: 0.35, footerOpacity: 0.3 },
+}
+
 const CONFIG = {
   header: { ...band(true, 554221, { color: '#676767', pixelSize: 6.2, scale: 1.17 }), _collapsed: false },
   footer: { ...band(false, 440992, { color: '#706B68', pixelSize: 4.2, scale: 1.14 }), _collapsed: true },
+  /** Band colours on the Unwind case-study page only. */
+  unwindPage: {
+    preset: { type: 'select' as const, options: [...Object.keys(UNWIND_PRESETS), 'custom'], default: 'site' },
+    headerColor: { type: 'color' as const, default: '#53BFFE' },
+    headerOpacity: [0.35, 0, 1, 0.01] as Tuple,
+    footerColor: { type: 'color' as const, default: '#53BFFE' },
+    footerOpacity: [0.3, 0, 1, 0.01] as Tuple,
+    _collapsed: false,
+  },
 }
 
 type Props = { position: 'header' | 'footer' }
 
 export function DitherBand({ position }: Props) {
-  const values = useTuning('Dither bands', CONFIG)[position]
+  const { values: all, setValue } = useTuningController('Dither bands', CONFIG)
+  const route = useRoute()
+  const u = all.unwindPage
+  // Moving a custom colour dial means "use my numbers": flip the preset to 'custom'.
+  const unwindKey = `${u.headerColor}|${u.headerOpacity}|${u.footerColor}|${u.footerOpacity}`
+  const unwindKeyRef = useRef(unwindKey)
+  useEffect(() => {
+    if (unwindKeyRef.current === unwindKey) return
+    unwindKeyRef.current = unwindKey
+    if (position === 'header' && u.preset !== 'custom') setValue('unwindPage.preset', 'custom')
+  }, [unwindKey, u.preset, position, setValue])
+  const pagePreset =
+    route !== 'unwind'
+      ? null
+      : u.preset === 'custom'
+        ? { header: u.headerColor, footer: u.footerColor, headerOpacity: u.headerOpacity, footerOpacity: u.footerOpacity }
+        : UNWIND_PRESETS[u.preset]
+  const base = all[position]
+  const values = pagePreset
+    ? { ...base, color: pagePreset[position], opacity: position === 'header' ? pagePreset.headerOpacity : pagePreset.footerOpacity }
+    : base
   const hostRef = useRef<HTMLDivElement>(null)
   const mountRef = useRef<ShaderMount | null>(null)
 
