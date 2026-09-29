@@ -204,6 +204,12 @@ html[data-works-snap] body:has(.works) .footer {
   scale: var(--momo-in-scale, 1);
   filter: blur(var(--momo-blur, 0px));
 }
+.momo__src {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
 .momo__clip[data-state='active'],
 .momo__clip[data-state='out'] {
   transition:

@@ -1,9 +1,14 @@
 /**
  * Momo (the Unwind cloud) floating in the middle of the Unwind card.
  *
- * Two transparent clips: VP9-alpha WebM for Chrome/Firefox, HEVC-alpha MOV for
- * WebKit. `clip` picks one looping clip, or both played
- * back to back: each clip plays once, then hands over to the other.
+ * Transparency: each clip is a plain H.264 MP4 with the colour (premultiplied)
+ * in the top half and the alpha mask in the bottom half. A tiny WebGL shader
+ * recombines them on a <canvas>. Every browser decodes H.264, so this never
+ * depends on codec alpha support (WebM alpha is lost on iOS; HEVC alpha is
+ * fragile there too and showed a white box).
+ *
+ * `clip` picks one looping clip, or both played back to back: each clip plays
+ * once, then hands over to the other.
  *
  * The hand-over overlaps: the next clip starts `fadeMs` before the current one
  * ends and the two blend (opacity, blur, scale — compositor-only) so the loop
@@ -17,16 +22,74 @@ type Clip = 'listening' | 'floating'
 
 const CLIPS: Clip[] = ['listening', 'floating']
 
-/**
- * WebKit (Safari, every iOS browser) plays WebM but drops its alpha; Chrome plays
- * HEVC but drops *its* alpha. So pick by engine rather than by <source> order.
- */
-const USE_HEVC =
-  typeof navigator !== 'undefined' &&
-  (/iP(hone|ad|od)/.test(navigator.userAgent) ||
-    (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)) ||
-    (/Safari\//.test(navigator.userAgent) && !/Chrome|Chromium|Edg|Firefox|OPR/.test(navigator.userAgent)))
-const clipUrl = (clip: Clip) => `/work/unwind/momo-${clip}.${USE_HEVC ? 'mov' : 'webm'}`
+const clipUrl = (clip: Clip) => `/work/unwind/momo-${clip}.mp4`
+
+const VERT = `attribute vec2 p;varying vec2 uv;void main(){uv=vec2((p.x+1.)*.5,(1.-p.y)*.5);gl_Position=vec4(p,0.,1.);}`
+const FRAG = `precision mediump float;varying vec2 uv;uniform sampler2D t;
+void main(){vec3 c=texture2D(t,vec2(uv.x,uv.y*.5)).rgb;float a=texture2D(t,vec2(uv.x,.5+uv.y*.5)).r;
+a=clamp((a-.03)/.94,0.,1.);gl_FragColor=vec4(min(c,vec3(a)),a);}`
+
+/** Draws `video` (stacked colour/alpha) into `canvas` on every new frame. Returns a stop function. */
+function stackedAlpha(video: HTMLVideoElement, canvas: HTMLCanvasElement): () => void {
+  const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false })
+  if (!gl) return () => {}
+  const shader = (type: number, src: string) => {
+    const sh = gl.createShader(type)!
+    gl.shaderSource(sh, src)
+    gl.compileShader(sh)
+    return sh
+  }
+  const prog = gl.createProgram()!
+  gl.attachShader(prog, shader(gl.VERTEX_SHADER, VERT))
+  gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, FRAG))
+  gl.linkProgram(prog)
+  gl.useProgram(prog)
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
+  const loc = gl.getAttribLocation(prog, 'p')
+  gl.enableVertexAttribArray(loc)
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
+  gl.bindTexture(gl.TEXTURE_2D, gl.createTexture())
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  gl.clearColor(0, 0, 0, 0)
+
+  const draw = () => {
+    if (video.readyState < 2 || !video.videoWidth) return
+    const w = video.videoWidth
+    const h = video.videoHeight / 2
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w
+      canvas.height = h
+      gl.viewport(0, 0, w, h)
+    }
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, video)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+  }
+
+  let stopped = false
+  let handle = 0
+  const rvfc = 'requestVideoFrameCallback' in video
+  const loop = () => {
+    if (stopped) return
+    draw()
+    handle = rvfc ? video.requestVideoFrameCallback(loop) : requestAnimationFrame(loop)
+  }
+  // Paint the first frame even before playback (and for reduced motion).
+  video.addEventListener('loadeddata', draw)
+  video.addEventListener('seeked', draw)
+  loop()
+  return () => {
+    stopped = true
+    if (rvfc) video.cancelVideoFrameCallback(handle)
+    else cancelAnimationFrame(handle)
+    video.removeEventListener('loadeddata', draw)
+    video.removeEventListener('seeked', draw)
+  }
+}
 
 const CONFIG = {
   clip: { type: 'select' as const, options: ['listening', 'floating', 'both'], default: 'both' },
@@ -82,6 +145,16 @@ export function MomoCard() {
   const { values: t, setValue } = useTuningController('Unwind Momo', CONFIG)
   const hostRef = useRef<HTMLDivElement>(null)
   const videos = useRef<Record<Clip, HTMLVideoElement | null>>({ listening: null, floating: null })
+  const canvases = useRef<Record<Clip, HTMLCanvasElement | null>>({ listening: null, floating: null })
+
+  useEffect(() => {
+    const stops = CLIPS.map((c) => {
+      const v = videos.current[c]
+      const cv = canvases.current[c]
+      return v && cv ? stackedAlpha(v, cv) : () => {}
+    })
+    return () => stops.forEach((stop) => stop())
+  }, [])
 
   const tr = t.transition
   const blend: Blend = tr.preset === 'custom' ? tr : (PRESETS[tr.preset] ?? PRESETS.breathe)
@@ -111,8 +184,8 @@ export function MomoCard() {
 
     // data-state: active (shown), out (blending away), idle (hidden, reset to its entry pose).
     const setState = (clip: Clip, state: 'active' | 'out' | 'idle') => {
-      const v = videos.current[clip]
-      if (v) v.dataset.state = state
+      const cv = canvases.current[clip]
+      if (cv) cv.dataset.state = state
     }
     const pauseAll = () => {
       cancelAnimationFrame(frame)
@@ -208,15 +281,12 @@ export function MomoCard() {
       }
     >
       {CLIPS.map((clip) => (
-        <video
+        <canvas
           key={clip}
           ref={(el) => {
-            videos.current[clip] = el
+            canvases.current[clip] = el
           }}
           className="momo__clip"
-          muted
-          playsInline
-          preload="auto"
           data-state={clip === CLIPS[0] ? 'active' : 'idle'}
           style={
             {
@@ -225,6 +295,19 @@ export function MomoCard() {
               '--clip-y': `${t[clip].y}%`,
             } as CSSProperties
           }
+        />
+      ))}
+      {/* Decoders only; the canvases show the pixels. Kept in the DOM (not display:none) so iOS decodes them. */}
+      {CLIPS.map((clip) => (
+        <video
+          key={clip}
+          ref={(el) => {
+            videos.current[clip] = el
+          }}
+          className="momo__src"
+          muted
+          playsInline
+          preload="auto"
           src={clipUrl(clip)}
         />
       ))}
