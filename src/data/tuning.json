@@ -360,7 +360,14 @@
   },
   "Thumbnail studio": {
     "motion": {
-      "preset": "drop"
+      "preset": "rounded",
+      "loopSec": 5.6,
+      "hold": 0.22,
+      "stagger": 0.3,
+      "order": "bottom → top",
+      "ease": "smooth",
+      "distance": 0.34,
+      "overshoot": 0.48
     }
   }
 }
