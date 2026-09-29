@@ -21,6 +21,8 @@
   border: 0;
   background: var(--placeholder, #d9d9d9);
   -webkit-tap-highlight-color: transparent;
+  /* No double-tap-zoom wait before the click fires on touch. */
+  touch-action: manipulation;
   pointer-events: auto;
   cursor: default;
 }

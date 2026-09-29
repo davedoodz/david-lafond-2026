@@ -296,7 +296,7 @@ textarea::selection {
 }
 
 .entrance [data-enter] {
-  animation: enter-in var(--enter-ms) var(--enter-ease) both;
+  animation: enter-in var(--enter-ms) var(--enter-ease) backwards; /* not `both`: a held filter/translate keeps text on a scaled layer, blurry on iOS */
 }
 
 .entrance [data-enter='0'] {

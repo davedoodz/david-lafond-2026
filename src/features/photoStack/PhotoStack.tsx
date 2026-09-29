@@ -218,8 +218,6 @@ export function PhotoStack({ className }: { className?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order, entered])
 
-  const queueRef = useRef<Promise<void>>(Promise.resolve())
-
   const runCycle = useCallback(async () => {
     const currentOrder = orderRef.current
     const frontId = currentOrder[0]
@@ -252,7 +250,8 @@ export function PhotoStack({ className }: { className?: string }) {
     } else {
       const outSpring = toMotionTransition(values.cycle.springOut)
       const tuckSpring = toMotionTransition(values.cycle.springTuck)
-      const outMs = 1000 * estimateSeconds(values.cycle.springOut)
+      // Tuck starts before the pull-out settles, so the card arcs through the peak instead of stopping there.
+      const outMs = 1000 * estimateSeconds(values.cycle.springOut) * values.cycle.handoff
       const tuckMs = 1000 * estimateSeconds(values.cycle.springTuck)
       const totalMs = outMs + tuckMs
       const peak = {
@@ -269,7 +268,7 @@ export function PhotoStack({ className }: { className?: string }) {
       await sleep(Math.max(0, totalMs * values.cycle.swapAt - outMs))
       setZIndices((prev) => {
         const next = prev.slice()
-        next[frontId] = zFor(backSlot)
+        next[frontId] = zFor(orderRef.current.indexOf(frontId)) // later taps may already have moved it up a slot
         return next
       })
       await sleep(Math.max(0, totalMs - Math.max(outMs, totalMs * values.cycle.swapAt)))
@@ -277,7 +276,7 @@ export function PhotoStack({ className }: { className?: string }) {
     if (reducedMotion) {
       setZIndices((prev) => {
         const next = prev.slice()
-        next[frontId] = zFor(backSlot)
+        next[frontId] = zFor(orderRef.current.indexOf(frontId)) // later taps may already have moved it up a slot
         return next
       })
     }
@@ -290,8 +289,9 @@ export function PhotoStack({ className }: { className?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moveTo, reducedMotion, slotPoses, values.cycle])
 
+  // Every tap starts right away (order updates synchronously), so rapid taps overlap instead of waiting in line.
   const cycle = useCallback(() => {
-    queueRef.current = queueRef.current.then(() => runCycle())
+    void runCycle()
   }, [runCycle])
 
   // Clicking a card behind the front one brings it straight to the front; the
@@ -342,7 +342,7 @@ export function PhotoStack({ className }: { className?: string }) {
 
   const bringToFront = useCallback(
     (cardId: number) => {
-      queueRef.current = queueRef.current.then(() => runBringToFront(cardId))
+      void runBringToFront(cardId)
     },
     [runBringToFront],
   )

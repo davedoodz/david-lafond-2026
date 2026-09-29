@@ -153,7 +153,9 @@ export const PHOTO_STACK_CONFIG = {
     liftY: [-10, -100, 100, 1] as [number, number, number, number],
     tilt: [18, 0, 60, 0.5] as [number, number, number, number],
     springOut: { type: 'spring' as const, visualDuration: 0.3, bounce: 0.15 },
-    springTuck: { type: 'spring' as const, visualDuration: 0.5, bounce: 0.35 },
+    springTuck: { type: 'spring' as const, visualDuration: 0.5, bounce: 0.2 },
+    /** Share of the pull-out after which the card turns back to tuck in; below 1 it never stops at the peak. */
+    handoff: [0.6, 0.2, 1, 0.05] as [number, number, number, number],
     swapAt: [0.55, 0, 1, 0.01] as [number, number, number, number],
   },
   layout: {
