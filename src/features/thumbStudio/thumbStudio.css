@@ -1,0 +1,110 @@
+@font-face {
+  font-family: 'Beatrice';
+  src: url('/fonts/Beatrice-Regular.woff2') format('woff2');
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+body {
+  background: #f5f5f5;
+  color: #1a1a1a;
+  font-family: 'Beatrice', system-ui, sans-serif;
+}
+
+.ts {
+  min-height: 100vh;
+  padding: 32px 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.ts-head h1 {
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.ts-head p {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-stages {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 48px;
+}
+
+.ts-stage {
+  display: grid;
+  gap: 10px;
+}
+
+/* Desktop and mobile shown at their real relative sizes when both fit. */
+.ts-stage--desktop {
+  width: min(867px, 100%);
+  flex: 1 1 auto;
+  max-width: 867px;
+}
+
+.ts-stage--mobile {
+  width: 300px;
+  flex: 0 0 auto;
+}
+
+.ts[data-show='mobile'] .ts-stage--mobile {
+  width: min(420px, 100%);
+}
+
+.ts-stage figcaption {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Units are card px scaled to the preview width: 100cqw = card width. */
+.ts-card {
+  position: relative;
+  container-type: inline-size;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.35);
+}
+
+.ts-card[data-guides] {
+  border-radius: calc(var(--card-radius) / var(--card-w) * 100cqw);
+}
+
+.ts-card canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ts-title {
+  position: absolute;
+  left: calc(var(--title-x) / var(--card-w) * 100cqw);
+  bottom: calc(var(--title-y) / var(--card-w) * 100cqw);
+  font-size: calc(var(--title-size) / var(--card-w) * 100cqw);
+  line-height: 1.2;
+  color: #fff;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .ts {
+    padding: 20px;
+  }
+  .ts-stages {
+    flex-direction: column;
+    align-items: center;
+  }
+}
