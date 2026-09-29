@@ -35,6 +35,19 @@ const CONFIG = {
   /** Offset from the card centre, % of card width / height. */
   x: [0, -50, 50, 0.5] as Tuple,
   y: [0, -50, 50, 0.5] as Tuple,
+  /** Per-clip fine-tune on top of the shared size/x/y: line the two clips up so the blend is seamless. */
+  listening: {
+    scale: [1, 0.3, 2, 0.01] as Tuple,
+    x: [0, -30, 30, 0.1] as Tuple,
+    y: [0, -30, 30, 0.1] as Tuple,
+    _collapsed: false,
+  },
+  floating: {
+    scale: [1, 0.3, 2, 0.01] as Tuple,
+    x: [0, -30, 30, 0.1] as Tuple,
+    y: [0, -30, 30, 0.1] as Tuple,
+    _collapsed: false,
+  },
   /** How "both" hands one clip over to the other. */
   transition: {
     preset: {
@@ -205,6 +218,13 @@ export function MomoCard() {
           playsInline
           preload="auto"
           data-state={clip === CLIPS[0] ? 'active' : 'idle'}
+          style={
+            {
+              '--clip-scale': t[clip].scale,
+              '--clip-x': `${t[clip].x}%`,
+              '--clip-y': `${t[clip].y}%`,
+            } as CSSProperties
+          }
           src={clipUrl(clip)}
         />
       ))}
