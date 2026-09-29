@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unwind intro — Say It Out Loud, 10 variations</title>
+    <style>
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-SemiboldItalic.woff2') format('woff2'); font-weight: 600; font-style: italic; }
+      :root { --paper: #f5f5f5; --ink: #0b0a09; --s6: #6f6b68; --s4: #a6a09c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #ebeae8; color: var(--ink); font-family: Beatrice, system-ui, sans-serif; letter-spacing: -0.01em; }
+      header { display: flex; flex-wrap: wrap; gap: 24px; align-items: end; justify-content: space-between; padding: 40px 44px 28px; }
+      h1 { margin: 0; font-size: 32px; font-weight: 400; }
+      header p { max-width: 680px; margin: 8px 0 0; color: var(--s6); font-size: 15px; line-height: 1.35; }
+      .controls { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--s6); }
+      .controls button { padding: 8px 14px; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+      .controls button[aria-pressed='true'] { background: var(--ink); color: #fff; border-color: var(--ink); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 36px 28px; padding: 0 44px 64px; }
+      figure { margin: 0; }
+      .frame { position: relative; cursor: zoom-in; }
+      canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: var(--paper); box-shadow: 0 0 30px rgb(23 23 23 / 0.08); }
+      .bar { position: absolute; left: 14px; right: 14px; bottom: 10px; height: 2px; border-radius: 2px; background: rgb(11 10 9 / 0.08); overflow: hidden; }
+      .bar i { display: block; height: 100%; width: 100%; background: rgb(11 10 9 / 0.35); transform-origin: left; }
+      figcaption { display: grid; gap: 6px; padding: 14px 4px 0; }
+      .name { display: flex; gap: 10px; align-items: baseline; font-size: 18px; }
+      .num { color: var(--s4); font-size: 13px; font-variant-numeric: tabular-nums; }
+      .idea { color: var(--s6); font-size: 14px; line-height: 1.35; }
+      .meta { color: var(--s4); font-size: 12px; line-height: 1.35; }
+      .focus { position: fixed; inset: 0; z-index: 10; display: none; place-items: center; gap: 16px; padding: 32px; background: rgb(11 10 9 / 0.78); backdrop-filter: blur(6px); }
+      .focus[data-open] { display: grid; }
+      .focus canvas { width: min(92vw, 150svh); box-shadow: none; }
+      .focus .cap { max-width: min(92vw, 150svh); color: #f5f5f5; font-size: 15px; line-height: 1.4; }
+      .focus .cap b { font-weight: 500; }
+      .focus .hint { color: #a6a09c; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Unwind intro — “Say It Out Loud”, 10 variations</h1>
+        <p>
+          Same base as direction 09: someone journals out loud, the fragments of a recurring regret surface, and RE:SELF turns them into one if-then plan. Each variation changes how the voice is shown and how speech becomes the plan. All hand off to the hero.
+        </p>
+      </div>
+      <div class="controls">
+        <span>Speed</span>
+        <button data-speed="0.5">0.5×</button>
+        <button data-speed="1" aria-pressed="true">1×</button>
+        <button data-speed="1.5">1.5×</button>
+        <button id="replay">Replay all</button>
+      </div>
+    </header>
+    <main class="grid" id="grid"></main>
+    <div class="focus" id="focus" role="dialog" aria-modal="true">
+      <canvas id="focusCanvas" width="1920" height="1080"></canvas>
+      <div class="cap" id="focusCap"></div>
+      <div class="hint">Click to replay · ← → to switch · Esc to close</div>
+    </div>
+
+    <script type="module">
+      const W = 960, H = 540, DUR = 7, HOLD = 1.4
+      const C = { paper: '#f5f5f5', ink: '#0b0a09', ink9: '#171717', s6: '#6f6b68', s4: '#a6a09c', s2: '#dcd9d6', blue: '#53BFFE', sky: '#CBEFFE', mist: '#E9EEF8', cyan: '#00D0FF', deep: '#1E7FB8' }
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+      const lerp = (a, b, t) => a + (b - a) * t
+      const seg = (t, a, b) => clamp((t - a) / (b - a))
+      const ease = {
+        out: (t) => 1 - (1 - t) ** 3,
+        in: (t) => t ** 3,
+        inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
+        expo: (t) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t)),
+        back: (t) => { const c = 1.70158; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2 },
+      }
+      const hash = (i, j, k) => { const x = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453; return x - Math.floor(x) }
+      const rng = (seed) => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296) }
+      const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})` }
+      const font = (size, weight = 400, style = '') => `${style} ${weight} ${size}px Beatrice, system-ui, sans-serif`
+
+      function text(ctx, str, x, y, { size = 16, weight = 400, color = C.ink, align = 'left', base = 'alphabetic', alpha = 1, style = '', track = 0 } = {}) {
+        if (alpha <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= alpha
+        ctx.font = font(size, weight, style)
+        ctx.fillStyle = color
+        ctx.textAlign = align
+        ctx.textBaseline = base
+        ctx.letterSpacing = `${track}px`
+        ctx.fillText(str, x, y)
+        ctx.restore()
+      }
+      const rrect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r) }
+
+      // --- The hero every direction hands off to (rough mock of /work/unwind).
+      const MEDIA = { x: 560, y: 110, w: 330, h: 330 }
+      function drawMedia(ctx, a = 1, m = MEDIA) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        rrect(ctx, m.x, m.y, m.w, m.h, 14)
+        const g = ctx.createLinearGradient(m.x, m.y, m.x, m.y + m.h)
+        g.addColorStop(0, '#c6e6f6'); g.addColorStop(0.55, '#96bd9f'); g.addColorStop(1, '#5d8c58')
+        ctx.fillStyle = g
+        ctx.fill()
+        const pw = m.w * 0.4, ph = pw * 2.05, px = m.x + m.w / 2 - pw / 2, py = m.y + m.h / 2 - ph / 2
+        rrect(ctx, px, py, pw, ph, pw * 0.17); ctx.fillStyle = '#121212'; ctx.fill()
+        rrect(ctx, px + 4, py + 4, pw - 8, ph - 8, pw * 0.14)
+        const s = ctx.createLinearGradient(0, py, 0, py + ph)
+        s.addColorStop(0, '#fbfbfb'); s.addColorStop(0.6, '#f1f6fa'); s.addColorStop(1, '#a6d7fb')
+        ctx.fillStyle = s
+        ctx.fill()
+        ctx.restore()
+      }
+      function drawPage(ctx, a = 1, dy = 0, { media = true } = {}) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        ctx.translate(0, dy)
+        text(ctx, '‹  BACK', 40, 120, { size: 10, weight: 500, color: C.s6 })
+        ;['Overview', 'Problem', 'Opportunity', 'Solution', 'Context', 'Tracking change', 'Outcomes'].forEach((s, i) => text(ctx, s, 40, 150 + i * 20, { size: 10, color: C.s4 }))
+        text(ctx, 'UNWIND · RE:SELF · 2025', 200, 176, { size: 10, color: C.s4, track: 1 })
+        ;['Unwind – Novel Multimodal', 'AI Reflection System', 'for Behavioral Change'].forEach((s, i) => text(ctx, s, 200, 218 + i * 38, { size: 31 }))
+        ;[['ROLE', 'Lead Product Designer'], ['TIMELINE', 'March – Sept 2025'], ['TEAM', '2 dev · 2 design · 2 therapists']].forEach(([k, v], i) => {
+          text(ctx, k, 200 + i * 112, 356, { size: 9, color: C.s4 })
+          text(ctx, v, 200 + i * 112, 372, { size: 9, color: C.s6 })
+        })
+        ctx.restore()
+        if (media) drawMedia(ctx, a, { ...MEDIA, y: MEDIA.y + dy })
+      }
+      /** Block wipe: `p` 0→1 covers the frame block by block. */
+      function blocks(ctx, p, color, { cols = 16, rows = 9, seed = 7, diag = false } = {}) {
+        if (p <= 0) return
+        const r = rng(seed), cw = W / cols, ch = H / rows
+        ctx.fillStyle = color
+        for (let j = 0; j < rows; j++)
+          for (let i = 0; i < cols; i++) {
+            let th = r()
+            if (diag) th = ((i / cols + j / rows) / 2) * 0.75 + th * 0.25
+            if (th < p) ctx.fillRect(Math.floor(i * cw), Math.floor(j * ch), Math.ceil(cw) + 1, Math.ceil(ch) + 1)
+          }
+      }
+      const bez = (p, u) => {
+        const v = 1 - u
+        return [0, 1].map((k) => v ** 3 * p[0][k] + 3 * v * v * u * p[1][k] + 3 * v * u * u * p[2][k] + u ** 3 * p[3][k])
+      }
+      function strokeBez(ctx, p, upto) {
+        if (upto <= 0) return
+        ctx.beginPath()
+        for (let s = 0; s <= 60; s++) {
+          const [x, y] = bez(p, (s / 60) * upto)
+          s ? ctx.lineTo(x, y) : ctx.moveTo(x, y)
+        }
+        ctx.stroke()
+      }
+
+      // ---------------------------------------------------------------- directions
+      const FRAGS = ['I snapped again', 'at dinner', 'so tired', 'every time', 'why do I…']
+      const PLAN = 'If I’m tired at dinner → then I pause and breathe.'
+      const voice = (i, n, t) => {
+        const env = Math.sin((i / (n - 1)) * Math.PI) ** 1.3
+        return env * (0.25 + 0.75 * Math.abs(Math.sin(i * 0.37 + t * 9)) * Math.abs(Math.sin(i * 0.11 - t * 5.3))) * (0.6 + 0.4 * Math.sin(t * 14) * Math.sin(t * 3.1))
+      }
+      const calmV = (i, n, t) => Math.sin((i / (n - 1)) * Math.PI) * (0.35 + 0.25 * Math.sin(i * 0.22 - t * 2.2))
+      function bars(ctx, { cx = 480, cy, n = 64, step = 9, bw = 5, amp = 110, level = 1, t, color = C.ink, fn = voice, alpha = 1 }) {
+        if (alpha <= 0) return
+        ctx.save(); ctx.globalAlpha *= alpha; ctx.fillStyle = color
+        const x0 = cx - ((n - 1) * step + bw) / 2
+        for (let i = 0; i < n; i++) {
+          const h = Math.max(2, fn(i, n, t) * level * amp)
+          rrect(ctx, x0 + i * step, cy - h / 2, bw, h, bw / 2); ctx.fill()
+        }
+        ctx.restore()
+      }
+      const measure = (ctx, s, size, weight = 400) => { ctx.save(); ctx.font = font(size, weight); ctx.letterSpacing = '0px'; const w = ctx.measureText(s).width; ctx.restore(); return w }
+      const handoff = (ctx, t, a = 5.0, b = 6.1) => { const h = ease.inOut(seg(t, a, b)); return h }
+      const page = (ctx, h) => { ctx.globalAlpha = 1; drawPage(ctx, h, lerp(24, 0, h)) }
+
+      const DIRECTIONS = [
+        {
+          name: 'Live Transcript',
+          idea: 'The voice is transcribed word by word as it speaks. Then the ramble dims and the product rewrites it in place into one plan, with a blue caret doing the editing.',
+          vibe: 'Editorial · type-led · product-honest',
+          handoff: 'The words fade as the hero rises.',
+          draw(ctx, t) {
+            const hand = handoff(ctx, t)
+            ctx.globalAlpha = 1 - hand
+            bars(ctx, { cy: 140, n: 40, step: 8, bw: 4, amp: 60, level: seg(t, 0.1, 0.4) * (1 - seg(t, 2.8, 3.2)), t })
+            const reflect = seg(t, 3.0, 3.4)
+            text(ctx, reflect > 0.5 ? 'REFLECTING' : 'LISTENING…', 160, 212, { size: 11, color: reflect > 0.5 ? C.blue : C.s4, track: 1.5 })
+            const lines = ['I snapped again at dinner.', 'So tired. Why do I do this every time?']
+            let n = Math.floor((lines[0].length + lines[1].length + 1) * seg(t, 0.3, 2.8))
+            lines.forEach((l, i) => { text(ctx, l.slice(0, Math.max(0, n)), 160, 256 + i * 40, { size: 28, alpha: 1 - 0.78 * seg(t, 3.0, 3.5) }); n -= l.length + 1 })
+            const m = Math.floor(PLAN.length * seg(t, 3.5, 4.6))
+            text(ctx, PLAN.slice(0, m), 160, 372, { size: 28 })
+            if (t > 3.4 && t < 4.9 && Math.floor(t * 3) % 2 === 0) { ctx.fillStyle = C.blue; ctx.fillRect(162 + measure(ctx, PLAN.slice(0, m), 28), 346, 2, 32) }
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Voice Notes',
+          idea: 'Voice memos stack up like a chat thread: three grey notes with live waveforms. RE:SELF “types”, then replies in blue with the plan.',
+          vibe: 'Messaging UI · familiar · intimate',
+          handoff: 'The thread scrolls up and out; the hero fades in.',
+          draw(ctx, t) {
+            const hand = handoff(ctx, t, 4.9, 6.0)
+            ctx.globalAlpha = 1 - hand
+            const items = [{ at: 0.3, me: true, d: '0:04' }, { at: 1.0, me: true, d: '0:11' }, { at: 1.7, me: true, d: '0:06' }]
+            if (t >= 2.4 && t < 3.2) items.push({ at: 2.4, typing: true })
+            if (t >= 3.2) items.push({ at: 3.2, plan: true })
+            let y = 420 - hand * 140
+            for (let k = items.length - 1; k >= 0; k--) {
+              const it = items[k], p = ease.out(seg(t, it.at, it.at + 0.35))
+              if (p <= 0) continue
+              const h = 48
+              y -= h * p
+              ctx.save(); ctx.globalAlpha *= p
+              if (it.me) {
+                const bx = 760 - 240 + (1 - p) * 24
+                rrect(ctx, bx, y, 240, h, 24); ctx.fillStyle = '#e8e6e3'; ctx.fill()
+                bars(ctx, { cx: bx + 104, cy: y + h / 2, n: 24, step: 6, bw: 3, amp: 26, level: 0.8, t: t + k })
+                text(ctx, it.d, bx + 222, y + 29, { size: 12, color: C.s6, align: 'right' })
+              } else if (it.typing) {
+                rrect(ctx, 200, y, 72, h, 24); ctx.fillStyle = '#e8e6e3'; ctx.fill()
+                for (let d = 0; d < 3; d++) { ctx.fillStyle = C.s4; ctx.beginPath(); ctx.arc(222 + d * 14, y + 24 - Math.max(0, Math.sin(t * 9 - d)) * 5, 4, 0, Math.PI * 2); ctx.fill() }
+              } else {
+                const w = measure(ctx, PLAN, 15) + 40
+                rrect(ctx, 200 - (1 - p) * 24, y, w, h, 24); ctx.fillStyle = C.blue; ctx.fill()
+                text(ctx, PLAN, 220 - (1 - p) * 24, y + 29, { size: 15, color: '#fff' })
+              }
+              ctx.restore()
+              y -= 14 * p
+            }
+            text(ctx, 'RE:SELF', 480, 70 - hand * 140, { size: 11, color: C.s4, align: 'center', track: 1.5 })
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Voice Orb',
+          idea: 'A circular waveform, like an assistant listening. Fragments orbit it, get pulled into the centre, and the ring turns calm and blue as the plan appears beneath.',
+          vibe: 'Assistant · radial · Siri-adjacent',
+          handoff: 'The ring collapses to a blue dot; the hero fades in.',
+          draw(ctx, t) {
+            const cx = 480, cy = 240, hand = handoff(ctx, t)
+            const calm = ease.inOut(seg(t, 3.2, 4.0)), shrink = ease.inOut(seg(t, 4.4, 5.1)), suck = ease.in(seg(t, 2.9, 3.6))
+            ctx.globalAlpha = 1 - hand
+            const R = lerp(78, 5, shrink), n = 72, on = seg(t, 0.1, 0.4)
+            ctx.strokeStyle = calm > 0.5 ? C.blue : C.ink; ctx.lineWidth = 3; ctx.lineCap = 'round'
+            ctx.beginPath()
+            for (let i = 0; i < n; i++) {
+              const a = (i / n) * Math.PI * 2
+              const loud = 0.25 + 0.75 * Math.abs(Math.sin(i * 0.37 + t * 9)) * Math.abs(Math.sin(i * 0.21 - t * 5.3))
+              const soft = 0.3 + 0.2 * Math.sin(i * 0.35 - t * 2)
+              const len = (3 + lerp(loud, soft, calm) * 46 * on) * (1 - shrink)
+              ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.lineTo(cx + Math.cos(a) * (R + len), cy + Math.sin(a) * (R + len))
+            }
+            ctx.stroke()
+            if (shrink > 0.5) { ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill() }
+            FRAGS.forEach((f, k) => {
+              const s = seg(t, 0.4 + k * 0.45, 0.8 + k * 0.45)
+              if (s <= 0) return
+              const a = (k / 5) * Math.PI * 2 + t * 0.3, r = lerp(200, 0, suck)
+              text(ctx, f, cx + Math.cos(a) * r * 1.5, cy + Math.sin(a) * r * 0.8 + 5, { size: 14, color: C.s6, align: 'center', alpha: s * (1 - suck) })
+            })
+            text(ctx, PLAN, cx, 440, { size: 24, align: 'center', alpha: seg(t, 3.8, 4.4) })
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Peaks Become Words',
+          idea: 'Each spoken word lifts off the top of the waveform and floats. Most drift away; the ones that matter (“tired”, “at dinner”) fly into place, and the plan builds around them.',
+          vibe: 'Generative typography · playful · precise',
+          handoff: 'The plan fades as the hero rises.',
+          draw(ctx, t) {
+            const hand = handoff(ctx, t)
+            ctx.globalAlpha = 1 - hand
+            bars(ctx, { cy: 390, level: seg(t, 0.1, 0.4) * (1 - seg(t, 2.8, 3.2)), t })
+            const words = PLAN.split(' '), size = 28, x0 = 480 - measure(ctx, PLAN, size) / 2
+            const slot = (i) => x0 + measure(ctx, words.slice(0, i).join(' ') + (i ? ' ' : ''), size) + measure(ctx, words[i], size) / 2
+            const FW = ['I', 'snapped', 'again', 'at', 'dinner', 'so', 'tired', 'every', 'time']
+            const KEY = { at: 3, dinner: 4, tired: 2 }
+            const fly = ease.inOut(seg(t, 3.3, 4.1))
+            FW.forEach((w, k) => {
+              const tk = 0.4 + k * 0.27, rise = ease.out(seg(t, tk, tk + 0.8))
+              if (rise <= 0) return
+              const fx = 192 + ((k + 0.5) / 9) * 576, fy = lerp(370, 110 + hash(k, 1, 1) * 150, rise) + Math.sin(t * 1.5 + k) * 4
+              const key = KEY[w]
+              if (key === undefined) { text(ctx, w, fx, fy, { size: 20, color: C.s6, align: 'center', alpha: rise * (1 - seg(t, 3.0, 3.5)) }); return }
+              text(ctx, w, lerp(fx, slot(key), fly), lerp(fy, 230, fly), { size: lerp(20, size, fly), color: fly > 0.5 ? C.ink : C.s6, align: 'center' })
+            })
+            words.forEach((w, i) => {
+              if (Object.values(KEY).includes(i)) return
+              text(ctx, w, slot(i), 230, { size, align: 'center', color: w === 'If' || w === 'then' ? C.blue : C.ink, alpha: seg(t, 3.9 + i * 0.04, 4.4 + i * 0.04) })
+            })
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Loud, Then Quiet',
+          idea: 'Full-frame kinetic type: each spoken word hits the screen alone, big and fast (“snapped.” “again.” “tired.”). Then the pace drops and the plan arrives slowly in two lines.',
+          vibe: 'Bold kinetic type · poster energy',
+          handoff: 'Checkerboard block wipe onto the hero.',
+          draw(ctx, t) {
+            const SEQ = [['I', 0.2], ['snapped', 0.55], ['again.', 1.0], ['So', 1.5], ['tired.', 1.8], ['Why?', 2.25]]
+            if (t < 5.2) {
+              bars(ctx, { cy: 470, n: 80, step: 8, bw: 4, amp: 50, level: seg(t, 0.1, 0.3) * (1 - seg(t, 2.6, 2.9)), t })
+              if (t < 2.7) {
+                const cur = SEQ.filter(([, s]) => t >= s).pop()
+                if (cur) { const p = ease.back(seg(t, cur[1], cur[1] + 0.2)); ctx.save(); ctx.translate(480, 260); ctx.scale(lerp(0.7, 1, p), lerp(0.7, 1, p)); text(ctx, cur[0], 0, 45, { size: 140, align: 'center', color: cur[0] === 'Why?' ? C.s4 : C.ink }); ctx.restore() }
+              } else {
+                text(ctx, 'If tired,', 480, 240, { size: 88, align: 'center', alpha: ease.out(seg(t, 2.8, 3.5)) })
+                text(ctx, 'then pause.', 480, 340 + (1 - ease.out(seg(t, 3.4, 4.1))) * 20, { size: 88, align: 'center', color: C.blue, alpha: seg(t, 3.4, 4.1) })
+              }
+              blocks(ctx, ease.in(seg(t, 4.6, 5.2)), C.ink9, { seed: 11 })
+            } else {
+              drawPage(ctx)
+              blocks(ctx, 1 - seg(t, 5.25, 6.1), C.ink9, { seed: 11 })
+            }
+          },
+        },
+        {
+          name: 'Highlighter',
+          idea: 'A full, rambling transcript. A blue highlighter picks out what matters (“snapped”, “dinner”, “tired”), everything else fades, and the plan is written from only those words.',
+          vibe: 'Annotated · research notebook · honest',
+          handoff: 'The notes fade as the hero rises.',
+          draw(ctx, t) {
+            const hand = handoff(ctx, t)
+            ctx.globalAlpha = 1 - hand
+            const lines = ['I snapped again at dinner tonight. I know', 'it’s because I was tired, I always am by', 'then. Why do I keep doing this every time?']
+            const KEYS = [[0, 'snapped', 2.2], [0, 'dinner', 2.55], [1, 'tired', 2.9]]
+            const x = 150, size = 26, fade = seg(t, 3.3, 3.9)
+            KEYS.forEach(([li, w, at]) => {
+              const p = ease.inOut(seg(t, at, at + 0.35)); if (p <= 0) return
+              const wx = x + measure(ctx, lines[li].slice(0, lines[li].indexOf(w)), size)
+              ctx.fillStyle = hexA(C.blue, 0.35); ctx.fillRect(wx - 3, 150 + li * 44 - 24, (measure(ctx, w, size) + 6) * p, 32)
+            })
+            lines.forEach((l, i) => {
+              const a = seg(t, 0.2 + i * 0.5, 0.7 + i * 0.5)
+              text(ctx, l, x, 150 + i * 44, { size, color: C.s6, alpha: a * (1 - 0.85 * fade) })
+              KEYS.filter(([li]) => li === i).forEach(([, w]) => text(ctx, w, x + measure(ctx, l.slice(0, l.indexOf(w)), size), 150 + i * 44, { size, alpha: a * fade }))
+            })
+            text(ctx, PLAN, x, 360, { size: 28, alpha: seg(t, 3.9, 4.6) })
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Scan',
+          idea: 'The waveform itself turns into the sentence: a blue scan line sweeps across, and behind it the voice is replaced by the plan. Speech becomes text in one gesture.',
+          vibe: 'Minimal · single move · magical',
+          handoff: 'The line of text lifts away; the hero fades in.',
+          draw(ctx, t) {
+            const hand = handoff(ctx, t)
+            ctx.globalAlpha = 1 - hand
+            const scan = ease.inOut(seg(t, 2.6, 4.3)), sx = lerp(150, 810, scan), cy = 270
+            ctx.save(); ctx.beginPath(); ctx.rect(sx, 0, W - sx, H); ctx.clip()
+            bars(ctx, { cy, n: 70, step: 9, level: seg(t, 0.1, 0.4), t }); ctx.restore()
+            ctx.save(); ctx.beginPath(); ctx.rect(0, 0, sx, H); ctx.clip()
+            text(ctx, PLAN, 480, cy + 9 - hand * 50, { size: 24, align: 'center' }); ctx.restore()
+            if (scan > 0 && scan < 1) {
+              const g = ctx.createLinearGradient(sx - 40, 0, sx, 0); g.addColorStop(0, hexA(C.blue, 0)); g.addColorStop(1, hexA(C.blue, 0.25))
+              ctx.fillStyle = g; ctx.fillRect(sx - 40, cy - 80, 40, 160); ctx.fillStyle = C.blue; ctx.fillRect(sx - 1, cy - 80, 2, 160)
+            }
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Tonight / Next Time',
+          idea: 'Two voices, stacked. “Tonight”: a loud, jagged grey waveform with the regret. “Next time”: a calm blue waveform with the plan. The first fades; the second takes the stage.',
+          vibe: 'Split comparison · before/after · counterfactual',
+          handoff: 'The “next time” track glides up and fades into the hero.',
+          draw(ctx, t) {
+            const hand = handoff(ctx, t)
+            ctx.globalAlpha = 1 - hand
+            const topA = 1 - seg(t, 3.9, 4.4), move = ease.inOut(seg(t, 3.9, 4.6)) * -190
+            ctx.save(); ctx.globalAlpha *= topA
+            text(ctx, 'TONIGHT', 200, 100, { size: 11, color: C.s4, track: 1.5 })
+            bars(ctx, { cy: 165, n: 56, step: 8, bw: 4, amp: 100, level: seg(t, 0.1, 0.4), t })
+            text(ctx, 'I snapped again at dinner.', 480, 250, { size: 18, color: C.s6, align: 'center', alpha: seg(t, 0.8, 1.3) })
+            ctx.fillStyle = C.s2; ctx.fillRect(200, 290, 560, 1)
+            ctx.restore()
+            ctx.save(); ctx.translate(0, move)
+            text(ctx, 'NEXT TIME', 200, 330, { size: 11, color: C.blue, track: 1.5, alpha: seg(t, 1.8, 2.2) })
+            bars(ctx, { cy: 390, n: 56, step: 8, bw: 4, amp: 70, level: seg(t, 1.9, 2.6), t, color: C.blue, fn: calmV })
+            text(ctx, PLAN, 480, 470, { size: 18, align: 'center', alpha: seg(t, 2.8, 3.4) })
+            ctx.restore()
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Reassemble',
+          idea: 'The spoken fragments break apart letter by letter, and the same letters swirl and land as the plan. Nothing new is added; the regret is rebuilt into the answer.',
+          vibe: 'Particle type · transformation · clever',
+          handoff: 'The letters drift up and fade; the hero fades in.',
+          draw(ctx, t) {
+            if (!this.cache) {
+              const CH = [[300, 150], [540, 118], [680, 180], [400, 92], [250, 214]]
+              const from = []
+              FRAGS.forEach((f, k) => { const x0 = CH[k][0] - measure(ctx, f, 14) / 2; for (let j = 0; j < f.length; j++) from.push({ c: f[j], x: x0 + measure(ctx, f.slice(0, j), 14), y: CH[k][1] + 5, k }) })
+              const px0 = 480 - measure(ctx, PLAN, 26) / 2
+              const to = [...PLAN].map((c, j) => ({ c, x: px0 + measure(ctx, PLAN.slice(0, j), 26), y: 290 }))
+              this.cache = { CH, from, to }
+            }
+            const { CH, from, to } = this.cache, hand = handoff(ctx, t)
+            ctx.globalAlpha = 1 - hand
+            bars(ctx, { cy: 420, n: 50, step: 8, bw: 4, amp: 50, level: seg(t, 0.1, 0.4) * (1 - seg(t, 2.3, 2.7)), t })
+            FRAGS.forEach((f, k) => {
+              const s = seg(t, 0.3 + k * 0.4, 0.7 + k * 0.4) * (1 - seg(t, 2.4, 2.7))
+              if (s <= 0) return
+              const w = measure(ctx, f, 14) + 24
+              ctx.save(); ctx.globalAlpha *= s; rrect(ctx, CH[k][0] - w / 2, CH[k][1] - 15, w, 30, 15); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = C.s2; ctx.stroke(); ctx.restore()
+            })
+            const N = Math.max(from.length, to.length)
+            for (let j = 0; j < N; j++) {
+              const a = from[j], b = to[j]
+              const appear = a ? seg(t, 0.3 + a.k * 0.4, 0.7 + a.k * 0.4) : 0
+              const l = ease.inOut(seg(t, 2.7 + j * 0.012, 3.6 + j * 0.012))
+              if (a && b) {
+                const x = lerp(a.x, b.x, l), y = lerp(a.y, b.y, l) - Math.sin(l * Math.PI) * 70 * (hash(j, 2, 3) - 0.5) * 2 - hand * 40
+                ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(l * Math.PI) * (hash(j, 5, 1) - 0.5) * 3)
+                text(ctx, l < 0.5 ? a.c : b.c, 0, 0, { size: lerp(14, 26, l), color: l > 0.5 ? C.ink : C.s6, alpha: Math.max(appear, l) })
+                ctx.restore()
+              } else if (a) text(ctx, a.c, a.x, a.y, { size: 14, color: C.s6, alpha: appear * (1 - l) })
+              else if (b) text(ctx, b.c, b.x, b.y - hand * 40, { size: 26, alpha: seg(t, 3.6, 4.0) })
+            }
+            page(ctx, hand)
+          },
+        },
+        {
+          name: 'Notes to Plan',
+          idea: 'Each fragment lands as a scattered note card. They gather into a neat stack, the top card flips over to reveal the blue if-then plan, and that card grows into the product.',
+          vibe: 'Tactile · physical · object-based',
+          handoff: 'The plan card morphs into the hero’s media card.',
+          draw(ctx, t) {
+            const POS = [[260, 170, -0.14], [650, 140, 0.1], [380, 370, 0.08], [700, 350, -0.09], [480, 250, 0.05]]
+            const stack = ease.inOut(seg(t, 2.6, 3.4)), flip = seg(t, 3.5, 4.0), grow = ease.inOut(seg(t, 4.4, 5.4))
+            drawPage(ctx, seg(t, 5.1, 6.0), 0, { media: false })
+            FRAGS.forEach((f, k) => {
+              const p = seg(t, 0.3 + k * 0.4, 0.65 + k * 0.4)
+              if (p <= 0) return
+              if (k === 4 && flip >= 0.5) return
+              const [x, y, r] = POS[k]
+              const cx = lerp(x, 480, stack), cy = lerp(y, 270, stack) - (1 - ease.back(p)) * 40 - stack * k * 3
+              ctx.save(); ctx.globalAlpha = p * (k === 4 ? 1 : 1 - seg(t, 3.5, 3.7))
+              ctx.translate(cx, cy); ctx.rotate(lerp(r, 0, stack)); if (k === 4) ctx.scale(Math.max(0.001, Math.cos(flip * Math.PI)), 1)
+              ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6
+              rrect(ctx, -85, -32, 170, 64, 10); ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowColor = 'transparent'
+              text(ctx, f, 0, 5, { size: 14, color: C.s6, align: 'center' })
+              ctx.restore()
+            })
+            if (flip >= 0.5) {
+              const w = lerp(300, MEDIA.w, grow), h = lerp(120, MEDIA.h, grow)
+              const x = lerp(480, MEDIA.x + MEDIA.w / 2, grow) - w / 2, y = lerp(270 - 12, MEDIA.y + MEDIA.h / 2, grow) - h / 2
+              ctx.save(); ctx.translate(x + w / 2, 0); ctx.scale(Math.max(0.001, -Math.cos(flip * Math.PI)), 1); ctx.translate(-(x + w / 2), 0)
+              rrect(ctx, x, y, w, h, 14); ctx.fillStyle = C.blue; ctx.fill()
+              text(ctx, 'If I’m tired at dinner →', x + w / 2, y + h / 2 - 6, { size: 18, color: '#fff', align: 'center', alpha: 1 - seg(t, 4.4, 4.8) })
+              text(ctx, 'then I pause and breathe.', x + w / 2, y + h / 2 + 20, { size: 18, color: '#fff', align: 'center', alpha: 1 - seg(t, 4.4, 4.8) })
+              ctx.restore()
+              drawMedia(ctx, seg(t, 4.9, 5.6), { x, y, w, h })
+            }
+          },
+        },
+      ]
+
+      // ---------------------------------------------------------------- runtime
+      let speed = 1
+      const tiles = []
+      const grid = document.getElementById('grid')
+      DIRECTIONS.forEach((d, i) => {
+        const fig = document.createElement('figure')
+        fig.innerHTML = `<div class="frame"><canvas width="${W}" height="${H}"></canvas><div class="bar"><i></i></div></div>
+          <figcaption><div class="name"><span class="num">${String(i + 1).padStart(2, '0')}</span>${d.name}</div>
+          <div class="idea">${d.idea}</div><div class="meta">${d.vibe} · Handoff: ${d.handoff}</div></figcaption>`
+        grid.append(fig)
+        const canvas = fig.querySelector('canvas')
+        const tile = { d, i, ctx: canvas.getContext('2d'), bar: fig.querySelector('.bar i'), start: performance.now(), visible: true, scale: 1 }
+        tiles.push(tile)
+        fig.querySelector('.frame').addEventListener('click', () => openFocus(i))
+        new IntersectionObserver(([e]) => (tile.visible = e.isIntersecting)).observe(canvas)
+      })
+
+      function render(ctx, d, t, scale = 1) {
+        ctx.setTransform(scale, 0, 0, scale, 0, 0)
+        ctx.globalAlpha = 1
+        ctx.fillStyle = C.paper
+        ctx.fillRect(0, 0, W, H)
+        ctx.save()
+        d.draw(ctx, t)
+        ctx.restore()
+      }
+      const localT = (tile, now) => Math.min(DUR, (((now - tile.start) / 1000) * speed) % (DUR + HOLD))
+
+      const focus = document.getElementById('focus'), fctx = document.getElementById('focusCanvas').getContext('2d')
+      const focusTile = { start: 0, i: 0 }
+      function openFocus(i) {
+        focusTile.i = (i + DIRECTIONS.length) % DIRECTIONS.length
+        focusTile.start = performance.now()
+        const d = DIRECTIONS[focusTile.i]
+        document.getElementById('focusCap').innerHTML = `<b>${String(focusTile.i + 1).padStart(2, '0')} · ${d.name}</b> — ${d.idea}<br><span style="color:#a6a09c">${d.vibe} · Handoff: ${d.handoff}</span>`
+        focus.dataset.open = ''
+      }
+      focus.addEventListener('click', () => (focusTile.start = performance.now()))
+      addEventListener('keydown', (e) => {
+        if (!('open' in focus.dataset)) return
+        if (e.key === 'Escape') delete focus.dataset.open
+        if (e.key === 'ArrowRight') openFocus(focusTile.i + 1)
+        if (e.key === 'ArrowLeft') openFocus(focusTile.i - 1)
+      })
+      document.querySelectorAll('[data-speed]').forEach((b) =>
+        b.addEventListener('click', () => {
+          speed = Number(b.dataset.speed)
+          document.querySelectorAll('[data-speed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+        }),
+      )
+      document.getElementById('replay').addEventListener('click', () => tiles.forEach((t) => (t.start = performance.now())))
+
+      // Debug hook for headless review: render direction `i` at time `t` into a data URL.
+      window.renderAt = (i, t) => {
+        const c = document.createElement('canvas'); c.width = W; c.height = H
+        render(c.getContext('2d'), DIRECTIONS[i], t)
+        return c.toDataURL('image/png')
+      }
+      // Same hook over the DOM, for tools that evaluate in an isolated world.
+      addEventListener('studio:render', (e) => {
+        document.body.dataset.render = window.renderAt(e.detail.i, e.detail.t)
+      })
+
+      await document.fonts.load(font(20)); await document.fonts.load(font(20, 500))
+      const frame = (now) => {
+        if ('open' in focus.dataset) render(fctx, DIRECTIONS[focusTile.i], localT(focusTile, now), 2)
+        else
+          for (const tile of tiles) {
+            if (!tile.visible) continue
+            const t = localT(tile, now)
+            render(tile.ctx, tile.d, t)
+            tile.bar.style.transform = `scaleX(${t / DUR})`
+          }
+        requestAnimationFrame(frame)
+      }
+      requestAnimationFrame(frame)
+      window.studioReady = true
+      document.body.dataset.ready = ''
+    </script>
+  </body>
+</html>
