@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { Footer } from '../components/Footer'
-import { Nav } from '../components/Nav'
+import { BackLink, Nav } from '../components/Nav'
 import { WORKS, type Work } from '../data/works'
 import { useFitColumn } from '../lib/useFitColumn'
 import './CaseStudyPage.css'
@@ -21,6 +21,7 @@ export function CaseStudyPage({ id }: Props) {
       <div className="case__light" data-surface="light">
         <Nav route={id} />
         <header className="case__intro column">
+          <BackLink className="case__back" />
           <h1 className="case__title">{work.title}</h1>
         </header>
       </div>

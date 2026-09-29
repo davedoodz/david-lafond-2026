@@ -32,18 +32,23 @@ function goBack(event: MouseEvent<HTMLAnchorElement>) {
   else navigate('work')
 }
 
+/** "< Back" link. Case-study pages place it above their title; Nav shows it for pages without one. */
+export function BackLink({ className = '' }: { className?: string }) {
+  return (
+    <a className={`nav__back ${className}`.trim()} href="/" onClick={goBack}>
+      <ChevronLeftIcon className="nav__back-icon" />
+      Back
+    </a>
+  )
+}
+
 export function Nav({ route }: Props) {
   const isProject = PROJECT_ROUTES.includes(route)
   return (
     <header className="nav">
       <div className="nav__start">
         <GhostButton className="nav__ghost" />
-        {isProject && (
-          <a className="nav__back" href="/" onClick={goBack}>
-            <ChevronLeftIcon className="nav__back-icon" />
-            Back
-          </a>
-        )}
+        {route === 'harvard-mit' && <BackLink />}
       </div>
       <nav className="nav__links" aria-label="Primary">
         <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
