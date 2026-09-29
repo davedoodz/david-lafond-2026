@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unwind intro — Voice Orb, 10 variations</title>
+    <style>
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-SemiboldItalic.woff2') format('woff2'); font-weight: 600; font-style: italic; }
+      :root { --paper: #f5f5f5; --ink: #0b0a09; --s6: #6f6b68; --s4: #a6a09c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #ebeae8; color: var(--ink); font-family: Beatrice, system-ui, sans-serif; letter-spacing: -0.01em; }
+      header { display: flex; flex-wrap: wrap; gap: 24px; align-items: end; justify-content: space-between; padding: 40px 44px 28px; }
+      h1 { margin: 0; font-size: 32px; font-weight: 400; }
+      header p { max-width: 680px; margin: 8px 0 0; color: var(--s6); font-size: 15px; line-height: 1.35; }
+      .controls { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--s6); }
+      .controls button { padding: 8px 14px; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+      .controls button[aria-pressed='true'] { background: var(--ink); color: #fff; border-color: var(--ink); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 36px 28px; padding: 0 44px 64px; }
+      figure { margin: 0; }
+      .frame { position: relative; cursor: zoom-in; }
+      canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: var(--paper); box-shadow: 0 0 30px rgb(23 23 23 / 0.08); }
+      .bar { position: absolute; left: 14px; right: 14px; bottom: 10px; height: 2px; border-radius: 2px; background: rgb(11 10 9 / 0.08); overflow: hidden; }
+      .bar i { display: block; height: 100%; width: 100%; background: rgb(11 10 9 / 0.35); transform-origin: left; }
+      .scrub { display: flex; gap: 10px; align-items: center; padding: 10px 4px 0; font-size: 12px; color: var(--s6); font-variant-numeric: tabular-nums; }
+      .scrub button { width: 30px; height: 26px; flex-shrink: 0; padding: 0; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+      .scrub input { flex: 1; accent-color: #0b0a09; }
+      .scrub output { width: 64px; text-align: right; }
+      .focus .scrub { width: min(92vw, 150svh); color: #dcd9d6; }
+      .focus .scrub input { accent-color: #53bffe; }
+      figcaption { display: grid; gap: 6px; padding: 14px 4px 0; }
+      .name { display: flex; gap: 10px; align-items: baseline; font-size: 18px; }
+      .num { color: var(--s4); font-size: 13px; font-variant-numeric: tabular-nums; }
+      .idea { color: var(--s6); font-size: 14px; line-height: 1.35; }
+      .meta { color: var(--s4); font-size: 12px; line-height: 1.35; }
+      .focus { position: fixed; inset: 0; z-index: 10; display: none; place-items: center; gap: 16px; padding: 32px; background: rgb(11 10 9 / 0.78); backdrop-filter: blur(6px); }
+      .focus[data-open] { display: grid; }
+      .focus canvas { width: min(92vw, 150svh); box-shadow: none; }
+      .focus .cap { max-width: min(92vw, 150svh); color: #f5f5f5; font-size: 15px; line-height: 1.4; }
+      .focus .cap b { font-weight: 500; }
+      .focus .hint { color: #a6a09c; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Unwind intro — “Voice Orb”, 10 variations</h1>
+        <p>
+          Built on variation 03: an orb listens while someone journals out loud, absorbs the fragments of a recurring regret, calms to blue and gives back one if-then plan. Each variation changes what the orb is made of and how it hands off to the hero.
+        </p>
+      </div>
+      <div class="controls">
+        <span>Speed</span>
+        <button data-speed="0.5">0.5×</button>
+        <button data-speed="1" aria-pressed="true">1×</button>
+        <button data-speed="1.5">1.5×</button>
+        <button id="replay">Replay all</button>
+      </div>
+    </header>
+    <main class="grid" id="grid"></main>
+    <div class="focus" id="focus" role="dialog" aria-modal="true">
+      <canvas id="focusCanvas" width="1920" height="1080"></canvas>
+      <div class="scrub" id="focusScrub"></div>
+      <div class="cap" id="focusCap"></div>
+      <div class="hint">Space pause/play · , . step 0.1s · drag to scrub · ← → switch · Esc close</div>
+    </div>
+
+    <script type="module">
+      const W = 960, H = 540, DUR = 7, HOLD = 1.4
+      const C = { paper: '#f5f5f5', ink: '#0b0a09', ink9: '#171717', s6: '#6f6b68', s4: '#a6a09c', s2: '#dcd9d6', blue: '#53BFFE', sky: '#CBEFFE', mist: '#E9EEF8', cyan: '#00D0FF', deep: '#1E7FB8' }
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+      const lerp = (a, b, t) => a + (b - a) * t
+      const seg = (t, a, b) => clamp((t - a) / (b - a))
+      const ease = {
+        out: (t) => 1 - (1 - t) ** 3,
+        in: (t) => t ** 3,
+        inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
+        expo: (t) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t)),
+        back: (t) => { const c = 1.70158; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2 },
+      }
+      const hash = (i, j, k) => { const x = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453; return x - Math.floor(x) }
+      const rng = (seed) => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296) }
+      const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})` }
+      const font = (size, weight = 400, style = '') => `${style} ${weight} ${size}px Beatrice, system-ui, sans-serif`
+
+      function text(ctx, str, x, y, { size = 16, weight = 400, color = C.ink, align = 'left', base = 'alphabetic', alpha = 1, style = '', track = 0 } = {}) {
+        if (alpha <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= alpha
+        ctx.font = font(size, weight, style)
+        ctx.fillStyle = color
+        ctx.textAlign = align
+        ctx.textBaseline = base
+        ctx.letterSpacing = `${track}px`
+        ctx.fillText(str, x, y)
+        ctx.restore()
+      }
+      const rrect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r) }
+
+      // --- The hero every direction hands off to (rough mock of /work/unwind).
+      const MEDIA = { x: 560, y: 110, w: 330, h: 330 }
+      function drawMedia(ctx, a = 1, m = MEDIA) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        rrect(ctx, m.x, m.y, m.w, m.h, 14)
+        const g = ctx.createLinearGradient(m.x, m.y, m.x, m.y + m.h)
+        g.addColorStop(0, '#c6e6f6'); g.addColorStop(0.55, '#96bd9f'); g.addColorStop(1, '#5d8c58')
+        ctx.fillStyle = g
+        ctx.fill()
+        const pw = m.w * 0.4, ph = pw * 2.05, px = m.x + m.w / 2 - pw / 2, py = m.y + m.h / 2 - ph / 2
+        rrect(ctx, px, py, pw, ph, pw * 0.17); ctx.fillStyle = '#121212'; ctx.fill()
+        rrect(ctx, px + 4, py + 4, pw - 8, ph - 8, pw * 0.14)
+        const s = ctx.createLinearGradient(0, py, 0, py + ph)
+        s.addColorStop(0, '#fbfbfb'); s.addColorStop(0.6, '#f1f6fa'); s.addColorStop(1, '#a6d7fb')
+        ctx.fillStyle = s
+        ctx.fill()
+        ctx.restore()
+      }
+      function drawPage(ctx, a = 1, dy = 0, { media = true } = {}) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        ctx.translate(0, dy)
+        text(ctx, '‹  BACK', 40, 120, { size: 10, weight: 500, color: C.s6 })
+        ;['Overview', 'Problem', 'Opportunity', 'Solution', 'Context', 'Tracking change', 'Outcomes'].forEach((s, i) => text(ctx, s, 40, 150 + i * 20, { size: 10, color: C.s4 }))
+        text(ctx, 'UNWIND · RE:SELF · 2025', 200, 176, { size: 10, color: C.s4, track: 1 })
+        ;['Unwind – Novel Multimodal', 'AI Reflection System', 'for Behavioral Change'].forEach((s, i) => text(ctx, s, 200, 218 + i * 38, { size: 31 }))
+        ;[['ROLE', 'Lead Product Designer'], ['TIMELINE', 'March – Sept 2025'], ['TEAM', '2 dev · 2 design · 2 therapists']].forEach(([k, v], i) => {
+          text(ctx, k, 200 + i * 112, 356, { size: 9, color: C.s4 })
+          text(ctx, v, 200 + i * 112, 372, { size: 9, color: C.s6 })
+        })
+        ctx.restore()
+        if (media) drawMedia(ctx, a, { ...MEDIA, y: MEDIA.y + dy })
+      }
+      /** Block wipe: `p` 0→1 covers the frame block by block. */
+      function blocks(ctx, p, color, { cols = 16, rows = 9, seed = 7, diag = false } = {}) {
+        if (p <= 0) return
+        const r = rng(seed), cw = W / cols, ch = H / rows
+        ctx.fillStyle = color
+        for (let j = 0; j < rows; j++)
+          for (let i = 0; i < cols; i++) {
+            let th = r()
+            if (diag) th = ((i / cols + j / rows) / 2) * 0.75 + th * 0.25
+            if (th < p) ctx.fillRect(Math.floor(i * cw), Math.floor(j * ch), Math.ceil(cw) + 1, Math.ceil(ch) + 1)
+          }
+      }
+      const bez = (p, u) => {
+        const v = 1 - u
+        return [0, 1].map((k) => v ** 3 * p[0][k] + 3 * v * v * u * p[1][k] + 3 * v * u * u * p[2][k] + u ** 3 * p[3][k])
+      }
+      function strokeBez(ctx, p, upto) {
+        if (upto <= 0) return
+        ctx.beginPath()
+        for (let s = 0; s <= 60; s++) {
+          const [x, y] = bez(p, (s / 60) * upto)
+          s ? ctx.lineTo(x, y) : ctx.moveTo(x, y)
+        }
+        ctx.stroke()
+      }
+
+      // ---------------------------------------------------------------- directions
+      const FRAGS = ['I snapped again', 'at dinner', 'so tired', 'every time', 'why do I…']
+      const PLAN = 'If I’m tired at dinner → then I pause and breathe.'
+      const measure = (ctx, s, size, weight = 400) => { ctx.save(); ctx.font = font(size, weight); ctx.letterSpacing = '0px'; const w = ctx.measureText(s).width; ctx.restore(); return w }
+      const handoff = (ctx, t, a = 5.0, b = 6.1) => ease.inOut(seg(t, a, b))
+      const page = (ctx, h) => { ctx.globalAlpha = 1; drawPage(ctx, h, lerp(24, 0, h)) }
+      const TAU = Math.PI * 2
+      const loudA = (a, t) => 0.25 + 0.75 * Math.abs(Math.sin(a * 5.9 + t * 9)) * Math.abs(Math.sin(a * 3.3 - t * 5.3))
+      const softA = (a, t) => 0.3 + 0.2 * Math.sin(a * 3 - t * 2)
+      const blobNoise = (a, t) => 0.5 * Math.sin(3 * a + t * 4.1) + 0.3 * Math.sin(5 * a - t * 6.3) + 0.2 * Math.sin(8 * a + t * 9.7)
+      /** Shared beats: speaking 0.1–2.9, fragments absorbed 2.9–3.6, calm 3.2–4.0, plan 3.8–4.4, exit 4.5–5.1, hero 5.0–6.1. */
+      const beats = (t) => ({
+        on: seg(t, 0.1, 0.4),
+        speak: seg(t, 0.1, 0.4) * (1 - seg(t, 2.9, 3.4)),
+        suck: ease.in(seg(t, 2.9, 3.6)),
+        calm: ease.inOut(seg(t, 3.2, 4.0)),
+        plan: seg(t, 3.8, 4.4),
+        shrink: ease.inOut(seg(t, 4.5, 5.1)),
+        hand: ease.inOut(seg(t, 5.0, 6.1)),
+      })
+      function orbBars(ctx, { cx, cy, R, n = 72, t, level = 1, calm = 0, amp = 46, color, lw = 3, alpha = 1 }) {
+        if (alpha <= 0 || R <= 0) return
+        ctx.save(); ctx.globalAlpha *= alpha
+        ctx.strokeStyle = color ?? (calm > 0.5 ? C.blue : C.ink); ctx.lineWidth = lw; ctx.lineCap = 'round'
+        ctx.beginPath()
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * TAU, len = 3 + lerp(loudA(a, t), softA(a, t), calm) * amp * level
+          ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.lineTo(cx + Math.cos(a) * (R + len), cy + Math.sin(a) * (R + len))
+        }
+        ctx.stroke(); ctx.restore()
+      }
+      function orbitFrags(ctx, { cx, cy, t, suck, rx = 300, ry = 160, size = 14 }) {
+        FRAGS.forEach((f, k) => {
+          const s = seg(t, 0.4 + k * 0.45, 0.8 + k * 0.45)
+          if (s <= 0) return
+          const a = (k / 5) * TAU + t * 0.3, r = 1 - suck
+          text(ctx, f, cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r + 5, { size, color: C.s6, align: 'center', alpha: s * (1 - suck) })
+        })
+      }
+      const closedPath = (ctx, cx, cy, fr) => { ctx.beginPath(); for (let s = 0; s <= 140; s++) { const a = (s / 140) * TAU, r = fr(a); s ? ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r) : ctx.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r) } ctx.closePath() }
+      const planText = (ctx, t, y, b, { typed = false, size = 24 } = {}) => {
+        const s = typed ? PLAN.slice(0, Math.floor(PLAN.length * seg(t, 3.8, 4.6))) : PLAN
+        text(ctx, s, 480, y, { size, align: 'center', alpha: typed ? 1 : b.plan })
+      }
+      const endDot = (ctx, cx, cy, b) => { if (b.shrink > 0.5) { ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, TAU); ctx.fill() } }
+
+      const DIRECTIONS = [
+        {
+          name: 'Orb, Refined',
+          idea: 'The base, tightened: a radial waveform listens (“LISTENING”), fragments orbit and get pulled in, a soft blue halo blooms as it calms (“REFLECTING”) and the plan types out beneath.',
+          vibe: 'Assistant · clean · the reference cut',
+          handoff: 'The ring collapses to a blue dot; the hero fades in.',
+          draw(ctx, t) {
+            const cx = 480, cy = 230, b = beats(t)
+            ctx.globalAlpha = 1 - b.hand
+            if (b.calm > 0) { const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 200); g.addColorStop(0, hexA(C.blue, 0.2 * b.calm * (1 - b.shrink))); g.addColorStop(1, hexA(C.blue, 0)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H) }
+            orbBars(ctx, { cx, cy, R: lerp(78, 5, b.shrink), t, level: b.on * (1 - b.shrink), calm: b.calm })
+            endDot(ctx, cx, cy, b)
+            orbitFrags(ctx, { cx, cy, t, suck: b.suck })
+            text(ctx, b.calm > 0.5 ? 'REFLECTING' : 'LISTENING', cx, 72, { size: 11, color: b.calm > 0.5 ? C.blue : C.s4, align: 'center', track: 1.5, alpha: b.on * (1 - b.shrink) })
+            planText(ctx, t, 430, b, { typed: true })
+            page(ctx, b.hand)
+          },
+        },
+        {
+          name: 'Liquid Mercury',
+          idea: 'A solid, liquid orb: dark and restless while the voice is raw, its surface wobbling with every word. Each fragment drifts in and is swallowed; it settles into a smooth blue drop.',
+          vibe: 'Material · tactile · gooey',
+          handoff: 'The drop shrinks to a bead; the hero fades in.',
+          draw(ctx, t) {
+            const cx = 480, cy = 240, b = beats(t)
+            ctx.globalAlpha = 1 - b.hand
+            let gulp = 0
+            FRAGS.forEach((f, k) => {
+              const at = 0.4 + k * 0.45, s = seg(t, at, at + 0.3), p = ease.in(seg(t, at + 0.5, at + 1.3))
+              gulp = Math.max(gulp, Math.sin(seg(t, at + 1.2, at + 1.6) * Math.PI))
+              if (s <= 0 || p >= 1) return
+              const a = (k / 5) * TAU + 0.6
+              text(ctx, f, lerp(cx + Math.cos(a) * 300, cx, p), lerp(cy + Math.sin(a) * 170, cy, p) + 5, { size: lerp(15, 9, p), color: C.s6, align: 'center', alpha: s * (1 - p) })
+            })
+            const Rb = lerp(84, 8, b.shrink) * (1 + 0.08 * gulp)
+            const shape = (a) => Rb * (1 + (0.2 * b.speak * (1 - b.calm) + 0.05 * gulp) * blobNoise(a, t) + 0.04 * b.calm * Math.sin(2 * a + t * 1.5))
+            for (const [stops, a] of [[['#ffffff', '#8d8a87', '#2d2c2b'], 1 - b.calm], [[C.mist, C.sky, C.blue], b.calm]]) {
+              if (a <= 0.01) continue
+              closedPath(ctx, cx, cy, shape)
+              const g = ctx.createRadialGradient(cx - Rb * 0.35, cy - Rb * 0.4, Rb * 0.05, cx, cy, Rb * 1.15)
+              g.addColorStop(0, stops[0]); g.addColorStop(0.45, stops[1]); g.addColorStop(1, stops[2])
+              ctx.save(); ctx.globalAlpha *= a * b.on; ctx.fillStyle = g; ctx.shadowColor = hexA(a > 0.5 && b.calm > 0.5 ? C.blue : C.ink, 0.25); ctx.shadowBlur = 40; ctx.shadowOffsetY = 12; ctx.fill(); ctx.restore()
+            }
+            planText(ctx, t, 430, b)
+            page(ctx, b.hand)
+          },
+        },
+        {
+          name: 'Three Signals',
+          idea: 'Three nested rings: voice, heart and breath, each moving at its own jittery rhythm. As RE:SELF reflects, they fall into sync and merge into one calm blue ring.',
+          vibe: 'Multimodal · sensor fusion · precise',
+          handoff: 'The merged ring shrinks to a dot; the hero fades in.',
+          draw(ctx, t) {
+            const cx = 480, cy = 240, b = beats(t)
+            ctx.globalAlpha = 1 - b.hand
+            const RINGS = [{ R: 56, f: 9, s: 11, label: 'voice' }, { R: 98, f: 5, s: 5, label: 'heart' }, { R: 140, f: 2, s: 2.2, label: 'breath' }]
+            RINGS.forEach((r, k) => {
+              const appear = seg(t, 0.1 + k * 0.25, 0.5 + k * 0.25)
+              if (appear <= 0) return
+              const Rt = lerp(lerp(r.R, 98, b.calm), 6, b.shrink)
+              const beat = k === 1 ? Math.max(0, Math.sin(t * 7)) ** 8 : 1
+              const disp = (a) => (1 - b.calm) * b.speak * lerp(6, 16, beat) * Math.sin(r.f * a + t * r.s + k) + b.calm * 3 * Math.sin(3 * a - t * 2)
+              closedPath(ctx, cx, cy, (a) => Rt + disp(a) * (1 - b.shrink))
+              ctx.strokeStyle = b.calm > 0.5 ? C.blue : hexA(C.ink, [1, 0.6, 0.35][k]); ctx.lineWidth = lerp(1.6, 3, b.calm)
+              ctx.save(); ctx.globalAlpha *= appear * (k === 1 ? 1 : 1 - b.calm * 0.7); ctx.stroke(); ctx.restore()
+              text(ctx, r.label.toUpperCase(), cx + r.R + 14, cy - r.R * 0.35, { size: 10, color: C.s4, track: 1.5, alpha: appear * (1 - b.calm) })
+            })
+            endDot(ctx, cx, cy, b)
+            planText(ctx, t, 440, b)
+            page(ctx, b.hand)
+          },
+        },
+        {
+          name: 'Particle Ring',
+          idea: 'The orb is 140 loose particles, scattered by the voice. Fragments orbit and are absorbed; the particles snap into a perfect blue circle and slowly turn, like something clicking into place.',
+          vibe: 'Generative · particles · satisfying',
+          handoff: 'The particles converge to a point; the hero fades in.',
+          draw(ctx, t) {
+            const cx = 480, cy = 235, b = beats(t)
+            ctx.globalAlpha = 1 - b.hand
+            const n = 140, rot = b.calm * t * 0.35
+            for (let i = 0; i < n; i++) {
+              const a = (i / n) * TAU + rot, jit = b.speak * ((hash(i, 1, 1) - 0.5) * 70 + loudA(a, t) * 26)
+              const r = (86 + lerp(jit, 0, b.calm)) * (1 - b.shrink) * lerp(0.2, 1, ease.out(b.on))
+              ctx.fillStyle = b.calm > 0.5 ? C.blue : hexA(C.ink, 0.5 + 0.5 * hash(i, 2, 2))
+              ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, lerp(1.6 + hash(i, 3, 3) * 1.6, 2.4, b.calm), 0, TAU); ctx.fill()
+            }
+            endDot(ctx, cx, cy, b)
+            orbitFrags(ctx, { cx, cy, t, suck: b.suck })
+            planText(ctx, t, 430, b)
+            page(ctx, b.hand)
+          },
+        },
+        {
+          name: 'Words Around the Ring',
+          idea: 'After the orb absorbs the fragments, the plan appears written around its circumference, turning slowly. Then it unrolls into one straight line: the loop becomes a way forward.',
+          vibe: 'Typographic · circular · poetic',
+          handoff: 'The straight sentence lifts away; the hero fades in.',
+          draw(ctx, t) {
+            const cx = 480, cy = 250, b = beats(t), hand = handoff(ctx, t, 5.2, 6.2)
+            if (!this.offs) this.offs = [...PLAN].map((_, j) => measure(ctx, PLAN.slice(0, j), 22)), (this.total = measure(ctx, PLAN, 22))
+            ctx.globalAlpha = 1 - hand
+            const ringOut = seg(t, 3.3, 3.8)
+            orbBars(ctx, { cx, cy, R: 80, t, level: b.on, calm: b.calm, alpha: 1 - ringOut })
+            orbitFrags(ctx, { cx, cy, t, suck: b.suck })
+            const show = seg(t, 3.4, 4.0), un = ease.inOut(seg(t, 4.3, 5.1)), R = 120, spin = t * 0.5
+            ;[...PLAN].forEach((c, j) => {
+              const u = this.offs[j] / this.total
+              const a = -Math.PI / 2 + u * TAU * 0.92 + spin * (1 - un)
+              const x = lerp(cx + Math.cos(a) * R, 480 - this.total / 2 + this.offs[j], un)
+              const y = lerp(cy + Math.sin(a) * R, cy + 8, un) - hand * 40
+              ctx.save(); ctx.translate(x, y); ctx.rotate(lerp(a + Math.PI / 2, 0, un))
+              text(ctx, c, 0, 0, { size: 22, color: c === '→' ? C.blue : C.ink, alpha: seg(t, 3.4 + u * 0.5, 3.6 + u * 0.5) * show })
+              ctx.restore()
+            })
+            ctx.globalAlpha = 1
+            drawPage(ctx, hand, lerp(24, 0, hand))
+          },
+        },
+        {
+          name: 'Iris',
+          idea: 'The orb as an eye: fibres around a pupil that tightens and flickers with each word. When it understands, the fibres turn blue and the pupil opens, and inside it is the product.',
+          vibe: 'Organic · attentive · a bit uncanny',
+          handoff: 'The pupil dilates into a circular reveal of the hero.',
+          draw(ctx, t) {
+            const cx = 480, cy = 250, b = beats(t)
+            const dil = ease.in(seg(t, 4.3, 5.4)), pr = lerp(lerp(30, 24, b.calm) + b.speak * 12 * Math.abs(Math.sin(t * 6)), 1150, dil)
+            const fib = 1 - seg(t, 4.3, 4.8)
+            ctx.save(); ctx.globalAlpha = fib * b.on
+            for (let i = 0; i < 110; i++) {
+              const a = (i / 110) * TAU, r1 = 118 + (hash(i, 4, 4) - 0.5) * 14 + b.speak * loudA(a, t) * 18
+              ctx.strokeStyle = b.calm > 0.5 ? hexA(C.blue, 0.55 + 0.4 * hash(i, 5, 5)) : hexA(C.ink, 0.25 + 0.5 * hash(i, 5, 5)); ctx.lineWidth = 1.2
+              ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * (pr + 4), cy + Math.sin(a) * (pr + 4)); ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); ctx.stroke()
+            }
+            ctx.restore()
+            orbitFrags(ctx, { cx, cy, t, suck: b.suck })
+            text(ctx, PLAN, 480, 440, { size: 22, align: 'center', alpha: seg(t, 3.6, 4.1) * (1 - seg(t, 4.3, 4.6)) })
+            ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, pr, 0, TAU); ctx.clip()
+            ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H)
+            drawPage(ctx, seg(t, 4.6, 5.6))
+            ctx.fillStyle = hexA(C.ink9, 1 - clamp((pr - 40) / 90)); ctx.fillRect(0, 0, W, H)
+            ctx.restore()
+          },
+        },
+        {
+          name: 'Aurora',
+          idea: 'A soft glow of colour (blue, cyan, lilac, rose) swirling and swelling with the voice, like an assistant thinking. As it reflects, the colours melt into a single calm blue glow.',
+          vibe: 'Ambient · luminous · Siri / Apple Intelligence',
+          handoff: 'The glow blooms across the frame and the hero emerges from it.',
+          draw(ctx, t) {
+            const cx = 480, cy = 240, b = beats(t)
+            const bloom = ease.inOut(seg(t, 4.4, 5.6))
+            const COLS = [C.blue, C.cyan, '#B9A7F5', '#FFB3C7']
+            COLS.forEach((col, k) => {
+              const a = (k / 4) * TAU + t * (0.8 + k * 0.15), orbit = lerp(46, 0, b.calm) * b.on
+              const x = cx + Math.cos(a) * orbit, y = cy + Math.sin(a) * orbit * 0.7
+              const r = (lerp(90 + 50 * b.speak * loudA(a, t), 120 + 8 * Math.sin(t * 2), b.calm) + bloom * 900) * b.on
+              const alpha = (k === 0 ? 0.75 : 0.6 * (1 - b.calm)) * (1 - bloom)
+              if (alpha <= 0.01 || r <= 0) return
+              const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, hexA(col, alpha)); g.addColorStop(0.6, hexA(col, alpha * 0.35)); g.addColorStop(1, hexA(col, 0))
+              ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
+            })
+            ctx.globalAlpha = 1 - bloom
+            orbitFrags(ctx, { cx, cy, t, suck: b.suck })
+            planText(ctx, t, 430, b)
+            ctx.globalAlpha = 1
+            drawPage(ctx, seg(t, 4.9, 5.9), lerp(24, 0, seg(t, 4.9, 5.9)))
+          },
+        },
+        {
+          name: 'Traveller',
+          idea: 'A small orb moves through the evening from left to right, dropping what was said as a trail behind it. When it stops, it gathers the fragments back, grows calm and blue, and speaks the plan.',
+          vibe: 'Narrative · time-based · gentle',
+          handoff: 'The orb shrinks to a dot; the hero fades in.',
+          draw(ctx, t) {
+            const b = beats(t), y = 230
+            const xAt = (tt) => lerp(150, 480, ease.inOut(seg(tt, 0.2, 2.9)))
+            const x = xAt(t), yy = y + Math.sin(t * 2) * 5 * (1 - b.calm)
+            ctx.globalAlpha = 1 - b.hand
+            ctx.strokeStyle = C.s2; ctx.lineWidth = 1; ctx.setLineDash([3, 6]); ctx.beginPath(); ctx.moveTo(150, y); ctx.lineTo(x, y); ctx.stroke(); ctx.setLineDash([])
+            FRAGS.forEach((f, k) => {
+              const at = 0.5 + k * 0.45, s = seg(t, at, at + 0.4)
+              if (s <= 0) return
+              const fx = xAt(at), fy = y + 70 + (k % 2) * 28 - (1 - ease.out(s)) * 40
+              text(ctx, f, lerp(fx, x, b.suck), lerp(fy, yy, b.suck) + 5, { size: 13, color: C.s6, align: 'center', alpha: s * (1 - b.suck) })
+            })
+            orbBars(ctx, { cx: x, cy: yy, R: lerp(lerp(22, 56, b.calm), 5, b.shrink), n: 56, t, amp: lerp(20, 36, b.calm), lw: lerp(2, 3, b.calm), level: b.on * (1 - b.shrink), calm: b.calm })
+            endDot(ctx, x, yy, b)
+            planText(ctx, t, 420, b)
+            page(ctx, b.hand)
+          },
+        },
+        {
+          name: 'Two Orbs',
+          idea: 'Two voices side by side: tonight, a loud grey orb swallowing the regret; next time, a quiet blue orb breathing slowly. They drift together and merge, and only the calm one remains.',
+          vibe: 'Counterfactual · before/after · symmetrical',
+          handoff: 'The merged orb shrinks to a dot; the hero fades in.',
+          draw(ctx, t) {
+            const b = beats(t), cy = 230, m = ease.inOut(seg(t, 3.2, 4.0))
+            ctx.globalAlpha = 1 - b.hand
+            const lx = lerp(300, 480, m), rx = lerp(660, 480, m)
+            orbitFrags(ctx, { cx: 300, cy, t, suck: ease.in(seg(t, 2.6, 3.2)), rx: 150, ry: 110, size: 12 })
+            orbBars(ctx, { cx: lx, cy, R: 58, n: 60, t, amp: 36, level: b.on, color: C.ink, alpha: 1 - m })
+            const rOn = seg(t, 1.8, 2.3)
+            orbBars(ctx, { cx: rx, cy, R: lerp(lerp(58, 74, m), 5, b.shrink), n: 60, t, amp: 30, calm: 1, level: rOn * (1 - b.shrink), color: C.blue })
+            endDot(ctx, rx, cy, b)
+            text(ctx, 'TONIGHT', 300, cy + 130, { size: 11, color: C.s4, align: 'center', track: 1.5, alpha: b.on * (1 - m) })
+            text(ctx, 'NEXT TIME', 660, cy + 130, { size: 11, color: C.blue, align: 'center', track: 1.5, alpha: rOn * (1 - m) })
+            planText(ctx, t, 430, b)
+            page(ctx, b.hand)
+          },
+        },
+        {
+          name: 'Dive In',
+          idea: 'The orb listens, absorbs, calms to blue and states the plan. Then the camera dives through the ring, and on the other side of it is the product.',
+          vibe: 'Immersive · z-axis · decisive',
+          handoff: 'Zoom through the ring: its inside becomes the hero.',
+          draw(ctx, t) {
+            const cx = 480, cy = 240, b = beats(t)
+            const z = ease.in(seg(t, 4.3, 5.4)), Rz = lerp(80, 1250, z)
+            ctx.save(); ctx.globalAlpha = 1 - z
+            ctx.translate(cx, cy); ctx.scale(1 + z * 3, 1 + z * 3); ctx.translate(-cx, -cy)
+            orbitFrags(ctx, { cx, cy, t, suck: b.suck })
+            text(ctx, PLAN, 480, 430, { size: 24, align: 'center', alpha: b.plan })
+            ctx.restore()
+            if (z > 0) {
+              ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, Rz, 0, TAU); ctx.clip()
+              drawPage(ctx, seg(t, 4.5, 5.4)); ctx.restore()
+            }
+            orbBars(ctx, { cx, cy, R: Rz, t, level: b.on, calm: b.calm, amp: lerp(46, 120, z), lw: lerp(3, 8, z), alpha: 1 - seg(t, 5.0, 5.5) })
+          },
+        },
+      ]
+
+      // ---------------------------------------------------------------- runtime
+      let speed = 1
+      const tiles = []
+      const grid = document.getElementById('grid')
+      DIRECTIONS.forEach((d, i) => {
+        const fig = document.createElement('figure')
+        fig.innerHTML = `<div class="frame"><canvas width="${W}" height="${H}"></canvas><div class="bar"><i></i></div></div>
+          <div class="scrub"></div>
+          <figcaption><div class="name"><span class="num">${String(i + 1).padStart(2, '0')}</span>${d.name}</div>
+          <div class="idea">${d.idea}</div><div class="meta">${d.vibe} · Handoff: ${d.handoff}</div></figcaption>`
+        grid.append(fig)
+        const canvas = fig.querySelector('canvas')
+        const tile = { d, i, ctx: canvas.getContext('2d'), bar: fig.querySelector('.bar i'), start: performance.now(), visible: true, scale: 1, paused: null }
+        tile.ui = scrubber(fig.querySelector('.scrub'), tile)
+        tiles.push(tile)
+        fig.querySelector('.frame').addEventListener('click', () => openFocus(i))
+        new IntersectionObserver(([e]) => (tile.visible = e.isIntersecting)).observe(canvas)
+      })
+
+      /** Play/pause + time slider for a tile. `tile.paused` holds the frozen time (s) or null while playing. */
+      function scrubber(host, tile) {
+        host.innerHTML = `<button type="button" aria-label="Pause">❚❚</button><input type="range" min="0" max="${DUR}" step="0.01" value="0" aria-label="Time"><output>0.00s</output>`
+        const [btn, range, out] = host.children
+        const setPaused = (at) => {
+          if (at === null) tile.start = performance.now() - ((tile.paused ?? 0) / speed) * 1000
+          tile.paused = at
+          btn.textContent = at === null ? '❚❚' : '▶'
+          btn.setAttribute('aria-label', at === null ? 'Pause' : 'Play')
+        }
+        btn.addEventListener('click', (e) => { e.stopPropagation(); setPaused(tile.paused === null ? localT(tile, performance.now()) : null) })
+        range.addEventListener('input', () => setPaused(Number(range.value)))
+        return {
+          setPaused,
+          sync(t) { if (document.activeElement !== range) range.value = String(t); out.textContent = `${t.toFixed(2)}s` },
+        }
+      }
+
+      function render(ctx, d, t, scale = 1) {
+        ctx.setTransform(scale, 0, 0, scale, 0, 0)
+        ctx.globalAlpha = 1
+        ctx.fillStyle = C.paper
+        ctx.fillRect(0, 0, W, H)
+        ctx.save()
+        d.draw(ctx, t)
+        ctx.restore()
+      }
+      const localT = (tile, now) => (tile.paused !== null && tile.paused !== undefined ? tile.paused : Math.min(DUR, (((now - tile.start) / 1000) * speed) % (DUR + HOLD)))
+
+      const focus = document.getElementById('focus'), fctx = document.getElementById('focusCanvas').getContext('2d')
+      const focusTile = { start: 0, i: 0, paused: null }
+      focusTile.ui = scrubber(document.getElementById('focusScrub'), focusTile)
+      document.getElementById('focusScrub').addEventListener('click', (e) => e.stopPropagation())
+      function openFocus(i) {
+        focusTile.i = (i + DIRECTIONS.length) % DIRECTIONS.length
+        focusTile.start = performance.now()
+        focusTile.ui.setPaused(null)
+        const d = DIRECTIONS[focusTile.i]
+        document.getElementById('focusCap').innerHTML = `<b>${String(focusTile.i + 1).padStart(2, '0')} · ${d.name}</b> — ${d.idea}<br><span style="color:#a6a09c">${d.vibe} · Handoff: ${d.handoff}</span>`
+        focus.dataset.open = ''
+      }
+      focus.addEventListener('click', () => { focusTile.paused = null; focusTile.ui.setPaused(null); focusTile.start = performance.now() })
+      addEventListener('keydown', (e) => {
+        if (!('open' in focus.dataset)) return
+        if (e.key === 'Escape') delete focus.dataset.open
+        if (e.key === 'ArrowRight') openFocus(focusTile.i + 1)
+        if (e.key === 'ArrowLeft') openFocus(focusTile.i - 1)
+        if (e.key === ' ') { e.preventDefault(); focusTile.ui.setPaused(focusTile.paused === null ? localT(focusTile, performance.now()) : null) }
+        if (e.key === ',' || e.key === '.') focusTile.ui.setPaused(clamp(localT(focusTile, performance.now()) + (e.key === '.' ? 0.1 : -0.1), 0, DUR))
+      })
+      document.querySelectorAll('[data-speed]').forEach((b) =>
+        b.addEventListener('click', () => {
+          speed = Number(b.dataset.speed)
+          document.querySelectorAll('[data-speed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+        }),
+      )
+      document.getElementById('replay').addEventListener('click', () => tiles.forEach((t) => { t.paused = null; t.ui.setPaused(null); t.start = performance.now() }))
+
+      // Debug hook for headless review: render direction `i` at time `t` into a data URL.
+      window.renderAt = (i, t) => {
+        const c = document.createElement('canvas'); c.width = W; c.height = H
+        render(c.getContext('2d'), DIRECTIONS[i], t)
+        return c.toDataURL('image/png')
+      }
+      // Same hook over the DOM, for tools that evaluate in an isolated world.
+      addEventListener('studio:render', (e) => {
+        document.body.dataset.render = window.renderAt(e.detail.i, e.detail.t)
+      })
+
+      await document.fonts.load(font(20)); await document.fonts.load(font(20, 500))
+      const frame = (now) => {
+        if ('open' in focus.dataset) { const t = localT(focusTile, now); render(fctx, DIRECTIONS[focusTile.i], t, 2); focusTile.ui.sync(t) }
+        else
+          for (const tile of tiles) {
+            if (!tile.visible) continue
+            const t = localT(tile, now)
+            render(tile.ctx, tile.d, t)
+            tile.bar.style.transform = `scaleX(${t / DUR})`
+            tile.ui.sync(t)
+          }
+        requestAnimationFrame(frame)
+      }
+      requestAnimationFrame(frame)
+      window.studioReady = true
+      document.body.dataset.ready = ''
+    </script>
+  </body>
+</html>
