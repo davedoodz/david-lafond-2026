@@ -223,6 +223,7 @@
         if (shrink > 0.5) { ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, TAU); ctx.fill() }
         // Fragments
         const fade = (1 - Math.max(bloom, rise, wash, shrink)) * out
+        if (o.ui !== false) protoUI(ctx, t, b, (o.uiAlpha ?? 0.9) * (1 - Math.max(bloom, rise, wash)) * out, o)
         FRAGS.forEach((f, k) => {
           const s = seg(t, 0.4 + k * 0.45, 0.8 + k * 0.45)
           if (s <= 0) return
@@ -242,6 +243,91 @@
         drawPage(ctx, heroA, lerp(24, 0, heroA))
       }
 
+      /**
+       * Prototype UI, drawn small and quiet (from the RE:SELF voice prototypes):
+       * record orb → stop square while speaking, with the Freeform pill and
+       * restart / pause beside it → arrow once the plan is ready. Plus the live
+       * transcript: older lines fade, the word being spoken is blue.
+       */
+      const measure = (ctx, s, size, weight = 400) => { ctx.save(); ctx.font = font(size, weight); ctx.letterSpacing = '0px'; const w = ctx.measureText(s).width; ctx.restore(); return w }
+      const SPOKEN = 'I snapped again at dinner. So tired. Why do I do this every time?'.split(' ')
+      function glassButton(ctx, x, y, r, a) {
+        ctx.save(); ctx.globalAlpha *= a
+        ctx.shadowColor = 'rgba(40,90,140,0.12)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3
+        ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,0.62)'; ctx.fill()
+        ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1; ctx.stroke()
+        ctx.restore()
+      }
+      function blueFill(ctx, x0, y0, x1, y1) {
+        const g = ctx.createLinearGradient(x0, y0, x1, y1)
+        g.addColorStop(0, '#2F7BF5'); g.addColorStop(0.55, '#8EC9FF'); g.addColorStop(1, '#F2F8FF')
+        return g
+      }
+      function protoUI(ctx, t, b, a, o) {
+        if (a <= 0.01) return
+        ctx.save(); ctx.globalAlpha *= a
+        const y = o.uiY ?? 492
+        // Live transcript over the glow (skipped where fragments already sit inside it).
+        if (o.frags !== 'inside') {
+          const n = Math.floor(SPOKEN.length * seg(t, 0.5, 2.9)), ta = seg(t, 0.5, 0.8) * (1 - seg(t, 3.0, 3.5))
+          if (n > 0 && ta > 0) {
+            const words = SPOKEN.slice(0, n), size = 15, maxW = 300, lines = [[]]
+            words.forEach((w) => { const cur = lines[lines.length - 1]; if (cur.length && measure(ctx, [...cur, w].join(' '), size) > maxW) lines.push([w]); else cur.push(w) })
+            const shown = lines.slice(-3), ty = (o.transY ?? (o.cy ?? 240) + 4) - (shown.length - 1) * 11
+            shown.forEach((line, li) => {
+              const last = li === shown.length - 1, lineA = [0.22, 0.45, 0.8][li + 3 - shown.length]
+              let x = 480 - measure(ctx, line.join(' '), size) / 2
+              line.forEach((w, wi) => {
+                const current = last && wi === line.length - 1
+                text(ctx, w, x, ty + li * 22, { size, color: current ? C.blue : C.s6, alpha: ta * (current ? 0.9 : lineA) })
+                x += measure(ctx, w + ' ', size)
+              })
+            })
+          }
+        }
+        // Controls row: pill + restart + pause slide in beside the main button.
+        const spread = ease.inOut(seg(t, 0.45, 0.95)), side = seg(t, 0.6, 1.0)
+        const pillX = 318, pillW = 96, h = 32
+        if (side > 0) {
+          ctx.save(); ctx.globalAlpha *= side
+          ctx.shadowColor = 'rgba(40,90,140,0.12)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3
+          rrect(ctx, pillX + (1 - side) * 10, y - h / 2, pillW, h, h / 2); ctx.fillStyle = 'rgba(255,255,255,0.62)'; ctx.fill()
+          ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke()
+          text(ctx, 'Freeform', pillX + 18 + (1 - side) * 10, y + 4.5, { size: 12, color: C.ink })
+          ctx.strokeStyle = C.s6; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(pillX + 79, y - 1.5); ctx.lineTo(pillX + 82, y + 1.5); ctx.lineTo(pillX + 85, y - 1.5); ctx.stroke()
+          ctx.restore()
+          glassButton(ctx, 514, y, 16, side)
+          ctx.save(); ctx.globalAlpha *= side; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.4
+          ctx.beginPath(); ctx.arc(514, y, 6, -Math.PI * 0.35, Math.PI * 1.35); ctx.stroke()
+          ctx.beginPath(); ctx.moveTo(514 - 5.5, y - 7.5); ctx.lineTo(514 - 2.2, y - 4.2); ctx.lineTo(514 - 6.4, y - 2.4); ctx.stroke()
+          ctx.fillStyle = C.ink; ctx.fillRect(553, y - 5.5, 2, 11); ctx.fillRect(558, y - 5.5, 2, 11)
+          ctx.restore()
+          glassButton(ctx, 556, y, 16, side)
+          ctx.save(); ctx.globalAlpha *= side; ctx.fillStyle = C.ink; ctx.fillRect(552.5, y - 5.5, 2, 11); ctx.fillRect(557.5, y - 5.5, 2, 11); ctx.restore()
+        }
+        // Main button: record orb → stop → arrow, with a tap dip at each change.
+        const mx = lerp(480, 604, spread)
+        const tap = 1 - 0.1 * Math.sin(Math.PI * seg(t, 0.3, 0.45)) - 0.1 * Math.sin(Math.PI * seg(t, 4.2, 4.35))
+        const R = 19 * tap
+        ctx.save()
+        ctx.shadowColor = 'rgba(20,40,80,0.25)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4
+        ctx.beginPath(); ctx.arc(mx, y, R, 0, TAU); ctx.fillStyle = '#232428'; ctx.fill()
+        ctx.restore()
+        if (b.speak > 0 && t < 3.2) { ctx.strokeStyle = hexA(C.blue, 0.35 + 0.25 * Math.sin(t * 6)); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(mx, y, R + 3, 0, TAU); ctx.stroke() }
+        const rec = 1 - seg(t, 0.4, 0.55), stop = seg(t, 0.45, 0.6) * (1 - seg(t, 3.3, 3.5)), arrow = seg(t, 3.4, 3.6)
+        if (rec > 0) {
+          const g = ctx.createRadialGradient(mx - 3, y - 4, 1, mx, y, 10); g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.5, '#BFE3FF'); g.addColorStop(1, '#3E8EF7')
+          ctx.save(); ctx.globalAlpha *= rec; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(mx, y, 9.5, 0, TAU); ctx.fill(); ctx.restore()
+        }
+        if (stop > 0) { ctx.save(); ctx.globalAlpha *= stop; rrect(ctx, mx - 6.5, y - 6.5, 13, 13, 3); ctx.fillStyle = blueFill(ctx, mx - 6, y + 6, mx + 6, y - 6); ctx.fill(); ctx.restore() }
+        if (arrow > 0) {
+          ctx.save(); ctx.globalAlpha *= arrow; ctx.fillStyle = blueFill(ctx, mx - 8, y, mx + 9, y)
+          ctx.beginPath(); ctx.moveTo(mx - 8, y - 2.6); ctx.lineTo(mx + 1, y - 2.6); ctx.lineTo(mx + 1, y - 7); ctx.lineTo(mx + 9, y); ctx.lineTo(mx + 1, y + 7); ctx.lineTo(mx + 1, y + 2.6); ctx.lineTo(mx - 8, y + 2.6); ctx.closePath(); ctx.fill()
+          ctx.restore()
+        }
+        ctx.restore()
+      }
+
       const DIRECTIONS = [
         { name: 'Aurora, Original', idea: 'The reference: four glows orbit and swell with the voice, fragments circle and are pulled in, the colours melt into one calm blue and bloom across the frame.', vibe: 'Baseline · balanced', handoff: 'Bloom across the frame.',
           draw(ctx, t) { aurora(ctx, t, { handoff: 'bloom' }) } },
@@ -258,7 +344,7 @@
         { name: 'Words Inside', idea: 'The fragments live inside the glow instead of orbiting it, blurred and drifting in the colour. When it calms, the plan resolves in the centre of the blue, like a thought surfacing.', vibe: 'Intimate · contained · thought-like', handoff: 'Rises; hero fades in.',
           draw(ctx, t) { aurora(ctx, t, { size: 120, orbit: 30, frags: 'inside', plan: 'inside', coreAlpha: 0.55, alpha: 0.45, handoff: 'rise' }) } },
         { name: 'Horizon', idea: 'A wide, low glow stretched across the frame like a sunrise band. Fragments rise out of it and drift up, then it settles into a calm blue horizon line.', vibe: 'Landscape · wide · sunrise', handoff: 'Washes over the frame.',
-          draw(ctx, t) { aurora(ctx, t, { cy: 330, squashX: 3.2, squash: 0.25, orbit: 80, size: 120, frags: 'rise', planY: 200, colors: [C.blue, PEACH, LILAC, C.cyan], handoff: 'wash' }) } },
+          draw(ctx, t) { aurora(ctx, t, { cy: 330, squashX: 3.2, squash: 0.25, orbit: 80, size: 120, frags: 'rise', planY: 200, transY: 120, colors: [C.blue, PEACH, LILAC, C.cyan], handoff: 'wash' }) } },
         { name: 'Keeps Its Colour', idea: 'It never fully turns blue: when it calms, the colours stop swirling and hold together as one gentle iridescent orb with a thin blue ring. Calm doesn’t mean monochrome.', vibe: 'Iridescent · hopeful · softer ending', handoff: 'Shrinks to a blue dot; hero fades in.',
           draw(ctx, t) { aurora(ctx, t, { keepColor: 0.35, ring: true, breathe: 0.05, plan: 'typed', handoff: 'dot' }) } },
         { name: 'Tight & Bright', idea: 'Smaller, denser, sharper-edged glows that react harder to the voice: more like a live voice indicator. Calms into a compact bright blue bead above a typed plan.', vibe: 'Precise · UI-like · product-forward', handoff: 'Shrinks to a blue dot; hero fades in.',
