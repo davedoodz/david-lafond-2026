@@ -23,7 +23,7 @@
   transition: color 180ms ease;
 }
 
-.nav__links a[aria-current='page'],
+.nav__links a[aria-current],
 .nav__links a:hover,
 .nav__links a:focus-visible {
   color: var(--nav-active, var(--paper));
@@ -34,8 +34,42 @@
   --nav-active: var(--ink-900);
 }
 
+.nav__start {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
 .nav__ghost {
   flex-shrink: 0;
+}
+
+/* Project pages: "< Back" under Davebot, styled like the nav links. */
+.nav__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: -4px;
+  font-size: var(--text-nav);
+  font-weight: 500;
+  line-height: 18px;
+  text-transform: uppercase;
+  color: var(--nav-idle, var(--stone-600));
+  transition: color 180ms ease;
+}
+.nav__back:hover,
+.nav__back:focus-visible {
+  color: var(--nav-active, var(--paper));
+}
+.nav__back-icon {
+  width: 16px;
+  height: 16px;
+  transition: translate 180ms ease;
+}
+.nav__back:hover .nav__back-icon {
+  translate: -3px 0;
 }
 
 @media (max-width: 640px) {

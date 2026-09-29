@@ -1,7 +1,8 @@
 import type { MouseEvent } from 'react'
 import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
-import { navigate, type Route } from '../lib/router'
+import { ChevronLeftIcon } from './icons'
+import { hasInAppHistory, navigate, type Route } from '../lib/router'
 import './Nav.css'
 
 type Props = { route: Route }
@@ -21,12 +22,31 @@ function scrollToContact(event: MouseEvent<HTMLAnchorElement>) {
   window.scrollTo({ top: document.documentElement.scrollHeight, behavior: reduce ? 'auto' : 'smooth' })
 }
 
+const PROJECT_ROUTES: Route[] = ['unwind', 'ecofabriq', 'harvard-mit']
+
+/** Back to the work list: history when we came from it (restores the scroll), else the Work page. */
+function goBack(event: MouseEvent<HTMLAnchorElement>) {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+  event.preventDefault()
+  if (hasInAppHistory()) window.history.back()
+  else navigate('work')
+}
+
 export function Nav({ route }: Props) {
+  const isProject = PROJECT_ROUTES.includes(route)
   return (
     <header className="nav">
-      <GhostButton className="nav__ghost" />
+      <div className="nav__start">
+        <GhostButton className="nav__ghost" />
+        {isProject && (
+          <a className="nav__back" href="/" onClick={goBack}>
+            <ChevronLeftIcon className="nav__back-icon" />
+            Back
+          </a>
+        )}
+      </div>
       <nav className="nav__links" aria-label="Primary">
-        <a href="/" aria-current={route === 'work' ? 'page' : undefined} onClick={internalLink('work')}>
+        <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
           Work
         </a>
         <a href="/about" aria-current={route === 'about' ? 'page' : undefined} onClick={internalLink('about')}>
