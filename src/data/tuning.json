@@ -395,5 +395,12 @@
         "radius": 21
       }
     }
+  },
+  "Nav Momo": {
+    "state": "awake"
+  },
+  "Nav": {
+    "position": "fixed",
+    "backdrop": "none"
   }
 }
