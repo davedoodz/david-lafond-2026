@@ -56,6 +56,11 @@
       "mouse": {
         "radius": 250
       }
+    },
+    "unwindPage": {
+      "preset": "custom",
+      "headerColor": "#53BFFE",
+      "headerOpacity": 0.25
     }
   },
   "Signature": {
@@ -275,14 +280,28 @@
       "cursor": "dark"
     },
     "book": {
-      "scale": 0.86,
-      "shadowOpacity": 0
+      "scale": 0.88,
+      "flipMs": 460,
+      "tiltRestX": 6.5,
+      "tiltHover": 7,
+      "push": 0,
+      "shadowOpacity": 0,
+      "thickness": 3,
+      "glare": 0
     },
     "grid": {
       "scale": 0.88,
       "minCard": 346,
       "gap": 12,
-      "showPageNumbers": false
+      "showPageNumbers": false,
+      "entrance": {
+        "duration": 1120
+      },
+      "hover": {
+        "preset": "float",
+        "strength": 1.35,
+        "duration": 900
+      }
     }
   },
   "Page transition": {
@@ -368,6 +387,13 @@
       "ease": "smooth",
       "distance": 0.34,
       "overshoot": 0.48
+    }
+  },
+  "Unwind case study": {
+    "hero": {
+      "media": {
+        "radius": 21
+      }
     }
   }
 }
