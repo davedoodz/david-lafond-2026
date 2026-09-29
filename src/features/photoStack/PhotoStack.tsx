@@ -143,6 +143,7 @@ export function PhotoStack({ className }: { className?: string }) {
     useCardMotionValues(initialPoseFor(3)),
     useCardMotionValues(initialPoseFor(4)),
   ]
+  const rootRef = useRef<HTMLDivElement>(null)
   const mvRef = useRef(mv)
   mvRef.current = mv
 
@@ -203,8 +204,25 @@ export function PhotoStack({ className }: { className?: string }) {
 
   playEntranceRef.current = playEntrance
 
+  // Start only once the page wipe is over and every photo is decoded: springing
+  // cards while the browser animates the page snapshots and decodes images drops frames.
   useEffect(() => {
-    playEntrance()
+    let cancelled = false
+    const transitionDone = () =>
+      new Promise<void>((resolve) => {
+        const check = () => (document.documentElement.dataset.vt ? requestAnimationFrame(check) : resolve())
+        check()
+      })
+    const decoded = Array.from(rootRef.current?.querySelectorAll('img') ?? [], (img) => img.decode().catch(() => {}))
+    void Promise.all([transitionDone(), ...decoded]).then(() => {
+      // One extra frame so the first animated frame is not the one that paints the decoded images.
+      requestAnimationFrame(() => {
+        if (!cancelled) playEntrance()
+      })
+    })
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -425,6 +443,7 @@ export function PhotoStack({ className }: { className?: string }) {
 
   return (
     <div
+      ref={rootRef}
       className={['ps-root', className].filter(Boolean).join(' ')}
       style={{ boxSizing: 'content-box', paddingTop: topOffset, height: containerHeight * scale, ['--ps-caption-gap' as string]: `${values.caption.gap}px` } as CSSProperties}
       data-testid="photo-stack"
