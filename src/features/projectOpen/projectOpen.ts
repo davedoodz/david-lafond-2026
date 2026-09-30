@@ -383,34 +383,83 @@ function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold'], holdSeconds
   const wrap = document.createElement('div')
   wrap.className = 'project-open__momo'
   Object.assign(wrap.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` })
-  // The current frame, shown until the live copy has drawn its first frame.
-  const still = document.createElement('canvas')
-  still.width = source.width
-  still.height = source.height
-  still.getContext('2d')?.drawImage(source, 0, 0)
-  wrap.append(still)
+  // Outgoing: a live mirror of the card's Momo (it keeps playing under the overlay until the
+  // page commits), so nothing freezes while the end of the loop loads.
+  const mirror = document.createElement('canvas')
+  mirror.width = source.width
+  mirror.height = source.height
+  const mctx = mirror.getContext('2d')
+  let mirrorFrame = 0
+  const copy = () => {
+    mctx?.clearRect(0, 0, mirror.width, mirror.height)
+    mctx?.drawImage(source, 0, 0)
+    mirrorFrame = requestAnimationFrame(copy)
+  }
+  copy()
+  wrap.append(mirror)
   document.body.append(wrap)
+  const stopMirror = () => cancelAnimationFrame(mirrorFrame)
 
-  // Live copy: same clip, same moment, own decoder (the card unmounts at commit).
+  // Incoming: the same clip from `holdSeconds` before its end, blended in with the card's own
+  // clip hand-off (Unwind Momo → transition: fade, blur, scale), so the swap reads as one motion.
   const clips = [...(source.parentElement?.querySelectorAll<HTMLCanvasElement>('.momo__clip') ?? [])]
   const srcVideo = source.parentElement?.querySelectorAll<HTMLVideoElement>('.momo__src')[clips.indexOf(source)]
   let stopLive = () => {}
   let video: HTMLVideoElement | null = null
   if (holdMode !== 'off' && srcVideo?.currentSrc) {
+    const look = getComputedStyle(source.parentElement!)
+    const blur = parseFloat(look.getPropertyValue('--momo-blur')) || 6
+    const outScale = parseFloat(look.getPropertyValue('--momo-out-scale')) || 1
+    const inScale = parseFloat(look.getPropertyValue('--momo-in-scale')) || 1
+    const fadeMs = parseFloat(look.getPropertyValue('--momo-fade')) || 700
+    const clipLen = srcVideo.duration || 0
+    const start = holdMode === 'loop' && clipLen ? Math.max(0, clipLen - holdSeconds) : srcVideo.currentTime
+    // Leave at least a third of the hold for Momo to play on its own after the blend.
+    const blendMs = holdMode === 'loop' ? Math.min(fadeMs, holdSeconds * 1000 * 0.66) : Math.min(fadeMs, 600)
+
     const v = document.createElement('video')
     Object.assign(v, { muted: true, playsInline: true, loop: false, preload: 'auto', src: srcVideo.currentSrc })
     v.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0'
-    // loop: play only the last `holdSeconds` of the loop, ending back in Momo's resting pose.
-    const clipLen = srcVideo.duration || 0
-    v.currentTime = holdMode === 'loop' && clipLen ? Math.max(0, clipLen - holdSeconds) : srcVideo.currentTime
     const live = document.createElement('canvas')
+    live.style.opacity = '0'
     wrap.append(live, v)
     stopLive = stackedAlpha(v, live)
-    // Soft hand-off from the card's frame to the live clip.
-    v.addEventListener('playing', () => requestAnimationFrame(() => still.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished.then(() => still.remove(), () => {})), { once: true })
-    wrap.append(still)
-    void v.play().catch(() => {})
     video = v
+
+    const blend = () => {
+      const opts = { duration: blendMs, easing: 'cubic-bezier(0.45, 0, 0.55, 1)', fill: 'forwards' as const }
+      live.animate(
+        [
+          { opacity: 0, filter: `blur(${blur}px)`, transform: `scale(${inScale})` },
+          { opacity: 1, filter: 'blur(0px)', transform: 'scale(1)' },
+        ],
+        opts,
+      )
+      void mirror
+        .animate(
+          [
+            { opacity: 1, filter: 'blur(0px)', transform: 'scale(1)' },
+            { opacity: 0, filter: `blur(${blur}px)`, transform: `scale(${outScale})` },
+          ],
+          opts,
+        )
+        .finished.then(() => {
+          stopMirror()
+          mirror.remove()
+        }, () => {})
+    }
+    // Start the blend only once the incoming clip has painted a frame at its start point.
+    const firstFrame = () => {
+      // First decoded frame at the start point (rVFC where available, else two frames after 'playing').
+      const video = v as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number }
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(() => requestAnimationFrame(blend))
+      else video.addEventListener('playing', () => requestAnimationFrame(() => requestAnimationFrame(blend)), { once: true })
+      void v.play().catch(() => blend())
+    }
+    v.addEventListener('loadedmetadata', () => {
+      v.addEventListener('seeked', firstFrame, { once: true })
+      v.currentTime = start
+    }, { once: true })
   }
 
   return {
@@ -437,6 +486,7 @@ function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold'], holdSeconds
     },
     async land(duration: number) {
       const cleanup = () => {
+        stopMirror()
         stopLive()
         video?.pause()
         wrap.remove()
