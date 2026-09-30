@@ -123,19 +123,31 @@
 }
 
 /* Sideways (Back from a project page): same sheet, entering from the right ('left')
-   or the left ('right'), leading corners rounded; the old page drifts the same way. */
+   or the left ('right'), leading corners rounded; the old page drifts the same way.
+   Speed and feel come from the "Page transition → projectBack" dials (--vt-back-*). */
+:root[data-vt='wipe'][data-vt-dir='left']::view-transition-old(root),
+:root[data-vt='wipe'][data-vt-dir='right']::view-transition-old(root) {
+  animation-duration: var(--vt-back-out-dur);
+  animation-timing-function: var(--vt-back-ease);
+}
 :root[data-vt='wipe'][data-vt-dir='left']::view-transition-old(root) {
   animation-name: vt-drift-left;
 }
 :root[data-vt='wipe'][data-vt-dir='right']::view-transition-old(root) {
   animation-name: vt-drift-right;
 }
+:root[data-vt='wipe'][data-vt-dir='left']::view-transition-new(root),
+:root[data-vt='wipe'][data-vt-dir='right']::view-transition-new(root) {
+  animation-duration: var(--vt-back-dur), calc(var(--vt-back-dur) * 0.2);
+  animation-delay: var(--vt-back-delay), calc(var(--vt-back-delay) + var(--vt-back-dur) * 0.8);
+  animation-timing-function: var(--vt-back-ease), ease-out;
+}
 :root[data-vt='wipe'][data-vt-dir='left']::view-transition-new(root) {
-  clip-path: inset(0 round var(--vt-wipe-radius) 0 0 var(--vt-wipe-radius));
+  clip-path: inset(0 round var(--vt-back-radius) 0 0 var(--vt-back-radius));
   animation-name: vt-sheet-left, vt-square;
 }
 :root[data-vt='wipe'][data-vt-dir='right']::view-transition-new(root) {
-  clip-path: inset(0 round 0 var(--vt-wipe-radius) var(--vt-wipe-radius) 0);
+  clip-path: inset(0 round 0 var(--vt-back-radius) var(--vt-back-radius) 0);
   animation-name: vt-sheet-right, vt-square;
 }
 :root[data-vt='wipe'][data-vt-wipe='reveal'][data-vt-dir='left']::view-transition-new(root) {
@@ -234,14 +246,14 @@
 }
 @keyframes vt-drift-left {
   to {
-    opacity: max(var(--vt-out-opacity), 0.35);
-    transform: translateX(calc(var(--vt-dist) * -1));
+    opacity: var(--vt-back-out-opacity);
+    transform: translateX(calc(var(--vt-back-dist) * -1));
   }
 }
 @keyframes vt-drift-right {
   to {
-    opacity: max(var(--vt-out-opacity), 0.35);
-    transform: translateX(var(--vt-dist));
+    opacity: var(--vt-back-out-opacity);
+    transform: translateX(var(--vt-back-dist));
   }
 }
 @keyframes vt-sheet-left {
@@ -256,7 +268,7 @@
 }
 @keyframes vt-wipe-left {
   from {
-    clip-path: inset(0 0 0 100% round var(--vt-wipe-radius) 0 0 var(--vt-wipe-radius));
+    clip-path: inset(0 0 0 100% round var(--vt-back-radius) 0 0 var(--vt-back-radius));
   }
   to {
     clip-path: inset(0 round 0);
@@ -264,7 +276,7 @@
 }
 @keyframes vt-wipe-right {
   from {
-    clip-path: inset(0 100% 0 0 round 0 var(--vt-wipe-radius) var(--vt-wipe-radius) 0);
+    clip-path: inset(0 100% 0 0 round 0 var(--vt-back-radius) var(--vt-back-radius) 0);
   }
   to {
     clip-path: inset(0 round 0);
