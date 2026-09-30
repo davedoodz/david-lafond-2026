@@ -12,7 +12,7 @@ const pickOf = (id: string, name: string) => Math.max(0, opts(id).indexOf(name))
  * A fixed canvas over the hero plays: the voice bands wake as someone starts
  * talking → words link to past entries → the loop → the if-then plan → the
  * band drops into the phone. The canvas phone lands exactly on the hero video's
- * box, then the real page takes over. Plays once per visit; skipped for reduced
+ * box, then the real page takes over. Plays every time the page opens; skipped for reduced
  * motion. Any wheel, key or tap skips it.
  */
 const CONFIG = {
@@ -29,14 +29,11 @@ const CONFIG = {
   _collapsed: false,
 }
 
-const PLAYED = 'unwind-intro-played'
-
 export function UnwindIntro({ onDone }: { onDone: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [run, setRun] = useState(() => {
     if (typeof window === 'undefined') return 0
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0
-    return sessionStorage.getItem(PLAYED) ? 0 : 1
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1
   })
   const { values: t } = useTuningController('Unwind intro', CONFIG, {
     onAction: (a) => {
@@ -67,7 +64,6 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
       handoff: pickOf('handoff', cur.handoff),
     })
     hooks.page = true
-    sessionStorage.setItem(PLAYED, '1')
     window.scrollTo(0, 0)
     document.documentElement.dataset.introLock = ''
 
