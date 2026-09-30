@@ -6,6 +6,13 @@
   justify-content: space-between;
   padding: 31px var(--edge) 0 35px;
   min-height: 60px;
+  /* Empty header space lets clicks through to content placed under it (e.g. the
+     Video / Book / Grid switch raised by its Y dial); the nav's own items stay clickable. */
+  pointer-events: none;
+}
+
+.nav > * {
+  pointer-events: auto;
 }
 
 .nav__links {
