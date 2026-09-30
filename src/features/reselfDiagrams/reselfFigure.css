@@ -1,0 +1,121 @@
+/* Re:Self diagrams on the Unwind case study. Only Unwind-blue marks (b-*) animate; ink never moves. */
+.reself-figure {
+  justify-self: center;
+  width: min(var(--rf-width, 100%), 100vw - 2 * var(--edge, 24px));
+  max-height: 60svh;
+  --rf-t: calc(1s / var(--rf-speed, 1));
+}
+.reself-figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 60svh;
+}
+.reself-figure [class^='b-'] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.reself-figure:not([data-live]) * {
+  animation-play-state: paused !important;
+}
+
+/* --- Product flow --- */
+[data-kind='flow'][data-anim='trace'] .b-pulse {
+  stroke-dasharray: 1 1;
+  animation: rf-trace calc(var(--rf-t) * 2.4) calc(var(--i, 0) * var(--rf-stagger)) linear infinite both;
+}
+[data-kind='flow'][data-anim='trace'] .b-loop,
+[data-kind='flow'][data-anim='flow'] .b-loop {
+  animation: rf-march-loop calc(var(--rf-t) * 1.2) linear infinite;
+}
+[data-kind='flow'][data-anim='trace'] .b-dot,
+[data-kind='flow'][data-anim='flow'] .b-dot,
+[data-kind='flow'][data-anim='pulse'] .b-dot {
+  animation: rf-ping calc(var(--rf-t) * 1.6) calc(var(--i, 0) * var(--rf-stagger)) ease-out infinite;
+}
+[data-kind='flow'][data-anim='flow'] .b-buzz {
+  animation: rf-blink calc(var(--rf-t) * 1.6) ease-in-out infinite;
+}
+[data-kind='flow'][data-anim='pulse'] :is(.b-spark, .b-brain, .b-buzz, .b-pulse) {
+  animation: rf-breathe calc(var(--rf-t) * 2.4) calc(var(--i, 0) * var(--rf-stagger)) ease-in-out infinite;
+}
+[data-kind='flow'][data-anim='glow'] [class^='b-'] {
+  animation: rf-glow calc(var(--rf-t) * 3) calc(var(--i, 0) * var(--rf-stagger)) ease-in-out infinite;
+}
+
+/* --- System design --- */
+[data-kind='system'][data-anim='march'] .b-edge {
+  stroke-dasharray: var(--rf-dots);
+  animation: rf-march calc(var(--rf-t) * 1.4) linear infinite;
+}
+[data-kind='system'][data-anim='pulse'] .b-edge {
+  animation: rf-glow calc(var(--rf-t) * 2.4) calc(var(--i, 0) * var(--rf-stagger)) ease-in-out infinite;
+}
+
+@keyframes rf-trace {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: -1; }
+}
+@keyframes rf-march-loop {
+  to { stroke-dashoffset: -20; }
+}
+@keyframes rf-march {
+  to { stroke-dashoffset: var(--rf-period); }
+}
+@keyframes rf-ping {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.55; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes rf-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+@keyframes rf-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+@keyframes rf-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reself-figure * {
+    animation: none !important;
+  }
+}
+
+/* --- Overview vision + Context signals --- */
+[data-kind='vision'] .b-calm {
+  stroke-dasharray: 1 1;
+  animation: rf-draw calc(var(--rf-t) * 3.2) ease-in-out infinite;
+}
+[data-kind='vision'] .b-ring {
+  animation: rf-spin calc(var(--rf-t) * 14) linear infinite;
+}
+[data-kind='vision'] .b-dot,
+[data-kind='signals'] .b-moment {
+  animation: rf-breathe calc(var(--rf-t) * 2.6) ease-in-out infinite;
+}
+[data-kind='vision'],
+[data-kind='signals'] {
+  width: min(620px, 46vw);
+}
+[data-kind='vision'] svg,
+[data-kind='signals'] svg {
+  max-height: 64svh;
+}
+@media (max-width: 800px) {
+  [data-kind='vision'],
+  [data-kind='signals'] {
+    width: 100%;
+  }
+}
+@keyframes rf-draw {
+  0% { stroke-dashoffset: 1; }
+  45%, 80% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes rf-spin {
+  to { rotate: 360deg; }
+}

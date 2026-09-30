@@ -8,23 +8,28 @@ type Tuple = [number, number, number, number]
 
 /** Prototype recordings in public/work/unwind/proto: the phone only, cropped to its frame (1080 px tall H.264 + first-frame poster). */
 export const PROTO_VIDEOS = {
-  'welcome-park': { w: 522, h: 1080 },
-  'freeform-evening': { w: 522, h: 1080 },
-  'guided-models': { w: 528, h: 1080 },
-  'guided-woop': { w: 528, h: 1080 },
+  'welcome-park': { w: 522, h: 1080, dir: 'proto' },
+  'freeform-evening': { w: 522, h: 1080, dir: 'proto' },
+  'guided-models': { w: 530, h: 1080, dir: 'flows' },
+  'guided-woop': { w: 530, h: 1080, dir: 'flows' },
+  voice: { w: 530, h: 1080, dir: 'flows' },
+  dynamic: { w: 530, h: 1080, dir: 'flows' },
+  entries: { w: 530, h: 1080, dir: 'flows' },
 } as const
 export type ProtoVideo = keyof typeof PROTO_VIDEOS
 const VIDEO_OPTIONS = ['none', ...Object.keys(PROTO_VIDEOS)]
 
 /** Where the video sits relative to the text. */
-const LAYOUTS = ['right', 'left', 'below', 'above', 'center']
+const LAYOUTS = ['right', 'left', 'below', 'above', 'center', 'rise']
 
 type SectionDefaults = {
   eyebrow: string
   title: string
   body?: string
   video?: ProtoVideo | 'none'
-  layout?: 'right' | 'left' | 'below' | 'above' | 'center'
+  /** Re:Self diagram shown instead of a video. */
+  figure?: 'none' | 'flow' | 'system' | 'vision' | 'signals'
+  layout?: 'right' | 'left' | 'below' | 'above' | 'center' | 'rise'
   size?: number
   gap?: number
 }
@@ -36,6 +41,7 @@ export function sectionDials(d: SectionDefaults) {
     body: { type: 'text' as const, default: d.body ?? '', placeholder: 'Blank lines = paragraph breaks' },
     media: {
       video: { type: 'select' as const, options: VIDEO_OPTIONS, default: d.video ?? 'none' },
+      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals'], default: d.figure ?? 'none' },
       layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'right' },
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
@@ -75,29 +81,59 @@ export const UNWIND_CONFIG = {
     eyebrow: 'Unwind · RE:SELF · 2025',
     title: 'Unwind – Novel Multimodal AI Reflection System for Behavioral Change',
     video: 'welcome-park',
-    layout: 'center',
-    size: 44,
-    gap: 28,
+    layout: 'rise',
+    size: 78,
+    gap: 44,
     role: 'Lead Product Designer',
     timeline: 'March – September 2025',
     team: '2 developers\n2 designers\n2 therapists',
   }),
+  /** Partner logos in the hero (public/work/unwind/logos). Rendered by the hero, not as a section. */
+  logos: {
+    show: true,
+    placement: { type: 'select' as const, options: ['eyebrow', 'below meta', 'above title', 'top right', 'bottom'], default: 'eyebrow' },
+    /** Logo height (px); each logo keeps its own proportions. */
+    height: [28, 12, 72, 1] as Tuple,
+    gap: [40, 8, 120, 1] as Tuple,
+    /** Space between the row and the text (px). */
+    offset: [24, 0, 160, 1] as Tuple,
+    x: [0, -400, 400, 1] as Tuple,
+    y: [0, -300, 300, 1] as Tuple,
+    opacity: [0.85, 0.2, 1, 0.05] as Tuple,
+    /** Harvard's shield reads smaller; scale it against the others. */
+    harvardScale: [1, 0.5, 2, 0.05] as Tuple,
+    _collapsed: true,
+  },
   overview: sectionDials({
     eyebrow: 'Overview',
-    title: 'Knowing isn’t doing: The Action Gap',
-    body: 'I noticed that strong intention to change, alone, rarely translates into new behavior. So I designed RE:SELF: a multimodal AI voice journaling system that pairs counterfactual reflection with biometric sensing to close the gap between noticing a pattern and acting on it.',
-    video: 'freeform-evening',
+    title: 'A journal that notices before you do.',
+    body: 'Unwind pairs an Apple Watch that senses when your body shifts for no physical reason with a 30-second voice reflection. Over time it learns what stress looks like for you, and turns each moment into a plan for next time.',
+    figure: 'vision',
+    layout: 'right',
   }),
-  problem: sectionDials({
-    eyebrow: 'Problem',
-    title: 'Reflection tools help people notice the loop, but never help them break it.',
-    body: 'People stuck in a recurring regret can usually name the exact trigger, but insight alone doesn’t change what happens next time. Existing journaling tools capture the moment after it’s already passed.',
+  /** Problem, Opportunity and Solution side by side in one snap view (rendered as `story`). */
+  story: {
+    problemTitle: { type: 'text' as const, default: 'Insight alone doesn’t change what happens next.' },
+    problemBody: { type: 'text' as const, default: 'People can name their trigger. Journals capture the moment after it has already passed.' },
+    opportunityTitle: { type: 'text' as const, default: 'Catch the moment while it’s happening.' },
+    opportunityBody: { type: 'text' as const, default: 'A wearable can notice physiological arousal in real time, and ask.' },
+    solutionTitle: { type: 'text' as const, default: 'Reflect, then rehearse next time.' },
+    solutionBody: { type: 'text' as const, default: 'A short voice reflection becomes a counterfactual and an if-then plan.' },
+    _collapsed: true,
+  },
+  system: sectionDials({
+    eyebrow: 'System',
+    title: 'Watch, phone and AI, with therapists shaping the model.',
+    figure: 'system',
     layout: 'below',
+    gap: 24,
   }),
-  opportunity: sectionDials({
-    eyebrow: 'Opportunity',
-    title: 'A wearable-augmented reflection tool for self-awareness and adaptive behavioral change.',
+  howItWorks: sectionDials({
+    eyebrow: 'How it works',
+    title: 'Your body notices first. You name what it was.',
+    figure: 'flow',
     layout: 'below',
+    gap: 40,
   }),
   /** Pinned, scroll-driven wrist sequence (WristSequence); keyed `moment` so the page renders it specially. */
   moment: {
@@ -114,24 +150,47 @@ export const UNWIND_CONFIG = {
     showScreen: false,
     _collapsed: true,
   },
-  solution: sectionDials({
-    eyebrow: 'Solution',
-    title: 'A Novel Counterfactual Reflection System',
-    body: 'The watch notices when your body shifts for no physical reason, and asks. A short voice reflection becomes a counterfactual and an if-then plan for next time.',
-    video: 'guided-models',
+  /** Three phones side by side (rendered as `flows`). */
+  flows: {
+    eyebrow: { type: 'text' as const, default: 'Core flows' },
+    title: { type: 'text' as const, default: 'Notice. Reflect. Look back.' },
+    notificationLabel: { type: 'text' as const, default: 'A gentle nudge' },
+    voiceLabel: { type: 'text' as const, default: 'Say what happened' },
+    entriesLabel: { type: 'text' as const, default: 'Your entries' },
+    /** Vertical offset between neighbouring phones (px). */
+    stagger: [56, 0, 160, 1] as Tuple,
+    /** How far each phone slides with scroll (px). */
+    parallax: [70, 0, 200, 1] as Tuple,
+    _collapsed: true,
+  },
+  /** Guided WOOP and Gross models side by side (rendered as `guided`). */
+  guided: {
+    eyebrow: { type: 'text' as const, default: 'Guided reflection' },
+    title: { type: 'text' as const, default: 'Evidence-based models, spoken out loud.' },
+    body: { type: 'text' as const, default: 'Pick a framework and answer one question at a time.' },
+    woopLabel: { type: 'text' as const, default: 'WOOP · plan for next time' },
+    modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
+    _collapsed: true,
+  },
+  dynamic: sectionDials({
+    eyebrow: 'Dynamic mode',
+    title: 'It asks the right question at the right moment.',
+    body: 'As you talk, Unwind offers a follow-up at natural pauses. Tap to answer, or keep going.',
+    video: 'dynamic',
+    layout: 'right',
   }),
   context: sectionDials({
     eyebrow: 'Context',
     title: 'It learns what stress looks like for you.',
     body: 'It doesn’t guess emotions. It learns your baseline, flags unusual arousal, and lets you name what it was.\n\nheart rate · HRV · motion\nrespiratory rate · sleep · time of day\nyour voice, only when you choose to reflect',
-    video: 'welcome-park',
+    figure: 'signals',
     layout: 'left',
   }),
   tracking: sectionDials({
     eyebrow: 'Tracking change',
     title: 'Tracking Behavioral Change',
     body: 'A daily calendar tracks shifts, obstacles and habit formation over time.\n\nWeekly, user-driven goals turn into “if-then” plans.',
-    video: 'guided-woop',
+    video: 'entries',
   }),
   outcomes: sectionDials({
     eyebrow: 'Outcomes',

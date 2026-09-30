@@ -5,9 +5,11 @@ import { Footer } from '../components/Footer'
 import { BackLink, Nav } from '../components/Nav'
 import type { Work } from '../data/works'
 import { UnwindIntro } from '../features/unwindIntro/UnwindIntro'
+import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
 import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
+import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import './CaseStudyPage.css'
 
 type Id = Extract<Work['id'], 'unwind' | 'ecofabriq'>
@@ -18,21 +20,49 @@ const PANELS = {
   ecofabriq: { name: 'EcoFabriq case study', config: ECOFABRIQ_CONFIG },
 } as const
 
-type Media = { video: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
+type Media = { video: string; figure: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
+type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; y: number; opacity: number; harvardScale: number }
+
+const LOGOS = [
+  { src: '/work/unwind/logos/media-lab.svg', alt: 'MIT Media Lab', harvard: false },
+  { src: '/work/unwind/logos/fluid-interfaces.svg', alt: 'Fluid Interfaces', harvard: false },
+  { src: '/work/unwind/logos/multisensory-intelligence.svg', alt: 'Multisensory Intelligence', harvard: false },
+  { src: '/work/unwind/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', harvard: true },
+]
+
+/** Partner logo row for the hero; placement and size come from the "logos" dials. */
+function LogoRow({ l }: { l: Logos }) {
+  return (
+    <div
+      className="case__logos"
+      data-placement={l.placement}
+      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, '--logo-y': `${l.y}px`, opacity: l.opacity } as CSSProperties}
+    >
+      {LOGOS.map((logo) => (
+        <img key={logo.src} src={logo.src} alt={logo.alt} style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
+      ))}
+    </div>
+  )
+}
 type Section = { eyebrow: string; title: string; body: string; media: Media }
 type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
 
-/** Wrist keyframes for the moment sequence (one placeholder for now; add matching frames in order). */
-const WRIST_FRAMES: WristFrame[] = [
-  {
-    src: '/work/unwind/watch/wrist-01.webp',
-    srcSmall: '/work/unwind/watch/wrist-01-960.webp',
-    width: 1754,
-    height: 896,
-    // Blank watch display, clockwise from top-left (image pixels).
-    screen: [[847, 353], [959, 337], [976, 458], [873, 472]],
-  },
-]
+/**
+ * Wrist sequence: 57 frames extracted from the watch video (1980×1044), scrubbed by scroll.
+ * The display quad is marked on the first and last frames and interpolated between them.
+ */
+const WRIST_COUNT = 57
+const SCREEN_FIRST: WristFrame['screen'] = [[830, 470], [960, 460], [990, 640], [860, 650]]
+const SCREEN_LAST: WristFrame['screen'] = [[956, 379], [1073, 360], [1111, 530], [998, 549]]
+const WRIST_FRAMES: WristFrame[] = Array.from({ length: WRIST_COUNT }, (_, k) => {
+  const t = k / (WRIST_COUNT - 1)
+  return {
+    src: `/work/unwind/watch/sequence/frame-${String(k + 1).padStart(4, '0')}.webp`,
+    width: 1980,
+    height: 1044,
+    screen: SCREEN_FIRST.map((p, i) => [p[0] + (SCREEN_LAST[i][0] - p[0]) * t, p[1] + (SCREEN_LAST[i][1] - p[1]) * t]) as WristFrame['screen'],
+  }
+})
 type Hero = Section & { role: string; timeline: string; team: string }
 
 /** One prototype recording: plays only while its section is on screen. */
@@ -60,8 +90,8 @@ function ProtoMedia({ media }: { media: Media }) {
       ref={ref}
       key={name}
       className="case__media"
-      src={`/work/unwind/proto/${name}.mp4`}
-      poster={`/work/unwind/proto/${name}.webp`}
+      src={`/work/unwind/${dims.dir}/${name}.mp4`}
+      poster={`/work/unwind/${dims.dir}/${name}.webp`}
       muted
       loop
       playsInline
@@ -94,7 +124,8 @@ export function CaseStudyPage({ id }: Props) {
   const hero = all.hero
   // Unwind opens with the voice intro; the hero video stays hidden until it hands off.
   const [intro, setIntro] = useState(id === 'unwind')
-  const keys = Object.keys(panel.config).filter((k) => k !== 'page' && k !== 'hero')
+  const keys = Object.keys(panel.config).filter((k) => k !== 'page' && k !== 'hero' && k !== 'logos')
+  const logos = (all as unknown as { logos?: Logos }).logos
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
   useLayoutEffect(() => {
@@ -161,19 +192,28 @@ export function CaseStudyPage({ id }: Props) {
 
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
-    const hasVideo = s.media.video !== 'none'
+    if (key === 'story') return <StoryRow key={key} s={s as unknown as Story} edit={edit} />
+    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} />
+    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} />
+    const hasFigure = ['flow', 'system', 'vision', 'signals'].includes(s.media.figure)
+    const hasVideo = !hasFigure && s.media.video !== 'none'
     return (
       <section
         key={key}
         className={`case__section${isHero ? ' case__section--hero' : ''}`}
         data-section={key}
-        data-layout={hasVideo ? s.media.layout : 'text'}
+        data-layout={hasVideo || hasFigure ? s.media.layout : 'text'}
         style={{ '--media-gap': `${s.media.gap}px` } as CSSProperties}
         aria-labelledby={`case-${key}`}
       >
         <div className="case__text">
           {isHero && <BackLink className="case__back case__back--inline" />}
-          <EditableText className="case__eyebrow eyebrow" label={`${key} eyebrow`} value={s.eyebrow} onChange={edit(`${key}.eyebrow`)} />
+          {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
+          {isHero && logos?.show && logos.placement === 'eyebrow' ? (
+            <LogoRow l={logos} />
+          ) : (
+            <EditableText className="case__eyebrow eyebrow" label={`${key} eyebrow`} value={s.eyebrow} onChange={edit(`${key}.eyebrow`)} />
+          )}
           <EditableText
             as={isHero ? 'h1' : 'h2'}
             id={`case-${key}`}
@@ -195,8 +235,11 @@ export function CaseStudyPage({ id }: Props) {
               ))}
             </dl>
           )}
+          {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
         {hasVideo && <ProtoMedia media={s.media} />}
+        {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
+        {hasFigure && <ReselfFigure kind={s.media.figure as 'flow' | 'system' | 'vision' | 'signals'} />}
       </section>
     )
   }
@@ -219,7 +262,7 @@ export function CaseStudyPage({ id }: Props) {
               {keys.map((key) => (
                 <li key={key}>
                   <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
-                    {all[key].eyebrow}
+                    {key === 'story' ? 'Problem · Solution' : all[key].eyebrow}
                   </button>
                 </li>
               ))}

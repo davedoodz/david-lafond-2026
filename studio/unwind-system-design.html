@@ -158,12 +158,12 @@
         },
         {
           kind: 'ai',
-          points: [[502, 548], [502, 388], [192, 388]],
+          points: [[502, 532], [502, 388], [192, 388]],
           label: { x: 476, y: 422, anchor: 'end', head: 'Interactive journal space:', items: ['daily entries', 'counterfactuals', 'behavior plans'] },
         },
         {
           kind: 'data',
-          points: [[522, 548], [522, 388], [818, 388]],
+          points: [[522, 532], [522, 388], [818, 388]],
           label: { x: 548, y: 422, anchor: 'start', lines: ['Activity user data'] },
         },
         {
@@ -321,26 +321,30 @@
       }
 
       const ICONS = {
+        // Drawn after David's Canva diagram: chunky rounded outlines, bust-style people, pulse watch, puffy AI cloud.
         person: (x, y, w) => `
-          <circle cx="${x}" cy="${y - 26}" r="22" />
-          <path d="M${x - 46} ${y + 50} v-12 q0 -36 46 -36 q46 0 46 36 v12 q0 6 -6 6 h-80 q-6 0 -6 -6 z" />`,
+          <circle cx="${x}" cy="${y - 30}" r="26" />
+          <path d="M${x - 50} ${y + 58} v-20 q0 -34 28 -40 q22 14 44 0 q28 6 28 40 v20 q0 8 -8 8 h-84 q-8 0 -8 -8 z" />`,
         therapist: (x, y, w) => `
           ${ICONS.person(x, y, w)}
-          <path d="M${x - 18} ${y + 4} l18 22 l18 -22" />
-          <path d="M${x + 26} ${y + 28} h14 M${x + 33} ${y + 21} v14" />`,
+          <path d="M${x - 21} ${y - 1} l21 34 l21 -34 M${x} ${y + 33} v33" />
+          <path d="M${x + 22} ${y + 44} h16 M${x + 30} ${y + 36} v16" />`,
         watch: (x, y, w) => `
-          <path d="M${x - 20} ${y - 34} v-14 q0 -6 6 -6 h28 q6 0 6 6 v14 M${x - 20} ${y + 34} v14 q0 6 6 6 h28 q6 0 6 -6 v-14" />
-          <rect x="${x - 34}" y="${y - 34}" width="68" height="68" rx="16" />
-          <path d="M${x + 34} ${y - 8} h6 v16 h-6" />
-          <path d="M${x - 22} ${y} h10 l5 -12 l8 24 l6 -18 l4 6 h11" />`,
+          <path d="M${x - 24} ${y - 36} l5 -20 h38 l5 20 M${x - 24} ${y + 36} l5 20 h38 l5 -20" />
+          <rect x="${x - 38}" y="${y - 36}" width="76" height="72" rx="20" />
+          <path d="M${x + 38} ${y - 8} h6 v16 h-6" />
+          <path d="M${x - 26} ${y + 2} h13 l4 -9 l6 18 l6 -22 l5 13 h18" stroke-width="${w * 0.8}" />`,
         cloud: (x, y, w) => `
-          <path d="M${x - 40} ${y + 30} h80 a26 26 0 0 0 4 -51.7 a36 36 0 0 0 -68 -8 a28 28 0 0 0 -16 59.7 z" />
-          <text x="${x + 2}" y="${y + 17}" text-anchor="middle" font-size="26" font-weight="500" stroke="none" fill="currentColor">AI</text>`,
+          <path d="M${x - 42} ${y + 32} h86 a24 24 0 0 0 2 -48 a34 34 0 0 0 -63 -10 a27 27 0 0 0 -25 58 z" />
+          <text x="${x + 2}" y="${y + 19}" text-anchor="middle" font-size="28" font-weight="500" stroke="none" fill="currentColor" letter-spacing="0">AI</text>`,
         phone: (x, y, w) => `
-          <rect x="${x - 30}" y="${y - 54}" width="60" height="108" rx="12" />
-          <path d="M${x - 8} ${y - 45} h16" />
-          <path d="M${x - 18} ${y - 26} h24 M${x - 18} ${y - 16} h36 M${x - 18} ${y - 6} h30 M${x - 18} ${y + 4} h36 M${x - 18} ${y + 14} h22" />
-          <path d="M${x + 12} ${y + 34} v-12 M${x + 12} ${y + 28} m-6 -3.5 l12 7 M${x + 12} ${y + 28} m-6 3.5 l12 -7" />`,
+          <rect x="${x - 32}" y="${y - 56}" width="64" height="112" rx="14" />
+          <path d="M${x - 9} ${y - 46} h18" />
+          <g stroke-width="${w * 0.55}" stroke-linecap="butt">
+            <path d="M${x - 19} ${y - 30} h38 M${x - 19} ${y - 22} h38 M${x - 19} ${y - 14} h38 M${x - 19} ${y - 6} h38 M${x - 19} ${y + 2} h38" stroke-dasharray="3 2.5" />
+            <circle cx="${x}" cy="${y + 26}" r="11" stroke-dasharray="0.1 5.6" stroke-linecap="round" stroke-width="${w * 0.9}" />
+            <circle cx="${x}" cy="${y + 26}" r="2.5" fill="currentColor" />
+          </g>`,
       }
 
       function titleText(node, o) {
@@ -375,7 +379,7 @@
           if (o.disc) parts.push(`<circle cx="${node.x}" cy="${node.y}" r="${o.disc}" fill="#fff" filter="url(#shadow-${o.id})" />`)
           const scale = o.disc ? 0.78 : 1
           parts.push(
-            `<g color="${INK}" fill="none" stroke="${INK}" stroke-width="${o.icon / scale}" stroke-linecap="round" stroke-linejoin="round" transform="translate(${node.x} ${node.y}) scale(${scale}) translate(${-node.x} ${-node.y})">${ICONS[node.icon](node.x, node.y, o.icon)}</g>`,
+            `<g color="${INK}" fill="none" stroke="${INK}" stroke-width="${(o.icon * 1.7) / scale}" stroke-linecap="round" stroke-linejoin="round" transform="translate(${node.x} ${node.y}) scale(${scale}) translate(${-node.x} ${-node.y})">${ICONS[node.icon](node.x, node.y, (o.icon * 1.7) / scale)}</g>`,
           )
           parts.push(titleText(node, o))
         }
