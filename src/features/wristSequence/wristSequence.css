@@ -1,0 +1,82 @@
+/*
+ * Wrist sequence: a tall scroll section with a pinned, full-bleed stage.
+ *
+ *   .wrist-seq            tall section (--wrist-h, ~300–400svh of scroll)
+ *   └ .wrist-seq__stage   sticky 100svh viewport; fades into the white page top and bottom
+ *     └ .wrist-seq__picture   moves as one (tiny push-in + drift), so every layer stays locked
+ *       ├ .wrist-seq__frame ×N   photographic keyframes, crossfaded by scroll
+ *       ├ .wrist-seq__screen     live watch UI, anchored to the blank display
+ *       └ .wrist-seq__glass      optional reflection over the UI
+ */
+.wrist-seq {
+  position: relative;
+  height: var(--wrist-h, 360svh);
+  /* The stage is pinned inside; nothing snaps mid-sequence. */
+  scroll-snap-align: none;
+}
+
+.wrist-seq__stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--paper);
+  /* Dissolve into the white page: no hard edges top or bottom. */
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 86%, transparent 100%);
+}
+
+.wrist-seq__picture {
+  position: absolute;
+  inset: 0;
+  transform-origin: 58% 45%;
+  will-change: transform;
+}
+
+.wrist-seq__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Watch sits ~52% across, ~46% down: keep it in frame as the crop tightens. */
+  object-position: 52% 46%;
+  transition: none;
+}
+
+/* The blank watch display. Size and placement come from WristSequence (per frame). */
+.wrist-seq__screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+.wrist-seq__screen[data-guide] {
+  outline: 1px dashed rgb(83 191 254 / 0.9);
+  outline-offset: 2px;
+}
+
+.wrist-seq__glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Narrow screens: the landscape can go; the wrist and watch can't. */
+@media (max-width: 800px) {
+  .wrist-seq__frame {
+    object-position: 53% 42%;
+  }
+}
+
+@media (max-width: 520px) {
+  .wrist-seq__frame {
+    object-position: 51% 40%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrist-seq__picture {
+    will-change: auto;
+  }
+}

@@ -99,16 +99,31 @@ export const UNWIND_CONFIG = {
     title: 'A wearable-augmented reflection tool for self-awareness and adaptive behavioral change.',
     layout: 'below',
   }),
+  /** Pinned, scroll-driven wrist sequence (WristSequence); keyed `moment` so the page renders it specially. */
+  moment: {
+    eyebrow: { type: 'text' as const, default: 'The moment' },
+    captionDetect: { type: 'text' as const, default: 'Heart rate up. HRV down. Not moving.' },
+    captionNotify: { type: 'text' as const, default: 'Something changed. How are you feeling?' },
+    captionFocus: { type: 'text' as const, default: 'One tap starts a 30-second voice reflection.' },
+    /** Scroll length of the pinned sequence (svh). */
+    height: [360, 200, 500, 10] as Tuple,
+    /** Push-in over the whole sequence (0.04 = 1.00 → 1.04). */
+    zoom: [0.04, 0, 0.12, 0.005] as Tuple,
+    drift: [12, 0, 60, 1] as Tuple,
+    /** Outline the watch display the live UI will sit on. */
+    showScreen: false,
+    _collapsed: true,
+  },
   solution: sectionDials({
     eyebrow: 'Solution',
     title: 'A Novel Counterfactual Reflection System',
-    body: 'RE:SELF pairs a smartwatch that senses rising stress with a voice journal built for the moment itself. It captures the regret as it happens, then turns it into a counterfactual and an if-then plan for the next time the pattern shows up.',
+    body: 'The watch notices when your body shifts for no physical reason, and asks. A short voice reflection becomes a counterfactual and an if-then plan for next time.',
     video: 'guided-models',
   }),
   context: sectionDials({
     eyebrow: 'Context',
-    title: 'A Context-Aware Journaling System',
-    body: 'Micro-reflection prompts read emotional state from context clues and biometric variation.\n\nspeech / acoustic variability\ntemperature / humidity\nheart rate variability\nrespiratory rate\noxygen levels',
+    title: 'It learns what stress looks like for you.',
+    body: 'It doesn’t guess emotions. It learns your baseline, flags unusual arousal, and lets you name what it was.\n\nheart rate · HRV · motion\nrespiratory rate · sleep · time of day\nyour voice, only when you choose to reflect',
     video: 'welcome-park',
     layout: 'left',
   }),

@@ -5,6 +5,7 @@ import { Footer } from '../components/Footer'
 import { BackLink, Nav } from '../components/Nav'
 import type { Work } from '../data/works'
 import { UnwindIntro } from '../features/unwindIntro/UnwindIntro'
+import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
 import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
 import './CaseStudyPage.css'
@@ -19,6 +20,19 @@ const PANELS = {
 
 type Media = { video: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
 type Section = { eyebrow: string; title: string; body: string; media: Media }
+type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
+
+/** Wrist keyframes for the moment sequence (one placeholder for now; add matching frames in order). */
+const WRIST_FRAMES: WristFrame[] = [
+  {
+    src: '/work/unwind/watch/wrist-01.webp',
+    srcSmall: '/work/unwind/watch/wrist-01-960.webp',
+    width: 1754,
+    height: 896,
+    // Blank watch display, clockwise from top-left (image pixels).
+    screen: [[847, 353], [959, 337], [976, 458], [873, 472]],
+  },
+]
 type Hero = Section & { role: string; timeline: string; team: string }
 
 /** One prototype recording: plays only while its section is on screen. */
@@ -124,7 +138,29 @@ export function CaseStudyPage({ id }: Props) {
 
   const edit = (path: string) => (next: string) => setValue(path, next)
 
+  const renderMoment = (key: string, m: Moment) => (
+    <WristSequence
+      key={key}
+      data-section={key}
+      className="case__moment"
+      frames={WRIST_FRAMES}
+      heightVh={m.height}
+      zoom={m.zoom}
+      drift={m.drift}
+      showScreen={m.showScreen}
+      glass={
+        <div className="case__moment-captions" aria-live="off">
+          <p className="case__moment-eyebrow eyebrow">{m.eyebrow}</p>
+          <p data-at="detect">{m.captionDetect}</p>
+          <p data-at="notify">{m.captionNotify}</p>
+          <p data-at="focus">{m.captionFocus}</p>
+        </div>
+      }
+    />
+  )
+
   const renderSection = (key: string, s: Section, isHero = false) => {
+    if (key === 'moment') return renderMoment(key, s as unknown as Moment)
     const hasVideo = s.media.video !== 'none'
     return (
       <section
@@ -177,7 +213,7 @@ export function CaseStudyPage({ id }: Props) {
       <div className="case__light" data-surface="light">
         <Nav route={id} />
         {page.showSidebar && (
-          <aside className="case__sidebar" data-hidden={onDark || undefined} aria-label="Sections">
+          <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
             <BackLink className="case__back" />
             <ol className="case__toc">
               {keys.map((key) => (
