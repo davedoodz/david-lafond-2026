@@ -26,12 +26,18 @@ import { FlipBook, type BookController, type BookState } from './FlipBook'
 import { PAGE_COUNT, SPREADS, pageLabel } from './bookPages'
 import { SpreadGrid } from './SpreadGrid'
 import './book.css'
+import { VideoControls } from './VideoControls'
 
 type Tuple = [number, number, number, number]
 type Mode = 'video' | 'book' | 'grid'
 
 /** `enablejsapi` lets the page pause the video when you switch away from it. */
 const VIDEO_SRC = 'https://www.youtube.com/embed/Rv-e5doUc0E?si=EUWjaq_nuAePoblG&enablejsapi=1&rel=0'
+/** Mouse / trackpad: the site hides the native cursor everywhere, but it cannot reach inside
+ *  YouTube's iframe. There the player runs without its own controls and VideoControls sits
+ *  on top, so the cursor dot never leaves the page. Touch keeps YouTube's controls. */
+const FINE_POINTER = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+const VIDEO_SRC_FINE = `${VIDEO_SRC}&controls=0&disablekb=1&fs=0&iv_load_policy=3&playsinline=1`
 
 const CONFIG = {
   /** Video / Book / Grid switch animation. */
@@ -136,6 +142,7 @@ export function BookViewer() {
   const [videoStarted, setVideoStarted] = useState(false)
   const [videoKey, setVideoKey] = useState(0)
   const videoRef = useRef<HTMLIFrameElement>(null)
+  const videoFrameRef = useRef<HTMLDivElement>(null)
   const [state, setState] = useState<BookState>({ index: 0, orientation: 'landscape', zoom: 1 })
   const controller = useRef<BookController | null>(null)
 
@@ -273,7 +280,7 @@ export function BookViewer() {
           event.currentTarget.style.setProperty('--y', `${event.clientY - rect.top}px`)
         }}
         aria-hidden={mode !== 'video'} inert={mode !== 'video'}>
-        <div className="viewer__video-frame">
+        <div className="viewer__video-frame" ref={videoFrameRef}>
           {!videoStarted && (
             // The page cannot see the pointer inside YouTube's iframe, so a shield
             // carries the hover label until the first click starts the video.
@@ -294,12 +301,20 @@ export function BookViewer() {
           <iframe
             key={videoKey}
             ref={videoRef}
-            src={VIDEO_SRC}
+            src={FINE_POINTER ? VIDEO_SRC_FINE : VIDEO_SRC}
             title="The Design Portfolio that Got Me Into Harvard & MIT — video"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
           />
+          {videoStarted && FINE_POINTER && (
+            <VideoControls
+              key={videoKey}
+              iframeRef={videoRef}
+              frameRef={videoFrameRef}
+              surface={t.video.cursor === 'dark' ? 'light' : 'dark'}
+            />
+          )}
         </div>
         {!videoStarted && (
           <span className="viewer__video-label" aria-hidden="true">

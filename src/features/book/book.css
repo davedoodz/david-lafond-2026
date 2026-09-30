@@ -737,3 +737,80 @@
 .book-page[data-flat] {
   clip-path: var(--flat-clip);
 }
+
+/* Our own video controls (VideoControls.tsx): mouse / trackpad only, over a controls=0
+   player, so the cursor dot stays in charge over the video. */
+.vc {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.vc__surface {
+  position: absolute;
+  inset: 0;
+}
+.vc__bar {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px 12px;
+  color: #fff;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.55), transparent);
+  opacity: 0;
+  translate: 0 6px;
+  transition: opacity 0.3s ease, translate 0.3s ease;
+  pointer-events: none;
+}
+.vc[data-shown='true'] .vc__bar {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+.vc__btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+.vc__btn:hover {
+  background: rgb(255 255 255 / 0.14);
+}
+.vc__btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+.vc__track {
+  position: relative;
+  flex: 1;
+  height: 18px;
+  touch-action: none;
+}
+.vc__track::before,
+.vc__fill {
+  content: '';
+  position: absolute;
+  inset: 7px 0;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.3);
+}
+.vc__fill {
+  background: #fff;
+  transform-origin: left center;
+  scale: 0 1;
+}
+.vc__time {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
