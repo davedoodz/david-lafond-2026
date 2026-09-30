@@ -19,9 +19,9 @@ const CONFIG = {
 
 /** Each click flips the name to the next emoji, then back to the name after the fifth. */
 const PLACES = [
-  { name: 'Boston', emoji: ['🦞', '🏛️', '⚾', '🍂', '🍩'] },
-  { name: 'Montréal', emoji: ['🫎', '🍁', '🏒', '❄️', '🇨🇦'] },
-  { name: 'Saigon', emoji: ['🍜', '🏮', '☕', '🥖', '🌶️'] },
+  { name: 'Montréal', emoji: ['🇨🇦', '🫎', '🍁', '🏒', '❄️'] },
+  { name: 'Boston', emoji: ['🇺🇸', '🦞', '⚾', '🍂', '🍩'] },
+  { name: 'Saigon', emoji: ['🇻🇳', '🍜', '☕', '🥖', '🌶️'] },
 ]
 
 function Place({ name, emoji }: (typeof PLACES)[number]) {

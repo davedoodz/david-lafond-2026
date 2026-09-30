@@ -59,8 +59,11 @@
     },
     "unwindPage": {
       "preset": "custom",
-      "headerColor": "#53BFFE",
       "headerOpacity": 0.25
+    },
+    "ecofabriqPage": {
+      "preset": "blush",
+      "headerColor": "#FFE1E2"
     }
   },
   "Signature": {
@@ -438,6 +441,9 @@
     "preset": "spring",
     "look": {
       "cornerZone": 11
+    },
+    "content": {
+      "feel": "parallax"
     }
   },
   "Unwind shader": {

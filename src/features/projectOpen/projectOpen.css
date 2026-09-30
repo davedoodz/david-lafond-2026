@@ -18,15 +18,24 @@
   will-change: clip-path;
 }
 
-.project-open__shader {
+.project-open__frame {
   position: absolute;
+  overflow: hidden;
+}
+/* Card artwork mirror (content feel): centred in the frame, scaled from its card size. */
+.project-open__content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
 }
 .project-open__shade {
   position: absolute;
   inset: 0;
   z-index: 1;
 }
-.project-open__shader > canvas {
+.project-open__frame > canvas {
   width: 100%;
   height: 100%;
 }

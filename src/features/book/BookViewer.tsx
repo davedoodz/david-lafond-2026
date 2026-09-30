@@ -16,8 +16,6 @@ import {
   GridIcon,
   YouTubeIcon,
   LastPageIcon,
-  ZoomInIcon,
-  ZoomOutIcon,
 } from '../../components/icons'
 import { useTuningController } from '../../tuning/useTuning'
 import { GRID_ENTRANCES, GRID_HOVERS, playGridEntrance, type GridEntranceValues } from './gridEntrance'
@@ -65,6 +63,17 @@ const CONFIG = {
     /** Fold shadow down the spine. */
     /** Sheen across the pages that moves with the tilt. */
     glare: [0.35, 0, 1, 0.01] as Tuple,
+  },
+  /** Book mode, desktop: vertical placement of the switch, the book and the page controls. */
+  layout: {
+    /** Switch (Video / Book / Grid) distance from the top of the viewer. */
+    switchY: [4, -40, 160, 1] as Tuple,
+    /** Gap between the switch and the book. */
+    gapAbove: [36, 0, 240, 1] as Tuple,
+    /** Gap between the book and the page controls. */
+    gapBelow: [24, 0, 240, 1] as Tuple,
+    /** Page controls distance from the bottom of the viewer. */
+    controlsY: [26, 0, 200, 1] as Tuple,
   },
   zoom: {
     maxZoom: [4, 1.5, 8, 0.1] as Tuple,
@@ -205,6 +214,10 @@ export function BookViewer() {
     '--video-radius': `${t.video.radius}px`,
     '--grid-min': `${t.grid.minCard * t.grid.scale}px`,
     '--grid-gap': `${t.grid.gap * t.grid.scale}px`,
+    '--switch-y': `${t.layout.switchY}px`,
+    '--book-gap-top': `${t.layout.gapAbove}px`,
+    '--book-gap-bottom': `${t.layout.gapBelow}px`,
+    '--bar-y': `${t.layout.controlsY}px`,
   } as CSSProperties
 
   return (
@@ -245,33 +258,6 @@ export function BookViewer() {
             </button>
             <button type="button" aria-label="Last page" disabled={atEnd} onClick={() => controller.current?.last()}>
               <LastPageIcon />
-            </button>
-          </div>
-          <div className="viewer__zoom">
-            <button
-              type="button"
-              aria-label="Zoom out"
-              disabled={state.zoom <= 1}
-              onClick={() => controller.current?.zoomBy(1 / 1.5)}
-            >
-              <ZoomOutIcon />
-            </button>
-            <button
-              type="button"
-              className="viewer__zoom-level"
-              aria-label="Reset zoom"
-              disabled={state.zoom <= 1}
-              onClick={() => controller.current?.zoomReset()}
-            >
-              {Math.round(state.zoom * 100)}%
-            </button>
-            <button
-              type="button"
-              aria-label="Zoom in"
-              disabled={state.zoom >= t.zoom.maxZoom}
-              onClick={() => controller.current?.zoomBy(1.5)}
-            >
-              <ZoomInIcon />
             </button>
           </div>
         </div>

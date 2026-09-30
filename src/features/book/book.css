@@ -2,7 +2,7 @@
 
 .viewer {
   --viewer-h: max(520px, calc(100svh - 91px));
-  --switch-block: 48px;
+  --switch-block: calc(44px + var(--switch-y, 4px));
   position: relative;
   z-index: 1;
   color: var(--paper);
@@ -36,7 +36,7 @@
   display: flex;
   width: max-content;
   height: 44px;
-  margin: 4px auto 0;
+  margin: var(--switch-y, 4px) auto 0;
   padding: 4px;
   border: 1px solid rgb(255 255 255 / 0.12);
   border-radius: 999px;
@@ -160,7 +160,7 @@
   min-height: 0;
   display: grid;
   place-items: center;
-  padding: 36px var(--edge) 24px;
+  padding: var(--book-gap-top, 36px) var(--edge) var(--book-gap-bottom, 24px);
   perspective: 2200px;
   overflow: clip;
   user-select: none;
@@ -337,7 +337,7 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 var(--edge) 26px;
+  padding: 0 var(--edge) var(--bar-y, 26px);
 }
 
 .viewer__nav {
@@ -345,14 +345,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.viewer__zoom {
-  grid-column: 3;
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  gap: 2px;
 }
 
 .viewer__bar button {
@@ -392,12 +384,6 @@
 
 .viewer__total {
   color: var(--stone-600);
-}
-
-.viewer__zoom-level {
-  padding-inline: 6px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Video mode ---------- */
@@ -662,10 +648,6 @@
   }
   .viewer__nav {
     grid-column: 1;
-  }
-  /* Touch zooms with a pinch. */
-  .viewer__zoom {
-    display: none;
   }
   .viewer__grid {
     padding-top: 32px;

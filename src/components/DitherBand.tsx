@@ -89,25 +89,51 @@ const band = (flip: boolean, frame: number, look: BandLook) => ({
   },
 })
 
-/** Unwind page header band: colour and opacity presets. `site` = the global header band above. */
-const UNWIND_PRESETS: Record<string, { color: string; opacity: number } | null> = {
-  site: null,
-  'unwind blue': { color: '#53BFFE', opacity: 0.35 },
-  sky: { color: '#9ED8FF', opacity: 0.45 },
-  'deep sea': { color: '#1E7FB8', opacity: 0.3 },
-  lilac: { color: '#B9A7F5', opacity: 0.35 },
+type PageLook = { color: string; opacity: number }
+
+/** Project-page header bands: colour and opacity presets per page. `site` = the global header band above. */
+const PAGE_PRESETS = {
+  unwind: {
+    'unwind blue': { color: '#53BFFE', opacity: 0.35 },
+    sky: { color: '#9ED8FF', opacity: 0.45 },
+    'deep sea': { color: '#1E7FB8', opacity: 0.3 },
+    lilac: { color: '#B9A7F5', opacity: 0.35 },
+  },
+  ecofabriq: {
+    blush: { color: '#F4A7AE', opacity: 0.4 },
+    rose: { color: '#E0707C', opacity: 0.3 },
+    moss: { color: '#8DB38B', opacity: 0.35 },
+    clay: { color: '#C98F6B', opacity: 0.3 },
+  },
+  'harvard-mit': {
+    crimson: { color: '#A51C30', opacity: 0.5 },
+    silver: { color: '#BDBDBD', opacity: 0.2 },
+    ink: { color: '#4A4A4A', opacity: 0.6 },
+    ember: { color: '#FF6A3D', opacity: 0.3 },
+  },
+} satisfies Record<string, Record<string, PageLook>>
+type ProjectPage = keyof typeof PAGE_PRESETS
+/** Dial group per project page (key in CONFIG). */
+const PAGE_GROUP: Record<ProjectPage, 'unwindPage' | 'ecofabriqPage' | 'harvardMitPage'> = {
+  unwind: 'unwindPage',
+  ecofabriq: 'ecofabriqPage',
+  'harvard-mit': 'harvardMitPage',
 }
+
+const pageBand = (page: ProjectPage, custom: PageLook) => ({
+  preset: { type: 'select' as const, options: ['site', ...Object.keys(PAGE_PRESETS[page]), 'custom'], default: 'site' },
+  headerColor: { type: 'color' as const, default: custom.color },
+  headerOpacity: [custom.opacity, 0, 1, 0.01] as Tuple,
+  _collapsed: true,
+})
 
 const CONFIG = {
   header: { ...band(true, 554221, { color: '#676767', pixelSize: 6.2, scale: 1.17 }), _collapsed: false },
   footer: { ...band(false, 440992, { color: '#706B68', pixelSize: 4.2, scale: 1.14 }), _collapsed: true },
-  /** Header band on the Unwind case-study page only (footer and every other page keep the site bands). */
-  unwindPage: {
-    preset: { type: 'select' as const, options: [...Object.keys(UNWIND_PRESETS), 'custom'], default: 'site' },
-    headerColor: { type: 'color' as const, default: '#53BFFE' },
-    headerOpacity: [0.35, 0, 1, 0.01] as Tuple,
-    _collapsed: false,
-  },
+  /** Header band on each project page only (footer and every other page keep the site bands). */
+  unwindPage: pageBand('unwind', PAGE_PRESETS.unwind['unwind blue']),
+  ecofabriqPage: pageBand('ecofabriq', PAGE_PRESETS.ecofabriq.blush),
+  harvardMitPage: pageBand('harvard-mit', PAGE_PRESETS['harvard-mit'].crimson),
 }
 
 type Props = { position: 'header' | 'footer' }
@@ -115,21 +141,25 @@ type Props = { position: 'header' | 'footer' }
 export function DitherBand({ position }: Props) {
   const { values: all, setValue } = useTuningController('Dither bands', CONFIG)
   const route = useRoute()
-  const u = all.unwindPage
-  // Moving a custom colour dial means "use my numbers": flip the preset to 'custom'.
-  const unwindKey = `${u.headerColor}|${u.headerOpacity}`
-  const unwindKeyRef = useRef(unwindKey)
+  const page = position === 'header' && route in PAGE_GROUP ? (route as ProjectPage) : null
+  const group = page ? PAGE_GROUP[page] : null
+  const u = group ? all[group] : null
+  // Moving a custom colour dial means "use my numbers": flip that page's preset to 'custom'.
+  const customKey = u ? `${group}|${u.headerColor}|${u.headerOpacity}` : ''
+  const customKeyRef = useRef(customKey)
   useEffect(() => {
-    if (unwindKeyRef.current === unwindKey) return
-    unwindKeyRef.current = unwindKey
-    if (position === 'header' && u.preset !== 'custom') setValue('unwindPage.preset', 'custom')
-  }, [unwindKey, u.preset, position, setValue])
-  const pageHeader =
-    route !== 'unwind' || position !== 'header'
+    const prev = customKeyRef.current
+    customKeyRef.current = customKey
+    // Only a dial move on the same page counts, not arriving on a different page.
+    if (!u || !prev || prev.split('|')[0] !== group || prev === customKey) return
+    if (u.preset !== 'custom') setValue(`${group}.preset`, 'custom')
+  }, [customKey, group, u, setValue])
+  const pageHeader: PageLook | null =
+    !page || !u || u.preset === 'site'
       ? null
       : u.preset === 'custom'
         ? { color: u.headerColor, opacity: u.headerOpacity }
-        : UNWIND_PRESETS[u.preset]
+        : ((PAGE_PRESETS[page] as Record<string, PageLook>)[u.preset] ?? null)
   const base = all[position]
   const values = pageHeader ? { ...base, ...pageHeader } : base
   const hostRef = useRef<HTMLDivElement>(null)

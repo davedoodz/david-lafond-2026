@@ -1,0 +1,18 @@
+/* Scroll snap (Harvard & MIT page → snap): the book at the top, then the page end. */
+html[data-project-snap='proximity'] {
+  scroll-snap-type: y proximity;
+}
+
+html[data-project-snap='mandatory'] {
+  scroll-snap-type: y mandatory;
+}
+
+/* The top stop is the small nav spacer, not .project: a snap area taller than the screen
+   lets the page rest anywhere inside it, which would make mandatory a no-op. */
+html[data-project-snap] .project > .nav__spacer {
+  scroll-snap-align: start;
+}
+
+html[data-project-snap] body:has(.project) .footer {
+  scroll-snap-align: end;
+}

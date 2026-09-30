@@ -28,7 +28,27 @@ export type Edges = { top: number; right: number; bottom: number; left: number }
 export const OPEN_EFFECTS = ['expand', 'curtain', 'window', 'iris', 'zoom'] as const
 export type OpenEffect = (typeof OPEN_EFFECTS)[number]
 
+/**
+ * How a card's own artwork (EcoFabriq wall, Harvard & MIT crane loop) behaves while the card
+ * grows (expand / curtain). The artwork stays live: it keeps animating during the run.
+ *   grow      scales with the card so it always covers it, like the card is being enlarged
+ *   zoom      grows, then keeps pushing in past cover: you fall into the artwork
+ *   parallax  grows at a fraction of the card's speed: the frame opens faster than the art
+ *   anchor    stays its card size, centred: the frame opens around it
+ *   lift      grows while drifting up and fading: it rises out of the way of the page
+ *   fade      grows and fades out, handing over to the page
+ *   off       colour only (the old behaviour)
+ */
+export const CONTENT_FEELS = ['grow', 'zoom', 'parallax', 'anchor', 'lift', 'fade', 'off'] as const
+export type ContentFeel = (typeof CONTENT_FEELS)[number]
+
 export type OpenSpec = {
+  /** Card artwork during expand/curtain; see CONTENT_FEELS. */
+  contentFeel: ContentFeel
+  /** How strong the feel is (zoom push, parallax lag, lift distance). */
+  contentStrength: number
+  /** Share of the run, at its end, over which the artwork fades out (0 = stays). */
+  contentFade: number
   effect: OpenEffect
   /** Cards with Momo (Unwind): Momo flies from the card into the nav's Momo on the page. */
   momoFlight: boolean
@@ -135,22 +155,24 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   surface.style.backgroundColor = cardStyle.backgroundColor
   overlay.append(dim, surface)
 
-  // Cards with a live shader (Unwind): the shader itself grows with the card, continuing
-  // from the card's current frame. It tracks the growing rect, so it reflows like the card.
-  const shader = document.createElement('div')
-  shader.className = 'project-open__shader'
-  surface.prepend(shader)
-  const disposeShader = spawnMesh(card, shader)
-  if (!disposeShader) shader.remove()
+  // A layer that tracks the growing rect. Cards with a live shader (Unwind): the shader grows
+  // in it, continuing from the card's current frame, so it reflows like the card.
+  const frameLayer = document.createElement('div')
+  frameLayer.className = 'project-open__frame'
+  surface.prepend(frameLayer)
+  const disposeShader = spawnMesh(card, frameLayer)
+  // Other cards: a live mirror of the card's artwork rides inside, shaped by the content feel.
+  const content = !disposeShader && spec.contentFeel !== 'off' ? mirrorArtwork(card) : null
+  if (content) frameLayer.append(content.layer)
   // Keep the card's bottom shade on it, so the first frame matches the card exactly.
   const shade = card.querySelector('.card-shade')
-  if (disposeShader && shade) {
+  if ((disposeShader || content) && shade) {
     const layer = document.createElement('div')
     layer.className = 'project-open__shade'
     const style = getComputedStyle(shade)
     layer.style.background = style.backgroundImage
     layer.style.opacity = style.opacity
-    shader.append(layer)
+    frameLayer.append(layer)
   }
 
   // The title rides along with the card's bottom-left corner while it fades.
@@ -197,13 +219,19 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
       return (startRadius * t * t * (3 - 2 * t)).toFixed(2)
     }
     const radii = `${corner(inset.top, inset.left)}px ${corner(inset.top, inset.right)}px ${corner(inset.bottom, inset.right)}px ${corner(inset.bottom, inset.left)}px`
-    if (disposeShader) {
-      Object.assign(shader.style, {
-        left: `${inset.left.toFixed(2)}px`,
-        top: `${inset.top.toFixed(2)}px`,
-        width: `${(vw - inset.left - inset.right).toFixed(2)}px`,
-        height: `${(vh - inset.top - inset.bottom).toFixed(2)}px`,
-      })
+    const width = vw - inset.left - inset.right
+    const height = vh - inset.top - inset.bottom
+    Object.assign(frameLayer.style, {
+      left: `${inset.left.toFixed(2)}px`,
+      top: `${inset.top.toFixed(2)}px`,
+      width: `${width.toFixed(2)}px`,
+      height: `${height.toFixed(2)}px`,
+    })
+    if (content) {
+      content.sync()
+      const { scale, y, opacity } = contentPose(spec, width / rect.width, height / rect.height, overall, elapsed / ease.duration)
+      content.layer.style.transform = `translate(-50%, calc(-50% + ${(y * height).toFixed(2)}px)) scale(${(scale * rect.width / content.width).toFixed(4)})`
+      content.layer.style.opacity = opacity.toFixed(3)
     }
     surface.style.clipPath = `inset(${inset.top.toFixed(2)}px ${inset.right.toFixed(2)}px ${inset.bottom.toFixed(2)}px ${inset.left.toFixed(2)}px round ${radii})`
     dim.style.opacity = String(spec.dim * Math.min(1, Math.max(0, overall)))
@@ -229,6 +257,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
         fill: 'forwards',
       },
     )
+    content?.sync()
     const flight = momo?.land(spec.revealMs + 120)
     await Promise.all([reveal.finished.catch(() => {}), flight])
     disposeShader?.()
@@ -245,6 +274,81 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
     else void finish()
   }
   requestAnimationFrame(frame)
+}
+
+/** Artwork scale, vertical drift (share of the frame height) and opacity for one frame. */
+function contentPose(spec: OpenSpec, growX: number, growY: number, p: number, t: number) {
+  const cover = Math.max(growX, growY)
+  const k = spec.contentStrength
+  const eased = Math.min(1, Math.max(0, p))
+  let scale = cover
+  let y = 0
+  let opacity = 1
+  switch (spec.contentFeel) {
+    case 'zoom':
+      scale = cover * (1 + 0.5 * k * eased)
+      break
+    case 'parallax':
+      scale = 1 + (cover - 1) * Math.max(0, 1 - 0.5 * k)
+      break
+    case 'anchor':
+      scale = 1
+      break
+    case 'lift':
+      y = -0.12 * k * eased
+      opacity = 1 - eased
+      break
+    case 'fade':
+      opacity = 1 - eased * eased
+      break
+  }
+  if (spec.contentFade > 0) opacity *= Math.min(1, Math.max(0, (1 - t) / spec.contentFade))
+  return { scale, y, opacity }
+}
+
+/**
+ * A copy of the card's artwork (its `.works__mesh` layer) that stays live: `sync()` copies the
+ * source's inline styles (the EcoFabriq wall moves tiles that way) and canvas pixels (the
+ * crane loop) onto the copy, so it keeps animating while the card grows over it.
+ */
+function mirrorArtwork(card: HTMLElement) {
+  const source = card.querySelector<HTMLElement>(':scope > .works__mesh')
+  if (!source) return null
+  const width = source.offsetWidth
+  const height = source.offsetHeight
+  const layer = document.createElement('div')
+  layer.className = 'project-open__content'
+  layer.style.width = `${width}px`
+  layer.style.height = `${height}px`
+  let from: Element[] = []
+  let to: Element[] = []
+  const clone = () => {
+    layer.replaceChildren(source.cloneNode(true))
+    from = [source, ...source.querySelectorAll('*')]
+    to = [layer.firstElementChild!, ...layer.firstElementChild!.querySelectorAll('*')]
+  }
+  clone()
+  const sync = () => {
+    if (!source.isConnected) return
+    const now = source.querySelectorAll('*').length + 1
+    if (now !== from.length) clone()
+    for (let i = 0; i < from.length; i++) {
+      const a = from[i]
+      const b = to[i]
+      if (a instanceof HTMLCanvasElement && b instanceof HTMLCanvasElement) {
+        if (b.width !== a.width || b.height !== a.height) {
+          b.width = a.width
+          b.height = a.height
+        }
+        b.getContext('2d')?.drawImage(a, 0, 0)
+        continue
+      }
+      const css = (a as HTMLElement).style?.cssText
+      if (css !== undefined && (b as HTMLElement).style.cssText !== css) (b as HTMLElement).style.cssText = css
+    }
+  }
+  sync()
+  return { layer, sync, width, height }
 }
 
 /** The visible Momo frame inside a card or nav slot, if any. */
