@@ -32,7 +32,7 @@
       <div>
         <h1>Unwind intro — the reflection film</h1>
         <p class="sub">
-          A 6.9-second intro. The record button is tapped and slides down; the aurora listens (words plus [exhales], [sniffs], [gasp]); the words link to past entries, fall into the pattern (trigger → state → reaction) and become an if-then plan, then hand off to the hero. ElevenLabs v4 treatment: warm off-white, grain, dotted glow, bracketed cue tags.
+          A 6.9-second intro. The record button is tapped and slides down; the aurora listens (words plus [exhales], [sniffs], [gasp]); the words link to past entries, fall into the pattern (trigger → state → reaction) and become an if-then plan, then hand off to the hero. Soft aurora glow whose edge ripples with the voice; pick the wave style below.
         </p>
       </div>
       <canvas id="c" width="1920" height="1080"></canvas>
@@ -42,9 +42,7 @@
         <output id="time">0.00s</output>
       </div>
       <div class="opts">
-        <span>Glow <button data-opt="glow" data-v="both">dots + soft</button><button data-opt="glow" data-v="dots">dots</button><button data-opt="glow" data-v="soft">soft</button></span>
-        <span>Palette <button data-opt="palette" data-v="aurora">aurora</button><button data-opt="palette" data-v="ice">ice blue</button><button data-opt="palette" data-v="eleven">ElevenLabs</button></span>
-        <span>Grain <button data-opt="grain" data-v="on">on</button><button data-opt="grain" data-v="off">off</button></span>
+        <span>Glow <button data-opt="wave" data-v="liquid">liquid</button><button data-opt="wave" data-v="ripple">ripple</button><button data-opt="wave" data-v="petal">petal</button><button data-opt="wave" data-v="tide">tide</button><button data-opt="wave" data-v="ribbon">voice bands</button><button data-opt="wave" data-v="round">round (before)</button></span>
         <span>Speed <button data-speed="0.5">0.5×</button><button data-speed="1">1×</button></span>
       </div>
       <div class="hint">Space play/pause · , . step 0.1s · click a chapter to jump · click the film to restart</div>
@@ -150,7 +148,21 @@
         eleven: ['#E8604C', '#2F6B45', '#F2A48A', '#9CC7A4'],
         ice: [C.blue, '#9ED8FF', C.cyan, '#E9EEF8'],
       }
-      const S = { glow: 'both', palette: 'aurora', grain: true, bg: 'warm' }
+      const S = { glow: 'soft', palette: 'aurora', grain: false, wave: 'liquid' }
+      /**
+       * Voice-reactive glow shapes. Each colour is a soft blob whose edge ripples:
+       * `f1/f2` wave counts around the edge, `s1/s2` their speeds, `base` the idle
+       * wobble, `react` how far the voice pushes it, `blur` edge softness.
+       * `ribbon` draws horizontal voice bands instead of blobs.
+       */
+      const WAVES = {
+        round: { kind: 'round' },
+        liquid: { f1: 2, f2: 3, s1: 1.2, s2: 0.9, base: 0.07, react: 0.2, blur: 5 },
+        ripple: { f1: 6, f2: 9, s1: 3.2, s2: 4.1, base: 0.03, react: 0.16, blur: 3 },
+        petal: { f1: 4, f2: 5, s1: 1.8, s2: 2.4, base: 0.06, react: 0.3, blur: 3.5 },
+        tide: { f1: 1, f2: 2, s1: 0.7, s2: 1.1, base: 0.12, react: 0.26, blur: 6 },
+        ribbon: { kind: 'ribbon' },
+      }
       const measure = (ctx, s, size) => { ctx.save(); ctx.font = font(size); ctx.letterSpacing = '0px'; const w = ctx.measureText(s).width; ctx.restore(); return w }
       const isTag = (w) => w.startsWith('[')
       const norm = (w) => w.toLowerCase().replace(/[^a-z\[\]]/g, '')
@@ -254,10 +266,37 @@
           const r = (lerp(92 + 58 * loud, 122 + 6 * Math.sin(RT * 1.6), calm) * lerp(1, 1.5, wide) + bloom * 900) * on
           const alpha = (k === 0 ? 0.78 : 0.62 * (1 - calm)) * (1 - bloom)
           if (alpha <= 0.01 || r <= 0) return
+          const P = WAVES[S.wave] ?? WAVES.liquid, c0 = k === 0 && calm > 0 ? C.blue : col
+          if (P.kind === 'ribbon') {
+            // Horizontal voice bands: thickness and swing follow the voice, then flatten when calm.
+            const half = lerp(280, 360, wide) * on, th = (10 + 26 * loud) * (1 - calm * 0.6) + 6
+            const amp = (8 + 38 * env * (1 - calm)) * (1 - bloom), yo = (k - 1.5) * 7 * (1 - calm)
+            const lg = g.createLinearGradient(cx - half, 0, cx + half, 0)
+            lg.addColorStop(0, hexA(c0, 0)); lg.addColorStop(0.5, hexA(c0, alpha)); lg.addColorStop(1, hexA(c0, 0))
+            const yAt = (xx, o) => cy + yo + o + amp * Math.exp(-(((xx - cx) / (half * 0.55)) ** 2)) * Math.sin(xx * 0.022 * (1 + k * 0.25) + RT * (2 + k * 0.7) + k)
+            g.save(); g.filter = 'blur(3px)'; g.fillStyle = lg; g.beginPath()
+            for (let xx = cx - half; xx <= cx + half; xx += 6) xx === cx - half ? g.moveTo(xx, yAt(xx, -th / 2)) : g.lineTo(xx, yAt(xx, -th / 2))
+            for (let xx = cx + half; xx >= cx - half; xx -= 6) g.lineTo(xx, yAt(xx, th / 2) + th * 0.3 * Math.sin(xx * 0.05 - RT * 3))
+            g.closePath(); g.fill(); g.restore()
+            return
+          }
           g.save(); g.translate(x, y); g.scale(lerp(1, 2.2, wide), 1)
           const grd = g.createRadialGradient(0, 0, 0, 0, 0, r)
-          grd.addColorStop(0, hexA(k === 0 && calm > 0 ? C.blue : col, alpha)); grd.addColorStop(0.6, hexA(col, alpha * 0.35)); grd.addColorStop(1, hexA(col, 0))
-          g.fillStyle = grd; g.fillRect(-W, -H, W * 2, H * 2); g.restore()
+          grd.addColorStop(0, hexA(c0, alpha)); grd.addColorStop(0.6, hexA(col, alpha * 0.35)); grd.addColorStop(1, hexA(col, 0))
+          g.fillStyle = grd
+          if (P.kind === 'round') g.fillRect(-W, -H, W * 2, H * 2)
+          else {
+            // Wavy edge: idle wobble + voice push, settling as it calms.
+            const w = (P.base + P.react * env * (1 - calm)) * (1 - bloom)
+            g.filter = `blur(${P.blur}px)`; g.beginPath()
+            for (let q = 0; q <= 120; q++) {
+              const an = (q / 120) * TAU
+              const rr = r * 0.78 * (1 + w * (0.6 * Math.sin(P.f1 * an + RT * P.s1 + k * 1.3) + 0.4 * Math.sin(P.f2 * an - RT * P.s2 + k * 2.1)))
+              q ? g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr) : g.moveTo(Math.cos(an) * rr, Math.sin(an) * rr)
+            }
+            g.closePath(); g.fill()
+          }
+          g.restore()
         })
         return { on, bloom }
       }
