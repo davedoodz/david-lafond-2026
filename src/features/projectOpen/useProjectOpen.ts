@@ -25,7 +25,7 @@ export const OPEN_PRESETS: Record<string, { timing: Easing | Spring; delay: Edge
   /** Fast start, long soft landing. */
   swift: { timing: bezier(0.7, [0.16, 1, 0.3, 1]), delay: even },
   /** Critically-damped-ish spring with a hint of settle in the corners. */
-  spring: { timing: { type: 'spring', visualDuration: 0.3, bounce: 0.12 }, delay: even },
+  spring: { timing: { type: 'spring', visualDuration: 0.6, bounce: 0.12 }, delay: even },
   /** Top edge leads, sides follow, bottom arrives last: the card unfolds downward. */
   unfold: { timing: bezier(0.95, [0.76, 0, 0.24, 1]), delay: { top: 0, right: 0.08, bottom: 0.16, left: 0.08 } },
   /** Top-left corner reaches its viewport corner first, bottom-right last: a diagonal sweep. */
@@ -38,7 +38,7 @@ const CONFIG = {
   /** Unwind: Momo flies from the card into the nav's Momo. */
   momoFlight: false,
   /** Unwind: seconds Momo keeps animating after the click before it flies into the nav (a tap or key skips it). */
-  momoHoldSeconds: [0.25, 0, 5, 0.05] as Tuple,
+  momoHoldSeconds: [1, 0, 5, 0.05] as Tuple,
   preset: { type: 'select' as const, options: [...Object.keys(OPEN_PRESETS), 'custom'], default: 'glide' },
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
   previewUnwind: { type: 'action' as const, label: 'Preview (open Unwind)' },
