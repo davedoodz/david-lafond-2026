@@ -8,6 +8,7 @@
  * grow the card evenly, staggered delays make some corners arrive first.
  */
 import { flushSync } from 'react-dom'
+import { stackedAlpha } from '../../components/MomoCard'
 import { navigate, type Route } from '../../lib/router'
 import { preloadRoute } from '../../lib/routeChunks'
 import { pageUrl } from '../book/bookPages'
@@ -55,6 +56,8 @@ export type OpenSpec = {
   effect: OpenEffect
   /** Cards with Momo (Unwind): Momo flies from the card into the nav's Momo on the page. */
   momoFlight: boolean
+  /** Before Momo flies into the nav: loop = one full live loop at full screen; finish clip = play to the end of its clip; off = fly at once (still frame). */
+  momoHold: 'loop' | 'finish clip' | 'off'
   timing: Easing | Spring
   /** Start delay per edge, as a fraction of the whole duration. */
   delay: Edges
@@ -142,7 +145,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
       return
     }
   }
-  const momo = spec.momoFlight ? liftMomo(card) : null
+  const momo = spec.momoFlight ? liftMomo(card, spec.momoHold) : null
 
   const rect = card.getBoundingClientRect()
   const cardStyle = getComputedStyle(card)
@@ -250,6 +253,8 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   const finish = async () => {
     // A failed chunk load still navigates; the route's Suspense boundary retries it.
     await pageReady.catch(() => {})
+    // Momo plays on at full screen (a complete loop) before the page appears and it flies home.
+    await momo?.hold()
     // Commit the page under the full-screen card, then let the card go.
     flushSync(commit)
     surface.style.clipPath = 'none'
@@ -365,40 +370,99 @@ function momoCanvas(root: ParentNode): HTMLCanvasElement | null {
 }
 
 /**
- * Lifts a still of the card's Momo above the expansion, then flies it into the nav's Momo
- * once the page is committed (expand / curtain).
+ * Lifts the card's Momo above the expansion. It keeps playing live (its own decoder,
+ * continuing from the card's frame), optionally holds for a complete loop at full
+ * screen, then flies into the nav's Momo once the page is committed.
  */
-function liftMomo(card: HTMLElement) {
+function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold']) {
   const source = momoCanvas(card)
   if (!source || !source.width) return null
   const from = source.getBoundingClientRect()
+  const wrap = document.createElement('div')
+  wrap.className = 'project-open__momo'
+  Object.assign(wrap.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` })
+  // The current frame, shown until the live copy has drawn its first frame.
   const still = document.createElement('canvas')
   still.width = source.width
   still.height = source.height
   still.getContext('2d')?.drawImage(source, 0, 0)
-  still.className = 'project-open__momo'
-  Object.assign(still.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` })
-  document.body.append(still)
+  wrap.append(still)
+  document.body.append(wrap)
+
+  // Live copy: same clip, same moment, own decoder (the card unmounts at commit).
+  const clips = [...(source.parentElement?.querySelectorAll<HTMLCanvasElement>('.momo__clip') ?? [])]
+  const srcVideo = source.parentElement?.querySelectorAll<HTMLVideoElement>('.momo__src')[clips.indexOf(source)]
+  let stopLive = () => {}
+  let video: HTMLVideoElement | null = null
+  if (holdMode !== 'off' && srcVideo?.currentSrc) {
+    const v = document.createElement('video')
+    Object.assign(v, { muted: true, playsInline: true, loop: holdMode === 'loop', preload: 'auto', src: srcVideo.currentSrc })
+    v.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0'
+    v.currentTime = srcVideo.currentTime
+    const live = document.createElement('canvas')
+    wrap.append(live, v)
+    stopLive = stackedAlpha(v, live)
+    v.addEventListener('playing', () => requestAnimationFrame(() => still.remove()), { once: true })
+    void v.play().catch(() => {})
+    video = v
+  }
+
   return {
+    /** Resolves once Momo has finished its loop (or its clip), or straight away. Any tap or key skips it. */
+    hold(): Promise<void> {
+      const v = video
+      if (!v) return Promise.resolve()
+      return new Promise<void>((resolve) => {
+        let done = false, frame = 0, played = 0, last = v.currentTime
+        const cap = window.setTimeout(() => finish(), ((v.duration || 6) + 1.5) * 1000)
+        const finish = () => {
+          if (done) return
+          done = true
+          cancelAnimationFrame(frame)
+          window.clearTimeout(cap)
+          window.removeEventListener('pointerdown', finish)
+          window.removeEventListener('keydown', finish)
+          v.removeEventListener('ended', finish)
+          resolve()
+        }
+        // loop: one full clip length of playback, so Momo is back in the pose it started in.
+        const watch = () => {
+          const now = v.currentTime
+          played += now >= last ? now - last : now + (v.duration - last)
+          last = now
+          if (v.duration && played >= v.duration - 0.05) return finish()
+          frame = requestAnimationFrame(watch)
+        }
+        if (holdMode === 'loop') frame = requestAnimationFrame(watch)
+        else v.addEventListener('ended', finish)
+        window.addEventListener('pointerdown', finish)
+        window.addEventListener('keydown', finish)
+      })
+    },
     async land(duration: number) {
+      const cleanup = () => {
+        stopLive()
+        video?.pause()
+        wrap.remove()
+      }
       const slot = document.querySelector<HTMLElement>('.nav-momo')
       const target = slot && momoCanvas(slot)
       if (!slot || !target) {
-        await still.animate([{ opacity: 1 }, { opacity: 0 }], { duration, fill: 'forwards' }).finished.catch(() => {})
-        return still.remove()
+        await wrap.animate([{ opacity: 1 }, { opacity: 0 }], { duration, fill: 'forwards' }).finished.catch(() => {})
+        return cleanup()
       }
       const to = target.getBoundingClientRect()
       slot.style.visibility = 'hidden'
       const dx = to.left + to.width / 2 - (from.left + from.width / 2)
       const dy = to.top + to.height / 2 - (from.top + from.height / 2)
-      const flight = still.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${to.width / from.width})` }], {
+      const flight = wrap.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${to.width / from.width})` }], {
         duration,
         easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
         fill: 'forwards',
       })
       await flight.finished.catch(() => {})
       slot.style.visibility = ''
-      still.remove()
+      cleanup()
     },
   }
 }

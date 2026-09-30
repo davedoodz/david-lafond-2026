@@ -10,7 +10,7 @@ import type { Easing, Spring } from '../pageTransition/cssTiming'
 import { CONTENT_FEELS, OPEN_EFFECTS, openProject, type ContentFeel, type Edges, type OpenEffect, type OpenSpec } from './projectOpen'
 
 type Tuple = [number, number, number, number]
-type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'contentStrength' | 'contentFade'> & {
+type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'momoHold' | 'contentStrength' | 'contentFade'> & {
   effect: OpenEffect
   contentFeel: ContentFeel
 }
@@ -37,6 +37,8 @@ const CONFIG = {
   effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'expand' },
   /** Unwind: Momo flies from the card into the nav's Momo. */
   momoFlight: false,
+  /** Unwind: before flying into the nav, Momo plays a complete loop at full screen (a tap or key skips it). */
+  momoHold: { type: 'select' as const, options: ['loop', 'finish clip', 'off'], default: 'loop' },
   preset: { type: 'select' as const, options: [...Object.keys(OPEN_PRESETS), 'custom'], default: 'glide' },
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
   previewUnwind: { type: 'action' as const, label: 'Preview (open Unwind)' },
@@ -84,6 +86,7 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
     ...t.look,
     effect: t.effect as OpenEffect,
     momoFlight: t.momoFlight,
+    momoHold: t.momoHold as Look['momoHold'],
     contentFeel: t.content.feel as ContentFeel,
     contentStrength: t.content.strength,
     contentFade: t.content.fade,
