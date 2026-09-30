@@ -14,7 +14,7 @@
       h1 { margin: 0; font-size: 28px; font-weight: 400; }
       h2 { margin: 18px 0 0; font-size: 20px; font-weight: 400; }
       .sub { margin: 6px 0 0; color: var(--s6); font-size: 15px; line-height: 1.4; max-width: 920px; }
-      .seq { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+      .seq { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
       .seq label { display: grid; gap: 6px; font-size: 11px; color: var(--s4); letter-spacing: 0.08em; text-transform: uppercase; }
       .seq select { padding: 8px 10px; border: 1px solid #d6d3d0; border-radius: 10px; background: #fff; font: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--ink); }
       canvas.film { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; background: #f5f5f5; box-shadow: 0 0 40px rgb(23 23 23 / 0.08); cursor: pointer; }
@@ -42,7 +42,7 @@
       <div>
         <h1>Unwind intro — modular sections</h1>
         <p class="sub">
-          Six sections at the earlier, unhurried pace, each with three treatments. Pick one per section and the film re-assembles with soft cross-fades between them.
+          Five sections, each with three treatments. It opens on the glow waking and pulsing as someone starts speaking. Pick one per section and the film re-assembles with soft cross-fades between them.
           Every treatment starts and ends from the same shared state (floating words, glow, controls), so any combination joins cleanly. Click a tile below to use it.
         </p>
       </div>
@@ -54,7 +54,8 @@
         <output id="time">0.00s</output>
       </div>
       <div class="opts">
-        <span>Glow <button data-wave="liquid">liquid</button><button data-wave="ripple">ripple</button><button data-wave="petal">petal</button><button data-wave="tide">tide</button><button data-wave="round">round</button></span>
+        <span>Glow <button data-wave="silk">silk</button><button data-wave="surge">surge</button><button data-wave="lobes">lobes</button><button data-wave="swirl">swirl</button><button data-wave="nebula">nebula</button><button data-wave="bands">voice bands</button><button data-wave="liquid">liquid</button><button data-wave="ripple">ripple</button><button data-wave="petal">petal</button><button data-wave="tide">tide</button><button data-wave="round">round</button></span>
+        <span>Prototype UI <button data-ui="off">off</button><button data-ui="on">on</button></span>
         <span>Drift <button data-drift="0.35">slow</button><button data-drift="0.5">calm</button><button data-drift="0.8">lively</button></span>
       </div>
       <div class="hint">Space play/pause · , . step 0.1s · click a chapter to jump · click the film to restart</div>
@@ -163,9 +164,15 @@
         ripple: { f1: 6, f2: 9, s1: 1.6, s2: 2.1, base: 0.03, react: 0.16, blur: 3 },
         petal: { f1: 4, f2: 5, s1: 1.0, s2: 1.3, base: 0.06, react: 0.28, blur: 3.5 },
         tide: { f1: 1, f2: 2, s1: 0.45, s2: 0.7, base: 0.12, react: 0.26, blur: 6 },
+        silk: { layers: [[3, 0.55, 0.22], [5, -0.8, 0.12], [8, 1.3, 0.06]], react: 0.32, blur: 5 },
+        surge: { layers: [[2, 0.5, 0.26], [3, -0.7, 0.18]], react: 0.5, blur: 6 },
+        lobes: { layers: [[7, 0.6, 0.16], [11, -0.9, 0.07]], react: 0.3, blur: 3 },
+        swirl: { layers: [[3, 0.9, 0.2], [4, 0.9, 0.1]], react: 0.35, blur: 5, twist: 2.2 },
+        nebula: { layers: [[2, 0.35, 0.26], [4, -0.5, 0.15], [6, 0.8, 0.09], [9, -1.1, 0.05]], react: 0.4, blur: 7 },
+        bands: { kind: 'ribbon' },
         round: { kind: 'round' },
       }
-      const G = { wave: 'liquid', speed: 0.5 }
+      const G = { wave: 'silk', speed: 0.5, controls: false }
       let RT = 0
       const OVER = 0.35
       const MCTX = document.createElement('canvas').getContext('2d')
@@ -174,7 +181,7 @@
 
       // ---- Script: one short voice note, with non-verbal cues --------------
       const LINES = [['[exhales]', 'I', 'snapped', 'again.'], ['[sniffs]', 'At', 'dinner.', 'So', 'tired.'], ['[gasp]', 'Why', 'do', 'I', 'do', 'this?']]
-      const L0 = 0.15, L1 = 1.85
+      const L0 = 0.45, L1 = 2.05
       const TOK = []
       {
         const all = LINES.flatMap((l, li) => l.map((w) => ({ w, li })))
@@ -244,8 +251,8 @@
       }
 
       // ---- Stage: glow + controls, mixed between sections ------------------
-      const BASE = { glow: 0, env: 0, calm: 0, wide: 0, dim: 0, bloom: 0, gx: 480, gy: 232, gscale: 1, ctrlY: 1, ctrlOn: 1, side: 1, rec: 0, stop: 1, arrow: 0, dip: 0, halo: 0, listen: 0 }
-      const GW = 240, GH = 135
+      const BASE = { glow: 0, env: 0, calm: 0, wide: 0, dim: 0, bloom: 0, gx: 480, gy: 245, gscale: 1, ctrlY: 1, ctrlOn: 1, side: 1, rec: 0, stop: 1, arrow: 0, dip: 0, halo: 0, listen: 0 }
+      const GW = 480, GH = 270
       const glowCanvas = document.createElement('canvas'); glowCanvas.width = GW; glowCanvas.height = GH
       const gctx = glowCanvas.getContext('2d')
       function drawGlow(ctx, st) {
@@ -268,7 +275,30 @@
           grd.addColorStop(0, hexA(c0, alpha)); grd.addColorStop(0.6, hexA(col, alpha * 0.35)); grd.addColorStop(1, hexA(col, 0))
           g.fillStyle = grd
           if (P.kind === 'round') g.fillRect(-W, -H, W * 2, H * 2)
-          else {
+          else if (P.layers) {
+            // Several edge waves stacked; the voice pushes all of them, calm flattens them.
+            const push = (1 + P.react / 0.1 * st.env * (1 - st.calm)) * (1 - 0.6 * st.calm) * (1 - st.bloom)
+            g.filter = `blur(${P.blur}px)`; g.beginPath()
+            for (let q = 0; q <= 160; q++) {
+              const an = (q / 160) * TAU
+              let d = 0
+              P.layers.forEach(([f, sp, amp], li) => (d += amp * Math.sin(f * an + RT * sp * 2 + k * (1.3 + li) + (P.twist ? P.twist * Math.sin(an + RT * 0.6) : 0))))
+              const rr = r * 0.78 * (1 + d * Math.min(push, 3.2) * 0.5)
+              q ? g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr) : g.moveTo(Math.cos(an) * rr, Math.sin(an) * rr)
+            }
+            g.closePath(); g.fill()
+          } else if (P.kind === 'ribbon') {
+            g.restore(); g.save()
+            const half = lerp(260, 360, st.wide) * on, th = (12 + 28 * loud) * (1 - st.calm * 0.6) + 6
+            const amp = (10 + 42 * st.env * (1 - st.calm)) * (1 - st.bloom), yo = (k - 1.5) * 8 * (1 - st.calm)
+            const lg = g.createLinearGradient(st.gx - half, 0, st.gx + half, 0)
+            lg.addColorStop(0, hexA(c0, 0)); lg.addColorStop(0.5, hexA(c0, alpha)); lg.addColorStop(1, hexA(c0, 0))
+            const yAt = (xx, o) => st.gy + yo + o + amp * Math.exp(-(((xx - st.gx) / (half * 0.55)) ** 2)) * Math.sin(xx * 0.022 * (1 + k * 0.25) + RT * (1 + k * 0.35) + k)
+            g.filter = 'blur(3px)'; g.fillStyle = lg; g.beginPath()
+            for (let xx = st.gx - half; xx <= st.gx + half; xx += 6) xx === st.gx - half ? g.moveTo(xx, yAt(xx, -th / 2)) : g.lineTo(xx, yAt(xx, -th / 2))
+            for (let xx = st.gx + half; xx >= st.gx - half; xx -= 6) g.lineTo(xx, yAt(xx, th / 2) + th * 0.3 * Math.sin(xx * 0.05 - RT * 1.5))
+            g.closePath(); g.fill()
+          } else {
             const w = (P.base + P.react * st.env * (1 - st.calm)) * (1 - st.bloom)
             g.filter = `blur(${P.blur}px)`; g.beginPath()
             for (let q = 0; q <= 120; q++) {
@@ -289,7 +319,7 @@
       }
       const blueFill = (ctx, x0, y0, x1, y1) => { const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, '#2F7BF5'); g.addColorStop(0.55, '#8EC9FF'); g.addColorStop(1, '#F2F8FF'); return g }
       function controls(ctx, st) {
-        if (st.ctrlOn > 0.01) {
+        if (G.controls && st.ctrlOn > 0.01) {
           ctx.save(); ctx.globalAlpha = st.ctrlOn
           const y = lerp(270, 492, st.ctrlY), mx = lerp(480, 604, st.side), side = st.side
           if (side > 0.01) {
@@ -333,22 +363,13 @@
       function arrowHead(ctx, x, y, ang, s = 6) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - Math.cos(ang - 0.45) * s, y - Math.sin(ang - 0.45) * s); ctx.moveTo(x, y); ctx.lineTo(x - Math.cos(ang + 0.45) * s, y - Math.sin(ang + 0.45) * s); ctx.stroke() }
 
       // ---- Sections: three interchangeable treatments each -----------------
-      const tapStage = (u) => { const cin = ease.inOut(seg(u, 0.05, 0.5)); return { glow: 0.6 * seg(u, 0.62, 1.0), ctrlY: ease.inOut(seg(u, 0.62, 1.0)), side: seg(u, 0.78, 1.0), rec: 1 - seg(u, 0.52, 0.6), stop: seg(u, 0.55, 0.63), dip: 0.12 * Math.sin(Math.PI * seg(u, 0.48, 0.62)), cursor: { x: lerp(700, 488, cin), y: lerp(420, 276, cin), a: seg(u, 0.02, 0.2) * (1 - seg(u, 0.65, 0.85)), press: 1 - 0.45 * Math.sin(Math.PI * seg(u, 0.48, 0.62)) } } }
+      const unusedTapStage = (u) => { const cin = ease.inOut(seg(u, 0.05, 0.5)); return { glow: 0.6 * seg(u, 0.62, 1.0), ctrlY: ease.inOut(seg(u, 0.62, 1.0)), side: seg(u, 0.78, 1.0), rec: 1 - seg(u, 0.52, 0.6), stop: seg(u, 0.55, 0.63), dip: 0.12 * Math.sin(Math.PI * seg(u, 0.48, 0.62)), cursor: { x: lerp(700, 488, cin), y: lerp(420, 276, cin), a: seg(u, 0.02, 0.2) * (1 - seg(u, 0.65, 0.85)), press: 1 - 0.45 * Math.sin(Math.PI * seg(u, 0.48, 0.62)) } } }
       const tapLabel = (ctx, u) => text(ctx, 'Tap to reflect', 480, 318, { size: 11, color: C.s4, align: 'center', track: 0.5, alpha: seg(u, 0, 0.2) * (1 - seg(u, 0.45, 0.6)) })
 
       const CHAPTERS = [
-        { id: 'tap', title: 'Tap', variants: [
-          { name: 'Cursor tap', idea: 'Only the record button. The site’s dot cursor comes in and taps; it slides down and the glow fades up behind.', dur: 1.0, stage: tapStage, draw: tapLabel },
-          { name: 'Breathing invite', idea: 'The button pulses soft blue rings on its own, presses itself and drops with a small bounce.', dur: 1.0,
-            stage: (u) => ({ halo: 1 - seg(u, 0.45, 0.6), glow: 0.15 * seg(u, 0, 0.3) + 0.45 * seg(u, 0.6, 1.0), ctrlY: ease.back(seg(u, 0.6, 1.0)), side: seg(u, 0.78, 1.0), rec: 1 - seg(u, 0.52, 0.6), stop: seg(u, 0.55, 0.63), dip: 0.12 * Math.sin(Math.PI * seg(u, 0.44, 0.6)) }),
-            draw: tapLabel },
-          { name: 'Glow from the button', idea: 'Tapped with the cursor; the aurora is born from the button itself and grows up and out as the button slides away.', dur: 1.0,
-            stage: (u) => ({ ...tapStage(u), glow: 0.85 * seg(u, 0.5, 0.62), gy: lerp(270, 232, ease.inOut(seg(u, 0.6, 1.0))), gscale: lerp(0.15, 1, ease.out(seg(u, 0.52, 1.0))) }),
-            draw: tapLabel },
-        ] },
         { id: 'listen', title: 'Listen', variants: [
           { name: 'Caption lift', idea: 'A caption runs under the glow with the cues in brackets; key words lift out of it and float.', dur: 2.3,
-            stage: (u) => ({ glow: 1, env: voiceEnv(u), listen: 1 }),
+            stage: (u) => ({ glow: ease.out(seg(u, 0, 0.45)), env: voiceEnv(u) + 0.35 * Math.sin(Math.PI * seg(u, 0.05, 0.45)), listen: 1 }),
             words(u) {
               const { capOf } = lay(), out = {}
               FLOATS.forEach((f, k) => {
@@ -370,7 +391,7 @@
               })
             } },
           { name: 'Words surface', idea: 'No caption: each word surfaces straight into the space as it’s said, and each cue sends a soft ring through the glow.', dur: 2.3,
-            stage: (u) => ({ glow: 1, env: voiceEnv(u), listen: 1 }),
+            stage: (u) => ({ glow: ease.out(seg(u, 0, 0.45)), env: voiceEnv(u) + 0.35 * Math.sin(Math.PI * seg(u, 0.05, 0.45)), listen: 1 }),
             words(u) {
               const out = {}
               FLOATS.forEach((f, k) => {
@@ -391,7 +412,7 @@
               })
             } },
           { name: 'Live transcript', idea: 'The prototype’s transcript inside the glow (older lines fade, the current word is blue); at the end the key words drift out of it.', dur: 2.3,
-            stage: (u) => ({ glow: 1, env: voiceEnv(u), listen: 1 }),
+            stage: (u) => ({ glow: ease.out(seg(u, 0, 0.45)), env: voiceEnv(u) + 0.35 * Math.sin(Math.PI * seg(u, 0.05, 0.45)), listen: 1 }),
             words(u) {
               const out = {}, s = ease.inOut(seg(u, 1.75, 2.25))
               if (s <= 0) return out
@@ -518,7 +539,7 @@
               text(ctx, 'NEXT TIME', 480, 186, { size: 10, color: C.blue, align: 'center', track: 1.5, alpha: seg(u, 0.05, 0.25) })
               const n1 = Math.floor(PLAN1.length * seg(u, 0.12, 0.6)), n2 = Math.floor(PLAN2.length * seg(u, 0.55, 1.05))
               const e1 = planLine(ctx, PLAN1, n1, 238, 1), e2 = n2 ? planLine(ctx, PLAN2, n2, 278, 1) : null
-              if (u < 1.15 && Math.floor(RT * 3) % 2 === 0) { ctx.fillStyle = C.blue; ctx.fillRect((e2 ?? e1) + 2, (e2 ? 278 : 238) - 24, 2, 30) }
+              if (n1 > 0 && u < 1.15 && Math.floor(RT * 3) % 2 === 0) { ctx.fillStyle = C.blue; ctx.fillRect((e2 ?? e1) + 2, (e2 ? 278 : 238) - 24, 2, 30) }
             } },
           { name: 'Rise', idea: 'The two lines of the plan rise into place from behind a mask, one after the other. Quiet and confident.', dur: 1.3,
             stage: (u) => ({ glow: 1, calm: lerp(0.35, 1, ease.inOut(seg(u, 0, 0.6))), stop: 1 - seg(u, 0.2, 0.32), arrow: seg(u, 0.28, 0.4), dip: 0.12 * Math.sin(Math.PI * seg(u, 0.1, 0.28)) }),
@@ -562,7 +583,7 @@
         ] },
       ]
       // Restructure words: from home to each variant's targets; the rest fade.
-      CHAPTERS[3].variants.forEach((v) => {
+      CHAPTERS.find((c) => c.id === 'restructure').variants.forEach((v) => {
         v.words = (u) => {
           const out = {}, m = ease.inOut(seg(u, 0.05, 0.6))
           FLOATS.forEach((f, k) => {
@@ -651,7 +672,9 @@
       const syncOpts = () => {
         document.querySelectorAll('[data-wave]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.wave === G.wave)))
         document.querySelectorAll('[data-drift]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.drift) === G.speed)))
+        document.querySelectorAll('[data-ui]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.ui === 'on') === G.controls)))
       }
+      document.querySelectorAll('[data-ui]').forEach((b) => (b.onclick = () => { G.controls = b.dataset.ui === 'on'; syncOpts() }))
       document.querySelectorAll('[data-wave]').forEach((b) => (b.onclick = () => { G.wave = b.dataset.wave; syncOpts() }))
       document.querySelectorAll('[data-drift]').forEach((b) => (b.onclick = () => { G.speed = Number(b.dataset.drift); syncOpts() }))
       syncOpts()
