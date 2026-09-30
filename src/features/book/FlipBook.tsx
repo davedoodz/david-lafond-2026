@@ -122,7 +122,6 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       const img = document.createElement('img')
       img.alt = i === 0 ? 'Portfolio front cover' : i === PAGE_COUNT - 1 ? 'Portfolio back cover' : `Portfolio page ${i + 1}`
       img.decoding = 'async'
-      img.draggable = false
       page.appendChild(img)
       images.push(img)
       quality.push('none')

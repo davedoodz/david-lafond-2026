@@ -112,13 +112,12 @@ export function SpreadZoom({ pages, source, closing, look, transition, onClose, 
       >
         {pages.map((page) => (
           <span key={page} className="spread-zoom__page">
-            <img src={pageUrl(page, 'thumb')} alt="" draggable={false} />
+            <img src={pageUrl(page, 'thumb')} alt="" />
             <img
               className="spread-zoom__sharp"
               data-ready={sharp}
               src={pageUrl(page, 'medium')}
               alt=""
-              draggable={false}
               onLoad={() => setSharp(true)}
             />
           </span>

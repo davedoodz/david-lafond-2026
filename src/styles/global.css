@@ -106,6 +106,13 @@ svg {
   max-width: 100%;
 }
 
+/* No drag ghost when dragging a photo (Chrome/Safari; Firefox: dragstart guard in main.tsx). */
+img,
+video,
+svg {
+  -webkit-user-drag: none;
+}
+
 button {
   font: inherit;
   letter-spacing: inherit;

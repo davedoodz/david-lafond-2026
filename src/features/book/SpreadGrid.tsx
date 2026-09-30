@@ -33,7 +33,7 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
             >
               <span className="spread-grid__pages">
                 {pages.map((page) => (
-                  <img key={page} src={pageUrl(page, 'thumb')} alt="" loading="lazy" decoding="async" draggable={false} />
+                  <img key={page} src={pageUrl(page, 'thumb')} alt="" loading="lazy" decoding="async" />
                 ))}
               </span>
               {showPageNumbers && <span className="spread-grid__label">{label}</span>}
