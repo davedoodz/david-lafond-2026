@@ -293,7 +293,16 @@ export function SelectedWorks() {
             ? 'cubic-bezier(0.22, 1, 0.36, 1)'
             : 'linear'
     const animation = bg.animate(frames, { duration: intro.durationMs, delay: intro.delayMs, easing, fill: 'backwards' })
-    return () => animation.cancel()
+    // The intro is a landing flourish only. Once the user scrolls, jump to rest so the
+    // lowered sheet (and the dark gap above it) never shows at a scroll or snap stop.
+    const skip = () => {
+      if (window.scrollY > 10 && animation.playState !== 'finished') animation.finish()
+    }
+    window.addEventListener('scroll', skip, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', skip)
+      animation.cancel()
+    }
     // `introKey` captures every intro dial.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [introKey])
