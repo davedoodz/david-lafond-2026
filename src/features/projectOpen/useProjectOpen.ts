@@ -38,7 +38,7 @@ const CONFIG = {
   /** Unwind: Momo flies from the card into the nav's Momo. */
   momoFlight: false,
   /** Unwind: seconds Momo keeps animating after the click before it flies into the nav (a tap or key skips it). */
-  momoHoldSeconds: [1, 0, 5, 0.1] as Tuple,
+  momoHoldSeconds: [0.25, 0, 5, 0.05] as Tuple,
   preset: { type: 'select' as const, options: [...Object.keys(OPEN_PRESETS), 'custom'], default: 'glide' },
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
   previewUnwind: { type: 'action' as const, label: 'Preview (open Unwind)' },
