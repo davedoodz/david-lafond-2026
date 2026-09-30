@@ -21,10 +21,13 @@ function useFinePointer(): boolean {
   return fine
 }
 
-/** Anything the dot should treat as clickable (grows + turns translucent over it). */
+const DRAWING_ROUTES = new Set(['harvard-mit', 'unwind', 'ecofabriq'])
+
+/** The project pages keep the circle cursor but do not draw click-drag ink. */
+const drawingEnabledFor = (route: string): boolean => !DRAWING_ROUTES.has(route)
+
 const CLICKABLE_SELECTOR =
   'a[href], button:not(:disabled), [role="button"], summary, select, label[for], input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"]'
-
 /**
  * The white dot cursor and its click-drag ink trail — ported in spirit from
  * ditto's `public/app.js` (cursor dot) and `public/draw.js` (ink). Mount once
@@ -52,13 +55,13 @@ export function CursorLayer() {
   // Keep the ink engine's live options current without re-mounting listeners.
   useEffect(() => {
     engineRef.current?.setOptions({
-      enabled: tuning.ink.enabled,
+      enabled: drawingEnabledFor(route) && tuning.ink.enabled,
       width: tuning.ink.width,
       fadeMs: tuning.ink.fadeMs,
       colorDark: tuning.ink.colorDark,
       colorLight: tuning.ink.colorLight,
     })
-  }, [tuning.ink])
+  }, [route, tuning.ink])
 
   useEffect(() => {
     if (!fine) return
@@ -68,7 +71,7 @@ export function CursorLayer() {
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const engine = createInkEngine(canvas, {
-      enabled: tuningRef.current.ink.enabled,
+      enabled: drawingEnabledFor(route) && tuningRef.current.ink.enabled,
       width: tuningRef.current.ink.width,
       fadeMs: tuningRef.current.ink.fadeMs,
       colorDark: tuningRef.current.ink.colorDark,
@@ -266,7 +269,7 @@ export function CursorLayer() {
       engineRef.current = null
       resyncRef.current = null
     }
-  }, [fine])
+  }, [fine, route])
 
   // Runs inside the route commit (also inside a View Transition's update), so the
   // colour is already right when the new page is first painted.
