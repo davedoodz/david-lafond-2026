@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EcoFabriq thumbnail — 10 directions</title>
+<style>
+  @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+  :root {
+    --pink: #ffe1e2;
+    --ink: #171717;
+    --mauve: #8c7a7c;
+    --s6: #6f6b68;
+    --s4: #a6a09c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f5f5f5; color: var(--ink); font-family: Beatrice, system-ui, sans-serif; letter-spacing: -0.01em; }
+  header { display: flex; flex-wrap: wrap; gap: 24px; align-items: end; justify-content: space-between; padding: 40px 44px 28px; }
+  h1 { margin: 0; font-size: 32px; font-weight: 400; }
+  header p { max-width: 700px; margin: 8px 0 0; color: var(--s6); font-size: 15px; line-height: 1.35; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--s6); }
+  .controls button { padding: 8px 14px; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+  .controls button[aria-pressed='true'] { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 40px 32px; padding: 0 44px 72px; }
+  figure { margin: 0; }
+  figcaption { display: grid; gap: 6px; padding: 14px 4px 0; }
+  .name { display: flex; gap: 10px; align-items: baseline; font-size: 18px; }
+  .num { color: var(--s4); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .idea { color: var(--s6); font-size: 14px; line-height: 1.35; }
+  .meta { color: var(--s4); font-size: 12px; line-height: 1.35; }
+  .scrub { display: flex; gap: 10px; align-items: center; padding: 10px 4px 0; font-size: 12px; color: var(--s6); font-variant-numeric: tabular-nums; }
+  .scrub button { width: 30px; height: 26px; flex-shrink: 0; padding: 0; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); cursor: pointer; font-size: 11px; }
+  .scrub input { flex: 1; accent-color: var(--ink); }
+  .scrub output { width: 48px; text-align: right; }
+
+  /* ---------- The card, as it sits on the Work page ---------- */
+  .card {
+    position: relative;
+    aspect-ratio: 867 / 493;
+    border-radius: 22px;
+    overflow: hidden;
+    background: var(--pink);
+    box-shadow: 0 0 54.5px 16px rgb(23 23 23 / 0.1);
+    cursor: zoom-in;
+    isolation: isolate;
+    container-type: inline-size;
+  }
+  .stage { position: absolute; inset: 0; overflow: hidden; }
+  .shade {
+    position: absolute; inset: 0; pointer-events: none; z-index: 20;
+    background: linear-gradient(to bottom, transparent 50%, rgb(140 122 124 / 0.35) 72%, rgb(120 104 106 / 0.85) 100%);
+    transition: opacity 300ms ease;
+  }
+  .title {
+    position: absolute; left: 4.9cqw; right: 4.9cqw; bottom: 5.4cqw; z-index: 21; margin: 0;
+    color: #fff; font-size: 2.3cqw; font-weight: 400; line-height: 1.15; pointer-events: none;
+    text-shadow: 0 0 20px rgb(0 0 0 / 0.08);
+    transition: opacity 300ms ease;
+  }
+  body.no-title .shade, body.no-title .title { opacity: 0; }
+
+  /* Shared bits used by the concepts */
+  .abs { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+  .sprite { background-repeat: no-repeat; background-size: 600% 600%; }
+  .mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing: 0.02em; }
+  .chip {
+    position: absolute; padding: 0.5cqw 1.1cqw; border-radius: 999px; background: #fff; color: var(--ink);
+    font-size: 1.25cqw; white-space: nowrap; box-shadow: 0 0.4cqw 1.4cqw rgb(23 23 23 / 0.08);
+  }
+  .label { position: absolute; font-size: 1.15cqw; color: var(--ink); white-space: nowrap; }
+  canvas.fill { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .focus { position: fixed; inset: 0; z-index: 50; display: none; place-items: center; align-content: center; gap: 18px; padding: 32px; background: rgb(11 10 9 / 0.8); backdrop-filter: blur(6px); }
+  .focus[data-open] { display: grid; }
+  .focus .slot { width: min(92vw, 150svh); }
+  .focus .card { cursor: zoom-out; }
+  .focus .cap { width: min(92vw, 150svh); color: #f5f5f5; font-size: 15px; line-height: 1.4; }
+  .focus .cap b { font-weight: 500; }
+  .focus .hint { color: #a6a09c; font-size: 12px; }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>EcoFabriq — thumbnail motion, 10 directions</h1>
+      <p>Every direction uses the real FutureFabric material: the 36-frame product turntables, the material scan photographs, the PubChem molecule models, the four material categories and the triangle → square → circle mark. Each one loops on the card as it sits on the Work page. Click a card to see it large.</p>
+    </div>
+    <div class="controls">
+      <span>Speed</span>
+      <button data-speed="0.5">0.5×</button>
+      <button data-speed="1" aria-pressed="true">1×</button>
+      <button data-speed="1.5">1.5×</button>
+      <button id="titleToggle" aria-pressed="true">Title</button>
+      <button id="replay">Replay all</button>
+    </div>
+  </header>
+  <main class="grid" id="grid"></main>
+  <div class="focus" id="focus"><div class="slot" id="focusSlot"></div><p class="cap" id="focusCap"></p><p class="hint">Esc or click the card to close · ← → to step through</p></div>
+
+<script type="module">
+const ROOT = '/studio/ecofabriq'
+const [PRODUCTS, MOLECULES] = await Promise.all([
+  fetch(`${ROOT}/products.json`).then((r) => r.json()),
+  fetch(`${ROOT}/molecules.json`).then((r) => r.json()),
+])
+const byCode = Object.fromEntries(PRODUCTS.map((p) => [p.code, p]))
+const SCANNED = ['MFB-01', 'PBC-01', 'BSP-01', 'PRO-02', 'BSP-03']
+const CATEGORIES = [
+  { key: 'Plant-based cellulosic', short: 'Plant-based', model: 'cellulose', formula: '(C₆H₁₀O₅)ₙ', name: 'CELLULOSE' },
+  { key: 'Protein-based', short: 'Protein', model: 'peptide', formula: '[–NH–CHR–CO–]ₙ', name: 'POLYPEPTIDE' },
+  { key: 'Bio-based synthetic polymers', short: 'Bio-synthetic', model: 'pla', formula: '(C₃H₄O₂)ₙ', name: 'POLYLACTIC ACID' },
+  { key: 'Microbial and fungal bioassembled', short: 'Microbial & fungal', model: 'chitin', formula: '(C₈H₁₃NO₅)ₙ', name: 'CHITIN' },
+]
+
+// Warm every sheet so no concept pops in empty.
+await Promise.all(PRODUCTS.map((p) => { const i = new Image(); i.src = `${ROOT}/sprites/${p.sprite}`; return i.decode().catch(() => {}) }))
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+const lerp = (a, b, t) => a + (b - a) * t
+const inOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
+const outCubic = (t) => 1 - (1 - t) ** 3
+const outQuint = (t) => 1 - (1 - t) ** 5
+const seg = (t, a, b) => clamp((t - a) / (b - a))
+const mod = (a, n) => ((a % n) + n) % n
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296) }
+function el(parent, cls = 'abs', html = '') { const e = document.createElement('div'); e.className = cls; if (html) e.innerHTML = html; parent.append(e); return e }
+function sprite(parent, product) {
+  const e = el(parent, 'abs sprite')
+  e.style.backgroundImage = `url(${ROOT}/sprites/${product.sprite})`
+  e._product = product
+  return e
+}
+function setSprite(e, product) { if (e._product !== product) { e._product = product; e.style.backgroundImage = `url(${ROOT}/sprites/${product.sprite})` } }
+function frame(e, f) { const i = mod(Math.floor(f), 36); e.style.backgroundPosition = `${(i % 6) * 20}% ${Math.floor(i / 6) * 20}%` }
+/** Place a box of size s (px) centred on (x, y). */
+function place(e, x, y, s, extra = '') { e.style.width = e.style.height = `${s}px`; e.style.transform = `translate3d(${x - s / 2}px, ${y - s / 2}px, 0) ${extra}` }
+
+// ---------- the ten concepts ----------
+// Each: init(stage, size) → render(t, size). render is pure in t, so scrubbing works.
+const CONCEPTS = [
+  {
+    name: 'Turntable orbit',
+    idea: 'The catalog as a slow carousel: seven products ride an ellipse, each one turning on its own turntable as it passes the front.',
+    meta: 'Products: 36-frame turntables · 12 s loop',
+    duration: 12,
+    init(stage) {
+      const picks = ['PBC-01', 'MFB-01', 'PRO-01', 'BSP-01', 'MFB-02', 'PBC-02', 'BSP-03'].map((c) => byCode[c])
+      const items = picks.map((p) => sprite(stage, p))
+      const floor = el(stage, 'abs')
+      floor.style.cssText += 'border-radius:50%;background:radial-gradient(closest-side, rgb(140 122 124 / 0.22), transparent);'
+      stage.prepend(floor)
+      return (t, { w, h }) => {
+        const cx = w / 2, cy = h * 0.47, rx = w * 0.36, ry = h * 0.13
+        place(floor, cx, cy + h * 0.15, 0)
+        floor.style.width = `${rx * 2.4}px`; floor.style.height = `${ry * 2.6}px`
+        floor.style.transform = `translate3d(${cx - rx * 1.2}px, ${cy + h * 0.02}px, 0)`
+        items.forEach((e, i) => {
+          const a = (t / 12) * Math.PI * 2 + (i / items.length) * Math.PI * 2
+          const depth = (Math.sin(a) + 1) / 2 // 1 = front
+          const s = h * lerp(0.26, 0.52, depth)
+          place(e, cx + Math.cos(a) * rx, cy + Math.sin(a) * ry, s)
+          e.style.zIndex = Math.round(depth * 100)
+          e.style.opacity = lerp(0.55, 1, depth)
+          e.style.filter = `blur(${((1 - depth) * 1.2).toFixed(2)}px)`
+          frame(e, (a / (Math.PI * 2)) * 36 * 1.5 + i * 5)
+        })
+      }
+    },
+  },
+  {
+    name: 'Material → product',
+    idea: 'Start on the material itself: a close-up of the real surface fills the frame, settles into a round swatch, and the product made from it turns up beside it.',
+    meta: 'Material surface crops (5) + matching turntables · 15 s loop',
+    duration: 15,
+    init(stage) {
+      const photo = el(stage, 'abs')
+      photo.style.cssText += 'background-size:cover;background-position:center;'
+      const prod = sprite(stage, byCode[SCANNED[0]])
+      const code = el(stage, 'label mono')
+      const mat = el(stage, 'chip')
+      return (t, { w, h }) => {
+        const i = Math.floor(t / 3) % SCANNED.length
+        const p = byCode[SCANNED[i]]
+        const u = (t % 3) / 3
+        photo.style.backgroundImage = `url(${ROOT}/scans/${p.code}-surface.webp)`
+        setSprite(prod, p)
+        // 0–.3 full-bleed macro, .3–.55 pull back into swatch, .55–1 product.
+        const pull = inOut(seg(u, 0.25, 0.55))
+        // Surface crops are small (≈120–240 px), so the opening frame is a large
+        // rounded tile, not full-bleed: it stays sharp at card size.
+        const sw = h * 0.46, big = h * 0.84
+        const pw = lerp(big * 1.25, sw, pull), ph = lerp(big, sw, pull)
+        const x = lerp(w / 2, w * 0.33, pull) - pw / 2, y = lerp(h * 0.46, h * 0.44, pull) - ph / 2
+        photo.style.width = `${pw}px`; photo.style.height = `${ph}px`
+        photo.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${lerp(0.94, 1, outCubic(seg(u, 0, 0.12)))})`
+        photo.style.borderRadius = `${lerp(h * 0.04, sw / 2, pull)}px`
+        photo.style.backgroundSize = 'cover'
+        photo.style.boxShadow = '0 1cqw 3cqw rgb(23 23 23 / 0.12)'
+        const out = seg(u, 0.9, 1)
+        photo.style.opacity = (1 - out) * outCubic(seg(u, 0, 0.1))
+        const show = outCubic(seg(u, 0.45, 0.7))
+        place(prod, w * 0.64, h * 0.44, h * 0.62 * lerp(0.85, 1, show))
+        prod.style.opacity = show * (1 - out)
+        frame(prod, u * 36)
+        code.textContent = `${p.code} · ${p.name}`
+        code.style.transform = `translate3d(${w * 0.64 - code.offsetWidth / 2}px, ${h * 0.77}px, 0)`
+        code.style.opacity = show * (1 - out)
+        mat.textContent = p.material
+        mat.style.transform = `translate3d(${w * 0.33 - mat.offsetWidth / 2}px, ${h * 0.73 + (1 - show) * 8}px, 0)`
+        mat.style.opacity = show * (1 - out)
+      }
+    },
+  },
+  {
+    name: 'Molecule to garment',
+    idea: 'Chemistry first: the real 3D molecule for each material family turns in space, collapses to a point, and blooms into a product of that family.',
+    meta: 'PubChem molecules (cellulose, peptide, PLA, chitin) · 16 s loop',
+    duration: 16,
+    init(stage) {
+      const c = document.createElement('canvas'); c.className = 'fill'; stage.append(c)
+      const ctx = c.getContext('2d')
+      const prod = sprite(stage, byCode['PBC-01'])
+      const formula = el(stage, 'label mono')
+      const picks = { cellulose: 'PBC-01', peptide: 'PRO-02', pla: 'BSP-02', chitin: 'MFB-02' }
+      const COLORS = { 6: '#171717', 8: '#d6606d', 7: '#6e7fd1', 1: '#ffffff' }
+      return (t, { w, h, dpr }) => {
+        if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr) }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h)
+        const k = Math.floor(t / 4) % 4, u = (t % 4) / 4
+        const cat = CATEGORIES[k], mol = MOLECULES[cat.model], p = byCode[picks[cat.model]]
+        const collapse = inOut(seg(u, 0.5, 0.66))
+        const appear = outCubic(seg(u, 0.6, 0.8))
+        const out = seg(u, 0.92, 1)
+        const molIn = outCubic(seg(u, 0, 0.14))
+        // Fit the molecule to the card.
+        const pts = mol.atoms
+        let r = 0; for (const a of pts) r = Math.max(r, Math.hypot(a[1], a[2], a[3]))
+        const scale = (h * 0.34) / r
+        const ay = t * 0.9, ax = 0.5 + Math.sin(t * 0.4) * 0.3
+        const proj = pts.map(([z, x, y, zz]) => {
+          const x1 = x * Math.cos(ay) + zz * Math.sin(ay), z1 = -x * Math.sin(ay) + zz * Math.cos(ay)
+          const y1 = y * Math.cos(ax) - z1 * Math.sin(ax), z2 = y * Math.sin(ax) + z1 * Math.cos(ax)
+          const f = 1 - collapse
+          return { z, x: w / 2 + x1 * scale * f * molIn, y: h * 0.45 + y1 * scale * f * molIn, d: z2 }
+        })
+        const alpha = (1 - collapse * 0.85) * (1 - out)
+        ctx.lineWidth = Math.max(1, h * 0.006); ctx.strokeStyle = `rgba(23,23,23,${0.35 * alpha})`
+        for (const [a, b] of mol.bonds) { const A = proj[a], B = proj[b]; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke() }
+        for (const q of [...proj].sort((a, b) => a.d - b.d)) {
+          const rad = h * (q.z === 1 ? 0.012 : 0.022) * (1 + q.d / (r * 3))
+          ctx.globalAlpha = alpha; ctx.fillStyle = COLORS[q.z] || '#171717'
+          ctx.beginPath(); ctx.arc(q.x, q.y, rad, 0, Math.PI * 2); ctx.fill()
+          if (q.z === 1) { ctx.strokeStyle = `rgba(23,23,23,${0.3 * alpha})`; ctx.lineWidth = 1; ctx.stroke(); ctx.lineWidth = Math.max(1, h * 0.006); ctx.strokeStyle = `rgba(23,23,23,${0.35 * alpha})` }
+        }
+        ctx.globalAlpha = 1
+        setSprite(prod, p)
+        place(prod, w / 2, h * 0.45, h * 0.66 * lerp(0.2, 1, appear))
+        prod.style.opacity = appear * (1 - out)
+        frame(prod, t * 9)
+        formula.textContent = `${cat.name}  ${cat.formula}  →  ${p.code}`
+        formula.style.transform = `translate3d(${w / 2 - formula.offsetWidth / 2}px, ${h * 0.8}px, 0)`
+        formula.style.opacity = molIn * (1 - out)
+      }
+    },
+  },
+  {
+    name: 'Smart discovery',
+    idea: 'The product in one move: a query types itself, the grid re-sorts around it, and the best matches rise to the front with a match score.',
+    meta: 'Search → FLIP re-rank of 8 turntables · 10 s loop',
+    duration: 10,
+    init(stage) {
+      const q = 'breathable plant-based sneaker'
+      const bar = el(stage, 'chip', '<span></span><i style="display:inline-block;width:1px;height:1.1em;background:#171717;vertical-align:-0.15em;margin-left:2px"></i>')
+      const codes = ['MFB-01', 'PBC-01', 'BSP-02', 'PRO-01', 'MFB-02', 'PBC-02', 'BSP-01', 'PBC-05']
+      const ranked = ['PBC-01', 'PRO-01', 'PBC-02', 'PBC-05', 'BSP-02', 'MFB-01', 'BSP-01', 'MFB-02']
+      const scores = { 'PBC-01': 98, 'PRO-01': 91, 'PBC-02': 84, 'PBC-05': 72 }
+      const tiles = codes.map((c) => {
+        const tile = el(stage, 'abs')
+        tile.style.cssText += 'background:rgb(255 255 255 / 0.55);border-radius:1.2cqw;'
+        const s = sprite(tile, byCode[c]); s.style.position = 'absolute'
+        const badge = el(tile, 'chip mono'); badge.textContent = scores[c] ? `${scores[c]}% match` : ''
+        return { c, tile, s, badge }
+      })
+      return (t, { w, h }) => {
+        const typed = Math.round(q.length * seg(t, 0.6, 3.2))
+        bar.firstChild.textContent = typed ? q.slice(0, typed) : 'Search bio-textiles…'
+        bar.firstChild.style.color = typed ? '#171717' : '#a6a09c'
+        bar.lastChild.style.opacity = Math.floor(t * 2.4) % 2 ? 1 : 0
+        bar.style.transform = `translate3d(${w / 2 - bar.offsetWidth / 2}px, ${h * 0.07}px, 0)`
+        const sort = inOut(seg(t, 3.4, 4.6)) * (1 - inOut(seg(t, 8.6, 9.6)))
+        const cols = 4, gap = w * 0.018, tw = (w * 0.74 - gap * 3) / cols, th = tw * 0.68
+        const x0 = (w - (tw * cols + gap * 3)) / 2, y0 = h * 0.22
+        tiles.forEach(({ c, tile, s, badge }, i) => {
+          const j = ranked.indexOf(c)
+          const x = lerp(x0 + (i % cols) * (tw + gap), x0 + (j % cols) * (tw + gap), sort)
+          const y = lerp(y0 + Math.floor(i / cols) * (th + gap), y0 + Math.floor(j / cols) * (th + gap), sort)
+          const hit = scores[c] !== undefined
+          tile.style.width = `${tw}px`; tile.style.height = `${th}px`
+          tile.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${hit ? 1 + 0.03 * sort : 1 - 0.06 * sort})`
+          tile.style.opacity = hit ? 1 : 1 - 0.55 * sort
+          tile.style.zIndex = hit ? 2 : 1
+          const ss = th * 0.95
+          s.style.width = s.style.height = `${ss}px`; s.style.left = `${(tw - ss) / 2}px`; s.style.top = `${(th - ss) / 2}px`
+          frame(s, t * 6 + i * 4)
+          badge.style.transform = `translate3d(${tw * 0.06}px, ${tw * 0.06}px, 0) scale(${0.9 + 0.1 * sort})`
+          badge.style.opacity = hit ? sort : 0
+          badge.style.fontSize = '1cqw'
+        })
+      }
+    },
+  },
+  {
+    name: 'Taxonomy sort',
+    idea: 'Chaos into order: sixteen products drift loose, then file themselves into the four material families, then let go again.',
+    meta: 'All products × 4 categories · 10 s loop',
+    duration: 10,
+    init(stage) {
+      const r = rng(7)
+      const items = PRODUCTS.slice(0, 16).map((p) => ({ p, e: sprite(stage, p), sx: 0.08 + r() * 0.84, sy: 0.12 + r() * 0.6, ph: r() * 6.28, f: r() * 36 }))
+      const heads = CATEGORIES.map((c) => { const e = el(stage, 'label'); e.textContent = c.short; e.style.color = '#6f6b68'; return e })
+      const buckets = CATEGORIES.map((c) => items.filter((it) => it.p.category === c.key))
+      return (t, { w, h }) => {
+        const order = inOut(seg(t, 2.2, 3.8)) * (1 - inOut(seg(t, 7.6, 9.2)))
+        const colW = w * 0.2, x0 = w / 2 - colW * 1.5
+        buckets.forEach((b, ci) => b.forEach((it, k) => {
+          const perRow = 3, cell = colW / perRow
+          const tx = x0 + ci * colW + ((k % perRow) - (Math.min(b.length, perRow) - 1) / 2) * cell
+          const ty = h * 0.3 + Math.floor(k / perRow) * cell * 1.05
+          const fx = it.sx * w + Math.sin(t * 0.7 + it.ph) * w * 0.02, fy = it.sy * h + Math.cos(t * 0.6 + it.ph) * h * 0.03
+          const s = lerp(h * 0.2, cell * 1.1, order)
+          place(it.e, lerp(fx, tx, order), lerp(fy, ty, order), s)
+          frame(it.e, it.f + t * 4)
+        }))
+        heads.forEach((e, ci) => {
+          e.style.transform = `translate3d(${x0 + ci * colW - e.offsetWidth / 2}px, ${h * 0.14 + (1 - order) * 10}px, 0)`
+          e.style.opacity = order
+        })
+      }
+    },
+  },
+  {
+    name: 'Lab scan',
+    idea: 'The FutureFabric material scan, big: a sweep passes over the product, reading it as a material specimen with a live loupe on the real surface photo.',
+    meta: 'Scan UI language (lock, sweep, crosshair) + surface crops · 12 s loop',
+    duration: 12,
+    init(stage) {
+      const base = sprite(stage, byCode['MFB-01'])
+      const xray = sprite(stage, byCode['MFB-01'])
+      xray.style.filter = 'grayscale(1) contrast(1.6) brightness(1.15)'
+      const line = el(stage, 'abs'); line.style.cssText += 'width:1.5px;background:#171717;'
+      const loupe = el(stage, 'abs'); loupe.style.cssText += 'border-radius:50%;border:1.5px solid #171717;background-size:cover;background-position:center;box-shadow:0 1cqw 3cqw rgb(23 23 23 / .18)'
+      const hud = el(stage, 'label mono'); hud.style.lineHeight = '1.6'
+      const bracket = el(stage, 'abs'); bracket.style.cssText += 'border:1.5px solid #171717;border-radius:0.6cqw;'
+      const picks = ['MFB-01', 'PBC-01', 'PRO-02']
+      return (t, { w, h }) => {
+        const i = Math.floor(t / 4) % 3, u = (t % 4) / 4, p = byCode[picks[i]]
+        setSprite(base, p); setSprite(xray, p)
+        const s = h * 0.78, cx = w * 0.42, cy = h * 0.46
+        place(base, cx, cy, s); place(xray, cx, cy, s)
+        const f = 6 + u * 6; frame(base, f); frame(xray, f)
+        const sweep = inOut(seg(u, 0.1, 0.75))
+        const lx = lerp(cx - s * 0.42, cx + s * 0.42, sweep)
+        const cut = ((lx - (cx - s / 2)) / s) * 100
+        xray.style.clipPath = `inset(0 ${100 - cut}% 0 0)`
+        const fade = 1 - seg(u, 0.9, 1)
+        base.style.opacity = xray.style.opacity = fade * outCubic(seg(u, 0, 0.1))
+        line.style.height = `${s * 0.86}px`; line.style.transform = `translate3d(${lx}px, ${cy - s * 0.43}px, 0)`
+        line.style.opacity = sweep > 0 && sweep < 1 ? fade : 0
+        const ls = h * 0.26
+        loupe.style.width = loupe.style.height = `${ls}px`
+        loupe.style.backgroundImage = `url(${ROOT}/scans/${p.code}-surface.webp)`
+        loupe.style.transform = `translate3d(${w * 0.7}px, ${h * 0.14}px, 0) scale(${outCubic(seg(u, 0.35, 0.55)) * fade})`
+        bracket.style.width = `${s * 0.7}px`; bracket.style.height = `${s * 0.86}px`
+        bracket.style.transform = `translate3d(${cx - s * 0.35}px, ${cy - s * 0.43}px, 0)`
+        bracket.style.opacity = (0.6 - 0.6 * seg(u, 0.75, 0.85)) * fade
+        const lines = [`01 / LOCK   ${p.code}`, p.material.toUpperCase(), p.category.toUpperCase()]
+        const shown = Math.floor(seg(u, 0.4, 0.8) * 3 + 0.999)
+        hud.innerHTML = lines.slice(0, shown).join('<br>')
+        hud.style.transform = `translate3d(${w * 0.7}px, ${h * 0.14 + ls + h * 0.04}px, 0)`
+        hud.style.opacity = fade
+        hud.style.fontSize = '1cqw'
+      }
+    },
+  },
+  {
+    name: 'Shape field',
+    idea: 'The FutureFabric mark as a system: a grid of triangles rolls into rounded squares and circles on a diagonal wave, and each circle opens onto a product.',
+    meta: 'Triangle → square → circle mark · 9 s loop',
+    duration: 9,
+    init(stage) {
+      const N = 48
+      const shapes = {
+        tri: Array.from({ length: N }, (_, i) => { const a = (i / N) * Math.PI * 2 - Math.PI / 2; const k = Math.floor((i / N) * 3), f = (i / N) * 3 - k; const v = [0, 1, 2].map((j) => [Math.cos(-Math.PI / 2 + j * 2.094), Math.sin(-Math.PI / 2 + j * 2.094)]); const A = v[k], B = v[(k + 1) % 3]; return [lerp(A[0], B[0], f) * 0.95, lerp(A[1], B[1], f) * 0.95 + 0.12] }),
+        sq: Array.from({ length: N }, (_, i) => { const a = (i / N) * Math.PI * 2 - Math.PI / 2; const c = Math.cos(a), s = Math.sin(a); const n = 6; const r = 1 / Math.pow(Math.abs(c) ** n + Math.abs(s) ** n, 1 / n); return [c * r * 0.78, s * r * 0.78] }),
+        circ: Array.from({ length: N }, (_, i) => { const a = (i / N) * Math.PI * 2 - Math.PI / 2; return [Math.cos(a), Math.sin(a)] }),
+      }
+      const cols = 7, rows = 4
+      const cells = []
+      const pool = PRODUCTS
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const cell = el(stage, 'abs')
+        cell.style.background = '#171717'
+        const s = sprite(cell, pool[(r * cols + c) % pool.length]); s.style.position = 'absolute'; s.style.left = s.style.top = '0'
+        cells.push({ r, c, cell, s })
+      }
+      return (t, { w, h }) => {
+        const size = Math.min(w / (cols + 0.6), h / (rows + 0.6)) * 0.78
+        const gx = w / cols, gy = h / rows
+        cells.forEach(({ r, c, cell, s }, idx) => {
+          const wave = (t / 9) * 2 - (c + r) / (cols + rows) // travels diagonally
+          const m = clamp(Math.sin(mod(wave, 1) * Math.PI) * 1.4) * 2 // 0 tri → 1 sq → 2 circle
+          const A = m < 1 ? shapes.tri : shapes.sq, B = m < 1 ? shapes.sq : shapes.circ, k = inOut(m < 1 ? m : m - 1)
+          const poly = A.map((p, i) => `${(50 + lerp(p[0], B[i][0], k) * 50).toFixed(2)}% ${(50 + lerp(p[1], B[i][1], k) * 50).toFixed(2)}%`).join(',')
+          cell.style.clipPath = `polygon(${poly})`
+          cell.style.width = cell.style.height = `${size}px`
+          cell.style.transform = `translate3d(${gx * (c + 0.5) - size / 2}px, ${gy * (r + 0.5) - size / 2}px, 0) rotate(${(1 - clamp(m / 2)) * 0}deg)`
+          const open = outCubic(seg(m, 1.4, 2))
+          cell.style.background = `rgb(${lerp(23, 255, open)} ${lerp(23, 255, open)} ${lerp(23, 255, open)})`
+          s.style.width = s.style.height = `${size}px`
+          s.style.opacity = open
+          s.style.transform = `scale(${lerp(0.6, 1.05, open)})`
+          frame(s, t * 5 + idx * 3)
+        })
+      }
+    },
+  },
+  {
+    name: 'Catalog wall',
+    idea: 'Scale at a glance: three tilted rails of spinning products slide past at different speeds, like a wall of the whole catalog.',
+    meta: 'All 17 turntables on 3 rails · 16 s loop',
+    duration: 16,
+    init(stage) {
+      const wall = el(stage, 'abs'); wall.style.transformOrigin = '50% 50%'
+      const rows = [0, 1, 2].map((ri) => ({ ri, items: Array.from({ length: 9 }, (_, i) => { const p = PRODUCTS[(i * 2 + ri * 5) % PRODUCTS.length]; const cardEl = el(wall, 'abs'); cardEl.style.cssText += 'background:rgb(255 255 255 / .6);border-radius:1.4cqw;'; const s = sprite(cardEl, p); s.style.position = 'absolute'; return { cardEl, s } }) }))
+      return (t, { w, h }) => {
+        wall.style.width = `${w}px`; wall.style.height = `${h}px`
+        wall.style.transform = 'rotate(-9deg) scale(1.25)'
+        const tile = h * 0.3, gap = tile * 0.12, span = (tile + gap) * 9
+        rows.forEach(({ ri, items }) => {
+          const dir = ri % 2 ? 1 : -1, speed = [1, 1.5, 0.75][ri]
+          // Whole number of tiles per loop keeps the seam invisible.
+          const shift = (t / 16) * (tile + gap) * 3 * speed * 2
+          items.forEach(({ cardEl, s }, i) => {
+            const x = mod(i * (tile + gap) + dir * shift, span) - (tile + gap)
+            const y = h / 2 + (ri - 1) * (tile + gap) - tile / 2
+            cardEl.style.width = cardEl.style.height = `${tile}px`
+            cardEl.style.transform = `translate3d(${x}px, ${y}px, 0)`
+            s.style.width = s.style.height = `${tile}px`
+            frame(s, t * 4.5 + i * 7 + ri * 3)
+          })
+        })
+      }
+    },
+  },
+  {
+    name: 'Spotlight index',
+    idea: 'One product at a time, big and confident: it spins in, a product code ticks over like an index, and the next one blurs through.',
+    meta: 'Code counter + name + category · 14 s loop',
+    duration: 14,
+    init(stage) {
+      const picks = ['MFB-01', 'PBC-01', 'PRO-02', 'BSP-03', 'MFB-03', 'PBC-06', 'BSP-01'].map((c) => byCode[c])
+      const a = sprite(stage, picks[0]), b = sprite(stage, picks[1])
+      const code = el(stage, 'abs mono'); code.style.cssText += 'font-size:6.2cqw;font-weight:500;color:#171717;letter-spacing:-0.02em;line-height:1;'
+      const name = el(stage, 'label'); name.style.fontSize = '1.6cqw'
+      const cat = el(stage, 'chip')
+      const count = el(stage, 'label mono'); count.style.color = '#6f6b68'
+      return (t, { w, h }) => {
+        const i = Math.floor(t / 2) % picks.length, u = (t % 2) / 2
+        const cur = picks[i], nxt = picks[(i + 1) % picks.length]
+        setSprite(a, cur); setSprite(b, nxt)
+        const swap = inOut(seg(u, 0.78, 1))
+        const s = h * 0.9
+        place(a, w * 0.63 - swap * w * 0.06, h * 0.5, s * (1 - 0.12 * swap)); a.style.opacity = 1 - swap; a.style.filter = `blur(${swap * 10}px)`
+        place(b, w * 0.63 + (1 - swap) * w * 0.06, h * 0.5, s * (0.88 + 0.12 * swap)); b.style.opacity = swap; b.style.filter = `blur(${(1 - swap) * 10}px)`
+        const spin = outQuint(u) * 36
+        frame(a, 9 + spin); frame(b, 9)
+        // Roll the code characters that change.
+        const rolled = [...cur.code].map((ch, k) => (swap > 0.5 ? nxt.code[k] : ch)).join('')
+        code.textContent = rolled
+        code.style.transform = `translate3d(${w * 0.07}px, ${h * 0.2 - (swap > 0.5 ? (1 - swap) : -swap) * h * 0.04}px, 0)`
+        code.style.opacity = 1 - Math.sin(swap * Math.PI) * 0.8
+        const shown = swap > 0.5 ? nxt : cur
+        name.textContent = `${shown.name} — ${shown.companies}`
+        name.style.transform = `translate3d(${w * 0.07}px, ${h * 0.36}px, 0)`
+        name.style.opacity = 1 - Math.sin(swap * Math.PI)
+        cat.textContent = shown.category
+        cat.style.transform = `translate3d(${w * 0.07}px, ${h * 0.44}px, 0)`
+        cat.style.opacity = 1 - Math.sin(swap * Math.PI)
+        count.textContent = `${String((swap > 0.5 ? i + 1 : i) % picks.length + 1).padStart(2, '0')} / ${String(PRODUCTS.length).padStart(2, '0')}`
+        count.style.transform = `translate3d(${w * 0.07}px, ${h * 0.1}px, 0)`
+      }
+    },
+  },
+  {
+    name: 'Grown, not made',
+    idea: 'For the microbial family: mycelium threads grow out from the centre across the card, knit into a mat, and the mat becomes a mycelium-grown product.',
+    meta: 'Procedural hyphae + Reishi / EPHEA / Mylo turntables · 10 s loop',
+    duration: 10,
+    init(stage) {
+      const c = document.createElement('canvas'); c.className = 'fill'; stage.append(c)
+      const ctx = c.getContext('2d')
+      const prod = sprite(stage, byCode['MFB-02'])
+      const label = el(stage, 'label mono')
+      // Precompute branching hyphae: each segment has a birth time in [0, 1].
+      const r = rng(21), segs = []
+      const grow = (x, y, a, t0, depth) => {
+        let px = x, py = y, t = t0
+        const n = 20 + Math.floor(r() * 16)
+        for (let i = 0; i < n && t < 1; i++) {
+          a += (r() - 0.5) * 0.5
+          const nx = px + Math.cos(a) * 0.022, ny = py + Math.sin(a) * 0.022 * 1.76
+          segs.push([px, py, nx, ny, t, depth])
+          px = nx; py = ny; t += 0.012 + r() * 0.01
+          if (depth < 4 && r() < 0.12) grow(px, py, a + (r() < 0.5 ? -1 : 1) * (0.5 + r() * 0.6), t, depth + 1)
+        }
+      }
+      for (let k = 0; k < 9; k++) grow(0.5, 0.46, (k / 9) * Math.PI * 2, 0, 0)
+      const picks = ['MFB-02', 'MFB-01', 'MFB-03']
+      return (t, { w, h, dpr }) => {
+        if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr) }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h)
+        const cycle = Math.floor(t / 10), u = (t % 10) / 10
+        const g = seg(u, 0, 0.55) * 0.95
+        const fade = 1 - seg(u, 0.88, 1)
+        const mat = seg(u, 0.5, 0.7)
+        ctx.lineCap = 'round'
+        for (const [x1, y1, x2, y2, born, d] of segs) {
+          if (born > g) continue
+          const age = clamp((g - born) / 0.05)
+          ctx.strokeStyle = `rgba(140,122,124,${(0.55 - d * 0.08) * fade * (1 - mat * 0.5)})`
+          ctx.lineWidth = Math.max(0.6, h * (0.004 - d * 0.0006))
+          ctx.beginPath(); ctx.moveTo(x1 * w, y1 * h); ctx.lineTo(lerp(x1, x2, age) * w, lerp(y1, y2, age) * h); ctx.stroke()
+        }
+        // The mat: a soft disc that thickens where growth is densest.
+        const disc = outCubic(mat)
+        const grad = ctx.createRadialGradient(w / 2, h * 0.46, 0, w / 2, h * 0.46, h * 0.46)
+        grad.addColorStop(0, `rgba(255,255,255,${0.75 * disc * fade})`); grad.addColorStop(1, 'rgba(255,255,255,0)')
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h)
+        const p = byCode[picks[Math.floor(t / 10) % picks.length]]
+        setSprite(prod, p)
+        const show = outCubic(seg(u, 0.58, 0.78))
+        place(prod, w / 2, h * 0.46, h * 0.72 * lerp(0.7, 1, show))
+        prod.style.opacity = show * fade
+        frame(prod, u * 30)
+        label.textContent = `${p.code} · ${p.material}`
+        label.style.transform = `translate3d(${w / 2 - label.offsetWidth / 2}px, ${h * 0.83}px, 0)`
+        label.style.opacity = show * fade
+      }
+    },
+  },
+]
+
+// ---------- gallery harness ----------
+const TITLE = 'EcoFabriq – Personalized AI-Driven Smart Product Discovery for Bio-Textiles'
+let speed = 1
+const players = []
+
+function makeCard(concept) {
+  const card = document.createElement('div')
+  card.className = 'card'
+  const stage = el(card, 'stage')
+  card.insertAdjacentHTML('beforeend', `<div class="shade"></div><p class="title">${TITLE}</p>`)
+  const render = concept.init(stage)
+  return { card, stage, render }
+}
+
+CONCEPTS.forEach((concept, index) => {
+  const fig = document.createElement('figure')
+  const { card, stage, render } = makeCard(concept)
+  fig.append(card)
+  fig.insertAdjacentHTML('beforeend', `
+    <div class="scrub"><button type="button" aria-label="Pause">❚❚</button><input type="range" min="0" max="${concept.duration}" step="0.01" value="0"><output>0.0s</output></div>
+    <figcaption><div class="name"><span class="num">${String(index + 1).padStart(2, '0')}</span>${concept.name}</div><div class="idea">${concept.idea}</div><div class="meta">${concept.meta}</div></figcaption>`)
+  document.getElementById('grid').append(fig)
+  const [btn, range, out] = fig.querySelectorAll('.scrub > *')
+  const player = { concept, card, stage, render, t: 0, playing: true, visible: false, range, out, btn, index }
+  btn.onclick = () => { player.playing = !player.playing; btn.textContent = player.playing ? '❚❚' : '▶' }
+  range.oninput = () => { player.t = +range.value; player.playing = false; btn.textContent = '▶'; draw(player) }
+  card.onclick = () => openFocus(index)
+  players.push(player)
+})
+
+function size(stage) { return { w: stage.clientWidth, h: stage.clientHeight, dpr: Math.min(2, devicePixelRatio || 1) } }
+function draw(p, stage = p.stage, render = p.render) {
+  const s = size(stage)
+  if (!s.w) return
+  render(p.t, s)
+  p.range.value = p.t
+  p.out.textContent = `${p.t.toFixed(1)}s`
+}
+
+const io = new IntersectionObserver((entries) => { for (const e of entries) { const p = players.find((q) => q.card === e.target); if (p) p.visible = e.isIntersecting } })
+players.forEach((p) => io.observe(p.card))
+
+// Focus view: a second instance of the same concept, driven by the same clock.
+const focus = document.getElementById('focus'), slot = document.getElementById('focusSlot'), cap = document.getElementById('focusCap')
+let focused = null
+function openFocus(index) {
+  const p = players[index]
+  slot.innerHTML = ''
+  const big = makeCard(p.concept)
+  slot.append(big.card)
+  big.card.onclick = closeFocus
+  focused = { p, ...big }
+  cap.innerHTML = `<b>${String(index + 1).padStart(2, '0')} · ${p.concept.name}</b> — ${p.concept.idea}`
+  focus.dataset.open = ''
+}
+function closeFocus() { delete focus.dataset.open; slot.innerHTML = ''; focused = null }
+focus.onclick = (e) => { if (e.target === focus) closeFocus() }
+addEventListener('keydown', (e) => {
+  if (!focused) return
+  if (e.key === 'Escape') closeFocus()
+  if (e.key === 'ArrowRight') openFocus((focused.p.index + 1) % players.length)
+  if (e.key === 'ArrowLeft') openFocus((focused.p.index + players.length - 1) % players.length)
+})
+
+let last = performance.now()
+function tick(now) {
+  const dt = Math.min(0.1, (now - last) / 1000) * speed
+  last = now
+  for (const p of players) {
+    if (p.playing) p.t = mod(p.t + dt, p.concept.duration)
+    if (p.visible && !focused) draw(p)
+  }
+  if (focused) {
+    const s = size(focused.stage)
+    if (s.w) focused.render(focused.p.t, s)
+  }
+  requestAnimationFrame(tick)
+}
+requestAnimationFrame(tick)
+
+for (const b of document.querySelectorAll('[data-speed]')) b.onclick = () => {
+  speed = +b.dataset.speed
+  for (const o of document.querySelectorAll('[data-speed]')) o.setAttribute('aria-pressed', String(o === b))
+}
+document.getElementById('replay').onclick = () => players.forEach((p) => { p.t = 0; p.playing = true; p.btn.textContent = '❚❚' })
+document.getElementById('titleToggle').onclick = (e) => {
+  const on = document.body.classList.toggle('no-title')
+  e.currentTarget.setAttribute('aria-pressed', String(!on))
+}
+</script>
+</body>
+</html>

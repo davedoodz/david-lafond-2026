@@ -1,0 +1,138 @@
+[
+ {
+  "code": "MFB-01",
+  "name": "EPHEA™ Floor-Length Coat",
+  "companies": "Balenciaga",
+  "sprite": "balenciaga-ephea-mycelium-coat-fw2022-spritesheet.webp",
+  "category": "Microbial and fungal bioassembled",
+  "material": "Ephea mycelium leather"
+ },
+ {
+  "code": "PBC-01",
+  "name": "Air Max 90 Happy Pineapple",
+  "companies": "Nike × Piñatex",
+  "sprite": "nike-partners-with-pinatex-for-happy-pineapple-plant-based-sneaker-collection-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Piñatex pineapple-leaf fiber"
+ },
+ {
+  "code": "BSP-01",
+  "name": "Frayme Veuve Clicquot Bucket Bag",
+  "companies": "Stella McCartney × Veuve Clicquot",
+  "sprite": "stella-mccartney-x-veuve-clicquot-vegea-frayme-grape-waste-woven-bag-spritesheet.webp",
+  "category": "Bio-based synthetic polymers",
+  "material": "VEGEA grape-waste leather"
+ },
+ {
+  "code": "PBC-02",
+  "name": "Piñatex® Sandal",
+  "companies": "Zara × Piñatex",
+  "sprite": "zara-pinatex-sandal-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Piñatex pineapple-leaf fiber"
+ },
+ {
+  "code": "PBC-03",
+  "name": "Tote Bag by Piñatex®",
+  "companies": "Zara × Piñatex",
+  "sprite": "zara-pinatex-bag-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Piñatex pineapple-leaf fiber"
+ },
+ {
+  "code": "BSP-02",
+  "name": "PLA Windbreaker",
+  "companies": "Xtep",
+  "sprite": "xtep-pla-windbreaker-spritesheet.webp",
+  "category": "Bio-based synthetic polymers",
+  "material": "PLA biopolymer"
+ },
+ {
+  "code": "PRO-01",
+  "name": "Wool Runner",
+  "companies": "Allbirds",
+  "sprite": "allbirds-wool-runners-spritesheet.webp",
+  "category": "Protein-based",
+  "material": "ZQ Merino wool"
+ },
+ {
+  "code": "MFB-02",
+  "name": "Reishi™",
+  "companies": "MycoWorks",
+  "sprite": "reishi-spritesheet.webp",
+  "category": "Microbial and fungal bioassembled",
+  "material": "Reishi mycelium leather"
+ },
+ {
+  "code": "PBC-04",
+  "name": "Orange Fiber Capsule Collection",
+  "companies": "Salvatore Ferragamo",
+  "sprite": "ferragamo-orange-fiber-collection-2017-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Orange Fiber citrus cellulose"
+ },
+ {
+  "code": "MFB-03",
+  "name": "Mylo™ Bustier and Trousers",
+  "companies": "Stella McCartney × Bolt Threads",
+  "sprite": "stella-mccartney-mylo-bustier-and-trousers-2021-spritesheet.webp",
+  "category": "Microbial and fungal bioassembled",
+  "material": "Mylo mycelium leather"
+ },
+ {
+  "code": "MFB-04",
+  "name": "Coprinus",
+  "companies": "Mogu",
+  "sprite": "coprinus-spritesheet.webp",
+  "category": "Microbial and fungal bioassembled",
+  "material": "Coprinus fungal mycelium"
+ },
+ {
+  "code": "PBC-05",
+  "name": "TENCEL™ Luxe",
+  "companies": "Osman Yousefzada × Lenzing",
+  "sprite": "osman-yousefzada-ss22-tencel-luxe-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Tencel Luxe cellulosic filament"
+ },
+ {
+  "code": "PRO-02",
+  "name": "Brewed Protein™ Couture",
+  "companies": "Yuima Nakazato × Spiber",
+  "sprite": "yuima-nakazato-couture-with-brewed-protein-spritesheet.webp",
+  "category": "Protein-based",
+  "material": "Brewed Protein™ fiber"
+ },
+ {
+  "code": "PBC-06",
+  "name": "Circ Lyocell",
+  "companies": "Christian Siriano × Circ",
+  "sprite": "christian-siriano-ss2025-circ-lyocell-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Circ Lyocell recycled cellulose"
+ },
+ {
+  "code": "PBC-07",
+  "name": "E. Marinella made with Orange Fiber",
+  "companies": "E. Marinella",
+  "sprite": "slk-orangefiber-tieorange-fiber-collection-e-marinalla-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Orange Fiber citrus cellulose"
+ },
+ {
+  "code": "PBC-08",
+  "name": "Conscious Exclusive 2019",
+  "companies": "Orange Fiber × H&M",
+  "sprite": "orange-fiber-x-h-m-conscious-exclusive-collection-2019-spritesheet.webp",
+  "category": "Plant-based cellulosic",
+  "material": "Orange Fiber citrus cellulose"
+ },
+ {
+  "code": "BSP-03",
+  "name": "Moon Parka",
+  "companies": "The North Face × Spiber",
+  "sprite": "northface-spritesheet.webp",
+  "category": "Bio-based synthetic polymers",
+  "material": "Brewed Protein™ fiber"
+ }
+]
