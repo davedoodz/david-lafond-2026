@@ -191,3 +191,31 @@ html[data-works-snap] body:has(.works) .footer {
   outline-offset: 4px;
 }
 
+
+/* EcoFabriq catalog wall (EcoFabriqCard). */
+.ecowall {
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ecowall__wall {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+}
+
+.ecowall__tile {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: var(--tile-radius, 16px);
+  background: rgb(255 255 255 / var(--tile-alpha, 0.6));
+  will-change: transform;
+}
+
+.ecowall__sprite {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 600% 600%;
+}

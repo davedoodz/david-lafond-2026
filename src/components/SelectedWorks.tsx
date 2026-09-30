@@ -19,6 +19,7 @@ import { springEasing } from '../lib/springEasing'
 import { useTuning } from '../tuning/useTuning'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
 import { HarvardMitCard } from './HarvardMitCard'
+import { EcoFabriqCard } from './EcoFabriqCard'
 import { MeshCard } from './MeshCard'
 import { MomoCard } from './MomoCard'
 import { useProjectOpen } from '../features/projectOpen/useProjectOpen'
@@ -377,6 +378,7 @@ export function SelectedWorks() {
                   )}
                   {work.id === 'unwind' && <MeshCard />}
                   {work.id === 'unwind' && <MomoCard />}
+                  {work.id === 'ecofabriq' && <EcoFabriqCard />}
                   {work.id === 'harvard-mit' && <HarvardMitCard />}
                   <div className="card-shade" />
                   <h3 className="card-title works__title">
