@@ -62,7 +62,15 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
       schedule()
     })
     resize.observe(root)
-    const mutations = new MutationObserver(schedule)
+    // Only text changes inside a column matter (live edits, dial copy). The footer clock
+    // ticking every second would otherwise re-measure every text line on the page.
+    const mutations = new MutationObserver((records) => {
+      const inColumn = records.some((r) => {
+        const el = r.target instanceof Element ? r.target : r.target.parentElement
+        return Boolean(el?.closest('.column'))
+      })
+      if (inColumn) schedule()
+    })
     mutations.observe(root, { subtree: true, childList: true, characterData: true })
     void document.fonts.ready.then(schedule)
 

@@ -84,7 +84,8 @@ export function App() {
             {harvardMitChunk.module ? (
               <harvardMitChunk.module.HarvardMitPage />
             ) : (
-              <Suspense fallback={null}>
+              // A screen-tall placeholder keeps the footer below the fold while the chunk loads (no layout jump).
+              <Suspense fallback={<div style={{ minHeight: '100svh' }} />}>
                 <LazyHarvardMitPage />
               </Suspense>
             )}

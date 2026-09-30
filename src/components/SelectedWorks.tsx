@@ -168,7 +168,10 @@ export function SelectedWorks() {
 
   useEffect(() => {
     const section = sectionRef.current
-    if (!section) return
+    // Written on the background layer itself (its only consumer): set on the section it
+    // would restyle every card underneath on each scroll frame.
+    const bg = section?.querySelector<HTMLElement>('.works__bg')
+    if (!section || !bg) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const mobile = window.matchMedia('(max-width: 640px)')
     let frame = 0
@@ -186,7 +189,7 @@ export function SelectedWorks() {
       const x = reduced ? 0 : curve(clamp01((vh * (1 - morph.exitStart) - rect.bottom) / (morph.exitDistance * vh)))
 
       const side = Math.max(morph.startSide * (1 - e), morph.endSide * x) * vw / 100
-      section.style.setProperty(
+      bg.style.setProperty(
         '--works-clip',
         domeClip(
           side,

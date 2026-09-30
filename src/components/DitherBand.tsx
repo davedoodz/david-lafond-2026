@@ -245,13 +245,34 @@ export function DitherBand({ position }: Props) {
     let amt = 0
     let raf = 0
 
+    // The band's box in page coordinates, measured once and on resize. Reading it
+    // per frame forced a layout on every scroll frame; the viewport rect is derived
+    // from the scroll offset instead.
+    // Re-measured at most twice a second as a backstop for content moving the footer band.
+    let box: { left: number; top: number; width: number; height: number } | null = null
+    let measuredAt = 0
+    const measure = (): void => {
+      const r = host.getBoundingClientRect()
+      box = { left: r.left + window.scrollX, top: r.top + window.scrollY, width: r.width, height: r.height }
+      measuredAt = performance.now()
+    }
+    const resize = new ResizeObserver(() => {
+      box = null
+    })
+    resize.observe(host)
+    resize.observe(document.documentElement)
+
     const tick = (): void => {
       raf = 0
       const mount = mountRef.current
       const canvas = host.querySelector('canvas')
       if (!mount || !canvas) return
       const m = mouseRef.current
-      const rect = host.getBoundingClientRect()
+      if (!box || performance.now() - measuredAt > 500) measure()
+      const b = box!
+      const left = b.left - window.scrollX
+      const top = b.top - window.scrollY
+      const rect = { left, top, right: left + b.width, bottom: top + b.height, width: b.width, height: b.height }
       const inside =
         hasPointer &&
         m.enabled &&
@@ -303,6 +324,7 @@ export function DitherBand({ position }: Props) {
     window.addEventListener('scroll', kick, { passive: true })
     return () => {
       cancelAnimationFrame(raf)
+      resize.disconnect()
       window.removeEventListener('pointermove', onMove)
       document.removeEventListener('pointerout', onLeave)
       window.removeEventListener('scroll', kick)

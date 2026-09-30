@@ -171,6 +171,13 @@ html[data-about-snap] .about .footer {
   scroll-snap-align: end;
 }
 
+/* Written on every scroll frame and read only by the sheet itself: not inherited, so a
+   change doesn't restyle the playground, graph and footer inside it. */
+@property --dome-clip {
+  syntax: '*';
+  inherits: false;
+}
+
 /* Dome (dome.show): the dark sheet peeks above the fold as an arched tip and
    flattens as it scrolls up. Its own snap area starts at the peek, so the story's
    end still leaves the tip showing. */

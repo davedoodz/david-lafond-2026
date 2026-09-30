@@ -36,6 +36,14 @@
   justify-items: center;
 }
 
+/* Not inherited: it is written on every scroll frame and only the <li> itself uses it,
+   so a change restyles one element instead of the whole card inside. */
+@property --focus-scale {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
 .works__list > li {
   scale: var(--focus-scale, 1);
   width: min(867px, 100% - 2 * clamp(41px, 10.25vw, 206px));
