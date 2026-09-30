@@ -56,6 +56,7 @@
       <div class="opts">
         <span>Glow <button data-wave="silk">silk</button><button data-wave="surge">surge</button><button data-wave="lobes">lobes</button><button data-wave="swirl">swirl</button><button data-wave="nebula">nebula</button><button data-wave="bands">voice bands</button><button data-wave="liquid">liquid</button><button data-wave="ripple">ripple</button><button data-wave="petal">petal</button><button data-wave="tide">tide</button><button data-wave="round">round</button></span>
         <span>Prototype UI <button data-ui="off">off</button><button data-ui="on">on</button></span>
+        <span>Speed <button data-play="0.25">0.25×</button><button data-play="0.35">0.35×</button><button data-play="0.5">0.5×</button><button data-play="0.75">0.75×</button><button data-play="1">1×</button><input id="play-rate" type="range" min="0.1" max="1.5" step="0.05" style="width:110px;accent-color:#0b0a09"><output id="play-out"></output></span>
         <span>Drift <button data-drift="0.35">slow</button><button data-drift="0.5">calm</button><button data-drift="0.8">lively</button></span>
       </div>
       <div class="hint">Space play/pause · , . step 0.1s · click a chapter to jump · click the film to restart</div>
@@ -658,9 +659,9 @@
       // Player
       const film = document.getElementById('film'), fctx = film.getContext('2d')
       const range = document.getElementById('range'), timeOut = document.getElementById('time'), playBtn = document.getElementById('play'), chapters = document.getElementById('chapters')
-      let paused = null, start = performance.now()
-      const now = () => (paused !== null ? paused : Math.min(TOTAL, ((performance.now() - start) / 1000) % (TOTAL + HOLD)))
-      const setPaused = (at) => { if (at === null) start = performance.now() - (paused ?? 0) * 1000; paused = at; playBtn.textContent = at === null ? '❚❚' : '▶' }
+      let paused = null, start = performance.now(), PLAY = 0.5, clockMs = 0, lastMs = performance.now()
+      const now = () => (paused !== null ? paused : Math.min(TOTAL, (((performance.now() - start) / 1000) * PLAY) % (TOTAL + HOLD)))
+      const setPaused = (at) => { if (at === null) start = performance.now() - ((paused ?? 0) / PLAY) * 1000; paused = at; playBtn.textContent = at === null ? '❚❚' : '▶' }
       playBtn.onclick = () => setPaused(paused === null ? now() : null)
       range.oninput = () => setPaused(Number(range.value))
       film.onclick = () => { paused = null; setPaused(null); start = performance.now() }
@@ -674,6 +675,17 @@
         document.querySelectorAll('[data-drift]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.drift) === G.speed)))
         document.querySelectorAll('[data-ui]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.ui === 'on') === G.controls)))
       }
+      const playRate = document.getElementById('play-rate'), playOut = document.getElementById('play-out')
+      const setPlay = (v) => {
+        const t = now()
+        PLAY = v
+        if (paused === null) start = performance.now() - (t / PLAY) * 1000
+        playRate.value = String(v); playOut.textContent = `${v.toFixed(2)}×`
+        document.querySelectorAll('[data-play]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.play) === v)))
+        rebuild()
+      }
+      document.querySelectorAll('[data-play]').forEach((b) => (b.onclick = () => setPlay(Number(b.dataset.play))))
+      playRate.oninput = () => setPlay(Number(playRate.value))
       document.querySelectorAll('[data-ui]').forEach((b) => (b.onclick = () => { G.controls = b.dataset.ui === 'on'; syncOpts() }))
       document.querySelectorAll('[data-wave]').forEach((b) => (b.onclick = () => { G.wave = b.dataset.wave; syncOpts() }))
       document.querySelectorAll('[data-drift]').forEach((b) => (b.onclick = () => { G.speed = Number(b.dataset.drift); syncOpts() }))
@@ -705,6 +717,7 @@
       tiles.forEach((t) => (t.loopParts = shifted(t.loopParts)))
 
       rebuild()
+      setPlay(0.5)
       addEventListener('studio:render', (e) => {
         if (e.detail.pick) Object.assign(pick, e.detail.pick), rebuild()
         if (e.detail.opts) Object.assign(G, e.detail.opts)
@@ -714,11 +727,12 @@
       })
       await document.fonts.load(font(20))
       const frame = (ms) => {
-        RT = ms / 1000
+        clockMs += (ms - lastMs) * PLAY; lastMs = ms
+        RT = clockMs / 1000
         const t = now()
         renderParts(fctx, parts, t, 2)
         if (document.activeElement !== range) range.value = String(t)
-        timeOut.textContent = `${t.toFixed(2)}s / ${TOTAL.toFixed(1)}s`
+        timeOut.textContent = `${(t / PLAY).toFixed(1)}s / ${(TOTAL / PLAY).toFixed(1)}s at ${PLAY}×`
         const cur = [...chapters.children].filter((b) => Number(b.dataset.at) <= t).pop()
         ;[...chapters.children].forEach((b) => (b === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')))
         for (const tile of tiles) if (tile.visible) renderParts(tile.ctx, tile.loopParts, (RT + tile.off) % tile.len, 1)
