@@ -1,11 +1,22 @@
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { EditableText } from '../components/EditableText'
+import { PrototypeMomo, type PrototypeMomoValues } from './PrototypeMomo'
 
 /** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
 const flow = (name: string) => ({ src: `/work/unwind/flows/${name}.mp4`, poster: `/work/unwind/flows/${name}.webp` })
 
 /** A phone recording that plays only while on screen (and not for reduced motion). */
-export function PhoneVideo({ name, className = '' }: { name: string; className?: string }) {
+export function PhoneVideo({
+  name,
+  className = '',
+  momoId,
+  momo,
+}: {
+  name: string
+  className?: string
+  momoId?: string
+  momo?: PrototypeMomoValues
+}) {
   const ref = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     const video = ref.current
@@ -15,7 +26,12 @@ export function PhoneVideo({ name, className = '' }: { name: string; className?:
     return () => observer.disconnect()
   }, [])
   const { src, poster } = flow(name)
-  return <video ref={ref} className={`case__phone ${className}`.trim()} src={src} poster={poster} muted loop playsInline preload="metadata" aria-hidden="true" />
+  return (
+    <>
+      <video ref={ref} className={`case__phone ${className}`.trim()} src={src} poster={poster} muted loop playsInline preload="metadata" aria-hidden="true" />
+      {momoId && momo && <PrototypeMomo id={momoId} values={momo} mode={momoId === 'voice' ? 'awake' : 'asleep'} />}
+    </>
+  )
 }
 
 type Edit = (path: string) => (next: string) => void
@@ -53,7 +69,7 @@ export function StoryRow({ s, edit }: { s: Story; edit: Edit }) {
 
 /* ---------- Core flows: three phones, staggered, sliding with scroll ---------- */
 export type Flows = { eyebrow: string; title: string; notificationLabel: string; voiceLabel: string; entriesLabel: string; stagger: number; parallax: number }
-export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
+export function CoreFlows({ f, edit, momo }: { f: Flows; edit: Edit; momo?: Record<string, PrototypeMomoValues> }) {
   const ref = useRef<HTMLElement>(null)
   // Scroll drives a --flow progress (-1 → 1 as the row crosses the screen); phones offset from it.
   useLayoutEffect(() => {
@@ -115,7 +131,11 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
       <ol className="case__flows-row">
         {phones.map(([name, label], i) => (
           <li key={name} style={{ '--i': i, '--k': i - 1 } as CSSProperties}>
-            {name === 'notification' ? <LockNotification /> : <PhoneVideo name={name} />}
+            {name === 'notification' ? (
+              <LockNotification />
+            ) : (
+              <PhoneVideo name={name} momoId={name === 'entries' ? 'entriesFlow' : name} momo={momo?.[name === 'entries' ? 'entriesFlow' : name]} />
+            )}
             <EditableText as="p" className="case__phone-label" label={`${name} label`} value={label} onChange={edit(`flows.${name}Label`)} />
           </li>
         ))}
@@ -151,7 +171,7 @@ function LockNotification() {
 
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type Guided = { eyebrow: string; title: string; body: string; woopLabel: string; modelsLabel: string }
-export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
+export function GuidedPair({ g, edit, momo }: { g: Guided; edit: Edit; momo?: Record<string, PrototypeMomoValues> }) {
   return (
     <section className="case__section case__guided" data-section="guided" data-layout="guided" aria-labelledby="case-guided">
       <div className="case__flows-head">
@@ -167,7 +187,11 @@ export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
           ] as const
         ).map(([name, label, field]) => (
           <li key={name}>
-            <PhoneVideo name={name} />
+            <PhoneVideo
+              name={name}
+              momoId={name === 'guided-woop' ? 'guidedWoop' : 'guidedModels'}
+              momo={momo?.[name === 'guided-woop' ? 'guidedWoop' : 'guidedModels']}
+            />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}

@@ -75,6 +75,15 @@ const heroDials = (d: SectionDefaults & { role: string; timeline: string; team: 
   _collapsed: false,
 })
 
+const momoDials = () => ({
+  show: true,
+  /** Scale of the replacement Momo inside this prototype. */
+  scale: [1, 0.25, 2.5, 0.01] as Tuple,
+  /** Vertical nudge as % of the phone height. */
+  y: [0, -40, 40, 0.5] as Tuple,
+  _collapsed: true,
+})
+
 export const UNWIND_CONFIG = {
   page: pageDials,
   hero: heroDials({
@@ -103,6 +112,17 @@ export const UNWIND_CONFIG = {
     /** Harvard's shield reads smaller; scale it against the others. */
     harvardScale: [1, 0.5, 2, 0.05] as Tuple,
     _collapsed: true,
+  },
+  /** Each recording gets its own replacement Momo controls. */
+  prototypeMomo: {
+    hero: momoDials(),
+    voice: momoDials(),
+    entriesFlow: momoDials(),
+    guidedWoop: momoDials(),
+    guidedModels: momoDials(),
+    dynamic: momoDials(),
+    tracking: momoDials(),
+    _collapsed: false,
   },
   overview: sectionDials({
     eyebrow: 'Overview',
