@@ -54,7 +54,7 @@
         <output id="time">0.00s</output>
       </div>
       <div class="opts">
-        <span>Glow <button data-wave="silk">silk</button><button data-wave="surge">surge</button><button data-wave="lobes">lobes</button><button data-wave="swirl">swirl</button><button data-wave="nebula">nebula</button><button data-wave="bands">voice bands</button><button data-wave="liquid">liquid</button><button data-wave="ripple">ripple</button><button data-wave="petal">petal</button><button data-wave="tide">tide</button><button data-wave="round">round</button></span>
+        <span>Voice bands <button data-band="silk">silk</button><button data-band="strands">strands</button><button data-band="swell">swell</button><button data-band="braid">braid</button><button data-band="mist">mist</button></span>
         <span>Prototype UI <button data-ui="off">off</button><button data-ui="on">on</button></span>
         <span>Speed <button data-play="0.25">0.25×</button><button data-play="0.35">0.35×</button><button data-play="0.5">0.5×</button><button data-play="0.75">0.75×</button><button data-play="1">1×</button><input id="play-rate" type="range" min="0.1" max="1.5" step="0.05" style="width:110px;accent-color:#0b0a09"><output id="play-out"></output></span>
         <span>Drift <button data-drift="0.35">slow</button><button data-drift="0.5">calm</button><button data-drift="0.8">lively</button></span>
@@ -173,7 +173,20 @@
         bands: { kind: 'ribbon' },
         round: { kind: 'round' },
       }
-      const G = { wave: 'silk', speed: 0.5, controls: false }
+      const G = { wave: 'bands', band: 'silk', speed: 0.5, controls: false }
+      /**
+       * Voice-band presets. width: half-length (px); thick/thickReact: band height idle / pushed by voice;
+       * amp/ampReact: swing idle / pushed by voice; freq: waves along the band; speed: travel;
+       * spread: vertical gap between colours; phase: how far colours drift out of step (crossings);
+       * blur: edge softness; alpha: opacity.
+       */
+      const BANDS = {
+        silk: { width: 300, thick: 12, thickReact: 28, amp: 10, ampReact: 42, freq: 0.022, speed: 1, spread: 8, phase: 1, blur: 3, alpha: 1 },
+        strands: { width: 330, thick: 3, thickReact: 7, amp: 12, ampReact: 50, freq: 0.03, speed: 1.2, spread: 3, phase: 1.6, blur: 1.2, alpha: 1 },
+        swell: { width: 280, thick: 26, thickReact: 40, amp: 16, ampReact: 58, freq: 0.012, speed: 0.6, spread: 14, phase: 0.5, blur: 6, alpha: 0.85 },
+        braid: { width: 320, thick: 9, thickReact: 20, amp: 18, ampReact: 44, freq: 0.02, speed: 0.9, spread: 0, phase: 2.4, blur: 2.5, alpha: 1 },
+        mist: { width: 420, thick: 34, thickReact: 34, amp: 8, ampReact: 30, freq: 0.014, speed: 0.5, spread: 18, phase: 0.8, blur: 12, alpha: 0.7 },
+      }
       let RT = 0
       const OVER = 0.35
       const MCTX = document.createElement('canvas').getContext('2d')
@@ -290,14 +303,15 @@
             g.closePath(); g.fill()
           } else if (P.kind === 'ribbon') {
             g.restore(); g.save()
-            const half = lerp(260, 360, st.wide) * on, th = (12 + 28 * loud) * (1 - st.calm * 0.6) + 6
-            const amp = (10 + 42 * st.env * (1 - st.calm)) * (1 - st.bloom), yo = (k - 1.5) * 8 * (1 - st.calm)
+            const B = BANDS[G.band] ?? BANDS.silk
+            const half = B.width * lerp(0.87, 1.2, st.wide) * on, th = (B.thick + B.thickReact * loud) * (1 - st.calm * 0.6) + 4
+            const amp = (B.amp + B.ampReact * st.env * (1 - st.calm)) * (1 - st.bloom), yo = (k - 1.5) * B.spread * (1 - st.calm)
             const lg = g.createLinearGradient(st.gx - half, 0, st.gx + half, 0)
-            lg.addColorStop(0, hexA(c0, 0)); lg.addColorStop(0.5, hexA(c0, alpha)); lg.addColorStop(1, hexA(c0, 0))
-            const yAt = (xx, o) => st.gy + yo + o + amp * Math.exp(-(((xx - st.gx) / (half * 0.55)) ** 2)) * Math.sin(xx * 0.022 * (1 + k * 0.25) + RT * (1 + k * 0.35) + k)
-            g.filter = 'blur(3px)'; g.fillStyle = lg; g.beginPath()
+            lg.addColorStop(0, hexA(c0, 0)); lg.addColorStop(0.5, hexA(c0, alpha * B.alpha)); lg.addColorStop(1, hexA(c0, 0))
+            const yAt = (xx, o) => st.gy + yo + o + amp * Math.exp(-(((xx - st.gx) / (half * 0.55)) ** 2)) * Math.sin(xx * B.freq * (1 + k * 0.25) + RT * B.speed * (1 + k * 0.35) + k * B.phase)
+            g.filter = `blur(${B.blur}px)`; g.fillStyle = lg; g.beginPath()
             for (let xx = st.gx - half; xx <= st.gx + half; xx += 6) xx === st.gx - half ? g.moveTo(xx, yAt(xx, -th / 2)) : g.lineTo(xx, yAt(xx, -th / 2))
-            for (let xx = st.gx + half; xx >= st.gx - half; xx -= 6) g.lineTo(xx, yAt(xx, th / 2) + th * 0.3 * Math.sin(xx * 0.05 - RT * 1.5))
+            for (let xx = st.gx + half; xx >= st.gx - half; xx -= 6) g.lineTo(xx, yAt(xx, th / 2) + th * 0.3 * Math.sin(xx * 0.05 - RT * 1.5 * B.speed))
             g.closePath(); g.fill()
           } else {
             const w = (P.base + P.react * st.env * (1 - st.calm)) * (1 - st.bloom)
@@ -671,7 +685,7 @@
         if (e.key === ',' || e.key === '.') setPaused(clamp(now() + (e.key === '.' ? 0.1 : -0.1), 0, TOTAL))
       })
       const syncOpts = () => {
-        document.querySelectorAll('[data-wave]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.wave === G.wave)))
+        document.querySelectorAll('[data-band]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.band === G.band)))
         document.querySelectorAll('[data-drift]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.drift) === G.speed)))
         document.querySelectorAll('[data-ui]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.ui === 'on') === G.controls)))
       }
@@ -687,7 +701,7 @@
       document.querySelectorAll('[data-play]').forEach((b) => (b.onclick = () => setPlay(Number(b.dataset.play))))
       playRate.oninput = () => setPlay(Number(playRate.value))
       document.querySelectorAll('[data-ui]').forEach((b) => (b.onclick = () => { G.controls = b.dataset.ui === 'on'; syncOpts() }))
-      document.querySelectorAll('[data-wave]').forEach((b) => (b.onclick = () => { G.wave = b.dataset.wave; syncOpts() }))
+      document.querySelectorAll('[data-band]').forEach((b) => (b.onclick = () => { G.band = b.dataset.band; syncOpts() }))
       document.querySelectorAll('[data-drift]').forEach((b) => (b.onclick = () => { G.speed = Number(b.dataset.drift); syncOpts() }))
       syncOpts()
 
