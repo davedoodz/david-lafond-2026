@@ -8,6 +8,7 @@
  * screen until the runner calls `update`.
  */
 import { useSyncExternalStore } from 'react'
+import { flushSync } from 'react-dom'
 
 export type Route = 'work' | 'about' | 'harvard-mit' | 'unwind' | 'ecofabriq'
 
@@ -46,8 +47,12 @@ const listeners = new Set<() => void>()
 
 function commit(scrollY: number) {
   committedPath = normalize(window.location.pathname)
+  // Render the new page first: scrolling the old one clamps to its height, and the
+  // browser's scroll anchoring then drifts the restored position (Back landed at the footer).
+  flushSync(() => {
+    for (const listener of listeners) listener()
+  })
   window.scrollTo(0, scrollY)
-  for (const listener of listeners) listener()
 }
 
 // Back/forward restores each entry's own scroll position after the commit,

@@ -122,6 +122,31 @@
   animation-name: vt-wipe-down;
 }
 
+/* Sideways (Back from a project page): same sheet, entering from the right ('left')
+   or the left ('right'), leading corners rounded; the old page drifts the same way. */
+:root[data-vt='wipe'][data-vt-dir='left']::view-transition-old(root) {
+  animation-name: vt-drift-left;
+}
+:root[data-vt='wipe'][data-vt-dir='right']::view-transition-old(root) {
+  animation-name: vt-drift-right;
+}
+:root[data-vt='wipe'][data-vt-dir='left']::view-transition-new(root) {
+  clip-path: inset(0 round var(--vt-wipe-radius) 0 0 var(--vt-wipe-radius));
+  animation-name: vt-sheet-left, vt-square;
+}
+:root[data-vt='wipe'][data-vt-dir='right']::view-transition-new(root) {
+  clip-path: inset(0 round 0 var(--vt-wipe-radius) var(--vt-wipe-radius) 0);
+  animation-name: vt-sheet-right, vt-square;
+}
+:root[data-vt='wipe'][data-vt-wipe='reveal'][data-vt-dir='left']::view-transition-new(root) {
+  clip-path: none;
+  animation-name: vt-wipe-left;
+}
+:root[data-vt='wipe'][data-vt-wipe='reveal'][data-vt-dir='right']::view-transition-new(root) {
+  clip-path: none;
+  animation-name: vt-wipe-right;
+}
+
 @keyframes vt-fade-out {
   to {
     opacity: var(--vt-out-opacity);
@@ -202,6 +227,44 @@
 @keyframes vt-wipe-down {
   from {
     clip-path: inset(0 0 100% 0 round 0 0 var(--vt-wipe-radius) var(--vt-wipe-radius));
+  }
+  to {
+    clip-path: inset(0 round 0);
+  }
+}
+@keyframes vt-drift-left {
+  to {
+    opacity: max(var(--vt-out-opacity), 0.35);
+    transform: translateX(calc(var(--vt-dist) * -1));
+  }
+}
+@keyframes vt-drift-right {
+  to {
+    opacity: max(var(--vt-out-opacity), 0.35);
+    transform: translateX(var(--vt-dist));
+  }
+}
+@keyframes vt-sheet-left {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-sheet-right {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes vt-wipe-left {
+  from {
+    clip-path: inset(0 0 0 100% round var(--vt-wipe-radius) 0 0 var(--vt-wipe-radius));
+  }
+  to {
+    clip-path: inset(0 round 0);
+  }
+}
+@keyframes vt-wipe-right {
+  from {
+    clip-path: inset(0 100% 0 0 round 0 var(--vt-wipe-radius) var(--vt-wipe-radius) 0);
   }
   to {
     clip-path: inset(0 round 0);

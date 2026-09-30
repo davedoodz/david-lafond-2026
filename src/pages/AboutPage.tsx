@@ -12,6 +12,7 @@ import { useEntrance } from '../lib/useEntrance'
 import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { useFitColumn } from '../lib/useFitColumn'
 import { revealDials, useReveal } from '../lib/useReveal'
+import { storyEntranceDials, useStoryEntrance } from '../features/storyEntrance/storyEntrance'
 import { useTuningController } from '../tuning/useTuning'
 import './AboutPage.css'
 
@@ -59,6 +60,8 @@ const CONFIG = {
   },
   /** How the playground label and cards arrive as they scroll into view. */
   reveal: revealDials(),
+  /** How the heading and story arrive on load, tuned separately. soft = the shared Entrance rise. */
+  storyEntrance: storyEntranceDials(),
   spacing: {
     gapDesktop: [214, 40, 600, 1] as [number, number, number, number],
     gapMobile: [149, 24, 500, 1] as [number, number, number, number],
@@ -93,11 +96,15 @@ const CONFIG = {
   },
 }
 
+const STORY_TARGETS = { heading: '.about__heading', body: '.about__text' }
+
 export function AboutPage() {
   const [revealRun, setRevealRun] = useState(0)
+  const [storyRun, setStoryRun] = useState(0)
   const { values: t, setValue } = useTuningController('About', CONFIG, {
     onAction: (action) => {
       if (action === 'reveal.replay') setRevealRun((n) => n + 1)
+      if (action === 'storyEntrance.replay') setStoryRun((n) => n + 1)
     },
   })
 
@@ -107,6 +114,11 @@ export function AboutPage() {
   useSheetDepth(darkRef, lightRef, { values: t.sheet, radius: [45, 20] })
   useFitColumn(mainRef)
   const entrance = useEntrance()
+  const storyRef = useRef<HTMLElement>(null)
+  useStoryEntrance(storyRef, STORY_TARGETS, t.storyEntrance, storyRun)
+  // soft keeps the shared CSS rise; the other presets split the text and animate the pieces.
+  const headingSoft = t.storyEntrance.heading.preset === 'soft'
+  const bodySoft = t.storyEntrance.body.preset === 'soft'
   const playRef = useRef<HTMLElement>(null)
   useReveal(playRef, '#play-title, .pg-card', t.reveal, revealRun)
 
@@ -279,20 +291,20 @@ export function AboutPage() {
         <div className="about__top-stop" aria-hidden="true" />
         <Nav route="about" />
         <PhotoStack className="about__stack" />
-        <section className={`about__story column ${entrance.className}`} style={entrance.style} aria-labelledby="about-title">
+        <section ref={storyRef} className={`about__story column ${entrance.className}`} style={entrance.style} aria-labelledby="about-title">
           <EditableText
             as="h1"
             id="about-title"
             className="about__heading"
             label="Heading"
-            enter={0}
+            enter={headingSoft ? 0 : undefined}
             value={t.heading}
             onChange={(next) => setValue('heading', next)}
           />
           <EditableText
             className="about__text"
             label="Story"
-            enter={1}
+            enter={bodySoft ? 1 : undefined}
             value={t.story}
             onChange={(next) => setValue('story', next)}
           />

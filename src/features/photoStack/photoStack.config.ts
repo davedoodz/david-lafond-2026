@@ -75,7 +75,12 @@ export const PHOTO_STACK_CONFIG = {
     spring: { type: 'spring' as const, visualDuration: 0.7, bounce: 0.45 },
     stagger: [0.09, 0, 0.3, 0.01] as [number, number, number, number],
     startOffsetY: [220, 0, 500, 1] as [number, number, number, number],
-    delay: [0.1, 0, 1, 0.01] as [number, number, number, number],
+    /** Arriving through the page wipe: start once the wipe is this far along (0 = with it, 1 = after it lands). */
+    wipeStart: [0.7, 0, 1, 0.01] as [number, number, number, number],
+    /** Extra wait (s) after that point, or after load when there is no wipe. */
+    delay: [0.05, 0, 1, 0.01] as [number, number, number, number],
+    /** Time (s) each card takes to fade in. */
+    fade: [0.25, 0, 1, 0.01] as [number, number, number, number],
     replay: { type: 'action' as const, label: 'Replay entrance' },
   },
   /** Hovering the front card. Offsets pivot on the card's centre; `preset` picks the effect, `custom` uses the dials. */

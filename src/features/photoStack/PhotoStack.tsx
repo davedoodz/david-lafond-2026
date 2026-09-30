@@ -193,7 +193,7 @@ export function PhotoStack({ className }: { className?: string }) {
       animate(x, base.x, { ...tuckSpring, delay })
       animate(y, base.y, { ...tuckSpring, delay })
       animate(rotate, base.rotate, { ...tuckSpring, delay })
-      animate(opacity, 1, { duration: 0.25, ease: 'easeOut', delay })
+      animate(opacity, 1, { duration: values.entrance.fade, ease: 'easeOut', delay })
     }
     const totalMs = reducedMotion
       ? 0
@@ -204,13 +204,24 @@ export function PhotoStack({ className }: { className?: string }) {
 
   playEntranceRef.current = playEntrance
 
-  // Start only once the page wipe is over and every photo is decoded: springing
-  // cards while the browser animates the page snapshots and decodes images drops frames.
+  // Start once the page wipe is `wipeStart` of the way in (so the cards carry on its upward
+  // motion) and every photo is decoded (decoding mid-spring drops frames).
+  const wipeStartRef = useRef(values.entrance.wipeStart)
+  wipeStartRef.current = values.entrance.wipeStart
   useEffect(() => {
     let cancelled = false
     const transitionDone = () =>
       new Promise<void>((resolve) => {
-        const check = () => (document.documentElement.dataset.vt ? requestAnimationFrame(check) : resolve())
+        const check = () => {
+          const root = document.documentElement
+          if (!root.dataset.vt) return resolve()
+          const wipe = root
+            .getAnimations({ subtree: true })
+            .find((a) => (a.effect as KeyframeEffect | null)?.pseudoElement === '::view-transition-new(root)')
+          const progress = wipe?.effect?.getComputedTiming().progress
+          if (wipe && wipe.playState !== 'idle' && (progress ?? 0) >= wipeStartRef.current) return resolve()
+          requestAnimationFrame(check)
+        }
         check()
       })
     const decoded = Array.from(rootRef.current?.querySelectorAll('img') ?? [], (img) => img.decode().catch(() => {}))
@@ -394,6 +405,21 @@ export function PhotoStack({ className }: { className?: string }) {
     settle(cardId, toMotionTransition(wasTop ? values.topHover.spring : values.backHover.spring))
   }
 
+  // Cards slide under a still pointer while they move, and hover events fired mid-move are
+  // ignored (the card is cycling); no new event comes once it settles. So when a move ends,
+  // re-check which card is under the last pointer position and hover that one.
+  const pointerRef = useRef<{ x: number; y: number } | null>(null)
+  useEffect(() => {
+    const p = pointerRef.current
+    if (!p || !finePointer || reducedMotion) return
+    const card = document.elementFromPoint(p.x, p.y)?.closest<HTMLElement>('.ps-card')
+    const id = card && rootRef.current?.contains(card) ? Number(card.dataset.card) : null
+    if (id === hoveredId || (id !== null && cyclingIds.has(id))) return
+    if (hoveredId !== null) handleHoverEnd(hoveredId)
+    if (id !== null) handleHoverStart(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cyclingIds])
+
   const width = values.card.width
   const height = values.card.height
   const containerWidth = Math.max(...slotPoses.map((p) => p.x)) + width
@@ -447,6 +473,12 @@ export function PhotoStack({ className }: { className?: string }) {
       className={['ps-root', className].filter(Boolean).join(' ')}
       style={{ boxSizing: 'content-box', paddingTop: topOffset, height: containerHeight * scale, ['--ps-caption-gap' as string]: `${values.caption.gap}px` } as CSSProperties}
       data-testid="photo-stack"
+      onPointerMove={(event) => {
+        if (event.pointerType === 'mouse') pointerRef.current = { x: event.clientX, y: event.clientY }
+      }}
+      onPointerLeave={() => {
+        pointerRef.current = null
+      }}
     >
       <div
         className="ps-scale"
@@ -465,6 +497,7 @@ export function PhotoStack({ className }: { className?: string }) {
               <motion.button
                 key={cardId}
                 className={`ps-card${isTop ? ' ps-card--active' : ''}`}
+                data-card={cardId}
                 data-surface={values.caption.cursor.whiteCursor ? 'dark' : undefined}
                 style={{
                   width,

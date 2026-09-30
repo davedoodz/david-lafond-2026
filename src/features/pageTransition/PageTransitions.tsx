@@ -33,6 +33,8 @@ const CONFIG = {
     /** slide: the page moves up (smoothest). reveal: the page stays put and is uncovered. */
     wipeStyle: { type: 'select' as const, options: ['slide', 'reveal'], default: 'slide' },
     mirrorOnBack: true,
+    /** Leaving a project page (Back): the wipe runs sideways. right: the page slides in from the left, moving right. */
+    projectBack: { type: 'select' as const, options: ['left', 'right', 'vertical'], default: 'right' },
   },
   pin: {
     nav: true,
@@ -44,7 +46,8 @@ const CONFIG = {
 const ORDER: Record<Route, number> = { work: 0, unwind: 1, ecofabriq: 1, 'harvard-mit': 1, about: 2 }
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 
-type Settings = { preset: Preset; mirror: boolean; pinNav: boolean; pinShader: boolean }
+type Settings = { preset: Preset; mirror: boolean; projectBack: string; pinNav: boolean; pinShader: boolean }
+const PROJECTS: Route[] = ['unwind', 'ecofabriq', 'harvard-mit']
 
 /** Pin an element only if it is on screen; an off-screen pin would fly in from its scrolled position. */
 function pinIfVisible(selector: string, attribute: string) {
@@ -66,8 +69,17 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
   }
 
   root.dataset.vt = settings.preset
-  root.dataset.vtDir = settings.mirror && ORDER[to] < ORDER[from] ? 'back' : 'forward'
-  if (settings.pinNav) pinIfVisible('.nav', 'data-vt-pin-nav')
+  const back = ORDER[to] < ORDER[from]
+  root.dataset.vtDir =
+    back && PROJECTS.includes(from) && settings.projectBack !== 'vertical'
+      ? settings.projectBack
+      : settings.mirror && back
+        ? 'back'
+        : 'forward'
+  // Sideways: each nav rides with its own page, so the wipe edge sweeps over it. Pinned,
+  // the old and new nav would crossfade and the dark/light "Work" would wash out mid-way.
+  const sideways = root.dataset.vtDir === 'left' || root.dataset.vtDir === 'right'
+  if (settings.pinNav && !sideways) pinIfVisible('.nav', 'data-vt-pin-nav')
   if (settings.pinShader) pinIfVisible('.dither-band--header', 'data-vt-pin-shader')
 
   const transition = document.startViewTransition(async () => {
@@ -119,11 +131,12 @@ export function PageTransitions() {
     const settings: Settings = {
       preset: preset as Preset,
       mirror: look.mirrorOnBack,
+      projectBack: look.projectBack,
       pinNav: pin.nav,
       pinShader: pin.headerShader,
     }
     setTransitionRunner((update, to, from) => run(settings, update, to, from))
-  }, [preset, look.mirrorOnBack, pin.nav, pin.headerShader])
+  }, [preset, look.mirrorOnBack, look.projectBack, pin.nav, pin.headerShader])
 
   return null
 }

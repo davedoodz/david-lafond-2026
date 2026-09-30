@@ -68,8 +68,8 @@
       "color": "#A6A09C"
     },
     "playback": {
-      "speed": 3.4,
-      "startDelayMs": 1890
+      "speed": 3.7,
+      "startDelayMs": 1610
     },
     "layout": {
       "mobileWidth": 373,
@@ -96,7 +96,7 @@
       "endArch": 35
     },
     "intro": {
-      "delayMs": 3620,
+      "delayMs": 3010,
       "durationMs": 960,
       "bounce": 0.4
     },
@@ -134,8 +134,12 @@
         "saturation": 1.18
       }
     },
+    "entrance": {
+      "wipeStart": 0.3,
+      "delay": 0
+    },
     "topHover": {
-      "preset": "tilt-left"
+      "preset": "custom"
     },
     "backHover": {
       "second": {
@@ -179,7 +183,7 @@
     }
   },
   "Entrance": {
-    "durationMs": 1400,
+    "durationMs": 1040,
     "staggerMs": 200,
     "blur": 6.5,
     "ease": "linear-ish"
@@ -325,15 +329,23 @@
       "radius": 0
     },
     "domeMobile": {
-      "curve": "expo-out",
-      "enterDistance": 1.75,
-      "side": 0,
       "arch": 20,
       "radius": 60
     },
     "reveal": {
       "preset": "deal",
       "repeat": "always"
+    },
+    "storyEntrance": {
+      "heading": {
+        "preset": "bounce",
+        "delayMs": 690,
+        "distance": 28
+      },
+      "body": {
+        "preset": "words",
+        "delayMs": 1090
+      }
     },
     "spacing": {
       "gapDesktop": 185,
@@ -402,5 +414,15 @@
   "Nav": {
     "position": "fixed",
     "backdrop": "none"
+  },
+  "Project open": {
+    "momoFlight": true,
+    "preset": "spring",
+    "look": {
+      "cornerZone": 11
+    }
+  },
+  "Unwind shader": {
+    "frame": 2738590
   }
 }

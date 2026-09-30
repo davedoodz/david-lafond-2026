@@ -12,6 +12,7 @@ import {
   getShaderColorFromString,
   meshGradientFragmentShader,
 } from '@paper-design/shaders'
+import { releaseShader } from '../lib/releaseShader'
 import { useTuning } from '../tuning/useTuning'
 
 type Tuple = [number, number, number, number]
@@ -26,6 +27,24 @@ const CONFIG = {
   swirl: [0.1, 0, 1, 0.01] as Tuple,
   scale: [1, 0.2, 4, 0.01] as Tuple,
   frame: [2_738_589.6, 0, 5_000_000, 1] as Tuple,
+}
+
+type MeshState = { uniforms: Record<string, unknown>; speed: number; mount: ShaderMount }
+/** Live state per card host, so a transition can spawn a matching copy (spawnMesh). */
+const meshes = new WeakMap<Element, MeshState>()
+
+/**
+ * Starts a copy of a card's mesh shader in `host`, on the same uniforms, speed and current
+ * frame, so it continues the card's animation seamlessly. Returns dispose, or null if `card`
+ * has no mesh.
+ */
+export function spawnMesh(card: Element, host: HTMLElement) {
+  const source = card.querySelector('.works__mesh')
+  const state = source && meshes.get(source)
+  if (!state) return null
+  const frame = (state.mount as unknown as { currentFrame: number }).currentFrame
+  const mount = new ShaderMount(host, meshGradientFragmentShader, state.uniforms as never, undefined, state.speed, frame, 1)
+  return () => releaseShader(mount)
 }
 
 export function MeshCard() {
@@ -59,8 +78,10 @@ export function MeshCard() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const mount = new ShaderMount(host, meshGradientFragmentShader, uniformsRef.current, undefined, reduced ? 0 : t.speed, t.frame, 1)
     mountRef.current = mount
+    meshes.set(host, { uniforms: uniformsRef.current, speed: reduced ? 0 : t.speed, mount })
     return () => {
-      mount.dispose()
+      meshes.delete(host)
+      releaseShader(mount)
       mountRef.current = null
     }
     // Speed/frame/uniform changes are pushed below without recreating the WebGL context.
@@ -69,11 +90,15 @@ export function MeshCard() {
   const uniformKey = JSON.stringify(uniforms)
   useEffect(() => {
     mountRef.current?.setUniforms(uniformsRef.current)
+    const state = hostRef.current && meshes.get(hostRef.current)
+    if (state) state.uniforms = uniformsRef.current
   }, [uniformKey])
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     mountRef.current?.setSpeed(reduced ? 0 : t.speed)
+    const state = hostRef.current && meshes.get(hostRef.current)
+    if (state) state.speed = reduced ? 0 : t.speed
   }, [t.speed])
 
   useEffect(() => {

@@ -4,7 +4,7 @@
  * DialKit controller — so layout below reflows live and the copy autosaves to
  * src/data/tuning.json. In production it is plain text.
  */
-import { createElement, useEffect, useRef, type FormEvent } from 'react'
+import { createElement, useLayoutEffect, useRef, type FormEvent } from 'react'
 
 type Props = {
   as?: 'p' | 'h1' | 'h2' | 'div'
@@ -21,8 +21,9 @@ export function EditableText({ as = 'div', value, onChange, className, id, label
   const ref = useRef<HTMLElement>(null)
 
   // Only push external edits (DialKit panel) into the DOM, never the user's own
-  // keystrokes, so the caret never jumps.
-  useEffect(() => {
+  // keystrokes, so the caret never jumps. Layout effect: the text is in place before paint
+  // and before parent layout effects (the About story entrance splits it into words).
+  useLayoutEffect(() => {
     const el = ref.current
     if (el && el.innerText !== value) el.innerText = value
   }, [value])

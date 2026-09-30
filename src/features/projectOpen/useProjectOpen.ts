@@ -7,10 +7,10 @@ import { useCallback, useRef } from 'react'
 import type { Route } from '../../lib/router'
 import { useTuning } from '../../tuning/useTuning'
 import type { Easing, Spring } from '../pageTransition/cssTiming'
-import { openProject, type Edges, type OpenSpec } from './projectOpen'
+import { OPEN_EFFECTS, openProject, type Edges, type OpenEffect, type OpenSpec } from './projectOpen'
 
 type Tuple = [number, number, number, number]
-type Look = Pick<OpenSpec, 'endRadius' | 'titleFade' | 'dim' | 'revealMs'>
+type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight'> & { effect: OpenEffect }
 
 const even: Edges = { top: 0, right: 0, bottom: 0, left: 0 }
 const bezier = (duration: number, ease: [number, number, number, number]): Easing => ({ type: 'easing', duration, ease })
@@ -30,9 +30,16 @@ export const OPEN_PRESETS: Record<string, { timing: Easing | Spring; delay: Edge
 }
 
 const CONFIG = {
+  /** How the card becomes the page (see OPEN_EFFECTS); the preset below sets its timing. */
+  effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'expand' },
+  /** Unwind: Momo flies from the card into the nav's Momo. */
+  momoFlight: false,
   preset: { type: 'select' as const, options: [...Object.keys(OPEN_PRESETS), 'custom'], default: 'glide' },
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
+  previewUnwind: { type: 'action' as const, label: 'Preview (open Unwind)' },
   look: {
+    /** expand: corners square off as the card's edges come within this many px of the screen edge. */
+    cornerZone: [140, 0, 600, 1] as Tuple,
     endRadius: [0, 0, 60, 1] as Tuple,
     titleFade: [0.45, 0, 1, 0.01] as Tuple,
     dim: [0.35, 0, 0.9, 0.01] as Tuple,
@@ -52,15 +59,16 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
   const specRef = useRef<OpenSpec | null>(null)
   const t = useTuning('Project open', CONFIG, {
     onAction: (action) => {
-      if (action !== 'preview') return
-      const card = document.querySelector<HTMLElement>('[data-work="harvard-mit"]')
+      const route = action === 'preview' ? 'harvard-mit' : action === 'previewUnwind' ? 'unwind' : null
+      if (!route) return
+      const card = document.querySelector<HTMLElement>(`[data-work="${route}"]`)
       if (!card || !specRef.current) return
       card.scrollIntoView({ block: 'center' })
-      requestAnimationFrame(() => openProject(card, 'harvard-mit', specRef.current!))
+      requestAnimationFrame(() => openProject(card, route, specRef.current!))
     },
   })
 
-  const look: Look = t.look
+  const look: Look = { ...t.look, effect: t.effect as OpenEffect, momoFlight: t.momoFlight }
   const named = OPEN_PRESETS[t.preset]
   specRef.current = named
     ? { ...look, ...named }

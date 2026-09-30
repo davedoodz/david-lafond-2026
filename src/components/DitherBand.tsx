@@ -19,6 +19,7 @@ import {
   ditheringFragmentShader,
   getShaderColorFromString,
 } from '@paper-design/shaders'
+import { releaseShader } from '../lib/releaseShader'
 import { useRoute } from '../lib/router'
 import { useTuningController } from '../tuning/useTuning'
 import './DitherBand.css'
@@ -154,6 +155,10 @@ export function DitherBand({ position }: Props) {
   }
   const uniformsRef = useRef(uniforms)
   uniformsRef.current = uniforms
+  const speedRef = useRef(values.speed)
+  speedRef.current = values.speed
+  const frameRef = useRef(values.frame)
+  frameRef.current = values.frame
   // Read by the pointer loop without re-subscribing listeners on every dial change.
   const mouseRef = useRef({ ...values.mouse, flip: values.flip })
   mouseRef.current = { ...values.mouse, flip: values.flip }
@@ -162,11 +167,23 @@ export function DitherBand({ position }: Props) {
     const host = hostRef.current
     if (!host) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const initial = { ...uniformsRef.current, u_mouse: [0, 0], u_mouseAmt: 0, u_mouseRadius: 1 }
-    const mount = new ShaderMount(host, interactiveDitheringShader, initial, undefined, reduced ? 0 : values.speed, values.frame, 1)
-    mountRef.current = mount
+    let mount: ShaderMount
+    const start = () => {
+      const initial = { ...uniformsRef.current, u_mouse: [0, 0], u_mouseAmt: 0, u_mouseRadius: 1 }
+      mount = new ShaderMount(host, interactiveDitheringShader, initial, undefined, reduced ? 0 : speedRef.current, frameRef.current, 1)
+      mountRef.current = mount
+      // The header band outlives every page; if the browser still drops its context
+      // (too many live WebGL contexts), start a fresh one instead of showing a blank band.
+      host.querySelector('canvas')?.addEventListener('webglcontextlost', restart, { once: true })
+    }
+    const restart = () => {
+      releaseShader(mount)
+      start()
+    }
+    start()
     return () => {
-      mount.dispose()
+      host.querySelector('canvas')?.removeEventListener('webglcontextlost', restart)
+      releaseShader(mount)
       mountRef.current = null
     }
     // Speed/frame/uniform changes are pushed below without recreating the WebGL context.

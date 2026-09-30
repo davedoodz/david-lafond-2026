@@ -18,9 +18,46 @@
   will-change: clip-path;
 }
 
+.project-open__shader {
+  position: absolute;
+}
+.project-open__shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.project-open__shader > canvas {
+  width: 100%;
+  height: 100%;
+}
+
 .project-open__title {
   position: absolute;
   margin: 0;
   text-wrap: balance;
   will-change: transform, opacity;
+}
+
+/* Momo still riding above the expansion into the nav (expand / curtain). */
+.project-open__momo {
+  position: fixed;
+  z-index: 1001;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+/* window / iris / zoom run on View Transitions; motion comes from projectOpen.ts. */
+:root[data-po]::view-transition-old(root),
+:root[data-po]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+:root[data-po]::view-transition-group(po-momo) {
+  animation-duration: var(--po-ms);
+  animation-timing-function: var(--po-ease);
+}
+:root[data-po]::view-transition-old(po-momo),
+:root[data-po]::view-transition-new(po-momo) {
+  animation-duration: var(--po-ms);
+  height: 100%;
 }

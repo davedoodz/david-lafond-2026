@@ -36,7 +36,8 @@ a=clamp((a-.03)/.94,0.,1.);gl_FragColor=vec4(min(c,vec3(a)),a);}`
 
 /** Draws `video` (stacked colour/alpha) into `canvas` on every new frame. Returns a stop function. */
 export function stackedAlpha(video: HTMLVideoElement, canvas: HTMLCanvasElement): () => void {
-  const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false })
+  // preserveDrawingBuffer: the card open copies the current frame (projectOpen liftMomo).
+  const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true })
   if (!gl) return () => {}
   const shader = (type: number, src: string) => {
     const sh = gl.createShader(type)!
@@ -93,6 +94,11 @@ export function stackedAlpha(video: HTMLVideoElement, canvas: HTMLCanvasElement)
     else cancelAnimationFrame(handle)
     video.removeEventListener('loadeddata', draw)
     video.removeEventListener('seeked', draw)
+    // Once the canvas has left the page, free its context now rather than at GC:
+    // lingering contexts push the header dither band over Chrome's live-context cap.
+    setTimeout(() => {
+      if (!canvas.isConnected) gl.getExtension('WEBGL_lose_context')?.loseContext()
+    })
   }
 }
 
