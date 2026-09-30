@@ -173,7 +173,7 @@
         bands: { kind: 'ribbon' },
         round: { kind: 'round' },
       }
-      const G = { wave: 'bands', band: 'silk', speed: 0.5, controls: false }
+      const G = { wave: 'bands', band: 'braid', speed: 0.5, controls: false }
       /**
        * Voice-band presets. width: half-length (px); thick/thickReact: band height idle / pushed by voice;
        * amp/ampReact: swing idle / pushed by voice; freq: waves along the band; speed: travel;
@@ -582,21 +582,71 @@
             } },
         ] },
         { id: 'handoff', title: 'Hand off', variants: [
-          { name: 'Bloom', idea: 'The calm blue glow blooms across the frame and the case study fades up out of it.', dur: 1.1,
-            stage: (u) => ({ glow: 1, calm: 1, stop: 0, arrow: 1, bloom: ease.inOut(seg(u, 0, 0.75)), ctrlOn: 1 - seg(u, 0, 0.3) }),
-            draw(ctx, u) { const h = seg(u, 0.35, 1.05); drawPage(ctx, h, lerp(20, 0, h)) } },
-          { name: 'Rise', idea: 'The glow drifts up and away like breath leaving; the case study rises in from below.', dur: 1.1,
-            stage: (u) => ({ glow: 1 - seg(u, 0.1, 0.75), calm: 1, stop: 0, arrow: 1, gy: 232 - 260 * ease.inOut(seg(u, 0, 0.8)), ctrlOn: 1 - seg(u, 0, 0.3) }),
-            draw(ctx, u) { const h = ease.inOut(seg(u, 0.2, 1.0)); drawPage(ctx, h, lerp(60, 0, h)) } },
-          { name: 'Through the button', idea: 'The arrow is pressed and the case study opens as a circle from the button, as if you went through it.', dur: 1.1,
-            stage: (u) => ({ glow: 1 - seg(u, 0.2, 0.7), calm: 1, stop: 0, arrow: 1, dip: 0.12 * Math.sin(Math.PI * seg(u, 0, 0.15)), ctrlOn: 1 - seg(u, 0.25, 0.5) }),
+          { name: 'Band wipe', idea: 'The calm blue line picks its colours back up, stretches edge to edge, drops to the bottom and sweeps up the frame; the case study is revealed beneath its wavy edge.', dur: 1.4,
+            stage: (u) => ({ glow: 1 - seg(u, 0, 0.08), calm: 1, ctrlOn: 1 - seg(u, 0, 0.3) }),
             draw(ctx, u) {
-              const r = lerp(0, 1150, ease.in(seg(u, 0.12, 1.0)))
-              if (r <= 0) return
-              ctx.save(); ctx.beginPath(); ctx.arc(604, 492, r, 0, TAU); ctx.clip(); ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H); drawPage(ctx, 1); ctx.restore()
+              const B = curBand(), grow = ease.inOut(seg(u, 0.05, 0.35))
+              const cy = u < 0.35 ? lerp(245, 520, ease.inOut(seg(u, 0.05, 0.35))) : lerp(520, -70, ease.inOut(seg(u, 0.35, 0.95)))
+              const band = { cx: 480, cy, half: lerp(B.width * 0.87, 1100, grow), amp: lerp(B.amp, 16, grow) + 10 * Math.sin(Math.PI * seg(u, 0.35, 0.95)), th: B.thick * 0.4 + 4 + 6 * grow, color: seg(u, 0.05, 0.3) }
+              if (u > 0.33) {
+                ctx.save(); clipWave(ctx, (x) => bandY(0, x, band, B), () => H + 20); ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H); drawPage(ctx, 1); ctx.restore()
+              }
+              bandsOn(ctx, band, 1 - seg(u, 0.9, 1.0))
+            } },
+          { name: 'Opening', idea: 'The line splits into two voice bands that part like an opening eye, one rising and one falling; the case study appears in the space between them.', dur: 1.4,
+            stage: (u) => ({ glow: 1 - seg(u, 0, 0.08), calm: 1, ctrlOn: 1 - seg(u, 0, 0.3) }),
+            draw(ctx, u) {
+              const B = curBand(), grow = ease.inOut(seg(u, 0.05, 0.4)), open = ease.inOut(seg(u, 0.25, 0.98))
+              const gap = lerp(0, H + 200, open), half = lerp(B.width * 0.87, 1100, grow), amp = lerp(B.amp, 14, grow)
+              const top = { cx: 480, cy: 245 - gap / 2, half, amp, th: B.thick * 0.4 + 4 + 5 * grow, color: seg(u, 0.05, 0.3) }
+              const bot = { ...top, cy: 245 + gap / 2 }
+              if (open > 0) {
+                ctx.save(); clipWave(ctx, (x) => bandY(0, x, top, B), (x) => bandY(0, x, bot, B)); ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H); drawPage(ctx, 1, lerp(20, 0, open)); ctx.restore()
+              }
+              bandsOn(ctx, top, 1 - seg(u, 0.85, 1.0))
+              if (open > 0.02) bandsOn(ctx, bot, 1 - seg(u, 0.85, 1.0))
+            } },
+          { name: 'Into the phone', idea: 'The voice band shrinks and travels into the phone in the case-study image, landing as the glow at the bottom of its screen, with one last pulse as the page settles around it.', dur: 1.5,
+            stage: (u) => ({ glow: 1 - seg(u, 0, 0.08), calm: 1, ctrlOn: 1 - seg(u, 0, 0.3) }),
+            draw(ctx, u) {
+              const B = curBand(), m = ease.inOut(seg(u, 0.05, 0.6)), pulse = Math.sin(Math.PI * seg(u, 0.58, 0.8))
+              const h = ease.inOut(seg(u, 0.3, 0.85))
+              drawPage(ctx, h, lerp(16, 0, h))
+              bandsOn(ctx, { cx: lerp(480, 725, m), cy: lerp(245, 372 + lerp(16, 0, h), m), half: lerp(B.width * 0.87, 50, m), amp: lerp(B.amp, 4, m) + 10 * pulse, th: lerp(B.thick * 0.4 + 4, 8, m), color: Math.sin(Math.PI * seg(u, 0.05, 0.6)) }, 1 - seg(u, 0.78, 1.0))
             } },
         ] },
       ]
+      // ---- Voice bands drawn on the main canvas (hand-off) --------------------
+      const curBand = () => BANDS[G.band] ?? BANDS.silk
+      /** Centre line of band k (same formula as the glow's bands). */
+      function bandY(k, x, b, B) {
+        const yo = (k - 1.5) * B.spread * b.color
+        return b.cy + yo + b.amp * Math.exp(-(((x - b.cx) / (b.half * 0.55)) ** 2)) * Math.sin(x * B.freq * (1 + k * 0.25) + RT * B.speed * (1 + k * 0.35) + k * B.phase)
+      }
+      /** The four aurora bands; `b.color` 0 = calm blue only, 1 = all colours back. */
+      function bandsOn(ctx, b, alpha = 1) {
+        if (alpha <= 0.01 || b.half <= 0) return
+        const B = curBand()
+        ctx.save(); ctx.filter = `blur(${B.blur * 1.6}px)`
+        PALETTE.forEach((col, k) => {
+          const a = (k === 0 ? 0.8 : 0.62 * b.color) * alpha * B.alpha
+          if (a <= 0.01) return
+          const c0 = k === 0 ? C.blue : col, lg = ctx.createLinearGradient(b.cx - b.half, 0, b.cx + b.half, 0)
+          lg.addColorStop(0, hexA(c0, 0)); lg.addColorStop(0.5, hexA(c0, a)); lg.addColorStop(1, hexA(c0, 0))
+          ctx.fillStyle = lg; ctx.beginPath()
+          const x0 = b.cx - b.half, x1 = b.cx + b.half, step = Math.max(2, (x1 - x0) / 160)
+          for (let x = x0; x <= x1; x += step) x === x0 ? ctx.moveTo(x, bandY(k, x, b, B) - b.th / 2) : ctx.lineTo(x, bandY(k, x, b, B) - b.th / 2)
+          for (let x = x1; x >= x0; x -= step) ctx.lineTo(x, bandY(k, x, b, B) + b.th / 2)
+          ctx.closePath(); ctx.fill()
+        })
+        ctx.restore()
+      }
+      function clipWave(ctx, top, bot) {
+        ctx.beginPath()
+        for (let x = -10; x <= W + 10; x += 8) x === -10 ? ctx.moveTo(x, top(x)) : ctx.lineTo(x, top(x))
+        for (let x = W + 10; x >= -10; x -= 8) ctx.lineTo(x, bot(x))
+        ctx.closePath(); ctx.clip()
+      }
       // Restructure words: from home to each variant's targets; the rest fade.
       CHAPTERS.find((c) => c.id === 'restructure').variants.forEach((v) => {
         v.words = (u) => {
