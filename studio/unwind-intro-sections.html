@@ -115,6 +115,21 @@
         ctx.fill()
         ctx.restore()
       }
+      /** Just the phone, centred on (cx, cy), `pw` wide. */
+      function drawPhone(ctx, cx, cy, pw, a = 1) {
+        if (a <= 0.01) return
+        const ph = pw * 2.05, px = cx - pw / 2, py = cy - ph / 2
+        ctx.save(); ctx.globalAlpha *= a
+        ctx.shadowColor = 'rgba(20,40,80,0.18)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18
+        rrect(ctx, px, py, pw, ph, pw * 0.17); ctx.fillStyle = '#121212'; ctx.fill()
+        ctx.shadowColor = 'transparent'
+        rrect(ctx, px + 4, py + 4, pw - 8, ph - 8, pw * 0.14)
+        const s = ctx.createLinearGradient(0, py, 0, py + ph)
+        s.addColorStop(0, '#fbfbfb'); s.addColorStop(0.7, '#f3f6f9'); s.addColorStop(1, '#e6f1fb')
+        ctx.fillStyle = s; ctx.fill()
+        rrect(ctx, cx - pw * 0.16, py + pw * 0.07, pw * 0.32, pw * 0.085, pw * 0.05); ctx.fillStyle = '#121212'; ctx.fill()
+        ctx.restore()
+      }
       function drawPage(ctx, a = 1, dy = 0, { media = true } = {}) {
         if (a <= 0) return
         ctx.save()
@@ -606,13 +621,26 @@
               bandsOn(ctx, top, 1 - seg(u, 0.85, 1.0))
               if (open > 0.02) bandsOn(ctx, bot, 1 - seg(u, 0.85, 1.0))
             } },
-          { name: 'Into the phone', idea: 'The voice band shrinks and travels into the phone in the case-study image, landing as the glow at the bottom of its screen, with one last pulse as the page settles around it.', dur: 1.5,
+          { name: 'Into the phone', idea: 'A bare phone (no background) fades up in the centre; the voice band shrinks into it and becomes the glow at the bottom of its screen, pulses once, then the phone glides to its place in the case study as the page forms around it.', dur: 2.0,
             stage: (u) => ({ glow: 1 - seg(u, 0, 0.08), calm: 1, ctrlOn: 1 - seg(u, 0, 0.3) }),
             draw(ctx, u) {
-              const B = curBand(), m = ease.inOut(seg(u, 0.05, 0.6)), pulse = Math.sin(Math.PI * seg(u, 0.58, 0.8))
-              const h = ease.inOut(seg(u, 0.3, 0.85))
-              drawPage(ctx, h, lerp(16, 0, h))
-              bandsOn(ctx, { cx: lerp(480, 725, m), cy: lerp(245, 372 + lerp(16, 0, h), m), half: lerp(B.width * 0.87, 50, m), amp: lerp(B.amp, 4, m) + 10 * pulse, th: lerp(B.thick * 0.4 + 4, 8, m), color: Math.sin(Math.PI * seg(u, 0.05, 0.6)) }, 1 - seg(u, 0.78, 1.0))
+              const B = curBand()
+              const HERO = { cx: MEDIA.x + MEDIA.w / 2, cy: MEDIA.y + MEDIA.h / 2, pw: MEDIA.w * 0.4 }
+              const pin = ease.out(seg(u, 0.02, 0.3)), move = ease.inOut(seg(u, 0.6, 0.95))
+              const cx = lerp(480, HERO.cx, move), cy = lerp(270, HERO.cy, move), pw = lerp(170, HERO.pw, move) * lerp(0.94, 1, pin)
+              const ph = pw * 2.05, screenY = cy + ph / 2 - pw * 0.2
+              // Page text forms around the phone; the photo behind it only appears once it has landed.
+              const h = ease.inOut(seg(u, 0.62, 0.95))
+              drawPage(ctx, h, lerp(16, 0, h), { media: false })
+              drawMedia(ctx, seg(u, 0.9, 1.0))
+              drawPhone(ctx, cx, cy, pw, pin * (1 - seg(u, 0.97, 1.0)))
+              // The band travels into the screen and becomes its glow.
+              const m = ease.inOut(seg(u, 0.05, 0.45)), pulse = Math.sin(Math.PI * seg(u, 0.42, 0.62))
+              const clipIn = seg(u, 0.35, 0.45)
+              ctx.save()
+              if (clipIn > 0) { rrect(ctx, cx - pw / 2 + 4, cy - ph / 2 + 4, pw - 8, ph - 8, pw * 0.14); ctx.clip() }
+              bandsOn(ctx, { cx: lerp(480, cx, m), cy: lerp(245, screenY, m), half: lerp(B.width * 0.87, pw * 0.42, m), amp: lerp(B.amp, 5, m) + 9 * pulse, th: lerp(B.thick * 0.4 + 4, 10, m), color: Math.sin(Math.PI * seg(u, 0.05, 0.5)) }, 1 - seg(u, 0.93, 1.0))
+              ctx.restore()
             } },
         ] },
       ]
