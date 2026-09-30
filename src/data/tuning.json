@@ -441,9 +441,6 @@
     "preset": "spring",
     "look": {
       "cornerZone": 11
-    },
-    "content": {
-      "feel": "parallax"
     }
   },
   "Unwind shader": {

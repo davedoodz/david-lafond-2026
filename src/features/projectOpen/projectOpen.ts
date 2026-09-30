@@ -42,6 +42,9 @@ export type OpenEffect = (typeof OPEN_EFFECTS)[number]
 export const CONTENT_FEELS = ['grow', 'zoom', 'parallax', 'anchor', 'lift', 'fade', 'off'] as const
 export type ContentFeel = (typeof CONTENT_FEELS)[number]
 
+/** Sent to the card as it starts growing; `detail.ms` = time left to settle its artwork. */
+export const SETTLE_EVENT = 'project-open:settle'
+
 export type OpenSpec = {
   /** Card artwork during expand/curtain; see CONTENT_FEELS. */
   contentFeel: ContentFeel
@@ -200,6 +203,8 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   const ease = toEase(spec.timing)
   const maxDelay = Math.min(0.9, Math.max(...EDGES.map((edge) => spec.delay[edge])))
   const edgeDuration = ease.duration * (1 - maxDelay)
+  // Card artwork mid-move (the Harvard & MIT crane loop) finishes its current move before the page opens.
+  card.dispatchEvent(new CustomEvent(SETTLE_EVENT, { detail: { ms: ease.duration * 0.85 } }))
 
   const block = (event: Event) => event.preventDefault()
   overlay.addEventListener('wheel', block, { passive: false })
@@ -320,6 +325,8 @@ function mirrorArtwork(card: HTMLElement) {
   layer.className = 'project-open__content'
   layer.style.width = `${width}px`
   layer.style.height = `${height}px`
+  // Smaller than the frame (anchor, parallax): the art shows as a card-shaped window.
+  layer.style.borderRadius = getComputedStyle(card).borderTopLeftRadius
   let from: Element[] = []
   let to: Element[] = []
   const clone = () => {
