@@ -6,26 +6,27 @@
  */
 type Tuple = [number, number, number, number]
 
-/** Prototype recordings in public/work/unwind/proto (1080 px tall H.264 + first-frame poster). */
+/** Prototype recordings in public/work/unwind/proto: the phone only, cropped to its frame (1080 px tall H.264 + first-frame poster). */
 export const PROTO_VIDEOS = {
-  'welcome-park': { w: 1010, h: 1080 },
-  'freeform-evening': { w: 1010, h: 1080 },
-  'guided-models': { w: 722, h: 1080 },
-  'guided-woop': { w: 722, h: 1080 },
+  'welcome-park': { w: 522, h: 1080 },
+  'freeform-evening': { w: 522, h: 1080 },
+  'guided-models': { w: 528, h: 1080 },
+  'guided-woop': { w: 528, h: 1080 },
 } as const
 export type ProtoVideo = keyof typeof PROTO_VIDEOS
 const VIDEO_OPTIONS = ['none', ...Object.keys(PROTO_VIDEOS)]
 
 /** Where the video sits relative to the text. */
-const LAYOUTS = ['right', 'left', 'below', 'above']
+const LAYOUTS = ['right', 'left', 'below', 'above', 'center']
 
 type SectionDefaults = {
   eyebrow: string
   title: string
   body?: string
   video?: ProtoVideo | 'none'
-  layout?: 'right' | 'left' | 'below' | 'above'
+  layout?: 'right' | 'left' | 'below' | 'above' | 'center'
   size?: number
+  gap?: number
 }
 
 export function sectionDials(d: SectionDefaults) {
@@ -39,7 +40,7 @@ export function sectionDials(d: SectionDefaults) {
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
       /** Space between the text and the video (px). */
-      gap: [72, 0, 240, 1] as Tuple,
+      gap: [d.gap ?? 72, 0, 240, 1] as Tuple,
       /** Nudge from its slot, % of the video's own width / height. */
       x: [0, -60, 60, 0.5] as Tuple,
       y: [0, -60, 60, 0.5] as Tuple,
@@ -74,8 +75,9 @@ export const UNWIND_CONFIG = {
     eyebrow: 'Unwind · RE:SELF · 2025',
     title: 'Unwind – Novel Multimodal AI Reflection System for Behavioral Change',
     video: 'welcome-park',
-    layout: 'right',
-    size: 70,
+    layout: 'center',
+    size: 44,
+    gap: 28,
     role: 'Lead Product Designer',
     timeline: 'March – September 2025',
     team: '2 developers\n2 designers\n2 therapists',

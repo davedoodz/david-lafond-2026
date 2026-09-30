@@ -4,6 +4,7 @@ import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
 import { BackLink, Nav } from '../components/Nav'
 import type { Work } from '../data/works'
+import { UnwindIntro } from '../features/unwindIntro/UnwindIntro'
 import { useTuningController } from '../tuning/useTuning'
 import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
 import './CaseStudyPage.css'
@@ -77,6 +78,8 @@ export function CaseStudyPage({ id }: Props) {
   const all = values as unknown as Record<string, Section> & { page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }; hero: Hero }
   const page = all.page
   const hero = all.hero
+  // Unwind opens with the voice intro; the hero video stays hidden until it hands off.
+  const [intro, setIntro] = useState(id === 'unwind')
   const keys = Object.keys(panel.config).filter((k) => k !== 'page' && k !== 'hero')
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
@@ -167,8 +170,10 @@ export function CaseStudyPage({ id }: Props) {
       ref={mainRef}
       className="case"
       data-work={id}
+      data-intro={intro || undefined}
       style={{ '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
     >
+      {id === 'unwind' && <UnwindIntro onDone={() => setIntro(false)} />}
       <div className="case__light" data-surface="light">
         <Nav route={id} />
         {page.showSidebar && (

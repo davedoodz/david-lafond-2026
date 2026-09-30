@@ -1,0 +1,19 @@
+/* The intro canvas sits over the page; a paper veil (drawn by the element's
+   background) hides the case study until the hand-off reveals it. */
+.unwind-intro {
+  --veil: 1;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  width: 100vw;
+  height: 100svh;
+  pointer-events: none;
+  background: rgb(245 245 245 / var(--veil));
+  transition: opacity 450ms ease;
+}
+.unwind-intro[data-out] {
+  opacity: 0;
+}
+html[data-intro-lock] {
+  overflow: hidden;
+}

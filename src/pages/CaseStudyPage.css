@@ -177,6 +177,8 @@
 /* Prototype recording: height is a share of the screen, width follows its ratio. */
 .case__media {
   display: block;
+  /* Phone-only recordings: clip to the phone's own rounded frame, no background. */
+  clip-path: inset(0.4% round 17% / 8.2%);
   height: var(--media-h, 72svh);
   max-width: 100%;
   aspect-ratio: var(--media-ratio);
@@ -188,6 +190,29 @@
 .case__section[data-layout='below'] .case__media,
 .case__section[data-layout='above'] .case__media {
   height: min(var(--media-h, 72svh), 46svh);
+}
+
+/* center: phone on top, text centred underneath, centred in the whole viewport. */
+.case__section[data-layout='center'] {
+  grid-template-columns: min(var(--case-content), 100%);
+  justify-items: center;
+  gap: var(--media-gap, 28px);
+  padding-inline: calc(var(--edge) + var(--case-sidebar));
+}
+.case__section[data-layout='center'] .case__media {
+  order: -1;
+}
+.case__section[data-layout='center'] .case__text {
+  justify-items: center;
+  max-width: 900px;
+  text-align: center;
+}
+.case__section[data-layout='center'] .case__meta {
+  justify-content: center;
+}
+/* While the Unwind intro plays, its canvas phone stands in for the hero video. */
+.case[data-intro] .case__section--hero .case__media {
+  opacity: 0;
 }
 
 /* --- Snap (page.snap): one stop per section, then the footer. */
@@ -243,6 +268,14 @@ html[data-case-snap] .case .footer {
     min-height: 0;
     height: min(var(--media-h, 72svh), 100%);
     max-height: 60svh;
+  }
+  .case__section[data-layout='center'] .case__media {
+    order: -1;
+    max-height: 44svh;
+  }
+  .case__section[data-layout='center'] {
+    align-items: center;
+    text-align: center;
   }
 }
 
