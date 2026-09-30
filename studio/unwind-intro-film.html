@@ -194,15 +194,15 @@
       ]
       // Past entries with the same cues.
       const CARDS = [
-        { x: 36, y: 56, date: 'SEP 12 · 9:14 PM', text: 'I snapped at Mia over dinner. I was exhausted and just done.' },
-        { x: 36, y: 318, date: 'SEP 19 · 8:52 PM', text: '[sighs] Too tired to be patient at dinner again tonight.' },
-        { x: 734, y: 150, date: 'SEP 26 · 9:03 PM', text: 'Dinner was rough. [exhales] I snapped before I even noticed.' },
+        { x: 36, y: 56, date: 'SEP 12 · 9:14 PM', text: 'Snapped at the kids at dinner. Too exhausted to stay patient.' },
+        { x: 36, y: 318, date: 'SEP 19 · 8:52 PM', text: '[sighs] So drained by dinner. I snapped over nothing.' },
+        { x: 734, y: 150, date: 'SEP 26 · 9:03 PM', text: 'Dinner again. [exhales] Tired, and I snapped before I noticed.' },
       ]
-      const LINKS = { snapped: ['snapped'], dinner: ['dinner'], 'so tired': ['exhausted', 'tired'], '[exhales]': ['[sighs]', '[exhales]'], again: ['again'] }
+      const LINKS = { dinner: ['dinner'], 'so tired': ['exhausted', 'drained', 'tired'], '[exhales]': ['[sighs]', '[exhales]'], snapped: ['snapped'] }
       // Restructured view: where each floating word lands.
       const COLS = [
         { x: 292, label: 'TRIGGER', words: ['dinner'], extra: '~9 pm' },
-        { x: 480, label: 'STATE', words: ['so tired', '[exhales]', '[sniffs]'] },
+        { x: 480, label: 'STATE', words: ['so tired', '[exhales]'] },
         { x: 668, label: 'REACTION', words: ['snapped', 'again'] },
       ]
       const CHAPTERS = [['Tap', 0], ['Listen', 0.7], ['Connect', 2.9], ['Restructure', 4.0], ['Plan', 4.8], ['Hand off', 5.8]]
@@ -369,6 +369,8 @@
           let size = 16, alpha = lerp(0.35, 1, lift), color = isTag(f.w) ? C.s4 : C.ink
           if (col) { const row = col.words.indexOf(f.w); x = lerp(x, col.x, struct); y = lerp(y, 238 + row * 28, struct); size = lerp(size, 18, struct) }
           else alpha *= 1 - seg(t, 10.8, 11.4)
+          // Connect: only the cues that recur in past entries stay bright.
+          if (!LINKS[f.w]) alpha *= 1 - 0.75 * seg(t, 7.7, 8.3) * (1 - seg(t, 10.6, 11.0))
           if (LINKS[f.w] && t > 8.9 && t < 10.9) color = C.blue
           // Plan: trigger/state words fly into the sentence; reaction is struck out.
           if (f.w === 'dinner' || f.w === 'so tired') {
