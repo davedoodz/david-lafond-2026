@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>EcoFabriq thumbnail — 10 directions</title>
+<title>EcoFabriq thumbnail — round 2</title>
 <style>
   @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
   @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
@@ -70,6 +70,50 @@
   }
   .label { position: absolute; font-size: 1.15cqw; color: var(--ink); white-space: nowrap; }
   canvas.fill { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .fillabs { position: absolute; inset: 0; }
+  .small { font-size: 0.95cqw; letter-spacing: 0.06em; color: var(--s6); }
+  .cap { font-size: 1.25cqw; color: var(--ink); }
+  .verb { white-space: normal; text-align: center; line-height: 1.4; }
+  .disc { display: grid; place-items: center; border-radius: 50%; background: #fff; box-shadow: 0 0.4cqw 1.6cqw rgb(23 23 23 / 0.08); }
+  .disc svg { width: 68%; height: 68%; }
+  .disc.lift { box-shadow: 0 0.6cqw 2.4cqw rgb(23 23 23 / 0.16); }
+  .swatch { border-radius: 50%; background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px rgb(23 23 23 / 0.06), 0 0.4cqw 1.6cqw rgb(23 23 23 / 0.1); }
+  .mattex { background-size: 90% auto; background-position: center; mask-size: 600% 600%; -webkit-mask-size: 600% 600%; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; }
+  .matshade { background-repeat: no-repeat; background-size: 600% 600%; filter: grayscale(1) brightness(1.5) contrast(1.1); mix-blend-mode: multiply; opacity: 0.6; }
+  .link { height: 1.5px; background: #171717; transform-origin: 0 50%; }
+  .dot { border-radius: 50%; background: #171717; }
+  .chiprow { display: flex; gap: 0.7cqw; }
+  .srcchip { display: flex; align-items: center; gap: 0.5cqw; padding: 0.35cqw 1cqw 0.35cqw 0.4cqw; border-radius: 999px; background: #fff; font-size: 1.15cqw; white-space: nowrap; color: var(--ink); box-shadow: 0 0.3cqw 1.2cqw rgb(23 23 23 / 0.07); transition: background 200ms ease, color 200ms ease; }
+  .srcchip .ico { display: grid; place-items: center; width: 2cqw; height: 2cqw; border-radius: 50%; background: var(--pink); }
+  .srcchip .ico svg { width: 82%; height: 82%; }
+  .srcchip.on { background: #171717; color: #fff; }
+  .srcchip.solo { font-size: 1.4cqw; padding-right: 1.3cqw; }
+  .srcchip.solo .ico { width: 2.6cqw; height: 2.6cqw; }
+  .cursor { width: 2.2cqw; height: 2.2cqw; z-index: 5; }
+  .tile { background: rgb(255 255 255 / 0.55); border-radius: 1.2cqw; }
+  .badge { position: absolute; left: 0.5cqw; top: 0.5cqw; width: 2.2cqw; height: 2.2cqw; padding: 0.2cqw; border-radius: 50%; background: #fff; }
+  .badge svg { width: 100%; height: 100%; }
+  .belt { height: 0.25cqw; background: repeating-linear-gradient(90deg, rgb(23 23 23 / 0.35) 0 1.2cqw, transparent 1.2cqw 2cqw); }
+  .mill { z-index: 4; display: grid; align-content: center; justify-items: center; gap: 0.5cqw; padding: 1cqw; border-radius: 1.4cqw; background: #fff; box-shadow: 0 0.6cqw 2.4cqw rgb(23 23 23 / 0.12); text-align: center; }
+  .mill b { font-weight: 400; font-size: 1.2cqw; line-height: 1.2; color: var(--ink); }
+  .sentence { font-size: 2cqw; line-height: 1.2; color: var(--s6); max-width: 44cqw; white-space: normal; }
+  .sentence.s0 { color: var(--ink); font-size: 2.4cqw; }
+  .sentence b { font-weight: 400; color: var(--ink); }
+  .famhead { font-size: 1.5cqw; color: #8c7a7c; }
+  .node { border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1.5px rgb(23 23 23 / 0.25); transition: box-shadow 200ms ease, background 200ms ease; }
+  .node.on { background: #171717; box-shadow: none; }
+  .fibres { border-radius: 50%; background: #fff; }
+  .fibres svg { width: 100%; height: 100%; }
+  .stagename { font-size: 2.8cqw; color: var(--ink); }
+  .stagedesc { width: 32cqw; white-space: normal; font-size: 1.5cqw; line-height: 1.3; color: var(--s6); }
+  .pane { background-size: cover; background-position: center; }
+  .pane .chip { font-size: 1.15cqw; }
+  .divider { left: 0; top: 0; width: 2px; margin-left: -1px; background: #fff; z-index: 6; box-shadow: 0 0 1cqw rgb(23 23 23 / 0.2); }
+  .divider i { position: absolute; left: 50%; top: 38%; width: 2.6cqw; height: 2.6cqw; border-radius: 50%; background: #fff; transform: translate(-50%, -50%); box-shadow: 0 0.3cqw 1.2cqw rgb(23 23 23 / 0.15); }
+  .scanline { height: 2px; border-radius: 2px; background: #fff; box-shadow: 0 0 1.2cqw 0.3cqw rgb(255 255 255 / 0.9); z-index: 3; }
+  .bigmat { font-size: 3cqw; line-height: 1.05; color: var(--ink); max-width: 34cqw; white-space: normal; }
+  h2 { margin: 0; padding: 12px 44px 18px; font-size: 22px; font-weight: 400; }
+  h2 small { display: block; margin-top: 6px; font-size: 14px; color: var(--s6); max-width: 760px; line-height: 1.35; }
 
   .focus { position: fixed; inset: 0; z-index: 50; display: none; place-items: center; align-content: center; gap: 18px; padding: 32px; background: rgb(11 10 9 / 0.8); backdrop-filter: blur(6px); }
   .focus[data-open] { display: grid; }
@@ -83,8 +127,8 @@
 <body>
   <header>
     <div>
-      <h1>EcoFabriq — thumbnail motion, 10 directions</h1>
-      <p>Every direction uses the real FutureFabric material: the 36-frame product turntables, the material scan photographs, the PubChem molecule models, the four material categories and the triangle → square → circle mark. Each one loops on the card as it sits on the Work page. Click a card to see it large.</p>
+      <h1>EcoFabriq — thumbnail motion</h1>
+      <p>Round 2. The four picks from round 1 sit on top (Shape field now uses real material instead of abstract shapes). Below are ten new directions that show where each biomaterial comes from — a leaf, a peel, a fungus, a fermenting tank — and how it becomes the product. Click a card to see it large.</p>
     </div>
     <div class="controls">
       <span>Speed</span>
@@ -95,22 +139,21 @@
       <button id="replay">Replay all</button>
     </div>
   </header>
-  <main class="grid" id="grid"></main>
+  <h2>Shortlist from round 1<small>Your picks: Smart discovery, Taxonomy sort, Shape field (now Material field) and Catalog wall.</small></h2>
+  <main class="grid" id="shortlist"></main>
+  <h2>Round 2 — make the biomaterial obvious<small>Source illustrations and material swatches are new assets generated for this page. Every source claim is the plain version of what the maker publishes.</small></h2>
+  <main class="grid" id="round2"></main>
   <div class="focus" id="focus"><div class="slot" id="focusSlot"></div><p class="cap" id="focusCap"></p><p class="hint">Esc or click the card to close · ← → to step through</p></div>
 
 <script type="module">
 const ROOT = '/studio/ecofabriq'
-const [PRODUCTS, MOLECULES] = await Promise.all([
-  fetch(`${ROOT}/products.json`).then((r) => r.json()),
-  fetch(`${ROOT}/molecules.json`).then((r) => r.json()),
-])
+const PRODUCTS = await fetch(`${ROOT}/products.json`).then((r) => r.json())
 const byCode = Object.fromEntries(PRODUCTS.map((p) => [p.code, p]))
-const SCANNED = ['MFB-01', 'PBC-01', 'BSP-01', 'PRO-02', 'BSP-03']
 const CATEGORIES = [
-  { key: 'Plant-based cellulosic', short: 'Plant-based', model: 'cellulose', formula: '(C₆H₁₀O₅)ₙ', name: 'CELLULOSE' },
-  { key: 'Protein-based', short: 'Protein', model: 'peptide', formula: '[–NH–CHR–CO–]ₙ', name: 'POLYPEPTIDE' },
-  { key: 'Bio-based synthetic polymers', short: 'Bio-synthetic', model: 'pla', formula: '(C₃H₄O₂)ₙ', name: 'POLYLACTIC ACID' },
-  { key: 'Microbial and fungal bioassembled', short: 'Microbial & fungal', model: 'chitin', formula: '(C₈H₁₃NO₅)ₙ', name: 'CHITIN' },
+  { key: 'Plant-based cellulosic', short: 'Plant-based' },
+  { key: 'Protein-based', short: 'Protein' },
+  { key: 'Bio-based synthetic polymers', short: 'Bio-synthetic' },
+  { key: 'Microbial and fungal bioassembled', short: 'Microbial & fungal' },
 ]
 
 // Warm every sheet so no concept pops in empty.
@@ -137,135 +180,138 @@ function frame(e, f) { const i = mod(Math.floor(f), 36); e.style.backgroundPosit
 /** Place a box of size s (px) centred on (x, y). */
 function place(e, x, y, s, extra = '') { e.style.width = e.style.height = `${s}px`; e.style.transform = `translate3d(${x - s / 2}px, ${y - s / 2}px, 0) ${extra}` }
 
-// ---------- the ten concepts ----------
-// Each: init(stage, size) → render(t, size). render is pure in t, so scrubbing works.
+
+// ---------- biomaterial sources ----------
+// Every product traced back to what it is grown or made from. Plain, verifiable claims only.
+let svgId = 0
+const ICONS = {
+  pineapple: () => { const id = `pc${svgId++}`; return `<svg viewBox="0 0 64 64"><defs><clipPath id="${id}"><ellipse cx="32" cy="43" rx="12" ry="16"/></clipPath></defs><g fill="#9dbb84" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"><path d="M31 28 L24 5 L35 24Z"/><path d="M33 28 L42 4 L37 25Z"/><path d="M30 29 L13 13 L32 25Z"/><path d="M34 29 L51 14 L33 25Z"/></g><ellipse cx="32" cy="43" rx="12" ry="16" fill="#e9c46a" stroke="#171717" stroke-width="1.4"/><g clip-path="url(#${id})" stroke="#171717" stroke-opacity=".45" stroke-width="1.1"><path d="M14 30 L50 66 M14 40 L44 70 M20 24 L56 60 M50 30 L14 66 M50 40 L20 70 M44 24 L8 60"/></g></svg>` },
+  orange: () => `<svg viewBox="0 0 64 64"><path d="M34 14 C38 6 48 5 54 9 C48 15 40 16 34 14Z" fill="#9dbb84" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"/><circle cx="32" cy="36" r="21" fill="#f2a24a" stroke="#171717" stroke-width="1.4"/><circle cx="32" cy="36" r="16.5" fill="#f8c77e"/><g stroke="#fff" stroke-width="1.6"><path d="M32 36 L32 20 M32 36 L43.7 24.3 M32 36 L48.5 36 M32 36 L43.7 47.7 M32 36 L32 52 M32 36 L20.3 47.7 M32 36 L15.5 36 M32 36 L20.3 24.3"/></g><circle cx="32" cy="36" r="2" fill="#fff"/></svg>`,
+  grape: () => `<svg viewBox="0 0 64 64"><path d="M34 18 C40 8 51 9 54 15 C47 20 39 21 34 18Z" fill="#9dbb84" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"/><path d="M32 22 C32 16 33 12 37 8" fill="none" stroke="#171717" stroke-width="1.6"/><g fill="#9b6a93" stroke="#171717" stroke-width="1.3">${[[25, 27], [39, 27], [18, 37], [32, 37], [46, 37], [25, 47], [39, 47], [32, 57]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6.6"/>`).join('')}</g></svg>`,
+  wood: () => `<svg viewBox="0 0 64 64"><g fill="#a9c2a4" stroke="#171717" stroke-width="1.3" stroke-linejoin="round"><path d="M22 26 C20 16 24 8 30 4 C33 12 30 20 22 26Z"/><path d="M36 25 C40 15 48 11 56 11 C54 19 46 24 36 25Z"/></g><path d="M29 28 L29 12" stroke="#171717" stroke-width="1.3"/><path d="M10 32 L46 32 L46 56 L10 56 C6 56 6 32 10 32Z" fill="#b98a5e" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"/><g stroke="#171717" stroke-opacity=".35" stroke-width="1"><path d="M14 38 L38 38 M12 45 L34 45 M16 51 L40 51"/></g><ellipse cx="46" cy="44" rx="7" ry="12" fill="#e2c296" stroke="#171717" stroke-width="1.4"/><g fill="none" stroke="#171717" stroke-opacity=".5" stroke-width="1"><ellipse cx="46" cy="44" rx="4.4" ry="8"/><ellipse cx="46" cy="44" rx="1.8" ry="3.4"/></g></svg>`,
+  waste: () => `<svg viewBox="0 0 64 64"><path d="M20 13 L28 9 C29 13 35 13 36 9 L44 13 L53 22 L47 28 L44 25 L44 55 L20 55 L20 25 L17 28 L11 22Z" fill="#b8c3d1" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"/><g fill="none" stroke="#171717" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M26.5 37 A6.5 6.5 0 1 1 29 44"/><path d="M25.5 32.5 L26.5 37 L31 36"/></g></svg>`,
+  corn: () => { const k = []; for (let r = 0; r < 7; r++) for (let c = 0; c < 3; c++) k.push(`<rect x="${27 + c * 4.2 - (r % 2) * 0.6}" y="${22 + r * 4.4}" width="3.4" height="3.6" rx="1.4"/>`); return `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="36" rx="9" ry="18" fill="#efcf6a" stroke="#171717" stroke-width="1.4"/><g fill="#f7e2a0" stroke="#171717" stroke-opacity=".35" stroke-width=".7">${k.join('')}</g><g fill="#9dbb84" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"><path d="M32 60 C19 54 14 40 17 24 C23 34 28 46 32 60Z"/><path d="M32 60 C45 54 50 40 47 24 C41 34 36 46 32 60Z"/></g></svg>` },
+  brew: () => `<svg viewBox="0 0 64 64"><path d="M19 45 L45 45 L50 53 C52 57 50 59 46 59 L18 59 C14 59 12 57 14 53Z" fill="#e7d3a3"/><path d="M28 8 L28 27 L14 53 C12 57 14 59 18 59 L46 59 C50 59 52 57 50 53 L36 27 L36 8" fill="none" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"/><path d="M25 8 L39 8" stroke="#171717" stroke-width="1.6" stroke-linecap="round"/><g fill="#fff" stroke="#171717" stroke-width="1"><circle cx="27" cy="51" r="2.4"/><circle cx="36" cy="49" r="1.8"/><circle cx="31" cy="40" r="1.6"/><circle cx="33" cy="32" r="1.2"/></g></svg>`,
+  sheep: () => `<svg viewBox="0 0 64 64"><g stroke="#171717" stroke-width="1.8" stroke-linecap="round"><path d="M26 47 L26 56 M32 48 L32 56 M40 48 L40 56 M46 47 L46 56"/></g><g fill="#fff" stroke="#171717" stroke-width="1.3">${[[28, 32, 8], [38, 29, 9], [48, 34, 7.5], [33, 41, 8.5], [44, 42, 8], [24, 40, 6.5]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g><ellipse cx="16" cy="35" rx="6" ry="7.4" fill="#3a3534"/><path d="M11 30 C8 29 7 32 9 33" fill="none" stroke="#3a3534" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+  fungi: () => `<svg viewBox="0 0 64 64"><g fill="none" stroke="#171717" stroke-opacity=".55" stroke-width="1"><path d="M32 44 C27 51 18 53 8 55 M32 44 C35 51 44 54 56 56 M31 46 C28 53 26 57 23 62 M33 46 C37 53 39 57 43 62 M30 48 C24 51 17 58 12 61 M34 48 C42 51 48 56 54 60"/></g><path d="M27 31 L37 31 L36 45 L28 45Z" fill="#f3e9dc" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 32 C9 12 55 12 55 32Z" fill="#d8a488" stroke="#171717" stroke-width="1.4" stroke-linejoin="round"/><g fill="#f3e9dc"><circle cx="24" cy="22" r="2.6"/><circle cx="37" cy="19" r="2"/><circle cx="44" cy="26" r="2.2"/></g></svg>`,
+}
+const SOURCES = {
+  pineapple: { label: 'Pineapple leaves', from: 'Leaves left in the field after the fruit harvest', process: 'Leaf fibres extracted and felted', steps: ['Collect leftover leaves', 'Extract the long leaf fibres', 'Felt them into a mesh'] },
+  orange: { label: 'Orange peel', from: 'Peel left over from juice making', process: 'Cellulose extracted and spun', steps: ['Collect citrus peel', 'Extract the cellulose', 'Spin into a silky yarn'] },
+  grape: { label: 'Grape waste', from: 'Skins, stems and seeds left from wine making', process: 'Dried, bound and coated', steps: ['Collect the grape marc', 'Dry and grind it', 'Bind and coat into a sheet'] },
+  wood: { label: 'Eucalyptus wood', from: 'Wood pulp from managed forests', process: 'Pulp dissolved and spun', steps: ['Pulp the wood', 'Dissolve the cellulose', 'Spin into a filament'] },
+  waste: { label: 'Worn clothes', from: 'Used cotton–polyester garments', process: 'Cotton separated and respun', steps: ['Collect worn clothes', 'Separate the cotton', 'Respin it as lyocell'] },
+  corn: { label: 'Corn sugar', from: 'Sugar from plant starch', process: 'Fermented into PLA and spun', steps: ['Ferment the sugar', 'Polymerise into PLA', 'Melt-spin into fibre'] },
+  brew: { label: 'Fermented sugar', from: 'Plant sugar fed to microbes', process: 'Protein brewed and spun', steps: ['Feed sugar to microbes', 'Harvest the protein', 'Spin it into fibre'] },
+  sheep: { label: 'Merino fleece', from: 'Fleece shorn from merino sheep', process: 'Washed, combed and knit', steps: ['Shear the fleece', 'Wash and comb it', 'Spin and knit'] },
+  fungi: { label: 'Mycelium', from: 'Fungal roots grown on farm waste', process: 'Grown into a mat and finished', steps: ['Grow mycelium on farm waste', 'Harvest the grown mat', 'Finish it like leather'] },
+}
+for (const [k, s] of Object.entries(SOURCES)) { s.key = k; s.icon = ICONS[k] }
+const ORIGIN = {
+  'PBC-01': ['pineapple', 'felt'], 'PBC-02': ['pineapple', 'felt'], 'PBC-03': ['pineapple', 'felt'],
+  'PBC-04': ['orange', 'satin'], 'PBC-07': ['orange', 'satin'], 'PBC-08': ['orange', 'satin'],
+  'PBC-05': ['wood', 'satin'], 'PBC-06': ['waste', 'twill'],
+  'BSP-01': ['grape', 'grain'], 'BSP-02': ['corn', 'ripstop'], 'BSP-03': ['brew', 'ripstop'],
+  'PRO-01': ['sheep', 'knit'], 'PRO-02': ['brew', 'knit'],
+  'MFB-01': ['fungi', 'grain'], 'MFB-02': ['fungi', 'grain'], 'MFB-03': ['fungi', 'grain'], 'MFB-04': ['fungi', 'foam'],
+}
+for (const p of PRODUCTS) { const [s, kind] = ORIGIN[p.code]; p.source = SOURCES[s]; p.kind = kind }
+
+// ---------- generated material textures ----------
+// Drawn once per product at 512 px, tinted with the product's own colour.
+const TEX = new Map()
+const hexRgb = (h) => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255] }
+const tone = ([r, g, b], a, k = 0) => { const f = (v) => Math.round(k >= 0 ? v + (255 - v) * k : v * (1 + k)); return `rgba(${f(r)},${f(g)},${f(b)},${a})` }
+function texture(p) {
+  if (TEX.has(p.code)) return TEX.get(p.code)
+  const S = 512, c = document.createElement('canvas'); c.width = c.height = S
+  const x = c.getContext('2d'), col = hexRgb(p.color), r = rng(parseInt(p.color.slice(1), 16) + p.code.charCodeAt(4) * 31)
+  const dark = col[0] + col[1] + col[2] < 300
+  x.fillStyle = tone(col, 1); x.fillRect(0, 0, S, S)
+  const sheen = (a) => { const g = x.createLinearGradient(0, 0, S, S * 0.7); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.4, `rgba(255,255,255,${a})`); g.addColorStop(0.55, 'rgba(255,255,255,0)'); g.addColorStop(0.8, `rgba(0,0,0,${a * 0.6})`); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, S, S) }
+  if (p.kind === 'felt') {
+    for (let i = 0; i < 6500; i++) {
+      const px = r() * S, py = r() * S, a = r() * Math.PI * 2, l = 10 + r() * 50
+      x.strokeStyle = tone(col, 0.2 + r() * 0.3, (r() - 0.45) * 0.8); x.lineWidth = 0.6 + r() * 1.8
+      x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + Math.cos(a + 0.7) * l * 0.5, py + Math.sin(a + 0.7) * l * 0.5, px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke()
+    }
+  } else if (p.kind === 'satin' || p.kind === 'twill') {
+    for (let y = 0; y < S; y += 2) {
+      x.strokeStyle = tone(col, 0.55, ((y / 2) % 2 ? 0.1 : -0.1) + (r() - 0.5) * 0.1); x.lineWidth = 1.3; x.beginPath()
+      for (let X = 0; X <= S; X += 16) { const yy = y + Math.sin(X * 0.018 + y * 0.04) * 1.4; X ? x.lineTo(X, yy) : x.moveTo(X, yy) }
+      x.stroke()
+    }
+    if (p.kind === 'twill') { x.lineWidth = 2; for (let d = -S; d < S; d += 9) { x.strokeStyle = tone(col, 0.22, dark ? 0.25 : -0.2); x.beginPath(); x.moveTo(d, S); x.lineTo(d + S, 0); x.stroke() } }
+    sheen(p.kind === 'satin' ? 0.3 : 0.12)
+  } else if (p.kind === 'grain') {
+    for (let i = 0; i < 3400; i++) {
+      const px = r() * S, py = r() * S, rad = 3 + r() * 8
+      x.fillStyle = tone(col, 0.16, -0.35); x.beginPath(); x.ellipse(px, py, rad, rad * (0.6 + r() * 0.5), r() * 3, 0, Math.PI * 2); x.fill()
+      x.fillStyle = tone(col, 0.14, 0.4); x.beginPath(); x.ellipse(px - rad * 0.3, py - rad * 0.3, rad * 0.5, rad * 0.35, 0, 0, Math.PI * 2); x.fill()
+    }
+    x.lineWidth = 1.6
+    for (let i = 0; i < 14; i++) { x.strokeStyle = tone(col, 0.22, dark ? 0.3 : -0.4); x.beginPath(); x.moveTo(r() * S, r() * S); x.bezierCurveTo(r() * S, r() * S, r() * S, r() * S, r() * S, r() * S); x.stroke() }
+    sheen(0.14)
+  } else if (p.kind === 'knit') {
+    const cw = 20, rh = 22
+    for (let y = -rh; y < S + rh; y += rh) for (let X = 0; X < S + cw; X += cw) for (const s of [-1, 1]) {
+      x.save(); x.translate(X + s * 4.5, y); x.rotate(s * 0.5)
+      const g = x.createLinearGradient(-6, 0, 6, 0); g.addColorStop(0, tone(col, 1, -0.25)); g.addColorStop(0.5, tone(col, 1, 0.22)); g.addColorStop(1, tone(col, 1, -0.25))
+      x.fillStyle = g; x.beginPath(); x.ellipse(0, 0, 5.4, 12.5, 0, 0, Math.PI * 2); x.fill()
+      x.strokeStyle = tone(col, 0.5, -0.45); x.lineWidth = 0.8; x.stroke(); x.restore()
+    }
+    for (let i = 0; i < 2600; i++) { const px = r() * S, py = r() * S, a = r() * 6.28; x.strokeStyle = tone(col, 0.25, 0.35); x.lineWidth = 0.5; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * 5, py + Math.sin(a) * 5); x.stroke() }
+  } else if (p.kind === 'ripstop') {
+    x.lineWidth = 1
+    for (let v = 0; v < S; v += 4) { x.strokeStyle = tone(col, 0.18, v % 8 ? 0.15 : -0.15); x.beginPath(); x.moveTo(v, 0); x.lineTo(v, S); x.stroke(); x.beginPath(); x.moveTo(0, v); x.lineTo(S, v); x.stroke() }
+    x.lineWidth = 2
+    for (let v = 0; v < S; v += 30) { x.strokeStyle = tone(col, 0.45, -0.3); x.beginPath(); x.moveTo(v, 0); x.lineTo(v, S); x.stroke(); x.beginPath(); x.moveTo(0, v); x.lineTo(S, v); x.stroke() }
+    sheen(0.26)
+  } else if (p.kind === 'foam') {
+    for (let i = 0; i < 4200; i++) { const px = r() * S, py = r() * S, rad = 3 + r() * 12, a = r() * 6.28; x.strokeStyle = tone(col, 0.35, r() < 0.5 ? 0.45 : -0.2); x.lineWidth = 0.6 + r(); x.beginPath(); x.arc(px, py, rad, a, a + 1 + r() * 2); x.stroke() }
+  }
+  // Fine noise so no texture reads as flat vector.
+  for (let i = 0; i < 9000; i++) { x.fillStyle = r() < 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'; x.fillRect(r() * S, r() * S, 1.2, 1.2) }
+  const url = c.toDataURL('image/jpeg', 0.86)
+  TEX.set(p.code, url)
+  return url
+}
+PRODUCTS.forEach(texture)
+
+/** A white disc holding a source illustration. */
+function sourceDisc(parent, cls = '') { const e = el(parent, `abs disc ${cls}`); return e }
+function setSource(e, s) { if (e._src !== s) { e._src = s; e.innerHTML = s.icon() } }
+/** A round swatch of a product's material. */
+function swatch(parent) { return el(parent, 'abs swatch') }
+function setSwatch(e, p) { if (e._p !== p) { e._p = p; e.style.backgroundImage = `url(${texture(p)})` } }
+/** The product silhouette filled with its own raw material, with the render's shading multiplied on top. */
+function matSprite(parent, p) {
+  const e = el(parent, 'abs matsprite')
+  e._tex = el(e, 'fillabs mattex'); e._shade = el(e, 'fillabs sprite matshade')
+  setMat(e, p)
+  return e
+}
+function setMat(e, p) {
+  if (e._p === p) return
+  e._p = p
+  const s = `url(${ROOT}/sprites/${p.sprite})`
+  e._tex.style.backgroundImage = `url(${texture(p)})`
+  e._tex.style.maskImage = e._tex.style.webkitMaskImage = s
+  e._shade.style.backgroundImage = s
+}
+function frameMat(e, f) {
+  const i = mod(Math.floor(f), 36), pos = `${(i % 6) * 20}% ${Math.floor(i / 6) * 20}%`
+  e._tex.style.maskPosition = e._tex.style.webkitMaskPosition = pos
+  e._shade.style.backgroundPosition = pos
+}
+/** Horizontally centre an element's box on x. */
+function centerAt(e, x, y) { e.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, 0)` }
+
+// ---------- concepts ----------
+// Each: init(stage) → render(t, size). render is pure in t, so scrubbing works.
 const CONCEPTS = [
   {
-    name: 'Turntable orbit',
-    idea: 'The catalog as a slow carousel: seven products ride an ellipse, each one turning on its own turntable as it passes the front.',
-    meta: 'Products: 36-frame turntables · 12 s loop',
-    duration: 12,
-    init(stage) {
-      const picks = ['PBC-01', 'MFB-01', 'PRO-01', 'BSP-01', 'MFB-02', 'PBC-02', 'BSP-03'].map((c) => byCode[c])
-      const items = picks.map((p) => sprite(stage, p))
-      const floor = el(stage, 'abs')
-      floor.style.cssText += 'border-radius:50%;background:radial-gradient(closest-side, rgb(140 122 124 / 0.22), transparent);'
-      stage.prepend(floor)
-      return (t, { w, h }) => {
-        const cx = w / 2, cy = h * 0.47, rx = w * 0.36, ry = h * 0.13
-        place(floor, cx, cy + h * 0.15, 0)
-        floor.style.width = `${rx * 2.4}px`; floor.style.height = `${ry * 2.6}px`
-        floor.style.transform = `translate3d(${cx - rx * 1.2}px, ${cy + h * 0.02}px, 0)`
-        items.forEach((e, i) => {
-          const a = (t / 12) * Math.PI * 2 + (i / items.length) * Math.PI * 2
-          const depth = (Math.sin(a) + 1) / 2 // 1 = front
-          const s = h * lerp(0.26, 0.52, depth)
-          place(e, cx + Math.cos(a) * rx, cy + Math.sin(a) * ry, s)
-          e.style.zIndex = Math.round(depth * 100)
-          e.style.opacity = lerp(0.55, 1, depth)
-          e.style.filter = `blur(${((1 - depth) * 1.2).toFixed(2)}px)`
-          frame(e, (a / (Math.PI * 2)) * 36 * 1.5 + i * 5)
-        })
-      }
-    },
-  },
-  {
-    name: 'Material → product',
-    idea: 'Start on the material itself: a close-up of the real surface fills the frame, settles into a round swatch, and the product made from it turns up beside it.',
-    meta: 'Material surface crops (5) + matching turntables · 15 s loop',
-    duration: 15,
-    init(stage) {
-      const photo = el(stage, 'abs')
-      photo.style.cssText += 'background-size:cover;background-position:center;'
-      const prod = sprite(stage, byCode[SCANNED[0]])
-      const code = el(stage, 'label mono')
-      const mat = el(stage, 'chip')
-      return (t, { w, h }) => {
-        const i = Math.floor(t / 3) % SCANNED.length
-        const p = byCode[SCANNED[i]]
-        const u = (t % 3) / 3
-        photo.style.backgroundImage = `url(${ROOT}/scans/${p.code}-surface.webp)`
-        setSprite(prod, p)
-        // 0–.3 full-bleed macro, .3–.55 pull back into swatch, .55–1 product.
-        const pull = inOut(seg(u, 0.25, 0.55))
-        // Surface crops are small (≈120–240 px), so the opening frame is a large
-        // rounded tile, not full-bleed: it stays sharp at card size.
-        const sw = h * 0.46, big = h * 0.84
-        const pw = lerp(big * 1.25, sw, pull), ph = lerp(big, sw, pull)
-        const x = lerp(w / 2, w * 0.33, pull) - pw / 2, y = lerp(h * 0.46, h * 0.44, pull) - ph / 2
-        photo.style.width = `${pw}px`; photo.style.height = `${ph}px`
-        photo.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${lerp(0.94, 1, outCubic(seg(u, 0, 0.12)))})`
-        photo.style.borderRadius = `${lerp(h * 0.04, sw / 2, pull)}px`
-        photo.style.backgroundSize = 'cover'
-        photo.style.boxShadow = '0 1cqw 3cqw rgb(23 23 23 / 0.12)'
-        const out = seg(u, 0.9, 1)
-        photo.style.opacity = (1 - out) * outCubic(seg(u, 0, 0.1))
-        const show = outCubic(seg(u, 0.45, 0.7))
-        place(prod, w * 0.64, h * 0.44, h * 0.62 * lerp(0.85, 1, show))
-        prod.style.opacity = show * (1 - out)
-        frame(prod, u * 36)
-        code.textContent = `${p.code} · ${p.name}`
-        code.style.transform = `translate3d(${w * 0.64 - code.offsetWidth / 2}px, ${h * 0.77}px, 0)`
-        code.style.opacity = show * (1 - out)
-        mat.textContent = p.material
-        mat.style.transform = `translate3d(${w * 0.33 - mat.offsetWidth / 2}px, ${h * 0.73 + (1 - show) * 8}px, 0)`
-        mat.style.opacity = show * (1 - out)
-      }
-    },
-  },
-  {
-    name: 'Molecule to garment',
-    idea: 'Chemistry first: the real 3D molecule for each material family turns in space, collapses to a point, and blooms into a product of that family.',
-    meta: 'PubChem molecules (cellulose, peptide, PLA, chitin) · 16 s loop',
-    duration: 16,
-    init(stage) {
-      const c = document.createElement('canvas'); c.className = 'fill'; stage.append(c)
-      const ctx = c.getContext('2d')
-      const prod = sprite(stage, byCode['PBC-01'])
-      const formula = el(stage, 'label mono')
-      const picks = { cellulose: 'PBC-01', peptide: 'PRO-02', pla: 'BSP-02', chitin: 'MFB-02' }
-      const COLORS = { 6: '#171717', 8: '#d6606d', 7: '#6e7fd1', 1: '#ffffff' }
-      return (t, { w, h, dpr }) => {
-        if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr) }
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h)
-        const k = Math.floor(t / 4) % 4, u = (t % 4) / 4
-        const cat = CATEGORIES[k], mol = MOLECULES[cat.model], p = byCode[picks[cat.model]]
-        const collapse = inOut(seg(u, 0.5, 0.66))
-        const appear = outCubic(seg(u, 0.6, 0.8))
-        const out = seg(u, 0.92, 1)
-        const molIn = outCubic(seg(u, 0, 0.14))
-        // Fit the molecule to the card.
-        const pts = mol.atoms
-        let r = 0; for (const a of pts) r = Math.max(r, Math.hypot(a[1], a[2], a[3]))
-        const scale = (h * 0.34) / r
-        const ay = t * 0.9, ax = 0.5 + Math.sin(t * 0.4) * 0.3
-        const proj = pts.map(([z, x, y, zz]) => {
-          const x1 = x * Math.cos(ay) + zz * Math.sin(ay), z1 = -x * Math.sin(ay) + zz * Math.cos(ay)
-          const y1 = y * Math.cos(ax) - z1 * Math.sin(ax), z2 = y * Math.sin(ax) + z1 * Math.cos(ax)
-          const f = 1 - collapse
-          return { z, x: w / 2 + x1 * scale * f * molIn, y: h * 0.45 + y1 * scale * f * molIn, d: z2 }
-        })
-        const alpha = (1 - collapse * 0.85) * (1 - out)
-        ctx.lineWidth = Math.max(1, h * 0.006); ctx.strokeStyle = `rgba(23,23,23,${0.35 * alpha})`
-        for (const [a, b] of mol.bonds) { const A = proj[a], B = proj[b]; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke() }
-        for (const q of [...proj].sort((a, b) => a.d - b.d)) {
-          const rad = h * (q.z === 1 ? 0.012 : 0.022) * (1 + q.d / (r * 3))
-          ctx.globalAlpha = alpha; ctx.fillStyle = COLORS[q.z] || '#171717'
-          ctx.beginPath(); ctx.arc(q.x, q.y, rad, 0, Math.PI * 2); ctx.fill()
-          if (q.z === 1) { ctx.strokeStyle = `rgba(23,23,23,${0.3 * alpha})`; ctx.lineWidth = 1; ctx.stroke(); ctx.lineWidth = Math.max(1, h * 0.006); ctx.strokeStyle = `rgba(23,23,23,${0.35 * alpha})` }
-        }
-        ctx.globalAlpha = 1
-        setSprite(prod, p)
-        place(prod, w / 2, h * 0.45, h * 0.66 * lerp(0.2, 1, appear))
-        prod.style.opacity = appear * (1 - out)
-        frame(prod, t * 9)
-        formula.textContent = `${cat.name}  ${cat.formula}  →  ${p.code}`
-        formula.style.transform = `translate3d(${w / 2 - formula.offsetWidth / 2}px, ${h * 0.8}px, 0)`
-        formula.style.opacity = molIn * (1 - out)
-      }
-    },
-  },
-  {
+    group: 'shortlist',
     name: 'Smart discovery',
     idea: 'The product in one move: a query types itself, the grid re-sorts around it, and the best matches rise to the front with a match score.',
     meta: 'Search → FLIP re-rank of 8 turntables · 10 s loop',
@@ -312,6 +358,7 @@ const CONCEPTS = [
     },
   },
   {
+    group: 'shortlist',
     name: 'Taxonomy sort',
     idea: 'Chaos into order: sixteen products drift loose, then file themselves into the four material families, then let go again.',
     meta: 'All products × 4 categories · 10 s loop',
@@ -341,92 +388,36 @@ const CONCEPTS = [
     },
   },
   {
-    name: 'Lab scan',
-    idea: 'The FutureFabric material scan, big: a sweep passes over the product, reading it as a material specimen with a live loupe on the real surface photo.',
-    meta: 'Scan UI language (lock, sweep, crosshair) + surface crops · 12 s loop',
-    duration: 12,
-    init(stage) {
-      const base = sprite(stage, byCode['MFB-01'])
-      const xray = sprite(stage, byCode['MFB-01'])
-      xray.style.filter = 'grayscale(1) contrast(1.6) brightness(1.15)'
-      const line = el(stage, 'abs'); line.style.cssText += 'width:1.5px;background:#171717;'
-      const loupe = el(stage, 'abs'); loupe.style.cssText += 'border-radius:50%;border:1.5px solid #171717;background-size:cover;background-position:center;box-shadow:0 1cqw 3cqw rgb(23 23 23 / .18)'
-      const hud = el(stage, 'label mono'); hud.style.lineHeight = '1.6'
-      const bracket = el(stage, 'abs'); bracket.style.cssText += 'border:1.5px solid #171717;border-radius:0.6cqw;'
-      const picks = ['MFB-01', 'PBC-01', 'PRO-02']
-      return (t, { w, h }) => {
-        const i = Math.floor(t / 4) % 3, u = (t % 4) / 4, p = byCode[picks[i]]
-        setSprite(base, p); setSprite(xray, p)
-        const s = h * 0.78, cx = w * 0.42, cy = h * 0.46
-        place(base, cx, cy, s); place(xray, cx, cy, s)
-        const f = 6 + u * 6; frame(base, f); frame(xray, f)
-        const sweep = inOut(seg(u, 0.1, 0.75))
-        const lx = lerp(cx - s * 0.42, cx + s * 0.42, sweep)
-        const cut = ((lx - (cx - s / 2)) / s) * 100
-        xray.style.clipPath = `inset(0 ${100 - cut}% 0 0)`
-        const fade = 1 - seg(u, 0.9, 1)
-        base.style.opacity = xray.style.opacity = fade * outCubic(seg(u, 0, 0.1))
-        line.style.height = `${s * 0.86}px`; line.style.transform = `translate3d(${lx}px, ${cy - s * 0.43}px, 0)`
-        line.style.opacity = sweep > 0 && sweep < 1 ? fade : 0
-        const ls = h * 0.26
-        loupe.style.width = loupe.style.height = `${ls}px`
-        loupe.style.backgroundImage = `url(${ROOT}/scans/${p.code}-surface.webp)`
-        loupe.style.transform = `translate3d(${w * 0.7}px, ${h * 0.14}px, 0) scale(${outCubic(seg(u, 0.35, 0.55)) * fade})`
-        bracket.style.width = `${s * 0.7}px`; bracket.style.height = `${s * 0.86}px`
-        bracket.style.transform = `translate3d(${cx - s * 0.35}px, ${cy - s * 0.43}px, 0)`
-        bracket.style.opacity = (0.6 - 0.6 * seg(u, 0.75, 0.85)) * fade
-        const lines = [`01 / LOCK   ${p.code}`, p.material.toUpperCase(), p.category.toUpperCase()]
-        const shown = Math.floor(seg(u, 0.4, 0.8) * 3 + 0.999)
-        hud.innerHTML = lines.slice(0, shown).join('<br>')
-        hud.style.transform = `translate3d(${w * 0.7}px, ${h * 0.14 + ls + h * 0.04}px, 0)`
-        hud.style.opacity = fade
-        hud.style.fontSize = '1cqw'
-      }
-    },
-  },
-  {
-    name: 'Shape field',
-    idea: 'The FutureFabric mark as a system: a grid of triangles rolls into rounded squares and circles on a diagonal wave, and each circle opens onto a product.',
-    meta: 'Triangle → square → circle mark · 9 s loop',
+    group: 'shortlist',
+    name: 'Material field',
+    idea: 'Shape field, redone with real material: a grid of swatches, each one the fabric a product is made of. A diagonal wave passes through — each swatch pulls into the shape of its product, then turns into the finished render.',
+    meta: 'Generated material swatches → material-filled silhouette → turntable · 9 s loop',
     duration: 9,
     init(stage) {
-      const N = 48
-      const shapes = {
-        tri: Array.from({ length: N }, (_, i) => { const a = (i / N) * Math.PI * 2 - Math.PI / 2; const k = Math.floor((i / N) * 3), f = (i / N) * 3 - k; const v = [0, 1, 2].map((j) => [Math.cos(-Math.PI / 2 + j * 2.094), Math.sin(-Math.PI / 2 + j * 2.094)]); const A = v[k], B = v[(k + 1) % 3]; return [lerp(A[0], B[0], f) * 0.95, lerp(A[1], B[1], f) * 0.95 + 0.12] }),
-        sq: Array.from({ length: N }, (_, i) => { const a = (i / N) * Math.PI * 2 - Math.PI / 2; const c = Math.cos(a), s = Math.sin(a); const n = 6; const r = 1 / Math.pow(Math.abs(c) ** n + Math.abs(s) ** n, 1 / n); return [c * r * 0.78, s * r * 0.78] }),
-        circ: Array.from({ length: N }, (_, i) => { const a = (i / N) * Math.PI * 2 - Math.PI / 2; return [Math.cos(a), Math.sin(a)] }),
-      }
-      const cols = 7, rows = 4
-      const cells = []
-      const pool = PRODUCTS
+      const cols = 7, rows = 4, cells = []
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-        const cell = el(stage, 'abs')
-        cell.style.background = '#171717'
-        const s = sprite(cell, pool[(r * cols + c) % pool.length]); s.style.position = 'absolute'; s.style.left = s.style.top = '0'
-        cells.push({ r, c, cell, s })
+        const p = PRODUCTS[(r * cols + c) % PRODUCTS.length]
+        const sw = swatch(stage); setSwatch(sw, p)
+        const m = matSprite(stage, p), s = sprite(stage, p)
+        cells.push({ r, c, sw, m, s })
       }
       return (t, { w, h }) => {
-        const size = Math.min(w / (cols + 0.6), h / (rows + 0.6)) * 0.78
-        const gx = w / cols, gy = h / rows
-        cells.forEach(({ r, c, cell, s }, idx) => {
-          const wave = (t / 9) * 2 - (c + r) / (cols + rows) // travels diagonally
-          const m = clamp(Math.sin(mod(wave, 1) * Math.PI) * 1.4) * 2 // 0 tri → 1 sq → 2 circle
-          const A = m < 1 ? shapes.tri : shapes.sq, B = m < 1 ? shapes.sq : shapes.circ, k = inOut(m < 1 ? m : m - 1)
-          const poly = A.map((p, i) => `${(50 + lerp(p[0], B[i][0], k) * 50).toFixed(2)}% ${(50 + lerp(p[1], B[i][1], k) * 50).toFixed(2)}%`).join(',')
-          cell.style.clipPath = `polygon(${poly})`
-          cell.style.width = cell.style.height = `${size}px`
-          cell.style.transform = `translate3d(${gx * (c + 0.5) - size / 2}px, ${gy * (r + 0.5) - size / 2}px, 0) rotate(${(1 - clamp(m / 2)) * 0}deg)`
-          const open = outCubic(seg(m, 1.4, 2))
-          cell.style.background = `rgb(${lerp(23, 255, open)} ${lerp(23, 255, open)} ${lerp(23, 255, open)})`
-          s.style.width = s.style.height = `${size}px`
-          s.style.opacity = open
-          s.style.transform = `scale(${lerp(0.6, 1.05, open)})`
-          frame(s, t * 5 + idx * 3)
+        const size = Math.min(w / (cols + 0.4), h / (rows + 0.4)), gx = w / cols, gy = h / rows
+        cells.forEach(({ r, c, sw, m, s }, i) => {
+          const ph = mod(t / 9 - ((c + r) / (cols + rows - 2)) * 0.55, 1)
+          const k = Math.sin(ph * Math.PI) ** 2
+          const a = inOut(seg(k, 0.25, 0.55)), b = inOut(seg(k, 0.6, 0.9))
+          const cx = gx * (c + 0.5), cy = gy * (r + 0.5)
+          place(sw, cx, cy, size * lerp(0.7, 0.35, a)); sw.style.opacity = 1 - a
+          place(m, cx, cy, size * 1.08); m.style.opacity = a * (1 - b)
+          place(s, cx, cy, size * 1.08); s.style.opacity = b
+          frameMat(m, t * 4 + i * 3); frame(s, t * 4 + i * 3)
         })
       }
     },
   },
   {
+    group: 'shortlist',
     name: 'Catalog wall',
     idea: 'Scale at a glance: three tilted rails of spinning products slide past at different speeds, like a wall of the whole catalog.',
     meta: 'All 17 turntables on 3 rails · 16 s loop',
@@ -454,99 +445,410 @@ const CONCEPTS = [
       }
     },
   },
+  // ---------------- Round 2: make the biomaterial visible ----------------
   {
-    name: 'Spotlight index',
-    idea: 'One product at a time, big and confident: it spins in, a product code ticks over like an index, and the next one blurs through.',
-    meta: 'Code counter + name + category · 14 s loop',
-    duration: 14,
+    group: 'round2',
+    name: 'Origin chain',
+    idea: 'The whole idea in one line: where it comes from → the material it becomes → the product you can buy. Eight products step through the same three stations.',
+    meta: 'Source illustration → generated material swatch → turntable · 24 s loop',
+    duration: 24,
     init(stage) {
-      const picks = ['MFB-01', 'PBC-01', 'PRO-02', 'BSP-03', 'MFB-03', 'PBC-06', 'BSP-01'].map((c) => byCode[c])
-      const a = sprite(stage, picks[0]), b = sprite(stage, picks[1])
-      const code = el(stage, 'abs mono'); code.style.cssText += 'font-size:6.2cqw;font-weight:500;color:#171717;letter-spacing:-0.02em;line-height:1;'
-      const name = el(stage, 'label'); name.style.fontSize = '1.6cqw'
-      const cat = el(stage, 'chip')
-      const count = el(stage, 'label mono'); count.style.color = '#6f6b68'
+      const chain = ['PBC-01', 'PBC-07', 'MFB-02', 'BSP-01', 'PRO-01', 'PRO-02', 'PBC-05', 'BSP-02'].map((c) => byCode[c])
+      const src = sourceDisc(stage), sw = swatch(stage), pr = sprite(stage, chain[0])
+      const links = [0, 1].map(() => el(stage, 'abs link')), dots = [0, 1].map(() => el(stage, 'abs dot'))
+      const verbs = [0, 1].map(() => el(stage, 'label mono small verb'))
+      const heads = ['Source', 'Material', 'Product'].map((tx) => { const e = el(stage, 'label mono small'); e.textContent = tx.toUpperCase(); return e })
+      const caps = [0, 1, 2].map(() => el(stage, 'label cap'))
       return (t, { w, h }) => {
-        const i = Math.floor(t / 2) % picks.length, u = (t % 2) / 2
-        const cur = picks[i], nxt = picks[(i + 1) % picks.length]
-        setSprite(a, cur); setSprite(b, nxt)
-        const swap = inOut(seg(u, 0.78, 1))
-        const s = h * 0.9
-        place(a, w * 0.63 - swap * w * 0.06, h * 0.5, s * (1 - 0.12 * swap)); a.style.opacity = 1 - swap; a.style.filter = `blur(${swap * 10}px)`
-        place(b, w * 0.63 + (1 - swap) * w * 0.06, h * 0.5, s * (0.88 + 0.12 * swap)); b.style.opacity = swap; b.style.filter = `blur(${(1 - swap) * 10}px)`
-        const spin = outQuint(u) * 36
-        frame(a, 9 + spin); frame(b, 9)
-        // Roll the code characters that change.
-        const rolled = [...cur.code].map((ch, k) => (swap > 0.5 ? nxt.code[k] : ch)).join('')
-        code.textContent = rolled
-        code.style.transform = `translate3d(${w * 0.07}px, ${h * 0.2 - (swap > 0.5 ? (1 - swap) : -swap) * h * 0.04}px, 0)`
-        code.style.opacity = 1 - Math.sin(swap * Math.PI) * 0.8
-        const shown = swap > 0.5 ? nxt : cur
-        name.textContent = `${shown.name} — ${shown.companies}`
-        name.style.transform = `translate3d(${w * 0.07}px, ${h * 0.36}px, 0)`
-        name.style.opacity = 1 - Math.sin(swap * Math.PI)
-        cat.textContent = shown.category
-        cat.style.transform = `translate3d(${w * 0.07}px, ${h * 0.44}px, 0)`
-        cat.style.opacity = 1 - Math.sin(swap * Math.PI)
-        count.textContent = `${String((swap > 0.5 ? i + 1 : i) % picks.length + 1).padStart(2, '0')} / ${String(PRODUCTS.length).padStart(2, '0')}`
-        count.style.transform = `translate3d(${w * 0.07}px, ${h * 0.1}px, 0)`
+        const i = Math.floor(t / 3) % chain.length, u = (t % 3) / 3, p = chain[i], S = p.source
+        const xs = [0.2, 0.5, 0.8].map((v) => v * w), y = h * 0.37, d = h * 0.3
+        const inn = [outCubic(seg(u, 0, 0.12)), outCubic(seg(u, 0.3, 0.42)), outCubic(seg(u, 0.58, 0.7))], out = seg(u, 0.9, 1)
+        setSource(src, S); setSwatch(sw, p); setSprite(pr, p)
+        place(src, xs[0], y, d * lerp(0.85, 1, inn[0])); src.style.opacity = inn[0] * (1 - out)
+        place(sw, xs[1], y, d * lerp(0.85, 1, inn[1])); sw.style.opacity = inn[1] * (1 - out)
+        place(pr, xs[2], y, d * 1.55 * lerp(0.85, 1, inn[2])); pr.style.opacity = inn[2] * (1 - out); frame(pr, u * 40)
+        verbs[0].textContent = S.process.toLowerCase(); verbs[1].textContent = 'made into'
+        links.forEach((l, k) => {
+          const x0 = xs[k] + d * 0.62, x1 = xs[k + 1] - d * 0.62, pr2 = inOut(seg(u, 0.12 + k * 0.28, 0.32 + k * 0.28))
+          l.style.width = `${x1 - x0}px`; l.style.transform = `translate3d(${x0}px, ${y}px, 0) scaleX(${pr2})`; l.style.opacity = 0.35 * (1 - out)
+          place(dots[k], lerp(x0, x1, pr2), y, h * 0.022); dots[k].style.opacity = pr2 > 0 && pr2 < 1 ? 1 : 0
+          verbs[k].style.width = `${x1 - x0 + d * 0.3}px`; centerAt(verbs[k], (x0 + x1) / 2, y + h * 0.03); verbs[k].style.opacity = seg(pr2, 0, 0.3) * (1 - out)
+        })
+        heads.forEach((e, k) => { centerAt(e, xs[k], h * 0.08); e.style.opacity = 0.55 })
+        const texts = [S.label, p.material, p.name]
+        caps.forEach((e, k) => { e.textContent = texts[k]; centerAt(e, xs[k], y + d * 0.5 + h * 0.06); e.style.opacity = inn[k] * (1 - out) })
       }
     },
   },
   {
-    name: 'Grown, not made',
-    idea: 'For the microbial family: mycelium threads grow out from the centre across the card, knit into a mat, and the mat becomes a mycelium-grown product.',
-    meta: 'Procedural hyphae + Reishi / EPHEA / Mylo turntables · 10 s loop',
-    duration: 10,
+    group: 'round2',
+    name: 'Filter by origin',
+    idea: 'Smart discovery, told through origin. A pointer taps "Mycelium", "Orange peel"… and the grid keeps only the products grown from it. Shoppers learn the sources by filtering with them.',
+    meta: 'Source chips with illustrations + filtered grid of 8 turntables · 16 s loop',
+    duration: 16,
     init(stage) {
+      const keys = ['pineapple', 'fungi', 'orange', 'brew']
+      const row = el(stage, 'abs chiprow')
+      const chips = keys.map((k) => { const e = el(row, 'srcchip', `<span class="ico">${SOURCES[k].icon()}</span>${SOURCES[k].label}`); return e })
+      const count = el(stage, 'label mono small')
+      const cursor = el(stage, 'abs cursor', '<svg viewBox="0 0 24 24"><path d="M5 3 L19 12 L12.5 13.5 L9.5 20Z" fill="#171717" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>')
+      const tiles = ['PBC-01', 'MFB-02', 'PBC-07', 'PRO-02', 'MFB-01', 'PBC-02', 'BSP-03', 'PBC-04'].map((c) => {
+        const p = byCode[c], tile = el(stage, 'abs tile'), s = sprite(tile, p); s.style.position = 'absolute'
+        const badge = el(tile, 'badge', p.source.icon())
+        return { p, tile, s, badge }
+      })
+      return (t, { w, h }) => {
+        const k = Math.floor(t / 4) % 4, u = (t % 4) / 4, key = keys[k]
+        const sel = inOut(seg(u, 0.22, 0.34)) * (1 - inOut(seg(u, 0.86, 1)))
+        centerAt(row, w / 2, h * 0.06)
+        const rowLeft = w / 2 - row.offsetWidth / 2
+        const cx = (j) => rowLeft + chips[j].offsetLeft + chips[j].offsetWidth / 2
+        chips.forEach((c, j) => c.classList.toggle('on', j === k && sel > 0.5))
+        const move = inOut(seg(u, 0, 0.2)), press = Math.sin(seg(u, 0.2, 0.28) * Math.PI)
+        const px = lerp(cx(mod(k - 1, 4)), cx(k), move), py = h * 0.06 + chips[0].offsetHeight * 0.75
+        cursor.style.transform = `translate3d(${px}px, ${py}px, 0) scale(${1 - 0.15 * press})`
+        const hits = tiles.filter((x) => x.p.source.key === key).length
+        count.textContent = `${hits} products made from ${SOURCES[key].label.toLowerCase()}`
+        centerAt(count, w / 2, h * 0.17); count.style.opacity = sel * 0.8
+        const cols = 4, gap = w * 0.018, tw = (w * 0.74 - gap * 3) / cols, th = tw * 0.62
+        const x0 = (w - (tw * cols + gap * 3)) / 2, y0 = h * 0.24
+        tiles.forEach(({ p, tile, s, badge }, i) => {
+          const hit = p.source.key === key
+          tile.style.width = `${tw}px`; tile.style.height = `${th}px`
+          tile.style.transform = `translate3d(${x0 + (i % cols) * (tw + gap)}px, ${y0 + Math.floor(i / cols) * (th + gap)}px, 0) scale(${hit ? 1 + 0.04 * sel : 1 - 0.05 * sel})`
+          tile.style.opacity = hit ? 1 : 1 - 0.78 * sel
+          tile.style.boxShadow = hit ? `0 0 0 ${1.5 * sel}px #171717` : 'none'
+          const ss = th * 0.95
+          s.style.width = s.style.height = `${ss}px`; s.style.left = `${(tw - ss) / 2}px`; s.style.top = `${(th - ss) / 2}px`
+          frame(s, t * 6 + i * 4)
+          badge.style.opacity = hit ? sel : 0
+        })
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Waste to wardrobe',
+    idea: 'A slow conveyor: leftover leaves, peel, grape skins, fleece and fungus go into the mill and come out as fabric, then as products. The mill names the step it is doing.',
+    meta: 'Continuous belt, 6 items, seamless 12 s loop',
+    duration: 12,
+    init(stage) {
+      const items = ['PBC-01', 'PBC-04', 'BSP-01', 'MFB-03', 'PRO-01', 'BSP-02'].map((c) => {
+        const p = byCode[c], src = sourceDisc(stage), sw = swatch(stage), pr = sprite(stage, p)
+        setSource(src, p.source); setSwatch(sw, p)
+        return { p, src, sw, pr }
+      })
+      const belt = el(stage, 'abs belt')
+      const mill = el(stage, 'abs mill', '<span class="mono small">MILL</span><b></b>')
+      const heads = ['Source', 'Material', 'Product'].map((tx) => { const e = el(stage, 'label mono small'); e.textContent = tx.toUpperCase(); return e })
+      return (t, { w, h }) => {
+        const y = h * 0.4, d = h * 0.2, mx0 = w * 0.36, mx1 = w * 0.56
+        belt.style.width = `${w}px`; belt.style.transform = `translate3d(0, ${y + d * 0.55}px, 0)`
+        belt.style.backgroundPosition = `${(t / 12) * w * 1.24}px 0`
+        mill.style.width = `${mx1 - mx0}px`; mill.style.height = `${d * 1.7}px`
+        mill.style.transform = `translate3d(${mx0}px, ${y - d * 0.85}px, 0)`
+        let inside = null
+        items.forEach(({ p, src, sw, pr }, i) => {
+          const x = lerp(-0.12 * w, 1.12 * w, mod(t / 12 + i / items.length, 1))
+          const before = x < mx0 + d * 0.3, after = x > mx1 - d * 0.3
+          if (!before && !after) inside = p
+          place(src, x, y, d); src.style.opacity = before ? 1 : 0
+          const morph = inOut(seg(x, w * 0.7, w * 0.8))
+          place(sw, x, y, d * lerp(1, 0.4, morph)); sw.style.opacity = after ? 1 - morph : 0
+          place(pr, x, y - d * 0.15, d * 2 * lerp(0.6, 1, morph)); pr.style.opacity = after ? morph : 0
+          frame(pr, t * 5 + i * 6)
+        })
+        mill.lastChild.textContent = inside ? inside.source.steps[1] : '…'
+        const hx = [w * 0.18, w * 0.64, w * 0.88]
+        heads.forEach((e, k) => { centerAt(e, hx[k], h * 0.08); e.style.opacity = 0.55 })
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Made of… made from…',
+    idea: 'A sentence you can read in two seconds. "Air Max 90 — is made of Piñatex — which comes from pineapple leaves." The picture changes with each clause: product, then its material, then its source.',
+    meta: 'Three-clause caption synced to product → material silhouette → source · 15 s loop',
+    duration: 15,
+    init(stage) {
+      const list = ['PBC-01', 'MFB-01', 'PBC-08', 'PRO-01', 'BSP-02'].map((c) => byCode[c])
+      const pr = sprite(stage, list[0]), mat = matSprite(stage, list[0]), src = sourceDisc(stage, 'lift')
+      const lines = [0, 1, 2].map((k) => el(stage, `label sentence s${k}`))
+      return (t, { w, h }) => {
+        const i = Math.floor(t / 3) % list.length, u = (t % 3) / 3, p = list[i], S = p.source
+        setSprite(pr, p); setMat(mat, p); setSource(src, S)
+        const out = seg(u, 0.9, 1), a = outCubic(seg(u, 0, 0.1)), b = inOut(seg(u, 0.3, 0.45)), c = outCubic(seg(u, 0.55, 0.68))
+        const cx = w * 0.7, cy = h * 0.4, s = h * 0.78
+        place(pr, cx, cy, s); pr.style.opacity = a * (1 - out)
+        place(mat, cx, cy, s); mat.style.opacity = 1 - out
+        mat.style.clipPath = `circle(${b * 75}% at 50% 50%)`
+        frame(pr, 8 + u * 12); frameMat(mat, 8 + u * 12)
+        place(src, cx - s * 0.3, cy + s * 0.18, h * 0.22 * lerp(0.6, 1, c)); src.style.opacity = c * (1 - out)
+        lines[0].innerHTML = p.name
+        lines[1].innerHTML = `is made of <b>${p.material}</b>`
+        lines[2].innerHTML = `which comes from <b>${S.label.toLowerCase()}</b>`
+        const vis = [a, seg(u, 0.3, 0.4), seg(u, 0.55, 0.65)]
+        lines.forEach((e, k) => { e.style.transform = `translate3d(${w * 0.07}px, ${h * (0.14 + k * 0.1) + (1 - vis[k]) * 6}px, 0)`; e.style.opacity = vis[k] * (1 - out) })
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Four origins',
+    idea: 'Taxonomy sort with the "why" added. Each biomaterial family shows the things it grows from; every product drops out of its own source into its family column.',
+    meta: 'Families + source illustrations + all 17 turntables · 12 s loop',
+    duration: 12,
+    init(stage) {
+      const fam = [
+        ['Plant-based cellulosic', 'Plant-based', ['pineapple', 'orange', 'wood', 'waste']],
+        ['Protein-based', 'Protein', ['sheep', 'brew']],
+        ['Bio-based synthetic polymers', 'Bio-synthetic', ['corn', 'grape', 'brew']],
+        ['Microbial and fungal bioassembled', 'Microbial & fungal', ['fungi']],
+      ]
+      const cols = fam.map(([key, short, srcs]) => {
+        const head = el(stage, 'label famhead'); head.textContent = short
+        const discs = srcs.map((k) => { const e = sourceDisc(stage, 'small'); setSource(e, SOURCES[k]); return { k, e } })
+        const prods = PRODUCTS.filter((p) => p.category === key).map((p) => ({ p, e: sprite(stage, p) }))
+        return { head, discs, prods }
+      })
+      const order = []
+      for (let r = 0; r < 8; r++) cols.forEach((c, ci) => { if (c.prods[r]) order.push([ci, r]) })
+      return (t, { w, h }) => {
+        const colW = w * 0.23, x0 = w / 2 - colW * 1.5, out = inOut(seg(t, 10.6, 11.8)), dd = h * 0.085
+        cols.forEach(({ head, discs, prods }, ci) => {
+          const cx = x0 + ci * colW
+          centerAt(head, cx, h * 0.05); head.style.opacity = outCubic(seg(t, 0, 0.6)) * (1 - out)
+          discs.forEach(({ e }, j) => { place(e, cx + (j - (discs.length - 1) / 2) * dd * 1.15, h * 0.17, dd); e.style.opacity = outCubic(seg(t, 0.3 + j * 0.1, 0.9 + j * 0.1)) * (1 - out) })
+        })
+        order.forEach(([ci, r], k) => {
+          const { discs, prods } = cols[ci], { p, e } = prods[r], cx = x0 + ci * colW
+          const j = discs.findIndex((d) => d.k === p.source.key), sx = cx + (j - (discs.length - 1) / 2) * dd * 1.15
+          const cell = colW / 3, tx = cx + ((r % 3) - (Math.min(prods.length, 3) - 1) / 2) * cell, ty = h * 0.3 + Math.floor(r / 3) * cell * 0.85
+          const s0 = 1.4 + k * 0.22, f = outCubic(seg(t, s0, s0 + 0.9))
+          place(e, lerp(sx, tx, f), lerp(h * 0.17, ty, f), cell * lerp(0.4, 1.15, f))
+          e.style.opacity = seg(t, s0, s0 + 0.15) * (1 - out)
+          frame(e, t * 4 + k * 5)
+        })
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Life of a material',
+    idea: 'A four-step ring — Source, Process, Material, Product — with a dot walking round it. The centre shows each stage big; the side says it in plain words.',
+    meta: 'Ring progress + stage visuals + plain-language steps · 24 s loop (2 products)',
+    duration: 24,
+    init(stage) {
+      const list = [byCode['MFB-02'], byCode['PBC-01']]
+      const NS = 'http://www.w3.org/2000/svg'
+      const svg = document.createElementNS(NS, 'svg'); svg.classList.add('abs'); stage.append(svg)
+      const ring = document.createElementNS(NS, 'circle'), arc = document.createElementNS(NS, 'circle')
+      ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', 'rgba(23,23,23,.18)'); ring.setAttribute('stroke-width', '1.5')
+      arc.setAttribute('fill', 'none'); arc.setAttribute('stroke', '#171717'); arc.setAttribute('stroke-width', '2'); arc.setAttribute('stroke-linecap', 'round')
+      svg.append(ring, arc)
+      const nodes = [0, 1, 2, 3].map(() => el(stage, 'abs node'))
+      const dot = el(stage, 'abs dot')
+      const big = { src: sourceDisc(stage), fib: el(stage, 'abs fibres'), sw: swatch(stage), pr: sprite(stage, list[0]) }
+      const step = el(stage, 'label mono small'), name = el(stage, 'label stagename'), desc = el(stage, 'label stagedesc')
+      const NAMES = ['Source', 'Process', 'Material', 'Product']
+      const fibres = (color) => `<svg viewBox="0 0 100 100">${Array.from({ length: 9 }, (_, i) => `<path d="M8 ${22 + i * 7} C 35 ${10 + i * 9}, 65 ${34 + i * 4}, 92 ${20 + i * 7.5}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" opacity="${0.55 + (i % 3) * 0.2}"/>`).join('')}</svg>`
+      return (t, { w, h }) => {
+        const pi = Math.floor(t / 12) % 2, p = list[pi], S = p.source, u = (t % 12) / 12, st = Math.floor(u * 4), su = (u * 4) % 1
+        const cx = w * 0.3, cy = h * 0.4, R = h * 0.29
+        svg.setAttribute('width', w); svg.setAttribute('height', h)
+        for (const c of [ring, arc]) { c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', R) }
+        const C = 2 * Math.PI * R
+        arc.setAttribute('stroke-dasharray', `${C * u} ${C}`); arc.setAttribute('transform', `rotate(-90 ${cx} ${cy})`)
+        const ang = -Math.PI / 2 + u * Math.PI * 2
+        place(dot, cx + Math.cos(ang) * R, cy + Math.sin(ang) * R, h * 0.028)
+        nodes.forEach((n, k) => { const a = -Math.PI / 2 + (k / 4) * Math.PI * 2; place(n, cx + Math.cos(a) * R, cy + Math.sin(a) * R, h * 0.05); n.classList.toggle('on', k <= st) })
+        if (big.fib._c !== p.color) { big.fib._c = p.color; big.fib.innerHTML = fibres(p.color) }
+        setSource(big.src, S); setSwatch(big.sw, p); setSprite(big.pr, p)
+        const vis = (k) => (k === st ? outCubic(seg(su, 0, 0.25)) * (1 - seg(su, 0.85, 1)) : 0)
+        const D = R * 1.2
+        place(big.src, cx, cy, D * lerp(0.85, 1, vis(0))); big.src.style.opacity = vis(0)
+        place(big.fib, cx, cy, D * lerp(0.85, 1, vis(1))); big.fib.style.opacity = vis(1)
+        place(big.sw, cx, cy, D * lerp(0.85, 1, vis(2))); big.sw.style.opacity = vis(2)
+        place(big.pr, cx, cy, D * 1.35 * lerp(0.85, 1, vis(3))); big.pr.style.opacity = vis(3); frame(big.pr, su * 36)
+        const texts = [S.from, S.steps.slice(1).map((x, j) => (j ? x[0].toLowerCase() + x.slice(1) : x)).join(', then '), p.material, `${p.name} — ${p.companies}`]
+        step.textContent = `${String(st + 1).padStart(2, '0')} / 04`
+        name.textContent = NAMES[st]; desc.textContent = texts[st]
+        const tv = vis(st)
+        for (const [e, y] of [[step, 0.14], [name, 0.21], [desc, 0.33]]) { e.style.transform = `translate3d(${w * 0.6}px, ${h * y + (1 - tv) * 6}px, 0)`; e.style.opacity = e === step ? 0.6 : tv }
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Fibre to fabric',
+    idea: 'Fibres stream out of the source, twist into one thread, and the thread weaves a swatch row by row. Then the product made from that cloth appears.',
+    meta: 'Canvas weave, product-coloured thread · 12 s loop (3 products)',
+    duration: 12,
+    init(stage) {
+      const list = ['PBC-07', 'PRO-01', 'PBC-05'].map((c) => byCode[c])
       const c = document.createElement('canvas'); c.className = 'fill'; stage.append(c)
       const ctx = c.getContext('2d')
-      const prod = sprite(stage, byCode['MFB-02'])
-      const label = el(stage, 'label mono')
-      // Precompute branching hyphae: each segment has a birth time in [0, 1].
-      const r = rng(21), segs = []
-      const grow = (x, y, a, t0, depth) => {
-        let px = x, py = y, t = t0
-        const n = 20 + Math.floor(r() * 16)
-        for (let i = 0; i < n && t < 1; i++) {
-          a += (r() - 0.5) * 0.5
-          const nx = px + Math.cos(a) * 0.022, ny = py + Math.sin(a) * 0.022 * 1.76
-          segs.push([px, py, nx, ny, t, depth])
-          px = nx; py = ny; t += 0.012 + r() * 0.01
-          if (depth < 4 && r() < 0.12) grow(px, py, a + (r() < 0.5 ? -1 : 1) * (0.5 + r() * 0.6), t, depth + 1)
-        }
-      }
-      for (let k = 0; k < 9; k++) grow(0.5, 0.46, (k / 9) * Math.PI * 2, 0, 0)
-      const picks = ['MFB-02', 'MFB-01', 'MFB-03']
+      const src = sourceDisc(stage), pr = sprite(stage, list[0])
+      const caps = [0, 1, 2].map(() => el(stage, 'label cap verb'))
       return (t, { w, h, dpr }) => {
         if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr) }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h)
-        const cycle = Math.floor(t / 10), u = (t % 10) / 10
-        const g = seg(u, 0, 0.55) * 0.95
-        const fade = 1 - seg(u, 0.88, 1)
-        const mat = seg(u, 0.5, 0.7)
-        ctx.lineCap = 'round'
-        for (const [x1, y1, x2, y2, born, d] of segs) {
-          if (born > g) continue
-          const age = clamp((g - born) / 0.05)
-          ctx.strokeStyle = `rgba(140,122,124,${(0.55 - d * 0.08) * fade * (1 - mat * 0.5)})`
-          ctx.lineWidth = Math.max(0.6, h * (0.004 - d * 0.0006))
-          ctx.beginPath(); ctx.moveTo(x1 * w, y1 * h); ctx.lineTo(lerp(x1, x2, age) * w, lerp(y1, y2, age) * h); ctx.stroke()
+        const i = Math.floor(t / 4) % list.length, u = (t % 4) / 4, p = list[i], col = hexRgb(p.color)
+        const out = 1 - seg(u, 0.9, 1), y = h * 0.38, sx = w * 0.15, jx = w * 0.33, size = h * 0.4, wx = w * 0.4, wy = y - size / 2
+        setSource(src, p.source); place(src, sx, y, h * 0.24); src.style.opacity = outCubic(seg(u, 0, 0.08)) * out
+        ctx.globalAlpha = out
+        // Fibres converging into one thread.
+        const flow = seg(u, 0.05, 0.2)
+        ctx.lineWidth = 1.2; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -t * 40
+        for (let k = 0; k < 9; k++) {
+          const a = (k / 8 - 0.5) * 1.6
+          ctx.strokeStyle = tone(col, 0.7 * flow, (k % 3 - 1) * 0.2)
+          ctx.beginPath(); ctx.moveTo(sx + Math.cos(a) * h * 0.13, y + Math.sin(a) * h * 0.13)
+          ctx.quadraticCurveTo(lerp(sx, jx, 0.6), y + Math.sin(a) * h * 0.05, jx, y); ctx.stroke()
         }
-        // The mat: a soft disc that thickens where growth is densest.
-        const disc = outCubic(mat)
-        const grad = ctx.createRadialGradient(w / 2, h * 0.46, 0, w / 2, h * 0.46, h * 0.46)
-        grad.addColorStop(0, `rgba(255,255,255,${0.75 * disc * fade})`); grad.addColorStop(1, 'rgba(255,255,255,0)')
-        ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h)
-        const p = byCode[picks[Math.floor(t / 10) % picks.length]]
-        setSprite(prod, p)
-        const show = outCubic(seg(u, 0.58, 0.78))
-        place(prod, w / 2, h * 0.46, h * 0.72 * lerp(0.7, 1, show))
-        prod.style.opacity = show * fade
-        frame(prod, u * 30)
-        label.textContent = `${p.code} · ${p.material}`
-        label.style.transform = `translate3d(${w / 2 - label.offsetWidth / 2}px, ${h * 0.83}px, 0)`
-        label.style.opacity = show * fade
+        ctx.setLineDash([])
+        // Weave: warp first, then weft rows over/under.
+        const n = 14, cell = size / n, warp = seg(u, 0.12, 0.22), weft = seg(u, 0.2, 0.68) * n
+        for (let k = 0; k < n; k++) { ctx.fillStyle = tone(col, warp, -0.28); ctx.fillRect(wx + k * cell + cell * 0.12, wy, cell * 0.76, size * warp) }
+        let shuttle = [jx, y]
+        for (let r = 0; r < Math.ceil(weft); r++) {
+          const part = Math.min(1, weft - r), ry = wy + r * cell, cols = Math.ceil(part * n), ltr = r % 2 === 0
+          // Weft strip across the woven span, then warp threads lifted back over it on alternate cells.
+          const left = ltr ? wx : wx + (n - cols) * cell
+          ctx.fillStyle = tone(col, 1, 0.14); ctx.beginPath(); ctx.roundRect(left, ry + cell * 0.1, cols * cell, cell * 0.8, cell * 0.3); ctx.fill()
+          for (let k = 0; k < cols; k++) {
+            const cx = ltr ? k : n - 1 - k
+            if ((r + cx) % 2) { ctx.fillStyle = tone(col, 1, -0.28); ctx.fillRect(wx + cx * cell + cell * 0.12, ry, cell * 0.76, cell) }
+          }
+          if (part < 1) { const edge = ltr ? wx + cols * cell : wx + (n - cols) * cell; shuttle = [edge, ry + cell / 2] }
+        }
+        if (weft > 0 && weft < n) {
+          ctx.strokeStyle = tone(col, 1, -0.1); ctx.lineWidth = 1.6
+          ctx.beginPath(); ctx.moveTo(jx, y); ctx.quadraticCurveTo((jx + shuttle[0]) / 2, y, shuttle[0], shuttle[1]); ctx.stroke()
+        }
+        ctx.globalAlpha = 1
+        setSprite(pr, p)
+        const show = outCubic(seg(u, 0.66, 0.8))
+        place(pr, w * 0.82, y, h * 0.56 * lerp(0.8, 1, show)); pr.style.opacity = show * out; frame(pr, u * 30)
+        const texts = [p.source.label, p.material, p.name], xs = [sx, wx + size / 2, w * 0.82], vis = [seg(u, 0, 0.1), seg(u, 0.3, 0.4), show]
+        caps.forEach((e, k) => { e.textContent = texts[k]; e.style.width = `${w * 0.22}px`; centerAt(e, xs[k], y + h * 0.25); e.style.opacity = vis[k] * out })
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Brewed, not farmed',
+    idea: 'For the most surprising source: sugar and microbes go into a tank, protein is brewed, spun out as a thread onto a spool — and becomes the Spiber couture piece or the Moon Parka.',
+    meta: 'Fermentation tank + spool, Brewed Protein™ products · 20 s loop',
+    duration: 20,
+    init(stage) {
+      const list = [byCode['PRO-02'], byCode['BSP-03']]
+      const c = document.createElement('canvas'); c.className = 'fill'; stage.append(c)
+      const ctx = c.getContext('2d'), pr = sprite(stage, list[0])
+      const caps = ['Plant sugar + microbes', 'Protein fibre', ''].map((tx) => { const e = el(stage, 'label cap'); e.textContent = tx; return e })
+      const r = rng(5), bubbles = Array.from({ length: 22 }, () => [r(), r(), 0.4 + r() * 0.8, 1.5 + r() * 2.5])
+      const drops = Array.from({ length: 16 }, () => [r(), r(), r() < 0.5])
+      return (t, { w, h, dpr }) => {
+        if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr) }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h)
+        const i = Math.floor(t / 10) % 2, u = (t % 10) / 10, p = list[i], col = hexRgb(p.color)
+        const out = 1 - seg(u, 0.92, 1), fin = seg(u, 0, 0.05)
+        ctx.globalAlpha = out * fin
+        const tx = w * 0.14, tw = w * 0.2, ty = h * 0.14, th = h * 0.5
+        // Ingredients falling in.
+        for (const [dx, ph, sugar] of drops) {
+          const f = mod(t * 0.7 + ph, 1), vis = seg(u, 0, 0.1) * (1 - seg(u, 0.4, 0.5))
+          const x = tx + tw * (0.25 + dx * 0.5), y = lerp(ty - h * 0.12, ty + th * 0.4, f)
+          ctx.globalAlpha = out * vis * (1 - f)
+          ctx.fillStyle = sugar ? '#ffffff' : '#9dbb84'; ctx.strokeStyle = 'rgba(23,23,23,.4)'; ctx.lineWidth = 0.8
+          ctx.beginPath(); sugar ? ctx.rect(x - 2.5, y - 2.5, 5, 5) : ctx.ellipse(x, y, 4, 2.4, f * 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
+        }
+        ctx.globalAlpha = out * fin
+        // Tank and brew.
+        const level = ty + th * lerp(0.55, 0.35, seg(u, 0.05, 0.4))
+        ctx.save(); ctx.beginPath(); ctx.roundRect(tx, ty, tw, th, tw * 0.18); ctx.clip()
+        ctx.fillStyle = tone(col, 0.35, 0.55); ctx.fillRect(tx, level, tw, th)
+        for (const [bx, ph, sp, rad] of bubbles) { const f = mod(t * sp * 0.3 + ph, 1), by = lerp(ty + th, level, f); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(tx + tw * (0.1 + bx * 0.8), by, rad, 0, Math.PI * 2); ctx.fill() }
+        ctx.restore()
+        ctx.strokeStyle = '#171717'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(tx, ty, tw, th, tw * 0.18); ctx.stroke()
+        // Nozzle → thread → spool.
+        const nx = tx + tw, ny = ty + th * 0.78, spx = w * 0.5, spy = h * 0.38, spw = h * 0.16, sph = h * 0.26
+        ctx.fillStyle = '#171717'; ctx.fillRect(nx, ny - 3, w * 0.02, 6)
+        const spin = seg(u, 0.3, 0.7)
+        if (spin > 0) {
+          ctx.strokeStyle = tone(col, 1, 0.1); ctx.lineWidth = 1.8; ctx.setLineDash([8, 4]); ctx.lineDashOffset = -t * 50
+          const wy = spy - sph * 0.4 + mod(t * 0.8, 1) * sph * 0.8
+          ctx.beginPath(); ctx.moveTo(nx + w * 0.02, ny); ctx.bezierCurveTo(w * 0.4, ny, w * 0.38, wy, spx - spw / 2, wy); ctx.stroke(); ctx.setLineDash([])
+        }
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#171717'; ctx.lineWidth = 1.2
+        ctx.beginPath(); ctx.roundRect(spx - spw * 0.65, spy - sph / 2 - 5, spw * 1.3, 5, 2); ctx.fill(); ctx.stroke()
+        ctx.beginPath(); ctx.roundRect(spx - spw * 0.65, spy + sph / 2, spw * 1.3, 5, 2); ctx.fill(); ctx.stroke()
+        const wraps = Math.floor(spin * 26)
+        for (let k = 0; k < wraps; k++) { ctx.strokeStyle = tone(col, 1, (k % 2 ? 0.15 : -0.1)); ctx.lineWidth = sph / 26; const yy = spy - sph / 2 + (k + 0.5) * (sph / 26); ctx.beginPath(); ctx.moveTo(spx - spw / 2, yy); ctx.lineTo(spx + spw / 2, yy); ctx.stroke() }
+        ctx.globalAlpha = 1
+        setSprite(pr, p)
+        const show = outCubic(seg(u, 0.62, 0.78))
+        place(pr, w * 0.8, h * 0.38, h * 0.62 * lerp(0.8, 1, show)); pr.style.opacity = show * out; frame(pr, u * 40)
+        caps[2].textContent = p.name
+        const xs = [tx + tw / 2, spx, w * 0.8], vis = [seg(u, 0.02, 0.1), seg(u, 0.35, 0.45), show]
+        caps.forEach((e, k) => { centerAt(e, xs[k], h * 0.68); e.style.opacity = vis[k] * out })
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Split lens',
+    idea: 'Before/after, but for origin. The left side is the raw material and where it comes from; the right side is the product. The divider drifts, then wipes to the next pair.',
+    meta: 'Full-bleed generated texture + source disc | turntable · 12 s loop',
+    duration: 12,
+    init(stage) {
+      const list = ['PBC-02', 'MFB-03', 'PBC-07', 'PRO-02'].map((c) => byCode[c])
+      const pr = sprite(stage, list[0]), pname = el(stage, 'label cap')
+      const pane = el(stage, 'fillabs pane'), src = sourceDisc(pane), tag = el(pane, 'chip'), from = el(pane, 'chip')
+      const divider = el(stage, 'abs divider', '<i></i>')
+      return (t, { w, h }) => {
+        const i = Math.floor(t / 3) % list.length, u = (t % 3) / 3, p = list[i]
+        setSprite(pr, p); setSource(src, p.source)
+        if (pane._p !== p) { pane._p = p; pane.style.backgroundImage = `url(${texture(p)})` }
+        const settle = 0.44 + Math.sin(u * Math.PI) * 0.04
+        const split = u < 0.15 ? lerp(-0.02, settle, inOut(seg(u, 0, 0.15))) : u > 0.85 ? lerp(settle, -0.02, inOut(seg(u, 0.85, 1))) : settle
+        pane.style.clipPath = `inset(0 ${(1 - split) * 100}% 0 0)`
+        divider.style.height = `${h}px`; divider.style.transform = `translate3d(${split * w}px, 0, 0)`
+        place(src, w * 0.2, h * 0.3, h * 0.26)
+        tag.textContent = p.material; centerAt(tag, w * 0.2, h * 0.47)
+        from.textContent = `from ${p.source.label.toLowerCase()}`; centerAt(from, w * 0.2, h * 0.55)
+        const pin = seg(u, 0.05, 0.2) * (1 - seg(u, 0.85, 0.95))
+        place(pr, w * 0.72, h * 0.38, h * 0.72); pr.style.opacity = pin; frame(pr, u * 30)
+        pname.textContent = p.name; centerAt(pname, w * 0.72, h * 0.7); pname.style.opacity = pin
+      }
+    },
+  },
+  {
+    group: 'round2',
+    name: 'Material becomes product',
+    idea: 'The product first appears built only from its raw material, turning slowly. A light line rises through it and leaves the finished product behind. The label says what it is made from.',
+    meta: 'Material-masked turntable + bottom-up reveal · 12 s loop',
+    duration: 12,
+    init(stage) {
+      const list = ['MFB-02', 'PBC-03', 'PBC-04', 'PRO-01'].map((c) => byCode[c])
+      const mat = matSprite(stage, list[0]), pr = sprite(stage, list[0]), line = el(stage, 'abs scanline')
+      const big = el(stage, 'label bigmat'), from = el(stage, 'abs srcchip solo'), status = el(stage, 'label mono small')
+      return (t, { w, h }) => {
+        const i = Math.floor(t / 3) % list.length, u = (t % 3) / 3, p = list[i]
+        setMat(mat, p); setSprite(pr, p)
+        if (from._p !== p) { from._p = p; from.innerHTML = `<span class="ico">${p.source.icon()}</span>from ${p.source.label.toLowerCase()}` }
+        const out = 1 - seg(u, 0.9, 1), fin = outCubic(seg(u, 0, 0.1)), rev = inOut(seg(u, 0.35, 0.72))
+        const cx = w * 0.66, cy = h * 0.42, s = h * 0.84
+        place(mat, cx, cy, s); mat.style.opacity = fin * out
+        place(pr, cx, cy, s); pr.style.opacity = out; pr.style.clipPath = `inset(${(1 - rev) * 100}% 0 0 0)`
+        frameMat(mat, t * 5); frame(pr, t * 5)
+        line.style.width = `${s * 0.7}px`; line.style.transform = `translate3d(${cx - s * 0.35}px, ${cy - s / 2 + s * (1 - rev)}px, 0)`
+        line.style.opacity = rev > 0 && rev < 1 ? out : 0
+        big.textContent = p.material
+        big.style.transform = `translate3d(${w * 0.07}px, ${h * 0.16 + (1 - fin) * 8}px, 0)`; big.style.opacity = fin * out
+        from.style.transform = `translate3d(${w * 0.07}px, ${h * 0.36}px, 0)`; from.style.opacity = fin * out
+        status.textContent = rev < 0.5 ? 'RAW MATERIAL' : `FINISHED — ${p.name.toUpperCase()}`
+        status.style.transform = `translate3d(${w * 0.07}px, ${h * 0.48}px, 0)`; status.style.opacity = 0.6 * out
       }
     },
   },
@@ -566,14 +868,15 @@ function makeCard(concept) {
   return { card, stage, render }
 }
 
+const label = (c, i) => (c.group === 'shortlist' ? `S${i + 1}` : String(i - CONCEPTS.filter((x) => x.group === 'shortlist').length + 1).padStart(2, '0'))
 CONCEPTS.forEach((concept, index) => {
   const fig = document.createElement('figure')
   const { card, stage, render } = makeCard(concept)
   fig.append(card)
   fig.insertAdjacentHTML('beforeend', `
     <div class="scrub"><button type="button" aria-label="Pause">❚❚</button><input type="range" min="0" max="${concept.duration}" step="0.01" value="0"><output>0.0s</output></div>
-    <figcaption><div class="name"><span class="num">${String(index + 1).padStart(2, '0')}</span>${concept.name}</div><div class="idea">${concept.idea}</div><div class="meta">${concept.meta}</div></figcaption>`)
-  document.getElementById('grid').append(fig)
+    <figcaption><div class="name"><span class="num">${label(concept, index)}</span>${concept.name}</div><div class="idea">${concept.idea}</div><div class="meta">${concept.meta}</div></figcaption>`)
+  document.getElementById(concept.group).append(fig)
   const [btn, range, out] = fig.querySelectorAll('.scrub > *')
   const player = { concept, card, stage, render, t: 0, playing: true, visible: false, range, out, btn, index }
   btn.onclick = () => { player.playing = !player.playing; btn.textContent = player.playing ? '❚❚' : '▶' }
@@ -604,7 +907,7 @@ function openFocus(index) {
   slot.append(big.card)
   big.card.onclick = closeFocus
   focused = { p, ...big }
-  cap.innerHTML = `<b>${String(index + 1).padStart(2, '0')} · ${p.concept.name}</b> — ${p.concept.idea}`
+  cap.innerHTML = `<b>${label(p.concept, index)} · ${p.concept.name}</b> — ${p.concept.idea}`
   focus.dataset.open = ''
 }
 function closeFocus() { delete focus.dataset.open; slot.innerHTML = ''; focused = null }

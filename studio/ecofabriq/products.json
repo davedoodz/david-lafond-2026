@@ -5,7 +5,8 @@
   "companies": "Balenciaga",
   "sprite": "balenciaga-ephea-mycelium-coat-fw2022-spritesheet.webp",
   "category": "Microbial and fungal bioassembled",
-  "material": "Ephea mycelium leather"
+  "material": "Ephea mycelium leather",
+  "color": "#303233"
  },
  {
   "code": "PBC-01",
@@ -13,7 +14,8 @@
   "companies": "Nike × Piñatex",
   "sprite": "nike-partners-with-pinatex-for-happy-pineapple-plant-based-sneaker-collection-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Piñatex pineapple-leaf fiber"
+  "material": "Piñatex pineapple-leaf fiber",
+  "color": "#c2c2bc"
  },
  {
   "code": "BSP-01",
@@ -21,7 +23,8 @@
   "companies": "Stella McCartney × Veuve Clicquot",
   "sprite": "stella-mccartney-x-veuve-clicquot-vegea-frayme-grape-waste-woven-bag-spritesheet.webp",
   "category": "Bio-based synthetic polymers",
-  "material": "VEGEA grape-waste leather"
+  "material": "VEGEA grape-waste leather",
+  "color": "#c7c2b5"
  },
  {
   "code": "PBC-02",
@@ -29,7 +32,8 @@
   "companies": "Zara × Piñatex",
   "sprite": "zara-pinatex-sandal-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Piñatex pineapple-leaf fiber"
+  "material": "Piñatex pineapple-leaf fiber",
+  "color": "#4d4e51"
  },
  {
   "code": "PBC-03",
@@ -37,7 +41,8 @@
   "companies": "Zara × Piñatex",
   "sprite": "zara-pinatex-bag-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Piñatex pineapple-leaf fiber"
+  "material": "Piñatex pineapple-leaf fiber",
+  "color": "#bab1a5"
  },
  {
   "code": "BSP-02",
@@ -45,7 +50,8 @@
   "companies": "Xtep",
   "sprite": "xtep-pla-windbreaker-spritesheet.webp",
   "category": "Bio-based synthetic polymers",
-  "material": "PLA biopolymer"
+  "material": "PLA biopolymer",
+  "color": "#db8e71"
  },
  {
   "code": "PRO-01",
@@ -53,7 +59,8 @@
   "companies": "Allbirds",
   "sprite": "allbirds-wool-runners-spritesheet.webp",
   "category": "Protein-based",
-  "material": "ZQ Merino wool"
+  "material": "ZQ Merino wool",
+  "color": "#7f8284"
  },
  {
   "code": "MFB-02",
@@ -61,7 +68,8 @@
   "companies": "MycoWorks",
   "sprite": "reishi-spritesheet.webp",
   "category": "Microbial and fungal bioassembled",
-  "material": "Reishi mycelium leather"
+  "material": "Reishi mycelium leather",
+  "color": "#c6907a"
  },
  {
   "code": "PBC-04",
@@ -69,7 +77,8 @@
   "companies": "Salvatore Ferragamo",
   "sprite": "ferragamo-orange-fiber-collection-2017-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Orange Fiber citrus cellulose"
+  "material": "Orange Fiber citrus cellulose",
+  "color": "#8f8f90"
  },
  {
   "code": "MFB-03",
@@ -77,7 +86,8 @@
   "companies": "Stella McCartney × Bolt Threads",
   "sprite": "stella-mccartney-mylo-bustier-and-trousers-2021-spritesheet.webp",
   "category": "Microbial and fungal bioassembled",
-  "material": "Mylo mycelium leather"
+  "material": "Mylo mycelium leather",
+  "color": "#26292a"
  },
  {
   "code": "MFB-04",
@@ -85,7 +95,8 @@
   "companies": "Mogu",
   "sprite": "coprinus-spritesheet.webp",
   "category": "Microbial and fungal bioassembled",
-  "material": "Coprinus fungal mycelium"
+  "material": "Coprinus fungal mycelium",
+  "color": "#caa698"
  },
  {
   "code": "PBC-05",
@@ -93,7 +104,8 @@
   "companies": "Osman Yousefzada × Lenzing",
   "sprite": "osman-yousefzada-ss22-tencel-luxe-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Tencel Luxe cellulosic filament"
+  "material": "Tencel Luxe cellulosic filament",
+  "color": "#b5997e"
  },
  {
   "code": "PRO-02",
@@ -101,7 +113,8 @@
   "companies": "Yuima Nakazato × Spiber",
   "sprite": "yuima-nakazato-couture-with-brewed-protein-spritesheet.webp",
   "category": "Protein-based",
-  "material": "Brewed Protein™ fiber"
+  "material": "Brewed Protein™ fiber",
+  "color": "#495461"
  },
  {
   "code": "PBC-06",
@@ -109,7 +122,8 @@
   "companies": "Christian Siriano × Circ",
   "sprite": "christian-siriano-ss2025-circ-lyocell-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Circ Lyocell recycled cellulose"
+  "material": "Circ Lyocell recycled cellulose",
+  "color": "#303641"
  },
  {
   "code": "PBC-07",
@@ -117,7 +131,8 @@
   "companies": "E. Marinella",
   "sprite": "slk-orangefiber-tieorange-fiber-collection-e-marinalla-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Orange Fiber citrus cellulose"
+  "material": "Orange Fiber citrus cellulose",
+  "color": "#ce8d62"
  },
  {
   "code": "PBC-08",
@@ -125,7 +140,8 @@
   "companies": "Orange Fiber × H&M",
   "sprite": "orange-fiber-x-h-m-conscious-exclusive-collection-2019-spritesheet.webp",
   "category": "Plant-based cellulosic",
-  "material": "Orange Fiber citrus cellulose"
+  "material": "Orange Fiber citrus cellulose",
+  "color": "#cbc7bf"
  },
  {
   "code": "BSP-03",
@@ -133,6 +149,7 @@
   "companies": "The North Face × Spiber",
   "sprite": "northface-spritesheet.webp",
   "category": "Bio-based synthetic polymers",
-  "material": "Brewed Protein™ fiber"
+  "material": "Brewed Protein™ fiber",
+  "color": "#cac4bd"
  }
 ]
