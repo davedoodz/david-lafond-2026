@@ -8,7 +8,6 @@
  * grow the card evenly, staggered delays make some corners arrive first.
  */
 import { flushSync } from 'react-dom'
-import { stackedAlpha } from '../../components/MomoCard'
 import { navigate, type Route } from '../../lib/router'
 import { preloadRoute } from '../../lib/routeChunks'
 import { pageUrl } from '../book/bookPages'
@@ -56,9 +55,7 @@ export type OpenSpec = {
   effect: OpenEffect
   /** Cards with Momo (Unwind): Momo flies from the card into the nav's Momo on the page. */
   momoFlight: boolean
-  /** Before Momo flies into the nav: loop = one full live loop at full screen; finish clip = play to the end of its clip; off = fly at once (still frame). */
-  momoHold: 'loop' | 'finish clip' | 'off'
-  /** loop: how many seconds of the end of the loop Momo plays before flying home. */
+  /** Seconds Momo keeps animating after the click before it flies into the nav (0 = fly as soon as the page is ready). */
   momoHoldSeconds: number
   timing: Easing | Spring
   /** Start delay per edge, as a fraction of the whole duration. */
@@ -147,7 +144,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
       return
     }
   }
-  const momo = spec.momoFlight ? liftMomo(card, spec.momoHold, spec.momoHoldSeconds) : null
+  const momo = spec.momoFlight ? liftMomo(card, spec.momoHoldSeconds) : null
 
   const rect = card.getBoundingClientRect()
   const cardStyle = getComputedStyle(card)
@@ -255,7 +252,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   const finish = async () => {
     // A failed chunk load still navigates; the route's Suspense boundary retries it.
     await pageReady.catch(() => {})
-    // Momo plays on at full screen (a complete loop) before the page appears and it flies home.
+    // Momo keeps animating at full screen for its hold before the page appears and it flies home.
     await momo?.hold()
     // Commit the page under the full-screen card, then let the card go.
     flushSync(commit)
@@ -372,143 +369,71 @@ function momoCanvas(root: ParentNode): HTMLCanvasElement | null {
 }
 
 /**
- * Lifts the card's Momo above the expansion. It keeps playing live (its own decoder,
- * continuing from the card's frame), optionally holds for a complete loop at full
- * screen, then flies into the nav's Momo once the page is committed.
+ * Lifts the card's Momo above the expansion as a live mirror of the card's own clip, so
+ * it keeps animating (no restart, no second clip) for `holdSeconds`, then flies into
+ * the nav's Momo once the page is committed.
  */
-function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold'], holdSeconds: number) {
+function liftMomo(card: HTMLElement, holdSeconds: number) {
   const source = momoCanvas(card)
   if (!source || !source.width) return null
   const from = source.getBoundingClientRect()
-  const wrap = document.createElement('div')
-  wrap.className = 'project-open__momo'
-  Object.assign(wrap.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` })
-  // Outgoing: a live mirror of the card's Momo (it keeps playing under the overlay until the
-  // page commits), so nothing freezes while the end of the loop loads.
   const mirror = document.createElement('canvas')
+  mirror.className = 'project-open__momo'
   mirror.width = source.width
   mirror.height = source.height
-  const mctx = mirror.getContext('2d')
-  let mirrorFrame = 0
+  Object.assign(mirror.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` })
+  const ctx = mirror.getContext('2d')
+  // Follows whichever of the card's clips is showing, so its own blend carries on too.
+  let frame = 0
   const copy = () => {
-    mctx?.clearRect(0, 0, mirror.width, mirror.height)
-    mctx?.drawImage(source, 0, 0)
-    mirrorFrame = requestAnimationFrame(copy)
+    const live = momoCanvas(card) ?? source
+    ctx?.clearRect(0, 0, mirror.width, mirror.height)
+    ctx?.drawImage(live, 0, 0, mirror.width, mirror.height)
+    frame = requestAnimationFrame(copy)
   }
   copy()
-  wrap.append(mirror)
-  document.body.append(wrap)
-  const stopMirror = () => cancelAnimationFrame(mirrorFrame)
-
-  // Incoming: the same clip from `holdSeconds` before its end, blended in with the card's own
-  // clip hand-off (Unwind Momo → transition: fade, blur, scale), so the swap reads as one motion.
-  const clips = [...(source.parentElement?.querySelectorAll<HTMLCanvasElement>('.momo__clip') ?? [])]
-  const srcVideo = source.parentElement?.querySelectorAll<HTMLVideoElement>('.momo__src')[clips.indexOf(source)]
-  let stopLive = () => {}
-  let video: HTMLVideoElement | null = null
-  if (holdMode !== 'off' && srcVideo?.currentSrc) {
-    const look = getComputedStyle(source.parentElement!)
-    const blur = parseFloat(look.getPropertyValue('--momo-blur')) || 6
-    const outScale = parseFloat(look.getPropertyValue('--momo-out-scale')) || 1
-    const inScale = parseFloat(look.getPropertyValue('--momo-in-scale')) || 1
-    const fadeMs = parseFloat(look.getPropertyValue('--momo-fade')) || 700
-    const clipLen = srcVideo.duration || 0
-    const start = holdMode === 'loop' && clipLen ? Math.max(0, clipLen - holdSeconds) : srcVideo.currentTime
-    // Leave at least a third of the hold for Momo to play on its own after the blend.
-    const blendMs = holdMode === 'loop' ? Math.min(fadeMs, holdSeconds * 1000 * 0.66) : Math.min(fadeMs, 600)
-
-    const v = document.createElement('video')
-    Object.assign(v, { muted: true, playsInline: true, loop: false, preload: 'auto', src: srcVideo.currentSrc })
-    v.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0'
-    const live = document.createElement('canvas')
-    live.style.opacity = '0'
-    wrap.append(live, v)
-    stopLive = stackedAlpha(v, live)
-    video = v
-
-    const blend = () => {
-      const opts = { duration: blendMs, easing: 'cubic-bezier(0.45, 0, 0.55, 1)', fill: 'forwards' as const }
-      live.animate(
-        [
-          { opacity: 0, filter: `blur(${blur}px)`, transform: `scale(${inScale})` },
-          { opacity: 1, filter: 'blur(0px)', transform: 'scale(1)' },
-        ],
-        opts,
-      )
-      void mirror
-        .animate(
-          [
-            { opacity: 1, filter: 'blur(0px)', transform: 'scale(1)' },
-            { opacity: 0, filter: `blur(${blur}px)`, transform: `scale(${outScale})` },
-          ],
-          opts,
-        )
-        .finished.then(() => {
-          stopMirror()
-          mirror.remove()
-        }, () => {})
-    }
-    // Start the blend only once the incoming clip has painted a frame at its start point.
-    const firstFrame = () => {
-      // First decoded frame at the start point (rVFC where available, else two frames after 'playing').
-      const video = v as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number }
-      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(() => requestAnimationFrame(blend))
-      else video.addEventListener('playing', () => requestAnimationFrame(() => requestAnimationFrame(blend)), { once: true })
-      void v.play().catch(() => blend())
-    }
-    v.addEventListener('loadedmetadata', () => {
-      v.addEventListener('seeked', firstFrame, { once: true })
-      v.currentTime = start
-    }, { once: true })
-  }
+  document.body.append(mirror)
+  const started = performance.now()
+  const stop = () => cancelAnimationFrame(frame)
 
   return {
-    /** Resolves once Momo has finished its loop (or its clip), or straight away. Any tap or key skips it. */
+    /** Resolves once Momo has animated for `holdSeconds` since the click. A tap or key skips it. */
     hold(): Promise<void> {
-      const v = video
-      if (!v) return Promise.resolve()
+      const left = holdSeconds * 1000 - (performance.now() - started)
+      if (left <= 0) return Promise.resolve()
       return new Promise<void>((resolve) => {
-        let done = false
-        const cap = window.setTimeout(() => finish(), ((holdMode === 'loop' ? holdSeconds : v.duration || 6) + 1.5) * 1000)
         const finish = () => {
-          if (done) return
-          done = true
-          window.clearTimeout(cap)
+          window.clearTimeout(timer)
           window.removeEventListener('pointerdown', finish)
           window.removeEventListener('keydown', finish)
-          v.removeEventListener('ended', finish)
           resolve()
         }
-        v.addEventListener('ended', finish)
+        const timer = window.setTimeout(finish, left)
         window.addEventListener('pointerdown', finish)
         window.addEventListener('keydown', finish)
       })
     },
     async land(duration: number) {
-      const cleanup = () => {
-        stopMirror()
-        stopLive()
-        video?.pause()
-        wrap.remove()
-      }
+      // The card unmounts at commit: freeze on the last frame it drew for the flight.
+      stop()
       const slot = document.querySelector<HTMLElement>('.nav-momo')
       const target = slot && momoCanvas(slot)
       if (!slot || !target) {
-        await wrap.animate([{ opacity: 1 }, { opacity: 0 }], { duration, fill: 'forwards' }).finished.catch(() => {})
-        return cleanup()
+        await mirror.animate([{ opacity: 1 }, { opacity: 0 }], { duration, fill: 'forwards' }).finished.catch(() => {})
+        return mirror.remove()
       }
       const to = target.getBoundingClientRect()
       slot.style.visibility = 'hidden'
       const dx = to.left + to.width / 2 - (from.left + from.width / 2)
       const dy = to.top + to.height / 2 - (from.top + from.height / 2)
-      const flight = wrap.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${to.width / from.width})` }], {
+      const flight = mirror.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${to.width / from.width})` }], {
         duration,
         easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
         fill: 'forwards',
       })
       await flight.finished.catch(() => {})
       slot.style.visibility = ''
-      cleanup()
+      mirror.remove()
     },
   }
 }
