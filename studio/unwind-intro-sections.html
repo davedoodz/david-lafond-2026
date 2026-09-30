@@ -97,23 +97,10 @@
 
       // --- The hero every direction hands off to (rough mock of /work/unwind).
       const MEDIA = { x: 560, y: 110, w: 330, h: 330 }
-      function drawMedia(ctx, a = 1, m = MEDIA) {
-        if (a <= 0) return
-        ctx.save()
-        ctx.globalAlpha *= a
-        rrect(ctx, m.x, m.y, m.w, m.h, 14)
-        const g = ctx.createLinearGradient(m.x, m.y, m.x, m.y + m.h)
-        g.addColorStop(0, '#c6e6f6'); g.addColorStop(0.55, '#96bd9f'); g.addColorStop(1, '#5d8c58')
-        ctx.fillStyle = g
-        ctx.fill()
-        const pw = m.w * 0.4, ph = pw * 2.05, px = m.x + m.w / 2 - pw / 2, py = m.y + m.h / 2 - ph / 2
-        rrect(ctx, px, py, pw, ph, pw * 0.17); ctx.fillStyle = '#121212'; ctx.fill()
-        rrect(ctx, px + 4, py + 4, pw - 8, ph - 8, pw * 0.14)
-        const s = ctx.createLinearGradient(0, py, 0, py + ph)
-        s.addColorStop(0, '#fbfbfb'); s.addColorStop(0.6, '#f1f6fa'); s.addColorStop(1, '#a6d7fb')
-        ctx.fillStyle = s
-        ctx.fill()
-        ctx.restore()
+      /** Hero phone: centred, no background card. */
+      const HERO_PHONE = { cx: 480, cy: 168, pw: 100 }
+      function drawMedia(ctx, a = 1) {
+        drawPhone(ctx, HERO_PHONE.cx, HERO_PHONE.cy, HERO_PHONE.pw, a)
       }
       /** Just the phone, centred on (cx, cy), `pw` wide. */
       function drawPhone(ctx, cx, cy, pw, a = 1) {
@@ -137,14 +124,14 @@
         ctx.translate(0, dy)
         text(ctx, '‹  BACK', 40, 120, { size: 10, weight: 500, color: C.s6 })
         ;['Overview', 'Problem', 'Opportunity', 'Solution', 'Context', 'Tracking change', 'Outcomes'].forEach((s, i) => text(ctx, s, 40, 150 + i * 20, { size: 10, color: C.s4 }))
-        text(ctx, 'UNWIND · RE:SELF · 2025', 200, 176, { size: 10, color: C.s4, track: 1 })
-        ;['Unwind – Novel Multimodal', 'AI Reflection System', 'for Behavioral Change'].forEach((s, i) => text(ctx, s, 200, 218 + i * 38, { size: 31 }))
+        text(ctx, 'UNWIND · RE:SELF · 2025', 480, 318, { size: 10, color: C.s4, track: 1, align: 'center' })
+        ;['Unwind – Novel Multimodal AI Reflection', 'System for Behavioral Change'].forEach((s, i) => text(ctx, s, 480, 352 + i * 32, { size: 26, align: 'center' }))
         ;[['ROLE', 'Lead Product Designer'], ['TIMELINE', 'March – Sept 2025'], ['TEAM', '2 dev · 2 design · 2 therapists']].forEach(([k, v], i) => {
-          text(ctx, k, 200 + i * 112, 356, { size: 9, color: C.s4 })
-          text(ctx, v, 200 + i * 112, 372, { size: 9, color: C.s6 })
+          text(ctx, k, 480 + (i - 1) * 150, 430, { size: 9, color: C.s4, align: 'center' })
+          text(ctx, v, 480 + (i - 1) * 150, 446, { size: 9, color: C.s6, align: 'center' })
         })
         ctx.restore()
-        if (media) drawMedia(ctx, a, { ...MEDIA, y: MEDIA.y + dy })
+        if (media) drawPhone(ctx, HERO_PHONE.cx, HERO_PHONE.cy + dy, HERO_PHONE.pw, a)
       }
       /** Block wipe: `p` 0→1 covers the frame block by block. */
       function blocks(ctx, p, color, { cols = 16, rows = 9, seed = 7, diag = false } = {}) {
@@ -621,19 +608,18 @@
               bandsOn(ctx, top, 1 - seg(u, 0.85, 1.0))
               if (open > 0.02) bandsOn(ctx, bot, 1 - seg(u, 0.85, 1.0))
             } },
-          { name: 'Into the phone', idea: 'A bare phone (no background) fades up in the centre; the voice band shrinks into it and becomes the glow at the bottom of its screen, pulses once, then the phone glides to its place in the case study as the page forms around it.', dur: 2.0,
+          { name: 'Into the phone', idea: 'A bare phone fades up in the centre; the voice band shrinks into it and becomes the glow at the bottom of its screen, pulses once, then the phone settles up a little as the case-study text forms underneath.', dur: 2.0,
             stage: (u) => ({ glow: 1 - seg(u, 0, 0.08), calm: 1, ctrlOn: 1 - seg(u, 0, 0.3) }),
             draw(ctx, u) {
               const B = curBand()
-              const HERO = { cx: MEDIA.x + MEDIA.w / 2, cy: MEDIA.y + MEDIA.h / 2, pw: MEDIA.w * 0.4 }
+              const HERO = HERO_PHONE
               const pin = ease.out(seg(u, 0.02, 0.3)), move = ease.inOut(seg(u, 0.6, 0.95))
               const cx = lerp(480, HERO.cx, move), cy = lerp(270, HERO.cy, move), pw = lerp(170, HERO.pw, move) * lerp(0.94, 1, pin)
               const ph = pw * 2.05, screenY = cy + ph / 2 - pw * 0.2
               // Page text forms around the phone; the photo behind it only appears once it has landed.
               const h = ease.inOut(seg(u, 0.62, 0.95))
               drawPage(ctx, h, lerp(16, 0, h), { media: false })
-              drawMedia(ctx, seg(u, 0.9, 1.0))
-              drawPhone(ctx, cx, cy, pw, pin * (1 - seg(u, 0.97, 1.0)))
+              drawPhone(ctx, cx, cy, pw, pin)
               // The band travels into the screen and becomes its glow.
               const m = ease.inOut(seg(u, 0.05, 0.45)), pulse = Math.sin(Math.PI * seg(u, 0.42, 0.62))
               const clipIn = seg(u, 0.35, 0.45)
