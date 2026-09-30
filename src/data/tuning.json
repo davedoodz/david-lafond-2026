@@ -278,6 +278,10 @@
     "peekMobile": 95
   },
   "Portfolio book": {
+    "switch": {
+      "bounce": 0.16,
+      "lag": 0.1
+    },
     "video": {
       "scaleDesktop": 0.63,
       "scaleMobile": 0.8,
@@ -295,6 +299,15 @@
       "shadowOpacity": 0,
       "thickness": 3,
       "glare": 0
+    },
+    "placement": {
+      "switchY": -40,
+      "videoY": -58
+    },
+    "layout": {
+      "gapAbove": 0,
+      "gapBelow": 13,
+      "controlsY": 91
     },
     "grid": {
       "scale": 0.88,
