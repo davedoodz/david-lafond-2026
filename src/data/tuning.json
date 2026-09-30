@@ -318,13 +318,13 @@
         "type": "easing",
         "duration": 1.1,
         "ease": [
-          0.33,
-          0.55,
-          0.25,
+          0.65,
+          0,
+          0.35,
           1
         ]
       },
-      "delay": 0,
+      "delay": -0.2,
       "oldDuration": 1.1,
       "oldDrift": 180,
       "oldOpacity": 0.55,

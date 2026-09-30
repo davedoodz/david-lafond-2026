@@ -42,7 +42,8 @@ const CONFIG = {
     direction: { type: 'select' as const, options: ['right', 'left', 'vertical'], default: 'right' },
     /** The incoming Work page: duration + curve. */
     motion: { type: 'easing' as const, duration: 0.62, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-    delay: [0.06, 0, 0.8, 0.01] as [number, number, number, number],
+    /** Seconds before both pages move. Negative skips into the curve: same motion, no slow start. */
+    delay: [0.06, -0.5, 0.8, 0.01] as [number, number, number, number],
     /** The project page leaving underneath: how long it drifts, how far, and how dim it ends. */
     oldDuration: [0.32, 0.1, 2.5, 0.01] as [number, number, number, number],
     oldDrift: [56, 0, 480, 1] as [number, number, number, number],
@@ -152,13 +153,31 @@ export function PageTransitions() {
   const back = pb.feel === 'custom' ? custom : (BACK_FEELS[pb.feel] ?? BACK_FEELS.smooth)
   backMsRef.current = back.duration * 1000
 
-  // Moving a back-wipe dial means "use my numbers": flip the feel to 'custom'.
+  // Picking a preset loads its numbers into the dials, so custom always starts from it.
+  const seedingUntil = useRef(0)
+  const feelRef = useRef(pb.feel)
+  useEffect(() => {
+    if (feelRef.current === pb.feel) return
+    feelRef.current = pb.feel
+    const preset = BACK_FEELS[pb.feel]
+    if (!preset) return
+    seedingUntil.current = performance.now() + 400
+    setValue('projectBack.motion', { type: 'easing', duration: preset.duration, ease: preset.ease })
+    setValue('projectBack.delay', preset.delay)
+    setValue('projectBack.oldDuration', preset.oldDuration)
+    setValue('projectBack.oldDrift', preset.oldDrift)
+    setValue('projectBack.oldOpacity', preset.oldOpacity)
+    setValue('projectBack.radius', preset.radius)
+  }, [pb.feel, setValue])
+
+  // Moving a back-wipe dial yourself means "use my numbers": flip the feel to 'custom'.
   const backKey = JSON.stringify([pb.motion, pb.delay, pb.oldDuration, pb.oldDrift, pb.oldOpacity, pb.radius])
   const [backKeySeen] = useState(backKey)
   const backKeyRef = useRef(backKeySeen)
   useEffect(() => {
     if (backKeyRef.current === backKey) return
     backKeyRef.current = backKey
+    if (performance.now() < seedingUntil.current) return
     if (pb.feel !== 'custom') setValue('projectBack.feel', 'custom')
   }, [backKey, pb.feel, setValue])
 
@@ -185,6 +204,8 @@ export function PageTransitions() {
     style.setProperty('--vt-back-dur', `${back.duration}s`)
     style.setProperty('--vt-back-ease', `cubic-bezier(${back.ease.join(', ')})`)
     style.setProperty('--vt-back-delay', `${back.delay}s`)
+    // A negative delay (head start) applies to both pages so they stay in step.
+    style.setProperty('--vt-back-out-delay', `${Math.min(0, back.delay)}s`)
     style.setProperty('--vt-back-out-dur', `${back.oldDuration}s`)
     style.setProperty('--vt-back-dist', `${back.oldDrift}px`)
     style.setProperty('--vt-back-out-opacity', String(back.oldOpacity))

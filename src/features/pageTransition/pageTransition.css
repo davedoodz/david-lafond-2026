@@ -129,6 +129,7 @@
 :root[data-vt='wipe'][data-vt-dir='right']::view-transition-old(root) {
   animation-duration: var(--vt-back-out-dur);
   animation-timing-function: var(--vt-back-ease);
+  animation-delay: var(--vt-back-out-delay, 0s);
 }
 :root[data-vt='wipe'][data-vt-dir='left']::view-transition-old(root) {
   animation-name: vt-drift-left;
