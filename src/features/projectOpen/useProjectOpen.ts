@@ -10,7 +10,7 @@ import type { Easing, Spring } from '../pageTransition/cssTiming'
 import { CONTENT_FEELS, OPEN_EFFECTS, openProject, type ContentFeel, type Edges, type OpenEffect, type OpenSpec } from './projectOpen'
 
 type Tuple = [number, number, number, number]
-type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'momoHold' | 'contentStrength' | 'contentFade'> & {
+type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'momoHold' | 'momoHoldSeconds' | 'contentStrength' | 'contentFade'> & {
   effect: OpenEffect
   contentFeel: ContentFeel
 }
@@ -39,6 +39,8 @@ const CONFIG = {
   momoFlight: false,
   /** Unwind: before flying into the nav, Momo plays a complete loop at full screen (a tap or key skips it). */
   momoHold: { type: 'select' as const, options: ['loop', 'finish clip', 'off'], default: 'loop' },
+  /** loop: seconds from the end of the loop Momo plays before flying home. */
+  momoHoldSeconds: [2, 0.5, 5, 0.1] as Tuple,
   preset: { type: 'select' as const, options: [...Object.keys(OPEN_PRESETS), 'custom'], default: 'glide' },
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
   previewUnwind: { type: 'action' as const, label: 'Preview (open Unwind)' },
@@ -87,6 +89,7 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
     effect: t.effect as OpenEffect,
     momoFlight: t.momoFlight,
     momoHold: t.momoHold as Look['momoHold'],
+    momoHoldSeconds: t.momoHoldSeconds,
     contentFeel: t.content.feel as ContentFeel,
     contentStrength: t.content.strength,
     contentFade: t.content.fade,

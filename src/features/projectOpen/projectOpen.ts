@@ -58,6 +58,8 @@ export type OpenSpec = {
   momoFlight: boolean
   /** Before Momo flies into the nav: loop = one full live loop at full screen; finish clip = play to the end of its clip; off = fly at once (still frame). */
   momoHold: 'loop' | 'finish clip' | 'off'
+  /** loop: how many seconds of the end of the loop Momo plays before flying home. */
+  momoHoldSeconds: number
   timing: Easing | Spring
   /** Start delay per edge, as a fraction of the whole duration. */
   delay: Edges
@@ -145,7 +147,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
       return
     }
   }
-  const momo = spec.momoFlight ? liftMomo(card, spec.momoHold) : null
+  const momo = spec.momoFlight ? liftMomo(card, spec.momoHold, spec.momoHoldSeconds) : null
 
   const rect = card.getBoundingClientRect()
   const cardStyle = getComputedStyle(card)
@@ -374,7 +376,7 @@ function momoCanvas(root: ParentNode): HTMLCanvasElement | null {
  * continuing from the card's frame), optionally holds for a complete loop at full
  * screen, then flies into the nav's Momo once the page is committed.
  */
-function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold']) {
+function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold'], holdSeconds: number) {
   const source = momoCanvas(card)
   if (!source || !source.width) return null
   const from = source.getBoundingClientRect()
@@ -396,13 +398,17 @@ function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold']) {
   let video: HTMLVideoElement | null = null
   if (holdMode !== 'off' && srcVideo?.currentSrc) {
     const v = document.createElement('video')
-    Object.assign(v, { muted: true, playsInline: true, loop: holdMode === 'loop', preload: 'auto', src: srcVideo.currentSrc })
+    Object.assign(v, { muted: true, playsInline: true, loop: false, preload: 'auto', src: srcVideo.currentSrc })
     v.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0'
-    v.currentTime = srcVideo.currentTime
+    // loop: play only the last `holdSeconds` of the loop, ending back in Momo's resting pose.
+    const clipLen = srcVideo.duration || 0
+    v.currentTime = holdMode === 'loop' && clipLen ? Math.max(0, clipLen - holdSeconds) : srcVideo.currentTime
     const live = document.createElement('canvas')
     wrap.append(live, v)
     stopLive = stackedAlpha(v, live)
-    v.addEventListener('playing', () => requestAnimationFrame(() => still.remove()), { once: true })
+    // Soft hand-off from the card's frame to the live clip.
+    v.addEventListener('playing', () => requestAnimationFrame(() => still.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished.then(() => still.remove(), () => {})), { once: true })
+    wrap.append(still)
     void v.play().catch(() => {})
     video = v
   }
@@ -413,28 +419,18 @@ function liftMomo(card: HTMLElement, holdMode: OpenSpec['momoHold']) {
       const v = video
       if (!v) return Promise.resolve()
       return new Promise<void>((resolve) => {
-        let done = false, frame = 0, played = 0, last = v.currentTime
-        const cap = window.setTimeout(() => finish(), ((v.duration || 6) + 1.5) * 1000)
+        let done = false
+        const cap = window.setTimeout(() => finish(), ((holdMode === 'loop' ? holdSeconds : v.duration || 6) + 1.5) * 1000)
         const finish = () => {
           if (done) return
           done = true
-          cancelAnimationFrame(frame)
           window.clearTimeout(cap)
           window.removeEventListener('pointerdown', finish)
           window.removeEventListener('keydown', finish)
           v.removeEventListener('ended', finish)
           resolve()
         }
-        // loop: one full clip length of playback, so Momo is back in the pose it started in.
-        const watch = () => {
-          const now = v.currentTime
-          played += now >= last ? now - last : now + (v.duration - last)
-          last = now
-          if (v.duration && played >= v.duration - 0.05) return finish()
-          frame = requestAnimationFrame(watch)
-        }
-        if (holdMode === 'loop') frame = requestAnimationFrame(watch)
-        else v.addEventListener('ended', finish)
+        v.addEventListener('ended', finish)
         window.addEventListener('pointerdown', finish)
         window.addEventListener('keydown', finish)
       })
