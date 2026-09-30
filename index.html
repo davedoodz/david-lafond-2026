@@ -8,6 +8,22 @@
     <meta name="description" content="David Lafond — architect and ex-MIT UX researcher, now focused on product design." />
     <link rel="preload" href="/fonts/Beatrice-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Beatrice-Medium.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Native cursor off from first paint on mouse/trackpad devices; the dot (CursorLayer) replaces it.
+         Inline so it applies before the app bundle and its CSS load. !important beats component
+         cursors (grab, pointer, the DialKit panel). -->
+    <style>
+      @media (hover: hover) and (pointer: fine) {
+        html.cur-active,
+        html.cur-active *,
+        html.cur-active *::before,
+        html.cur-active *::after {
+          cursor: none !important;
+        }
+      }
+    </style>
+    <script>
+      if (matchMedia('(hover: hover) and (pointer: fine)').matches) document.documentElement.classList.add('cur-active')
+    </script>
   </head>
   <body>
     <div id="root"></div>

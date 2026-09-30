@@ -1,11 +1,6 @@
-/* Custom cursor dot + ink layer — ported in spirit from ditto's app.js/draw.js. */
-
-@media (hover: hover) and (pointer: fine) {
-  html.cur-active,
-  html.cur-active * {
-    cursor: none;
-  }
-}
+/* Custom cursor dot + ink layer — ported in spirit from ditto's app.js/draw.js.
+   The native cursor is hidden by an inline rule in index.html (html.cur-active), so it is
+   gone from first paint, before this stylesheet loads. */
 
 .cur-canvas {
   position: fixed;
