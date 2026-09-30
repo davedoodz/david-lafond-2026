@@ -38,6 +38,9 @@ const VIDEO_SRC = 'https://www.youtube.com/embed/Rv-e5doUc0E?si=EUWjaq_nuAePoblG
  *  on top, so the cursor dot never leaves the page. Touch keeps YouTube's controls. */
 const FINE_POINTER = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
 const VIDEO_SRC_FINE = `${VIDEO_SRC}&controls=0&disablekb=1&fs=0&iv_load_policy=3&playsinline=1`
+/** Sharp still shown until playback starts, so the pane never shows YouTube's blurry
+ *  low-res placeholder while the player loads. */
+const VIDEO_POSTER = 'https://i.ytimg.com/vi_webp/Rv-e5doUc0E/maxresdefault.webp'
 
 const CONFIG = {
   /** Video / Book / Grid switch animation. */
@@ -70,10 +73,15 @@ const CONFIG = {
     /** Sheen across the pages that moves with the tilt. */
     glare: [0.35, 0, 1, 0.01] as Tuple,
   },
-  /** Book mode, desktop: vertical placement of the switch, the book and the page controls. */
-  layout: {
-    /** Switch (Video / Book / Grid) distance from the top of the viewer. */
+  /** Vertical placement of the Video / Book / Grid switch and the video. */
+  placement: {
+    /** Switch distance from the top of the viewer (moves everything below it too). */
     switchY: [4, -40, 160, 1] as Tuple,
+    /** Video nudge up (−) or down (+), on its own. */
+    videoY: [0, -240, 240, 1] as Tuple,
+  },
+  /** Book mode, desktop: vertical placement of the book and the page controls. */
+  layout: {
     /** Gap between the switch and the book. */
     gapAbove: [36, 0, 240, 1] as Tuple,
     /** Gap between the book and the page controls. */
@@ -138,8 +146,10 @@ export function BookViewer() {
   // The grid is only built the first time it is opened.
   const [gridMounted, setGridMounted] = useState(false)
   // Video is the opening view. Leaving it reloads the player, so coming back always shows
-  // YouTube's untouched start screen (title, thumbnail, play button) and nothing plays behind.
+  // the poster and nothing plays behind.
   const [videoStarted, setVideoStarted] = useState(false)
+  // True once the player reports it is playing; the poster fades out then.
+  const [videoPlaying, setVideoPlaying] = useState(false)
   const [videoKey, setVideoKey] = useState(0)
   const videoRef = useRef<HTMLIFrameElement>(null)
   const videoFrameRef = useRef<HTMLDivElement>(null)
@@ -194,6 +204,7 @@ export function BookViewer() {
     window.scrollTo({ top: 0, behavior: same ? 'smooth' : 'auto' })
     if (next !== 'video' && modeRef.current === 'video') {
       setVideoStarted(false)
+      setVideoPlaying(false)
       setVideoKey((key) => key + 1)
     }
   }, [])
@@ -221,7 +232,8 @@ export function BookViewer() {
     '--video-radius': `${t.video.radius}px`,
     '--grid-min': `${t.grid.minCard * t.grid.scale}px`,
     '--grid-gap': `${t.grid.gap * t.grid.scale}px`,
-    '--switch-y': `${t.layout.switchY}px`,
+    '--switch-y': `${t.placement.switchY}px`,
+    '--video-y': `${t.placement.videoY}px`,
     '--book-gap-top': `${t.layout.gapAbove}px`,
     '--book-gap-bottom': `${t.layout.gapBelow}px`,
     '--bar-y': `${t.layout.controlsY}px`,
@@ -291,12 +303,22 @@ export function BookViewer() {
               data-surface={t.video.cursor === 'dark' ? 'light' : 'dark'}
               onClick={() => {
                 setVideoStarted(true)
+                // Touch keeps YouTube's own player UI, so its poster goes right away.
+                // Fine pointers: VideoControls starts playback and reports when it runs.
+                if (FINE_POINTER) return
+                setVideoPlaying(true)
                 videoRef.current?.contentWindow?.postMessage(
                   JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
                   'https://www.youtube.com',
                 )
               }}
-            />
+            >
+              <span className="viewer__video-play" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" />
+                </svg>
+              </span>
+            </button>
           )}
           <iframe
             key={videoKey}
@@ -307,12 +329,21 @@ export function BookViewer() {
             referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
           />
+          <img
+            className="viewer__video-poster"
+            src={VIDEO_POSTER}
+            alt=""
+            decoding="async"
+            fetchPriority="high"
+            data-gone={videoPlaying}
+          />
           {videoStarted && FINE_POINTER && (
             <VideoControls
               key={videoKey}
               iframeRef={videoRef}
               frameRef={videoFrameRef}
               surface={t.video.cursor === 'dark' ? 'light' : 'dark'}
+              onPlaying={() => setVideoPlaying(true)}
             />
           )}
         </div>

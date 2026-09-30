@@ -436,6 +436,12 @@
   overflow: hidden;
   background: #000;
   box-shadow: 0 40px 80px -12px rgb(0 0 0 / 0.6);
+  translate: 0 var(--video-y, 0px);
+}
+
+.viewer__video-frame:fullscreen {
+  translate: none;
+  border-radius: 0;
 }
 
 .viewer__video-frame iframe {
@@ -445,12 +451,57 @@
   border: 0;
 }
 
-/* Transparent until the first click; carries the hover label that follows the pointer. */
+/* Covers the player until the first click: carries the play button and the hover label
+   that follows the pointer. */
 .viewer__video-shield {
   position: absolute;
   inset: 0;
   z-index: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
   overflow: hidden;
+}
+
+.viewer__video-play {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgb(0 0 0 / 0.42);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: scale 260ms var(--ease-out), background 200ms ease;
+}
+.viewer__video-play svg {
+  width: 28px;
+  height: 28px;
+  margin-left: 3px;
+  fill: currentColor;
+}
+.viewer__video-shield:hover .viewer__video-play {
+  scale: 1.08;
+  background: rgb(0 0 0 / 0.55);
+}
+
+/* Sharp still over the loading player (no low-res YouTube placeholder); fades once
+   playback is running. */
+.viewer__video-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+.viewer__video-poster[data-gone='true'] {
+  opacity: 0;
 }
 
 .viewer__video {

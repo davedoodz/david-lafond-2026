@@ -16,6 +16,8 @@ type Props = {
   frameRef: RefObject<HTMLDivElement | null>
   /** Surface under the cursor dot (sets its colour). */
   surface: 'light' | 'dark'
+  /** Called once, when the player first reports that it is playing. */
+  onPlaying: () => void
 }
 
 type Info = { currentTime?: number; duration?: number; playerState?: number; muted?: boolean }
@@ -32,7 +34,7 @@ const clock = (s: number) => {
   return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`
 }
 
-export function VideoControls({ iframeRef, frameRef, surface }: Props) {
+export function VideoControls({ iframeRef, frameRef, surface, onPlaying }: Props) {
   const [playing, setPlaying] = useState(true)
   const [muted, setMuted] = useState(false)
   const [duration, setDuration] = useState(0)
@@ -42,9 +44,14 @@ export function VideoControls({ iframeRef, frameRef, surface }: Props) {
   const fillRef = useRef<HTMLDivElement>(null)
   const timeRef = useRef<HTMLSpanElement>(null)
   // Last reported time and when it arrived, so the bar moves smoothly between reports.
-  const report = useRef({ time: 0, at: 0, playing: true })
+  const report = useRef({ time: 0, at: 0, playing: false })
   const scrubRef = useRef<number | null>(null)
   const durationRef = useRef(0)
+  // Mounting means "play": keep asking until the player confirms, since the first
+  // command can arrive before the iframe's player is ready and be dropped.
+  const startedRef = useRef(false)
+  const onPlayingRef = useRef(onPlaying)
+  onPlayingRef.current = onPlaying
 
   const send = (func: string, args: unknown[] = []) =>
     iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), 'https://www.youtube.com')
@@ -71,31 +78,44 @@ export function VideoControls({ iframeRef, frameRef, surface }: Props) {
         const on = info.playerState === PLAYING
         report.current = { ...report.current, playing: on }
         setPlaying(on)
+        if (on && !startedRef.current) {
+          startedRef.current = true
+          onPlayingRef.current()
+        }
       }
       if (typeof info.currentTime === 'number') report.current = { ...report.current, time: info.currentTime, at: performance.now() }
     }
     window.addEventListener('message', onMessage)
-    // The API only starts reporting after a "listening" handshake; repeat until the player is up.
-    const listen = () =>
-      iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), 'https://www.youtube.com')
-    listen()
-    const retry = window.setInterval(() => (durationRef.current ? window.clearInterval(retry) : listen()), 500)
+    // The API only reports after a "listening" handshake; repeat it (and the play command)
+    // until the player is up and running.
+    const post = (message: object) =>
+      iframeRef.current?.contentWindow?.postMessage(JSON.stringify(message), 'https://www.youtube.com')
+    const kick = () => {
+      if (startedRef.current && durationRef.current) return window.clearInterval(retry)
+      post({ event: 'listening', id: 1, channel: 'widget' })
+      if (!startedRef.current) post({ event: 'command', func: 'playVideo', args: [] })
+    }
+    const retry = window.setInterval(kick, 250)
+    kick()
     return () => {
       window.removeEventListener('message', onMessage)
       window.clearInterval(retry)
     }
   }, [iframeRef])
 
-  // Progress bar + time, written straight to the DOM every frame (no React renders).
+  // Progress bar + time, written straight to the DOM every frame (no React renders);
+  // the text node is only touched when the shown second changes.
   useEffect(() => {
     let frame = 0
+    let shown = ''
     const tick = () => {
       const r = report.current
       const d = durationRef.current
       const now = scrubRef.current ?? (r.playing ? r.time + (performance.now() - r.at) / 1000 : r.time)
       const t = d ? Math.min(now, d) : now
       if (fillRef.current) fillRef.current.style.scale = `${d ? t / d : 0} 1`
-      if (timeRef.current) timeRef.current.textContent = `${clock(t)} / ${clock(d)}`
+      const text = `${clock(t)} / ${clock(d)}`
+      if (text !== shown && timeRef.current) timeRef.current.textContent = shown = text
       frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)
