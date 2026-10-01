@@ -218,7 +218,7 @@ export function CaseStudyPage({ id }: Props) {
   })
   const keys = parseOrder((orderPanel.values as unknown as OrderDials).order, allKeys)
   const orderSig = keys.join(',')
-  const heroSpacing = (all as unknown as { heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number } }).heroSpacing
+  const heroSpacing = (all as unknown as { heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number } }).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
@@ -307,6 +307,8 @@ export function CaseStudyPage({ id }: Props) {
                   '--hero-meta-gap': `${heroSpacing.titleToMeta}px`,
                   '--media-gap': `${heroSpacing.metaToPhone}px`,
                   '--hero-phone-h': `${heroSpacing.phoneHeight}svh`,
+                  '--hero-phone-scale': heroSpacing.phoneScale,
+                  '--hero-phone-y': `${heroSpacing.phoneY}px`,
                 }
               : {}),
           } as CSSProperties
