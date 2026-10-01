@@ -1,0 +1,28 @@
+.watch-tracking-editor {
+  position: fixed;
+  z-index: 10000;
+  top: 80px;
+  right: 16px;
+  width: min(330px, calc(100vw - 32px));
+  max-height: calc(100svh - 100px);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid #64748b;
+  border-radius: 12px;
+  background: #111827;
+  color: #f8fafc;
+  font: 12px/1.5 system-ui, sans-serif;
+  box-shadow: 0 8px 30px #0005;
+}
+.watch-tracking-editor, .watch-tracking-editor * { cursor: auto !important; box-sizing: border-box; }
+.watch-tracking-editor strong { display: block; margin-bottom: 10px; }
+.watch-tracking-editor label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; }
+.watch-tracking-editor input, .watch-tracking-editor select, .watch-tracking-editor button { font: inherit; color: #f8fafc; background: #263245; border: 1px solid #64748b; border-radius: 4px; padding: 5px; min-width: 0; }
+.watch-tracking-editor input[type=number] { width: 70px; }
+.watch-tracking-editor input[type=range] { width: 165px; }
+.watch-tracking-editor__coords { display: grid; grid-template-columns: 1fr 70px 70px; gap: 5px; margin: 12px 0; }
+.watch-tracking-editor__row { display: contents; }
+.watch-tracking-editor__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 12px 0; }
+.watch-tracking-editor button:disabled { opacity: .4; }
+.watch-tracking-editor small { color: #cbd5e1; }
+.watch-tracking-editor :focus-visible { outline: 2px solid cyan; outline-offset: 2px; }

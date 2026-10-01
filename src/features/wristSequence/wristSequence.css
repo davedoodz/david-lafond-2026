@@ -43,17 +43,37 @@
   transition: none;
 }
 
-/* The blank watch display. Size and placement come from WristSequence (per frame). */
+/* One high-resolution DOM surface, projected onto the source-image display quad. */
 .wrist-seq__screen {
   position: absolute;
   top: 0;
   left: 0;
-  transform-origin: 50% 50%;
-  pointer-events: none;
+  transform-origin: 0 0;
+  overflow: hidden;
+  border-radius: 128px;
+  background: #000;
+  will-change: transform, opacity;
 }
-.wrist-seq__screen[data-guide] {
-  outline: 1px dashed rgb(83 191 254 / 0.9);
-  outline-offset: 2px;
+.wrist-seq__interface {
+  display: block;
+  border: 0;
+  width: 100%;
+  height: 100%;
+}
+.wrist-seq__tracking {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: #00ffff;
+  stroke-width: 1.5;
+}
+.wrist-seq__tracking circle {
+  fill: #00ffff;
+  stroke: #111;
 }
 
 .wrist-seq__glass {
