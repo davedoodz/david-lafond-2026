@@ -10,7 +10,6 @@ import { WristSequence, type WristFrame } from '../features/wristSequence/WristS
 import { useTuningController } from '../tuning/useTuning'
 import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
-import { PrototypeMomo, type PrototypeMomoValues } from './PrototypeMomo'
 import './CaseStudyPage.css'
 
 type Id = Extract<Work['id'], 'unwind' | 'ecofabriq'>
@@ -48,16 +47,26 @@ function LogoRow({ l }: { l: Logos }) {
 type Section = { eyebrow: string; title: string; body: string; media: Media }
 type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
 
-/** Full-resolution source frames; display tracking is kept separately in watchTracking.ts. */
-const WRIST_FRAMES: WristFrame[] = Array.from({ length: 57 }, (_, k) => ({
-  src: `/work/unwind/watch/sequence/frame-${String(k + 1).padStart(4, '0')}.webp`,
-  width: 1980,
-  height: 1044,
-}))
+/**
+ * Wrist sequence: 57 frames extracted from the watch video (1980×1044), scrubbed by scroll.
+ * The display quad is marked on the first and last frames and interpolated between them.
+ */
+const WRIST_COUNT = 57
+const SCREEN_FIRST: WristFrame['screen'] = [[830, 470], [960, 460], [990, 640], [860, 650]]
+const SCREEN_LAST: WristFrame['screen'] = [[956, 379], [1073, 360], [1111, 530], [998, 549]]
+const WRIST_FRAMES: WristFrame[] = Array.from({ length: WRIST_COUNT }, (_, k) => {
+  const t = k / (WRIST_COUNT - 1)
+  return {
+    src: `/work/unwind/watch/sequence/frame-${String(k + 1).padStart(4, '0')}.webp`,
+    width: 1980,
+    height: 1044,
+    screen: SCREEN_FIRST.map((p, i) => [p[0] + (SCREEN_LAST[i][0] - p[0]) * t, p[1] + (SCREEN_LAST[i][1] - p[1]) * t]) as WristFrame['screen'],
+  }
+})
 type Hero = Section & { role: string; timeline: string; team: string }
 
 /** One prototype recording: plays only while its section is on screen. */
-function ProtoMedia({ media, momoId, momo }: { media: Media; momoId?: string; momo?: PrototypeMomoValues }) {
+function ProtoMedia({ media }: { media: Media }) {
   const ref = useRef<HTMLVideoElement>(null)
   const name = media.video as ProtoVideo
   useEffect(() => {
@@ -77,8 +86,17 @@ function ProtoMedia({ media, momoId, momo }: { media: Media; momoId?: string; mo
   const dims = PROTO_VIDEOS[name]
   if (!dims) return null
   return (
-    <div
-      className="case__media-stage"
+    <video
+      ref={ref}
+      key={name}
+      className="case__media"
+      src={`/work/unwind/${dims.dir}/${name}.mp4`}
+      poster={`/work/unwind/${dims.dir}/${name}.webp`}
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      aria-hidden="true"
       style={
         {
           '--media-h': `${media.size}svh`,
@@ -88,21 +106,7 @@ function ProtoMedia({ media, momoId, momo }: { media: Media; momoId?: string; mo
           '--media-radius': `${media.radius}px`,
         } as CSSProperties
       }
-    >
-      <video
-        ref={ref}
-        key={name}
-        className="case__media"
-        src={`/work/unwind/${dims.dir}/${name}.mp4`}
-        poster={`/work/unwind/${dims.dir}/${name}.webp`}
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        aria-hidden="true"
-      />
-      {momoId && momo && <PrototypeMomo id={momoId} values={momo} mode={momoId === 'voice' || momoId === 'dynamic' ? 'awake' : 'asleep'} />}
-    </div>
+    />
   )
 }
 
@@ -115,19 +119,13 @@ function ProtoMedia({ media, momoId, momo }: { media: Media; momoId?: string; mo
 export function CaseStudyPage({ id }: Props) {
   const panel = PANELS[id]
   const { values, setValue } = useTuningController(panel.name, panel.config)
-  const all = values as unknown as Record<string, Section> & {
-    page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }
-    hero: Hero
-    logos?: Logos
-    prototypeMomo?: Record<string, PrototypeMomoValues>
-  }
+  const all = values as unknown as Record<string, Section> & { page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }; hero: Hero }
   const page = all.page
   const hero = all.hero
-  const prototypeMomo = all.prototypeMomo
   // Unwind opens with the voice intro; the hero video stays hidden until it hands off.
   const [intro, setIntro] = useState(id === 'unwind')
-  const keys = Object.keys(panel.config).filter((k) => !['page', 'hero', 'logos', 'prototypeMomo'].includes(k))
-  const logos = all.logos
+  const keys = Object.keys(panel.config).filter((k) => k !== 'page' && k !== 'hero' && k !== 'logos')
+  const logos = (all as unknown as { logos?: Logos }).logos
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
   useLayoutEffect(() => {
@@ -195,8 +193,8 @@ export function CaseStudyPage({ id }: Props) {
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
     if (key === 'story') return <StoryRow key={key} s={s as unknown as Story} edit={edit} />
-    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} momo={prototypeMomo} />
-    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} momo={prototypeMomo} />
+    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} />
+    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} />
     const hasFigure = ['flow', 'system', 'vision', 'signals'].includes(s.media.figure)
     const hasVideo = !hasFigure && s.media.video !== 'none'
     return (
@@ -239,13 +237,7 @@ export function CaseStudyPage({ id }: Props) {
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
-        {hasVideo && (
-          <ProtoMedia
-            media={s.media}
-            momoId={id === 'unwind' ? (isHero ? 'hero' : key === 'dynamic' || key === 'tracking' ? key : undefined) : undefined}
-            momo={id === 'unwind' ? prototypeMomo?.[isHero ? 'hero' : key] : undefined}
-          />
-        )}
+        {hasVideo && <ProtoMedia media={s.media} />}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
         {hasFigure && <ReselfFigure kind={s.media.figure as 'flow' | 'system' | 'vision' | 'signals'} />}
       </section>

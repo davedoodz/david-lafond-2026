@@ -100,11 +100,11 @@
   grid-template-columns: min(var(--case-content), 100%);
   justify-items: start;
 }
-.case__section[data-layout='above'] .case__media-stage {
+.case__section[data-layout='above'] .case__media {
   order: -1;
 }
-.case__section[data-layout='below'] .case__media-stage,
-.case__section[data-layout='above'] .case__media-stage {
+.case__section[data-layout='below'] .case__media,
+.case__section[data-layout='above'] .case__media {
   justify-self: center;
 }
 
@@ -116,7 +116,7 @@
 .case__section[data-layout='left'] {
   grid-template-columns: auto minmax(0, var(--case-text, 520px));
 }
-.case__section[data-layout='left'] .case__media-stage {
+.case__section[data-layout='left'] .case__media {
   order: -1;
 }
 
@@ -174,26 +174,21 @@
   white-space: pre-wrap;
 }
 
-/* Prototype recording: the stage owns layout; the video and replacement Momo fill it. */
-.case__media-stage {
-  position: relative;
+/* Prototype recording: height is a share of the screen, width follows its ratio. */
+.case__media {
+  display: block;
+  /* Phone-only recordings: clip to the phone's own rounded frame, no background. */
+  clip-path: inset(0.4% round 17% / 8.2%);
   height: var(--media-h, 72svh);
   max-width: 100%;
   aspect-ratio: var(--media-ratio);
+  object-fit: contain;
   border-radius: var(--media-radius, 0px);
   translate: var(--media-x, 0%) var(--media-y, 0%);
-}
-.case__media {
-  display: block;
-  width: 100%;
-  height: 100%;
-  /* Phone-only recordings: clip to the phone's own rounded frame, no background. */
-  clip-path: inset(0.4% round 17% / 8.2%);
-  object-fit: contain;
   background: transparent;
 }
-.case__section[data-layout='below'] .case__media-stage,
-.case__section[data-layout='above'] .case__media-stage {
+.case__section[data-layout='below'] .case__media,
+.case__section[data-layout='above'] .case__media {
   height: min(var(--media-h, 72svh), 46svh);
 }
 
@@ -204,7 +199,7 @@
   gap: var(--media-gap, 28px);
   padding-inline: calc(var(--edge) + var(--case-sidebar));
 }
-.case__section[data-layout='center'] .case__media-stage {
+.case__section[data-layout='center'] .case__media {
   order: -1;
 }
 .case__section[data-layout='center'] .case__text {
@@ -216,7 +211,7 @@
   justify-content: center;
 }
 /* While the Unwind intro plays, its canvas phone stands in for the hero video. */
-.case[data-intro] .case__section--hero .case__media-stage {
+.case[data-intro] .case__section--hero .case__media {
   opacity: 0;
 }
 
@@ -270,7 +265,7 @@ html[data-case-snap] .case .footer {
     gap: 28px;
     padding: 88px var(--edge) 32px;
   }
-  .case__section[data-layout] .case__media-stage {
+  .case__section[data-layout] .case__media {
     order: 0;
     align-self: center;
     flex: 0 1 auto;
@@ -278,7 +273,7 @@ html[data-case-snap] .case .footer {
     height: min(var(--media-h, 72svh), 100%);
     max-height: 60svh;
   }
-  .case__section[data-layout='center'] .case__media-stage {
+  .case__section[data-layout='center'] .case__media {
     order: -1;
     max-height: 44svh;
   }
@@ -407,7 +402,7 @@ html[data-case-snap] .case__moment {
 .case__section[data-layout='rise'] .case__meta {
   justify-content: center;
 }
-.case__section[data-layout='rise'] .case__media-stage {
+.case__section[data-layout='rise'] .case__media {
   flex: none;
   height: var(--media-h, 78svh);
   translate: 0 0;
@@ -463,70 +458,6 @@ html[data-case-snap] .case__moment {
   aspect-ratio: 530 / 1080;
   object-fit: contain;
   filter: drop-shadow(0 30px 40px rgb(23 23 23 / 0.12));
-}
-
-.case__flows-row > li,
-.case__guided-row > li {
-  position: relative;
-}
-
-/* Prototype-specific replacement Momo. The soft patch covers the copy baked into
-   each recording; the live Momo can then be hidden, scaled, or moved independently. */
-.prototype-momo {
-  --prototype-momo-left: 50%;
-  --prototype-momo-top: 15%;
-  --prototype-momo-width: 25%;
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  pointer-events: none;
-}
-.case__media-stage > .prototype-momo {
-  border-radius: inherit;
-}
-.prototype-momo__patch,
-.prototype-momo__live {
-  position: absolute;
-  top: calc(var(--prototype-momo-top) + var(--prototype-momo-y, 0%));
-  left: var(--prototype-momo-left);
-  width: calc(var(--prototype-momo-width) * var(--prototype-momo-scale, 1));
-  aspect-ratio: 1.5;
-  translate: -50% -50%;
-}
-.prototype-momo__patch {
-  top: var(--prototype-momo-top);
-}
-.prototype-momo__patch {
-  width: calc(var(--prototype-momo-width) * 1.35);
-  border-radius: 50%;
-  background: rgb(250 250 250 / 0.98);
-  filter: blur(10px);
-}
-.prototype-momo__live {
-  transform-origin: center;
-}
-.prototype-momo[data-prototype='hero'] {
-  --prototype-momo-top: 35%;
-  --prototype-momo-width: 34%;
-}
-.prototype-momo[data-prototype='voice'] {
-  --prototype-momo-top: 34%;
-  --prototype-momo-width: 38%;
-}
-.prototype-momo[data-prototype='entriesFlow'],
-.prototype-momo[data-prototype='tracking'] {
-  --prototype-momo-top: 14%;
-  --prototype-momo-width: 31%;
-}
-.prototype-momo[data-prototype='dynamic'] {
-  --prototype-momo-top: 18%;
-  --prototype-momo-width: 31%;
-}
-.prototype-momo[data-prototype='guidedWoop'],
-.prototype-momo[data-prototype='guidedModels'] {
-  --prototype-momo-top: 13.5%;
-  --prototype-momo-width: 23%;
 }
 .case__phone-label {
   margin: 18px 0 0;
@@ -761,7 +692,7 @@ html[data-case-snap] .case__moment {
     padding: 84px var(--edge) 0;
   }
   /* The phone takes the rest of the screen and is cut by the fold. */
-  .case .case__section[data-layout='rise'] .case__media-stage {
+  .case .case__section[data-layout='rise'] .case__media {
     flex: none;
     order: 0;
     height: 62svh;
