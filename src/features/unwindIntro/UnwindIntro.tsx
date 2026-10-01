@@ -86,7 +86,9 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
     fit()
     window.addEventListener('resize', fit)
 
-    let raf = 0, last = performance.now(), clock = 0, rt = 0, done = false
+    let raf = 0, last = performance.now(), clock = 0, rt = 0, done = false, landed = false
+    delete document.documentElement.dataset.introLanded
+    hooks.landed = false
     const finish = () => {
       if (done) return
       done = true
@@ -95,6 +97,7 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
         cancelAnimationFrame(raf)
         hooks.page = false
         delete document.documentElement.dataset.introLock
+        delete document.documentElement.dataset.introLanded
         onDone()
       }, 450)
     }
@@ -113,6 +116,12 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
       renderParts(ctx, parts, T, m, { bg: false })
       // Veil hides the page until the hand-off reveals it.
       canvas.style.setProperty('--veil', String(1 - Math.min(1, hooks.reveal)))
+      // Phone landed: the real welcome prototype takes over right away (no blank phone, no wait).
+      if (hooks.reveal > 0.98 && !landed) {
+        landed = true
+        hooks.landed = true
+        document.documentElement.dataset.introLanded = ''
+      }
       if (T >= total) finish()
       raf = requestAnimationFrame(frame)
     }

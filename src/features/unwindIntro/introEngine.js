@@ -45,7 +45,7 @@ const MEDIA = { x: 560, y: 110, w: 330, h: 330 }
 /** Hero phone: centred, no background card. */
 export const HERO_PHONE = { cx: 480, cy: 168, pw: 100 }
 /** Site hooks: when `page` is set, the case study is the real DOM underneath; the canvas only reports how visible it should be. */
-export const hooks = { page: false, reveal: 0 }
+export const hooks = { page: false, reveal: 0, landed: false }
 function drawMedia(ctx, a = 1) {
   drawPhone(ctx, HERO_PHONE.cx, HERO_PHONE.cy, HERO_PHONE.pw, a)
 }
@@ -66,7 +66,7 @@ function drawPhone(ctx, cx, cy, pw, a = 1) {
 }
 function drawPage(ctx, a = 1, dy = 0, { media = true } = {}) {
   if (a <= 0) return
-  if (hooks.page) { hooks.reveal = Math.max(hooks.reveal, a); if (media) drawPhone(ctx, HERO_PHONE.cx, HERO_PHONE.cy + dy, HERO_PHONE.pw, a); return }
+  if (hooks.page) { hooks.reveal = Math.max(hooks.reveal, a); if (media && !hooks.landed) drawPhone(ctx, HERO_PHONE.cx, HERO_PHONE.cy + dy, HERO_PHONE.pw, a); return }
   ctx.save()
   ctx.globalAlpha *= a
   ctx.translate(0, dy)
@@ -568,6 +568,9 @@ export const CHAPTERS = [
         // Page text forms around the phone; the photo behind it only appears once it has landed.
         const h = ease.inOut(seg(u, 0.62, 0.95))
         drawPage(ctx, h, lerp(16, 0, h), { media: false })
+        // On the site, once the phone has landed the real welcome prototype is showing underneath:
+        // stop drawing the blank canvas phone (and its band) so the real one is what you see.
+        if (hooks.landed) return
         drawPhone(ctx, cx, cy, pw, pin)
         // The band travels into the screen and becomes its glow.
         const m = ease.inOut(seg(u, 0.05, 0.45)), pulse = Math.sin(Math.PI * seg(u, 0.42, 0.62))

@@ -28,7 +28,7 @@ type SectionDefaults = {
   body?: string
   video?: ProtoVideo | 'none'
   /** Re:Self diagram shown instead of a video. */
-  figure?: 'none' | 'flow' | 'system' | 'vision' | 'signals'
+  figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals'
   layout?: 'right' | 'left' | 'below' | 'above' | 'center' | 'rise'
   size?: number
   gap?: number
@@ -41,7 +41,7 @@ export function sectionDials(d: SectionDefaults) {
     body: { type: 'text' as const, default: d.body ?? '', placeholder: 'Blank lines = paragraph breaks' },
     media: {
       video: { type: 'select' as const, options: VIDEO_OPTIONS, default: d.video ?? 'none' },
-      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals'], default: d.figure ?? 'none' },
+      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification'], default: d.figure ?? 'none' },
       layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'right' },
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
@@ -88,6 +88,15 @@ export const UNWIND_CONFIG = {
     timeline: 'March – September 2025',
     team: '2 developers\n2 designers\n2 therapists',
   }),
+  /** Hero vertical spacing (px): logos → title, title → role/timeline/team, those → the phone. */
+  heroSpacing: {
+    logosToTitle: [16, -40, 160, 1] as Tuple,
+    titleToMeta: [40, 0, 200, 1] as Tuple,
+    metaToPhone: [44, 0, 240, 1] as Tuple,
+    /** Phone height (svh); the whole phone shows, no cut at the fold. */
+    phoneHeight: [50, 30, 90, 1] as Tuple,
+    _collapsed: false,
+  },
   /** Partner logos in the hero (public/work/unwind/logos). Rendered by the hero, not as a section. */
   logos: {
     show: true,
@@ -127,6 +136,14 @@ export const UNWIND_CONFIG = {
     figure: 'system',
     layout: 'below',
     gap: 24,
+  }),
+  notification: sectionDials({
+    eyebrow: 'The notification',
+    title: 'A gentle tap, only when something changes.',
+    figure: 'notification',
+    layout: 'below',
+    size: 78,
+    gap: 16,
   }),
   howItWorks: sectionDials({
     eyebrow: 'How it works',
