@@ -437,9 +437,11 @@
   },
   "Unwind case study": {
     "hero": {
+      "title": "A Novel Multimodal AI Reflection System for Behavioral Change",
       "media": {
         "radius": 21
-      }
+      },
+      "team": "2 developers, 2 designers, 2 therapists"
     }
   },
   "Nav Momo": {
