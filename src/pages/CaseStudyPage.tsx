@@ -54,6 +54,26 @@ function NotificationDemo({ media }: { media: Media }) {
   )
 }
 
+/**
+ * Hero Apple Watch: the notification prototype's watch screen (`?embed=watch`) in the Starlight
+ * frame. Frame PNG is 540×860 with the screen cut-out at x 72, y 193, 396×479.
+ */
+function HeroWatch() {
+  const hidePanel = (e: SyntheticEvent<HTMLIFrameElement>) => {
+    const doc = e.currentTarget.contentDocument
+    if (!doc) return
+    const style = doc.createElement('style')
+    style.textContent = '.dialkit-panel,[class*="dialkit"]{display:none!important}'
+    doc.head.append(style)
+  }
+  return (
+    <div className="case__watch" aria-hidden="true">
+      <iframe src="/work/unwind/notification/notification.html?embed=watch" title="Unwind watch notification" tabIndex={-1} onLoad={hidePanel} />
+      <img src="/work/unwind/watch/starlight.png" alt="" width={540} height={860} draggable={false} />
+    </div>
+  )
+}
+
 /** Partner logo row for the hero; placement and size come from the "logos" dials. */
 function LogoRow({ l }: { l: Logos }) {
   return (
@@ -173,7 +193,7 @@ function resolveGroups(order: string[], keep: Record<string, string> | undefined
 }
 
 /** One prototype recording: plays only while its section is on screen. */
-function ProtoMedia({ media }: { media: Media }) {
+function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
   const name = media.video as ProtoVideo
   useEffect(() => {
@@ -213,7 +233,7 @@ function ProtoMedia({ media }: { media: Media }) {
       muted
       loop
       playsInline
-      preload={media.video === 'welcome-park' ? 'auto' : 'metadata'}
+      preload={eager ? 'auto' : 'metadata'}
       aria-hidden="true"
       style={
         {
@@ -280,7 +300,11 @@ export function CaseStudyPage({ id }: Props) {
     if (!key) return
     document.querySelector<HTMLElement>(`[data-group="${key}"], [data-section="${key}"]`)?.scrollIntoView({ block: 'start' })
   }, [orderSig])
-  const heroSpacing = (all as unknown as { heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number } }).heroSpacing
+  const heroSpacing = (
+    all as unknown as {
+      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devices: string; watchSize: number; devicesGap: number; watchY: number }
+    }
+  ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
@@ -376,6 +400,9 @@ export function CaseStudyPage({ id }: Props) {
                   '--hero-phone-h': `${heroSpacing.phoneHeight}svh`,
                   '--hero-phone-scale': heroSpacing.phoneScale,
                   '--hero-phone-y': `${heroSpacing.phoneY}px`,
+                  '--hero-watch-size': heroSpacing.watchSize,
+                  '--hero-devices-gap': `${heroSpacing.devicesGap}px`,
+                  '--hero-watch-y': `${heroSpacing.watchY}px`,
                 }
               : {}),
           } as CSSProperties
@@ -413,7 +440,15 @@ export function CaseStudyPage({ id }: Props) {
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
-        {hasVideo && <ProtoMedia media={s.media} />}
+        {hasVideo &&
+          (isHero && heroSpacing?.devices === 'watch + phone' ? (
+            <div className="case__devices">
+              <HeroWatch />
+              <ProtoMedia media={s.media} eager />
+            </div>
+          ) : (
+            <ProtoMedia media={s.media} eager={isHero} />
+          ))}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
         {hasDemo && <NotificationDemo media={s.media} />}
         {hasFigure && <ReselfFigure kind={s.media.figure as 'flow' | 'system' | 'vision' | 'signals'} />}

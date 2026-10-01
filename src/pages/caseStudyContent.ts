@@ -82,7 +82,7 @@ export const UNWIND_CONFIG = {
   hero: heroDials({
     eyebrow: 'Unwind · RE:SELF · 2025',
     title: 'Unwind – Novel Multimodal AI Reflection System for Behavioral Change',
-    video: 'welcome-park',
+    video: 'dynamic',
     layout: 'rise',
     size: 78,
     gap: 44,
@@ -101,6 +101,14 @@ export const UNWIND_CONFIG = {
     phoneScale: [1, 0.5, 1.6, 0.01] as Tuple,
     /** Moves the hero phone up (−) or down (+), px. */
     phoneY: [0, -300, 300, 1] as Tuple,
+    /** Under the title: the phone alone, or the Apple Watch (left) beside the phone (right). */
+    devices: { type: 'select' as const, options: ['watch + phone', 'phone'], default: 'watch + phone' },
+    /** Watch height as a share of the phone's height. */
+    watchSize: [0.82, 0.4, 1.4, 0.01] as Tuple,
+    /** Space between the watch and the phone (px). */
+    devicesGap: [48, -80, 240, 1] as Tuple,
+    /** Moves the watch up (−) or down (+), px. */
+    watchY: [0, -300, 300, 1] as Tuple,
     _collapsed: false,
   },
   /** Partner logos in the hero (public/work/unwind/logos). Rendered by the hero, not as a section. */

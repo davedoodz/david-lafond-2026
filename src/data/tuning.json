@@ -477,8 +477,8 @@
     "frame": 2738590
   },
   "Unwind case study · order": {
-    "order": "story, persona, moment, overview, notification, dynamic, system, howItWorks, flows, guided, context, tracking, outcomes",
-    "section": "notification",
+    "order": "story, persona, moment, overview, notification, dynamic, howItWorks, flows, guided, context, tracking, system, outcomes",
+    "section": "system",
     "max": 13,
     "keep": {
       "Overview": "hide"
