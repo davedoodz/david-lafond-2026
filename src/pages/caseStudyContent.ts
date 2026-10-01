@@ -4,6 +4,8 @@
  * prototype video placed relative to the text. All copy is editable on the page
  * in dev and autosaves to tuning.json, like the About story.
  */
+import { PERSONA_DIALS } from './casePersona'
+
 type Tuple = [number, number, number, number]
 
 /** Prototype recordings in public/work/unwind/proto: the phone only, cropped to its frame (1080 px tall H.264 + first-frame poster). */
@@ -132,8 +134,22 @@ export const UNWIND_CONFIG = {
     opportunityBody: { type: 'text' as const, default: 'A wearable can notice physiological arousal in real time, and ask.' },
     solutionTitle: { type: 'text' as const, default: 'Reflect, then rehearse next time.' },
     solutionBody: { type: 'text' as const, default: 'A short voice reflection becomes a counterfactual and an if-then plan.' },
+    /** Look presets set layout + art + motion together; 'custom' uses the dials below. */
+    preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'converge', 'outline', 'minimal', 'columns', 'custom'], default: 'calm cards' },
+    layout: { type: 'select' as const, options: ['art left', 'art right', 'alternate', 'columns'], default: 'art left' },
+    art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
+    /** three: a tile per technology · converge: all three flow into the moment · single: one row of icons */
+    opportunityArt: { type: 'select' as const, options: ['three', 'converge', 'single'], default: 'three' },
+    /** Only the blue marks move. */
+    motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
+    artWidth: [300, 160, 480, 5] as Tuple,
+    rowGap: [44, 8, 140, 1] as Tuple,
+    titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
+    textWidth: [460, 280, 720, 10] as Tuple,
     _collapsed: true,
   },
+  /** Persona sheet, reorganised to read top to bottom (rendered as `persona`). */
+  persona: PERSONA_DIALS,
   system: sectionDials({
     eyebrow: 'System',
     title: 'Watch, phone and AI, with therapists shaping the model.',

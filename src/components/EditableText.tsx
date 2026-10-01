@@ -7,7 +7,7 @@
 import { createElement, useLayoutEffect, useRef, type FormEvent } from 'react'
 
 type Props = {
-  as?: 'p' | 'h1' | 'h2' | 'div'
+  as?: 'p' | 'h1' | 'h2' | 'h3' | 'div'
   value: string
   onChange: (next: string) => void
   className?: string

@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { EditableText } from '../components/EditableText'
+import { OpportunityArt, ProblemArt, SolutionArt } from './storyArt'
 
 /** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
 const flow = (name: string) => ({ src: `/work/unwind/flows/${name}.mp4`, poster: `/work/unwind/flows/${name}.webp` })
@@ -28,22 +29,67 @@ export type Story = {
   opportunityBody: string
   solutionTitle: string
   solutionBody: string
+  preset: string
+  layout: string
+  art: string
+  opportunityArt: string
+  motion: string
+  artWidth: number
+  rowGap: number
+  titleScale: number
+  textWidth: number
 }
+
+type Look = Pick<Story, 'layout' | 'art' | 'opportunityArt' | 'motion'>
+/** Named combinations to compare quickly; 'custom' falls through to the individual dials. */
+const STORY_PRESETS: Record<string, Look> = {
+  'calm cards': { layout: 'art left', art: 'card', opportunityArt: 'three', motion: 'draw' },
+  editorial: { layout: 'alternate', art: 'line', opportunityArt: 'three', motion: 'draw' },
+  converge: { layout: 'art right', art: 'card', opportunityArt: 'converge', motion: 'pulse' },
+  outline: { layout: 'art left', art: 'outline', opportunityArt: 'single', motion: 'pulse' },
+  minimal: { layout: 'art left', art: 'none', opportunityArt: 'three', motion: 'off' },
+  columns: { layout: 'columns', art: 'card', opportunityArt: 'three', motion: 'draw' },
+}
+
 export function StoryRow({ s, edit }: { s: Story; edit: Edit }) {
-  const cols = [
-    ['problem', 'Problem', s.problemTitle, s.problemBody],
-    ['opportunity', 'Opportunity', s.opportunityTitle, s.opportunityBody],
-    ['solution', 'Solution', s.solutionTitle, s.solutionBody],
+  const look = STORY_PRESETS[s.preset] ?? s
+  const ref = useRef<HTMLElement>(null)
+  const [live, setLive] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(([e]) => setLive(e.isIntersecting), { threshold: 0.25 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  const rows = [
+    ['problem', 'Problem', s.problemTitle, s.problemBody, <ProblemArt key="p" />],
+    ['opportunity', 'Opportunity', s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} />],
+    ['solution', 'Solution', s.solutionTitle, s.solutionBody, <SolutionArt key="s" />],
   ] as const
   return (
-    <section className="case__section case__story" data-section="story" data-layout="story" aria-label="Problem, opportunity and solution">
+    <section
+      ref={ref}
+      className="case__section case__story"
+      data-section="story"
+      data-layout="story"
+      data-story-layout={look.layout}
+      data-story-art={look.art}
+      data-story-motion={look.motion}
+      data-live={live || undefined}
+      aria-label="Problem, opportunity and solution"
+      style={{ '--story-art-w': `${s.artWidth}px`, '--story-gap': `${s.rowGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
+    >
       <ol className="case__story-cols">
-        {cols.map(([k, label, title, body], i) => (
-          <li key={k} style={{ '--i': i } as CSSProperties}>
-            <span className="case__story-step">{String(i + 1).padStart(2, '0')}</span>
-            <p className="eyebrow">{label}</p>
-            <EditableText as="h2" className="case__story-title" label={`${label} title`} value={title} onChange={edit(`story.${k}Title`)} />
-            <EditableText className="case__story-body" label={`${label} body`} value={body} onChange={edit(`story.${k}Body`)} />
+        {rows.map(([k, label, title, body, art], i) => (
+          <li key={k} data-row={k} style={{ '--i': i } as CSSProperties}>
+            {look.art !== 'none' && <div className="story-art">{art}</div>}
+            <div className="case__story-text">
+              <span className="case__story-step">{String(i + 1).padStart(2, '0')}</span>
+              <p className="eyebrow">{label}</p>
+              <EditableText as="h2" className="case__story-title" label={`${label} title`} value={title} onChange={edit(`story.${k}Title`)} />
+              <EditableText className="case__story-body" label={`${label} body`} value={body} onChange={edit(`story.${k}Body`)} />
+            </div>
           </li>
         ))}
       </ol>

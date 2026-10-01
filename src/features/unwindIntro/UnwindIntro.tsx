@@ -18,6 +18,10 @@ const pickOf = (id: string, name: string) => Math.max(0, opts(id).indexOf(name))
 const CONFIG = {
   enabled: true,
   replay: { type: 'action' as const, label: 'Replay intro' },
+  /** Pull up at the top of the page to replay; the intro then lands back in the hero. */
+  scrollReplay: true,
+  /** How far to pull (wheel px or swipe px) before it replays. */
+  pullDistance: [120, 20, 600, 10] as Tuple,
   speed: [0.5, 0.1, 1.5, 0.05] as Tuple,
   band: { type: 'select' as const, options: ['silk', 'strands', 'swell', 'braid', 'mist'], default: 'braid' },
   drift: [0.5, 0.2, 1, 0.05] as Tuple,
@@ -29,7 +33,7 @@ const CONFIG = {
   _collapsed: false,
 }
 
-export function UnwindIntro({ onDone }: { onDone: () => void }) {
+export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [run, setRun] = useState(() => {
     if (typeof window === 'undefined') return 0
@@ -43,6 +47,7 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
   const tRef = useRef(t)
   tRef.current = t
   const enabled = t.enabled && run > 0
+  const [playing, setPlaying] = useState(enabled)
 
   useEffect(() => {
     if (!enabled) onDone()
@@ -50,8 +55,50 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled])
 
+  // Pull up past the top of the page (wheel up, swipe down, ↑/PageUp/Home) to replay the intro;
+  // it lands back in the hero, so it reads as the start of the overview, not a section of its own.
+  useEffect(() => {
+    if (!t.enabled || !t.scrollReplay || playing) return
+    let pull = 0
+    let touchY = 0
+    const atTop = () => window.scrollY <= 2
+    const replay = () => {
+      pull = 0
+      onStart?.()
+      setRun((r) => r + 1)
+    }
+    const wheel = (e: WheelEvent) => {
+      if (!atTop() || e.deltaY >= 0) return void (pull = 0)
+      pull -= e.deltaY
+      if (pull > t.pullDistance) replay()
+    }
+    const touchStart = (e: TouchEvent) => (touchY = e.touches[0].clientY)
+    const touchMove = (e: TouchEvent) => {
+      if (atTop() && e.touches[0].clientY - touchY > t.pullDistance) replay()
+    }
+    const key = (e: KeyboardEvent) => {
+      if (atTop() && (e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'Home')) replay()
+    }
+    // Ignore the momentum tail of the scroll that brought us to the top.
+    const arm = window.setTimeout(() => {
+      window.addEventListener('wheel', wheel, { passive: true })
+      window.addEventListener('touchstart', touchStart, { passive: true })
+      window.addEventListener('touchmove', touchMove, { passive: true })
+      window.addEventListener('keydown', key)
+    }, 400)
+    return () => {
+      window.clearTimeout(arm)
+      window.removeEventListener('wheel', wheel)
+      window.removeEventListener('touchstart', touchStart)
+      window.removeEventListener('touchmove', touchMove)
+      window.removeEventListener('keydown', key)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t.enabled, t.scrollReplay, t.pullDistance, playing])
+
   useLayoutEffect(() => {
     if (!enabled) return
+    setPlaying(true)
     const canvas = canvasRef.current!
     const ctx = canvas.getContext('2d')!
     const dpr = Math.min(2, window.devicePixelRatio || 1)
@@ -98,6 +145,7 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
         hooks.page = false
         delete document.documentElement.dataset.introLock
         delete document.documentElement.dataset.introLanded
+        setPlaying(false)
         onDone()
       }, 450)
     }
@@ -126,18 +174,22 @@ export function UnwindIntro({ onDone }: { onDone: () => void }) {
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
+    // Skip forward only: scrolling down, a tap, or a key other than the replay keys.
     const skip = () => finish()
-    window.addEventListener('wheel', skip, { passive: true })
+    const wheelSkip = (e: WheelEvent) => e.deltaY > 0 && finish()
+    const started = performance.now()
+    const keySkip = () => performance.now() - started > 400 && finish()
+    window.addEventListener('wheel', wheelSkip, { passive: true })
     window.addEventListener('touchstart', skip, { passive: true })
-    window.addEventListener('keydown', skip)
+    window.addEventListener('keydown', keySkip)
     return () => {
       cancelAnimationFrame(raf)
       hooks.page = false
       delete document.documentElement.dataset.introLock
       window.removeEventListener('resize', fit)
-      window.removeEventListener('wheel', skip)
+      window.removeEventListener('wheel', wheelSkip)
       window.removeEventListener('touchstart', skip)
-      window.removeEventListener('keydown', skip)
+      window.removeEventListener('keydown', keySkip)
     }
     // Re-run on replay; live dial changes are read through tRef.
     // eslint-disable-next-line react-hooks/exhaustive-deps

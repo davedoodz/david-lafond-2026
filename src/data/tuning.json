@@ -442,6 +442,21 @@
         "radius": 21
       },
       "team": "2 developers, 2 designers, 2 therapists"
+    },
+    "heroSpacing": {
+      "logosToTitle": -40
+    },
+    "logos": {
+      "height": 40,
+      "y": -82
+    },
+    "story": {
+      "problemTitle": "Support usually comes too late.",
+      "problemBody": "Most wellness tools wait for us to open them often after the emotional intensity and useful context have already faded.",
+      "opportunityTitle": "Three technologies just converged ",
+      "opportunityBody": "Wearables can sense physiological change. Voice can capture subtle emotional and acoustic cues. Realtime AI can connect both to the moment—making wellness support more situational.",
+      "solutionTitle": "A private check-in, at the moment it matters.",
+      "solutionBody": "The Watch surfaces the moment. The phone gives you somewhere to talk. AI connects signal, story and history to help interrupt recurring patterns before they become habits."
     }
   },
   "Nav Momo": {
@@ -460,5 +475,13 @@
   },
   "Unwind shader": {
     "frame": 2738590
+  },
+  "Unwind case study · order": {
+    "order": "story, persona, moment, overview, notification, dynamic, system, howItWorks, flows, guided, context, tracking, outcomes",
+    "section": "notification",
+    "max": 13,
+    "keep": {
+      "Overview": "hide"
+    }
   }
 }

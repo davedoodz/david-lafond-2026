@@ -11,6 +11,7 @@ import { useTuningController } from '../tuning/useTuning'
 import type { DialConfig } from 'dialkit'
 import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
+import { PersonaSection, type Persona } from './casePersona'
 import './CaseStudyPage.css'
 
 type Id = Extract<Work['id'], 'unwind' | 'ecofabriq'>
@@ -94,24 +95,64 @@ const SECTION_KEYS = Object.fromEntries(
   Object.entries(PANELS).map(([k, p]) => [k, Object.keys(p.config).filter((s) => !NON_SECTIONS.has(s))]),
 ) as Record<keyof typeof PANELS, string[]>
 
-type OrderDials = { order: string; section: string; swapWith: string }
+type OrderDials = { order: string; section: string; swapWith: string; max: number; keep: Record<string, string> }
+/** At most this many sections get their own screen; extra kept ones are hidden. */
+const MAX_SECTIONS = 8
+const mergeLabel = (k: string) => `add to ${k}`
+
+/** What each section is called on the page (its eyebrow), so the panel names match what you see. */
+const SPECIAL_LABELS: Record<string, string> = { story: 'Problem · Opportunity · Solution', persona: 'Persona' }
+const SECTION_LABELS = Object.fromEntries(
+  Object.entries(PANELS).map(([k, p]) => [
+    k,
+    Object.fromEntries(
+      SECTION_KEYS[k as keyof typeof PANELS].map((s) => {
+        const eyebrow = (p.config as Record<string, { eyebrow?: { default?: string } | string }>)[s]?.eyebrow
+        const text = typeof eyebrow === 'string' ? eyebrow : eyebrow?.default
+        // DialKit uses '.' as a path separator, so labels used as keys must not contain one.
+        return [s, (SPECIAL_LABELS[s] ?? text ?? s).replace(/\./g, '')]
+      }),
+    ),
+  ]),
+) as Record<keyof typeof PANELS, Record<string, string>>
+
 /** Section order panel: the order text is the source of truth; actions rewrite it. */
 const ORDER_CONFIGS = Object.fromEntries(
-  Object.entries(SECTION_KEYS).map(([k, keys]) => [
-    k,
-    {
-      /** Comma list of section keys, top to bottom. Missing keys are appended; unknown ones ignored. */
-      order: { type: 'text' as const, default: keys.join(', ') },
-      section: { type: 'select' as const, options: keys, default: keys[0] },
-      up: { type: 'action' as const, label: 'Move up' },
-      down: { type: 'action' as const, label: 'Move down' },
-      top: { type: 'action' as const, label: 'Move to top' },
-      bottom: { type: 'action' as const, label: 'Move to bottom' },
-      swapWith: { type: 'select' as const, options: keys, default: keys[1] ?? keys[0] },
-      swap: { type: 'action' as const, label: 'Swap' },
-      reset: { type: 'action' as const, label: 'Reset order' },
-    },
-  ]),
+  Object.entries(SECTION_KEYS).map(([k, keys]) => {
+    const label = SECTION_LABELS[k as keyof typeof PANELS]
+    const options = keys.map((s) => ({ value: s, label: label[s] }))
+    return [
+      k,
+      {
+        /** Comma list of section keys, top to bottom. Missing keys are appended; unknown ones ignored. */
+        order: { type: 'text' as const, default: keys.join(', ') },
+        section: { type: 'select' as const, options, default: keys[0] },
+        up: { type: 'action' as const, label: 'Move up' },
+        down: { type: 'action' as const, label: 'Move down' },
+        top: { type: 'action' as const, label: 'Move to top' },
+        bottom: { type: 'action' as const, label: 'Move to bottom' },
+        swapWith: { type: 'select' as const, options, default: keys[1] ?? keys[0] },
+        swap: { type: 'action' as const, label: 'Swap' },
+        reset: { type: 'action' as const, label: 'Reset order' },
+        max: [MAX_SECTIONS, 1, keys.length, 1] as [number, number, number, number],
+        /** Per section (named as on the page): keep, hide, or add its content to the end of another section. */
+        keep: Object.fromEntries(
+          keys.map((s) => [
+            label[s],
+            {
+              type: 'select' as const,
+              options: [
+                { value: 'keep', label: 'keep' },
+                { value: 'hide', label: 'hide' },
+                ...keys.filter((o) => o !== s).map((o) => ({ value: mergeLabel(o), label: `add to ${label[o]}` })),
+              ],
+              default: 'keep',
+            },
+          ]),
+        ),
+      },
+    ]
+  }),
 ) as unknown as Record<keyof typeof PANELS, DialConfig>
 
 function parseOrder(text: string | undefined, keys: string[]) {
@@ -119,6 +160,16 @@ function parseOrder(text: string | undefined, keys: string[]) {
   for (const k of (text ?? '').split(/[\s,]+/)) if (keys.includes(k)) seen.add(k)
   for (const k of keys) seen.add(k)
   return [...seen]
+}
+
+/**
+ * Resolve visibility: groups of [owner, ...merged] in page order. Merges into a hidden or
+ * merged section fall back to hidden; only the first `max` kept sections get a screen.
+ */
+function resolveGroups(order: string[], keep: Record<string, string> | undefined, max: number, labels: Record<string, string>) {
+  const mode = (k: string) => keep?.[labels[k]] ?? 'keep'
+  const owners = order.filter((k) => mode(k) === 'keep').slice(0, max)
+  return owners.map((owner) => [owner, ...order.filter((k) => mode(k) === mergeLabel(owner))])
 }
 
 /** One prototype recording: plays only while its section is on screen. */
@@ -213,11 +264,22 @@ export function CaseStudyPage({ id }: Props) {
         if (j < 0) return
         ;[next[i], next[j]] = [next[j], next[i]]
       } else return
+      followRef.current = o.section
       orderPanel.setValue('order', next.join(', '))
     },
   })
-  const keys = parseOrder((orderPanel.values as unknown as OrderDials).order, allKeys)
-  const orderSig = keys.join(',')
+  const od = orderPanel.values as unknown as OrderDials
+  const groups = resolveGroups(parseOrder(od.order, allKeys), od.keep, od.max ?? MAX_SECTIONS, SECTION_LABELS[id])
+  const keys = groups.map((g) => g[0])
+  const orderSig = groups.map((g) => g.join('+')).join(',')
+  // After a move/swap, bring the moved section on screen so the change is visible immediately.
+  const followRef = useRef<string | null>(null)
+  useLayoutEffect(() => {
+    const key = followRef.current
+    followRef.current = null
+    if (!key) return
+    document.querySelector<HTMLElement>(`[data-group="${key}"], [data-section="${key}"]`)?.scrollIntoView({ block: 'start' })
+  }, [orderSig])
   const heroSpacing = (all as unknown as { heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number } }).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
 
@@ -241,7 +303,11 @@ export function CaseStudyPage({ id }: Props) {
     const sections = main.querySelectorAll<HTMLElement>('[data-section]')
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) if (entry.isIntersecting) setActive((entry.target as HTMLElement).dataset.section!)
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          const el = entry.target as HTMLElement
+          setActive((el.closest('[data-group]') as HTMLElement | null)?.dataset.group ?? el.dataset.section!)
+        }
       },
       { rootMargin: '-50% 0px -50% 0px' },
     )
@@ -287,6 +353,7 @@ export function CaseStudyPage({ id }: Props) {
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
     if (key === 'story') return <StoryRow key={key} s={s as unknown as Story} edit={edit} />
+    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} />
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} />
     const hasDemo = s.media.figure === 'notification'
@@ -362,7 +429,7 @@ export function CaseStudyPage({ id }: Props) {
       data-intro={intro || undefined}
       style={{ '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
     >
-      {id === 'unwind' && <UnwindIntro onDone={() => setIntro(false)} />}
+      {id === 'unwind' && <UnwindIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}
       <div className="case__light" data-surface="light">
         <Nav route={id} />
         {page.showSidebar && (
@@ -372,7 +439,7 @@ export function CaseStudyPage({ id }: Props) {
               {keys.map((key) => (
                 <li key={key}>
                   <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
-                    {key === 'story' ? 'Problem · Solution' : all[key].eyebrow}
+                    {key === 'story' ? 'Problem · Solution' : key === 'persona' ? 'Persona' : all[key].eyebrow}
                   </button>
                 </li>
               ))}
@@ -380,7 +447,15 @@ export function CaseStudyPage({ id }: Props) {
           </aside>
         )}
         {renderSection('hero', hero, true)}
-        {keys.map((key) => renderSection(key, all[key]))}
+        {groups.map((g) =>
+          g.length === 1 ? (
+            renderSection(g[0], all[g[0]])
+          ) : (
+            <div key={g[0]} className="case__group" data-group={g[0]}>
+              {g.map((key) => renderSection(key, all[key]))}
+            </div>
+          ),
+        )}
       </div>
       <div className="case__dark" data-surface="dark">
         <ContactCta />
