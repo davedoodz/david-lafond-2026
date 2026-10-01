@@ -767,6 +767,9 @@ html[data-case-snap] .case__moment {
 .case .case__section--hero[data-layout='rise'] .case__media {
   height: var(--hero-phone-h, 56svh);
   max-height: none;
+  scale: var(--hero-phone-scale, 1);
+  translate: 0 var(--hero-phone-y, 0px);
+  transform-origin: 50% 0;
 }
 @media (max-width: 800px) {
   .case .case__section--hero[data-layout='rise'] .case__media {

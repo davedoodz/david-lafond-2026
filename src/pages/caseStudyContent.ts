@@ -95,6 +95,10 @@ export const UNWIND_CONFIG = {
     metaToPhone: [44, 0, 240, 1] as Tuple,
     /** Phone height (svh); the whole phone shows, no cut at the fold. */
     phoneHeight: [50, 30, 90, 1] as Tuple,
+    /** Extra scale on the hero phone (1 = as sized). */
+    phoneScale: [1, 0.5, 1.6, 0.01] as Tuple,
+    /** Moves the hero phone up (−) or down (+), px. */
+    phoneY: [0, -300, 300, 1] as Tuple,
     _collapsed: false,
   },
   /** Partner logos in the hero (public/work/unwind/logos). Rendered by the hero, not as a section. */
