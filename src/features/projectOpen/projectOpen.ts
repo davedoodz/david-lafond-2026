@@ -419,7 +419,10 @@ function liftMomo(card: HTMLElement, holdSeconds: number) {
       const slot = document.querySelector<HTMLElement>('.nav-momo')
       const target = slot && momoCanvas(slot)
       if (!slot || !target) {
-        await mirror.animate([{ opacity: 1 }, { opacity: 0 }], { duration, fill: 'forwards' }).finished.catch(() => {})
+        // No Momo in the nav: Momo fades out where it is, before the page's own intro starts.
+        await mirror
+          .animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.92)' }], { duration: Math.min(duration, 380), easing: 'ease-out', fill: 'forwards' })
+          .finished.catch(() => {})
         return mirror.remove()
       }
       const to = target.getBoundingClientRect()

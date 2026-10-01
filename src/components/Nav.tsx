@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { GhostButton } from '../features/ghost/GhostButton'
-import { NavMomo } from './NavMomo'
 import { RESUME_URL } from '../data/contact'
 import { ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
@@ -128,7 +127,7 @@ export function Nav({ route }: Props) {
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
       <header ref={navRef} className="nav" data-pin={pin} data-under={under} style={style}>
         <div className="nav__start">
-          {route === 'unwind' ? <NavMomo className="nav__ghost" /> : <GhostButton className="nav__ghost" />}
+          <GhostButton className="nav__ghost" />
           {route === 'harvard-mit' && <BackLink />}
         </div>
         <nav className="nav__links" aria-label="Primary">
