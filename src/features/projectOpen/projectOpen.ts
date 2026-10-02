@@ -29,7 +29,7 @@ export const OPEN_EFFECTS = ['expand', 'curtain', 'window', 'iris', 'zoom'] as c
 export type OpenEffect = (typeof OPEN_EFFECTS)[number]
 
 /**
- * How a card's own artwork (EcoFabriq wall, Harvard & MIT crane loop) behaves while the card
+ * How a card's own artwork (Filo wall, Harvard & MIT crane loop) behaves while the card
  * grows (expand / curtain). The artwork stays live: it keeps animating during the run.
  *   grow      scales with the card so it always covers it, like the card is being enlarged
  *   zoom      grows, then keeps pushing in past cover: you fall into the artwork
@@ -317,7 +317,7 @@ function contentPose(spec: OpenSpec, growX: number, growY: number, p: number, t:
 
 /**
  * A copy of the card's artwork (its `.works__mesh` layer) that stays live: `sync()` copies the
- * source's inline styles (the EcoFabriq wall moves tiles that way) and canvas pixels (the
+ * source's inline styles (the Filo wall moves tiles that way) and canvas pixels (the
  * crane loop) onto the copy, so it keeps animating while the card grows over it.
  */
 function mirrorArtwork(card: HTMLElement) {

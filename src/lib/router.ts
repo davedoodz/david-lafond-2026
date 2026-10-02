@@ -10,7 +10,7 @@
 import { useSyncExternalStore } from 'react'
 import { flushSync } from 'react-dom'
 
-export type Route = 'work' | 'about' | 'harvard-mit' | 'unwind' | 'ecofabriq'
+export type Route = 'work' | 'about' | 'harvard-mit' | 'unwind' | 'filo'
 
 const ROUTE_BY_PATH: Record<string, Route> = {
   '/': 'work',
@@ -18,14 +18,14 @@ const ROUTE_BY_PATH: Record<string, Route> = {
   '/about': 'about',
   '/work/harvard-mit': 'harvard-mit',
   '/work/unwind': 'unwind',
-  '/work/ecofabriq': 'ecofabriq',
+  '/work/filo': 'filo',
 }
 export const PATH_BY_ROUTE: Record<Route, string> = {
   work: '/',
   about: '/about',
   'harvard-mit': '/work/harvard-mit',
   unwind: '/work/unwind',
-  ecofabriq: '/work/ecofabriq',
+  filo: '/work/filo',
 }
 
 const normalize = (path: string) => path.replace(/\/+$/, '') || '/'

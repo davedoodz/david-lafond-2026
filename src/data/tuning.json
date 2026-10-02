@@ -62,7 +62,7 @@
       "preset": "custom",
       "headerOpacity": 0.25
     },
-    "ecofabriqPage": {
+    "filoPage": {
       "preset": "blush",
       "headerColor": "#FFE1E2"
     }
@@ -516,7 +516,7 @@
     "about": false,
     "harvard-mit": false,
     "unwind": false,
-    "ecofabriq": false
+    "filo": false
   },
   "Footer links": {
     "icons": {
@@ -534,6 +534,11 @@
     "hero": {
       "width": 280,
       "energy": 0.28
+    }
+  },
+  "Filo case study": {
+    "page": {
+      "snap": "off"
     }
   }
 }

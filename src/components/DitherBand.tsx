@@ -125,7 +125,7 @@ const PAGE_PRESETS = {
     'deep sea': { color: '#1E7FB8', opacity: 0.3 },
     lilac: { color: '#B9A7F5', opacity: 0.35 },
   },
-  ecofabriq: {
+  filo: {
     blush: { color: '#F4A7AE', opacity: 0.4 },
     rose: { color: '#E0707C', opacity: 0.3 },
     moss: { color: '#8DB38B', opacity: 0.35 },
@@ -140,9 +140,9 @@ const PAGE_PRESETS = {
 } satisfies Record<string, Record<string, PageLook>>
 type ProjectPage = keyof typeof PAGE_PRESETS
 /** Dial group per project page (key in CONFIG). */
-const PAGE_GROUP: Record<ProjectPage, 'unwindPage' | 'ecofabriqPage' | 'harvardMitPage'> = {
+const PAGE_GROUP: Record<ProjectPage, 'unwindPage' | 'filoPage' | 'harvardMitPage'> = {
   unwind: 'unwindPage',
-  ecofabriq: 'ecofabriqPage',
+  filo: 'filoPage',
   'harvard-mit': 'harvardMitPage',
 }
 
@@ -166,7 +166,7 @@ const CONFIG = {
   footer: { ...band(false, 440992, { color: '#706B68', pixelSize: 4.2, scale: 1.14 }), _collapsed: true },
   /** Header band on each project page only (footer and every other page keep the site bands). */
   unwindPage: pageBand('unwind', PAGE_PRESETS.unwind['unwind blue']),
-  ecofabriqPage: pageBand('ecofabriq', PAGE_PRESETS.ecofabriq.blush),
+  filoPage: pageBand('filo', PAGE_PRESETS.filo.blush),
   harvardMitPage: pageBand('harvard-mit', PAGE_PRESETS['harvard-mit'].crimson),
 }
 

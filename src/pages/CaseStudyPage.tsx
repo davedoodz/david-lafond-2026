@@ -9,20 +9,21 @@ import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
 import type { DialConfig } from 'dialkit'
-import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
+import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import { PersonaSection, type Persona } from './casePersona'
+import { EvidenceSection, MediaPlaceholder, PrinciplesSection, ReframeSection } from './filoSections'
 import './CaseStudyPage.css'
 
-type Id = Extract<Work['id'], 'unwind' | 'ecofabriq'>
+type Id = Extract<Work['id'], 'unwind' | 'filo'>
 type Props = { id: Id }
 
 const PANELS = {
   unwind: { name: 'Unwind case study', config: UNWIND_CONFIG },
-  ecofabriq: { name: 'EcoFabriq case study', config: ECOFABRIQ_CONFIG },
+  filo: { name: 'Filo case study', config: FILO_CONFIG },
 } as const
 
-type Media = { video: string; figure: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
+type Media = { video: string; placeholder?: string; figure: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
 type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; harvardScale: number }
 
 const LOGOS = [
@@ -187,7 +188,8 @@ const ORDER_CONFIGS = Object.fromEntries(
         swapWith: { type: 'select' as const, options, default: keys[1] ?? keys[0] },
         swap: { type: 'action' as const, label: 'Swap' },
         reset: { type: 'action' as const, label: 'Reset order' },
-        ...arrangement(keys.join(', '), MAX_SECTIONS),
+        // Unwind caps at 8 screens; Filo shows every section.
+        ...arrangement(keys.join(', '), k === 'unwind' ? MAX_SECTIONS : keys.length),
         ...(k === 'unwind' ? { recruiter: { ...arrangement(RECRUITER_ORDER, keys.length), _collapsed: true } } : {}),
       },
     ]
@@ -270,7 +272,7 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
 }
 
 /**
- * Case-study page (Unwind, EcoFabriq): Apple-style storytelling. Each section is
+ * Case-study page (Unwind, Filo): Apple-style storytelling. Each section is
  * one full-screen mandatory snap stop pairing a few lines of copy with a
  * prototype recording. A sticky sidebar lists the sections (their eyebrows) and
  * tracks the one in view. All copy is editable on the page in dev.
@@ -407,15 +409,20 @@ export function CaseStudyPage({ id }: Props) {
     if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} />
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} />
+    const fields = s as unknown as Record<string, string>
+    if (id === 'filo' && key === 'evidence') return <EvidenceSection key={key} f={fields} edit={edit} />
+    if (id === 'filo' && key === 'reframe') return <ReframeSection key={key} f={fields} edit={edit} />
+    if (id === 'filo' && key === 'principles') return <PrinciplesSection key={key} f={fields} edit={edit} />
     const hasDemo = s.media.figure === 'notification'
     const hasFigure = ['flow', 'system', 'vision', 'signals'].includes(s.media.figure)
-    const hasVideo = !hasFigure && !hasDemo && s.media.video !== 'none'
+    const hasPlaceholder = !hasFigure && !hasDemo && s.media.video === 'placeholder'
+    const hasVideo = !hasFigure && !hasDemo && !hasPlaceholder && s.media.video !== 'none'
     return (
       <section
         key={key}
         className={`case__section${isHero ? ' case__section--hero' : ''}`}
         data-section={key}
-        data-layout={hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
+        data-layout={hasVideo || hasPlaceholder || hasFigure || hasDemo ? s.media.layout : 'text'}
         style={
           {
             '--media-gap': `${s.media.gap}px`,
@@ -442,7 +449,7 @@ export function CaseStudyPage({ id }: Props) {
         aria-labelledby={`case-${key}`}
       >
         <div className="case__text">
-          {isHero && id !== 'ecofabriq' && <BackLink className="case__back case__back--inline" />}
+          {isHero && id !== 'filo' && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} />
@@ -485,6 +492,7 @@ export function CaseStudyPage({ id }: Props) {
             <ProtoMedia media={s.media} eager={isHero} />
           ))}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
+        {hasPlaceholder && <MediaPlaceholder label={s.media.placeholder ?? ''} size={s.media.size} x={s.media.x} y={s.media.y} radius={s.media.radius} />}
         {hasDemo && <NotificationDemo media={s.media} />}
         {hasFigure && <ReselfFigure kind={s.media.figure as 'flow' | 'system' | 'vision' | 'signals'} />}
       </section>
@@ -504,7 +512,7 @@ export function CaseStudyPage({ id }: Props) {
         <Nav route={id} />
         {page.showSidebar && (
           <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
-            {id !== 'ecofabriq' && <BackLink className="case__back" />}
+            {id !== 'filo' && <BackLink className="case__back" />}
             <ol className="case__toc">
               {keys.map((key) => (
                 <li key={key}>

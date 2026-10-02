@@ -42,8 +42,8 @@ const CONFIG = {
   preset: { type: 'select' as const, options: [...Object.keys(OPEN_PRESETS), 'custom'], default: 'glide' },
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
   previewUnwind: { type: 'action' as const, label: 'Preview (open Unwind)' },
-  previewEcofabriq: { type: 'action' as const, label: 'Preview (open EcoFabriq)' },
-  /** EcoFabriq / Harvard & MIT: how the card's artwork moves while the card grows. */
+  previewFilo: { type: 'action' as const, label: 'Preview (open Filo)' },
+  /** Filo / Harvard & MIT: how the card's artwork moves while the card grows. */
   content: {
     feel: { type: 'select' as const, options: [...CONTENT_FEELS], default: 'grow' },
     strength: [1, 0, 2, 0.05] as Tuple,
@@ -73,7 +73,7 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
   const t = useTuning('Project open', CONFIG, {
     onAction: (action) => {
       const route =
-        action === 'preview' ? 'harvard-mit' : action === 'previewUnwind' ? 'unwind' : action === 'previewEcofabriq' ? 'ecofabriq' : null
+        action === 'preview' ? 'harvard-mit' : action === 'previewUnwind' ? 'unwind' : action === 'previewFilo' ? 'filo' : null
       if (!route) return
       const card = document.querySelector<HTMLElement>(`[data-work="${route}"]`)
       if (!card || !specRef.current) return

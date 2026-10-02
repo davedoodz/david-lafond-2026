@@ -28,7 +28,7 @@ const HEADER_BAND_CONFIG = {
   about: true,
   'harvard-mit': true,
   unwind: true,
-  ecofabriq: true,
+  filo: true,
 }
 
 /** Muted text on dark surfaces: nav, hero tagline/role, signature, CTA subtitle, footer, eyebrows (DialKit › Text colors). */
@@ -55,7 +55,7 @@ const TITLES = {
   about: 'About — David Lafond',
   'harvard-mit': 'The Design Portfolio that Got Me Into Harvard & MIT — David Lafond',
   unwind: 'Unwind — David Lafond',
-  ecofabriq: 'EcoFabriq — David Lafond',
+  filo: 'Filo — David Lafond',
 }
 
 export function App() {
@@ -82,7 +82,7 @@ export function App() {
 
   return (
     <>
-      <div className="site" data-surface={route === 'about' || route === 'unwind' || route === 'ecofabriq' ? 'light' : 'dark'}>
+      <div className="site" data-surface={route === 'about' || route === 'unwind' || route === 'filo' ? 'light' : 'dark'}>
         {headerBand[route as keyof typeof headerBand] !== false && <DitherBand position="header" />}
         {route === 'about' ? (
           // Render the loaded module directly so page transitions never capture a fallback.
@@ -93,7 +93,7 @@ export function App() {
               <LazyAboutPage />
             </Suspense>
           )
-        ) : route === 'unwind' || route === 'ecofabriq' ? (
+        ) : route === 'unwind' || route === 'filo' ? (
           caseStudyChunk.module ? (
             <caseStudyChunk.module.CaseStudyPage id={route} />
           ) : (

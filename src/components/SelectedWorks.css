@@ -200,7 +200,7 @@ html[data-works-snap] body:has(.works) .footer {
 }
 
 
-/* EcoFabriq catalog wall (EcoFabriqCard). */
+/* Filo catalog wall (FiloCard). */
 .ecowall {
   overflow: hidden;
   pointer-events: none;

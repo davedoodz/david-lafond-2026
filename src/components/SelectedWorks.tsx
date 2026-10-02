@@ -20,7 +20,7 @@ import { useTuningController } from '../tuning/useTuning'
 import { EditableText } from './EditableText'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
 import { HarvardMitCard } from './HarvardMitCard'
-import { EcoFabriqCard } from './EcoFabriqCard'
+import { FiloCard } from './FiloCard'
 import { MeshCard } from './MeshCard'
 import { MomoCard } from './MomoCard'
 import { useProjectOpen } from '../features/projectOpen/useProjectOpen'
@@ -32,14 +32,14 @@ type Tuple = [number, number, number, number]
 const CONFIG = {
   cards: {
     unwind: { type: 'color' as const, default: '#57BFFF' },
-    ecofabriq: { type: 'color' as const, default: '#FFE1E2' },
+    filo: { type: 'color' as const, default: '#FFE1E2' },
     'harvard-mit': { type: 'color' as const, default: '#171717' },
   },
   titles: {
     unwindDesktop: { type: 'text' as const, default: WORKS[0].title },
     unwindMobile: { type: 'text' as const, default: WORKS[0].shortTitle },
-    ecofabriqDesktop: { type: 'text' as const, default: WORKS[1].title },
-    ecofabriqMobile: { type: 'text' as const, default: WORKS[1].shortTitle },
+    filoDesktop: { type: 'text' as const, default: WORKS[1].title },
+    filoMobile: { type: 'text' as const, default: WORKS[1].shortTitle },
     harvardMitDesktop: { type: 'text' as const, default: WORKS[2].title },
     harvardMitMobile: { type: 'text' as const, default: WORKS[2].shortTitle },
     sizeDesktop: [20, 12, 36, 1] as Tuple,
@@ -155,7 +155,7 @@ const CONFIG = {
 
 const TITLE_KEYS = {
   unwind: ['unwindDesktop', 'unwindMobile'],
-  ecofabriq: ['ecofabriqDesktop', 'ecofabriqMobile'],
+  filo: ['filoDesktop', 'filoMobile'],
   'harvard-mit': ['harvardMitDesktop', 'harvardMitMobile'],
 } as const
 
@@ -399,7 +399,7 @@ export function SelectedWorks() {
                   )}
                   {work.id === 'unwind' && <MeshCard />}
                   {work.id === 'unwind' && <MomoCard />}
-                  {work.id === 'ecofabriq' && <EcoFabriqCard />}
+                  {work.id === 'filo' && <FiloCard />}
                   {work.id === 'harvard-mit' && <HarvardMitCard />}
                   <div className="card-shade" />
                   <h3 className="card-title works__title">

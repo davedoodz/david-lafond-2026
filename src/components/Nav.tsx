@@ -36,7 +36,7 @@ function internalLink(route: Route) {
   }
 }
 
-const PROJECT_ROUTES: Route[] = ['unwind', 'ecofabriq', 'harvard-mit']
+const PROJECT_ROUTES: Route[] = ['unwind', 'filo', 'harvard-mit']
 
 /** Back to the work list: history when we came from it (restores the scroll), else the Work page. */
 function goBack(event: MouseEvent<HTMLAnchorElement>) {
@@ -115,7 +115,7 @@ export function Nav({ route }: Props) {
       <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
-          {(route === 'harvard-mit' || route === 'ecofabriq') && <BackLink />}
+          {(route === 'harvard-mit' || route === 'filo') && <BackLink />}
         </div>
         <nav className="nav__links" aria-label="Primary">
           <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>

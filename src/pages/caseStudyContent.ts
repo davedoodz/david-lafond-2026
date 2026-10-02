@@ -5,6 +5,7 @@
  * in dev and autosaves to tuning.json, like the About story.
  */
 import { PERSONA_DIALS } from './casePersona'
+import { EVIDENCE_DIALS, PRINCIPLES_DIALS, REFRAME_DIALS } from './filoSections'
 
 type Tuple = [number, number, number, number]
 
@@ -20,6 +21,8 @@ export const PROTO_VIDEOS = {
 } as const
 export type ProtoVideo = keyof typeof PROTO_VIDEOS
 const VIDEO_OPTIONS = ['none', ...Object.keys(PROTO_VIDEOS)]
+/** Filo has no recordings yet: a labelled block marks where each prototype loop will go. */
+const PLACEHOLDER_OPTIONS = ['none', 'placeholder']
 
 /** Where the video sits relative to the text. */
 const LAYOUTS = ['right', 'left', 'below', 'above', 'center', 'rise']
@@ -28,7 +31,9 @@ type SectionDefaults = {
   eyebrow: string
   title: string
   body?: string
-  video?: ProtoVideo | 'none'
+  video?: ProtoVideo | 'none' | 'placeholder'
+  /** Label inside the placeholder block (Filo, until the prototype loops exist). */
+  placeholder?: string
   /** Re:Self diagram shown instead of a video. */
   figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals'
   layout?: 'right' | 'left' | 'below' | 'above' | 'center' | 'rise'
@@ -36,13 +41,14 @@ type SectionDefaults = {
   gap?: number
 }
 
-export function sectionDials(d: SectionDefaults) {
+export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTIONS) {
   return {
     eyebrow: { type: 'text' as const, default: d.eyebrow },
     title: { type: 'text' as const, default: d.title },
     body: { type: 'text' as const, default: d.body ?? '', placeholder: 'Blank lines = paragraph breaks' },
     media: {
-      video: { type: 'select' as const, options: VIDEO_OPTIONS, default: d.video ?? 'none' },
+      video: { type: 'select' as const, options: videos, default: d.video ?? 'none' },
+      ...(d.placeholder !== undefined ? { placeholder: { type: 'text' as const, default: d.placeholder } } : {}),
       figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification'], default: d.figure ?? 'none' },
       layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'right' },
       /** Video height, % of the screen height. */
@@ -69,8 +75,8 @@ const pageDials = {
   _collapsed: false,
 }
 
-const heroDials = (d: SectionDefaults & { role: string; timeline: string; team: string }) => ({
-  ...sectionDials(d),
+const heroDials = (d: SectionDefaults & { role: string; timeline: string; team: string }, videos?: string[]) => ({
+  ...sectionDials(d, videos),
   role: { type: 'text' as const, default: d.role },
   timeline: { type: 'text' as const, default: d.timeline },
   team: { type: 'text' as const, default: d.team },
@@ -353,14 +359,154 @@ export const UNWIND_CONFIG = {
   recruiter: RECRUITER_COPY,
 }
 
-export const ECOFABRIQ_CONFIG = {
+const txt = (d: string) => ({ type: 'text' as const, default: d })
+/** A Filo section with a placeholder block where its prototype loop will go. */
+const filoSection = (d: SectionDefaults) => sectionDials({ layout: 'below', gap: 40, size: 52, ...d }, PLACEHOLDER_OPTIONS)
+const filoFlow = (eyebrow: string, title: string, body: string, placeholder: string) =>
+  filoSection({ eyebrow, title, body, video: 'placeholder', placeholder })
+
+/**
+ * Filo (formerly EcoFabriq): the 2024 marketplace reframed, after 11 interviews, as an agent
+ * that gets a chosen biomaterial through a brand's development process. Source of the copy:
+ * textura-exchange/CASE-STUDY-SPINE.md. Prototype loops don't exist yet; each flow shows a
+ * labelled placeholder until its recording is cut.
+ */
+export const FILO_CONFIG = {
   page: pageDials,
-  hero: heroDials({
-    eyebrow: 'EcoFabriq',
-    title: 'EcoFabriq – Personalized AI-Driven Smart Product Discovery for Bio-Textiles',
+  hero: heroDials(
+    {
+      eyebrow: 'Filo · MIT × Polimi hackathon → 2026 redesign',
+      title: 'Filo – Agentic Commerce for Biomaterial Adoption in Fashion',
+      video: 'placeholder',
+      placeholder: 'Hero loop · the Filo workspace',
+      layout: 'below',
+      size: 46,
+      gap: 48,
+      role: 'Product Designer\nUser research',
+      timeline: 'Hackathon: late 2024\nInterviews: 2025\nRedesign: 2026',
+      team: '1 engineer\n2 fashion designers\n1 product designer',
+    },
+    PLACEHOLDER_OPTIONS,
+  ),
+  /** Problem, Opportunity and Solution in one snap view (rendered as `story`), text only. */
+  story: {
+    problemLabel: txt('Problem'),
+    opportunityLabel: txt('Opportunity'),
+    solutionLabel: txt('Solution'),
+    problemTitle: txt('New materials die between the swatch and the line review.'),
+    problemBody: txt(
+      'Designers can find biomaterials. What they can’t do is prove one will sew, dye, pass QA and scale in time for the season. So brands stick with what they know, and the startups behind those materials run out of runway.',
+    ),
+    opportunityTitle: txt('AI can now act, not just answer.'),
+    opportunityBody: txt(
+      'Agents can request samples, compare quotes, book lab tests and draft briefs across many parties. That slow, repetitive, multi-party work is exactly what makes a new material too risky to try.',
+    ),
+    solutionTitle: txt('An agent that gets a chosen material to production.'),
+    solutionBody: txt(
+      'Filo runs sampling, testing and the factory handoff, then returns a go/no-go with evidence. The designer still picks the material. Filo makes it safe to say yes.',
+    ),
+    preset: { type: 'select' as const, options: ['custom'], default: 'custom' },
+    layout: { type: 'select' as const, options: ['columns', 'art left'], default: 'columns' },
+    art: { type: 'select' as const, options: ['none'], default: 'none' },
+    opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
+    motion: { type: 'select' as const, options: ['off'], default: 'off' },
+    artWidth: [300, 160, 480, 5] as Tuple,
+    rowGap: [56, 8, 140, 1] as Tuple,
+    titleScale: [0.66, 0.3, 0.9, 0.01] as Tuple,
+    textWidth: [460, 280, 720, 10] as Tuple,
+    _collapsed: true,
+  },
+  origin: filoSection({
+    eyebrow: 'Where it started',
+    title: 'A 24-hour answer: a marketplace with a chatbot.',
+    body: 'In late 2024, four of us built EcoFabriq at an MIT × Polimi hackathon. Biomaterial providers listed materials. Designers described their project to a chatbot and got matching materials, specs and locations to order from.\n\nIt demoed well. Then mentors asked who pays, why this beats a catalogue, and what happens if a mushroom coat sells 10,000 units. We had no answers.',
+    video: 'placeholder',
+    placeholder: '2024 demo · EcoFabriq chatbot',
+    layout: 'right',
+    size: 40,
+    gap: 64,
+  }),
+  /** Quote wall from the interviews (rendered as `evidence`). */
+  evidence: EVIDENCE_DIALS,
+  insight: filoSection({
+    eyebrow: 'Insight',
+    title: 'Discovery wasn’t the bottleneck. Adoption was.',
+    body: 'We had automated the one step designers enjoy. The pain sat after it: sampling with no spec sheet, lab tests, factory constraints, and a scale question that reaches the line review with no answer.\n\nThe material startups don’t fail because they can’t make the material. They fail because no brand will carry the risk of going first.',
     layout: 'below',
-    role: '',
-    timeline: '',
-    team: '',
+  }),
+  /** Before → after table (rendered as `reframe`). */
+  reframe: REFRAME_DIALS,
+  /** Persona sheet (shared with Unwind), no portrait, one scenario card. */
+  persona: {
+    ...PERSONA_DIALS,
+    eyebrow: txt('User persona'),
+    title: txt('The technical designer handed a new material.'),
+    body: txt(
+      'She turns a designer’s sketch and fabric choice into a garment a factory can build. When a biomaterial lands on her desk, she becomes the project manager for every unknown.',
+    ),
+    tags: txt('Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM'),
+    preset: { type: 'select' as const, options: ['custom'], default: 'custom' },
+    image: { type: 'select' as const, options: ['none'], default: 'none' },
+    contexts: { type: 'select' as const, options: ['scenario'], default: 'scenario' },
+    driven: {
+      title: txt('Driven by'),
+      d1: txt('Ships the line on time, every season'),
+      d2: txt('Protects fit, quality and the brand’s name'),
+      d3: txt('Wants the new material to actually work'),
+      _collapsed: true,
+    },
+    challenges: {
+      title: txt('Challenges'),
+      c1: txt('Weeks of back-and-forth with suppliers and factories'),
+      c2: txt('Carries the risk personally if it fails'),
+      c3: txt('Gets asked “can we make 10,000?” with no answer'),
+      _collapsed: true,
+    },
+    moments: {
+      ...PERSONA_DIALS.moments,
+      eyebrow: txt('One moment · Monday, 9:12 AM'),
+      title: txt('A bacterial-cellulose sheet lands on next season’s overshirt.'),
+      body: txt(
+        'The designer loved the swatch at a trade fair. There’s no spec sheet, the factory has never cut it, and line review is in six weeks. Today she would quietly swap it for the polyester she knows.',
+      ),
+    },
+  },
+  overview: filoSection({
+    eyebrow: 'Product overview',
+    title: 'Pick the material. Filo gets it to production.',
+    body: 'Attach a material to a style. Filo proposes an adoption plan, runs it within a budget you set, and builds a technical file as results come in: how it sews, what it passed, how far it scales.',
+    video: 'placeholder',
+    placeholder: 'Product overview · 60 s loop',
+  }),
+  flowPlan: filoFlow(
+    'Flow 1 · Adoption plan',
+    'One material in. One plan out.',
+    'Drop in a swatch photo, a supplier link or a recipe. Filo lists what it knows, what’s missing, the runs it would do, the total cost and the date of a go/no-go. One approval starts it.',
+    'Prototype · Flow 1 — adoption plan',
+  ),
+  flowSamples: filoFlow(
+    'Flow 2 · Sample run',
+    'Three suppliers. One approval card.',
+    'Filo requests swatches, compares lead time, price and sample size, then orders within your budget. You make one decision, not three email threads.',
+    'Prototype · Flow 2 — sample run',
+  ),
+  flowFile: filoFlow(
+    'Flow 3 · Technical file',
+    'The file fills in as results arrive.',
+    'Colorfastness, seam strength, pilling and dimensional stability land as lab reports. A heat limit clashes with the factory’s fusing step and gets flagged. Filo drafts the factory brief from the constraints.',
+    'Prototype · Flow 3 — technical file',
+  ),
+  flowScale: filoFlow(
+    'Flow 4 · Scale ladder',
+    '“If it sells, can we make 10,000?”',
+    'Capacity, lead time and price at 500, 2,000 and 10,000 units, the gap at each step, and a fallback material. One slide for the line review.',
+    'Prototype · Flow 4 — scale ladder',
+  ),
+  /** Agent rules as four cards (rendered as `principles`). */
+  principles: PRINCIPLES_DIALS,
+  next: filoSection({
+    eyebrow: 'What’s next',
+    title: 'What I’d test next.',
+    body: 'The prototypes are staged: supplier replies and test results are scripted; the 3D material is real. Next, I’d put Flow 1 in front of five technical designers, and ask one material startup whether they would answer a brand’s agent.\n\nOne open question: from 2027, EU Digital Product Passports could make a material’s technical file mandatory, not optional.',
   }),
 }

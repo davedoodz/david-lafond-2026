@@ -59,7 +59,7 @@ const CONFIG = {
 }
 
 /** Page order sets the direction: Work → About plays forward, About → Work mirrors it. */
-const ORDER: Record<Route, number> = { work: 0, unwind: 1, ecofabriq: 1, 'harvard-mit': 1, about: 2 }
+const ORDER: Record<Route, number> = { work: 0, unwind: 1, filo: 1, 'harvard-mit': 1, about: 2 }
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 
 type BackFeel = { duration: number; ease: [number, number, number, number]; delay: number; oldDuration: number; oldDrift: number; oldOpacity: number; radius: number }
@@ -77,7 +77,7 @@ const BACK_FEELS: Record<string, BackFeel> = {
 }
 
 type Settings = { preset: Preset; mirror: boolean; projectBack: string; pinNav: boolean; pinShader: boolean }
-const PROJECT_ROUTES: Route[] = ['unwind', 'ecofabriq', 'harvard-mit']
+const PROJECT_ROUTES: Route[] = ['unwind', 'filo', 'harvard-mit']
 
 /** Pin an element only if it is on screen; an off-screen pin would fly in from its scrolled position. */
 function pinIfVisible(selector: string, attribute: string) {

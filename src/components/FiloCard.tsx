@@ -1,5 +1,5 @@
 /**
- * Catalog wall filling the EcoFabriq card: three tilted rails of FutureFabric product
+ * Catalog wall filling the Filo card: three tilted rails of FutureFabric product
  * turntables slide past at different speeds (studio/ecofabriq-thumbnail.html, "Catalog wall").
  *
  * No product ever shows twice at once. A tile only picks its product while it is still
@@ -48,7 +48,7 @@ const SPRITES = [
   'christian-siriano-ss2025-circ-lyocell',
   'slk-orangefiber-tieorange-fiber-collection-e-marinalla',
   'orange-fiber-x-h-m-conscious-exclusive-collection-2019',
-].map((name) => `url(/work/ecofabriq/sprites/${name}-spritesheet.webp)`)
+].map((name) => `url(/work/filo/sprites/${name}-spritesheet.webp)`)
 
 const ROWS = 3
 const PER_ROW = 9
@@ -58,8 +58,8 @@ type Tile = { el: HTMLDivElement; sprite: HTMLDivElement; product: number; near:
 
 const mod = (a: number, n: number) => ((a % n) + n) % n
 
-export function EcoFabriqCard() {
-  const v = useTuning('EcoFabriq card', CONFIG)
+export function FiloCard() {
+  const v = useTuning('Filo card', CONFIG)
   const wallRef = useRef<HTMLDivElement>(null)
   const valuesRef = useRef(v)
   valuesRef.current = v

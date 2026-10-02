@@ -2,7 +2,7 @@ import type { Route } from '../lib/router'
 
 /** Selected works. Media (image/video loops) plugs in per card once assets exist. */
 export type Work = {
-  id: 'unwind' | 'ecofabriq' | 'harvard-mit'
+  id: 'unwind' | 'filo' | 'harvard-mit'
   title: string
   shortTitle: string
   /** Surface under the card for the custom cursor (white dot on dark, black on light). */
@@ -20,11 +20,11 @@ export const WORKS: Work[] = [
     route: 'unwind',
   },
   {
-    id: 'ecofabriq',
-    title: 'EcoFabriq – Personalized AI-Driven Smart Product Discovery for Bio-Textiles',
-    shortTitle: 'EcoFabriq',
+    id: 'filo',
+    title: 'Filo – Agentic Commerce for Biomaterial Adoption in Fashion',
+    shortTitle: 'Filo',
     surface: 'light',
-    route: 'ecofabriq',
+    route: 'filo',
   },
   {
     id: 'harvard-mit',
