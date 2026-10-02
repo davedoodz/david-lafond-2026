@@ -1,19 +1,30 @@
-/* The intro canvas sits over the page; a paper veil (drawn by the element's
-   background) hides the case study until the hand-off reveals it. */
+/* A real screen-tall stage above the Unwind hero: scrolling up to it zooms the band
+   into the full-screen story; scrolling down shrinks it back above the partner logos. */
+.unwind-stage {
+  height: 100svh;
+}
+/* The band is drawn on one fixed canvas above the page (pointer-transparent). */
 .unwind-intro {
-  --veil: 1;
   position: fixed;
   inset: 0;
   z-index: 50;
   width: 100vw;
   height: 100svh;
   pointer-events: none;
-  background: rgb(245 245 245 / var(--veil));
-  transition: opacity 450ms ease;
 }
-.unwind-intro[data-out] {
+/* While the stage fills the screen, the nav, sidebar and Davebot step back. */
+html[data-unwind-stage] .case__sidebar,
+html[data-unwind-stage] .case .nav {
   opacity: 0;
+  pointer-events: none;
 }
-html[data-intro-lock] {
-  overflow: hidden;
+.case__sidebar,
+.case .nav {
+  transition: opacity 240ms ease;
+}
+/* Phones: the hero opens lower so the band has room between the nav and Back. */
+@media (max-width: 800px) {
+  .case[data-work='unwind'] .case__section.case__section--hero[data-layout='rise'] {
+    padding-top: 148px;
+  }
 }

@@ -210,13 +210,6 @@
 .case__section[data-layout='center'] .case__meta {
   justify-content: center;
 }
-/* While the Unwind intro plays, its canvas phone stands in for the hero video. */
-.case[data-intro] .case__section--hero .case__media {
-  opacity: 0;
-}
-html[data-intro-landed] .case[data-intro] .case__section--hero .case__media {
-  opacity: 1;
-}
 
 /* --- Snap (page.snap): one stop per section, then the footer. */
 html[data-case-snap='proximity'] {
@@ -1273,13 +1266,6 @@ html[data-case-snap] .case__group > * {
   height: 100%;
   pointer-events: none;
   user-select: none;
-}
-.case[data-intro] .case__section--hero .case__watch {
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-html[data-intro-landed] .case[data-intro] .case__section--hero .case__watch {
-  opacity: 1;
 }
 @media (max-width: 800px) {
   .case__devices {

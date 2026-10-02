@@ -240,18 +240,7 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
       { threshold: 0.35 },
     )
     observer.observe(video)
-    // Hero: restart from the first frame the moment the intro hands over, so the welcome animation
-    // begins exactly as the phone lands.
-    const landed = new MutationObserver(() => {
-      if (document.documentElement.dataset.introLanded === undefined || !video.closest('.case__section--hero')) return
-      video.currentTime = 0
-      void video.play().catch(() => {})
-    })
-    landed.observe(document.documentElement, { attributes: true, attributeFilter: ['data-intro-landed'] })
-    return () => {
-      observer.disconnect()
-      landed.disconnect()
-    }
+    return () => observer.disconnect()
   }, [name])
   const dims = PROTO_VIDEOS[name]
   if (!dims) return null
@@ -292,7 +281,7 @@ export function CaseStudyPage({ id }: Props) {
   const base = values as unknown as Record<string, Section> & { page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }; hero: Hero }
   const page = base.page
   const hero = base.hero
-  // Unwind opens with the voice intro; the hero video stays hidden until it hands off.
+  // True while the Unwind voice story plays on the stage above the hero.
   const [intro, setIntro] = useState(id === 'unwind')
   const allKeys = SECTION_KEYS[id]
   const orderPanel = useTuningController(`${panel.name} · order`, ORDER_CONFIGS[id], {
