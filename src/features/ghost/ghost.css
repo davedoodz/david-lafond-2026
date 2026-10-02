@@ -200,7 +200,8 @@
   transform-origin: left center;
 }
 
-[data-surface='light'] .ghost-button__pill {
+/* Dark pill over light backgrounds; the sample comes from what is behind the pill itself. */
+.ghost-button__pill[data-over='light'] {
   background: var(--ink-900);
   color: var(--paper);
 }

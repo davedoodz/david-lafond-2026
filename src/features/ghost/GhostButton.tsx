@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { isLightUnder } from '../../lib/surface'
 import { GhostMark } from './GhostMark'
 import { openDavebotAbout, setDavebotTrigger, toggleDavebot, useDavebotOpen } from './davebotStore'
 import { DAVEBOT_CONFIG, DAVEBOT_PANEL } from './davebotConfig'
@@ -73,6 +74,31 @@ export function GhostButton({ className }: GhostButtonProps) {
 
   const active = Boolean(quote) && !open
 
+  // The pill inverts against what is actually behind it (a white sheet scrolled under a
+  // dark page, a light section on a dark route), re-sampled while it shows.
+  const pillRef = useRef<HTMLSpanElement>(null)
+  const [overLight, setOverLight] = useState(false)
+  useLayoutEffect(() => {
+    const pill = pillRef.current
+    if (!active || !pill) return
+    let frame = 0
+    const sample = () => {
+      frame = 0
+      const r = pill.getBoundingClientRect()
+      const light = isLightUnder(pill, r.left + r.width / 2, r.top + r.height / 2)
+      if (light !== null) setOverLight(light)
+    }
+    const queue = () => (frame ||= requestAnimationFrame(sample))
+    sample()
+    window.addEventListener('scroll', queue, { passive: true })
+    window.addEventListener('resize', queue)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', queue)
+      window.removeEventListener('resize', queue)
+    }
+  }, [active])
+
   // mousedown would collapse the selection before click reads it; keep it.
   const keepSelection = (event: React.MouseEvent) => {
     if (active) event.preventDefault()
@@ -100,7 +126,7 @@ export function GhostButton({ className }: GhostButtonProps) {
       <span key={hop} className={`ghost-button__body${hop && active ? ' is-hopping' : ''}`}>
         <GhostMark size={tuning.ghost.navSize} />
       </span>
-      <span className="ghost-button__pill" aria-hidden="true">
+      <span ref={pillRef} className="ghost-button__pill" data-over={overLight ? 'light' : 'dark'} aria-hidden="true">
         {cue.pill}
       </span>
     </button>

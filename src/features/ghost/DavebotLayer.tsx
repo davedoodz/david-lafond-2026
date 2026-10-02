@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from 'react'
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'motion/react'
 import type { ResolvedValues } from 'dialkit'
 import { useTuning } from '../../tuning/useTuning'
@@ -136,7 +136,7 @@ function DavebotPanel() {
   const rootRef = useRef<HTMLDivElement>(null)
   const ghostWrapRef = useRef<HTMLSpanElement>(null)
   const panelRef = useRef<HTMLElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const ghostX = useMotionValue(0)
   const ghostY = useMotionValue(0)
@@ -364,7 +364,7 @@ function DavebotPanel() {
     void runQuery(row.query ?? inputValue, row.id)
   }
 
-  function onInputChange(event: ChangeEvent<HTMLInputElement>) {
+  function onInputChange(event: ChangeEvent<HTMLTextAreaElement>) {
     if (readOnly) return
     const value = event.target.value
     setInputValue(value)
@@ -385,6 +385,22 @@ function DavebotPanel() {
     if (row) runRow(row)
     else void runQuery(inputValue)
   }
+
+  // Enter submits like a single-line field; Shift+Enter is left alone (no newline needed, but
+  // IME composition must still be able to confirm with Enter).
+  function onInputKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+    event.preventDefault()
+    event.currentTarget.form?.requestSubmit()
+  }
+
+  // Grow the box to its text so nothing is cut off.
+  useLayoutEffect(() => {
+    const box = inputRef.current
+    if (!box) return
+    box.style.height = 'auto'
+    box.style.height = `${box.scrollHeight}px`
+  }, [inputValue])
 
   function clearOrClose() {
     if (inputValue.trim() || readOnly) {
@@ -504,11 +520,13 @@ function DavebotPanel() {
             <label className="visually-hidden" htmlFor="davebot-query">
               Ask Davebot
             </label>
-            <input
+            {/* A textarea, not an input: long questions (a highlighted passage) wrap instead of
+                scrolling out of sight. Enter still submits; the box grows to fit, up to a cap. */}
+            <textarea
               id="davebot-query"
               ref={inputRef}
               className={`davebot-input${engaged ? ' is-engaged' : ''}`}
-              type="search"
+              rows={1}
               role="combobox"
               aria-expanded="true"
               aria-autocomplete="list"
@@ -520,6 +538,7 @@ function DavebotPanel() {
               readOnly={readOnly}
               value={inputValue}
               onChange={onInputChange}
+              onKeyDown={onInputKeyDown}
               onPointerDown={() => setEngaged(true)}
             />
             <button type="button" className="davebot-close" aria-label="Close Davebot" onClick={requestClose}>

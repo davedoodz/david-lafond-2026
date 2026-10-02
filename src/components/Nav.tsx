@@ -3,6 +3,7 @@ import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
 import { ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
+import { isLightUnder } from '../lib/surface'
 import { useTuning } from '../tuning/useTuning'
 import './Nav.css'
 
@@ -33,22 +34,6 @@ function internalLink(route: Route) {
     event.preventDefault()
     navigate(route)
   }
-}
-
-/**
- * Whether the page behind a point is light: the topmost opaque background in the paint stack
- * under it, skipping the nav. The stack (not each hit's ancestors) catches sibling backdrop layers.
- */
-function isLightUnder(nav: HTMLElement, x: number, y: number) {
-  for (const hit of document.elementsFromPoint(x, y)) {
-    // Skip the nav and full-page overlays (Momo zoom, Davebot), which sit over the page only briefly.
-    if (nav.contains(hit) || hit.closest('.momo-zoom, .davebot-layer')) continue
-    const match = getComputedStyle(hit).backgroundColor.match(/[\d.]+/g)
-    if (!match || (match.length > 3 && Number(match[3]) < 0.5)) continue
-    const [r, g, b] = match.map(Number)
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 140
-  }
-  return null
 }
 
 const PROJECT_ROUTES: Route[] = ['unwind', 'ecofabriq', 'harvard-mit']
