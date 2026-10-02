@@ -238,3 +238,20 @@ html[data-about-snap] .about .footer {
     );
   }
 }
+
+/* About → spacing: playY moves the playground; playSpaceAbove/Below add room around it. */
+.about__play {
+  margin-top: var(--play-above, 0px);
+  margin-bottom: var(--play-below, 0px);
+}
+/* Whole section shifts without changing the space it takes in the page. */
+.about__play {
+  position: relative;
+  top: var(--play-y, 0px);
+}
+/* About → spacing → labelY: the label alone; `top` leaves the reveal's transform free. */
+#play-title {
+  position: relative;
+  top: var(--play-label-y, 0px);
+  z-index: 1;
+}

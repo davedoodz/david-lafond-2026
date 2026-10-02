@@ -451,11 +451,13 @@
       "team": "2 developers, 2 designers, 2 therapists"
     },
     "heroSpacing": {
-      "logosToTitle": 62,
+      "logosToTitle": 63,
       "titleToMeta": 23,
       "y": {
-        "braid": -54,
-        "logos": 29
+        "braid": -74,
+        "title": -25,
+        "meta": -23,
+        "logos": -7
       }
     },
     "logos": {

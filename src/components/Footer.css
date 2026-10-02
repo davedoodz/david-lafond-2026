@@ -56,6 +56,16 @@
   perspective: 200px;
 }
 
+/* Places and clock turn white on hover. */
+.footer__place {
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+.footer__place:hover,
+.footer__place:focus-visible {
+  color: #fff;
+}
+
 .footer__place-size,
 .footer__place-face {
   grid-area: 1 / 1;
