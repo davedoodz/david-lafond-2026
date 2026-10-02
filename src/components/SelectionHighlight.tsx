@@ -28,7 +28,10 @@ function collectRects(range: Range, out: DOMRect[]): void {
   const part = document.createRange()
   for (const node of textNodes) {
     const parent = node.parentElement
-    if (!parent || !node.data.trim()) continue
+    // Whitespace-only nodes still count: the space between words in separate
+    // inline elements (I’m <em>David</em>) would otherwise leave a gap.
+    // Collapsed whitespace has no client rects, so it adds nothing.
+    if (!parent || !node.data) continue
     if (getComputedStyle(parent).userSelect === 'none') continue
     part.selectNodeContents(node)
     if (node === range.startContainer) part.setStart(node, range.startOffset)
