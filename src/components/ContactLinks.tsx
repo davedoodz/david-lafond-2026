@@ -6,6 +6,11 @@ import './ContactLinks.css'
 
 const CONFIG = {
   hoverColor: { type: 'color' as const, default: '#F5F5F5' },
+  /** Icon nudge up (−) or down (+) against the label, in px. */
+  icons: {
+    copyY: [0, -10, 10, 0.5] as [number, number, number, number],
+    arrowY: [0, -10, 10, 0.5] as [number, number, number, number],
+  },
   toast: {
     text: { type: 'text' as const, default: 'saved to clipboard' },
     holdMs: [2200, 600, 6000, 100] as [number, number, number, number],
@@ -55,6 +60,8 @@ export function ContactLinks() {
 
   const style = {
     '--link-hover': t.hoverColor,
+    '--icon-copy-y': `${t.icons.copyY}px`,
+    '--icon-arrow-y': `${t.icons.arrowY}px`,
     '--toast-rise': `${t.toast.rise}px`,
     '--toast-in': `${t.toast.fadeIn}s`,
     '--toast-out': `${t.toast.fadeOut}s`,
