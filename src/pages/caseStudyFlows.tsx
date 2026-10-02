@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { OpportunityArt, ProblemArt, SolutionArt } from './storyArt'
 
@@ -54,7 +54,8 @@ const STORY_PRESETS: Record<string, Look> = {
   columns: { layout: 'columns', art: 'card', opportunityArt: 'three', motion: 'draw' },
 }
 
-export function StoryRow({ s, edit }: { s: Story; edit: Edit }) {
+/** `arts` replaces the Unwind graphics (problem, opportunity, solution) for another case study. */
+export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode] }) {
   const look = STORY_PRESETS[s.preset] ?? s
   const ref = useRef<HTMLElement>(null)
   const [live, setLive] = useState(false)
@@ -66,9 +67,9 @@ export function StoryRow({ s, edit }: { s: Story; edit: Edit }) {
     return () => observer.disconnect()
   }, [])
   const rows = [
-    ['problem', s.problemLabel, s.problemTitle, s.problemBody, <ProblemArt key="p" />],
-    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} />],
-    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, <SolutionArt key="s" />],
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody, arts?.[0] ?? <ProblemArt key="p" />],
+    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, arts?.[1] ?? <OpportunityArt key="o" variant={look.opportunityArt} />],
+    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, arts?.[2] ?? <SolutionArt key="s" />],
   ] as const
   return (
     <section

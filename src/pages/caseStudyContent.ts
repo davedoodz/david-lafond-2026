@@ -68,6 +68,8 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
 const pageDials = {
   snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'mandatory' },
   showSidebar: true,
+  /** Reading density across every case-study section. */
+  textSize: { type: 'select' as const, options: ['compact', 'balanced', 'display'], default: 'compact' },
   /** Widest the content column gets (px). */
   contentWidth: [1040, 600, 1400, 10] as Tuple,
   /** Text column width when the video sits beside it (px). */
@@ -405,14 +407,15 @@ export const FILO_CONFIG = {
     solutionBody: txt(
       'Filo runs sampling, testing and the factory handoff, then returns a go/no-go with evidence. The designer still picks the material. Filo makes it safe to say yes.',
     ),
-    preset: { type: 'select' as const, options: ['custom'], default: 'custom' },
-    layout: { type: 'select' as const, options: ['columns', 'art left'], default: 'columns' },
-    art: { type: 'select' as const, options: ['none'], default: 'none' },
+    /** Same look as Unwind's default (calm cards): stacked rows, a graphic card beside each. */
+    preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'outline', 'minimal', 'custom'], default: 'calm cards' },
+    layout: { type: 'select' as const, options: ['art left', 'art right', 'alternate'], default: 'art left' },
+    art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
     opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
-    motion: { type: 'select' as const, options: ['off'], default: 'off' },
+    motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
     artWidth: [300, 160, 480, 5] as Tuple,
-    rowGap: [56, 8, 140, 1] as Tuple,
-    titleScale: [0.66, 0.3, 0.9, 0.01] as Tuple,
+    rowGap: [44, 8, 140, 1] as Tuple,
+    titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     _collapsed: true,
   },

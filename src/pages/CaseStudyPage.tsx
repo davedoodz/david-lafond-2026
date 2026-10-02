@@ -13,6 +13,7 @@ import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, UNWIND_CONFIG, type ProtoVid
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import { PersonaSection, type Persona } from './casePersona'
 import { EvidenceSection, MediaPlaceholder, PrinciplesSection, ReframeSection } from './filoSections'
+import { FiloOpportunityArt, FiloProblemArt, FiloSolutionArt } from './filoStoryArt'
 import './CaseStudyPage.css'
 
 type Id = Extract<Work['id'], 'unwind' | 'filo'>
@@ -280,7 +281,16 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
 export function CaseStudyPage({ id }: Props) {
   const panel = PANELS[id]
   const { values, setValue } = useTuningController(panel.name, panel.config)
-  const base = values as unknown as Record<string, Section> & { page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }; hero: Hero }
+  const base = values as unknown as Record<string, Section> & {
+    page: {
+      snap: string
+      showSidebar: boolean
+      textSize: 'compact' | 'balanced' | 'display'
+      contentWidth: number
+      textWidth: number
+    }
+    hero: Hero
+  }
   const page = base.page
   const hero = base.hero
   // True while the Unwind voice story plays on the stage above the hero.
@@ -405,7 +415,15 @@ export function CaseStudyPage({ id }: Props) {
 
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
-    if (key === 'story') return <StoryRow key={key} s={s as unknown as Story} edit={edit} />
+    if (key === 'story')
+      return (
+        <StoryRow
+          key={key}
+          s={s as unknown as Story}
+          edit={edit}
+          arts={id === 'filo' ? [<FiloProblemArt key="p" />, <FiloOpportunityArt key="o" />, <FiloSolutionArt key="s" />] : undefined}
+        />
+      )
     if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} />
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} />
@@ -449,7 +467,7 @@ export function CaseStudyPage({ id }: Props) {
         aria-labelledby={`case-${key}`}
       >
         <div className="case__text">
-          {isHero && id !== 'filo' && <BackLink className="case__back case__back--inline" />}
+          {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} />
@@ -505,6 +523,7 @@ export function CaseStudyPage({ id }: Props) {
       className="case"
       data-work={id}
       data-intro={intro || undefined}
+      data-text-size={page.textSize}
       style={{ '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
     >
       {id === 'unwind' && <UnwindIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}
@@ -512,7 +531,7 @@ export function CaseStudyPage({ id }: Props) {
         <Nav route={id} />
         {page.showSidebar && (
           <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
-            {id !== 'filo' && <BackLink className="case__back" />}
+            <BackLink className="case__back" />
             <ol className="case__toc">
               {keys.map((key) => (
                 <li key={key}>

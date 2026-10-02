@@ -1,3 +1,21 @@
+/* Back: same spot as the Unwind/Filo sidebar Back (top-left, 140px down), scrolling with the page. */
+.project__back {
+  position: absolute;
+  z-index: 3;
+  top: 140px;
+  left: var(--edge);
+  /* Unwind's .case__back resets the nav's -4px nudge; match it. */
+  margin-left: 0;
+}
+
+@media (max-width: 900px) {
+  .project__back {
+    position: static;
+    /* The book's Video/Book/Grid switch pulls itself up 40px on narrow screens; clear it. */
+    margin: 0 0 56px var(--edge);
+  }
+}
+
 /* Scroll snap (Harvard & MIT page → snap): the book at the top, then the page end. */
 html[data-project-snap='proximity'] {
   scroll-snap-type: y proximity;

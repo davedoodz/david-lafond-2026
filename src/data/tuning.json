@@ -498,6 +498,7 @@
     "max": 13,
     "keep": {
       "Overview": "hide",
+      "The notification": "hide",
       "How it works": "hide",
       "Context": "hide"
     }
@@ -539,6 +540,11 @@
   "Filo case study": {
     "page": {
       "snap": "off"
+    },
+    "story": {
+      "problemTitle": "Fashion doesn’t have a discovery problem. It has a follow-through problem.",
+      "problemBody": "Designers already find compelling new materials. Most disappear during\n development because nobody can answer how they perform, how to manufacture with\n them or whether supply can scale.",
+      "opportunityTitle": "AI can move the work forward not just talk about it."
     }
   }
 }

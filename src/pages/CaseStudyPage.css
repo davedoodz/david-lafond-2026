@@ -1,7 +1,26 @@
 .case {
   --case-sidebar: 220px;
   --case-content: 1040px;
+  --case-frame-edge: calc(var(--edge) + var(--case-sidebar));
+  --case-heading-scale: 0.78;
+  --case-copy-scale: 0.88;
+  --case-reading: 680px;
+  --case-story-reading: 410px;
   background: var(--paper);
+}
+
+/* Page › text size. Compact is the portfolio default; the other modes are comparison tools. */
+.case[data-text-size='balanced'] {
+  --case-heading-scale: 0.9;
+  --case-copy-scale: 0.95;
+  --case-reading: 740px;
+  --case-story-reading: 440px;
+}
+.case[data-text-size='display'] {
+  --case-heading-scale: 1;
+  --case-copy-scale: 1;
+  --case-reading: 820px;
+  --case-story-reading: 460px;
 }
 
 .case__light {
@@ -91,7 +110,7 @@
   align-content: center;
   justify-content: center;
   gap: var(--media-gap, 72px);
-  padding: 96px var(--edge) 64px calc(var(--edge) + var(--case-sidebar));
+  padding: 96px var(--case-frame-edge) 64px;
 }
 
 .case__section[data-layout='text'],
@@ -99,6 +118,11 @@
 .case__section[data-layout='above'] {
   grid-template-columns: min(var(--case-content), 100%);
   justify-items: start;
+}
+/* Text stays left-aligned inside one viewport-centred reading measure. */
+.case__section:is([data-layout='text'], [data-layout='below'], [data-layout='above']) .case__text {
+  justify-self: center;
+  width: min(100%, var(--case-reading));
 }
 .case__section[data-layout='above'] .case__media {
   order: -1;
@@ -131,19 +155,19 @@
 }
 
 .case__title {
-  font-size: var(--text-display);
+  font-size: calc(var(--text-display) * var(--case-heading-scale));
   font-weight: 400;
   line-height: 1.15;
   color: var(--ink-950);
   text-wrap: balance;
 }
 .case__title--hero {
-  font-size: calc(var(--text-display) * 1.2);
+  font-size: calc(var(--text-display) * 1.2 * var(--case-heading-scale));
 }
 
 .case__body {
   margin-top: 20px;
-  font-size: var(--text-body);
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
   line-height: 1.3;
   color: var(--stone-600);
   white-space: pre-wrap;
@@ -197,7 +221,7 @@
   grid-template-columns: min(var(--case-content), 100%);
   justify-items: center;
   gap: var(--media-gap, 28px);
-  padding-inline: calc(var(--edge) + var(--case-sidebar));
+  padding-inline: var(--case-frame-edge);
 }
 .case__section[data-layout='center'] .case__media {
   order: -1;
@@ -243,19 +267,15 @@ html[data-case-snap] .case .footer {
 }
 
 @media (max-width: 1100px) {
+  .case {
+    --case-frame-edge: var(--edge);
+  }
   .case__sidebar {
     display: none;
-  }
-  .case .case__section[data-layout='rise'],
-  .case .case__section[data-layout='center'] {
-    padding-inline: var(--edge);
   }
   .case__back--inline {
     display: inline-flex;
     margin-bottom: 24px;
-  }
-  .case__section {
-    padding-left: var(--edge);
   }
 }
 
@@ -395,7 +415,7 @@ html[data-case-snap] .case__moment {
   justify-content: flex-start;
   gap: var(--media-gap, 44px);
   padding: 118px var(--edge) 0;
-  padding-inline: calc(var(--edge) + var(--case-sidebar));
+  padding-inline: var(--case-frame-edge);
   overflow: clip;
 }
 .case__section[data-layout='rise'] .case__text {
@@ -468,16 +488,17 @@ html[data-case-snap] .case__moment {
   font-variant-numeric: tabular-nums;
 }
 .case__story-title {
-  font-size: calc(var(--text-display) * var(--story-title, 0.5));
+  font-size: calc(var(--text-display) * var(--story-title, 0.5) * var(--case-heading-scale));
   line-height: 1.15;
   font-weight: 400;
   color: var(--ink-950);
   text-wrap: balance;
 }
 .case__story-body {
-  font-size: var(--text-body);
-  line-height: 1.4;
+  max-width: var(--case-story-reading);
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
   color: var(--stone-600);
+  line-height: 1.4;
   text-wrap: pretty;
 }
 
@@ -768,7 +789,7 @@ html[data-case-snap] .case__moment {
     gap: 6px;
   }
   .case__story-title {
-    font-size: calc(var(--text-display) * 0.9);
+    font-size: calc(var(--text-display) * 0.9 * var(--case-heading-scale));
   }
   .case__flows {
     gap: calc(28px + var(--stagger) * 0.5);
@@ -828,7 +849,7 @@ html[data-case-snap] .case__moment {
     max-height: none;
   }
   .case__section[data-layout='rise'] .case__title--hero {
-    font-size: calc(var(--text-display) * 1.05);
+    font-size: calc(var(--text-display) * 1.05 * var(--case-heading-scale));
   }
   .case .case__section[data-layout='rise'] .case__meta {
     grid-template-columns: repeat(3, auto);
@@ -968,7 +989,7 @@ html[data-case-snap] .case__group > * {
 }
 .persona__title {
   margin: 0;
-  font-size: calc(var(--text-display) * 1.4 * var(--persona-title, 1));
+  font-size: calc(var(--text-display) * 1.4 * var(--persona-title, 1) * var(--case-heading-scale));
   line-height: 1.05;
   font-weight: 400;
   letter-spacing: -0.02em;
@@ -976,13 +997,17 @@ html[data-case-snap] .case__group > * {
   text-wrap: balance;
 }
 .persona__title--sub {
-  font-size: calc(var(--text-display) * var(--persona-title, 1));
+  font-size: calc(var(--text-display) * var(--persona-title, 1) * var(--case-heading-scale));
 }
 .persona__body {
-  font-size: var(--text-body);
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
   line-height: 1.45;
   color: var(--stone-600);
   text-wrap: pretty;
+}
+
+[data-persona-image='none'] .persona__intro {
+  justify-content: center;
 }
 .persona__tags {
   display: flex;
