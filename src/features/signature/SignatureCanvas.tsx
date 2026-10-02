@@ -133,7 +133,7 @@ export function SignatureCanvas({
           </filter>
         </defs>
       )}
-      <g fill={color} fillOpacity={opacity} filter={grain > 0 ? `url(#${filterId})` : undefined}>
+      <g style={{ fill: color }} fillOpacity={opacity} filter={grain > 0 ? `url(#${filterId})` : undefined}>
         {strokes.map((_, i) => (
           <path
             key={i}

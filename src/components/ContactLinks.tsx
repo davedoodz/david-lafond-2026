@@ -5,7 +5,6 @@ import { ArrowUpRightIcon, CheckIcon, CopyIcon } from './icons'
 import './ContactLinks.css'
 
 const CONFIG = {
-  idleColor: { type: 'color' as const, default: '#A6A09C' },
   hoverColor: { type: 'color' as const, default: '#F5F5F5' },
   toast: {
     text: { type: 'text' as const, default: 'saved to clipboard' },
@@ -55,7 +54,6 @@ export function ContactLinks() {
   }
 
   const style = {
-    '--link-idle': t.idleColor,
     '--link-hover': t.hoverColor,
     '--toast-rise': `${t.toast.rise}px`,
     '--toast-in': `${t.toast.fadeIn}s`,

@@ -18,7 +18,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.28em;
-  color: var(--link-idle);
+  color: var(--text-muted);
   transition: color 180ms ease;
   /* Generous hit area without changing the visual rhythm. */
   padding-block: 4px;

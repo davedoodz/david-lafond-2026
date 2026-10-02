@@ -9,8 +9,9 @@ import { useTuning } from '../tuning/useTuning'
 import './WorkPage.css'
 
 const CONFIG = {
-  headline: { type: 'text' as const, default: 'Shaping' },
-  headlineEmphasis: { type: 'text' as const, default: 'what’s next' },
+  headlineLead: { type: 'text' as const, default: 'I’m' },
+  headlineName: { type: 'text' as const, default: 'David Lafond' },
+  headlineTagline: { type: 'text' as const, default: 'a product designer.' },
   intro: {
     type: 'text' as const,
     default: 'I’ve led interdisciplinary creative teams – from global smart city projects to world-class research labs.',
@@ -19,7 +20,7 @@ const CONFIG = {
     type: 'text' as const,
     default: 'Now, I’m bringing this experience to product design — where ideas can move faster and reach further.',
   },
-  name: { type: 'text' as const, default: 'David Lafond' },
+  /** Name lives in the headline; this line sits directly above the signature. */
   role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
   /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
   align: {
@@ -31,13 +32,11 @@ const CONFIG = {
   spacing: {
     titleToIntroDesktop: [30, 0, 200, 1] as [number, number, number, number],
     introToIntroDesktop: [24, 0, 200, 1] as [number, number, number, number],
-    introToNameDesktop: [42, 0, 200, 1] as [number, number, number, number],
-    nameToRoleDesktop: [10, 0, 120, 1] as [number, number, number, number],
+    introToRoleDesktop: [42, 0, 200, 1] as [number, number, number, number],
     roleToSignatureDesktop: [21, -40, 200, 1] as [number, number, number, number],
     titleToIntroMobile: [19, 0, 160, 1] as [number, number, number, number],
     introToIntroMobile: [17, 0, 160, 1] as [number, number, number, number],
-    introToNameMobile: [40, 0, 160, 1] as [number, number, number, number],
-    nameToRoleMobile: [3, 0, 100, 1] as [number, number, number, number],
+    introToRoleMobile: [40, 0, 160, 1] as [number, number, number, number],
     roleToSignatureMobile: [19, -40, 160, 1] as [number, number, number, number],
   },
   peekDesktop: [40, 0, 240, 1] as [number, number, number, number],
@@ -66,25 +65,24 @@ export function WorkPage() {
               '--align-x-m': `${t.align.xMobile}px`,
               '--gap-title-intro-d': `${t.spacing.titleToIntroDesktop}px`,
               '--gap-intro-intro-d': `${t.spacing.introToIntroDesktop}px`,
-              '--gap-intro-name-d': `${t.spacing.introToNameDesktop}px`,
-              '--gap-name-role-d': `${t.spacing.nameToRoleDesktop}px`,
+              '--gap-intro-role-d': `${t.spacing.introToRoleDesktop}px`,
               '--gap-role-sig-d': `${t.spacing.roleToSignatureDesktop}px`,
               '--gap-title-intro-m': `${t.spacing.titleToIntroMobile}px`,
               '--gap-intro-intro-m': `${t.spacing.introToIntroMobile}px`,
-              '--gap-intro-name-m': `${t.spacing.introToNameMobile}px`,
-              '--gap-name-role-m': `${t.spacing.nameToRoleMobile}px`,
+              '--gap-intro-role-m': `${t.spacing.introToRoleMobile}px`,
               '--gap-role-sig-m': `${t.spacing.roleToSignatureMobile}px`,
             } as CSSProperties
           }
           aria-labelledby="hero-title"
         >
           <h1 id="hero-title" className="hero__title" data-enter="0">
-            {t.headline} <em>{t.headlineEmphasis}</em>
+            {t.headlineLead} <em>{t.headlineName}</em>,
+            <br />
+            <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
           <p className="hero__intro" data-enter="1">{t.intro}</p>
           <p className="hero__intro" data-enter="1">{t.intro2}</p>
-          <p className="hero__name" data-enter="2">{t.name}</p>
-          <p className="hero__role" data-enter="3">{t.role}</p>
+          <p className="hero__role" data-enter="2">{t.role}</p>
           <Signature className="hero__signature" />
         </section>
       </div>

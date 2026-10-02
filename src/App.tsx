@@ -2,11 +2,13 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { DitherBand } from './components/DitherBand'
 import { Footer } from './components/Footer'
 import { SelectionHighlight } from './components/SelectionHighlight'
+import { ControlledScroll } from './features/controlledScroll/ControlledScroll'
 import { CursorLayer } from './features/cursor/CursorLayer'
 import { useDavebotOpen } from './features/ghost/davebotStore'
 import { useHeaderIntro } from './features/headerIntro/useHeaderIntro'
 import { PageTransitions } from './features/pageTransition/PageTransitions'
 import { useRoute } from './lib/router'
+import { useTuning } from './tuning/useTuning'
 import { aboutChunk, caseStudyChunk, harvardMitChunk } from './lib/routeChunks'
 import { WorkPage } from './pages/WorkPage'
 
@@ -19,6 +21,20 @@ const LazyCaseStudyPage = lazy(() => caseStudyChunk.load().then((m) => ({ defaul
 const DavebotLayer = lazy(() => loadDavebot().then((m) => ({ default: m.DavebotLayer })))
 
 const DevRoot = import.meta.env.DEV ? lazy(() => import('./tuning/DevRoot')) : null
+
+/** Header dither band, per page (DialKit › Header band). */
+const HEADER_BAND_CONFIG = {
+  work: true,
+  about: true,
+  'harvard-mit': true,
+  unwind: true,
+  ecofabriq: true,
+}
+
+/** Muted text on dark surfaces: nav, hero tagline/role, signature, CTA subtitle, footer, eyebrows (DialKit › Text colors). */
+const TEXT_COLORS_CONFIG = {
+  muted: { type: 'color' as const, default: '#A6A09C' },
+}
 
 function useIdle() {
   const [idle, setIdle] = useState(false)
@@ -44,6 +60,12 @@ const TITLES = {
 
 export function App() {
   const route = useRoute()
+  const headerBand = useTuning('Header band', HEADER_BAND_CONFIG)
+  const textColors = useTuning('Text colors', TEXT_COLORS_CONFIG)
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--text-muted', textColors.muted)
+  }, [textColors.muted])
   const idle = useIdle()
   const davebotOpen = useDavebotOpen()
   useHeaderIntro()
@@ -61,7 +83,7 @@ export function App() {
   return (
     <>
       <div className="site" data-surface={route === 'about' || route === 'unwind' || route === 'ecofabriq' ? 'light' : 'dark'}>
-        <DitherBand position="header" />
+        {headerBand[route as keyof typeof headerBand] !== false && <DitherBand position="header" />}
         {route === 'about' ? (
           // Render the loaded module directly so page transitions never capture a fallback.
           aboutChunk.module ? (
@@ -105,6 +127,7 @@ export function App() {
       )}
       <SelectionHighlight />
       <CursorLayer />
+      <ControlledScroll />
       <PageTransitions />
       {DevRoot && (
         <Suspense fallback={null}>

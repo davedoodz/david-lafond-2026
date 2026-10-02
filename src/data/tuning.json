@@ -41,10 +41,15 @@
   },
   "Dither bands": {
     "header": {
+      "opacity": 0.31,
       "pixelSize": 4.2,
       "scale": 1.14,
       "mouse": {
         "radius": 250
+      },
+      "dots": {
+        "style": "halftone",
+        "radius": 0.37
       }
     },
     "footer": {
@@ -100,11 +105,12 @@
     },
     "spacing": {
       "firstDesktop": 277,
-      "gapDesktop": 16,
+      "gapDesktop": 15,
       "lastDesktop": 277,
       "firstMobile": 228,
       "gapMobile": 15,
-      "lastMobile": 216
+      "lastMobile": 216,
+      "snap": "off"
     },
     "shape": {
       "cardHeightMobile": 134
@@ -480,5 +486,20 @@
     "keep": {
       "Overview": "hide"
     }
+  },
+  "Scroll": {
+    "mode": "native",
+    "maxStep": 60,
+    "downDistance": 5,
+    "upDistance": 5,
+    "downSpeed": 8000,
+    "upSpeed": 8000,
+    "ease": 0.5
+  },
+  "Header band": {
+    "about": false,
+    "harvard-mit": false,
+    "unwind": false,
+    "ecofabriq": false
   }
 }

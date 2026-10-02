@@ -26,7 +26,7 @@ import './DitherBand.css'
 
 type Tuple = [number, number, number, number]
 
-/** Paper's shader + a cursor field. Anchors are asserted so a package update can't silently drop the effect. */
+/** Paper's shader + a cursor field + round-dot styles. Anchors are asserted so a package update can't silently drop the effect. */
 function withMouseField(source: string): string {
   const inject = (src: string, anchor: string, add: string, before = false) => {
     if (!src.includes(anchor)) throw new Error(`DitherBand: shader anchor missing: ${anchor}`)
@@ -39,6 +39,8 @@ function withMouseField(source: string): string {
 uniform float u_mouseAmt;     // 0..1 presence
 uniform float u_mouseRadius;  // drawing-buffer px
 uniform float u_mouseBoost;   // + fills dots in, - clears them
+uniform float u_dotStyle;     // 0 square (Paper), 1 round, 2 bayer halftone, 3 halftone, 4 stepped grid
+uniform float u_dotRadius;    // dot radius as a fraction of the cell
 uniform float u_mouseWarp;    // + pushes pattern out, - pulls in`,
   )
   out = inject(
@@ -50,10 +52,34 @@ uniform float u_mouseWarp;    // + pushes pattern out, - pulls in`,
   shapeUV -= (mDelta / max(length(mDelta), 1e-3)) * mFall * u_mouseWarp * u_mouseRadius / u_resolution;`,
   )
   out = inject(out, 'int type = int(floor(u_type));', '  shape = clamp(shape + mFall * u_mouseBoost, 0., 1.);', true)
+  out = inject(
+    out,
+    'float res = step(.5, shape + dithering);',
+    `  if (u_dotStyle > .5) {
+    float cellR = length(fract(pxSizeUV) - .5);
+    float cellAA = .75 / pxSize;
+    float rad = u_dotRadius;
+    if (u_dotStyle > 3.5) {
+      // Stepped grid: every cell has a dot; brightness steps in 4 levels.
+      res = floor(shape * 4. + .35) / 4.;
+      rad *= .6;
+    } else if (u_dotStyle > 2.5) {
+      // Halftone: every cell has a dot; the shape scales it.
+      res = smoothstep(.04, .14, shape);
+      rad *= sqrt(shape);
+    } else if (u_dotStyle > 1.5) {
+      // Bayer halftone: Bayer picks the dots; the shape scales them.
+      rad *= .4 + .6 * shape;
+    }
+    res *= 1. - smoothstep(rad - cellAA, rad + cellAA, cellR);
+  }`,
+  )
   return out
 }
 
 const interactiveDitheringShader = withMouseField(ditheringFragmentShader)
+
+const DOT_STYLES = { square: 0, round: 1, 'bayer halftone': 2, halftone: 3, 'stepped grid': 4 } as const
 
 type BandLook = { color: string; pixelSize: number; scale: number }
 
@@ -128,7 +154,15 @@ const pageBand = (page: ProjectPage, custom: PageLook) => ({
 })
 
 const CONFIG = {
-  header: { ...band(true, 554221, { color: '#676767', pixelSize: 6.2, scale: 1.17 }), _collapsed: false },
+  header: {
+    ...band(true, 554221, { color: '#676767', pixelSize: 6.2, scale: 1.17 }),
+    /** Dot rendering on top of the dither, shared by the header and footer bands. `square` is Paper's original output. */
+    dots: {
+      style: { type: 'select' as const, options: Object.keys(DOT_STYLES), default: 'square' },
+      radius: [0.36, 0.1, 0.5, 0.01] as Tuple,
+    },
+    _collapsed: false,
+  },
   footer: { ...band(false, 440992, { color: '#706B68', pixelSize: 4.2, scale: 1.14 }), _collapsed: true },
   /** Header band on each project page only (footer and every other page keep the site bands). */
   unwindPage: pageBand('unwind', PAGE_PRESETS.unwind['unwind blue']),
@@ -161,7 +195,8 @@ export function DitherBand({ position }: Props) {
         ? { color: u.headerColor, opacity: u.headerOpacity }
         : ((PAGE_PRESETS[page] as Record<string, PageLook>)[u.preset] ?? null)
   const base = all[position]
-  const values = pageHeader ? { ...base, ...pageHeader } : base
+  const values = { ...base, ...pageHeader }
+  const dots = all.header.dots
   const hostRef = useRef<HTMLDivElement>(null)
   const mountRef = useRef<ShaderMount | null>(null)
 
@@ -182,6 +217,8 @@ export function DitherBand({ position }: Props) {
     u_worldHeight: 0,
     u_mouseBoost: values.mouse.boost,
     u_mouseWarp: values.mouse.warp,
+    u_dotStyle: DOT_STYLES[dots.style as keyof typeof DOT_STYLES],
+    u_dotRadius: dots.radius,
   }
   const uniformsRef = useRef(uniforms)
   uniformsRef.current = uniforms
