@@ -154,10 +154,17 @@
     opacity var(--chat-collapse) ease var(--chat-delay),
     left var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay);
 }
+/* Morph hover: the engine moves the edges every frame (no `left` transition); fades stay short so the hover reads instantly. */
 .chat.is-morph .chat__text {
+  transition: opacity 120ms ease;
+}
+.chat.is-morph .chat__body {
+  transition: color 120ms ease;
+}
+.chat.is-morph .chat__pill {
   transition:
-    opacity var(--chat-shape-ms) ease,
-    left var(--chat-shape-ms) var(--chat-shape-ease);
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 
 /* White: morph circle, click collapse/travel, fill. The stroke stays (same colour). */
