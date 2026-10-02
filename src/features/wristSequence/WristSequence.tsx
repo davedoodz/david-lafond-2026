@@ -191,7 +191,7 @@ export function WristSequence({ frames, heightVh = 360, zoom = 0.04, drift = 12,
           <div ref={screenRef} className="wrist-seq__screen" style={{ width: UI_WIDTH, height: UI_HEIGHT, opacity: 0 }}>
             <iframe
               className="wrist-seq__interface"
-              src="http://127.0.0.1:4176/notification.html?embed=watch"
+              src="/work/unwind/notification/notification.html?embed=watch"
               title="Live Unwind smartwatch notification"
               width={UI_WIDTH}
               height={UI_HEIGHT}
