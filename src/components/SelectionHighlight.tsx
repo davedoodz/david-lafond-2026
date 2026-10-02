@@ -57,18 +57,19 @@ export function SelectionHighlight() {
         for (let i = 0; i < selection.rangeCount; i += 1) collectRects(selection.getRangeAt(i), rects)
       }
 
-      // Expand each fragment by one CSS pixel on every side. Range rects often
-      // land on different subpixels (especially around inline boundaries), which
-      // otherwise leaves a visible hairline between adjacent highlighted pieces.
+      // Expand each fragment enough to overlap the font's line-box rounding.
+      // Client rects can leave a 2–3px seam between wrapped lines even after
+      // outward integer rounding.
+      const overlap = 3
       while (host.childElementCount > rects.length) host.lastElementChild!.remove()
       while (host.childElementCount < rects.length) host.appendChild(document.createElement('div'))
       const { scrollX, scrollY } = window
       rects.forEach((rect, i) => {
         const box = host.children[i] as HTMLDivElement
-        const left = Math.floor(rect.left + scrollX) - 1
-        const top = Math.floor(rect.top + scrollY) - 1
-        const right = Math.ceil(rect.right + scrollX) + 1
-        const bottom = Math.ceil(rect.bottom + scrollY) + 1
+        const left = Math.floor(rect.left + scrollX) - overlap
+        const top = Math.floor(rect.top + scrollY) - overlap
+        const right = Math.ceil(rect.right + scrollX) + overlap
+        const bottom = Math.ceil(rect.bottom + scrollY) + overlap
         box.style.cssText = `left:${left}px;top:${top}px;width:${right - left}px;height:${bottom - top}px`
       })
     }
