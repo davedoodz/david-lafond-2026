@@ -219,14 +219,16 @@ export function makeApi(ctx, L, F, t) {
     /**
      * Ends a film on the real case-study hero: nav, sidebar, title, meta, logos, then the Watch
      * and iPhone rise in, staggered from t0. Returns 0-1 for moving the braid into its hero slot.
+     * `o.alpha[layer]` drives a layer's opacity directly (no rise), for films that morph into it.
      */
-    hero(t0) {
+    hero(t0, o = {}) {
       const ORDER = [['nav', 0, 0], ['side', 0.05, 0], ['title', 0.1, 14], ['meta', 0.2, 12], ['logos', 0.28, 10], ['watch', 0.34, 40], ['phone', 0.42, 40]]
       for (const [k, d, dy] of ORDER) {
-        const e = ease.out(seg(t, t0 + d, t0 + d + 0.6))
+        const own = o.alpha?.[k]
+        const e = own ?? ease.out(seg(t, t0 + d, t0 + d + 0.6))
         if (e <= 0.01) continue
         const [x, y, w, h] = HERO_LAYERS[k]
-        ink.push((c) => { c.save(); c.globalAlpha = e; c.imageSmoothingQuality = 'high'; c.drawImage(heroImg[k], x, y + (1 - e) * dy, w, h); c.restore() })
+        ink.push((c) => { c.save(); c.globalAlpha = e; c.imageSmoothingQuality = 'high'; c.drawImage(heroImg[k], x, y + (own == null ? (1 - e) * dy : 0), w, h); c.restore() })
       }
       return ease.inOut(seg(t, t0 - 0.2, t0 + 0.6))
     },
