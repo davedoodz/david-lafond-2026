@@ -23,7 +23,7 @@ const PANELS = {
 } as const
 
 type Media = { video: string; figure: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
-type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; y: number; opacity: number; harvardScale: number }
+type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; harvardScale: number }
 
 const LOGOS = [
   { src: '/work/unwind/logos/media-lab.svg', alt: 'MIT Media Lab', harvard: false },
@@ -80,7 +80,7 @@ function LogoRow({ l }: { l: Logos }) {
     <div
       className="case__logos"
       data-placement={l.placement}
-      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, '--logo-y': `${l.y}px`, opacity: l.opacity } as CSSProperties}
+      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, opacity: l.opacity } as CSSProperties}
     >
       {LOGOS.map((logo) => (
         <img key={logo.src} src={logo.src} alt={logo.alt} style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
@@ -329,7 +329,7 @@ export function CaseStudyPage({ id }: Props) {
   }, [orderSig])
   const heroSpacing = (
     all as unknown as {
-      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devices: string; watchSize: number; devicesGap: number; devicesTop: number; watchY: number }
+      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devices: string; watchSize: number; devicesGap: number; devicesTop: number; watchY: number; y: { braid: number; title: number; meta: number; logos: number } }
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
@@ -431,6 +431,10 @@ export function CaseStudyPage({ id }: Props) {
                   '--hero-devices-gap': `${heroSpacing.devicesGap}px`,
                   '--hero-watch-y': `${heroSpacing.watchY}svh`,
                   '--hero-devices-top': `${heroSpacing.devicesTop}svh`,
+                  '--hero-braid-y': `${heroSpacing.y.braid}px`,
+                  '--hero-title-y': `${heroSpacing.y.title}px`,
+                  '--hero-meta-y': `${heroSpacing.y.meta}px`,
+                  '--logo-y': `${heroSpacing.y.logos}px`,
                 }
               : {}),
           } as CSSProperties

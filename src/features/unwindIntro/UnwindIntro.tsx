@@ -34,10 +34,8 @@ const CONFIG = {
   hero: {
     /** Width of the band above the title (px). */
     width: [360, 120, 900, 10] as Tuple,
-    /** Height of the band's slot above the title (px); sets the space it takes. */
+    /** Height of the band's slot above the title (px); sets the space it takes. Move it with Unwind case study › heroSpacing › y › braid. */
     slot: [48, 16, 200, 1] as Tuple,
-    /** Nudge the band up (−) or down (+) within its slot (px). */
-    y: [0, -100, 100, 1] as Tuple,
     /** How lively the idle band is (voice level, 0 = still). */
     energy: [0.15, 0, 1, 0.01] as Tuple,
   },
@@ -150,7 +148,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       const full = [sFull, (vw - SIZE.W * sFull) / 2, (vh - SIZE.H * sFull) / 2]
       const half = ((BANDS[s.band] ?? BANDS.braid).width ?? 320) * 0.87
       const sSmall = Math.min(s.hero.width, vw * 0.72) / (2 * half)
-      const ay = slotDocY - window.scrollY + s.hero.y
+      const ay = slotDocY - window.scrollY
       const small = [sSmall, vw / 2 - 480 * sSmall, ay - 245 * sSmall]
       const k = smooth(p)
       const sc = lerp(small[0], full[0], k)

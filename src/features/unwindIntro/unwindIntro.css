@@ -27,4 +27,6 @@ html[data-unwind-stage] .case .nav {
   width: 100%;
   height: var(--braid-slot-h, 48px);
   margin-bottom: 16px;
+  /* heroSpacing › y › braid; the intro canvas measures this box, so the band follows it. */
+  translate: 0 var(--hero-braid-y, 0px);
 }

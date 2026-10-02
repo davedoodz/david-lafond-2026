@@ -211,6 +211,14 @@
   justify-content: center;
 }
 
+/* Hero y nudges (heroSpacing › y): visual only, the layout around each element stays put. */
+.case__section--hero .case__title--hero {
+  translate: 0 var(--hero-title-y, 0px);
+}
+.case__section--hero .case__meta {
+  translate: 0 var(--hero-meta-y, 0px);
+}
+
 /* --- Snap (page.snap): one stop per section, then the footer. */
 html[data-case-snap='proximity'] {
   scroll-snap-type: y proximity;
@@ -346,7 +354,7 @@ html[data-case-snap] .case__moment {
   align-items: center;
   justify-content: center;
   gap: calc(var(--logo-gap) * 0.5) var(--logo-gap);
-  translate: var(--logo-x) var(--logo-y);
+  translate: var(--logo-x) var(--logo-y, 0px);
 }
 .case__logos img {
   display: block;
@@ -370,7 +378,7 @@ html[data-case-snap] .case__moment {
 .case__logos[data-placement='bottom'] {
   bottom: var(--logo-offset);
   left: 50%;
-  translate: calc(-50% + var(--logo-x)) var(--logo-y);
+  translate: calc(-50% + var(--logo-x)) var(--logo-y, 0px);
 }
 .case__section--hero {
   position: relative;

@@ -206,6 +206,13 @@ export const UNWIND_CONFIG = {
     devicesTop: [56, 20, 90, 0.5] as Tuple,
     /** Drops the watch below the phone's top edge, % of the screen height. */
     watchY: [9, -30, 40, 0.5] as Tuple,
+    /** Moves each hero element up (−) or down (+), px, without changing the layout around it. */
+    y: {
+      braid: [0, -200, 200, 1] as Tuple,
+      title: [0, -200, 200, 1] as Tuple,
+      meta: [0, -200, 200, 1] as Tuple,
+      logos: [0, -200, 200, 1] as Tuple,
+    },
     _collapsed: false,
   },
   /** Partner logos in the hero (public/work/unwind/logos). Rendered by the hero, not as a section. */
@@ -218,7 +225,6 @@ export const UNWIND_CONFIG = {
     /** Space between the row and the text (px). */
     offset: [24, 0, 160, 1] as Tuple,
     x: [0, -400, 400, 1] as Tuple,
-    y: [0, -300, 300, 1] as Tuple,
     opacity: [0.85, 0.2, 1, 0.05] as Tuple,
     /** Harvard's shield reads smaller; scale it against the others. */
     harvardScale: [1, 0.5, 2, 0.05] as Tuple,
