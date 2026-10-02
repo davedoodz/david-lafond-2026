@@ -43,20 +43,20 @@ export type Story = {
   textWidth: number
 }
 
-type Look = Pick<Story, 'layout' | 'art' | 'opportunityArt' | 'motion'>
-/** Named combinations to compare quickly; 'custom' falls through to the individual dials. */
+type Look = Pick<Story, 'art' | 'opportunityArt' | 'motion'>
+/** Named art and motion combinations; layout remains independently adjustable. */
 const STORY_PRESETS: Record<string, Look> = {
-  'calm cards': { layout: 'stacked', art: 'card', opportunityArt: 'three', motion: 'draw' },
-  editorial: { layout: 'stacked', art: 'line', opportunityArt: 'three', motion: 'draw' },
-  converge: { layout: 'stacked', art: 'card', opportunityArt: 'converge', motion: 'pulse' },
-  outline: { layout: 'stacked', art: 'outline', opportunityArt: 'single', motion: 'pulse' },
-  minimal: { layout: 'stacked', art: 'none', opportunityArt: 'three', motion: 'off' },
-  columns: { layout: 'stacked', art: 'card', opportunityArt: 'three', motion: 'draw' },
+  'calm cards': { art: 'card', opportunityArt: 'three', motion: 'draw' },
+  editorial: { art: 'line', opportunityArt: 'three', motion: 'draw' },
+  converge: { art: 'card', opportunityArt: 'converge', motion: 'pulse' },
+  outline: { art: 'outline', opportunityArt: 'single', motion: 'pulse' },
+  minimal: { art: 'none', opportunityArt: 'three', motion: 'off' },
+  columns: { art: 'card', opportunityArt: 'three', motion: 'draw' },
 }
 
 /** `arts` replaces the Unwind graphics (problem, opportunity, solution) for another case study. */
 export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode] }) {
-  const look = STORY_PRESETS[s.preset] ?? s
+  const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const ref = useRef<HTMLElement>(null)
   const [live, setLive] = useState(false)
   useEffect(() => {

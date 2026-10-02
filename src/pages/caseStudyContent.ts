@@ -24,8 +24,8 @@ const VIDEO_OPTIONS = ['none', ...Object.keys(PROTO_VIDEOS)]
 /** Filo has no recordings yet: a labelled block marks where each prototype loop will go. */
 const PLACEHOLDER_OPTIONS = ['none', 'placeholder']
 
-/** All section media follows its text in one centered vertical stack. */
-const LAYOUTS = ['below', 'center', 'rise']
+/** Media direction. `center` and `rise` remain available for project heroes. */
+const LAYOUTS = ['bottom', 'top', 'right', 'left', 'center', 'rise']
 
 type SectionDefaults = {
   eyebrow: string
@@ -36,7 +36,7 @@ type SectionDefaults = {
   placeholder?: string
   /** Re:Self diagram shown instead of a video. */
   figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals'
-  layout?: 'below' | 'center' | 'rise'
+  layout?: 'bottom' | 'top' | 'right' | 'left' | 'center' | 'rise'
   size?: number
   gap?: number
 }
@@ -50,7 +50,7 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
       video: { type: 'select' as const, options: videos, default: d.video ?? 'none' },
       ...(d.placeholder !== undefined ? { placeholder: { type: 'text' as const, default: d.placeholder } } : {}),
       figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification'], default: d.figure ?? 'none' },
-      layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'below' },
+      layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'bottom' },
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
       /** Space between the text and the video (px). */
@@ -243,9 +243,9 @@ export const UNWIND_CONFIG = {
     title: 'A journal that notices before you do.',
     body: 'Unwind pairs an Apple Watch that senses when your body shifts for no physical reason with a 30-second voice reflection. Over time it learns what stress looks like for you, and turns each moment into a plan for next time.',
     figure: 'vision',
-    layout: 'below',
+    layout: 'bottom',
   }),
-  /** Problem, Opportunity and Solution as three centred art-over-text rows (rendered as `story`). */
+  /** Problem, Opportunity and Solution; each row supports art above, below, left or right. */
   story: {
     problemLabel: { type: 'text' as const, default: 'Problem' },
     opportunityLabel: { type: 'text' as const, default: 'Opportunity' },
@@ -256,9 +256,9 @@ export const UNWIND_CONFIG = {
     opportunityBody: { type: 'text' as const, default: 'A wearable can notice physiological arousal in real time, and ask.' },
     solutionTitle: { type: 'text' as const, default: 'Reflect, then rehearse next time.' },
     solutionBody: { type: 'text' as const, default: 'A short voice reflection becomes a counterfactual and an if-then plan.' },
-    /** Look presets set layout + art + motion together; 'custom' uses the dials below. */
+    /** Look presets set art and motion; Layout stays independently adjustable. */
     preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'converge', 'outline', 'minimal', 'columns', 'custom'], default: 'calm cards' },
-    layout: { type: 'select' as const, options: ['stacked'], default: 'stacked' },
+    layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
     art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
     /** three: a tile per technology · converge: all three flow into the moment · single: one row of icons */
     opportunityArt: { type: 'select' as const, options: ['three', 'converge', 'single'], default: 'three' },
@@ -276,14 +276,14 @@ export const UNWIND_CONFIG = {
     eyebrow: 'System',
     title: 'Watch, phone and AI, with therapists shaping the model.',
     figure: 'system',
-    layout: 'below',
+    layout: 'bottom',
     gap: 24,
   }),
   notification: sectionDials({
     eyebrow: 'The notification',
     title: 'A gentle tap, only when something changes.',
     figure: 'notification',
-    layout: 'below',
+    layout: 'bottom',
     size: 78,
     gap: 16,
   }),
@@ -291,7 +291,7 @@ export const UNWIND_CONFIG = {
     eyebrow: 'How it works',
     title: 'Your body notices first. You name what it was.',
     figure: 'flow',
-    layout: 'below',
+    layout: 'bottom',
     gap: 40,
   }),
   /** Pinned, scroll-driven wrist sequence (WristSequence); keyed `moment` so the page renders it specially. */
@@ -336,14 +336,14 @@ export const UNWIND_CONFIG = {
     title: 'It asks the right question at the right moment.',
     body: 'As you talk, Unwind offers a follow-up at natural pauses. Tap to answer, or keep going.',
     video: 'dynamic',
-    layout: 'below',
+    layout: 'bottom',
   }),
   context: sectionDials({
     eyebrow: 'Context',
     title: 'It learns what stress looks like for you.',
     body: 'It doesn’t guess emotions. It learns your baseline, flags unusual arousal, and lets you name what it was.\n\nheart rate · HRV · motion\nrespiratory rate · sleep · time of day\nyour voice, only when you choose to reflect',
     figure: 'signals',
-    layout: 'below',
+    layout: 'bottom',
   }),
   tracking: sectionDials({
     eyebrow: 'Tracking change',
@@ -355,7 +355,7 @@ export const UNWIND_CONFIG = {
     eyebrow: 'Outcomes',
     title: 'Coping flexibility improved significantly across a 15-day pilot with 20 participants.',
     body: 'Guided reflection produced nearly twice as many action plans, and participants put more of them into practice in daily life.',
-    layout: 'below',
+    layout: 'bottom',
   }),
   /** Copy for the 8-part recruiter structure (order panel › structure). */
   recruiter: RECRUITER_COPY,
@@ -363,7 +363,7 @@ export const UNWIND_CONFIG = {
 
 const txt = (d: string) => ({ type: 'text' as const, default: d })
 /** A Filo section with a placeholder block where its prototype loop will go. */
-const filoSection = (d: SectionDefaults) => sectionDials({ layout: 'below', gap: 40, size: 52, ...d }, PLACEHOLDER_OPTIONS)
+const filoSection = (d: SectionDefaults) => sectionDials({ layout: 'bottom', gap: 40, size: 52, ...d }, PLACEHOLDER_OPTIONS)
 const filoFlow = (eyebrow: string, title: string, body: string, placeholder: string) =>
   filoSection({ eyebrow, title, body, video: 'placeholder', placeholder })
 
@@ -381,7 +381,7 @@ export const FILO_CONFIG = {
       title: 'Filo – Agentic Commerce for Biomaterial Adoption in Fashion',
       video: 'placeholder',
       placeholder: 'Hero loop · the Filo workspace',
-      layout: 'below',
+      layout: 'bottom',
       size: 46,
       gap: 48,
       role: 'Product Designer\nUser research',
@@ -390,7 +390,7 @@ export const FILO_CONFIG = {
     },
     PLACEHOLDER_OPTIONS,
   ),
-  /** Problem, Opportunity and Solution in one snap view (rendered as `story`), text only. */
+  /** Problem, Opportunity and Solution; each row supports art above, below, left or right. */
   story: {
     problemLabel: txt('Problem'),
     opportunityLabel: txt('Opportunity'),
@@ -407,9 +407,9 @@ export const FILO_CONFIG = {
     solutionBody: txt(
       'Filo runs sampling, testing and the factory handoff, then returns a go/no-go with evidence. The designer still picks the material. Filo makes it safe to say yes.',
     ),
-    /** Same look as Unwind's default (calm cards): stacked rows, a graphic card beside each. */
+    /** Look presets set art and motion; Layout stays independently adjustable. */
     preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'outline', 'minimal', 'custom'], default: 'calm cards' },
-    layout: { type: 'select' as const, options: ['art left', 'art right', 'alternate'], default: 'art left' },
+    layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
     art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
     opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
@@ -425,7 +425,7 @@ export const FILO_CONFIG = {
     body: 'In late 2024, four of us built EcoFabriq at an MIT × Polimi hackathon. Biomaterial providers listed materials. Designers described their project to a chatbot and got matching materials, specs and locations to order from.\n\nIt demoed well. Then mentors asked who pays, why this beats a catalogue, and what happens if a mushroom coat sells 10,000 units. We had no answers.',
     video: 'placeholder',
     placeholder: '2024 demo · EcoFabriq chatbot',
-    layout: 'below',
+    layout: 'bottom',
     size: 40,
     gap: 64,
   }),
@@ -435,7 +435,7 @@ export const FILO_CONFIG = {
     eyebrow: 'Insight',
     title: 'Discovery wasn’t the bottleneck. Adoption was.',
     body: 'We had automated the one step designers enjoy. The pain sat after it: sampling with no spec sheet, lab tests, factory constraints, and a scale question that reaches the line review with no answer.\n\nThe material startups don’t fail because they can’t make the material. They fail because no brand will carry the risk of going first.',
-    layout: 'below',
+    layout: 'bottom',
   }),
   /** Before → after table (rendered as `reframe`). */
   reframe: REFRAME_DIALS,

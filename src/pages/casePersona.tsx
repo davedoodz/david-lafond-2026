@@ -18,10 +18,10 @@ export const PERSONA_DIALS = {
   ),
   /** Comma-separated. */
   tags: text('20s – 30s, Works or studies, Uses a smartwatch, Values mental fitness, Open to AI tools, Urban lifestyle'),
-  /** Look presets set the layout dials together; 'custom' uses the dials below. */
+  /** Look presets set traits, contexts and motion; Image stays independently adjustable. */
   preset: { type: 'select' as const, options: ['reading', 'portrait first', 'compact', 'poster', 'scenario', 'custom'], default: 'reading' },
-  /** Where the portrait sits next to the intro. */
-  image: { type: 'select' as const, options: ['right', 'left', 'top', 'none'], default: 'right' },
+  /** Where the portrait sits relative to the intro. */
+  image: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left', 'none'], default: 'top' },
   /** Driven by / Challenges: two lists side by side, or one after the other. */
   traits: { type: 'select' as const, options: ['side by side', 'stacked'], default: 'side by side' },
   /** Key contexts: one row each (top to bottom), a 2×2 grid, four cards across, or just the one scenario card. */
@@ -94,13 +94,13 @@ export type Persona = {
   moments: Record<string, string>
 }
 
-type Look = Pick<Persona, 'image' | 'traits' | 'contexts' | 'motion'>
+type Look = Pick<Persona, 'traits' | 'contexts' | 'motion'>
 const PERSONA_PRESETS: Record<string, Look> = {
-  reading: { image: 'right', traits: 'side by side', contexts: 'rows', motion: 'draw' },
-  'portrait first': { image: 'top', traits: 'stacked', contexts: 'rows', motion: 'draw' },
-  compact: { image: 'left', traits: 'side by side', contexts: 'grid', motion: 'pulse' },
-  poster: { image: 'right', traits: 'stacked', contexts: 'cards', motion: 'off' },
-  scenario: { image: 'right', traits: 'side by side', contexts: 'scenario', motion: 'draw' },
+  reading: { traits: 'side by side', contexts: 'rows', motion: 'draw' },
+  'portrait first': { traits: 'stacked', contexts: 'rows', motion: 'draw' },
+  compact: { traits: 'side by side', contexts: 'grid', motion: 'pulse' },
+  poster: { traits: 'stacked', contexts: 'cards', motion: 'off' },
+  scenario: { traits: 'side by side', contexts: 'scenario', motion: 'draw' },
 }
 
 /* ---------- Icons: 40×40 line icons, ink + blue ---------- */
@@ -171,7 +171,7 @@ function Icon({ name }: { name: string }) {
 }
 
 export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
-  const look = PERSONA_PRESETS[p.preset] ?? p
+  const look = { ...(PERSONA_PRESETS[p.preset] ?? p), image: p.image }
   const ref = useRef<HTMLElement>(null)
   const [live, setLive] = useState(false)
   useEffect(() => {
