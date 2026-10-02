@@ -436,6 +436,9 @@
     }
   },
   "Unwind case study": {
+    "page": {
+      "snap": "off"
+    },
     "hero": {
       "title": "A Novel Multimodal AI Reflection System for Behavioral Change",
       "media": {
@@ -444,11 +447,11 @@
       "team": "2 developers, 2 designers, 2 therapists"
     },
     "heroSpacing": {
-      "logosToTitle": -40
+      "logosToTitle": 96
     },
     "logos": {
       "height": 40,
-      "y": -82
+      "y": 37
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
@@ -477,8 +480,8 @@
     "frame": 2738590
   },
   "Unwind case study · order": {
-    "order": "story, persona, moment, overview, notification, dynamic, howItWorks, flows, guided, context, tracking, system, outcomes",
     "section": "system",
+    "order": "story, persona, moment, overview, notification, dynamic, howItWorks, flows, guided, context, tracking, system, outcomes",
     "max": 13,
     "keep": {
       "Overview": "hide"

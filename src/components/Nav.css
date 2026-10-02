@@ -138,3 +138,14 @@
     gap: 20px;
   }
 }
+
+/* 'Nav → order': links on the left, Davebot on the right (mirrors the default padding). */
+.nav[data-ghost-side='end'] {
+  flex-direction: row-reverse;
+  padding-left: var(--edge);
+  padding-right: 35px;
+}
+.nav[data-ghost-side='end'] .nav__start {
+  display: flex;
+  flex-direction: row-reverse;
+}

@@ -19,13 +19,13 @@ export const PERSONA_DIALS = {
   /** Comma-separated. */
   tags: text('20s – 30s, Works or studies, Uses a smartwatch, Values mental fitness, Open to AI tools, Urban lifestyle'),
   /** Look presets set the layout dials together; 'custom' uses the dials below. */
-  preset: { type: 'select' as const, options: ['reading', 'portrait first', 'compact', 'poster', 'custom'], default: 'reading' },
+  preset: { type: 'select' as const, options: ['reading', 'portrait first', 'compact', 'poster', 'scenario', 'custom'], default: 'reading' },
   /** Where the portrait sits next to the intro. */
   image: { type: 'select' as const, options: ['right', 'left', 'top', 'none'], default: 'right' },
   /** Driven by / Challenges: two lists side by side, or one after the other. */
   traits: { type: 'select' as const, options: ['side by side', 'stacked'], default: 'side by side' },
-  /** Key contexts: one row each (top to bottom), a 2×2 grid, or four cards across. */
-  contexts: { type: 'select' as const, options: ['rows', 'grid', 'cards'], default: 'rows' },
+  /** Key contexts: one row each (top to bottom), a 2×2 grid, four cards across, or just the one scenario card. */
+  contexts: { type: 'select' as const, options: ['rows', 'grid', 'cards', 'scenario'], default: 'rows' },
   /** Only the blue marks move. */
   motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
   showTags: { type: 'boolean' as const, default: true },
@@ -100,6 +100,7 @@ const PERSONA_PRESETS: Record<string, Look> = {
   'portrait first': { image: 'top', traits: 'stacked', contexts: 'rows', motion: 'draw' },
   compact: { image: 'left', traits: 'side by side', contexts: 'grid', motion: 'pulse' },
   poster: { image: 'right', traits: 'stacked', contexts: 'cards', motion: 'off' },
+  scenario: { image: 'right', traits: 'side by side', contexts: 'scenario', motion: 'draw' },
 }
 
 /* ---------- Icons: 40×40 line icons, ink + blue ---------- */
@@ -264,7 +265,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
           <EditableText as="h2" className="persona__title persona__title--sub" label="Contexts title" value={m.title} onChange={edit('persona.moments.title')} />
           <EditableText className="persona__body" label="Contexts body" value={m.body} onChange={edit('persona.moments.body')} />
         </header>
-        <ol>
+        <ol hidden={look.contexts === 'scenario'}>
           {SCENES.map((scene, i) => {
             const n = `m${i + 1}`
             return (

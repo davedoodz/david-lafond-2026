@@ -1232,19 +1232,28 @@ html[data-case-snap] .case__group > * {
   justify-self: center;
 }
 
-/* Hero devices: the Apple Watch (notification prototype) left of the phone. */
+/* Hero devices: the Apple Watch (notification prototype) left of the phone, both rising
+   from below the fold. Pinned to a share of the screen height so the crop is the same on
+   every screen. The fold crops them on the first screen; the hero is tall enough to hold them
+   whole, so scrolling down reveals the full devices before the next section. */
 .case__devices {
+  position: absolute;
+  top: var(--hero-devices-top, 56svh);
+  left: 50%;
+  translate: -50% 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--hero-devices-gap, 48px);
+  align-items: flex-start;
+  gap: var(--hero-devices-gap, 56px);
+}
+.case .case__section--hero:has(.case__devices) {
+  height: max(100svh, calc(var(--hero-devices-top, 56svh) + var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) + var(--hero-phone-y, 0px) + 6svh));
 }
 .case__watch {
   position: relative;
   flex: none;
-  height: calc(var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) * var(--hero-watch-size, 0.82));
+  height: calc(var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) * var(--hero-watch-size, 0.64));
   aspect-ratio: 540 / 860;
-  translate: 0 calc(var(--hero-phone-y, 0px) + var(--hero-watch-y, 0px));
+  translate: 0 calc(var(--hero-phone-y, 0px) + var(--hero-watch-y, 9svh));
 }
 .case__watch iframe {
   position: absolute;
@@ -1277,6 +1286,19 @@ html[data-intro-landed] .case[data-intro] .case__section--hero .case__watch {
     gap: 16px;
   }
   .case__watch {
-    height: calc(min(var(--hero-phone-h, 56svh), 50svh) * var(--hero-watch-size, 0.82));
+    height: calc(min(var(--hero-phone-h, 56svh), 50svh) * var(--hero-watch-size, 0.64));
   }
+}
+/* Persona `scenario`: the moments header becomes one scenario card. */
+[data-persona-contexts='scenario'] .persona__moments header {
+  max-width: 760px;
+  padding: 32px 36px;
+  border-radius: 24px;
+  background: #eef8ff;
+}
+[data-persona-contexts='scenario'] .persona__moments header .eyebrow {
+  color: #2f8fd0;
+}
+.persona__moments ol[hidden] {
+  display: none;
 }

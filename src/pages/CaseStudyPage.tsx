@@ -9,7 +9,7 @@ import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
 import type { DialConfig } from 'dialkit'
-import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
+import { ECOFABRIQ_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import { PersonaSection, type Persona } from './casePersona'
 import './CaseStudyPage.css'
@@ -110,12 +110,25 @@ const WRIST_FRAMES: WristFrame[] = Array.from({ length: WRIST_COUNT }, (_, k) =>
 type Hero = Section & { role: string; timeline: string; team: string }
 
 /** Story sections (everything except page-level folders and the hero), in config order. */
-const NON_SECTIONS = new Set(['page', 'hero', 'logos', 'heroSpacing'])
+const NON_SECTIONS = new Set(['page', 'hero', 'logos', 'heroSpacing', 'recruiter'])
 const SECTION_KEYS = Object.fromEntries(
   Object.entries(PANELS).map(([k, p]) => [k, Object.keys(p.config).filter((s) => !NON_SECTIONS.has(s))]),
 ) as Record<keyof typeof PANELS, string[]>
 
-type OrderDials = { order: string; section: string; swapWith: string; max: number; keep: Record<string, string> }
+type Arrangement = { order: string; max: number; keep: Record<string, string> }
+type OrderDials = Arrangement & { section: string; swapWith: string; structure?: string; recruiter?: Arrangement }
+
+/**
+ * Alternative page structures. Each keeps its own order / max / keep (a `recruiter` subfolder), so
+ * switching `structure` back to `current` restores the current page untouched. The copy for the
+ * alternative lives in the Unwind panel's `recruiter` folder (RECRUITER_COPY) and overrides
+ * the section copy only while that structure is active.
+ */
+const RECRUITER_ORDER = 'story, overview, persona, howItWorks, moment, notification, dynamic, flows, guided, tracking, context, system, outcomes'
+const STRUCTURE_OPTIONS = [
+  { value: 'current', label: 'current' },
+  { value: 'recruiter', label: '8-part recruiter story' },
+]
 /** At most this many sections get their own screen; extra kept ones are hidden. */
 const MAX_SECTIONS = 8
 const mergeLabel = (k: string) => `add to ${k}`
@@ -141,11 +154,31 @@ const ORDER_CONFIGS = Object.fromEntries(
   Object.entries(SECTION_KEYS).map(([k, keys]) => {
     const label = SECTION_LABELS[k as keyof typeof PANELS]
     const options = keys.map((s) => ({ value: s, label: label[s] }))
+    const arrangement = (order: string, max: number) => ({
+      /** Comma list of section keys, top to bottom. Missing keys are appended; unknown ones ignored. */
+      order: { type: 'text' as const, default: order },
+      max: [max, 1, keys.length, 1] as [number, number, number, number],
+      /** Per section (named as on the page): keep, hide, or add its content to the end of another section. */
+      keep: Object.fromEntries(
+        keys.map((s) => [
+          label[s],
+          {
+            type: 'select' as const,
+            options: [
+              { value: 'keep', label: 'keep' },
+              { value: 'hide', label: 'hide' },
+              ...keys.filter((o) => o !== s).map((o) => ({ value: mergeLabel(o), label: `add to ${label[o]}` })),
+            ],
+            default: 'keep',
+          },
+        ]),
+      ),
+    })
     return [
       k,
       {
-        /** Comma list of section keys, top to bottom. Missing keys are appended; unknown ones ignored. */
-        order: { type: 'text' as const, default: keys.join(', ') },
+        /** Which page structure to show; the move/swap/reset actions edit the active one. */
+        ...(k === 'unwind' ? { structure: { type: 'select' as const, options: STRUCTURE_OPTIONS, default: 'current' } } : {}),
         section: { type: 'select' as const, options, default: keys[0] },
         up: { type: 'action' as const, label: 'Move up' },
         down: { type: 'action' as const, label: 'Move down' },
@@ -154,26 +187,25 @@ const ORDER_CONFIGS = Object.fromEntries(
         swapWith: { type: 'select' as const, options, default: keys[1] ?? keys[0] },
         swap: { type: 'action' as const, label: 'Swap' },
         reset: { type: 'action' as const, label: 'Reset order' },
-        max: [MAX_SECTIONS, 1, keys.length, 1] as [number, number, number, number],
-        /** Per section (named as on the page): keep, hide, or add its content to the end of another section. */
-        keep: Object.fromEntries(
-          keys.map((s) => [
-            label[s],
-            {
-              type: 'select' as const,
-              options: [
-                { value: 'keep', label: 'keep' },
-                { value: 'hide', label: 'hide' },
-                ...keys.filter((o) => o !== s).map((o) => ({ value: mergeLabel(o), label: `add to ${label[o]}` })),
-              ],
-              default: 'keep',
-            },
-          ]),
-        ),
+        ...arrangement(keys.join(', '), MAX_SECTIONS),
+        ...(k === 'unwind' ? { recruiter: { ...arrangement(RECRUITER_ORDER, keys.length), _collapsed: true } } : {}),
       },
     ]
   }),
 ) as unknown as Record<keyof typeof PANELS, DialConfig>
+
+/** Deep-merge copy overrides onto the section values (plain objects only). */
+function mergeCopy<T extends object>(base: T, over: object | undefined): T {
+  if (!over) return base
+  const out = { ...base } as Record<string, unknown>
+  for (const [k, v] of Object.entries(over)) {
+    const b = out[k]
+    out[k] = v && typeof v === 'object' && b && typeof b === 'object' ? mergeCopy(b as object, v) : v
+  }
+  return out as T
+}
+const hasPath = (cfg: object, path: string) =>
+  path.split('.').reduce<unknown>((node, key) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[key] : undefined), cfg) !== undefined
 
 function parseOrder(text: string | undefined, keys: string[]) {
   const seen = new Set<string>()
@@ -257,18 +289,20 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
 export function CaseStudyPage({ id }: Props) {
   const panel = PANELS[id]
   const { values, setValue } = useTuningController(panel.name, panel.config)
-  const all = values as unknown as Record<string, Section> & { page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }; hero: Hero }
-  const page = all.page
-  const hero = all.hero
+  const base = values as unknown as Record<string, Section> & { page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }; hero: Hero }
+  const page = base.page
+  const hero = base.hero
   // Unwind opens with the voice intro; the hero video stays hidden until it hands off.
   const [intro, setIntro] = useState(id === 'unwind')
   const allKeys = SECTION_KEYS[id]
   const orderPanel = useTuningController(`${panel.name} · order`, ORDER_CONFIGS[id], {
     onAction: (action) => {
       const o = orderPanel.values as unknown as OrderDials
-      const list = parseOrder(o.order, allKeys)
+      const rec = o.structure === 'recruiter'
+      const at = rec ? 'recruiter.order' : 'order'
+      const list = parseOrder(rec ? o.recruiter?.order : o.order, allKeys)
       const i = list.indexOf(o.section)
-      if (action === 'reset') return orderPanel.setValue('order', allKeys.join(', '))
+      if (action === 'reset') return orderPanel.setValue(at, rec ? RECRUITER_ORDER : allKeys.join(', '))
       if (i < 0) return
       const next = [...list]
       const move = (to: number) => {
@@ -285,11 +319,15 @@ export function CaseStudyPage({ id }: Props) {
         ;[next[i], next[j]] = [next[j], next[i]]
       } else return
       followRef.current = o.section
-      orderPanel.setValue('order', next.join(', '))
+      orderPanel.setValue(at, next.join(', '))
     },
   })
   const od = orderPanel.values as unknown as OrderDials
-  const groups = resolveGroups(parseOrder(od.order, allKeys), od.keep, od.max ?? MAX_SECTIONS, SECTION_LABELS[id])
+  const recruiter = id === 'unwind' && od.structure === 'recruiter'
+  const arrangement: Arrangement = recruiter && od.recruiter ? od.recruiter : od
+  const groups = resolveGroups(parseOrder(arrangement.order, allKeys), arrangement.keep, arrangement.max ?? MAX_SECTIONS, SECTION_LABELS[id])
+  // Recruiter structure: its copy (Unwind panel › recruiter) overrides the section copy, and on-page edits save there.
+  const all = (recruiter ? mergeCopy(base, (base as unknown as { recruiter: object }).recruiter) : base) as typeof base
   const keys = groups.map((g) => g[0])
   const orderSig = groups.map((g) => g.join('+')).join(',')
   // After a move/swap, bring the moved section on screen so the change is visible immediately.
@@ -302,7 +340,7 @@ export function CaseStudyPage({ id }: Props) {
   }, [orderSig])
   const heroSpacing = (
     all as unknown as {
-      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devices: string; watchSize: number; devicesGap: number; watchY: number }
+      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devices: string; watchSize: number; devicesGap: number; devicesTop: number; watchY: number }
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
@@ -351,7 +389,7 @@ export function CaseStudyPage({ id }: Props) {
     target?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
   }
 
-  const edit = (path: string) => (next: string) => setValue(path, next)
+  const edit = (path: string) => (next: string) => setValue(recruiter && hasPath(RECRUITER_COPY, path) ? `recruiter.${path}` : path, next)
 
   const renderMoment = (key: string, m: Moment) => (
     <WristSequence
@@ -402,7 +440,8 @@ export function CaseStudyPage({ id }: Props) {
                   '--hero-phone-y': `${heroSpacing.phoneY}px`,
                   '--hero-watch-size': heroSpacing.watchSize,
                   '--hero-devices-gap': `${heroSpacing.devicesGap}px`,
-                  '--hero-watch-y': `${heroSpacing.watchY}px`,
+                  '--hero-watch-y': `${heroSpacing.watchY}svh`,
+                  '--hero-devices-top': `${heroSpacing.devicesTop}svh`,
                 }
               : {}),
           } as CSSProperties
@@ -474,7 +513,7 @@ export function CaseStudyPage({ id }: Props) {
               {keys.map((key) => (
                 <li key={key}>
                   <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
-                    {key === 'story' ? 'Problem · Solution' : key === 'persona' ? 'Persona' : all[key].eyebrow}
+                    {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
                   </button>
                 </li>
               ))}

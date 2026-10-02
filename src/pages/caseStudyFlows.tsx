@@ -23,6 +23,9 @@ type Edit = (path: string) => (next: string) => void
 
 /* ---------- Problem · Opportunity · Solution in one snap view ---------- */
 export type Story = {
+  problemLabel: string
+  opportunityLabel: string
+  solutionLabel: string
   problemTitle: string
   problemBody: string
   opportunityTitle: string
@@ -63,9 +66,9 @@ export function StoryRow({ s, edit }: { s: Story; edit: Edit }) {
     return () => observer.disconnect()
   }, [])
   const rows = [
-    ['problem', 'Problem', s.problemTitle, s.problemBody, <ProblemArt key="p" />],
-    ['opportunity', 'Opportunity', s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} />],
-    ['solution', 'Solution', s.solutionTitle, s.solutionBody, <SolutionArt key="s" />],
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody, <ProblemArt key="p" />],
+    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} />],
+    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, <SolutionArt key="s" />],
   ] as const
   return (
     <section

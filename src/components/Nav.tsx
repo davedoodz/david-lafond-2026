@@ -23,6 +23,8 @@ const NAV_CONFIG = {
   blur: [16, 0, 40, 1] as Tuple,
   /** Space under the links while pinned, so the backdrop does not end tight on the text. */
   padBottom: [16, 0, 48, 1] as Tuple,
+  /** Which side Davebot (the ghost) sits on; the links take the other side. */
+  order: { type: 'select' as const, options: ['links · Davebot', 'Davebot · links'], default: 'links · Davebot' },
 }
 
 function internalLink(route: Route) {
@@ -125,7 +127,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={under} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
           {route === 'harvard-mit' && <BackLink />}
