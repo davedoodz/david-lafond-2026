@@ -221,6 +221,12 @@
   pointer-events: auto;
 }
 
+@media (hover: hover) {
+  .ghost-button.is-cued .ghost-button__pill:hover {
+    scale: 1.1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ghost-button__body.is-hopping {
     animation: none;
