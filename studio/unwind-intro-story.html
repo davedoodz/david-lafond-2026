@@ -14,12 +14,7 @@
       <header>
         <div>
           <h1>One hard afternoon — three cuts</h1>
-          <p class="sub">Built from the prototypes' own pieces: the Apple Watch notification, the voice screen with Momo, the live transcript, the glass Dynamic question card and controls, then the reflection cards. You watch one person, right after a tense 1:1 with Priya, say what happened and leave a little clearer. Phone UI stays in Inter (as in the prototypes); the few captions switch typeface.</p>
-        </div>
-        <div class="seg" role="group" aria-label="Typeface">
-          <button type="button" data-view="both" aria-pressed="true">Both</button>
-          <button type="button" data-view="inter" aria-pressed="false">Inter</button>
-          <button type="button" data-view="test" aria-pressed="false">Test Family</button>
+          <p class="sub">Built from the prototypes' own pieces. It opens before the meeting, with Momo wishing them luck on the lock screen. Then the Watch notices the heart rate after the 1:1, they say what happened (the braid appears only once they speak), Dynamic mode asks one question, and the reflection comes back as an entry, a pattern and a plan. All the reading happens on the screens.</p>
         </div>
       </header>
       <div id="list"></div>
@@ -140,12 +135,15 @@
         c.fillStyle = g; c.beginPath(); c.roundRect(337, y - 8, 16, 16, 3.5); c.fill()
         c.restore(); c.restore()
       }
-      function statusBar(c) {
+      function statusBar(c, back = 1) {
         tx(c, '9:41', 52, 30, 16, { w: 600 })
         c.fillStyle = '#1f1f1f'; [0, 1, 2, 3].forEach((i) => c.fillRect(298 + i * 5, 34 - (i + 1) * 2.6, 3, (i + 1) * 2.6))
         c.beginPath(); c.roundRect(323, 24, 23, 12, 3.5); c.lineWidth = 1; c.strokeStyle = 'rgba(31,31,31,0.4)'; c.stroke(); c.beginPath(); c.roundRect(325, 26, 19, 8, 2); c.fill()
+        if (back <= 0.01) return
+        c.save(); c.globalAlpha *= back
         glass(c, 22, 62, 44, 44, 22, 'rgba(255,255,255,0.55)', 4)
         c.strokeStyle = '#1f1f1f'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(47, 77); c.lineTo(40, 84); c.lineTo(47, 91); c.stroke()
+        c.restore()
       }
       function processing(c, t, al) {
         if (al <= 0.01) return
@@ -178,15 +176,27 @@
           if (k > 0) { c.strokeStyle = '#fff'; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(330, y + 52); c.lineTo(lerp(330, 334, k), lerp(y + 52, y + 57, k)); if (k > 0.5) c.lineTo(lerp(334, 343, (k - 0.5) * 2), lerp(y + 57, y + 46, (k - 0.5) * 2)); c.stroke() }
         } },
       }
-      function lockView(c, al) {
+      /** Lock-screen notification from Unwind, with Momo as the app icon. */
+      function notice(c, y, al, lines) {
+        if (al <= 0.01) return
+        c.save(); c.globalAlpha *= al
+        glass(c, 16, y, 358, 46 + lines.length * 19, 22, 'rgba(255,255,255,0.8)', 24)
+        c.fillStyle = '#EEF6FF'; c.beginPath(); c.roundRect(30, y + 14, 38, 38, 10); c.fill(); c.drawImage(IMG.momo, 31, y + 15, 36, 36)
+        tx(c, 'Unwind', 80, y + 24, 14, { w: 600, color: '#1f2a2e' }); tx(c, 'now', 356, y + 24, 13, { color: '#98a4a8', align: 'right' })
+        lines.forEach((l, i) => tx(c, l, 80, y + 45 + i * 19, 14, { color: '#3b484c' }))
+        c.restore()
+      }
+      function lockView(c, al, t, T, cfg) {
         if (al <= 0.01) return
         c.save(); c.globalAlpha = al
+        const skip = cfg.watch ? 0 : S(t, T.skip, T.skip + 0.5)
         tx(c, 'Wednesday, October 1', 195, 104, 17, { w: 500, color: '#3b484c', align: 'center' })
-        tx(c, '2:47', 195, 168, 84, { w: 300, color: '#2a3438', align: 'center', ls: -2 })
-        glass(c, 16, 300, 358, 82, 22, 'rgba(255,255,255,0.78)', 24)
-        c.fillStyle = '#EEF6FF'; c.beginPath(); c.roundRect(30, 316, 38, 38, 10); c.fill(); c.drawImage(IMG.stars, 39, 325, 20, 20)
-        tx(c, 'Unwind', 80, 324, 14, { w: 600, color: '#1f2a2e' }); tx(c, 'now', 356, 324, 13, { color: '#98a4a8', align: 'right' })
-        tx(c, 'Something changed. Want to talk', 80, 346, 14, { color: '#3b484c' }); tx(c, 'for 30 seconds?', 80, 365, 14, { color: '#3b484c' })
+        c.globalAlpha = al * (1 - skip); tx(c, '1:58', 195, 168, 84, { w: 300, color: '#2a3438', align: 'center', ls: -2 })
+        c.globalAlpha = al * skip; tx(c, '2:47', 195, 168, 84, { w: 300, color: '#2a3438', align: 'center', ls: -2 })
+        c.globalAlpha = al
+        const out = cfg.watch ? T.watchIn - 0.9 : T.skip - 0.3
+        notice(c, 300 - (1 - S(t, 0.5, 1.0)) * 24, Math.min(S(t, 0.5, 1.0), 1 - S(t, out, out + 0.4)), ['Good luck with Priya today.', 'You’ve prepared for this. Breathe first.'])
+        if (!cfg.watch) notice(c, 300 - (1 - S(t, T.buzz, T.buzz + 0.45)) * 24, S(t, T.buzz, T.buzz + 0.45), ['Something changed. Want to talk', 'for 30 seconds?'])
         c.restore()
       }
       function watchUI(c, t, T, k) {
@@ -211,9 +221,9 @@
       // ---------- One story, three cuts ----------
       function timeline(cfg) {
         const T = {}
-        let t = 1.9
+        let t = 2.8
         if (cfg.watch) { T.watchIn = t; T.buzz = t + 0.7; T.press = t + 2.3; T.phoneIn = t + 2.6; t = T.phoneIn + 0.8 }
-        else { T.phoneIn = t - 0.3; T.buzz = t + 0.4; T.press = t + 1.9; T.unlock = t + 2.0; t = T.unlock + 0.6 }
+        else { T.phoneIn = 0.05; T.skip = t - 0.3; T.buzz = t + 0.4; T.press = t + 1.9; T.unlock = t + 2.0; t = T.unlock + 0.6 }
         T.talk = t; t += cfg.words.length * cfg.rate + 0.4
         if (cfg.prompt) { T.card = t; T.take = t + 1.25; T.answer = t + 1.55; t = T.answer + cfg.answer.length * cfg.rate + 0.4 }
         T.stop = t; T.proc = t + 0.3; T.cards = t + 1.1
@@ -234,21 +244,26 @@
             // Background: warm flush while distressed, cooling as they talk.
             a.under((c) => {
               const g = c.createRadialGradient(480, 280, 0, 480, 280, 600), k = 1 - S(t, T.hero - 0.6, T.hero + 0.2)
-              g.addColorStop(0, `rgba(${Math.round(lerp(255, 120, calm))},${Math.round(lerp(176, 200, calm))},${Math.round(lerp(196, 250, calm))},${lerp(0.22, 0.12, calm) * k})`); g.addColorStop(1, 'rgba(245,245,245,0)')
+              g.addColorStop(0, `rgba(${Math.round(lerp(255, 120, calm))},${Math.round(lerp(176, 200, calm))},${Math.round(lerp(196, 250, calm))},${lerp(0.22, 0.12, calm) * k * S(t, T.buzz - 0.8, T.buzz)})`); g.addColorStop(1, 'rgba(245,245,245,0)')
               c.fillStyle = g; c.fillRect(0, 0, W, 540)
             })
 
             // Devices.
-            const ph = Math.min(S(t, T.phoneIn, T.phoneIn + 0.7), 1 - S(t, T.calm, T.calm + 0.7))
+            const opening = cfg.watch ? Math.min(S(t, 0.05, 0.6), 1 - S(t, T.watchIn - 0.6, T.watchIn)) : 0
+            const ph = Math.max(opening, Math.min(S(t, T.phoneIn, T.phoneIn + 0.7), 1 - S(t, T.calm, T.calm + 0.7)))
             const pk = 500 / PHONE.h, pw = PHONE.w * pk
-            const py = 280 + (1 - S(t, T.phoneIn, T.phoneIn + 0.7)) * 50
+            const py = 280 + (1 - (cfg.watch && t > T.watchIn ? S(t, T.phoneIn, T.phoneIn + 0.7) : S(t, 0.05, 0.7))) * 50
             const scr = { x: 480 - pw / 2 + PHONE.sx * pk, y: py - 250 + PHONE.sy * pk, w: PHONE.sw * pk, h: PHONE.sh * pk, r: PHONE.r * pk }
             const u = scr.w / 390
             // Camera: a slow push-in on the transcript while they talk, on the cards while they read, out for the calm.
             const inTalk = S(t, T.talk - 0.3, T.talk + 0.9) * (1 - S(t, T.stop, T.proc + 0.6))
             const inCards = S(t, T.cards - 0.2, T.cards + 0.8) * (1 - S(t, T.calm - 0.5, T.calm + 0.5))
-            const z = 1 + 0.42 * inTalk + 0.36 * inCards
-            const fx = lerp(480, 380, clamp(inTalk + inCards)), fy = lerp(280, lerp(scr.y + 560 * u, scr.y + 300 * u, inCards / Math.max(1e-6, inTalk + inCards)), clamp(inTalk + inCards))
+            // Lock screen: lean in so the notifications are readable.
+            const lockEnd = cfg.watch ? T.watchIn - 0.9 : T.unlock
+            const inLock = S(t, 0.5, 1.3) * (1 - S(t, lockEnd - 0.2, lockEnd + 0.5))
+            const z = 1 + 0.42 * inTalk + 0.36 * inCards + 0.6 * inLock
+            const wsum = inTalk + inCards + inLock, focus = (scr.y + 560 * u) * inTalk + (scr.y + 300 * u) * inCards + (scr.y + 270 * u) * inLock
+            const fx = 480, fy = lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
             const view = (c) => { c.translate(480, 270); c.scale(z, z); c.translate(-fx, -fy) }
             const cx = (x) => (x - fx) * z + 480, cy = (y) => (y - fy) * z + 270
 
@@ -262,28 +277,11 @@
             p = mix(p, glow, S(t, T.phoneIn, T.phoneIn + 0.7))
             p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
             p = mix(p, HERO_BRAID, S(t, T.calm + 0.6, T.hero))
-            const bAlpha = cfg.watch ? Math.max(1 - S(t, T.watchIn + 0.2, T.watchIn + 0.7), S(t, T.phoneIn + 0.2, T.phoneIn + 0.8)) : 1
+            const bAlpha = S(t, T.talk - 0.4, T.talk + 0.3)
             const speech = 0.45 + 0.4 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
             a.braid(curl(cx(p.x), cy(p.y), p.len * z, 0), {
               env: lerp(lerp(0.85 + 0.15 * hb, 0.1, calm), speech, talking * 0.8), scale: p.sc * z, rt, alpha: bAlpha,
               chaos: () => lerp(1.3, 0, calm), kAmp: () => lerp(1.6 + 0.3 * hb, 0.45, calm), weights: (k) => (k >= 2 ? lerp(1.25, 0.3, calm) : lerp(0.75, 1.1, calm)),
-            })
-
-            // Opening context: the meeting that just ended, and the body's reaction.
-            const ctxA = Math.min(S(t, 0.25, 0.75), 1 - S(t, 1.6, 2.1))
-            a.draw((c) => {
-              if (ctxA <= 0.01) return
-              c.save(); c.globalAlpha = ctxA
-              const y0 = 104 + (1 - S(t, 0.25, 0.75)) * 10
-              glass(c, 360, y0, 240, 60, 18, 'rgba(255,255,255,0.8)', 20)
-              c.fillStyle = '#EEF6FF'; c.beginPath(); c.roundRect(374, y0 + 12, 36, 36, 10); c.fill()
-              c.strokeStyle = BLUE; c.lineWidth = 1.6; c.beginPath(); c.roundRect(383, y0 + 22, 18, 17, 3); c.moveTo(383, y0 + 27); c.lineTo(401, y0 + 27); c.stroke()
-              tx(c, '1:1 with Priya', 422, y0 + 22, 14.5, { w: 600, color: '#1f2a2e' }); tx(c, '2:00 – 2:45 PM · ended', 422, y0 + 41, 12.5, { color: '#7d8b90' })
-              const h2 = pulse(t * 1.9)
-              glass(c, 404, 452, 152, 44, 22, 'rgba(255,255,255,0.8)', 16)
-              c.fillStyle = '#ff6b81'; c.font = `600 ${15 + 3 * h2}px ${UI}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('♥', 428, 474)
-              tx(c, '96 BPM', 444, 474, 14.5, { w: 600, color: '#1f2a2e' }); tx(c, 'HRV ↓', 508, 474, 13, { w: 500, color: '#7d8b90' })
-              c.restore()
             })
 
             // Apple Watch: face → haptic → notification → tap.
@@ -291,19 +289,19 @@
               const wa = Math.min(S(t, T.watchIn, T.watchIn + 0.6), 1 - S(t, T.phoneIn - 0.1, T.phoneIn + 0.5))
               const shake = Math.sin(t * 75) * 2.2 * (bump(t, T.buzz, T.buzz + 0.25) + bump(t, T.buzz + 0.35, T.buzz + 0.6))
               const wx = 480 - S(t, T.phoneIn - 0.1, T.phoneIn + 0.6) * 170 + shake, wy = 285 + (1 - S(t, T.watchIn, T.watchIn + 0.6)) * 40
-              const wk = 300 / WATCH.h
+              const wk = 390 / WATCH.h
               a.draw((c) => {
                 if (wa <= 0.01) return
                 c.save(); c.globalAlpha = wa
-                const x0 = wx - (WATCH.w * wk) / 2, y0 = wy - 150
+                const x0 = wx - (WATCH.w * wk) / 2, y0 = wy - 195
                 c.save(); c.translate(x0 + WATCH.sx * wk, y0 + WATCH.sy * wk); c.scale(wk, wk)
                 c.fillStyle = '#000'; c.beginPath(); c.roundRect(0, 0, WATCH.sw, WATCH.sh, 70); c.fill(); c.clip()
                 c.globalAlpha = wa; watchUI(c, t, T, wk); c.restore()
-                c.globalAlpha = wa; c.drawImage(IMG.watch, x0, y0, WATCH.w * wk, 300)
+                c.globalAlpha = wa; c.drawImage(IMG.watch, x0, y0, WATCH.w * wk, 390)
                 c.restore()
               })
-              a.ripple(wx, wy, T.buzz, { r0: 110, r1: 200, n: 2, dur: 1.4, gap: 0.35, alpha: 0.35, lw: 1.2 })
-              a.ripple(wx, wy - 150 + (WATCH.sy + 340) * wk, T.press, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
+              a.ripple(wx, wy, T.buzz, { r0: 140, r1: 240, n: 2, dur: 1.4, gap: 0.35, alpha: 0.35, lw: 1.2 })
+              a.ripple(wx, wy - 195 + (WATCH.sy + 340) * wk, T.press, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
             }
 
             // iPhone: lock banner (phone-only cut) → voice screen → question → reflection.
@@ -321,9 +319,9 @@
               c.save(); view(c); c.globalAlpha = ph
               c.translate(480, py); c.scale(lift, lift); c.translate(-480, -py)
               c.save(); c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip(); c.translate(scr.x, scr.y); c.scale(u, u)
-              statusBar(c)
-              lockView(c, cfg.watch ? 0 : 1 - S(t, T.unlock, T.unlock + 0.45))
-              const voice = cfg.watch ? 1 : S(t, T.unlock, T.unlock + 0.45)
+              statusBar(c, cfg.watch ? S(t, T.phoneIn - 0.3, T.phoneIn) : S(t, T.unlock, T.unlock + 0.45))
+              lockView(c, cfg.watch ? 1 - S(t, T.phoneIn - 0.3, T.phoneIn) : 1 - S(t, T.unlock, T.unlock + 0.45), t, T, cfg)
+              const voice = cfg.watch ? S(t, T.phoneIn - 0.3, T.phoneIn) : S(t, T.unlock, T.unlock + 0.45)
               c.globalAlpha = ph * voice * (1 - S(t, T.cards - 0.4, T.cards))
               momo(c, 195, 300, 150, t, talking)
               c.globalAlpha = ph * voice
@@ -348,8 +346,6 @@
             if (cfg.prompt) a.ripple(sx(195), sy(140), T.take, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
             a.ripple(sx(345), sy(790), T.stop, { r0: 4, r1: 26, n: 1, dur: 0.6, alpha: 0.6 })
 
-            // A few quiet captions, to the left of the devices.
-            cfg.say(T).forEach(([t0, t1, s]) => a.text(s, 92, 272, { size: 22, color: C.ink9, align: 'left', a: Math.min(S(t, t0, t0 + 0.5), 1 - S(t, t1 - 0.5, t1)) }))
             a.hero(T.hero)
           },
         }
@@ -361,11 +357,10 @@
           watch: true, prompt: true, rate: 0.17, words: WORDS,
           question: 'What would you say, if it happened again?', answer: 'That I need two more weeks, and why.'.split(' '),
           cards: ['entry', 'pattern', 'plan'],
-          say: (T) => [[0.2, 1.9, 'Right after the 1:1.'], [T.watchIn + 0.4, T.phoneIn + 0.2, 'Their body notices first.'], [T.talk + 0.6, T.stop - 0.4, 'So they say it out loud.'], [T.cards + 0.3, T.calm + 0.6, 'And leave a little clearer.']],
           meta: {
             title: 'The full moment',
             idea: 'Everything the system does, at a pace you can watch: the meeting just ended and the heart rate is up; the Watch buzzes; they tap “Talk for 30 seconds”; the phone listens while Momo nods along; Dynamic mode asks one question; the reflection comes back as an entry, a pattern and a plan they tick off.',
-            beats: ['0–1.9 1:1 ended, 96 BPM', 'Watch buzzes, tap', 'they talk (transcript)', 'Dynamic question + answer', 'entry · pattern · plan ✓', 'calm → hero'],
+            beats: ['1:58 Momo: good luck', 'Watch buzzes, tap', 'they talk (transcript)', 'Dynamic question + answer', 'entry · pattern · plan ✓', 'calm → hero'],
             keeps: 'Biometrics + calendar context, Watch prompt, voice journal, Dynamic question, entry, AI pattern, plan.',
             cuts: 'Email; the Guided (WOOP / Gross) frameworks.',
             tradeoff: 'The most complete and the most intimate (you read their words), at about 18 s. Easy to trim later by dropping the question or a card.',
@@ -374,11 +369,10 @@
         film({
           watch: true, prompt: false, rate: 0.15, words: 'Priya pushed back in front of everyone and I froze. I keep replaying it.'.split(' '),
           cards: ['pattern', 'plan'],
-          say: (T) => [[0.2, 1.9, 'Right after the 1:1.'], [T.talk + 0.4, T.stop - 0.3, 'Thirty seconds to say it.'], [T.cards + 0.3, T.calm + 0.6, 'A little clearer.']],
           meta: {
             title: 'Short cut',
             idea: 'The same moment, trimmed: Watch tap, a shorter confession in Freeform mode, then straight to the pattern and the plan.',
-            beats: ['1:1 ended', 'Watch tap', 'short transcript', 'pattern · plan ✓', 'calm → hero'],
+            beats: ['1:58 Momo: good luck', 'Watch tap', 'short transcript', 'pattern · plan ✓', 'calm → hero'],
             keeps: 'Watch → phone, voice, pattern, plan.',
             cuts: 'The Dynamic question and the entry card.',
             tradeoff: 'Lands in about 14 s and still feels personal; loses the “it asks you a good question” beat that shows the AI listening.',
@@ -388,11 +382,10 @@
           watch: false, prompt: true, rate: 0.17, words: WORDS,
           question: 'What would you say, if it happened again?', answer: 'That I need two more weeks, and why.'.split(' '),
           cards: ['pattern', 'plan'],
-          say: (T) => [[0.2, 1.7, 'Right after the 1:1.'], [T.talk + 0.6, T.stop - 0.4, 'They say it out loud.'], [T.cards + 0.3, T.calm + 0.6, 'A little clearer.']],
           meta: {
             title: 'Phone only',
             idea: 'Skips the Watch: the nudge arrives as an Unwind notification on the lock screen, then the voice screen, the Dynamic question and the reflection.',
-            beats: ['1:1 ended', 'lock-screen nudge', 'they talk', 'Dynamic question', 'pattern · plan ✓', 'calm → hero'],
+            beats: ['1:58 Momo: good luck', 'lock-screen nudge', 'they talk', 'Dynamic question', 'pattern · plan ✓', 'calm → hero'],
             keeps: 'The nudge, voice, Dynamic question, pattern, plan; one device the whole time.',
             cuts: 'The Apple Watch and the body-first idea.',
             tradeoff: 'Simplest staging (one device, no hand-off), but the “your body notices first” part of the system disappears.',
@@ -400,7 +393,7 @@
         }),
       ]
 
-      await mount(FILMS)
+      await mount(FILMS, { fonts: ['inter'] })
     </script>
   </body>
 </html>
