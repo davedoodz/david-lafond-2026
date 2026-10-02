@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unwind intro — distress to clarity, six wordless variants</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;1,14..32,400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./unwind-intro-kit.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Distress → clarity — six wordless variants</h1>
+          <p class="sub">No reading. The braid carries the story: tangled, fast and warm while the person is overwhelmed after a tense 1:1, then the Watch notices, and the band slows, aligns and cools into one clear line. Every film is 7.8 s and ends by settling into the real case-study hero.</p>
+        </div>
+      </header>
+      <div id="list"></div>
+    </main>
+    <script type="module">
+      import { W, TAU, C, clamp, lerp, seg, ease, curl, mount, HERO_BRAID } from './unwind-intro-kit.js'
+
+      // ---------- Calm-motion helpers ----------
+      /** Sine ease: the softest in/out, used for every calming move. */
+      const S = (t, a, b) => 0.5 - 0.5 * Math.cos(Math.PI * seg(t, a, b))
+      /** Integrates a speed curve, so motion can slow down smoothly instead of jumping. */
+      const clock = (t, speed) => { let r = 0; for (let x = 0; x < t; x += 1 / 60) r += speed(x) / 60; return r }
+      const pulse = (phase) => Math.exp(-(((phase % 1) + 1) % 1) * 7)
+      const mix = (p, q, k) => ({ x: lerp(p.x, q.x, k), y: lerp(p.y, q.y, k), len: lerp(p.len, q.len, k), sc: lerp(p.sc, q.sc, k) })
+      const toHero = (p, k) => mix(p, HERO_BRAID, k)
+      /** Warm strands (lilac, pink) lead in distress; the blues take over as it calms. */
+      const tone = (calm) => (k) => (k >= 2 ? lerp(1.25, 0.3, calm) : lerp(0.75, 1.1, calm))
+      const knot = (calm, extra = 0) => ({ chaos: () => lerp(1.4, 0, calm), kAmp: () => lerp(1.7 + extra, 0.45, calm), weights: tone(calm) })
+
+      /** Background: a faint warm flush in distress, a faint cool field in calm, plain paper for the hero. */
+      function wash(a, calm, gone) {
+        a.under((c) => {
+          const g = c.createRadialGradient(480, 270, 0, 480, 270, 560)
+          const warm = 0.2 * (1 - calm) * (1 - gone), cool = 0.11 * calm * (1 - gone)
+          g.addColorStop(0, `rgba(${Math.round(lerp(255, 83, calm))},${Math.round(lerp(179, 191, calm))},${Math.round(lerp(199, 254, calm))},${warm + cool})`)
+          g.addColorStop(1, 'rgba(245,245,245,0)')
+          c.fillStyle = g; c.fillRect(0, 0, W, 540)
+        })
+      }
+      /** A soft disc that swells with the in-breath. */
+      function breathGlow(a, x, y, r, al) {
+        if (al <= 0.01) return
+        a.under((c) => {
+          const g = c.createRadialGradient(x, y, 0, x, y, r)
+          g.addColorStop(0, `rgba(83,191,254,${0.16 * al})`); g.addColorStop(0.7, `rgba(203,239,254,${0.1 * al})`); g.addColorStop(1, 'rgba(203,239,254,0)')
+          c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill()
+        })
+      }
+      const watchShape = (a, x, y, s, al, trim = 1) => {
+        a.box(x, y, 160 * s, 196 * s, 46 * s, { a: al, stroke: C.s4, lw: 1.5, trim })
+        a.box(x + 80 * s + 5, y - 22 * s, 5, 28 * s, 2.5, { a: al * trim, fill: C.s2, stroke: null })
+      }
+      const phoneShape = (a, x, y, al, trim = 1) => {
+        a.box(x, y, 196, 392, 44, { a: al, stroke: C.s4, lw: 1.5, trim })
+        a.box(x, y - 176, 54, 14, 7, { a: al * trim, fill: C.s2, stroke: null })
+      }
+
+      const FILMS = [
+        {
+          title: 'Exhale',
+          dur: 7.8,
+          idea: 'The knot of tension is drawn into the Watch: one slow haptic ripple, a soft in-breath swell, then a long out-breath that pulls the braid out into one clear, cool line.',
+          beats: ['0–2 tangled, racing', '2 drawn into the Watch', '2.9 in-breath', '3.6–5.4 long out-breath, untangles', '5.6 → hero'],
+          keeps: 'The body noticing (Watch), the breath as the turning point, distress → clarity in one gesture.',
+          cuts: 'Voice, the iPhone, data sources.',
+          tradeoff: 'The most soothing and simplest to read. Shows how it feels, not how the system works.',
+          draw(a) {
+            const t = a.t
+            const notice = S(t, 2.0, 2.9), inhale = S(t, 2.9, 3.6), calm = S(t, 3.6, 5.4), lock = S(t, 5.6, 6.4)
+            const rt = clock(t, (x) => lerp(2.4, 0.45, S(x, 3.0, 5.4)))
+            const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, 2.5, 5))))
+            let p = mix({ x: 480, y: 270, len: 420, sc: 1 }, { x: 480, y: 270, len: 120, sc: 0.55 }, notice)
+            p.sc *= 1 + 0.14 * inhale * (1 - calm)
+            p = toHero(mix(p, { x: 480, y: 270, len: 640, sc: 1 }, calm), lock)
+            a.braid(curl(p.x, p.y, p.len, 0), { env: lerp(0.85 + 0.15 * hb, 0.07, calm), scale: p.sc, rt, ...knot(calm, 0.3 * hb) })
+            wash(a, calm, lock)
+            watchShape(a, 480, 270, 1, Math.min(S(t, 1.9, 2.5), 1 - S(t, 3.8, 4.8)) * 0.9, S(t, 1.9, 2.6))
+            a.ripple(480, 270, 2.35, { r0: 100, r1: 230, n: 2, dur: 1.8, gap: 0.5, alpha: 0.45, lw: 1.2 })
+            breathGlow(a, 480, 270, lerp(60, 200, inhale) + 120 * calm, inhale * (1 - calm * 0.8) * (1 - lock))
+            a.hero(6.4)
+          },
+        },
+        {
+          title: 'The loop unwinds',
+          dur: 7.8,
+          idea: 'Rumination as a loop: the braid curls into a ring that spins and throbs. A tap at its seam, and with two slow out-breaths the ring unwinds turn by turn into a straight line. The product name, acted out.',
+          beats: ['0–2.4 the loop spins', '2.5 tap at the seam', '2.9–4.1 first out-breath', '4.3–5.5 second, fully open', '5.6 → hero'],
+          keeps: 'Breaking the loop (your favourite), the Watch tap, the name “Unwind” without words.',
+          cuts: 'Devices, voice, data sources.',
+          tradeoff: 'The strongest single metaphor. Abstract: the Watch is only a blue tap, not a device.',
+          draw(a) {
+            const t = a.t
+            const coil = S(t, 0.1, 0.9), u1 = S(t, 2.9, 4.1), u2 = S(t, 4.3, 5.5), calm = S(t, 2.9, 5.5), lock = S(t, 5.6, 6.4)
+            const c = coil * (1 - 0.55 * u1 - 0.45 * u2)
+            const spin = (x) => lerp(lerp(3.2, 1.0, S(x, 2.4, 4.2)), 0.15, S(x, 4.2, 5.6))
+            // Once straight, a line only needs to sit level (any multiple of π), so ease off the leftover angle.
+            const R = clock(6.4, spin), rot = clock(t, spin) - S(t, 3.6, 5.6) * (R - Math.round(R / Math.PI) * Math.PI)
+            const rt = clock(t, (x) => lerp(2.2, 0.45, S(x, 2.9, 5.5)))
+            const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, 2.5, 5)))) * (1 - calm)
+            const p = toHero({ x: 480, y: 270, len: 520 * (1 + 0.04 * hb), sc: 1 }, lock)
+            a.braid(curl(p.x, p.y, p.len, c, rot), {
+              env: lerp(0.8, 0.07, calm), scale: p.sc, rt, closed: clamp(c * 1.4),
+              chaos: () => lerp(0.35, 0, calm), kAmp: () => lerp(0.45, 0.5, calm) * (1 + 0.25 * hb), weights: tone(calm),
+            })
+            wash(a, calm, lock)
+            const seamY = 270 + 520 / TAU
+            a.dot(480, seamY, 5, C.blue, Math.min(S(t, 2.4, 2.6), 1 - S(t, 3.2, 3.8)))
+            a.ripple(480, seamY, 2.5, { r0: 6, r1: 140, n: 2, dur: 1.6, gap: 0.45, alpha: 0.5, lw: 1.2 })
+            breathGlow(a, 480, 270, lerp(80, 230, calm), S(t, 2.8, 3.6) * (1 - lock))
+            a.hero(6.4)
+          },
+        },
+        {
+          title: 'Signals braid, then settle',
+          dur: 7.8,
+          idea: 'Multimodal without words: three jittery threads, each led by a small icon (heart, calendar, email), slide together and twist into a knot. A tap, a mic, and the knot moves to the rhythm of a voice, then evens out into one calm braid with a soft check.',
+          beats: ['0–1.5 body, calendar, email threads', '1.5–2.6 they tangle', '2.6 tap + mic: voice', '4.4 calm, check', '5.5 → hero'],
+          keeps: 'Multimodal context (as icons), the moment, voice reflection, resolution.',
+          cuts: 'Devices, entries and AI review.',
+          tradeoff: 'Most faithful to “multimodal” with no reading. Icons are small; a viewer may read them as decoration on first watch.',
+          draw(a) {
+            const t = a.t
+            const conv = S(t, 1.5, 2.6), calm = S(t, 3.0, 5.0), lock = S(t, 5.5, 6.3)
+            const rt = clock(t, (x) => lerp(2.4, 0.45, S(x, 3.0, 5.0)))
+            const ROWS = [[0, 'heart', 160], [2, 'cal', 270], [3, 'mail', 380]]
+            ROWS.forEach(([k, ic, y], i) => {
+              const inn = S(t, 0.1 + i * 0.25, 0.8 + i * 0.25)
+              if (conv < 1) a.braid(curl(lerp(lerp(700, 560, inn), 480, conv), lerp(y, 270, conv), lerp(lerp(120, 520, inn), 420, conv), 0), { strands: [k], env: 0.85, scale: 0.9, rt: rt + i, chaos: () => 1.2, kAmp: () => 1.3, alpha: inn * (1 - conv) })
+              a.box(lerp(220, 300, inn), y, 44, 44, 22, { a: inn * (1 - S(t, 1.4, 2.0)), fill: '#ffffff', stroke: null, shadow: 14 })
+              a.icon(ic, lerp(220, 300, inn), y, 22, inn * (1 - S(t, 1.4, 2.0)), C.blue)
+            })
+            const speech = 0.4 + 0.35 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
+            const voice = Math.min(S(t, 2.8, 3.3), 1 - S(t, 4.2, 4.9))
+            const p = toHero({ x: 480, y: 270, len: lerp(420, 620, calm), sc: 1 }, lock)
+            a.braid(curl(p.x, p.y, p.len, 0), { env: lerp(lerp(0.9, 0.07, calm), speech, voice * 0.6), scale: p.sc, rt, alpha: conv, ...knot(calm) })
+            wash(a, calm, lock)
+            a.ripple(480, 270, 2.6, { r0: 40, r1: 220, n: 2, dur: 1.6, gap: 0.45, alpha: 0.45, lw: 1.2 })
+            a.icon('mic', 480, 176, 22, Math.min(S(t, 2.7, 3.1), 1 - S(t, 4.2, 4.7)), C.blue)
+            a.icon('check', 480, 186, 22, Math.min(S(t, 4.6, 5.0), 1 - S(t, 5.3, 5.7)), C.blue)
+            a.hero(6.3)
+          },
+        },
+        {
+          title: 'Wordless relay',
+          dur: 7.8,
+          idea: 'The full product path drawn in outlines only: the knot is caught by the Watch, flows to the iPhone where it becomes a voice, three soft entries stack up, one lights blue (a pattern) and gets a check. Then the outlines dissolve and the line runs calm.',
+          beats: ['0–1.6 tangled', '1.6 caught by the Watch', '2.8 flows to the iPhone, voice', '3.9 entries, one lights up', '5 outlines dissolve', '5.6 → hero'],
+          keeps: 'Watch → iPhone, voice journal, entries, pattern, plan (check). Every product step.',
+          cuts: 'Data sources (body only, through the braid’s motion).',
+          tradeoff: 'Tells the most product story with no text, but has the most moving parts; the calm ending is shorter.',
+          draw(a) {
+            const t = a.t
+            const toW = S(t, 1.6, 2.4), toP = S(t, 2.8, 3.5), calm = S(t, 3.4, 5.0), open = S(t, 5.0, 5.6), lock = S(t, 5.6, 6.4)
+            const rt = clock(t, (x) => lerp(2.4, 0.45, S(x, 3.0, 5.0)))
+            const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, 2.5, 5)))) * (1 - calm)
+            let p = { x: 480, y: 270, len: 380, sc: 1 }
+            p = mix(p, { x: 340, y: 270, len: 110, sc: 0.5 }, toW)
+            p = mix(p, { x: 620, y: 384, len: 130, sc: 0.42 }, toP)
+            p = toHero(mix(p, { x: 480, y: 270, len: 620, sc: 1 }, open), lock)
+            const speech = 0.4 + 0.35 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
+            const voice = Math.min(S(t, 3.3, 3.6), 1 - S(t, 4.4, 5.0))
+            a.braid(curl(p.x, p.y, p.len, 0), { env: lerp(lerp(0.85 + 0.15 * hb, 0.07, calm), speech, voice * 0.7), scale: p.sc, rt, ...knot(calm, 0.3 * hb) })
+            wash(a, calm, lock)
+            watchShape(a, 340, 270, 1, Math.min(S(t, 1.5, 2.1), 1 - S(t, 3.0, 3.6)) * 0.9, S(t, 1.5, 2.2))
+            a.ripple(340, 270, 2.1, { r0: 100, r1: 210, n: 2, dur: 1.6, gap: 0.45, alpha: 0.45, lw: 1.2 })
+            const ph = Math.min(S(t, 2.7, 3.3), 1 - S(t, 5.0, 5.6))
+            phoneShape(a, 620, 270, ph * 0.9, S(t, 2.7, 3.4))
+            ;[0, 1, 2].forEach((i) => {
+              const e = S(t, 3.9 + i * 0.18, 4.3 + i * 0.18) * ph, y = 150 + i * 48
+              const lit = i === 1 ? S(t, 4.5, 4.9) : 0
+              a.box(620, y - (1 - e) * 8, 150, 36, 11, { a: e, fill: lit ? '#EAF6FF' : '#ffffff', stroke: null, shadow: 10 })
+              a.box(604, y - (1 - e) * 8, 100, 6, 3, { a: e * 0.9, fill: lit > 0.5 ? '#BFE6FF' : C.s2, stroke: null })
+            })
+            a.icon('check', 683, 198, 14, S(t, 4.7, 5.0) * ph, C.blue)
+            a.hero(6.4)
+          },
+        },
+        {
+          title: 'Storm to still water',
+          dur: 7.8,
+          idea: 'The braid is a rough surface stretched across the screen. A single blue drop falls (the Watch tap), and slow ripples travel outward, smoothing the surface from the centre until it is mirror-still, with a faint reflection.',
+          beats: ['0–2 rough, wide surface', '2 a drop falls', '2.45–5.2 ripples smooth it outward', '5.2 still, reflected', '5.6 → hero'],
+          keeps: 'The feeling of calm spreading, one gentle intervention.',
+          cuts: 'Devices, voice, data, entries.',
+          tradeoff: 'The most relaxing and cinematic. Least literal: it sells the feeling of the product, not its features.',
+          draw(a) {
+            const t = a.t
+            const front = S(t, 2.45, 5.2), calm = S(t, 2.6, 5.2), lock = S(t, 5.6, 6.4)
+            const rt = clock(t, (x) => lerp(2.6, 0.4, S(x, 2.6, 5.2)))
+            const shake = 3 * Math.sin(t * 23) * (1 - S(t, 2.4, 3.2))
+            const damp = (u) => clamp((front * 0.62 - Math.abs(u - 0.5)) / 0.1)
+            const p = toHero({ x: 480, y: 270 + shake, len: 760, sc: 1 }, lock)
+            const o = { env: lerp(0.95, 0.07, calm), scale: p.sc, rt, ampAt: (u) => lerp(1, 0.22, damp(u)), chaos: () => lerp(1.5, 0, calm), kAmp: () => lerp(1.9, 1, calm), weights: tone(calm) }
+            a.braid(curl(p.x, p.y, p.len, 0), o)
+            a.braid(curl(p.x, p.y + 26, p.len, 0), { ...o, alpha: 0.2 * S(t, 4.6, 5.4) * (1 - lock) })
+            wash(a, calm, lock)
+            const fall = seg(t, 2.0, 2.45)
+            a.dot(480, lerp(40, 270, ease.in(fall)), 5, C.blue, fall > 0 && fall < 1 ? 1 : 0)
+            a.ripple(480, 270, 2.45, { r0: 10, r1: 520, n: 4, dur: 2.6, gap: 0.55, alpha: 0.45, lw: 1.2, squash: 0.28 })
+            a.hero(6.4)
+          },
+        },
+        {
+          title: 'Pulse to breath',
+          dur: 7.8,
+          idea: 'A heartbeat made visible: sharp spikes race along the braid while a disc behind it throbs. After the tap, the spikes slow and widen into long, rolling waves and the disc becomes a breathing guide, swelling and releasing once, fully.',
+          beats: ['0–2.3 racing pulse', '2.4 tap', '2.8–5.6 spikes slow into breaths', '5.6 → hero'],
+          keeps: 'Biometrics (heart rate → breath) as the whole story, a guided-breath feel.',
+          cuts: 'Devices, voice, entries.',
+          tradeoff: 'Directly about the body signal and very calming, but it reads more like a breathing app than a reflection system.',
+          draw(a) {
+            const t = a.t
+            const calm = S(t, 2.6, 5.4), lock = S(t, 5.6, 6.4)
+            const rt = clock(t, (x) => lerp(2.2, 0.4, S(x, 2.6, 5.4)))
+            const phase = clock(t, (x) => lerp(0.9, 0.18, S(x, 2.4, 5.0)))
+            const w = lerp(0.025, 0.2, calm), h = lerp(2.4, 0.9, calm)
+            const ampAt = (u) => 0.25 + [0, 1, 2].reduce((s, i) => { const d = u - (((phase + i / 3) % 1) * 1.2 - 0.1); return s + h * Math.exp(-((d / w) ** 2)) }, 0)
+            const p = toHero({ x: 480, y: 270, len: 700, sc: 1 }, lock)
+            a.braid(curl(p.x, p.y, p.len, 0), { env: lerp(0.7, 0.07, calm), scale: p.sc, rt, ampAt: (u) => lerp(ampAt(u), 1, lock), chaos: () => lerp(0.5, 0, calm), kAmp: () => lerp(1, 0.6, calm), weights: tone(calm) })
+            wash(a, calm, lock)
+            const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, 2.4, 4))))
+            const breath = 0.5 - 0.5 * Math.cos(TAU * seg(t, 2.9, 5.7))
+            breathGlow(a, 480, 270, lerp(70 + 26 * hb, 90 + 140 * breath, calm), (1 - lock) * S(t, 0, 0.5))
+            a.ripple(480, 270, 2.4, { r0: 80, r1: 220, n: 2, dur: 1.6, gap: 0.45, alpha: 0.45, lw: 1.2 })
+            a.hero(6.4)
+          },
+        },
+      ]
+
+      await mount(FILMS, { fonts: ['inter'] })
+    </script>
+  </body>
+</html>

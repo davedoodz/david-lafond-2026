@@ -69,7 +69,7 @@ export const tri = (u) => 1 - Math.abs(2 * u - 1)
 
 // ---------- Braid renderer (drawn unblurred on a half-res layer, blurred once when composited) ----------
 export function braid(L, raw, o = {}) {
-  const { env = 0.2, alpha = 1, closed = 0, strands = [0, 1, 2, 3], scale = 1, ampAt = () => 1, kAmp = () => 1, chaos = () => 0, rt = 0 } = o
+  const { env = 0.2, alpha = 1, closed = 0, strands = [0, 1, 2, 3], scale = 1, ampAt = () => 1, kAmp = () => 1, chaos = () => 0, weights = () => 1, rt = 0 } = o
   if (alpha <= 0.01) return
   const P = sample(raw)
   for (const k of strands) {
@@ -86,7 +86,7 @@ export function braid(L, raw, o = {}) {
       top.push([p.x + p.nx * (d - th / 2), p.y + p.ny * (d - th / 2)])
       bot.push([p.x + p.nx * (d + th / 2 + bump), p.y + p.ny * (d + th / 2 + bump)])
     }
-    const base = (k === 0 ? 0.78 : 0.62) * alpha
+    const base = (k === 0 ? 0.78 : 0.62) * alpha * weights(k)
     for (let i = 0; i < P.length - 1; i += 4) {
       const j = Math.min(P.length - 1, i + 4)
       const a = base * lerp(tri(P[(i + j) >> 1].u), 1, closed)
@@ -102,7 +102,7 @@ export function braid(L, raw, o = {}) {
 
 // ---------- Per-frame drawing API handed to each concept ----------
 export function makeApi(ctx, L, F, t) {
-  const ink = []
+  const ink = [], under = []
   const api = {
     t, F,
     braid: (raw, o = {}) => braid(L, raw, { rt: t, ...o }),
@@ -120,12 +120,16 @@ export function makeApi(ctx, L, F, t) {
     },
     label: (str, x, y, a, o = {}) => api.text(str, x, y, { size: 11, color: C.s4, ls: 0.16, upper: true, a, ...o }),
     draw: (fn) => ink.push(fn),
+    /** Draws behind the braid (device bodies, soft fields), in film coordinates. */
+    under: (fn) => under.push(fn),
+    flushUnder(c) { under.forEach((fn) => fn(c)) },
     ripple(x, y, t0, o = {}) {
-      const { color = C.blue, r0 = 8, r1 = 120, n = 3 } = o
+      const { color = C.blue, r0 = 8, r1 = 120, n = 3, dur = 0.9, gap = 0.16, alpha = 0.7, lw = 1.5, squash = 1 } = o
       for (let i = 0; i < n; i++) {
-        const e = seg(t, t0 + i * 0.16, t0 + i * 0.16 + 0.9)
+        const e = seg(t, t0 + i * gap, t0 + i * gap + dur)
         if (e <= 0 || e >= 1) continue
-        ink.push((c) => { c.save(); c.globalAlpha = (1 - e) * 0.7; c.strokeStyle = color; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, lerp(r0, r1, ease.out(e)), 0, TAU); c.stroke(); c.restore() })
+        const r = lerp(r0, r1, ease.out(e))
+        ink.push((c) => { c.save(); c.globalAlpha = (1 - e) * alpha; c.strokeStyle = color; c.lineWidth = lw; c.beginPath(); c.ellipse(x, y, r, r * squash, 0, 0, TAU); c.stroke(); c.restore() })
       }
     },
     dot(x, y, r, color, a = 1) { if (a > 0.01) ink.push((c) => { c.save(); c.globalAlpha = a; c.fillStyle = color; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); c.restore() }) },
@@ -159,6 +163,7 @@ export function makeApi(ctx, L, F, t) {
         else if (name === 'mail') { c.roundRect(-7.5, -5.5, 15, 11, 2); c.moveTo(-7, -4.5); c.lineTo(0, 1); c.lineTo(7, -4.5) }
         else if (name === 'mic') { c.roundRect(-3, -8, 6, 10, 3); c.moveTo(-6, -1); c.quadraticCurveTo(-6, 5, 0, 5); c.quadraticCurveTo(6, 5, 6, -1); c.moveTo(0, 5); c.lineTo(0, 8) }
         else if (name === 'doc') { c.roundRect(-6, -8, 12, 16, 2); c.moveTo(-3, -3); c.lineTo(3, -3); c.moveTo(-3, 1); c.lineTo(3, 1); c.moveTo(-3, 5); c.lineTo(1, 5) }
+        else if (name === 'check') { c.moveTo(-6, 0); c.lineTo(-2, 4.5); c.lineTo(6.5, -5) }
         else if (name === 'spark') { c.moveTo(0, -8); c.quadraticCurveTo(1, -1, 8, 0); c.quadraticCurveTo(1, 1, 0, 8); c.quadraticCurveTo(-1, 1, -8, 0); c.quadraticCurveTo(-1, -1, 0, -8); c.fill() }
         if (name !== 'spark') c.stroke()
         c.restore()
@@ -231,7 +236,9 @@ export function makeApi(ctx, L, F, t) {
 }
 
 /** Mounts films into #list with play/scrub controls and the typeface switch. */
-export async function mount(FILMS, { dur = 7.5 } = {}) {
+/** `fonts`: which typefaces to render each film in (one for films without captions). */
+export async function mount(FILMS, { dur = 7.5, fonts = Object.keys(FONTS) } = {}) {
+  if (fonts.length === 1) document.documentElement.style.setProperty('--cols', 1)
   const DUR = dur
   const list = document.getElementById('list')
   const rows = []
@@ -242,7 +249,7 @@ export async function mount(FILMS, { dur = 7.5 } = {}) {
       <p class="idea">${c.idea}</p>
       <ul class="beats">${c.beats.map((b) => `<li>${b}</li>`).join('')}</ul>
       ${c.keeps ? `<dl class="trade"><div><dt>Keeps</dt><dd>${c.keeps}</dd></div><div><dt>Cuts</dt><dd>${c.cuts}</dd></div><div><dt>Tradeoff</dt><dd>${c.tradeoff}</dd></div></dl>` : ''}
-      <div class="films">${Object.entries(FONTS).map(([k, f]) => `<figure data-font="${k}"><canvas></canvas><figcaption>${f.label}</figcaption></figure>`).join('')}</div>
+      <div class="films">${Object.entries(FONTS).filter(([k]) => fonts.includes(k)).map(([k, f]) => `<figure data-font="${k}"><canvas></canvas>${fonts.length > 1 ? `<figcaption>${f.label}</figcaption>` : ''}</figure>`).join('')}</div>
       <div class="bar"><button type="button" aria-label="Play or pause">❚❚</button><input type="range" min="0" max="${c.dur ?? DUR}" step="0.01" value="0" aria-label="Scrub" /><output>0.00 s</output></div>`
     list.append(sec)
     const films = [...sec.querySelectorAll('figure')].map((fig) => {
@@ -271,6 +278,7 @@ export async function mount(FILMS, { dur = 7.5 } = {}) {
       row.c.draw(api)
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.fillStyle = C.paper; ctx.fillRect(0, 0, f.canvas.width, f.canvas.height)
+      ctx.setTransform(S, 0, 0, S, 0, 0); api.flushUnder(ctx); ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.filter = `blur(${5 * S}px)`; ctx.imageSmoothingQuality = 'high'
       ctx.drawImage(f.layer, 0, 0, f.canvas.width, f.canvas.height)
       ctx.filter = 'none'
