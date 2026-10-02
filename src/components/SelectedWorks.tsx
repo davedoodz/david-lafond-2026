@@ -16,7 +16,8 @@ import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
 import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
-import { useTuning } from '../tuning/useTuning'
+import { useTuningController } from '../tuning/useTuning'
+import { EditableText } from './EditableText'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
 import { HarvardMitCard } from './HarvardMitCard'
 import { EcoFabriqCard } from './EcoFabriqCard'
@@ -94,6 +95,8 @@ const CONFIG = {
   /** Vertical rhythm. Gaps are in % of viewport height so one project fills each stop. */
   spacing: {
     snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'off' },
+    /** Native scroll keeps its momentum, but a fast fling can't fly past a project (scroll-snap-stop). */
+    noSkip: { type: 'boolean' as const, default: false },
     /** Sheet top edge → first project. */
     firstDesktop: [210, 0, 800, 1] as Tuple,
     gapDesktop: [35, 5, 100, 1] as Tuple,
@@ -115,6 +118,8 @@ const CONFIG = {
   },
   /** "Selected works" label above the first project. */
   label: {
+    text: { type: 'text' as const, default: 'Selected works' },
+    color: { type: 'color' as const, default: '#171717' },
     show: true,
     align: { type: 'select' as const, options: ['center', 'left'], default: 'center' },
     arrow: { type: 'select' as const, options: ['down', 'down-right', 'none'], default: 'down' },
@@ -159,7 +164,7 @@ const smooth = (x: number) => x * x * (3 - 2 * x)
 
 
 export function SelectedWorks() {
-  const t = useTuning('Selected works', CONFIG)
+  const { values: t, setValue } = useTuningController('Selected works', CONFIG)
   const openProject = useProjectOpen()
   const sectionRef = useRef<HTMLElement>(null)
   const morphDesktop = t.morph
@@ -314,14 +319,17 @@ export function SelectedWorks() {
   // the attribute is gone in the same commit that swaps pages: otherwise the next
   // page would snap to its footer before this cleanup ran.
   const snap = t.spacing.snap
+  const noSkip = t.spacing.noSkip
   useLayoutEffect(() => {
     if (snap === 'off') return
     const root = document.documentElement
     root.dataset.worksSnap = snap
+    if (noSkip) root.dataset.worksNoSkip = ''
     return () => {
       delete root.dataset.worksSnap
+      delete root.dataset.worksNoSkip
     }
-  }, [snap])
+  }, [snap, noSkip])
 
   const sp = t.spacing
   const style = {
@@ -359,8 +367,9 @@ export function SelectedWorks() {
           id="works-heading"
           className={`eyebrow works__eyebrow column${t.label.show ? '' : ' visually-hidden'}`}
           data-align-label={t.label.align}
+          style={{ color: t.label.color }}
         >
-          Selected works
+          <EditableText as="span" label="Selected works label" value={t.label.text} onChange={(next) => setValue('label.text', next)} />
           {t.label.arrow === 'down' && <ArrowDownIcon />}
           {t.label.arrow === 'down-right' && <ArrowDownRightIcon />}
         </h2>

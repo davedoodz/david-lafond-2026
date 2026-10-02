@@ -227,3 +227,20 @@ html[data-works-snap] body:has(.works) .footer {
   background-repeat: no-repeat;
   background-size: 600% 600%;
 }
+
+/* Scroll › feel presets override the snap strength (custom leaves spacing › snap in charge). */
+html[data-works-snap][data-scroll-feel='none'] {
+  scroll-snap-type: none;
+}
+html[data-works-snap][data-scroll-feel='proximity'] {
+  scroll-snap-type: y proximity;
+}
+html[data-works-snap]:is([data-scroll-feel='mandatory'], [data-scroll-feel='stop']) {
+  scroll-snap-type: y mandatory;
+}
+html[data-works-snap][data-scroll-feel='stop'] .works__card {
+  scroll-snap-stop: always;
+}
+html[data-works-snap][data-works-no-skip] :is(.landing, .works__card) {
+  scroll-snap-stop: always;
+}

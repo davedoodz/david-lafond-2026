@@ -1,13 +1,8 @@
 {
-  "Cursor & ink": {
-    "ink": {
-      "fadeMs": 4000
-    }
-  },
   "Playground": {
     "title": {
       "x": 22,
-      "y": 24
+      "y": 22
     },
     "shade": {
       "start": 0,
@@ -16,7 +11,8 @@
     },
     "grid": {
       "count": 12,
-      "radius": 14
+      "radius": 14,
+      "topGapDesktop": 144
     }
   },
   "Davebot": {
@@ -46,10 +42,15 @@
   },
   "Dither bands": {
     "header": {
+      "opacity": 0.31,
       "pixelSize": 4.2,
       "scale": 1.14,
       "mouse": {
         "radius": 250
+      },
+      "dots": {
+        "style": "halftone",
+        "radius": 0.37
       }
     },
     "footer": {
@@ -94,6 +95,7 @@
       "endRadius": 0
     },
     "morphMobile": {
+      "enterDistance": 1.73,
       "startArch": 20,
       "startRadius": 60,
       "endArch": 35
@@ -104,11 +106,10 @@
       "bounce": 0.4
     },
     "spacing": {
-      "snap": "mandatory",
-      "firstDesktop": 277,
-      "gapDesktop": 16,
-      "lastDesktop": 277,
-      "firstMobile": 228,
+      "firstDesktop": 207,
+      "gapDesktop": 13,
+      "lastDesktop": 347,
+      "firstMobile": 183,
       "gapMobile": 15,
       "lastMobile": 216
     },
@@ -116,13 +117,17 @@
       "cardHeightMobile": 134
     },
     "label": {
-      "topDesktop": 110,
+      "text": "SELECTED PROJECTS",
+      "topDesktop": 48,
       "topMobile": 135,
       "arrowSize": 1,
       "arrowY": -0.5
     },
+    "focus": {
+      "restScale": 0.95
+    },
     "hover": {
-      "durationMs": 410
+      "durationMs": 720
     }
   },
   "Photo stack": {
@@ -193,22 +198,14 @@
   },
   "Contact CTA": {
     "spacing": {
-      "topDesktop": 310,
+      "topDesktop": 202,
+      "topMobile": 120,
+      "bottomDesktop": 152,
       "bottomMobile": 198
     }
   },
   "Let’s chat": {
     "morph": {
-      "shape": {
-        "type": "easing",
-        "duration": 0.4,
-        "ease": [
-          0.3,
-          0,
-          0.2,
-          1
-        ]
-      },
       "exitPx": 500,
       "exit": {
         "type": "easing",
@@ -382,9 +379,16 @@
       }
     },
     "spacing": {
-      "gapDesktop": 185,
+      "gapDesktop": 169,
       "stackToHeadingDesktop": 76,
-      "labelTopDesktop": 94
+      "labelTopDesktop": 99,
+      "playFitGap": 0,
+      "labelY": -78,
+      "playY": 40,
+      "playSpaceBelow": -93
+    },
+    "grid": {
+      "sizeDesktop": 1.1
     }
   },
   "Header intro": {
@@ -436,10 +440,39 @@
     }
   },
   "Unwind case study": {
+    "page": {
+      "snap": "off"
+    },
     "hero": {
+      "title": "A Novel Multimodal AI Reflection System for Behavioral Change",
       "media": {
         "radius": 21
+      },
+      "team": "2 developers, 2 designers, 2 therapists"
+    },
+    "heroSpacing": {
+      "logosToTitle": 63,
+      "titleToMeta": 23,
+      "y": {
+        "braid": -74,
+        "title": -25,
+        "meta": -23,
+        "logos": -7
       }
+    },
+    "logos": {
+      "placement": "below meta",
+      "height": 41,
+      "gap": 27,
+      "offset": 28
+    },
+    "story": {
+      "problemTitle": "Support usually comes too late.",
+      "problemBody": "Most wellness tools wait for us to open them often after the emotional intensity and useful context have already faded.",
+      "opportunityTitle": "Three technologies just converged ",
+      "opportunityBody": "Wearables can sense physiological change. Voice can capture subtle emotional and acoustic cues. Realtime AI can connect both to the moment—making wellness support more situational.",
+      "solutionTitle": "A private check-in, at the moment it matters.",
+      "solutionBody": "The Watch surfaces the moment. The phone gives you somewhere to talk. AI connects signal, story and history to help interrupt recurring patterns before they become habits."
     }
   },
   "Nav Momo": {
@@ -458,5 +491,45 @@
   },
   "Unwind shader": {
     "frame": 2738590
+  },
+  "Unwind case study · order": {
+    "section": "flows",
+    "order": "story, persona, moment, overview, notification, flows, dynamic, howItWorks, guided, context, tracking, system, outcomes",
+    "max": 13,
+    "keep": {
+      "Overview": "hide",
+      "How it works": "hide",
+      "Context": "hide"
+    }
+  },
+  "Scroll": {
+    "mode": "scaled",
+    "maxStep": 120,
+    "downDistance": 5,
+    "upDistance": 5,
+    "downSpeed": 8000,
+    "upSpeed": 8000,
+    "ease": 0.5,
+    "multiplier": 0.65
+  },
+  "Header band": {
+    "about": false,
+    "harvard-mit": false,
+    "unwind": false,
+    "ecofabriq": false
+  },
+  "Footer links": {
+    "icons": {
+      "copyY": -2
+    }
+  },
+  "Footer": {
+    "desktopHeight": 200
+  },
+  "Unwind intro": {
+    "hero": {
+      "width": 280,
+      "energy": 0.28
+    }
   }
 }

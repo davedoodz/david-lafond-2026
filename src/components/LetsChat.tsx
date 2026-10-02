@@ -35,7 +35,7 @@ const CONFIG = {
   },
   /** `morph` hover: the pill becomes the arrow circle under the cursor; a click sends it off to the right. */
   morph: {
-    shape: { type: 'easing' as const, duration: 0.35, ease: [0.3, 0, 0.2, 1] as [number, number, number, number] },
+    shape: { type: 'easing' as const, duration: 0.18, ease: [0.2, 0.9, 0.1, 1] as [number, number, number, number] },
     exitPx: [220, 40, 600, 1] as [number, number, number, number],
     exit: { type: 'easing' as const, duration: 0.45, ease: [0.5, 0, 0.75, 0] as [number, number, number, number] },
     /** After the circle exits: how long the button stays gone before fading back. */
@@ -44,6 +44,8 @@ const CONFIG = {
     fadeInMs: [4500, 0, 8000, 50] as [number, number, number, number],
     /** The cursor dot is pulled into the circle and drips back out on leave. */
     absorbCursor: true,
+    /** Full-pill outline that stays visible behind the circle while morphed. */
+    trackColor: { type: 'color' as const, default: '#6F6B68' },
   },
   motion: {
     fillMs: [160, 0, 800, 10] as [number, number, number, number],
@@ -73,7 +75,7 @@ function cssTransition(curve: TransitionConfig) {
 }
 
 type Phase = 'idle' | 'armed' | 'travel' | 'return' | 'filled' | 'pressed'
-type Curve = 'morph' | 'collapse' | 'travel' | 'expand' | 'none'
+type Curve = 'collapse' | 'travel' | 'expand' | 'none'
 
 const absorbCursor = (x: number, y: number) => window.dispatchEvent(new CustomEvent('cursor:absorb', { detail: { x, y } }))
 const releaseCursor = () => window.dispatchEvent(new Event('cursor:release'))
@@ -83,17 +85,22 @@ export function LetsChat() {
   const [phase, setPhase] = useState<Phase>('idle')
   const [curve, setCurve] = useState<Curve>('expand')
   const timers = useRef<number[]>([])
-  // Morph hover: centre of the arrow circle, in px from the pill's left edge.
-  const [morphPx, setMorphPx] = useState<number | null>(null)
+  // Morph hover is on: the pill's edges are then driven per frame by the morph engine below.
+  const [morphing, setMorphing] = useState(false)
   const [exiting, setExiting] = useState(false)
   const [fadingIn, setFadingIn] = useState(false)
-  // Morph hover is paused until this time (ms, performance.now) — e.g. while the pill regrows after leaving the circle.
-  const morphPausedUntil = useRef(0)
-  // Leave radius for the current morph: at least the circle's, or wider when entering at an edge/corner.
-  const morphRadius = useRef(0)
-  useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
+  const pillRef = useRef<HTMLSpanElement>(null)
+  // Edges (px from the pill's left) now and their targets; `raf` is 0 when settled.
+  const engine = useRef({ l: 0, r: 0, tl: 0, tr: 0, raf: 0, last: 0, active: false })
+  useEffect(
+    () => () => {
+      timers.current.forEach((id) => window.clearTimeout(id))
+      cancelAnimationFrame(engine.current.raf)
+    },
+    [],
+  )
 
-  // The outline is drawn from measured size: caps move, only the straight lines scale.
+  // The pill's edges come from the measured size of the button.
   const bodyRef = useRef<HTMLSpanElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
   useLayoutEffect(() => {
@@ -113,58 +120,110 @@ export function LetsChat() {
   const shape = cssTransition(t.morph.shape)
   const exit = cssTransition(t.morph.exit)
 
-  const unmorph = (pause: boolean) => {
-    setCurve('morph')
-    setMorphPx(null)
-    // Let the pill finish regrowing, then the circle can form again under the cursor.
-    morphPausedUntil.current = pause ? performance.now() + parseFloat(shape.duration) * 1000 : 0
-    releaseCursor()
+  // Settle time of the morph (DialKit › morph › shape duration); the engine eases exponentially toward it.
+  const tauRef = useRef(45)
+  tauRef.current = Math.max((parseFloat(shape.duration) * 1000) / 4, 1)
+
+  /**
+   * Morph engine: one rAF loop eases the pill's edges toward the pointer every frame.
+   * Pointer moves only move the target, so tracking never restarts a CSS transition
+   * (that restart was the lag) and never re-renders React.
+   */
+  const writeEdges = () => {
+    const pill = pillRef.current
+    if (!pill) return
+    pill.style.setProperty('--chat-l', `${engine.current.l}px`)
+    pill.style.setProperty('--chat-r', `${engine.current.r}px`)
+  }
+  const releaseEdges = () => {
+    const e = engine.current
+    cancelAnimationFrame(e.raf)
+    e.raf = 0
+    e.active = false
+    pillRef.current?.style.removeProperty('--chat-l')
+    pillRef.current?.style.removeProperty('--chat-r')
+  }
+  const step = (now: number) => {
+    const e = engine.current
+    const k = 1 - Math.exp(-Math.min(now - e.last, 64) / tauRef.current)
+    e.last = now
+    e.l += (e.tl - e.l) * k
+    e.r += (e.tr - e.r) * k
+    const settled = Math.abs(e.tl - e.l) < 0.05 && Math.abs(e.tr - e.r) < 0.05
+    if (settled) {
+      e.l = e.tl
+      e.r = e.tr
+    }
+    writeEdges()
+    if (!settled) {
+      e.raf = requestAnimationFrame(step)
+      return
+    }
+    e.raf = 0
+    // Back at the full pill after a leave: hand the edges back to the CSS state machine.
+    if (!e.active) releaseEdges()
+  }
+  const driveTo = (tl: number, tr: number) => {
+    const e = engine.current
+    e.tl = tl
+    e.tr = tr
+    if (e.raf) return
+    // Start as if one frame already passed, so the first painted frame already moves.
+    e.last = performance.now() - 16
+    e.raf = requestAnimationFrame(step)
   }
 
   const morphOn = t.hover.preset === 'morph'
-  const onPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
-    if (!morphOn || event.pointerType !== 'mouse' || phase !== 'idle' || exiting) return
-    if (fadingIn) {
-      // Hovering during the post-click fade-in ends it, so hover always responds.
-      setFadingIn(false)
-      setCurve('expand')
+  // Mouse only; the circle forms on enter and follows every move.
+  const anchorRef = useRef<HTMLAnchorElement>(null)
+  const morphAt = (clientX: number) => {
+    const el = anchorRef.current
+    if (!morphOn || !el || phase !== 'idle' || exiting) return
+    const e = engine.current
+    if (!e.active) {
+      if (fadingIn) {
+        // Hovering during the post-click fade-in ends it, so hover always responds.
+        setFadingIn(false)
+        setCurve('expand')
+      }
+      // Start from wherever the shape is: the full pill, or mid-way back from a previous leave.
+      if (!e.raf) {
+        e.l = 0
+        e.r = size.w
+      }
+      e.active = true
+      setCurve('none')
+      setMorphing(true)
     }
-    const rect = event.currentTarget.getBoundingClientRect()
+    const rect = el.getBoundingClientRect()
     const h = rect.height
-    if (morphPx !== null) {
-      // Left the circle: back to the pill until the pointer leaves the button.
-      const dx = event.clientX - (rect.left + morphPx)
-      const dy = event.clientY - (rect.top + h / 2)
-      if (Math.hypot(dx, dy) > morphRadius.current) unmorph(true)
-      return
-    }
-    if (performance.now() < morphPausedUntil.current) return
-    const px = Math.min(Math.max(event.clientX - rect.left, h / 2), rect.width - h / 2)
-    const entry = Math.hypot(event.clientX - (rect.left + px), event.clientY - (rect.top + h / 2))
-    morphRadius.current = Math.max(h / 2, entry) + 4
-    setCurve('morph')
-    setMorphPx(px)
+    const px = Math.min(Math.max(clientX - rect.left, h / 2), rect.width - h / 2)
+    driveTo(px - h / 2, px + h / 2)
     if (t.morph.absorbCursor) absorbCursor(rect.left + px, rect.top + h / 2)
+  }
+  const onPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType !== 'mouse') return
+    morphAt(event.clientX)
   }
   const onPointerEnter = (event: PointerEvent<HTMLAnchorElement>) => {
     if (event.pointerType !== 'mouse') return
     window.dispatchEvent(new Event('cursor:hide'))
-    // A fresh hover always starts armed, whatever an earlier click or leave left behind.
-    morphPausedUntil.current = 0
     onPointerMove(event)
   }
   const onPointerLeave = () => {
     window.dispatchEvent(new Event('cursor:show'))
-    if (exiting) return
-    if (morphPx !== null) unmorph(false)
-    morphPausedUntil.current = 0
+    if (exiting || !engine.current.active) return
+    engine.current.active = false
+    setMorphing(false)
+    driveTo(0, size.w)
+    releaseCursor()
   }
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
     if (phase !== 'idle' || exiting || fadingIn) return
-    if (morphPx !== null) {
+    if (morphing) {
       // Circle slides off to the right and fades, then the mail app opens and the pill fades back.
       setExiting(true)
       const exitMs = parseFloat(exit.duration) * 1000 + t.click.openDelayMs
@@ -176,7 +235,8 @@ export function LetsChat() {
         window.setTimeout(() => {
           setCurve('none')
           setExiting(false)
-          setMorphPx(null)
+          setMorphing(false)
+          releaseEdges()
           setFadingIn(true)
           releaseCursor()
         }, backAt),
@@ -187,6 +247,8 @@ export function LetsChat() {
       )
       return
     }
+    // A click during the leave animation: the CSS click states own the edges from here.
+    releaseEdges()
     const mail = () => {
       window.location.href = href
     }
@@ -229,17 +291,13 @@ export function LetsChat() {
   const { w, h } = size
   let left = 0
   let right = w
-  if (morphPx !== null) {
-    left = morphPx - h / 2
-    right = morphPx + h / 2
-  } else if (phase === 'armed' || (phase === 'return' && t.click.preset === 'circle')) {
+  if (phase === 'armed' || (phase === 'return' && t.click.preset === 'circle')) {
     left = w - h
   } else if (phase === 'travel' || phase === 'return') {
     right = h
   }
-  const lineScale = w > h ? (right - left - h) / (w - h) : 1
-  const timing = { morph: shape, collapse, travel, expand, none: { duration: '0s', ease: 'linear' } }[curve]
-  const white = morphPx !== null || exiting || phase === 'armed' || phase === 'travel' || phase === 'filled'
+  const timing = { collapse, travel, expand, none: { duration: '0s', ease: 'linear' } }[curve]
+  const white = morphing || exiting || phase === 'armed' || phase === 'travel' || phase === 'filled'
 
   const style = {
     '--chat-fill': `${t.motion.fillMs}ms`,
@@ -257,7 +315,6 @@ export function LetsChat() {
     '--chat-l': `${left}px`,
     '--chat-r': `${right}px`,
     '--chat-w': `${w}px`,
-    '--chat-s': lineScale,
     '--chat-shape-ms': timing.duration,
     '--chat-shape-ease': timing.ease,
     '--chat-shape-delay': curve === 'collapse' ? `${t.motion.collapseDelayMs}ms` : '0ms',
@@ -266,11 +323,13 @@ export function LetsChat() {
     '--chat-exit': exit.duration,
     '--chat-exit-ease': exit.ease,
     '--chat-fade-in': `${t.morph.fadeInMs}ms`,
+    '--chat-track': t.morph.trackColor,
   } as CSSProperties
 
   return (
     <a
-      className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}${morphPx !== null ? ' is-morph' : ''}${white ? ' is-white' : ''}${exiting ? ' is-exit' : ''}${fadingIn ? ' is-fadein' : ''}`}
+      ref={anchorRef}
+      className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}${morphing ? ' is-morph' : ''}${white ? ' is-white' : ''}${exiting ? ' is-exit' : ''}${fadingIn ? ' is-fadein' : ''}`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -279,17 +338,15 @@ export function LetsChat() {
       data-click={t.click.preset}
       onClick={onClick}
       style={style}
-      data-no-ink
     >
       <span className="chat__body" ref={bodyRef}>
-        <span className="chat__shape" aria-hidden="true">
-          <span className="chat__fill" />
-          <span className="chat__cap chat__cap--l" />
-          <span className="chat__line" />
-          <span className="chat__cap chat__cap--r" />
+        <span className="chat__track" aria-hidden="true" />
+        <span className="chat__pill" ref={pillRef} aria-hidden="true">
+          <span className="chat__text">{t.label}</span>
+          <ArrowRightIcon className="chat__arrow" />
         </span>
         <span className="chat__label">{t.label}</span>
-        <ArrowRightIcon className="chat__arrow" />
+        <span className="chat__arrow-space" />
       </span>
     </a>
   )

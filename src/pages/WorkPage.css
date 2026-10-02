@@ -22,6 +22,10 @@
   font-weight: 600;
 }
 
+.hero__tagline {
+  color: var(--text-muted);
+}
+
 .hero__intro {
   max-width: 517px;
   font-size: var(--text-body);
@@ -33,18 +37,11 @@
   margin-top: var(--gap-intro-intro-d);
 }
 
-.hero__name {
-  margin-top: var(--gap-intro-name-d);
-  font-size: var(--text-body);
-  font-weight: 500;
-  line-height: 1.4;
-}
-
 .hero__role {
-  margin-top: var(--gap-name-role-d);
+  margin-top: var(--gap-intro-role-d);
   font-size: var(--text-body);
   line-height: 1.2;
-  color: var(--stone-400);
+  color: var(--text-muted);
   white-space: pre-line;
 }
 
@@ -70,11 +67,8 @@
   .hero__intro + .hero__intro {
     margin-top: var(--gap-intro-intro-m);
   }
-  .hero__name {
-    margin-top: var(--gap-intro-name-m);
-  }
   .hero__role {
-    margin-top: var(--gap-name-role-m);
+    margin-top: var(--gap-intro-role-m);
   }
   .hero__signature {
     margin-top: var(--gap-role-sig-m);

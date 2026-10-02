@@ -50,11 +50,21 @@ function Place({ name, emoji }: (typeof PLACES)[number]) {
   )
 }
 
-/** Ticks once a second by writing text directly, so the footer never re-renders. */
+/**
+ * Ticks once a second by writing text directly. Click toggles between 24-hour
+ * time with seconds (23:45:50) and 12-hour AM/PM time without seconds (11:45 PM).
+ */
 function Clock({ timeZone }: { timeZone: string }) {
   const ref = useRef<HTMLTimeElement>(null)
+  const [twelve, setTwelve] = useState(false)
   useEffect(() => {
-    const format = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    const format = new Intl.DateTimeFormat(twelve ? 'en-US' : 'en-GB', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      ...(twelve ? {} : { second: '2-digit' as const }),
+      hour12: twelve,
+    })
     let timer = 0
     const tick = () => {
       const now = new Date()
@@ -66,8 +76,18 @@ function Clock({ timeZone }: { timeZone: string }) {
     }
     tick()
     return () => window.clearTimeout(timer)
-  }, [timeZone])
-  return <time ref={ref} className="footer__clock" />
+  }, [timeZone, twelve])
+  return (
+    <button
+      type="button"
+      className="footer__place footer__clock-button"
+      aria-label={twelve ? 'Switch to 24-hour time' : 'Switch to 12-hour time'}
+      aria-pressed={twelve}
+      onClick={() => setTwelve((v) => !v)}
+    >
+      <time ref={ref} className="footer__clock" />
+    </button>
+  )
 }
 
 export function Footer() {

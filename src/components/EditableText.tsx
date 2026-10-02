@@ -7,7 +7,7 @@
 import { createElement, useLayoutEffect, useRef, type FormEvent } from 'react'
 
 type Props = {
-  as?: 'p' | 'h1' | 'h2' | 'div'
+  as?: 'p' | 'h1' | 'h2' | 'h3' | 'div' | 'span'
   value: string
   onChange: (next: string) => void
   className?: string
@@ -39,7 +39,6 @@ export function EditableText({ as = 'div', value, onChange, className, id, label
     suppressContentEditableWarning: true,
     spellCheck: true,
     'aria-label': `${label} (editable in dev)`,
-    'data-no-ink': true,
     onInput: (event: FormEvent<HTMLElement>) => onChange((event.currentTarget as HTMLElement).innerText),
   })
 }

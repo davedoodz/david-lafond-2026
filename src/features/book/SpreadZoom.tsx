@@ -87,7 +87,7 @@ export function SpreadZoom({ pages, source, closing, look, transition, onClose, 
   const t = reduced ? { duration: 0.01 } : transition
 
   return createPortal(
-    <div className="spread-zoom" data-no-ink>
+    <div className="spread-zoom">
       <motion.div
         className="spread-zoom__backdrop"
         style={{ '--sz-blur': `${look.blur}px`, '--sz-dim': look.dimOpacity } as CSSProperties}

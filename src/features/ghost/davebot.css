@@ -87,13 +87,15 @@ body.davebot-open {
   border-bottom: 1px solid var(--davebot-edge);
 }
 
-.davebot-form input.davebot-input::-webkit-search-cancel-button {
-  display: none;
-}
-
 .davebot-input {
+  display: block;
   width: 100%;
   min-width: 0;
+  /* Grows with its text (height set in DavebotLayer); past the cap it scrolls inside. */
+  max-height: 140px;
+  margin: 18px 0;
+  overflow-y: auto;
+  resize: none;
   border: 0;
   outline: 0;
   padding: 0;
@@ -101,6 +103,7 @@ body.davebot-open {
   color: var(--davebot-ink);
   caret-color: var(--davebot-ink);
   font: 400 15px/20px var(--font);
+  overflow-wrap: anywhere;
 }
 
 .davebot-input::placeholder {

@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { EMAIL, SOCIAL } from '../data/contact'
 import { useTuning } from '../tuning/useTuning'
 import { ArrowUpRightIcon, CheckIcon, CopyIcon } from './icons'
 import './ContactLinks.css'
 
 const CONFIG = {
-  idleColor: { type: 'color' as const, default: '#A6A09C' },
   hoverColor: { type: 'color' as const, default: '#F5F5F5' },
+  /** Icon nudge up (−) or down (+) against the label, in px. */
+  icons: {
+    copyY: [0, -10, 10, 0.5] as [number, number, number, number],
+    arrowY: [0, -10, 10, 0.5] as [number, number, number, number],
+  },
   toast: {
     text: { type: 'text' as const, default: 'saved to clipboard' },
+    /** Distance from the bottom of the window (px); centred horizontally. */
+    bottom: [32, 0, 400, 1] as [number, number, number, number],
     holdMs: [2200, 600, 6000, 100] as [number, number, number, number],
     rise: [8, 0, 24, 1] as [number, number, number, number],
     fadeIn: [0.28, 0.05, 1, 0.01] as [number, number, number, number],
@@ -55,8 +62,17 @@ export function ContactLinks() {
   }
 
   const style = {
-    '--link-idle': t.idleColor,
     '--link-hover': t.hoverColor,
+    '--icon-copy-y': `${t.icons.copyY}px`,
+    '--icon-arrow-y': `${t.icons.arrowY}px`,
+    '--toast-rise': `${t.toast.rise}px`,
+    '--toast-in': `${t.toast.fadeIn}s`,
+    '--toast-out': `${t.toast.fadeOut}s`,
+  } as CSSProperties
+
+  const toastStyle = {
+    '--link-hover': t.hoverColor,
+    '--toast-bottom': `${t.toast.bottom}px`,
     '--toast-rise': `${t.toast.rise}px`,
     '--toast-in': `${t.toast.fadeIn}s`,
     '--toast-out': `${t.toast.fadeOut}s`,
@@ -69,11 +85,15 @@ export function ContactLinks() {
           Email
           <CopyIcon className="contact-links__icon contact-links__icon--copy" />
         </button>
-        {/* Always mounted: CSS transitions run in (rise up) and out (sink down). */}
-        <span className="contact-links__toast" data-visible={visible} aria-hidden={!visible}>
-          {t.toast.text}
-          <CheckIcon className="contact-links__check" />
-        </span>
+        {/* Portaled to <body> so it sits centred at the bottom of the window, never clipped or
+            offset by the footer's layout. Always mounted: CSS runs in (rise up) and out (sink). */}
+        {createPortal(
+          <span className="contact-links__toast" style={toastStyle} data-visible={visible} aria-hidden={!visible}>
+            {t.toast.text}
+            <CheckIcon className="contact-links__check" />
+          </span>,
+          document.body,
+        )}
         <span className="visually-hidden" role="status">
           {visible ? 'Email address copied to clipboard' : ''}
         </span>

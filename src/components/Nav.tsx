@@ -3,6 +3,7 @@ import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
 import { ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
+import { isLightUnder } from '../lib/surface'
 import { useTuning } from '../tuning/useTuning'
 import './Nav.css'
 
@@ -23,6 +24,8 @@ const NAV_CONFIG = {
   blur: [16, 0, 40, 1] as Tuple,
   /** Space under the links while pinned, so the backdrop does not end tight on the text. */
   padBottom: [16, 0, 48, 1] as Tuple,
+  /** Which side Davebot (the ghost) sits on; the links take the other side. */
+  order: { type: 'select' as const, options: ['links · Davebot', 'Davebot · links'], default: 'links · Davebot' },
 }
 
 function internalLink(route: Route) {
@@ -31,22 +34,6 @@ function internalLink(route: Route) {
     event.preventDefault()
     navigate(route)
   }
-}
-
-/**
- * Whether the page behind a point is light: the topmost opaque background in the paint stack
- * under it, skipping the nav. The stack (not each hit's ancestors) catches sibling backdrop layers.
- */
-function isLightUnder(nav: HTMLElement, x: number, y: number) {
-  for (const hit of document.elementsFromPoint(x, y)) {
-    // Skip the nav and full-page overlays (Momo zoom, Davebot), which sit over the page only briefly.
-    if (nav.contains(hit) || hit.closest('.momo-zoom, .davebot-layer')) continue
-    const match = getComputedStyle(hit).backgroundColor.match(/[\d.]+/g)
-    if (!match || (match.length > 3 && Number(match[3]) < 0.5)) continue
-    const [r, g, b] = match.map(Number)
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b > 140
-  }
-  return null
 }
 
 const PROJECT_ROUTES: Route[] = ['unwind', 'ecofabriq', 'harvard-mit']
@@ -59,7 +46,7 @@ function goBack(event: MouseEvent<HTMLAnchorElement>) {
   else navigate('work')
 }
 
-/** "< Back" link. Case-study pages place it above their title; Nav shows it for pages without one. */
+/** "< Back" link. Project pages place it under Davebot in the shared nav. */
 export function BackLink({ className = '' }: { className?: string }) {
   return (
     <a className={`nav__back ${className}`.trim()} href="/" onClick={goBack}>
@@ -125,10 +112,10 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={under} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
-          {route === 'harvard-mit' && <BackLink />}
+          {(route === 'harvard-mit' || route === 'ecofabriq') && <BackLink />}
         </div>
         <nav className="nav__links" aria-label="Primary">
           <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>

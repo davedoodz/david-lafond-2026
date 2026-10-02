@@ -18,7 +18,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.28em;
-  color: var(--link-idle);
+  color: var(--text-muted);
   transition: color 180ms ease;
   /* Generous hit area without changing the visual rhythm. */
   padding-block: 4px;
@@ -26,6 +26,9 @@
 }
 
 .contact-links__icon {
+  /* `top` (not translate) carries the Y dial, so it stacks with the hover slide below. */
+  position: relative;
+  top: var(--icon-arrow-y, 0px);
   width: 1em;
   height: 1em;
   opacity: 0;
@@ -36,6 +39,7 @@
 }
 
 .contact-links__icon--copy {
+  top: var(--icon-copy-y, 0px);
   width: 0.95em;
   height: 0.95em;
 }
@@ -66,16 +70,23 @@
   }
 }
 
+/* Bottom centre of the window; `--toast-bottom` is the gap from the bottom edge. */
 .contact-links__toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--toast-bottom, 32px) + env(safe-area-inset-bottom));
+  z-index: 2147483000;
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  font-size: var(--text-small);
+  line-height: 1.2;
   color: var(--link-hover);
   white-space: nowrap;
   pointer-events: none;
   /* Hidden state doubles as the exit: fade out while sinking top-to-bottom. */
   opacity: 0;
-  transform: translateY(var(--toast-rise));
+  transform: translate(-50%, var(--toast-rise));
   transition:
     opacity var(--toast-out) cubic-bezier(0.4, 0, 1, 1),
     transform var(--toast-out) cubic-bezier(0.4, 0, 1, 1);
@@ -83,7 +94,7 @@
 
 .contact-links__toast[data-visible='true'] {
   opacity: 1;
-  transform: none;
+  transform: translate(-50%, 0);
   transition:
     opacity var(--toast-in) cubic-bezier(0.22, 1, 0.36, 1),
     transform var(--toast-in) cubic-bezier(0.22, 1, 0.36, 1);

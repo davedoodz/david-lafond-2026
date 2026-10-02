@@ -67,7 +67,7 @@ export function Signature({ className }: { className?: string }) {
           className="sig-canvas"
           data={data}
           pen={values.pen}
-          color={values.pen.color}
+          color="var(--text-muted)"
           opacity={values.pen.opacity}
           grain={values.pen.grain}
           speed={values.playback.speed}

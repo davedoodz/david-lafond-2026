@@ -26,7 +26,7 @@
 }
 
 .nav__links a {
-  color: var(--nav-idle, var(--stone-600));
+  color: var(--nav-idle, var(--text-muted));
   transition: color 180ms ease;
 }
 
@@ -61,7 +61,7 @@
 }
 /* Pinned over another section: colours follow the page under the links (set in Nav.tsx). */
 .nav[data-under='dark'] {
-  --nav-idle: var(--stone-600);
+  --nav-idle: var(--text-muted);
   --nav-active: var(--paper);
   --nav-bg: var(--ink-900);
 }
@@ -106,7 +106,7 @@
   font-weight: 500;
   line-height: 18px;
   text-transform: uppercase;
-  color: var(--nav-idle, var(--stone-600));
+  color: var(--nav-idle, var(--text-muted));
   transition: color 180ms ease;
 }
 .nav__back:hover,
@@ -137,4 +137,15 @@
   .nav__links {
     gap: 20px;
   }
+}
+
+/* 'Nav → order': links on the left, Davebot on the right (mirrors the default padding). */
+.nav[data-ghost-side='end'] {
+  flex-direction: row-reverse;
+  padding-left: var(--edge);
+  padding-right: 35px;
+}
+.nav[data-ghost-side='end'] .nav__start {
+  display: flex;
+  flex-direction: row-reverse;
 }

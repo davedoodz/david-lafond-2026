@@ -13,6 +13,8 @@ export type WristFrame = {
   srcSmall?: string
   width: number
   height: number
+  /** Display quad for the scroll-scrubbed watch screen, in source-image pixels. */
+  screen?: [[number, number], [number, number], [number, number], [number, number]]
 }
 
 /** Scroll beats: progress (0–1) where each phase starts. Exposed as `data-phase` on the stage. */

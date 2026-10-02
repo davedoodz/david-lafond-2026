@@ -627,7 +627,7 @@ CHAPTERS.find((c) => c.id === 'restructure').variants.forEach((v) => {
 })
 
 // ---- Sequencer --------------------------------------------------------
-export function renderParts(ctx, parts, T, m, { bg = true } = {}) {
+export function renderParts(ctx, parts, T, m, { bg = true, alpha = 1, glowAlpha = 1, minGlow = 0 } = {}) {
   ctx.setTransform(m[0], 0, 0, m[0], m[1], m[2]); ctx.globalAlpha = 1
   if (bg) { ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H) }
   const active = []
@@ -641,10 +641,13 @@ export function renderParts(ctx, parts, T, m, { bg = true } = {}) {
   const stages = active.map((a) => ({ s: { ...BASE, ...(a.sec.stage?.(a.u) ?? {}) }, w: a.w }))
   const tw = stages.reduce((s, x) => s + x.w, 0) || 1, st = {}
   for (const k of Object.keys(BASE)) st[k] = stages.reduce((s, x) => s + x.s[k] * x.w, 0) / tw
+  st.glow = Math.max(st.glow, minGlow)
   st.cursor = null
   let cw = 0
   stages.forEach((x) => { if (x.s.cursor && x.w > cw) { st.cursor = { ...x.s.cursor, a: x.s.cursor.a * x.w }; cw = x.w } })
+  ctx.globalAlpha = glowAlpha
   drawGlow(ctx, st)
+  ctx.globalAlpha = alpha
   const acc = {}
   active.forEach(({ sec, u, w }) => {
     const m = sec.words?.(u)
@@ -660,18 +663,28 @@ export function renderParts(ctx, parts, T, m, { bg = true } = {}) {
     const size = e.size / e.pw
     text(ctx, k, e.x / e.pw, e.y / e.pw + size * 0.33, { size, color: e.color, align: 'center', alpha: Math.min(1, e.a) })
   }
-  active.forEach(({ sec, u, w }) => { ctx.save(); ctx.globalAlpha = w; sec.draw?.(ctx, u, w); ctx.restore() })
+  active.forEach(({ sec, u, w }) => { ctx.save(); ctx.globalAlpha = w * alpha; sec.draw?.(ctx, u, w); ctx.restore() })
   controls(ctx, st)
 }
 
-/** Build the timeline for one pick per chapter (e.g. { listen: 1, connect: 2, ... }). */
-export function sequence(pick) {
+/** Build the timeline for one pick per chapter (e.g. { listen: 1, connect: 2, ... }), optionally only some chapters. */
+export function sequence(pick, ids = CHAPTERS.map((c) => c.id)) {
+  const list = CHAPTERS.filter((c) => ids.includes(c.id))
   let t = 0
-  const parts = CHAPTERS.map((c, i) => {
+  const parts = list.map((c, i) => {
     const sec = c.variants[pick[c.id] ?? 0] ?? c.variants[0], p = { sec, start: t, chapter: c }
-    t += sec.dur - (i < CHAPTERS.length - 1 ? OVER : 0)
+    t += sec.dur - (i < list.length - 1 ? OVER : 0)
     return p
   })
   return { parts, total: t }
+}
+
+/** The idle voice band on its own (no words, no controls): the same glow the intro opens with. */
+export function drawBraid(ctx, m, { env = 0.15, alpha = 1 } = {}) {
+  if (alpha <= 0.01) return
+  ctx.save()
+  ctx.setTransform(m[0], 0, 0, m[0], m[1], m[2]); ctx.globalAlpha = alpha
+  drawGlow(ctx, { ...BASE, glow: 1, env })
+  ctx.restore()
 }
 export const SIZE = { W, H }

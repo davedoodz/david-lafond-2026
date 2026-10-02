@@ -32,6 +32,7 @@ const CONFIG = {
   headingLinesMobile: { type: 'select' as const, options: ['one', 'two'], default: 'one' },
   story: { type: 'text' as const, default: STORY, placeholder: 'Blank lines = paragraph breaks' },
   playgroundLabel: { type: 'text' as const, default: 'My playground' },
+  playgroundLabelColor: { type: 'color' as const, default: '#FFFFFF' },
   /** Vertical file-sheet presets for the dark playground panel. */
   sheet: sheetDials(),
   /**
@@ -82,8 +83,15 @@ const CONFIG = {
     playFitPadding: [56, 0, 200, 1] as [number, number, number, number],
     /** Fit mode: label to first row of cards (px). */
     playFitGap: [40, 0, 200, 1] as [number, number, number, number],
+    /** "My playground" label only: move up (−) / down (+), px, independent of the cards. */
+    labelY: [0, -1200, 400, 1] as [number, number, number, number],
+    /** Playground section (label + grid + graph): move up (−) / down (+), px. */
+    playY: [0, -300, 300, 1] as [number, number, number, number],
+    /** Extra space above / below the playground section (px; negative pulls neighbours closer). */
+    playSpaceAbove: [0, -200, 400, 1] as [number, number, number, number],
+    playSpaceBelow: [0, -200, 400, 1] as [number, number, number, number],
     /** Snap stops: page top (photos), story end (sheet tip peeking), playground, footer. */
-    snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'mandatory' },
+    snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'off' },
   },
   /** Playground grid inside the panel. Size multiplies the fitted width; x/y nudge it without moving anything else. */
   grid: {
@@ -120,7 +128,8 @@ export function AboutPage() {
   const headingSoft = t.storyEntrance.heading.preset === 'soft'
   const bodySoft = t.storyEntrance.body.preset === 'soft'
   const playRef = useRef<HTMLElement>(null)
-  useReveal(playRef, '#play-title, .pg-card', t.reveal, revealRun)
+  // A label moved with labelY sits outside the cards' reveal, so it is shown as placed.
+  useReveal(playRef, t.spacing.labelY ? '.pg-card' : '#play-title, .pg-card', t.reveal, revealRun)
 
   const dome = t.dome
   const domeMobile = t.domeMobile
@@ -273,6 +282,10 @@ export function AboutPage() {
     '--play-top-m': `${t.spacing.labelTopMobile}px`,
     '--play-arrow-y': `${t.spacing.labelArrowY}px`,
     '--play-fit-pad': `${t.spacing.playFitPadding}px`,
+    '--play-y': `${t.spacing.playY}px`,
+    '--play-label-y': `${t.spacing.labelY}px`,
+    '--play-above': `${t.spacing.playSpaceAbove}px`,
+    '--play-below': `${t.spacing.playSpaceBelow}px`,
     '--play-fit-gap': `${t.spacing.playFitGap}px`,
     '--grid-size-d': t.grid.sizeDesktop,
     '--grid-size-m': t.grid.sizeMobile,
@@ -314,8 +327,8 @@ export function AboutPage() {
       <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined}>
         <SheetLayers preset={t.sheet.preset} />
         <section ref={playRef} className="about__play" data-fit={t.spacing.playFit || undefined} aria-labelledby="play-title">
-          <h2 id="play-title" className="eyebrow column">
-            {t.playgroundLabel} <ArrowDownIcon />
+          <h2 id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor }}>
+            <EditableText as="span" label="Playground label" value={t.playgroundLabel} onChange={(next) => setValue('playgroundLabel', next)} /> <ArrowDownIcon />
           </h2>
           <Playground />
           <ContributionGraph />

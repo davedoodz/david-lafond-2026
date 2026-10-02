@@ -210,12 +210,13 @@
 .case__section[data-layout='center'] .case__meta {
   justify-content: center;
 }
-/* While the Unwind intro plays, its canvas phone stands in for the hero video. */
-.case[data-intro] .case__section--hero .case__media {
-  opacity: 0;
+
+/* Hero y nudges (heroSpacing › y): visual only, the layout around each element stays put. */
+.case__section--hero .case__title--hero {
+  translate: 0 var(--hero-title-y, 0px);
 }
-html[data-intro-landed] .case[data-intro] .case__section--hero .case__media {
-  opacity: 1;
+.case__section--hero .case__meta {
+  translate: 0 var(--hero-meta-y, 0px);
 }
 
 /* --- Snap (page.snap): one stop per section, then the footer. */
@@ -353,7 +354,7 @@ html[data-case-snap] .case__moment {
   align-items: center;
   justify-content: center;
   gap: calc(var(--logo-gap) * 0.5) var(--logo-gap);
-  translate: var(--logo-x) var(--logo-y);
+  translate: var(--logo-x) var(--logo-y, 0px);
 }
 .case__logos img {
   display: block;
@@ -377,7 +378,7 @@ html[data-case-snap] .case__moment {
 .case__logos[data-placement='bottom'] {
   bottom: var(--logo-offset);
   left: 50%;
-  translate: calc(-50% + var(--logo-x)) var(--logo-y);
+  translate: calc(-50% + var(--logo-x)) var(--logo-y, 0px);
 }
 .case__section--hero {
   position: relative;
@@ -411,29 +412,55 @@ html[data-case-snap] .case__moment {
   translate: 0 0;
 }
 
-/* --- Problem · Opportunity · Solution: one view, three columns. */
+/* --- Problem · Opportunity · Solution: stacked rows, a blue graphic beside each. */
 .case__story {
   grid-template-columns: 1fr;
   align-content: center;
+  height: auto;
+  min-height: 100svh;
+  padding-block: clamp(72px, 10svh, 120px);
 }
 .case__story-cols {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(28px, 4vw, 64px);
-  width: min(1120px, 100%);
+  gap: var(--story-gap, 44px);
+  width: min(1040px, 100%);
   margin: 0 auto;
   padding: 0;
   list-style: none;
 }
 .case__story-cols > li {
   display: grid;
-  align-content: start;
-  gap: 14px;
-  padding-top: 22px;
-  border-top: 1px solid rgb(11 10 9 / 0.14);
+  grid-template-columns: var(--story-art-w, 300px) minmax(0, var(--story-text-w, 460px));
+  justify-content: center;
+  align-items: center;
+  gap: clamp(28px, 4vw, 64px);
 }
-.case__story-cols > li:last-child {
-  border-top-color: var(--unwind-blue, #53bffe);
+.case__story-text {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+[data-story-art='none'] .case__story-cols > li {
+  grid-template-columns: minmax(0, var(--story-text-w, 460px));
+}
+[data-story-layout='art right'] .story-art,
+[data-story-layout='alternate'] li:nth-child(even) .story-art {
+  order: 2;
+}
+[data-story-layout='alternate'] li:nth-child(even) {
+  grid-template-columns: minmax(0, var(--story-text-w, 460px)) var(--story-art-w, 300px);
+}
+[data-story-layout='art right'] li {
+  grid-template-columns: minmax(0, var(--story-text-w, 460px)) var(--story-art-w, 300px);
+}
+/* Columns: the original three-up row, art on top, no rules. */
+[data-story-layout='columns'] .case__story-cols {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(1120px, 100%);
+}
+[data-story-layout='columns'] .case__story-cols > li {
+  grid-template-columns: 1fr;
+  align-items: start;
 }
 .case__story-step {
   font-size: var(--text-small);
@@ -441,7 +468,7 @@ html[data-case-snap] .case__moment {
   font-variant-numeric: tabular-nums;
 }
 .case__story-title {
-  font-size: calc(var(--text-display) * 0.7);
+  font-size: calc(var(--text-display) * var(--story-title, 0.5));
   line-height: 1.15;
   font-weight: 400;
   color: var(--ink-950);
@@ -449,9 +476,108 @@ html[data-case-snap] .case__moment {
 }
 .case__story-body {
   font-size: var(--text-body);
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--stone-600);
   text-wrap: pretty;
+}
+
+/* Graphic panel looks. */
+.story-art {
+  font-family: inherit;
+}
+.story-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+[data-story-art='card'] .story-art {
+  padding: 18px;
+  border-radius: 24px;
+  background: #eef8ff;
+}
+[data-story-art='outline'] .story-art {
+  padding: 18px;
+  border-radius: 24px;
+  border: 1.5px dashed rgb(83 191 254 / 0.6);
+}
+.story-art__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.story-art__tile {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 6px;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+[data-story-art='line'] .story-art__tile,
+[data-story-art='outline'] .story-art__tile {
+  background: none;
+  padding: 4px;
+}
+.story-art__tile svg {
+  width: 64%;
+}
+.story-art__tile figcaption {
+  display: grid;
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--stone-600);
+}
+.story-art__tile b {
+  font-weight: 500;
+  color: var(--ink-950);
+}
+
+/* Motion: only blue marks (.sa-b) move, and only while on screen. */
+.case__story .sa-b {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.case__story:not([data-live]) * {
+  animation-play-state: paused !important;
+}
+[data-story-motion='draw'] .sa-draw {
+  stroke-dasharray: 1 1;
+  animation: story-draw 1.6s calc(var(--i, 0) * 0.25s) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+[data-story-motion='draw'] li .sa-draw {
+  animation-delay: calc(var(--i, 0) * 0.35s);
+}
+[data-story-motion] .sa-ping {
+  animation: story-ping 2.4s ease-out infinite;
+}
+[data-story-motion='off'] .sa-ping {
+  animation: none;
+}
+[data-story-motion='pulse'] :is(.sa-spark, .sa-bars line) {
+  animation: story-breathe 2.4s calc(var(--i, 0) * 0.15s) ease-in-out infinite;
+}
+[data-story-motion='draw'] .sa-bars line {
+  animation: story-breathe 1.8s calc(var(--i, 0) * 0.12s) ease-in-out infinite;
+}
+@keyframes story-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes story-ping {
+  0% { transform: scale(0.6); opacity: 0.35; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes story-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .case__story * {
+    animation: none !important;
+  }
 }
 
 /* --- Phones shared by core flows + guided. */
@@ -775,4 +901,398 @@ html[data-case-snap] .case__moment {
   .case .case__section--hero[data-layout='rise'] .case__media {
     height: min(var(--hero-phone-h, 56svh), 50svh);
   }
+}
+
+/* Merged sections: one snap stop for the whole group, so it scrolls as one longer section. */
+html[data-case-snap] .case__group {
+  scroll-snap-align: start;
+}
+html[data-case-snap] .case__group > * {
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+@media (max-width: 800px) {
+  .case__story .case__story-cols > li {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .case__story .story-art {
+    order: 0;
+    max-width: 360px;
+  }
+}
+
+/* --- Persona: the persona sheet, reorganised to read top to bottom. */
+.case__persona {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: var(--persona-gap, 96px);
+  height: auto;
+  min-height: 100svh;
+  padding-block: clamp(96px, 12svh, 140px);
+}
+.case__persona > * {
+  width: min(1040px, 100%);
+  margin-inline: auto;
+}
+.case__persona h3 {
+  margin: 0;
+}
+.persona__intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--persona-img-w, 480px);
+  align-items: center;
+  gap: clamp(32px, 5vw, 72px);
+}
+[data-persona-image='left'] .persona__intro {
+  grid-template-columns: var(--persona-img-w, 480px) minmax(0, 1fr);
+}
+[data-persona-image='left'] .persona__photo {
+  order: -1;
+}
+[data-persona-image='top'] .persona__intro {
+  grid-template-columns: minmax(0, 640px);
+  justify-content: start;
+}
+[data-persona-image='top'] .persona__photo {
+  order: -1;
+  width: min(var(--persona-img-w, 480px), 100%);
+}
+[data-persona-image='none'] .persona__intro {
+  grid-template-columns: minmax(0, 640px);
+}
+.persona__who {
+  display: grid;
+  gap: 14px;
+}
+.persona__title {
+  margin: 0;
+  font-size: calc(var(--text-display) * 1.4 * var(--persona-title, 1));
+  line-height: 1.05;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink-950);
+  text-wrap: balance;
+}
+.persona__title--sub {
+  font-size: calc(var(--text-display) * var(--persona-title, 1));
+}
+.persona__body {
+  font-size: var(--text-body);
+  line-height: 1.45;
+  color: var(--stone-600);
+  text-wrap: pretty;
+}
+.persona__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.persona__tags li {
+  padding: 7px 14px;
+  border: 1px solid rgb(23 23 23 / 0.1);
+  border-radius: 999px;
+  font-size: var(--text-small);
+  color: var(--stone-600);
+  background: #fff;
+}
+.persona__photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--persona-img-r, 28px);
+}
+
+/* Driven by / Challenges. */
+.persona__traits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(32px, 5vw, 72px);
+}
+[data-persona-traits='stacked'] .persona__traits {
+  grid-template-columns: minmax(0, 560px);
+  gap: 48px;
+}
+.persona__traits-group {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+.persona__traits ul {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.persona__traits li {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: center;
+  gap: 18px;
+}
+.persona__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #eef8ff;
+}
+.persona__icon svg {
+  width: 30px;
+  height: 30px;
+  overflow: visible;
+}
+.persona__trait {
+  font-size: var(--text-body);
+  line-height: 1.35;
+  color: var(--ink-950);
+  text-wrap: pretty;
+}
+
+/* Key contexts. */
+.persona__moments {
+  display: grid;
+  gap: 40px;
+}
+.persona__moments header {
+  display: grid;
+  gap: 12px;
+}
+.persona__moments ol {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.persona__moments li {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) minmax(0, 0.8fr);
+  grid-template-areas: 'scene text quote' 'scene text tag';
+  align-items: center;
+  column-gap: clamp(24px, 3vw, 48px);
+  row-gap: 10px;
+  padding: 24px 28px;
+  border-radius: 24px;
+  background: #eef8ff;
+}
+.persona__scene {
+  grid-area: scene;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.persona__moment-text {
+  grid-area: text;
+  display: grid;
+  gap: 6px;
+}
+.persona__step {
+  font-size: var(--text-small);
+  color: var(--stone-400);
+  font-variant-numeric: tabular-nums;
+}
+.persona__moment-title {
+  font-size: calc(var(--text-body) * 1.15);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink-950);
+}
+.persona__moment-body {
+  font-size: calc(var(--text-body) * 0.85);
+  line-height: 1.4;
+  color: var(--stone-600);
+  text-wrap: pretty;
+}
+.persona__quote {
+  grid-area: quote;
+  align-self: end;
+  margin: 0;
+  font-style: italic;
+  font-size: calc(var(--text-body) * 0.85);
+  line-height: 1.4;
+  color: var(--stone-600);
+}
+.persona__tag {
+  grid-area: tag;
+  align-self: start;
+  justify-self: start;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2f8fd0;
+}
+[data-persona-contexts='grid'] .persona__moments ol {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+:is([data-persona-contexts='grid'], [data-persona-contexts='cards']) .persona__moments li {
+  grid-template-columns: 1fr;
+  grid-template-areas: 'text' 'scene' 'quote' 'tag';
+  align-content: start;
+}
+:is([data-persona-contexts='grid'], [data-persona-contexts='cards']) .persona__scene {
+  width: 140px;
+  justify-self: center;
+}
+:is([data-persona-contexts='grid'], [data-persona-contexts='cards']) .persona__quote {
+  text-align: center;
+}
+[data-persona-contexts='cards'] .persona__moments ol {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+[data-persona-contexts='cards'] > .persona__moments {
+  width: min(1240px, 100%);
+}
+
+/* Motion: only blue marks (.pa-b) move, and only while on screen. */
+.case__persona .pa-b {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.case__persona:not([data-live]) * {
+  animation-play-state: paused !important;
+}
+[data-persona-motion='draw'] .pa-draw {
+  stroke-dasharray: 1 1;
+  animation: story-draw 1.4s 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+[data-persona-motion='draw'] .pa-pop {
+  animation: persona-pop 0.6s calc(0.3s + var(--i, 0) * 0.15s) cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+[data-persona-motion] .pa-spin {
+  animation: persona-sway 3s calc(var(--i, 0) * -0.6s) ease-in-out infinite;
+}
+.case__persona .pa-hand {
+  transform-box: view-box;
+  transform-origin: 20px 20px;
+}
+[data-persona-motion] .pa-hand {
+  animation: persona-tick 8s steps(8) infinite;
+}
+[data-persona-motion='pulse'] :is(.pa-pop, .pa-ring, .pa-draw) {
+  animation: story-breathe 2.6s ease-in-out infinite;
+}
+[data-persona-motion='draw'] .pa-ring {
+  animation: persona-ring 2.8s ease-in-out infinite;
+  transform-origin: top center;
+}
+[data-persona-motion='off'] * {
+  animation: none !important;
+}
+@keyframes persona-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes persona-sway {
+  0%, 100% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+}
+@keyframes persona-tick {
+  to { transform: rotate(360deg); }
+}
+@keyframes persona-ring {
+  0%, 70%, 100% { transform: rotate(0); }
+  76% { transform: rotate(14deg); }
+  82% { transform: rotate(-12deg); }
+  88% { transform: rotate(8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .case__persona * {
+    animation: none !important;
+  }
+}
+@media (max-width: 800px) {
+  .case__persona .persona__intro,
+  .case__persona .persona__traits,
+  .case__persona .persona__moments ol {
+    grid-template-columns: 1fr;
+  }
+  .case__persona .persona__photo {
+    order: -1;
+  }
+  .case__persona .persona__moments li {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'text' 'scene' 'quote' 'tag';
+  }
+  .case__persona .persona__scene {
+    width: 120px;
+  }
+}
+:is([data-persona-contexts='grid'], [data-persona-contexts='cards']) .persona__tag {
+  justify-self: center;
+}
+
+/* Hero devices: the Apple Watch (notification prototype) left of the phone, both rising
+   from below the fold. Pinned to a share of the screen height so the crop is the same on
+   every screen. The fold crops them on the first screen; the hero is tall enough to hold them
+   whole, so scrolling down reveals the full devices before the next section. */
+.case__devices {
+  position: absolute;
+  top: var(--hero-devices-top, 56svh);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hero-devices-gap, 56px);
+}
+.case .case__section--hero:has(.case__devices) {
+  height: max(100svh, calc(var(--hero-devices-top, 56svh) + var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) + var(--hero-phone-y, 0px) + 6svh));
+}
+.case__watch {
+  position: relative;
+  flex: none;
+  height: calc(var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) * var(--hero-watch-size, 0.64));
+  aspect-ratio: 540 / 860;
+  translate: 0 calc(var(--hero-phone-y, 0px) + var(--hero-watch-y, 9svh));
+}
+.case__watch iframe {
+  position: absolute;
+  left: calc(72 / 540 * 100%);
+  top: calc(193 / 860 * 100%);
+  width: calc(396 / 540 * 100%);
+  height: calc(479 / 860 * 100%);
+  border: 0;
+  border-radius: 14%/12%;
+  background: #000;
+  pointer-events: none;
+}
+.case__watch img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+@media (max-width: 800px) {
+  .case__devices {
+    gap: 16px;
+  }
+  .case__watch {
+    height: calc(min(var(--hero-phone-h, 56svh), 50svh) * var(--hero-watch-size, 0.64));
+  }
+}
+/* Persona `scenario`: the moments header becomes one scenario card. */
+[data-persona-contexts='scenario'] .persona__moments header {
+  max-width: 760px;
+  padding: 32px 36px;
+  border-radius: 24px;
+  background: #eef8ff;
+}
+[data-persona-contexts='scenario'] .persona__moments header .eyebrow {
+  color: #2f8fd0;
+}
+.persona__moments ol[hidden] {
+  display: none;
 }

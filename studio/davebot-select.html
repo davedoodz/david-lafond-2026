@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Davebot — selection cue concepts</title>
+<style>
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+  :root { --ink: #171717; --paper: #f5f5f5; --shell: #d9d9d9; --ease: cubic-bezier(0.22, 1, 0.36, 1); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0e0e0e; color: var(--paper); font: 15px/1.4 Beatrice, system-ui, sans-serif; }
+  header.page { padding: 40px 48px 8px; max-width: 1200px; }
+  header.page h1 { margin: 0 0 8px; font-size: 22px; font-weight: 500; }
+  header.page p { margin: 0; color: #8a8a8a; max-width: 720px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 24px; padding: 28px 48px 64px; }
+
+  /* ---------- One concept card ---------- */
+  .card { display: grid; gap: 12px; }
+  .card__head { display: flex; align-items: baseline; gap: 10px; }
+  .card__num { color: #6b6b6b; font-variant-numeric: tabular-nums; }
+  .card__name { font-weight: 500; }
+  .card__note { color: #8a8a8a; font-size: 13px; margin: 0; }
+  .card__play { margin-left: auto; padding: 6px 12px; border: 1px solid #333; border-radius: 999px; background: transparent; color: #cfcfcf; font: inherit; font-size: 12px; cursor: pointer; }
+  .card__play:hover { border-color: #666; color: #fff; }
+
+  .demo { position: relative; height: 300px; overflow: hidden; border-radius: 14px; background: #171717; border: 1px solid #242424; }
+  .demo__copy { position: absolute; left: 36px; top: 92px; right: 150px; margin: 0; font-size: 17px; line-height: 1.3; }
+  .demo__copy b { font-weight: 500; font-style: italic; }
+  .demo__copy::selection, .demo__copy *::selection { background: var(--paper); color: var(--ink); }
+
+  /* Davebot in the corner, same 32-grid artwork as the site. */
+  .bot { position: absolute; top: 22px; right: 26px; width: 30px; height: 30px; transform-origin: 50% 85%; }
+  .bot svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .bot .shell { fill: var(--shell); }
+  .bot .pupil { fill: var(--ink); transition: translate 380ms var(--ease); }
+  .demo[data-on] .bot .pupil { translate: -1.4px 1.6px; } /* every concept: he looks at what you picked */
+
+  /* ---------- 1 · Perk up + "Ask me" pill ---------- */
+  .c2 .demo__copy { right: 250px; } /* room for the bubble so it never covers what was picked */
+  .c1 .pill { position: absolute; top: 25px; right: 66px; padding: 5px 11px; border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 12.5px; font-weight: 500; white-space: nowrap;
+    opacity: 0; translate: 10px 0; scale: 0.9; transform-origin: right center; transition: opacity 220ms ease, translate 420ms var(--ease), scale 420ms var(--ease); }
+  .c1[data-on] .pill { opacity: 1; translate: 0 0; scale: 1; transition-delay: 160ms; }
+  .c1[data-on] .bot { animation: hop 620ms var(--ease); }
+  @keyframes hop { 0% { scale: 1; } 25% { scale: 1.12 0.86; translate: 0 2px; } 55% { scale: 0.94 1.1; translate: 0 -7px; } 80% { scale: 1.04 0.97; translate: 0 0; } 100% { scale: 1; } }
+
+  /* ---------- 2 · Speech bubble quoting the selection ---------- */
+  .c2 .bubble { position: absolute; top: 62px; right: 18px; width: 220px; padding: 11px 13px 12px; border-radius: 14px 4px 14px 14px; background: var(--paper); color: var(--ink); font-size: 12.5px; line-height: 1.35;
+    opacity: 0; translate: 0 -6px; scale: 0.92; transform-origin: top right; transition: opacity 200ms ease, translate 380ms var(--ease), scale 380ms var(--ease); }
+  .c2 .bubble q { display: block; margin-top: 4px; color: #6b6b6b; quotes: '“' '”'; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c2 .bubble kbd { font: inherit; padding: 0 5px; border: 1px solid #cfcfcf; border-radius: 4px; color: #555; }
+  .c2[data-on] .bubble { opacity: 1; translate: 0 0; scale: 1; }
+  .c2[data-on] .bot { animation: tilt 520ms var(--ease); }
+  @keyframes tilt { 40% { rotate: -10deg; } 75% { rotate: 4deg; } }
+
+  /* ---------- 3 · Breathing halo + badge ---------- */
+  .c3 .halo { position: absolute; top: 37px; right: 41px; width: 0; height: 0; }
+  .c3 .halo::before, .c3 .halo::after { content: ''; position: absolute; left: -24px; top: -24px; width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid rgb(245 245 245 / 0.7); opacity: 0; }
+  .c3[data-on] .halo::before { animation: ring 1.8s ease-out infinite; }
+  .c3[data-on] .halo::after { animation: ring 1.8s ease-out 0.9s infinite; }
+  @keyframes ring { 0% { scale: 0.6; opacity: 0.9; } 100% { scale: 1.6; opacity: 0; } }
+  .c3 .badge { position: absolute; top: 18px; right: 22px; width: 10px; height: 10px; border-radius: 50%; background: #5b8cff; box-shadow: 0 0 0 2px #171717; scale: 0; transition: scale 360ms var(--ease); }
+  .c3[data-on] .badge { scale: 1; }
+  .c3 .hint { position: absolute; top: 64px; right: 14px; font-size: 11.5px; color: #9a9a9a; opacity: 0; transition: opacity 300ms ease 400ms; }
+  .c3[data-on] .hint { opacity: 1; }
+
+  /* ---------- 4 · Tether from the selection to Davebot ---------- */
+  .c4 svg.tether { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .c4 .tether path { fill: none; stroke: rgb(245 245 245 / 0.55); stroke-width: 1.4; stroke-dasharray: 2 5; stroke-linecap: round; }
+  .c4 .tether circle { fill: var(--paper); }
+  .c4 .tether .line { stroke-dashoffset: 0; }
+  .c4 .tether g { opacity: 0; transition: opacity 260ms ease; }
+  .c4[data-on] .tether g { opacity: 1; }
+  .c4[data-on] .tether .line { animation: march 1.2s linear infinite; }
+  @keyframes march { to { stroke-dashoffset: -14; } }
+  .c4 .ask { position: absolute; top: 60px; right: 16px; font-size: 12px; color: var(--paper); opacity: 0; transition: opacity 260ms ease 300ms; }
+  .c4[data-on] .ask { opacity: 1; }
+  .c4[data-on] .bot { rotate: -12deg; transition: rotate 500ms var(--ease); }
+  .c4 .bot { transition: rotate 400ms var(--ease); }
+
+  /* ---------- 5 · Grows into a "Ask about this" chip ---------- */
+  .c5 .chip { position: absolute; top: 16px; right: 18px; height: 42px; width: 42px; border-radius: 999px; background: transparent; overflow: hidden;
+    transition: width 520ms var(--ease), background 260ms ease; }
+  .c5 .chip span { position: absolute; left: 16px; top: 50%; translate: 0 -50%; white-space: nowrap; color: var(--ink); font-size: 12.5px; font-weight: 500; opacity: 0; transition: opacity 200ms ease; }
+  .c5[data-on] .chip { width: 168px; background: var(--paper); }
+  .c5[data-on] .chip span { opacity: 1; transition-delay: 220ms; }
+  .c5 .bot { z-index: 1; transition: scale 400ms var(--ease); }
+  .c5[data-on] .bot { scale: 0.9; }
+  .c5[data-on] .bot .shell { fill: var(--ink); }
+  .c5[data-on] .bot .pupil { fill: var(--paper); }
+  .c5 .bot .shell, .c5 .bot .pupil { transition: fill 260ms ease, translate 380ms var(--ease); }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: 1ms !important; } }
+</style>
+</head>
+<body>
+<header class="page">
+  <h1>Davebot · selection cue</h1>
+  <p>Highlight any text in a card (or press Play). Davebot reacts so the reader knows they can ask about what they picked. In every concept his eyes turn toward the selection.</p>
+</header>
+<main class="grid" id="grid"></main>
+
+<template id="bot">
+  <div class="bot" aria-hidden="true">
+    <svg viewBox="0 0 32 32">
+      <defs><clipPath id="head-CLIP"><path d="M4 14.2a12 12.2 0 1 0 24 0a12 12.2 0 1 0 -24 0Z" /></clipPath></defs>
+      <path class="shell" d="M16 2c7 0 12 5.1 12 12.4 0 4-1 6.4-1 9.2 0 2.2-1.4 3.6-3.2 3.6-1.7 0-2.6-1.1-3.6-1.1s-1.9 1.2-4.2 1.2-3.2-1.2-4.2-1.2-1.9 1.1-3.6 1.1C6.4 27.2 5 25.8 5 23.6c0-2.8-1-5.2-1-9.2C4 7.1 9 2 16 2Z" />
+      <g clip-path="url(#head-CLIP)">
+        <path class="pupil" d="M9.6 13.4a2.5 3.1 0 1 0 5 0a2.5 3.1 0 1 0 -5 0Z" />
+        <path class="pupil" d="M17.8 13.4a2.5 3.1 0 1 0 5 0a2.5 3.1 0 1 0 -5 0Z" />
+      </g>
+    </svg>
+  </div>
+</template>
+
+<script>
+const COPY = 'I’ve led interdisciplinary creative teams – from global smart city projects to world-class research labs. Now, I’m bringing this experience to <b>product design</b> — where ideas can move faster and reach further.'
+
+const CONCEPTS = [
+  { cls: 'c1', name: 'Perk up', note: 'A squash-and-stretch hop, then an “Ask me about this” pill slides out beside him. Quiet, clear, one line.',
+    extra: '<span class="pill">Ask me about this</span>' },
+  { cls: 'c2', name: 'Speech bubble', note: 'He tilts and a bubble drops from the corner quoting what you picked, with the shortcut to ask.',
+    extra: '<div class="bubble">Want to know more? <q data-quote></q><div style="margin-top:6px;color:#555">Click me or press <kbd>?</kbd></div></div>' },
+  { cls: 'c3', name: 'Halo + badge', note: 'Ambient: soft rings breathe around him and a blue dot appears, like an unread message. Lowest-key option.',
+    extra: '<span class="halo"></span><span class="badge"></span><span class="hint">Ask Davebot</span>' },
+  { cls: 'c4', name: 'Tether', note: 'A marching dotted line runs from the end of the selection to Davebot, who leans toward it. Makes the link literal.',
+    extra: '<svg class="tether"><g><path class="line" /><circle r="2.5" /></g></svg><span class="ask">Ask about this</span>' },
+  { cls: 'c5', name: 'Becomes a button', note: 'His corner grows into a pill: Davebot inverts and “Ask about this →” reads next to him. The cue is the action.',
+    extra: '<span class="chip"><span>Ask about this →</span></span>', botLast: true },
+]
+
+const grid = document.getElementById('grid')
+const botTpl = document.getElementById('bot')
+
+CONCEPTS.forEach((c, i) => {
+  const card = document.createElement('section')
+  card.className = 'card'
+  card.innerHTML = `
+    <div class="card__head"><span class="card__num">0${i + 1}</span><span class="card__name">${c.name}</span><button class="card__play" type="button">Play</button></div>
+    <div class="demo ${c.cls}"><p class="demo__copy">${COPY}</p>${c.extra}</div>
+    <p class="card__note">${c.note}</p>`
+  const demo = card.querySelector('.demo')
+  const bot = botTpl.content.firstElementChild.cloneNode(true)
+  bot.innerHTML = bot.innerHTML.replaceAll('head-CLIP', `head-${i}`)
+  demo.appendChild(bot)
+  card.querySelector('.card__play').addEventListener('click', () => play(demo))
+  grid.appendChild(card)
+})
+
+/** Selects the first sentence in a card, like a reader would. */
+function play(demo) {
+  const copy = demo.querySelector('.demo__copy')
+  const text = copy.firstChild
+  const range = document.createRange()
+  range.setStart(text, 0)
+  range.setEnd(text, text.data.indexOf('labs.') + 5)
+  const sel = getSelection()
+  sel.removeAllRanges()
+  // Clear first so a replay restarts the entrance animations.
+  demo.removeAttribute('data-on')
+  requestAnimationFrame(() => sel.addRange(range))
+}
+
+function update() {
+  const sel = getSelection()
+  const range = sel.rangeCount && !sel.isCollapsed ? sel.getRangeAt(0) : null
+  const node = range?.commonAncestorContainer
+  const active = node && (node.nodeType === 1 ? node : node.parentElement).closest('.demo')
+  document.querySelectorAll('.demo').forEach((demo) => {
+    if (demo !== active) return demo.removeAttribute('data-on')
+    const quote = demo.querySelector('[data-quote]')
+    if (quote) quote.textContent = sel.toString().trim()
+    const tether = demo.querySelector('.tether')
+    if (tether) drawTether(demo, range)
+    demo.setAttribute('data-on', '')
+  })
+}
+
+/** Curve from the end of the selection up to Davebot. */
+function drawTether(demo, range) {
+  const box = demo.getBoundingClientRect()
+  const rects = range.getClientRects()
+  const end = rects[rects.length - 1]
+  const bot = demo.querySelector('.bot').getBoundingClientRect()
+  const x1 = end.right - box.left + 4, y1 = end.top - box.top + end.height / 2
+  const x2 = bot.left - box.left - 6, y2 = bot.top - box.top + bot.height / 2
+  demo.querySelector('.tether path').setAttribute('d', `M${x1} ${y1} C ${x1 + 60} ${y1}, ${x2 - 40} ${y2 + 60}, ${x2} ${y2}`)
+  const dot = demo.querySelector('.tether circle')
+  dot.setAttribute('cx', x1)
+  dot.setAttribute('cy', y1)
+}
+
+document.addEventListener('selectionchange', update)
+</script>
+</body>
+</html>

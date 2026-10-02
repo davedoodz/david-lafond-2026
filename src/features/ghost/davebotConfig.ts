@@ -6,6 +6,13 @@
 
 export const DAVEBOT_PANEL = 'Davebot'
 
+/** CSS fill for the ghost body from the 'ghost → color' dial; undefined keeps the stylesheet default. */
+export function ghostFill(ghost: { color: string; customColor: string }): string | undefined {
+  if (ghost.color === 'gray text') return 'var(--text-muted)'
+  if (ghost.color === 'custom') return ghost.customColor
+  return undefined
+}
+
 const springField = (visualDuration: number, bounce: number) => ({ type: 'spring' as const, visualDuration, bounce })
 const colorField = (value: string) => ({ type: 'color' as const, default: value })
 const textField = (value: string) => ({ type: 'text' as const, default: value })
@@ -25,6 +32,10 @@ export const DAVEBOT_CONFIG = {
     offsetX: [0, -300, 300, 1] as [number, number, number, number],
     offsetY: [0, -200, 200, 1] as [number, number, number, number],
     paletteWidth: [560, 360, 720, 4] as [number, number, number, number],
+    /** Body colour. default: light gray (darker on light pages); gray text: the site's muted
+     *  text gray (--text-muted, e.g. "a product designer."); custom: the colour below. */
+    color: { type: 'select' as const, options: ['default', 'gray text', 'custom'], default: 'default' },
+    customColor: colorField('#a6a09c'),
     morph: springField(0.4, 0.15),
     _collapsed: false,
   },
@@ -50,6 +61,18 @@ export const DAVEBOT_CONFIG = {
   highlight: {
     show: true,
     color: colorField('#f2b544'),
+    _collapsed: false,
+  },
+  /** Highlighting text: Davebot hops and a pill offers to answer about it. */
+  selection: {
+    enabled: true,
+    pill: textField('Ask me about this'),
+    /** Question sent with the highlighted text when the reader clicks. */
+    prompt: textField('Tell me more about'),
+    /** Ignore tiny selections (characters). */
+    minChars: [3, 1, 40, 1] as [number, number, number, number],
+    hopMs: [620, 200, 1400, 10] as [number, number, number, number],
+    hopHeight: [7, 0, 16, 0.5] as [number, number, number, number],
     _collapsed: false,
   },
   text: {

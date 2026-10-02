@@ -28,7 +28,10 @@ function collectRects(range: Range, out: DOMRect[]): void {
   const part = document.createRange()
   for (const node of textNodes) {
     const parent = node.parentElement
-    if (!parent || !node.data.trim()) continue
+    // Whitespace-only nodes still count: the space between words in separate
+    // inline elements (I’m <em>David</em>) would otherwise leave a gap.
+    // Collapsed whitespace has no client rects, so it adds nothing.
+    if (!parent || !node.data) continue
     if (getComputedStyle(parent).userSelect === 'none') continue
     part.selectNodeContents(node)
     if (node === range.startContainer) part.setStart(node, range.startOffset)
@@ -57,15 +60,20 @@ export function SelectionHighlight() {
         for (let i = 0; i < selection.rangeCount; i += 1) collectRects(selection.getRangeAt(i), rects)
       }
 
-      // Reuse box elements; round outward so neighbouring runs never leave a hairline seam.
+      // Expand each fragment enough to overlap the font's line-box rounding.
+      // Client rects can leave a 2–3px seam between wrapped lines even after
+      // outward integer rounding.
+      const overlap = 3
       while (host.childElementCount > rects.length) host.lastElementChild!.remove()
       while (host.childElementCount < rects.length) host.appendChild(document.createElement('div'))
       const { scrollX, scrollY } = window
       rects.forEach((rect, i) => {
         const box = host.children[i] as HTMLDivElement
-        const left = Math.floor(rect.left + scrollX)
-        const top = Math.floor(rect.top + scrollY)
-        box.style.cssText = `left:${left}px;top:${top}px;width:${Math.ceil(rect.right + scrollX) - left}px;height:${Math.ceil(rect.bottom + scrollY) - top}px`
+        const left = Math.floor(rect.left + scrollX) - overlap
+        const top = Math.floor(rect.top + scrollY) - overlap
+        const right = Math.ceil(rect.right + scrollX) + overlap
+        const bottom = Math.ceil(rect.bottom + scrollY) + overlap
+        box.style.cssText = `left:${left}px;top:${top}px;width:${right - left}px;height:${bottom - top}px`
       })
     }
     const schedule = (): void => {
