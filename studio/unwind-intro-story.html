@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unwind intro — one hard afternoon, in the prototype's own UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;1,14..32,400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./unwind-intro-kit.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>One hard afternoon — three cuts</h1>
+          <p class="sub">Built from the prototypes' own pieces: the Apple Watch notification, the voice screen with Momo, the live transcript, the glass Dynamic question card and controls, then the reflection cards. You watch one person, right after a tense 1:1 with Priya, say what happened and leave a little clearer. Phone UI stays in Inter (as in the prototypes); the few captions switch typeface.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Typeface">
+          <button type="button" data-view="both" aria-pressed="true">Both</button>
+          <button type="button" data-view="inter" aria-pressed="false">Inter</button>
+          <button type="button" data-view="test" aria-pressed="false">Test Family</button>
+        </div>
+      </header>
+      <div id="list"></div>
+    </main>
+    <script type="module">
+      import { W, TAU, C, clamp, lerp, seg, curl, mount, HERO_BRAID } from './unwind-intro-kit.js'
+
+      // ---------- Assets copied from reself-voice-prototypes ----------
+      const img = (f) => { const i = new Image(); i.src = `./assets/proto/${f}`; return i }
+      const IMG = { phone: img('iphone.webp'), watch: img('watch.webp'), momo: img('momo.webp'), stars: img('stars.png') }
+      await Promise.all(Object.values(IMG).map((i) => i.decode().catch(() => {})))
+
+      const UI = 'Inter, -apple-system, system-ui, sans-serif'
+      const BLUE = '#61A8FD'
+      /** Device frames (asset px) and where their screens sit. */
+      const PHONE = { w: 874, h: 1780, sx: 46, sy: 39, sw: 784, sh: 1702, r: 113 }
+      const WATCH = { w: 540, h: 860, sx: 72, sy: 193, sw: 396, sh: 479 }
+      const SH = (PHONE.sh / PHONE.sw) * 390 // phone screen height in 390-pt UI units
+
+      // ---------- Motion helpers ----------
+      const S = (t, a, b) => 0.5 - 0.5 * Math.cos(Math.PI * seg(t, a, b))
+      const bump = (t, a, b) => Math.sin(Math.PI * seg(t, a, b))
+      const clock = (t, speed) => { let r = 0; for (let x = 0; x < t; x += 1 / 60) r += speed(x) / 60; return r }
+      const pulse = (phase) => Math.exp(-(((phase % 1) + 1) % 1) * 7)
+      const mix = (p, q, k) => ({ x: lerp(p.x, q.x, k), y: lerp(p.y, q.y, k), len: lerp(p.len, q.len, k), sc: lerp(p.sc, q.sc, k) })
+      const rgb = (a, b, k) => `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], k))).join(',')})`
+
+      // ---------- Canvas pieces in the prototypes' style ----------
+      function tx(c, s, x, y, size, o = {}) {
+        const { w = 400, color = '#1f1f1f', align = 'left', ls = 0 } = o
+        c.font = `${w} ${size}px ${UI}`; c.fillStyle = color; c.textAlign = align; c.textBaseline = 'middle'; c.letterSpacing = `${ls}px`
+        c.fillText(s, x, y); c.letterSpacing = '0px'
+      }
+      function wrap(c, text, maxW, size, w = 400) {
+        c.font = `${w} ${size}px ${UI}`
+        const out = []; let cur = ''
+        for (const word of text.split(' ')) { const n = cur ? `${cur} ${word}` : word; if (cur && c.measureText(n).width > maxW) { out.push(cur); cur = word } else cur = n }
+        if (cur) out.push(cur)
+        return out
+      }
+      /** Glass surface: white, a hairline and a soft blue-grey shadow (prompt card / controls). */
+      function glass(c, x, y, w, h, r, fill = 'rgba(255,255,255,0.72)', shadow = 30) {
+        c.save()
+        if (shadow) { c.shadowColor = 'rgba(0,50,70,0.10)'; c.shadowBlur = shadow; c.shadowOffsetY = shadow / 3 }
+        c.fillStyle = fill; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill()
+        c.shadowColor = 'transparent'; c.strokeStyle = 'rgba(0,0,0,0.05)'; c.lineWidth = 1; c.stroke()
+        c.restore()
+      }
+      function momo(c, x, y, size, t, listen = 0) {
+        const sq = 1 + 0.035 * listen * Math.sin(t * 9), bob = Math.sin(t * 1.8) * 4
+        c.drawImage(IMG.momo, x - (size * sq) / 2, y - size / 2 + bob - size * 0.03, size * sq, size / sq)
+      }
+
+      /** Transcript: words appear on their time, newest in blue, older lines fade toward the top. */
+      function transcript(c, tokens, t, al) {
+        const shown = tokens.filter((k) => k.at <= t)
+        if (!shown.length || al <= 0.01) return
+        const size = 19, maxW = 300, lines = [[]]
+        c.font = `400 ${size}px ${UI}`
+        const width = (ws) => c.measureText(ws.map((k) => k.text).join(' ')).width
+        for (const k of shown) {
+          if (k.q) { lines.push([k], []); continue }
+          const cur = lines[lines.length - 1]
+          if (cur.length && !cur[0].q && width([...cur, k]) > maxW) lines.push([k])
+          else if (cur.length && cur[0].q) lines.push([k])
+          else cur.push(k)
+        }
+        const vis = lines.filter((l) => l.length).slice(-4)
+        const fades = [0.22, 0.45, 0.8, 1].slice(-vis.length)
+        vis.forEach((line, li) => {
+          const y = 600 - (vis.length - 1 - li) * 29
+          if (line[0].q) { c.globalAlpha = al * fades[li]; tx(c, line[0].text, 195, y, 13.5, { w: 500, color: BLUE, align: 'center', ls: 0.2 }); return }
+          c.font = `400 ${size}px ${UI}`
+          let x = 195 - width(line) / 2
+          for (const k of line) {
+            const age = t - k.at, e = clamp(age / 0.5)
+            c.globalAlpha = al * fades[li] * e
+            c.fillStyle = rgb([97, 168, 253], [92, 108, 115], clamp((age - 0.25) / 0.6))
+            c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(k.text, x, y + (1 - e) * 4)
+            x += c.measureText(`${k.text} `).width
+          }
+        })
+        c.globalAlpha = 1
+      }
+      function promptCard(c, q, t, inAt, takeAt) {
+        const e = S(t, inAt, inAt + 0.55), g = S(t, takeAt, takeAt + 0.45)
+        const al = e * (1 - g)
+        if (al <= 0.01) return
+        const lines = wrap(c, q, 252, 17, 500), h = 50 + lines.length * 22
+        c.save(); c.globalAlpha = al
+        c.translate(195, 96 + h / 2 + (1 - e) * 12 + g * 24); c.scale(lerp(0.96, 1, e) * lerp(1, 0.94, g), lerp(0.96, 1, e) * lerp(1, 0.94, g)); c.translate(-195, -(96 + h / 2))
+        if (e < 1) c.filter = `blur(${(1 - e) * 6}px)`
+        glass(c, 45, 96, 300, h, 22, 'rgba(255,255,255,0.82)')
+        c.drawImage(IMG.stars, 145, 108, 16, 16)
+        tx(c, 'Tap to answer', 166, 117, 12, { w: 500, color: BLUE, ls: 0.24 })
+        lines.forEach((l, i) => tx(c, l, 195, 142 + i * 22, 17, { w: 500, color: '#2a3438', align: 'center' }))
+        c.strokeStyle = BLUE; c.lineWidth = 2; c.lineCap = 'round'
+        c.beginPath(); c.arc(322, 118, 7, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - seg(t, inAt, inAt + 6))); c.stroke()
+        c.restore()
+      }
+      function controls(c, t, al, mode, stopAt) {
+        if (al <= 0.01) return
+        c.save(); c.globalAlpha = al
+        const y = 790
+        c.font = `500 15px ${UI}`; const pw = 22 + c.measureText(mode).width + 8 + 12 + 19
+        glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.55)', 6)
+        tx(c, mode, 44, y, 15, { w: 500 })
+        c.strokeStyle = '#666'; c.lineWidth = 1.4; c.beginPath(); const cx = 22 + pw - 25; c.moveTo(cx - 3.5, y - 1.5); c.lineTo(cx, y + 2); c.lineTo(cx + 3.5, y - 1.5); c.stroke()
+        const btn = (x, fill) => { glass(c, x - 23, y - 23, 46, 46, 23, fill, fill === '#1c1c1e' ? 14 : 6) }
+        btn(229, 'rgba(255,255,255,0.55)'); btn(287, 'rgba(255,255,255,0.55)')
+        c.strokeStyle = '#1f1f1f'; c.lineWidth = 2; c.lineCap = 'round'
+        c.beginPath(); c.arc(229, y, 7.5, -2.4, 2.9); c.stroke(); c.beginPath(); c.moveTo(222, y - 9); c.lineTo(222.5, y - 4); c.lineTo(227.5, y - 4.5); c.stroke()
+        c.fillStyle = '#1f1f1f'; c.fillRect(282.5, y - 7, 3, 14); c.fillRect(288.5, y - 7, 3, 14)
+        const press = 1 - 0.08 * bump(t, stopAt, stopAt + 0.25)
+        c.save(); c.translate(345, y); c.scale(press, press); c.translate(-345, -y)
+        btn(345, '#1c1c1e')
+        const g = c.createLinearGradient(337, y - 8, 353, y + 8); g.addColorStop(0, '#CDEBFF'); g.addColorStop(1, '#3E8EF7')
+        c.fillStyle = g; c.beginPath(); c.roundRect(337, y - 8, 16, 16, 3.5); c.fill()
+        c.restore(); c.restore()
+      }
+      function statusBar(c) {
+        tx(c, '9:41', 52, 30, 16, { w: 600 })
+        c.fillStyle = '#1f1f1f'; [0, 1, 2, 3].forEach((i) => c.fillRect(298 + i * 5, 34 - (i + 1) * 2.6, 3, (i + 1) * 2.6))
+        c.beginPath(); c.roundRect(323, 24, 23, 12, 3.5); c.lineWidth = 1; c.strokeStyle = 'rgba(31,31,31,0.4)'; c.stroke(); c.beginPath(); c.roundRect(325, 26, 19, 8, 2); c.fill()
+        glass(c, 22, 62, 44, 44, 22, 'rgba(255,255,255,0.55)', 4)
+        c.strokeStyle = '#1f1f1f'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(47, 77); c.lineTo(40, 84); c.lineTo(47, 91); c.stroke()
+      }
+      function processing(c, t, al) {
+        if (al <= 0.01) return
+        c.save(); c.globalAlpha = al; c.font = `500 17px ${UI}`; c.textAlign = 'center'; c.textBaseline = 'middle'
+        const g = c.createLinearGradient(120, 0, 270, 0), p = (t * 0.8) % 1
+        g.addColorStop(0, '#9fb0b6'); g.addColorStop(clamp(p - 0.15), '#9fb0b6'); g.addColorStop(p, BLUE); g.addColorStop(clamp(p + 0.15), '#9fb0b6'); g.addColorStop(1, '#9fb0b6')
+        c.fillStyle = g; c.fillText('Reflecting…', 195, 560); c.restore()
+      }
+      /** The reflection: entry, pattern and plan cards, each rising in. */
+      const CARDS = {
+        entry: { h: 104, draw(c, y, t, T) {
+          glass(c, 22, y, 346, 104, 20, '#ffffff', 18)
+          tx(c, 'TODAY · 2:52 PM · 0:41', 40, y + 24, 11, { w: 500, color: '#98a4a8', ls: 0.8 })
+          tx(c, 'Froze when Priya pushed back', 40, y + 52, 17, { w: 600, color: '#1f2a2e' })
+          ;['Tense', 'Replaying'].forEach((m, i) => { const x = 40 + i * 74; c.fillStyle = 'rgba(97,168,253,0.12)'; c.beginPath(); c.roundRect(x, y + 70, i ? 80 : 58, 22, 11); c.fill(); tx(c, m, x + 11, y + 81, 12, { w: 500, color: '#3d7fd0' }) })
+        } },
+        pattern: { h: 104, draw(c, y) {
+          glass(c, 22, y, 346, 104, 20, '#EEF6FF', 0)
+          c.drawImage(IMG.stars, 40, y + 16, 15, 15)
+          tx(c, 'Pattern', 60, y + 24, 12, { w: 600, color: BLUE, ls: 0.3 })
+          wrap(c, 'Third tense 1:1 this month. You go quiet when you’re put on the spot.', 300, 15.5, 500).forEach((l, i) => tx(c, l, 40, y + 52 + i * 21, 15.5, { w: 500, color: '#2a3438' }))
+        } },
+        plan: { h: 104, draw(c, y, t, T) {
+          glass(c, 22, y, 346, 104, 20, '#ffffff', 18)
+          tx(c, 'BEFORE THURSDAY’S 1:1', 40, y + 24, 11, { w: 600, color: BLUE, ls: 0.8 })
+          wrap(c, 'Write your 3 points. Ask for two minutes up front.', 250, 15.5, 500).forEach((l, i) => tx(c, l, 40, y + 52 + i * 21, 15.5, { w: 500, color: '#2a3438' }))
+          const k = S(t, T.check, T.check + 0.35)
+          c.lineWidth = 1.6; c.strokeStyle = k > 0.5 ? BLUE : '#c9d3d6'; c.fillStyle = BLUE
+          c.beginPath(); c.arc(336, y + 52, 13, 0, TAU); k > 0.5 ? c.fill() : c.stroke()
+          if (k > 0) { c.strokeStyle = '#fff'; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(330, y + 52); c.lineTo(lerp(330, 334, k), lerp(y + 52, y + 57, k)); if (k > 0.5) c.lineTo(lerp(334, 343, (k - 0.5) * 2), lerp(y + 57, y + 46, (k - 0.5) * 2)); c.stroke() }
+        } },
+      }
+      function lockView(c, al) {
+        if (al <= 0.01) return
+        c.save(); c.globalAlpha = al
+        tx(c, 'Wednesday, October 1', 195, 104, 17, { w: 500, color: '#3b484c', align: 'center' })
+        tx(c, '2:47', 195, 168, 84, { w: 300, color: '#2a3438', align: 'center', ls: -2 })
+        glass(c, 16, 300, 358, 82, 22, 'rgba(255,255,255,0.78)', 24)
+        c.fillStyle = '#EEF6FF'; c.beginPath(); c.roundRect(30, 316, 38, 38, 10); c.fill(); c.drawImage(IMG.stars, 39, 325, 20, 20)
+        tx(c, 'Unwind', 80, 324, 14, { w: 600, color: '#1f2a2e' }); tx(c, 'now', 356, 324, 13, { color: '#98a4a8', align: 'right' })
+        tx(c, 'Something changed. Want to talk', 80, 346, 14, { color: '#3b484c' }); tx(c, 'for 30 seconds?', 80, 365, 14, { color: '#3b484c' })
+        c.restore()
+      }
+      function watchUI(c, t, T, k) {
+        const face = 1 - S(t, T.buzz - 0.2, T.buzz + 0.25), note = S(t, T.buzz, T.buzz + 0.45)
+        c.globalAlpha = face
+        tx(c, 'WED 1', 198, 118, 24, { w: 600, color: '#ff8a5c', align: 'center', ls: 1 })
+        tx(c, '2:47', 198, 200, 96, { w: 500, color: '#ffffff', align: 'center', ls: -2 })
+        const hb = pulse(t * 1.7)
+        c.fillStyle = '#ff6b81'; c.font = `600 ${26 + 3 * hb}px ${UI}`; c.textAlign = 'center'; c.fillText('♥', 160, 300); tx(c, '96 BPM', 222, 300, 26, { w: 600, color: '#ff8b9b', align: 'center' })
+        c.globalAlpha = note
+        c.drawImage(IMG.momo, 168, 34, 60, 60)
+        tx(c, 'Something changed.', 34, 132, 29, { w: 600, color: '#ffffff' })
+        wrap(c, 'Your heart rate rose while you were sitting still. How are you feeling?', 330, 21).forEach((l, i) => tx(c, l, 34, 170 + i * 27, 21, { color: '#a9a9a9' }))
+        const p = 1 - 0.05 * bump(t, T.press, T.press + 0.25)
+        c.save(); c.translate(198, 340); c.scale(p, p); c.translate(-198, -340)
+        c.fillStyle = BLUE; c.beginPath(); c.roundRect(30, 313, 336, 54, 27); c.fill(); tx(c, 'Talk for 30 seconds', 198, 340, 21, { w: 500, color: '#fff', align: 'center' })
+        c.restore()
+        c.fillStyle = '#2a2a2a'; c.beginPath(); c.roundRect(30, 380, 336, 50, 25); c.fill(); tx(c, 'Not now', 198, 405, 21, { w: 500, color: '#d6d6d6', align: 'center' })
+        c.globalAlpha = 1
+      }
+
+      // ---------- One story, three cuts ----------
+      function timeline(cfg) {
+        const T = {}
+        let t = 1.9
+        if (cfg.watch) { T.watchIn = t; T.buzz = t + 0.7; T.press = t + 2.3; T.phoneIn = t + 2.6; t = T.phoneIn + 0.8 }
+        else { T.phoneIn = t - 0.3; T.buzz = t + 0.4; T.press = t + 1.9; T.unlock = t + 2.0; t = T.unlock + 0.6 }
+        T.talk = t; t += cfg.words.length * cfg.rate + 0.4
+        if (cfg.prompt) { T.card = t; T.take = t + 1.25; T.answer = t + 1.55; t = T.answer + cfg.answer.length * cfg.rate + 0.4 }
+        T.stop = t; T.proc = t + 0.3; T.cards = t + 1.1
+        t = T.cards + cfg.cards.length * 0.4 + 1.4; T.check = t - 0.8
+        T.calm = t; T.hero = t + 1.3; T.dur = +(T.hero + 1.4).toFixed(1)
+        return T
+      }
+      function film(cfg) {
+        const T = timeline(cfg)
+        const tokens = cfg.words.map((w, i) => ({ text: w, at: T.talk + i * cfg.rate }))
+        if (cfg.prompt) tokens.push({ q: true, text: cfg.question, at: T.answer - 0.15 }, ...cfg.answer.map((w, i) => ({ text: w, at: T.answer + i * cfg.rate })))
+        return {
+          ...cfg.meta, dur: T.dur,
+          draw(a) {
+            const t = a.t
+            const calm = S(t, T.talk + 0.6, T.calm + 0.5)
+            const talking = Math.min(S(t, T.talk - 0.2, T.talk + 0.2), 1 - S(t, T.stop - 0.2, T.stop + 0.3))
+            // Background: warm flush while distressed, cooling as they talk.
+            a.under((c) => {
+              const g = c.createRadialGradient(480, 280, 0, 480, 280, 600), k = 1 - S(t, T.hero - 0.6, T.hero + 0.2)
+              g.addColorStop(0, `rgba(${Math.round(lerp(255, 120, calm))},${Math.round(lerp(176, 200, calm))},${Math.round(lerp(196, 250, calm))},${lerp(0.22, 0.12, calm) * k})`); g.addColorStop(1, 'rgba(245,245,245,0)')
+              c.fillStyle = g; c.fillRect(0, 0, W, 540)
+            })
+
+            // Devices.
+            const ph = Math.min(S(t, T.phoneIn, T.phoneIn + 0.7), 1 - S(t, T.calm, T.calm + 0.7))
+            const pk = 500 / PHONE.h, pw = PHONE.w * pk
+            const py = 280 + (1 - S(t, T.phoneIn, T.phoneIn + 0.7)) * 50
+            const scr = { x: 480 - pw / 2 + PHONE.sx * pk, y: py - 250 + PHONE.sy * pk, w: PHONE.sw * pk, h: PHONE.sh * pk, r: PHONE.r * pk }
+            const u = scr.w / 390
+            // Camera: a slow push-in on the transcript while they talk, on the cards while they read, out for the calm.
+            const inTalk = S(t, T.talk - 0.3, T.talk + 0.9) * (1 - S(t, T.stop, T.proc + 0.6))
+            const inCards = S(t, T.cards - 0.2, T.cards + 0.8) * (1 - S(t, T.calm - 0.5, T.calm + 0.5))
+            const z = 1 + 0.42 * inTalk + 0.36 * inCards
+            const fx = lerp(480, 380, clamp(inTalk + inCards)), fy = lerp(280, lerp(scr.y + 560 * u, scr.y + 300 * u, inCards / Math.max(1e-6, inTalk + inCards)), clamp(inTalk + inCards))
+            const view = (c) => { c.translate(480, 270); c.scale(z, z); c.translate(-fx, -fy) }
+            const cx = (x) => (x - fx) * z + 480, cy = (y) => (y - fy) * z + 270
+
+            // The braid: tangled and warm, gathers into the Watch, lives as the phone's voice glow, then opens into one calm line.
+            const rt = clock(t, (x) => lerp(2.3, 0.45, S(x, T.talk, T.calm + 0.6)))
+            const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, T.talk, T.calm)))) * (1 - calm)
+            const open = { x: 480, y: 300, len: 440, sc: 1 }
+            const glow = { x: 480, y: scr.y + scr.h * 0.9, len: scr.w * 0.8, sc: 0.3 }
+            let p = open
+            if (cfg.watch) p = mix(p, { x: 480, y: 285, len: 110, sc: 0.4 }, S(t, T.watchIn, T.watchIn + 0.7))
+            p = mix(p, glow, S(t, T.phoneIn, T.phoneIn + 0.7))
+            p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
+            p = mix(p, HERO_BRAID, S(t, T.calm + 0.6, T.hero))
+            const bAlpha = cfg.watch ? Math.max(1 - S(t, T.watchIn + 0.2, T.watchIn + 0.7), S(t, T.phoneIn + 0.2, T.phoneIn + 0.8)) : 1
+            const speech = 0.45 + 0.4 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
+            a.braid(curl(cx(p.x), cy(p.y), p.len * z, 0), {
+              env: lerp(lerp(0.85 + 0.15 * hb, 0.1, calm), speech, talking * 0.8), scale: p.sc * z, rt, alpha: bAlpha,
+              chaos: () => lerp(1.3, 0, calm), kAmp: () => lerp(1.6 + 0.3 * hb, 0.45, calm), weights: (k) => (k >= 2 ? lerp(1.25, 0.3, calm) : lerp(0.75, 1.1, calm)),
+            })
+
+            // Opening context: the meeting that just ended, and the body's reaction.
+            const ctxA = Math.min(S(t, 0.25, 0.75), 1 - S(t, 1.6, 2.1))
+            a.draw((c) => {
+              if (ctxA <= 0.01) return
+              c.save(); c.globalAlpha = ctxA
+              const y0 = 104 + (1 - S(t, 0.25, 0.75)) * 10
+              glass(c, 360, y0, 240, 60, 18, 'rgba(255,255,255,0.8)', 20)
+              c.fillStyle = '#EEF6FF'; c.beginPath(); c.roundRect(374, y0 + 12, 36, 36, 10); c.fill()
+              c.strokeStyle = BLUE; c.lineWidth = 1.6; c.beginPath(); c.roundRect(383, y0 + 22, 18, 17, 3); c.moveTo(383, y0 + 27); c.lineTo(401, y0 + 27); c.stroke()
+              tx(c, '1:1 with Priya', 422, y0 + 22, 14.5, { w: 600, color: '#1f2a2e' }); tx(c, '2:00 – 2:45 PM · ended', 422, y0 + 41, 12.5, { color: '#7d8b90' })
+              const h2 = pulse(t * 1.9)
+              glass(c, 404, 452, 152, 44, 22, 'rgba(255,255,255,0.8)', 16)
+              c.fillStyle = '#ff6b81'; c.font = `600 ${15 + 3 * h2}px ${UI}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('♥', 428, 474)
+              tx(c, '96 BPM', 444, 474, 14.5, { w: 600, color: '#1f2a2e' }); tx(c, 'HRV ↓', 508, 474, 13, { w: 500, color: '#7d8b90' })
+              c.restore()
+            })
+
+            // Apple Watch: face → haptic → notification → tap.
+            if (cfg.watch) {
+              const wa = Math.min(S(t, T.watchIn, T.watchIn + 0.6), 1 - S(t, T.phoneIn - 0.1, T.phoneIn + 0.5))
+              const shake = Math.sin(t * 75) * 2.2 * (bump(t, T.buzz, T.buzz + 0.25) + bump(t, T.buzz + 0.35, T.buzz + 0.6))
+              const wx = 480 - S(t, T.phoneIn - 0.1, T.phoneIn + 0.6) * 170 + shake, wy = 285 + (1 - S(t, T.watchIn, T.watchIn + 0.6)) * 40
+              const wk = 300 / WATCH.h
+              a.draw((c) => {
+                if (wa <= 0.01) return
+                c.save(); c.globalAlpha = wa
+                const x0 = wx - (WATCH.w * wk) / 2, y0 = wy - 150
+                c.save(); c.translate(x0 + WATCH.sx * wk, y0 + WATCH.sy * wk); c.scale(wk, wk)
+                c.fillStyle = '#000'; c.beginPath(); c.roundRect(0, 0, WATCH.sw, WATCH.sh, 70); c.fill(); c.clip()
+                c.globalAlpha = wa; watchUI(c, t, T, wk); c.restore()
+                c.globalAlpha = wa; c.drawImage(IMG.watch, x0, y0, WATCH.w * wk, 300)
+                c.restore()
+              })
+              a.ripple(wx, wy, T.buzz, { r0: 110, r1: 200, n: 2, dur: 1.4, gap: 0.35, alpha: 0.35, lw: 1.2 })
+              a.ripple(wx, wy - 150 + (WATCH.sy + 340) * wk, T.press, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
+            }
+
+            // iPhone: lock banner (phone-only cut) → voice screen → question → reflection.
+            const shown = (from, to, f = 0.35) => Math.min(S(t, from, from + f), 1 - S(t, to, to + f))
+            a.under((c) => {
+              if (ph <= 0.01) return
+              c.save(); view(c); c.globalAlpha = ph; c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip()
+              const g = c.createLinearGradient(0, scr.y, 0, scr.y + scr.h)
+              g.addColorStop(0, '#fbfdff'); g.addColorStop(0.55, '#f1f6fb'); g.addColorStop(1, `rgb(${Math.round(lerp(214, 176, talking))},${Math.round(lerp(234, 216, talking))},${Math.round(lerp(250, 252, talking))})`)
+              c.fillStyle = g; c.fillRect(scr.x, scr.y, scr.w, scr.h); c.restore()
+            })
+            a.draw((c) => {
+              if (ph <= 0.01) return
+              const lift = 1 - 0.03 * S(t, T.calm, T.calm + 0.7)
+              c.save(); view(c); c.globalAlpha = ph
+              c.translate(480, py); c.scale(lift, lift); c.translate(-480, -py)
+              c.save(); c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip(); c.translate(scr.x, scr.y); c.scale(u, u)
+              statusBar(c)
+              lockView(c, cfg.watch ? 0 : 1 - S(t, T.unlock, T.unlock + 0.45))
+              const voice = cfg.watch ? 1 : S(t, T.unlock, T.unlock + 0.45)
+              c.globalAlpha = ph * voice * (1 - S(t, T.cards - 0.4, T.cards))
+              momo(c, 195, 300, 150, t, talking)
+              c.globalAlpha = ph * voice
+              transcript(c, tokens, t, 1 - S(t, T.proc - 0.1, T.proc + 0.3))
+              if (cfg.prompt) promptCard(c, cfg.question, t, T.card, T.take)
+              controls(c, t, voice * (1 - S(t, T.stop + 0.15, T.stop + 0.55)), cfg.prompt ? 'Dynamic' : 'Freeform', T.stop)
+              processing(c, t, shown(T.proc, T.cards - 0.2))
+              if (t > T.cards - 0.1) {
+                tx(c, 'Your reflection', 30, 140, 22, { w: 600, color: '#1f2a2e' })
+                let y = 170
+                cfg.cards.forEach((name, i) => {
+                  const e = S(t, T.cards + i * 0.4, T.cards + i * 0.4 + 0.55)
+                  c.globalAlpha = ph * e; CARDS[name].draw(c, y + (1 - e) * 18, t, T); y += CARDS[name].h + 12
+                })
+              }
+              c.restore()
+              c.globalAlpha = ph; c.drawImage(IMG.phone, 480 - pw / 2, py - 250, pw, 500)
+              c.restore()
+            })
+            const sx = (x) => cx(scr.x + x * u), sy = (y) => cy(scr.y + y * u)
+            if (!cfg.watch) a.ripple(sx(195), sy(341), T.press, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
+            if (cfg.prompt) a.ripple(sx(195), sy(140), T.take, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
+            a.ripple(sx(345), sy(790), T.stop, { r0: 4, r1: 26, n: 1, dur: 0.6, alpha: 0.6 })
+
+            // A few quiet captions, to the left of the devices.
+            cfg.say(T).forEach(([t0, t1, s]) => a.text(s, 92, 272, { size: 22, color: C.ink9, align: 'left', a: Math.min(S(t, t0, t0 + 0.5), 1 - S(t, t1 - 0.5, t1)) }))
+            a.hero(T.hero)
+          },
+        }
+      }
+
+      const WORDS = 'Priya pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'.split(' ')
+      const FILMS = [
+        film({
+          watch: true, prompt: true, rate: 0.17, words: WORDS,
+          question: 'What would you say, if it happened again?', answer: 'That I need two more weeks, and why.'.split(' '),
+          cards: ['entry', 'pattern', 'plan'],
+          say: (T) => [[0.2, 1.9, 'Right after the 1:1.'], [T.watchIn + 0.4, T.phoneIn + 0.2, 'Their body notices first.'], [T.talk + 0.6, T.stop - 0.4, 'So they say it out loud.'], [T.cards + 0.3, T.calm + 0.6, 'And leave a little clearer.']],
+          meta: {
+            title: 'The full moment',
+            idea: 'Everything the system does, at a pace you can watch: the meeting just ended and the heart rate is up; the Watch buzzes; they tap “Talk for 30 seconds”; the phone listens while Momo nods along; Dynamic mode asks one question; the reflection comes back as an entry, a pattern and a plan they tick off.',
+            beats: ['0–1.9 1:1 ended, 96 BPM', 'Watch buzzes, tap', 'they talk (transcript)', 'Dynamic question + answer', 'entry · pattern · plan ✓', 'calm → hero'],
+            keeps: 'Biometrics + calendar context, Watch prompt, voice journal, Dynamic question, entry, AI pattern, plan.',
+            cuts: 'Email; the Guided (WOOP / Gross) frameworks.',
+            tradeoff: 'The most complete and the most intimate (you read their words), at about 18 s. Easy to trim later by dropping the question or a card.',
+          },
+        }),
+        film({
+          watch: true, prompt: false, rate: 0.15, words: 'Priya pushed back in front of everyone and I froze. I keep replaying it.'.split(' '),
+          cards: ['pattern', 'plan'],
+          say: (T) => [[0.2, 1.9, 'Right after the 1:1.'], [T.talk + 0.4, T.stop - 0.3, 'Thirty seconds to say it.'], [T.cards + 0.3, T.calm + 0.6, 'A little clearer.']],
+          meta: {
+            title: 'Short cut',
+            idea: 'The same moment, trimmed: Watch tap, a shorter confession in Freeform mode, then straight to the pattern and the plan.',
+            beats: ['1:1 ended', 'Watch tap', 'short transcript', 'pattern · plan ✓', 'calm → hero'],
+            keeps: 'Watch → phone, voice, pattern, plan.',
+            cuts: 'The Dynamic question and the entry card.',
+            tradeoff: 'Lands in about 14 s and still feels personal; loses the “it asks you a good question” beat that shows the AI listening.',
+          },
+        }),
+        film({
+          watch: false, prompt: true, rate: 0.17, words: WORDS,
+          question: 'What would you say, if it happened again?', answer: 'That I need two more weeks, and why.'.split(' '),
+          cards: ['pattern', 'plan'],
+          say: (T) => [[0.2, 1.7, 'Right after the 1:1.'], [T.talk + 0.6, T.stop - 0.4, 'They say it out loud.'], [T.cards + 0.3, T.calm + 0.6, 'A little clearer.']],
+          meta: {
+            title: 'Phone only',
+            idea: 'Skips the Watch: the nudge arrives as an Unwind notification on the lock screen, then the voice screen, the Dynamic question and the reflection.',
+            beats: ['1:1 ended', 'lock-screen nudge', 'they talk', 'Dynamic question', 'pattern · plan ✓', 'calm → hero'],
+            keeps: 'The nudge, voice, Dynamic question, pattern, plan; one device the whole time.',
+            cuts: 'The Apple Watch and the body-first idea.',
+            tradeoff: 'Simplest staging (one device, no hand-off), but the “your body notices first” part of the system disappears.',
+          },
+        }),
+      ]
+
+      await mount(FILMS)
+    </script>
+  </body>
+</html>
