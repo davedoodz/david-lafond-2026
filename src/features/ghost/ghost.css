@@ -211,7 +211,8 @@
   opacity: 1;
   translate: 0 -50%;
   scale: 1;
-  transition-delay: 160ms;
+  /* Entrance waits so Davebot can hop first; hover scale must respond immediately. */
+  transition-delay: 160ms, 160ms, 0ms;
 }
 
 /* The pill sits outside the button's 36px layout box. Make the visible cue part of the
