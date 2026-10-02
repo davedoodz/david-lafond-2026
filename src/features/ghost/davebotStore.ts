@@ -27,6 +27,20 @@ export function getDavebotTrigger(): HTMLElement | null {
   return triggerEl
 }
 
+/** Text the reader highlighted when they opened Davebot from the selection cue. Read once. */
+let pendingQuote: string | null = null
+
+export function openDavebotAbout(quote: string) {
+  pendingQuote = quote
+  openDavebot()
+}
+
+export function takeDavebotQuote(): string | null {
+  const quote = pendingQuote
+  pendingQuote = null
+  return quote
+}
+
 export function openDavebot() {
   if (open) return
   open = true

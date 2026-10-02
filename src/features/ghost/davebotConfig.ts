@@ -52,6 +52,18 @@ export const DAVEBOT_CONFIG = {
     color: colorField('#f2b544'),
     _collapsed: false,
   },
+  /** Highlighting text: Davebot hops and a pill offers to answer about it. */
+  selection: {
+    enabled: true,
+    pill: textField('Ask me about this'),
+    /** Question sent with the highlighted text when the reader clicks. */
+    prompt: textField('Tell me more about'),
+    /** Ignore tiny selections (characters). */
+    minChars: [3, 1, 40, 1] as [number, number, number, number],
+    hopMs: [620, 200, 1400, 10] as [number, number, number, number],
+    hopHeight: [7, 0, 16, 0.5] as [number, number, number, number],
+    _collapsed: false,
+  },
   text: {
     placeholder: textField('Ask Davebot anything…'),
     suggestedLabel: textField('Suggested'),

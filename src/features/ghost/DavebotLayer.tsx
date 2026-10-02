@@ -5,7 +5,7 @@ import { useTuning } from '../../tuning/useTuning'
 import { navigate, type Route } from '../../lib/router'
 import { DAVEBOT_CONFIG, DAVEBOT_PANEL } from './davebotConfig'
 import { toMotionTransition } from './motionTransition'
-import { closeDavebot, getDavebotTrigger, openDavebot, useDavebotOpen } from './davebotStore'
+import { closeDavebot, getDavebotTrigger, openDavebot, takeDavebotQuote, useDavebotOpen } from './davebotStore'
 import { DAVEBOT_ENTRY_BY_ID, rankEntries, type AnswerSegment } from './davebotIndex'
 import { GhostMark } from './GhostMark'
 import './davebot.css'
@@ -282,6 +282,13 @@ function DavebotPanel() {
     setRows(buildRecoveryRows(currentEntryIdRef.current))
     setSelectedIndex(0)
   }, [answer, revealCount])
+
+  // Opened from the selection cue: ask about the highlighted text straight away.
+  useEffect(() => {
+    const quote = takeDavebotQuote()
+    if (quote) void runQuery(quote)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function runQuery(query: string, excludeId?: string) {
     const value = query.trim()
