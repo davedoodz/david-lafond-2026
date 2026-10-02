@@ -191,7 +191,7 @@
   transition:
     opacity 220ms ease,
     translate 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    scale 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    scale 220ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 .nav:not([data-ghost-side='end']) .ghost-button__pill {
