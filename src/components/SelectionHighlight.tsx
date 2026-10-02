@@ -57,15 +57,19 @@ export function SelectionHighlight() {
         for (let i = 0; i < selection.rangeCount; i += 1) collectRects(selection.getRangeAt(i), rects)
       }
 
-      // Reuse box elements; round outward so neighbouring runs never leave a hairline seam.
+      // Expand each fragment by one CSS pixel on every side. Range rects often
+      // land on different subpixels (especially around inline boundaries), which
+      // otherwise leaves a visible hairline between adjacent highlighted pieces.
       while (host.childElementCount > rects.length) host.lastElementChild!.remove()
       while (host.childElementCount < rects.length) host.appendChild(document.createElement('div'))
       const { scrollX, scrollY } = window
       rects.forEach((rect, i) => {
         const box = host.children[i] as HTMLDivElement
-        const left = Math.floor(rect.left + scrollX)
-        const top = Math.floor(rect.top + scrollY)
-        box.style.cssText = `left:${left}px;top:${top}px;width:${Math.ceil(rect.right + scrollX) - left}px;height:${Math.ceil(rect.bottom + scrollY) - top}px`
+        const left = Math.floor(rect.left + scrollX) - 1
+        const top = Math.floor(rect.top + scrollY) - 1
+        const right = Math.ceil(rect.right + scrollX) + 1
+        const bottom = Math.ceil(rect.bottom + scrollY) + 1
+        box.style.cssText = `left:${left}px;top:${top}px;width:${right - left}px;height:${bottom - top}px`
       })
     }
     const schedule = (): void => {
