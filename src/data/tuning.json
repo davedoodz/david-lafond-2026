@@ -501,5 +501,10 @@
     "harvard-mit": false,
     "unwind": false,
     "ecofabriq": false
+  },
+  "Footer links": {
+    "icons": {
+      "copyY": -2
+    }
   }
 }
