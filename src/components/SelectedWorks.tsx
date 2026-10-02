@@ -94,6 +94,8 @@ const CONFIG = {
   /** Vertical rhythm. Gaps are in % of viewport height so one project fills each stop. */
   spacing: {
     snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'off' },
+    /** Native scroll keeps its momentum, but a fast fling can't fly past a project (scroll-snap-stop). */
+    noSkip: { type: 'boolean' as const, default: false },
     /** Sheet top edge → first project. */
     firstDesktop: [210, 0, 800, 1] as Tuple,
     gapDesktop: [35, 5, 100, 1] as Tuple,
@@ -314,14 +316,17 @@ export function SelectedWorks() {
   // the attribute is gone in the same commit that swaps pages: otherwise the next
   // page would snap to its footer before this cleanup ran.
   const snap = t.spacing.snap
+  const noSkip = t.spacing.noSkip
   useLayoutEffect(() => {
     if (snap === 'off') return
     const root = document.documentElement
     root.dataset.worksSnap = snap
+    if (noSkip) root.dataset.worksNoSkip = ''
     return () => {
       delete root.dataset.worksSnap
+      delete root.dataset.worksNoSkip
     }
-  }, [snap])
+  }, [snap, noSkip])
 
   const sp = t.spacing
   const style = {
