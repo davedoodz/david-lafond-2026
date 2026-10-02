@@ -14,7 +14,7 @@
       <header>
         <div>
           <h1>“Your body notices first” — six variants</h1>
-          <p class="sub">One scenario for the persona (the high-functioning overthinker): Wednesday, 2:47 PM, just out of a tense 1:1 with their manager, Priya. Each variant keeps the same braid and cuts a different amount of the system, from the full chain to a three-beat glimpse. All are under 8 s.</p>
+          <p class="sub">One scenario for the persona (the high-functioning overthinker): Wednesday, 2:47 PM, just out of a tense 1:1 with their manager, Priya. Each variant keeps the same braid and cuts a different amount of the system, from the full chain to a three-beat glimpse. All are under 8 s and end by assembling the real case-study hero around the braid, which settles into its slot above the title.</p>
         </div>
         <div class="seg" role="group" aria-label="Typeface">
           <button type="button" data-view="both" aria-pressed="true">Both</button>
@@ -25,7 +25,7 @@
       <div id="list"></div>
     </main>
     <script type="module">
-      import { W, TAU, C, clamp, lerp, seg, ease, io, curl, mount } from './unwind-intro-kit.js'
+      import { W, TAU, C, clamp, lerp, seg, ease, io, curl, mount, HERO_BRAID } from './unwind-intro-kit.js'
 
       // ---------- The one scenario ----------
       const S = {
@@ -41,7 +41,8 @@
         insight: 'Third 1:1 this month that left you tense.',
         plan: 'Before Thursday’s 1:1: write your 3 points.',
       }
-      const LOCK = { y: 214, len: 300, sc: 0.62 }
+      /** Where every film's braid ends: its slot above the title in the real hero. */
+      const LOCK = HERO_BRAID
 
       // ---------- Devices (ink only; the braid is placed beside them) ----------
       function watch(a, cx, cy, s, al, k = 1) {
@@ -102,7 +103,7 @@
       const beat = (t, bpm = 1.6) => Math.exp(-(((t * bpm) % 1) * 7))
       const speech = (t) => 0.35 + 0.4 * Math.abs(Math.sin(t * 9.1) * Math.sin(t * 3.7 + 1))
       /** Moves a braid placement {x, y, len, sc} toward the lockup position. */
-      const toLockup = (p, k) => ({ x: lerp(p.x, W / 2, k), y: lerp(p.y, LOCK.y, k), len: lerp(p.len, LOCK.len, k), sc: lerp(p.sc, LOCK.sc, k) })
+      const toLockup = (p, k) => ({ x: lerp(p.x, LOCK.x, k), y: lerp(p.y, LOCK.y, k), len: lerp(p.len, LOCK.len, k), sc: lerp(p.sc, LOCK.sc, k) })
       const mix = (p, q, k) => ({ x: lerp(p.x, q.x, k), y: lerp(p.y, q.y, k), len: lerp(p.len, q.len, k), sc: lerp(p.sc, q.sc, k) })
 
       const FILMS = [
@@ -110,7 +111,7 @@
           title: 'The full chain',
           dur: 8,
           idea: 'Everything in the vision, in order: body signals and the day’s context (calendar, email) feed in, the Watch asks at the right moment, the iPhone listens, then the entries view shows the pattern and a plan. It is a complete product glimpse, at the edge of what a first-time viewer can read.',
-          beats: ['0–2 body + calendar + email', '2–3.3 Watch asks', '3.3–4.9 iPhone listens', '4.9–6.3 entries → pattern → plan', '6.5 lockup'],
+          beats: ['0–2 body + calendar + email', '2–3.3 Watch asks', '3.3–4.9 iPhone listens', '4.9–6.3 entries → pattern → plan', '6.5 → the case-study hero'],
           keeps: 'Biometrics, calendar, email, Watch prompt, voice journal, entries, AI pattern, plan.',
           cuts: 'Nothing conceptual; each step gets about 1.3 s.',
           tradeoff: 'Most complete and most true to the vision, but the busiest. Someone new to the project may catch the arc without reading every label.',
@@ -119,7 +120,7 @@
             const toWatch = ease.inOut(seg(t, 1.95, 2.45))
             const toPhone = ease.inOut(seg(t, 3.2, 3.7))
             const calm = ease.inOut(seg(t, 4.9, 5.5))
-            const lock = ease.inOut(seg(t, 6.25, 6.95))
+            const lock = ease.inOut(seg(t, 5.85, 6.65))
             let p = { x: W / 2, y: 270, len: 560, sc: 1 }
             p = mix(p, { x: W / 2, y: 270, len: 120, sc: 0.3 }, toWatch)
             p = mix(p, { x: 600, y: 412, len: 150, sc: 0.38 }, toPhone)
@@ -150,14 +151,14 @@
             a.text('You talk it through.', 280, 270, { size: 22, a: io(t, 3.6, 4.95) })
             a.text('AI finds the pattern', 280, 254, { size: 22, a: io(t, 5.05, 6.15) })
             a.text('and plans the next one.', 280, 284, { size: 22, a: io(t, 5.2, 6.15) })
-            a.lockup(6.6, 'Reflection that finds the right moment.')
+            a.hero(6.6)
           },
         },
         {
           title: 'Signals converge',
           dur: 7.5,
           idea: 'The braid is literally the multimodal idea. Three strands (body, calendar, email) run on their own rows, then twist together into one braid at 2:47 PM: the moment Unwind decides to ask. The braid then becomes the voice, and settles into a plan.',
-          beats: ['0–2.3 three strands, three sources', '2.3–3.2 they braid: 2:47 PM', '3.4–4.8 you talk', '4.8–6 pattern + plan', '6.2 lockup'],
+          beats: ['0–2.3 three strands, three sources', '2.3–3.2 they braid: 2:47 PM', '3.4–4.8 you talk', '4.8–6 pattern + plan', '6.2 → the case-study hero'],
           keeps: 'Multimodal context as the core visual, the timing decision, voice, AI pattern, plan.',
           cuts: 'Device drawings (the Watch is a ripple and a label), the entries list.',
           tradeoff: 'The clearest picture of “many signals → one moment”, and it uses the braid best. You lose the hardware story: viewers won’t see that it lives on a Watch and an iPhone.',
@@ -165,7 +166,7 @@
             const t = a.t
             const merge = ease.inOut(seg(t, 2.25, 3.1))
             const calm = ease.inOut(seg(t, 4.85, 5.5))
-            const lock = ease.inOut(seg(t, 6.0, 6.75))
+            const lock = ease.inOut(seg(t, 5.45, 6.25))
             const ROWS = [
               { k: 0, ic: 'heart', title: 'Body', data: `${S.hr} · ${S.hrv}` },
               { k: 1, ic: 'cal', title: 'Calendar', data: `${S.meet} · ${S.ended}` },
@@ -194,14 +195,14 @@
             a.label('From your entries', W / 2, 140, io(t, 4.9, 6.0))
             a.text(S.insight, W / 2, 176, { size: 22, a: io(t, 4.95, 6.0) })
             a.chip(S.plan, W / 2, 372, { icon: 'cal', a: io(t, 5.2, 6.0), size: 14 })
-            a.lockup(6.2, 'Many signals. One right moment.')
+            a.hero(6.2)
           },
         },
         {
           title: 'One afternoon',
           dur: 7.5,
           idea: 'The braid is the person’s afternoon. A calendar block marks the 1:1, the line knots during it, and a playhead moves through the day. At 2:47, when the meeting is over and the next half hour is free, the Watch asks. The film ends on Thursday’s 1:1 with a plan already attached.',
-          beats: ['0–2.4 the afternoon plays', '2.4 2:47: meeting over, time free', '3.3–4.6 you talk', '4.7–6 Thursday, with a plan', '6.2 lockup'],
+          beats: ['0–2.4 the afternoon plays', '2.4 2:47: meeting over, time free', '3.3–4.6 you talk', '4.7–6 Thursday, with a plan', '6.2 → the case-study hero'],
           keeps: 'Why this moment (meeting ended + free time + body), voice, plan carried into the calendar.',
           cuts: 'Device drawings, the entries list, email.',
           tradeoff: 'Best at explaining timing: the reason it asks at 2:47 is visible. Reads as a calendar product for a second or two before the voice step lands.',
@@ -211,7 +212,7 @@
             const ph = lerp(12, 14.78, ease.inOut(seg(t, 0.3, 2.3)))
             const spike = ease.out(seg(ph, 13.9, 14.4)) * (1 - ease.inOut(seg(t, 4.7, 5.6)))
             const voice = io(t, 3.3, 4.7, 0.25)
-            const lock = ease.inOut(seg(t, 6.0, 6.75))
+            const lock = ease.inOut(seg(t, 5.45, 6.25))
             const u = (h) => (X(h) - 120) / 720
             const ampAt = (x) => 0.25 + spike * 2.3 * Math.exp(-(((x - u(14.37)) / 0.05) ** 2)) + voice * 1.6 * Math.exp(-(((x - u(14.78)) / 0.05) ** 2))
             const p = toLockup({ x: W / 2, y: 300, len: 720, sc: 1 }, lock)
@@ -240,14 +241,14 @@
             a.link(X(14.78), 236, X(17.5) - 60, 236, ease.out(seg(t, 4.7, 5.2)), thu)
             a.chip('Plan: write your 3 points', X(17.5) - 20, 176, { icon: 'spark', a: ease.out(seg(t, 5.05, 5.4)) * day })
             a.text('Next time, you walk in prepared.', W / 2, 92, { size: 20, a: io(t, 4.85, 6.0) })
-            a.lockup(6.2, 'It knows when to ask.')
+            a.hero(6.2)
           },
         },
         {
           title: 'Device relay',
           dur: 7.5,
           idea: 'The concept you picked, made specific. The braid starts as the body’s signal with its context around it, gathers into the Watch for the prompt, moves to the iPhone as the voice, and the same phone then shows the entries, the pattern and the plan.',
-          beats: ['0–1.6 body + meeting context', '1.6–2.9 Watch asks', '2.9–4.6 iPhone listens', '4.6–6 entries → pattern → plan', '6.3 lockup'],
+          beats: ['0–1.6 body + meeting context', '1.6–2.9 Watch asks', '2.9–4.6 iPhone listens', '4.6–6 entries → pattern → plan', '6.3 → the case-study hero'],
           keeps: 'Biometrics, calendar, Watch → iPhone hand-off, voice journal, entries, pattern, plan.',
           cuts: 'Email (calendar alone shows “context”).',
           tradeoff: 'Closest to “your body notices first” and easy to follow because it is one object moving between two devices. Slightly less “multimodal” than variant 02.',
@@ -256,7 +257,7 @@
             const toWatch = ease.inOut(seg(t, 1.5, 2.0))
             const toPhone = ease.inOut(seg(t, 2.9, 3.4))
             const calm = ease.inOut(seg(t, 4.6, 5.2))
-            const lock = ease.inOut(seg(t, 6.05, 6.8))
+            const lock = ease.inOut(seg(t, 5.55, 6.35))
             let p = { x: W / 2, y: 260, len: 560, sc: 1 }
             p = mix(p, { x: W / 2, y: 280, len: 120, sc: 0.3 }, toWatch)
             p = mix(p, { x: W / 2, y: 425, len: 150, sc: 0.38 }, toPhone)
@@ -281,14 +282,14 @@
             a.text('You talk it through.', 210, 270, { size: 22, a: io(t, 3.2, 4.65) })
             a.text('It learns your patterns', 750, 254, { size: 22, a: io(t, 4.8, 6.0) })
             a.text('and plans what’s next.', 750, 284, { size: 22, a: io(t, 4.95, 6.0) })
-            a.lockup(6.3, 'Reflection that finds you in the moment.')
+            a.hero(6.3)
           },
         },
         {
           title: 'Why now?',
           dur: 7.2,
           idea: 'Leads with the intelligence: the film asks “Why now?” and answers with three reasons from different sources (body, calendar, schedule). Then the Watch asks, you talk, and you get a plan. The most direct pitch of the timing engine.',
-          beats: ['0–2.7 Why now? three reasons', '2.8–3.9 Watch asks', '4–5.3 you talk', '5.3–6.1 plan', '6.2 lockup'],
+          beats: ['0–2.7 Why now? three reasons', '2.8–3.9 Watch asks', '4–5.3 you talk', '5.3–6.1 plan', '6.2 → the case-study hero'],
           keeps: 'Context reasoning (body + calendar + free time), Watch prompt, voice, plan.',
           cuts: 'The entries list and AI pattern, email, the iPhone drawing.',
           tradeoff: 'Very legible, almost a headline. It explains the “why” better than any other variant but sells the reflection side (entries, review with AI) only in one line.',
@@ -297,7 +298,7 @@
             const toWatch = ease.inOut(seg(t, 2.7, 3.2))
             const back = ease.inOut(seg(t, 3.9, 4.3))
             const calm = ease.inOut(seg(t, 5.25, 5.8))
-            const lock = ease.inOut(seg(t, 6.0, 6.75))
+            const lock = ease.inOut(seg(t, 5.45, 6.25))
             let p = { x: W / 2, y: 400, len: 520, sc: 0.95 }
             p = mix(p, { x: W / 2, y: 280, len: 110, sc: 0.3 }, toWatch)
             p = mix(p, { x: W / 2, y: 300, len: 560, sc: 1 }, back)
@@ -318,14 +319,14 @@
             transcript(a, W / 2, 168, 4.15, 22, io(t, 4.1, 5.25))
             a.label('Next time', W / 2, 150, io(t, 5.35, 6.05))
             a.text(S.plan, W / 2, 186, { size: 24, a: io(t, 5.4, 6.05) })
-            a.lockup(6.2, 'The right moment to reflect.')
+            a.hero(6.2)
           },
         },
         {
           title: 'Three-beat glimpse',
           dur: 6.8,
           idea: 'The lightest version: three short lines over the braid, no data, no devices. Notices → you talk → you plan. Only the braid changes behaviour (heartbeat, voice, calm line), so it reads instantly even with no context.',
-          beats: ['0–2 it notices (heartbeat)', '2–4.2 you talk (voice)', '4.2–5.5 you plan (calm)', '5.6 lockup'],
+          beats: ['0–2 it notices (heartbeat)', '2–4.2 you talk (voice)', '4.2–5.5 you plan (calm)', '5.6 → the case-study hero'],
           keeps: 'The arc of the product and the braid as its single symbol.',
           cuts: 'All specifics: devices, data sources, entries, AI review.',
           tradeoff: 'Easiest to follow and the most elegant, but generic: it could describe many wellness apps. The case study below has to do the explaining.',
@@ -333,7 +334,7 @@
             const t = a.t
             const voice = io(t, 2.0, 4.25, 0.35)
             const calm = ease.inOut(seg(t, 4.1, 4.8))
-            const lock = ease.inOut(seg(t, 5.4, 6.1))
+            const lock = ease.inOut(seg(t, 4.85, 5.65))
             const p = toLockup({ x: W / 2, y: 290, len: 600, sc: 1 }, lock)
             let env = lerp(0.18 + 0.6 * beat(t, lerp(1.1, 1.9, seg(t, 0, 1.8))), speech(t), voice); env = lerp(env, 0.05, calm)
             a.braid(curl(p.x, p.y, p.len, 0), { env, scale: p.sc })
@@ -344,7 +345,7 @@
             a.text('You talk it through.', W / 2, 192, { size: 30, a: io(t, 2.15, 4.15) })
             a.label('AI · from your entries', W / 2, 150, io(t, 4.2, 5.45))
             a.text('You plan what’s next.', W / 2, 192, { size: 30, a: io(t, 4.3, 5.45) })
-            a.lockup(5.6, 'Reflection that finds you in the moment.')
+            a.hero(5.6)
           },
         },
       ]

@@ -12,6 +12,24 @@ export const FONTS = {
   test: { label: 'Test Family', family: "'Test Family'", ls: 0 },
 }
 
+/**
+ * The real Unwind hero (1440×810 capture of /work/unwind, scaled to the 960×540 film) as
+ * separate layers, so a film can end by assembling the page itself. Boxes are film px.
+ * The braid's place in the hero (the eyebrow slot) is HERO_BRAID; films move their braid there.
+ */
+export const HERO_LAYERS = {
+  nav: [29.33, 24.33, 903.33, 16.67],
+  side: [29.33, 95.0, 80.0, 256.67],
+  title: [219.0, 107.67, 520.67, 70.0],
+  meta: [256.67, 199.0, 447.67, 26.67],
+  logos: [318.0, 256.67, 323.33, 27.33],
+  watch: [333.33, 353.0, 111.67, 187.0],
+  phone: [485.67, 303.33, 147.67, 236.67],
+}
+/** Braid centre, strip length and scale matching the live hero band (hero.width 280 at 1440px). */
+export const HERO_BRAID = { x: 480, y: 45.3, len: 187, sc: 0.336 }
+const heroImg = Object.fromEntries(Object.keys(HERO_LAYERS).map((k) => { const i = new Image(); i.src = new URL(`./assets/hero/${k}.webp`, import.meta.url).href; return [k, i] }))
+
 export const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
 export const lerp = (a, b, t) => a + (b - a) * t
 export const seg = (t, a, b) => clamp((t - a) / (b - a))
@@ -193,6 +211,20 @@ export function makeApi(ctx, L, F, t) {
       api.text(tagline, W / 2, y + 56, { size: 18, color: C.s6, a: ease.out(seg(t, t0 + 0.25, t0 + 0.9)) })
       return k
     },
+    /**
+     * Ends a film on the real case-study hero: nav, sidebar, title, meta, logos, then the Watch
+     * and iPhone rise in, staggered from t0. Returns 0-1 for moving the braid into its hero slot.
+     */
+    hero(t0) {
+      const ORDER = [['nav', 0, 0], ['side', 0.05, 0], ['title', 0.1, 14], ['meta', 0.2, 12], ['logos', 0.28, 10], ['watch', 0.34, 40], ['phone', 0.42, 40]]
+      for (const [k, d, dy] of ORDER) {
+        const e = ease.out(seg(t, t0 + d, t0 + d + 0.6))
+        if (e <= 0.01) continue
+        const [x, y, w, h] = HERO_LAYERS[k]
+        ink.push((c) => { c.save(); c.globalAlpha = e; c.imageSmoothingQuality = 'high'; c.drawImage(heroImg[k], x, y + (1 - e) * dy, w, h); c.restore() })
+      }
+      return ease.inOut(seg(t, t0 - 0.2, t0 + 0.6))
+    },
     flush(c) { ink.forEach((fn) => fn(c)) },
   }
   return api
@@ -272,6 +304,7 @@ export async function mount(FILMS, { dur = 7.5 } = {}) {
   window.seek = (i, t) => { const r = rows[i]; r.t = t; r.playing = false; sync(r); render(r) }
   document.addEventListener('seek', (e) => window.seek(...e.detail))
   await Promise.all(['400 20px Inter', 'italic 400 20px Inter', '500 20px Inter', "400 20px 'Test Family'", "italic 400 20px 'Test Family'"].map((f) => document.fonts.load(f).catch(() => {})))
+  await Promise.all(Object.values(heroImg).map((i) => i.decode().catch(() => {})))
   document.documentElement.dataset.ready = ''
   requestAnimationFrame(tick)
 }
