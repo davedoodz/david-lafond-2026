@@ -46,12 +46,12 @@ export type Story = {
 type Look = Pick<Story, 'layout' | 'art' | 'opportunityArt' | 'motion'>
 /** Named combinations to compare quickly; 'custom' falls through to the individual dials. */
 const STORY_PRESETS: Record<string, Look> = {
-  'calm cards': { layout: 'art left', art: 'card', opportunityArt: 'three', motion: 'draw' },
-  editorial: { layout: 'alternate', art: 'line', opportunityArt: 'three', motion: 'draw' },
-  converge: { layout: 'art right', art: 'card', opportunityArt: 'converge', motion: 'pulse' },
-  outline: { layout: 'art left', art: 'outline', opportunityArt: 'single', motion: 'pulse' },
-  minimal: { layout: 'art left', art: 'none', opportunityArt: 'three', motion: 'off' },
-  columns: { layout: 'columns', art: 'card', opportunityArt: 'three', motion: 'draw' },
+  'calm cards': { layout: 'stacked', art: 'card', opportunityArt: 'three', motion: 'draw' },
+  editorial: { layout: 'stacked', art: 'line', opportunityArt: 'three', motion: 'draw' },
+  converge: { layout: 'stacked', art: 'card', opportunityArt: 'converge', motion: 'pulse' },
+  outline: { layout: 'stacked', art: 'outline', opportunityArt: 'single', motion: 'pulse' },
+  minimal: { layout: 'stacked', art: 'none', opportunityArt: 'three', motion: 'off' },
+  columns: { layout: 'stacked', art: 'card', opportunityArt: 'three', motion: 'draw' },
 }
 
 /** `arts` replaces the Unwind graphics (problem, opportunity, solution) for another case study. */
