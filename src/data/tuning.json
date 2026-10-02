@@ -521,6 +521,10 @@
   "Footer links": {
     "icons": {
       "copyY": -2
+    },
+    "toast": {
+      "holdMs": 2300,
+      "checkY": -1.5
     }
   },
   "Footer": {

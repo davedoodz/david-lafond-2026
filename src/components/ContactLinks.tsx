@@ -17,6 +17,13 @@ const CONFIG = {
     /** Distance from the bottom of the window (px); centred horizontally. */
     bottom: [32, 0, 400, 1] as [number, number, number, number],
     holdMs: [2200, 600, 6000, 100] as [number, number, number, number],
+    /** Checkmark nudge up (−) or down (+), in px. */
+    checkY: [0, -20, 20, 0.5] as [number, number, number, number],
+    checkAnimation: {
+      type: 'select' as const,
+      options: ['draw', 'pop', 'bounce', 'stamp', 'slide'],
+      default: 'draw',
+    },
     rise: [8, 0, 24, 1] as [number, number, number, number],
     fadeIn: [0.28, 0.05, 1, 0.01] as [number, number, number, number],
     fadeOut: [0.32, 0.05, 1, 0.01] as [number, number, number, number],
@@ -50,6 +57,7 @@ const LINKS = [
 export function ContactLinks() {
   const t = useTuning('Footer links', CONFIG)
   const [visible, setVisible] = useState(false)
+  const [toastKey, setToastKey] = useState(0)
   const timer = useRef<number | undefined>(undefined)
 
   useEffect(() => () => window.clearTimeout(timer.current), [])
@@ -57,6 +65,8 @@ export function ContactLinks() {
   const onCopy = async () => {
     if (!(await copyText(EMAIL))) return
     window.clearTimeout(timer.current)
+    // Remount the visual toast so the selected check animation restarts on every copy.
+    setToastKey((key) => key + 1)
     setVisible(true)
     timer.current = window.setTimeout(() => setVisible(false), t.toast.holdMs)
   }
@@ -73,6 +83,7 @@ export function ContactLinks() {
   const toastStyle = {
     '--link-hover': t.hoverColor,
     '--toast-bottom': `${t.toast.bottom}px`,
+    '--check-y': `${t.toast.checkY}px`,
     '--toast-rise': `${t.toast.rise}px`,
     '--toast-in': `${t.toast.fadeIn}s`,
     '--toast-out': `${t.toast.fadeOut}s`,
@@ -88,7 +99,14 @@ export function ContactLinks() {
         {/* Portaled to <body> so it sits centred at the bottom of the window, never clipped or
             offset by the footer's layout. Always mounted: CSS runs in (rise up) and out (sink). */}
         {createPortal(
-          <span className="contact-links__toast" style={toastStyle} data-visible={visible} aria-hidden={!visible}>
+          <span
+            key={toastKey}
+            className="contact-links__toast"
+            style={toastStyle}
+            data-visible={visible}
+            data-check-animation={t.toast.checkAnimation}
+            aria-hidden={!visible}
+          >
             {t.toast.text}
             <CheckIcon className="contact-links__check" />
           </span>,
