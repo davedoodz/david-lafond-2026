@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>“Let’s chat” hover variants — David Lafond</title>
+<style>
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+  :root { --ink: #171717; --paper: #f5f5f5; --muted: #a6a09c; --h: 51px; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #0b0b0b; color: var(--paper); font-family: 'Beatrice', system-ui, sans-serif; padding: 32px; cursor: none; }
+  .intro { font-size: 14px; color: #888; margin: 0 0 24px 4px; max-width: 760px; line-height: 1.45; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 20px; max-width: 1500px; }
+  .card { background: #1a1a1a; border-radius: 12px; padding: 28px 40px 48px; min-height: 300px; }
+  .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #777; }
+  .tag b { color: var(--paper); font-weight: 500; }
+  .desc { font-size: 13px; color: #8a8a8a; margin: 8px 0 34px; line-height: 1.4; max-width: 400px; }
+  h2 { font-size: 30px; font-weight: 400; line-height: 1.2; }
+  .sub { font-size: 17px; color: var(--muted); margin: 12px 0 28px; }
+
+  /* Shared pill */
+  .chat { position: relative; display: inline-flex; align-items: center; gap: 8px; height: var(--h); padding: 0 13px 0 27px;
+    border-radius: 999px; font-size: 20px; line-height: 1; color: var(--paper); text-decoration: none; isolation: isolate; }
+  .chat svg { width: 24px; height: 24px; flex-shrink: 0; }
+  .chat .outline { position: absolute; inset: 0; border: 1px solid var(--paper); border-radius: inherit; z-index: -1; pointer-events: none; }
+  .chat .label { white-space: nowrap; display: inline-block; }
+
+  /* Cursor dot (like the site) */
+  .dot { position: fixed; left: 0; top: 0; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--paper);
+    pointer-events: none; z-index: 100; transition: opacity 120ms ease, scale 120ms ease; }
+  .dot.is-hidden { opacity: 0; scale: .4; }
+
+  /* 1 · Tracking circle: the pill collapses to a white circle that follows the pointer along the pill. */
+  .v1 .blob { position: absolute; top: 0; height: var(--h); left: 0; width: 100%; border-radius: 999px; background: var(--paper);
+    opacity: 0; z-index: -1; display: grid; place-items: center; color: var(--ink);
+    transition: left 160ms cubic-bezier(.2,.9,.1,1), width 160ms cubic-bezier(.2,.9,.1,1), opacity 90ms ease; }
+  .v1 .blob svg { opacity: 0; transition: opacity 90ms ease; }
+  .v1 .label, .v1 > svg, .v1 .outline { transition: opacity 90ms ease; }
+  .v1.on .blob { opacity: 1; }
+  .v1.on .blob svg { opacity: 1; }
+  .v1.on .label, .v1.on > svg { opacity: 0; }
+  .v1.on .outline { opacity: .25; }
+
+  /* 2 · Directional wipe: white fills in from the side the pointer entered. */
+  .v2 .fill { position: absolute; inset: 0; border-radius: inherit; background: var(--paper); z-index: -1;
+    clip-path: inset(0 var(--r, 100%) 0 var(--l, 0%) round 999px); transition: clip-path 180ms cubic-bezier(.2,.9,.1,1); }
+  .v2 .label, .v2 > svg { transition: color 120ms ease, translate 180ms cubic-bezier(.2,.9,.1,1); }
+  .v2.on { color: var(--ink); }
+  .v2.on > svg { translate: 4px 0; }
+
+  /* 3 · Cursor merge: the cursor dot jumps onto the arrow and grows into its circle. */
+  .v3 > svg { position: relative; z-index: 2; transition: color 120ms ease; }
+  .v3.on > svg { color: var(--ink); }
+  .v3.on .label { translate: -4px 0; }
+  .v3 .label { transition: translate 160ms cubic-bezier(.2,.9,.1,1); }
+
+  /* 4 · Snap to arrow: the pill collapses into a white circle around the arrow, with a small overshoot. */
+  .v4 .fill { position: absolute; inset: 0; border-radius: inherit; background: var(--paper); z-index: -1;
+    clip-path: inset(0 0 0 0 round 999px); opacity: 0;
+    transition: clip-path 170ms cubic-bezier(.2,.9,.25,1.25), opacity 80ms ease; }
+  .v4 .outline { transition: clip-path 170ms cubic-bezier(.2,.9,.25,1.25); clip-path: inset(-1px -1px -1px -1px round 999px); }
+  .v4 .label { transition: opacity 90ms ease, translate 170ms cubic-bezier(.2,.9,.1,1); }
+  .v4 > svg { transition: color 90ms ease; }
+  .v4.on .fill { opacity: 1; clip-path: inset(0 0 0 calc(100% - var(--h)) round 999px); }
+  .v4.on .outline { clip-path: inset(-1px -1px -1px calc(100% - var(--h)) round 999px); }
+  .v4.on .label { opacity: 0; translate: 10px 0; }
+  .v4.on > svg { color: var(--ink); }
+
+  /* 5 · Spotlight: a soft light follows the pointer inside the pill; the arrow kicks up-right. */
+  .v5 .glow { position: absolute; inset: 0; border-radius: inherit; z-index: -1; opacity: 0; transition: opacity 100ms ease;
+    background: radial-gradient(90px circle at var(--x, 50%) var(--y, 50%), rgba(245,245,245,.28), rgba(245,245,245,.06) 60%, transparent 100%); }
+  .v5 .outline { transition: border-color 100ms ease, box-shadow 100ms ease; }
+  .v5 > svg { transition: rotate 140ms cubic-bezier(.3,1.5,.5,1), translate 140ms cubic-bezier(.3,1.5,.5,1); }
+  .v5.on .glow { opacity: 1; }
+  .v5.on .outline { box-shadow: 0 0 0 1px var(--paper) inset; }
+  .v5.on > svg { rotate: -45deg; translate: 2px 0; }
+</style>
+</head>
+<body>
+<p class="intro">Each “Let’s chat” button reacts in under 200 ms and starts as soon as the pointer enters. The whole pill stays hoverable, so no part of it ignores the pointer. Clicks are disabled here.</p>
+<div class="grid">
+
+  <section class="card"><div class="tag"><b>1 · Tracking circle</b></div>
+    <p class="desc">Closest to the current morph. The pill collapses in 160 ms to a white circle under the pointer, and the circle follows the pointer along the pill. It never pauses or misses the pointer.</p>
+    <h2>What if we made something<br>worth building together?</h2><p class="sub">I promise you won’t regret it.</p>
+    <a class="chat v1" href="#"><span class="outline"></span><span class="blob">ARROW</span><span class="label">Let’s chat</span>ARROW</a>
+  </section>
+
+  <section class="card"><div class="tag"><b>2 · Directional wipe</b></div>
+    <p class="desc">White fills in from the side the pointer enters, and wipes out towards the side it leaves. The arrow nudges forward. Takes 180 ms.</p>
+    <h2>What if we made something<br>worth building together?</h2><p class="sub">I promise you won’t regret it.</p>
+    <a class="chat v2" href="#"><span class="outline"></span><span class="fill"></span><span class="label">Let’s chat</span>ARROW</a>
+  </section>
+
+  <section class="card"><div class="tag"><b>3 · Cursor merge</b></div>
+    <p class="desc">The cursor dot jumps onto the arrow and grows into its circle in 140 ms, with a small spring. The pill keeps its shape, and the cursor becomes the button.</p>
+    <h2>What if we made something<br>worth building together?</h2><p class="sub">I promise you won’t regret it.</p>
+    <a class="chat v3" href="#"><span class="outline"></span><span class="label">Let’s chat</span>ARROW</a>
+  </section>
+
+  <section class="card"><div class="tag"><b>4 · Snap to arrow</b></div>
+    <p class="desc">The pill always collapses to the same place, the arrow, with a small overshoot. Takes 170 ms. Because the target never moves, the pill cannot lose the pointer.</p>
+    <h2>What if we made something<br>worth building together?</h2><p class="sub">I promise you won’t regret it.</p>
+    <a class="chat v4" href="#"><span class="outline"></span><span class="fill"></span><span class="label">Let’s chat</span>ARROW</a>
+  </section>
+
+  <section class="card"><div class="tag"><b>5 · Spotlight</b></div>
+    <p class="desc">A soft light follows the pointer inside the pill, the outline gets thicker, and the arrow kicks up and to the right (↗). The pill does not change shape.</p>
+    <h2>What if we made something<br>worth building together?</h2><p class="sub">I promise you won’t regret it.</p>
+    <a class="chat v5" href="#"><span class="outline"></span><span class="glow"></span><span class="label">Let’s chat</span>ARROW</a>
+  </section>
+
+</div>
+<div class="dot"></div>
+<script>
+const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+document.querySelectorAll('.chat').forEach(a => { a.innerHTML = a.innerHTML.replaceAll('ARROW', ARROW); a.addEventListener('click', e => e.preventDefault()); });
+
+// Cursor dot follows the pointer; variant 3 takes it over.
+const dot = document.querySelector('.dot');
+let merged = null;
+addEventListener('pointermove', e => {
+  if (merged) return;
+  dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+});
+
+const H = 51;
+// 1 · tracking circle
+document.querySelectorAll('.v1').forEach(a => {
+  const blob = a.querySelector('.blob');
+  const place = e => {
+    const r = a.getBoundingClientRect();
+    const x = Math.min(Math.max(e.clientX - r.left, H / 2), r.width - H / 2);
+    blob.style.left = `${x - H / 2}px`; blob.style.width = `${H}px`;
+  };
+  a.addEventListener('pointerenter', e => { a.classList.add('on'); dot.classList.add('is-hidden'); place(e); });
+  a.addEventListener('pointermove', place);
+  a.addEventListener('pointerleave', () => { a.classList.remove('on'); dot.classList.remove('is-hidden'); blob.style.left = '0px'; blob.style.width = '100%'; });
+});
+
+// 2 · directional wipe
+document.querySelectorAll('.v2').forEach(a => {
+  const fill = a.querySelector('.fill');
+  const side = e => { const r = a.getBoundingClientRect(); return e.clientX - r.left < r.width / 2 ? 'l' : 'r'; };
+  const set = (l, r, animate = true) => { fill.style.transition = animate ? '' : 'none'; fill.style.setProperty('--l', l); fill.style.setProperty('--r', r); };
+  a.addEventListener('pointerenter', e => {
+    const s = side(e);
+    set(s === 'l' ? '0%' : '100%', s === 'l' ? '100%' : '0%', false);
+    fill.getBoundingClientRect();
+    set('0%', '0%'); a.classList.add('on');
+  });
+  a.addEventListener('pointerleave', e => {
+    const s = side(e);
+    set(s === 'l' ? '0%' : '100%', s === 'l' ? '100%' : '0%'); a.classList.remove('on');
+  });
+});
+
+// 3 · cursor merge
+document.querySelectorAll('.v3').forEach(a => {
+  const arrow = a.querySelector(':scope > svg');
+  a.addEventListener('pointerenter', () => {
+    const r = arrow.getBoundingClientRect();
+    merged = a;
+    dot.style.transition = 'transform 140ms cubic-bezier(.3,1.35,.5,1), opacity 120ms ease';
+    dot.style.transform = `translate(${r.left + r.width / 2}px, ${r.top + r.height / 2}px) scale(${(H - 6) / 12})`;
+    a.classList.add('on');
+  });
+  a.addEventListener('pointerleave', e => {
+    merged = null;
+    dot.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    setTimeout(() => { if (!merged) dot.style.transition = ''; }, 140);
+    a.classList.remove('on');
+  });
+});
+dot.style.zIndex = 100;
+// Keep the arrow above the grown dot in variant 3.
+document.querySelectorAll('.v3 > svg').forEach(s => { s.style.position = 'relative'; s.style.zIndex = 101; });
+document.querySelectorAll('.v3').forEach(a => { a.style.zIndex = 101; a.style.isolation = 'auto'; });
+
+// 4 · snap to arrow
+document.querySelectorAll('.v4').forEach(a => {
+  a.addEventListener('pointerenter', () => { a.classList.add('on'); dot.classList.add('is-hidden'); });
+  a.addEventListener('pointerleave', () => { a.classList.remove('on'); dot.classList.remove('is-hidden'); });
+});
+
+// 5 · spotlight
+document.querySelectorAll('.v5').forEach(a => {
+  const glow = a.querySelector('.glow');
+  const move = e => { const r = a.getBoundingClientRect(); glow.style.setProperty('--x', `${e.clientX - r.left}px`); glow.style.setProperty('--y', `${e.clientY - r.top}px`); };
+  a.addEventListener('pointerenter', e => { move(e); a.classList.add('on'); });
+  a.addEventListener('pointermove', move);
+  a.addEventListener('pointerleave', () => a.classList.remove('on'));
+});
+</script>
+</body>
+</html>
