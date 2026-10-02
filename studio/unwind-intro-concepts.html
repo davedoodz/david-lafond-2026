@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unwind intro — five concepts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;1,14..32,400&display=swap" rel="stylesheet" />
+    <style>
+      @font-face { font-family: 'Test Family'; src: url('./fonts/TestFamily-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: block; }
+      @font-face { font-family: 'Test Family'; src: url('./fonts/TestFamily-Italic.otf') format('opentype'); font-weight: 400; font-style: italic; font-display: block; }
+      :root { --ink: #0b0a09; --s6: #6f6b68; --s4: #a6a09c; --s2: #dcd9d6; --blue: #53bffe; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #ebeae8; color: var(--ink); font: 15px/1.4 Inter, system-ui, sans-serif; }
+      main { display: grid; gap: 40px; width: min(1400px, 100% - 48px); margin: 0 auto; padding: 36px 0 80px; }
+      header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+      h1 { margin: 0; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+      .sub { margin: 6px 0 0; color: var(--s6); max-width: 760px; }
+      .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: #fff; border: 1px solid var(--s2); }
+      .seg button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 13px; color: var(--s6); cursor: pointer; }
+      .seg button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+      section { display: grid; gap: 12px; }
+      .head { display: flex; gap: 14px; align-items: baseline; }
+      .num { color: var(--s4); font-size: 13px; font-variant-numeric: tabular-nums; }
+      h2 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -0.015em; }
+      .idea { margin: 0; color: var(--s6); max-width: 900px; }
+      .beats { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+      .beats li { font-size: 12px; color: var(--s6); background: #fff; border: 1px solid var(--s2); border-radius: 999px; padding: 3px 10px; }
+      .films { display: grid; grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 12px; }
+      figure { margin: 0; display: grid; gap: 6px; }
+      figure[hidden] { display: none; }
+      figcaption { font-size: 12px; color: var(--s4); letter-spacing: 0.08em; text-transform: uppercase; }
+      canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #f5f5f5; border-radius: 14px; cursor: pointer; }
+      .bar { display: flex; align-items: center; gap: 12px; }
+      .bar button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--s2); background: #fff; cursor: pointer; font-size: 12px; }
+      .bar input { flex: 1; accent-color: var(--ink); }
+      .bar output { width: 64px; text-align: right; font-size: 13px; color: var(--s6); font-variant-numeric: tabular-nums; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Unwind intro — five concepts</h1>
+          <p class="sub">Each film is 7.5 s and built on the same braided voice band. They all set the scene first (who it's for, which moments), then show the Watch noticing, the voice reflection, and the loop breaking. Each one renders in both prototype typefaces.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Typeface">
+          <button type="button" data-view="both" aria-pressed="true">Both</button>
+          <button type="button" data-view="inter" aria-pressed="false">Inter</button>
+          <button type="button" data-view="test" aria-pressed="false">Test Family</button>
+        </div>
+      </header>
+      <div id="list"></div>
+    </main>
+    <script type="module">
+      const W = 960, H = 540, DUR = 7.5, TAU = Math.PI * 2
+      const C = { paper: '#f5f5f5', ink: '#0b0a09', ink9: '#171717', s6: '#6f6b68', s4: '#a6a09c', s2: '#dcd9d6', blue: '#53BFFE', deep: '#1E7FB8' }
+      // The braid: same palette and band constants as the live intro (introEngine.js, BANDS.braid).
+      const PAL = [C.blue, '#00D0FF', '#B9A7F5', '#FFB3C7']
+      const FONTS = {
+        inter: { label: 'Inter', family: 'Inter', ls: -0.015 },
+        test: { label: 'Test Family', family: "'Test Family'", ls: 0 },
+      }
+
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+      const lerp = (a, b, t) => a + (b - a) * t
+      const seg = (t, a, b) => clamp((t - a) / (b - a))
+      const ease = {
+        out: (t) => 1 - (1 - t) ** 3,
+        inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
+        in: (t) => t ** 3,
+      }
+      const io = (t, a, b, f = 0.35) => Math.min(ease.out(seg(t, a, a + f)), 1 - ease.inOut(seg(t, b - f, b)))
+      const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})` }
+
+      // ---------- Paths: a strip of length `len` bent with curvature c (0 straight, 1 closed ring) ----------
+      function curl(cx, cy, len, c = 0, rot = 0, n = 160) {
+        const ds = len / n, half = n / 2, fw = [[0, 0]], bw = []
+        let x = 0, y = 0
+        for (let i = 1; i <= half; i++) { const f = (c * TAU * (i - 0.5) * ds) / len; x += Math.cos(f) * ds; y += Math.sin(f) * ds; fw.push([x, y]) }
+        x = 0; y = 0
+        for (let i = 1; i <= half; i++) { const f = (-c * TAU * (i - 0.5) * ds) / len; x -= Math.cos(f) * ds; y -= Math.sin(f) * ds; bw.push([x, y]) }
+        const raw = bw.reverse().concat(fw)
+        let mx = 0, my = 0
+        raw.forEach(([a, b]) => { mx += a; my += b })
+        mx /= raw.length; my /= raw.length
+        const cr = Math.cos(rot), sr = Math.sin(rot)
+        return raw.map(([a, b]) => [cx + (a - mx) * cr - (b - my) * sr, cy + (a - mx) * sr + (b - my) * cr])
+      }
+      function sample(raw) {
+        let s = 0
+        return raw.map((p, i) => {
+          if (i) s += Math.hypot(p[0] - raw[i - 1][0], p[1] - raw[i - 1][1])
+          const a = raw[Math.max(0, i - 1)], b = raw[Math.min(raw.length - 1, i + 1)]
+          const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1
+          return { x: p[0], y: p[1], nx: -dy / l, ny: dx / l, s, u: i / (raw.length - 1) }
+        })
+      }
+      const gauss = (u) => Math.exp(-(((u - 0.5) * 3.636) ** 2))
+      const tri = (u) => 1 - Math.abs(2 * u - 1)
+
+      // ---------- Braid renderer (drawn unblurred on a half-res layer, blurred once when composited) ----------
+      function braid(L, raw, o = {}) {
+        const { env = 0.2, alpha = 1, closed = 0, strands = [0, 1, 2, 3], scale = 1, ampAt = () => 1, kAmp = () => 1, chaos = () => 0, rt = 0 } = o
+        if (alpha <= 0.01) return
+        const P = sample(raw)
+        for (const k of strands) {
+          const loud = env * (0.6 + 0.4 * Math.abs(Math.sin(k * 1.7 + rt * 3)))
+          const th = (13 + 20 * loud) * scale
+          const A = (18 + 44 * env) * scale * kAmp(k)
+          const ch = chaos(k)
+          const top = [], bot = []
+          for (const p of P) {
+            const ss = p.s / scale
+            const e = lerp(gauss(p.u), 1, closed) * ampAt(p.u)
+            const d = A * e * (Math.sin(ss * 0.02 * (1 + k * 0.25) + rt * 0.9 * (1 + k * 0.35) + k * 2.4) + ch * 0.9 * Math.sin(ss * 0.071 * (1 + k * 0.4) - rt * 2.3 * (1 + k * 0.2) + k))
+            const bump = th * 0.3 * Math.sin(ss * 0.05 - rt * 1.35)
+            top.push([p.x + p.nx * (d - th / 2), p.y + p.ny * (d - th / 2)])
+            bot.push([p.x + p.nx * (d + th / 2 + bump), p.y + p.ny * (d + th / 2 + bump)])
+          }
+          const base = (k === 0 ? 0.78 : 0.62) * alpha
+          for (let i = 0; i < P.length - 1; i += 4) {
+            const j = Math.min(P.length - 1, i + 4)
+            const a = base * lerp(tri(P[(i + j) >> 1].u), 1, closed)
+            if (a <= 0.004) continue
+            L.fillStyle = hexA(PAL[k], a)
+            L.beginPath()
+            for (let q = i; q <= j; q++) q === i ? L.moveTo(top[q][0], top[q][1]) : L.lineTo(top[q][0], top[q][1])
+            for (let q = j; q >= i; q--) L.lineTo(bot[q][0], bot[q][1])
+            L.closePath(); L.fill()
+          }
+        }
+      }
+
+      // ---------- Per-frame drawing API handed to each concept ----------
+      function makeApi(ctx, L, F, t) {
+        const ink = []
+        const api = {
+          t, F,
+          braid: (raw, o = {}) => braid(L, raw, { rt: t, ...o }),
+          text(str, x, y, o = {}) {
+            const { size = 20, w = 400, it = false, color = C.ink, a = 1, align = 'center', ls = 0, upper = false } = o
+            if (a <= 0.01) return
+            ink.push((c) => {
+              c.save(); c.globalAlpha = a
+              c.font = `${it ? 'italic ' : ''}${w} ${size}px ${F.family}, system-ui, sans-serif`
+              c.letterSpacing = `${(ls || F.ls) * size}px`
+              c.fillStyle = color; c.textAlign = align; c.textBaseline = 'middle'
+              c.fillText(upper ? str.toUpperCase() : str, x, y)
+              c.restore()
+            })
+          },
+          label: (str, x, y, a, o = {}) => api.text(str, x, y, { size: 11, color: C.s4, ls: 0.16, upper: true, a, ...o }),
+          draw: (fn) => ink.push(fn),
+          ripple(x, y, t0, o = {}) {
+            const { color = C.blue, r0 = 8, r1 = 120, n = 3 } = o
+            for (let i = 0; i < n; i++) {
+              const e = seg(t, t0 + i * 0.16, t0 + i * 0.16 + 0.9)
+              if (e <= 0 || e >= 1) continue
+              ink.push((c) => { c.save(); c.globalAlpha = (1 - e) * 0.7; c.strokeStyle = color; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, lerp(r0, r1, ease.out(e)), 0, TAU); c.stroke(); c.restore() })
+            }
+          },
+          dot(x, y, r, color, a = 1) { if (a > 0.01) ink.push((c) => { c.save(); c.globalAlpha = a; c.fillStyle = color; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); c.restore() }) },
+          frame(cx, cy, w, h, r, a, trim = 1) {
+            if (a <= 0.01) return
+            ink.push((c) => {
+              c.save(); c.globalAlpha = a; c.strokeStyle = C.ink9; c.lineWidth = 2
+              const per = 2 * (w + h) - (8 - 2 * Math.PI) * r
+              c.setLineDash([per * trim, per]); c.beginPath(); c.roundRect(cx - w / 2, cy - h / 2, w, h, r); c.stroke(); c.restore()
+            })
+          },
+          // "Unwind" set as the brand does: "un" upright, "wind" italic.
+          lockup(t0, tagline, o = {}) {
+            const { y = 292, braidY = 214 } = o
+            const k = ease.out(seg(t, t0, t0 + 0.7))
+            if (k <= 0) return 0
+            ink.push((c) => {
+              c.save(); c.globalAlpha = k; c.fillStyle = C.ink; c.textBaseline = 'middle'
+              const size = 60, f = (it) => `${it ? 'italic ' : ''}400 ${size}px ${F.family}, system-ui, sans-serif`
+              c.letterSpacing = `${F.ls * size}px`
+              c.font = f(false); const a = c.measureText('un').width
+              c.font = f(true); const b = c.measureText('wind').width
+              const x0 = W / 2 - (a + b) / 2, yy = y + (1 - k) * 10
+              c.font = f(false); c.fillText('un', x0, yy)
+              c.font = f(true); c.fillText('wind', x0 + a, yy)
+              c.restore()
+            })
+            api.text(tagline, W / 2, y + 56, { size: 18, color: C.s6, a: ease.out(seg(t, t0 + 0.25, t0 + 0.9)) })
+            return k
+          },
+          flush(c) { ink.forEach((fn) => fn(c)) },
+        }
+        return api
+      }
+
+      // ---------- The five concepts ----------
+      const CONCEPTS = [
+        {
+          id: 'loop',
+          title: 'Break the loop',
+          idea: 'Builds on the loop you liked. A replayed thought ("Why did I say that?") curls the braid into a ring that spins faster and tighter. The Watch taps at the seam, and the ring unrolls into one calm line, the loop opening where it was noticed.',
+          beats: ['0–1.2 the moment', '1.2–4 the loop tightens', '4 Watch tap', '4.4–5.8 talk it through, ring unrolls', '6.1 lockup'],
+          draw(a) {
+            const t = a.t
+            const curlIn = ease.inOut(seg(t, 1.1, 2.5))
+            const tight = ease.inOut(seg(t, 2.5, 3.8)) * 0.12
+            const open = ease.inOut(seg(t, 4.3, 5.7))
+            const toLock = ease.inOut(seg(t, 5.9, 6.7))
+            const c = curlIn * (1 + tight) * (1 - open)
+            const rot = TAU * 2 * ease.in(seg(t, 1.3, 4.0))
+            const env = lerp(lerp(0.2, 0.95, ease.inOut(seg(t, 1.6, 3.9))), 0.06, ease.out(seg(t, 4.0, 5.6)))
+            a.braid(curl(W / 2, lerp(270, 214, toLock), lerp(580, 300, toLock), c, rot), { env, closed: clamp(c * 1.4), scale: lerp(1, 0.62, toLock), kAmp: () => lerp(1, 0.55, clamp(c)) })
+
+            // Scene: who and when.
+            a.label('After a hard conversation', W / 2, 140, io(t, 0.15, 1.6))
+            a.text('“Why did I say that?”', W / 2, 186, { size: 30, it: true, a: io(t, 0.3, 1.6) })
+            // The loop: the thought echoes around the ring, fainter each pass.
+            const ring = io(t, 1.6, 4.25)
+            if (ring > 0) {
+              const R = 580 / TAU + 52
+              for (let i = 0; i < 3; i++) {
+                const ang = -Math.PI / 2 + rot * 0.6 + (i * TAU) / 3
+                a.text('why did I say that?', W / 2 + Math.cos(ang) * R * 1.35, 270 + Math.sin(ang) * R, { size: 15, it: true, color: C.s6, a: ring * (1 - i * 0.28) })
+              }
+              a.label('the loop', W / 2, 270, ring)
+            }
+            // Watch tap at the seam (the ring's bottom).
+            const seamY = 270 + 580 / TAU
+            a.ripple(W / 2, seamY, 3.95)
+            a.dot(W / 2, seamY, 5, C.blue, io(t, 3.9, 4.6, 0.15))
+            a.label('Apple Watch · something changed', W / 2, 120, io(t, 3.95, 5.2))
+            a.text('How are you feeling?', W / 2, 152, { size: 22, a: io(t, 4.05, 5.2) })
+            a.text('Talk it through.', W / 2, 206, { size: 30, a: io(t, 4.9, 6.0) })
+            a.text('Unwind turns the moment into a plan for next time.', W / 2, 340, { size: 17, color: C.s6, a: io(t, 5.1, 6.0) })
+            a.lockup(6.1, 'Break the loop, in the moment.')
+          },
+        },
+        {
+          id: 'day',
+          title: 'One day, four moments',
+          idea: 'Sets the scene most literally. The braid is one person\'s day. Three moments from the deck (after a hard meeting, everyday stress, replaying it at night) each knot the line, and the tension carries over. The Watch notices, the knots settle, and the fourth moment ("before it happens again") arrives calm.',
+          beats: ['0.2 10:40 hard meeting', '1.5 15:10 everyday stress', '2.8 23:05 still replaying', '4.1 Watch notices, talk it through', '5.3 08:30 prepared', '6.3 lockup'],
+          draw(a) {
+            const t = a.t
+            const M = [
+              { at: 0.2, x: 0.14, time: '10:40', ctx: 'After a hard meeting', q: '“That meeting was rough…”' },
+              { at: 1.5, x: 0.38, time: '15:10', ctx: 'Everyday stress', q: '“There’s just so much right now…”' },
+              { at: 2.8, x: 0.62, time: '23:05', ctx: 'Still replaying it', q: '“Why did I say that?”' },
+              { at: 5.3, x: 0.86, time: '08:30', ctx: 'Before it happens again', q: '“Similar meeting today. Let’s prep.”', calm: true },
+            ]
+            const settle = ease.inOut(seg(t, 4.2, 5.2))
+            const toLock = ease.inOut(seg(t, 6.0, 6.8))
+            const len = lerp(840, 300, toLock), x0 = W / 2 - len / 2
+            const strength = M.map((m) => (m.calm ? 0 : ease.out(seg(t, m.at, m.at + 0.5)) * lerp(1, 0.7, seg(t, m.at + 0.9, m.at + 2.5)) * (1 - settle)))
+            const ampAt = (u) => 0.22 + M.reduce((s, m, i) => s + strength[i] * 2.4 * Math.exp(-(((u - m.x) / 0.07) ** 2)), 0)
+            const env = lerp(0.25 + 0.5 * Math.max(...strength), 0.08, settle)
+            a.braid(curl(W / 2, lerp(300, 214, toLock), len, 0), { env, ampAt: (u) => lerp(ampAt(u), 1, toLock), closed: 0.55 * (1 - toLock), scale: lerp(1, 0.62, toLock) })
+
+            const fadeAll = 1 - ease.inOut(seg(t, 5.9, 6.3))
+            a.label('The same person. Different moments.', W / 2, 92, io(t, 0.1, 6.0) )
+            M.forEach((m, i) => {
+              const x = x0 + m.x * len
+              const on = ease.out(seg(t, m.at, m.at + 0.4)) * fadeAll
+              a.dot(x, 300, 4, m.calm ? C.blue : C.ink9, on)
+              a.text(m.time, x, 396, { size: 13, color: C.s4, a: on })
+              a.text(m.ctx, x, 418, { size: 14, color: C.ink9, a: on })
+              const qa = m.calm ? io(t, m.at, 6.1) : io(t, m.at, M[i + 1].at > m.at + 2 ? m.at + 1.35 : M[i + 1].at)
+              a.text(m.q, clamp(x, 200, W - 200), 176, { size: 24, it: true, a: qa })
+            })
+            a.ripple(x0 + 0.62 * len, 300, 4.1)
+            a.label('Apple Watch · something changed', W / 2, 170, io(t, 4.1, 5.25))
+            a.text('Unwind notices the moment, and helps you talk it through.', W / 2, 210, { size: 22, a: io(t, 4.25, 5.25) })
+            a.lockup(6.3, 'Support for the moments that matter.')
+          },
+        },
+        {
+          id: 'body',
+          title: 'Your body notices first',
+          idea: 'Explains the two-device system. The braid starts as the body\'s signal (heart rate, HRV). It shrinks into an Apple Watch screen for the prompt, then becomes the voice band in an iPhone while the person talks. It ends as one calm line: the system learns the pattern.',
+          beats: ['0–1.5 body signal', '1.5 Watch: something changed', '3 iPhone: voice reflection', '4.9 learns your patterns', '6.2 lockup'],
+          draw(a) {
+            const t = a.t
+            const toWatch = ease.inOut(seg(t, 1.4, 2.1))
+            const toPhone = ease.inOut(seg(t, 3.0, 3.7))
+            const out = ease.inOut(seg(t, 4.8, 5.5))
+            const toLock = ease.inOut(seg(t, 6.0, 6.8))
+            const beat = Math.exp(-(((t * lerp(1.1, 1.8, seg(t, 0, 1.5))) % 1) * 7))
+            const speech = 0.35 + 0.35 * Math.abs(Math.sin(t * 9.1) * Math.sin(t * 3.7 + 1))
+            let env = lerp(0.18 + 0.55 * beat, 0.3, toWatch)
+            env = lerp(env, speech, toPhone * (1 - out))
+            env = lerp(env, 0.06, out)
+            let len = lerp(lerp(580, 128, toWatch), 150, toPhone)
+            let y = lerp(lerp(270, 300, toWatch), 392, toPhone)
+            len = lerp(len, 580, out); y = lerp(y, 290, out)
+            len = lerp(len, 300, toLock); y = lerp(y, 214, toLock)
+            const sc = lerp(lerp(lerp(1, 0.32, toWatch), 0.38, toPhone), 1, out) * lerp(1, 0.62, toLock)
+            a.braid(curl(W / 2, y, len, 0), { env, scale: sc })
+
+            a.text('Your body notices before you do.', W / 2, 176, { size: 28, a: io(t, 0.15, 1.45) })
+            a.label('heart rate ↑   ·   HRV ↓   ·   not moving', W / 2, 352, io(t, 0.45, 1.45))
+            // Device outline: Watch, then the same outline grows into an iPhone.
+            const dev = io(t, 1.45, 4.9, 0.3)
+            const fw = lerp(176, 196, toPhone), fh = lerp(206, 392, toPhone), fr = lerp(46, 42, toPhone)
+            a.frame(W / 2, 270, fw, fh, fr, dev * 0.9, ease.out(seg(t, 1.4, 1.9)))
+            a.ripple(W / 2, 270, 1.75, { r0: 110, r1: 190, color: C.blue })
+            a.text('Something changed.', W / 2, 236, { size: 14, w: 500, a: io(t, 1.8, 3.0, 0.25) })
+            a.text('How are you feeling?', W / 2, 256, { size: 12, color: C.s6, a: io(t, 1.9, 3.0, 0.25) })
+            a.label('Apple Watch', W / 2, 400, io(t, 1.8, 3.0, 0.25))
+            const lines = ['That meeting was rough.', 'I keep replaying it…']
+            lines.forEach((s, i) => {
+              const k = seg(t, 3.5 + i * 0.6, 3.5 + i * 0.6 + 0.55)
+              a.text(s.slice(0, Math.ceil(s.length * k)), W / 2, 214 + i * 24, { size: 14, a: io(t, 3.5, 4.9, 0.25) * (k > 0 ? 1 : 0) })
+            })
+            a.label('iPhone · voice reflection', W / 2, 492, io(t, 3.4, 4.9, 0.25))
+            a.text('It learns your patterns, so you can break the loop.', W / 2, 210, { size: 24, a: io(t, 5.0, 6.05) })
+            a.lockup(6.2, 'Reflection that finds you in the moment.')
+          },
+        },
+        {
+          id: 'untangle',
+          title: 'Untangle',
+          idea: 'The feeling rather than the system. When everything piles up, the four strands of the braid knot together under overlapping thoughts. The Watch tap starts the reflection, and each thought spoken out loud pulls one strand straight, until the braid runs calm and parallel.',
+          beats: ['0–2 tangled, thoughts pile up', '2.1 Watch tap', '2.5–5.4 say it out loud, strand by strand', '5.6 calm', '6.2 lockup'],
+          draw(a) {
+            const t = a.t
+            const calmK = (k) => ease.inOut(seg(t, 2.6 + k * 0.7, 3.4 + k * 0.7))
+            const toLock = ease.inOut(seg(t, 5.9, 6.7))
+            const env = lerp(0.85, 0.08, ease.inOut(seg(t, 2.6, 5.4)))
+            a.braid(curl(W / 2, lerp(270, 214, toLock), lerp(600, 300, toLock), 0), {
+              env, scale: lerp(1, 0.62, toLock),
+              kAmp: (k) => lerp(1.7, 0.4, calmK(k)),
+              chaos: (k) => 1.2 * (1 - calmK(k)),
+            })
+            const T = ['that meeting was rough', 'so much right now', 'why did I say that', 'tomorrow, again']
+            T.forEach((s, k) => {
+              const ang = k * 1.9 + 0.6
+              const hx = W / 2 + Math.cos(ang) * 230 + Math.sin(t * 2.3 + k) * 6
+              const hy = 270 + Math.sin(ang) * 120 + Math.cos(t * 1.9 + k * 2) * 5
+              const pull = ease.inOut(seg(t, 2.6 + k * 0.7, 3.3 + k * 0.7))
+              a.text(s, lerp(hx, W / 2, pull), lerp(hy, 270, pull), { size: lerp(19, 14, pull), it: true, color: C.s6, a: ease.out(seg(t, 0.15 + k * 0.25, 0.6 + k * 0.25)) * (1 - pull) })
+            })
+            a.label('When it all piles up', W / 2, 56, io(t, 0.1, 2.0))
+            a.ripple(W / 2, 270, 2.05, { r1: 160 })
+            a.label('Apple Watch · something changed', W / 2, 56, io(t, 2.05, 2.9))
+            a.text('Say it out loud.', W / 2, 92, { size: 30, a: io(t, 2.5, 4.6) })
+            a.text('Unwind helps you untangle it.', W / 2, 92, { size: 30, a: io(t, 4.6, 6.0) })
+            a.lockup(6.2, 'Untangle the moment.')
+          },
+        },
+        {
+          id: 'moments',
+          title: 'Four moments, one braid',
+          idea: 'Uses the deck\'s "key contexts" directly. Each moment is one coloured strand on its own row. As each moment plays, its strand reacts (the looping one curls). Then the four rows slide together and become the braid: one companion that is there for all of them.',
+          beats: ['0–3.4 four contexts, one by one', '3.6 strands merge into the braid', '4.6 Watch notices, iPhone listens', '6.2 lockup'],
+          draw(a) {
+            const t = a.t
+            const R = [
+              { ctx: 'After a challenging moment', q: '“That meeting was rough…”' },
+              { ctx: 'When thoughts keep looping', q: '“Why did I say that?”', loop: true },
+              { ctx: 'During everyday stress', q: '“There’s just so much right now…”' },
+              { ctx: 'Before it happens again', q: '“Similar meeting tomorrow. Let’s prep.”', calm: true },
+            ]
+            const merge = ease.inOut(seg(t, 3.5, 4.5))
+            const toLock = ease.inOut(seg(t, 6.0, 6.8))
+            R.forEach((r, k) => {
+              const at = 0.25 + k * 0.8
+              const on = io(t, at, at + 0.95, 0.25) * (1 - merge)
+              const rowY = 156 + k * 80
+              const y = lerp(lerp(rowY, 270, merge), 214, toLock)
+              const cx = lerp(640, W / 2, merge)
+              const c = r.loop ? on : 0
+              const len = lerp(lerp(380 * lerp(1, 0.6, c), 580, merge), 300, toLock)
+              a.braid(curl(cx, y, len, c, r.loop ? TAU * 2 * seg(t, at, at + 1) : 0), {
+                strands: [k], env: lerp(r.calm ? 0.1 : 0.15 + 0.75 * on, 0.1, merge), closed: clamp(c * 1.3),
+                scale: lerp(lerp(0.66, 1, merge), 0.62, toLock), alpha: lerp(0.55 + 0.45 * on, 1, merge),
+              })
+              const la = (1 - ease.inOut(seg(t, 3.3, 3.8))) * ease.out(seg(t, 0.05 + k * 0.08, 0.5 + k * 0.08))
+              a.text(String(k + 1).padStart(2, '0'), 120, rowY, { size: 12, color: C.s4, align: 'left', a: la })
+              a.text(r.ctx, 150, rowY, { size: 17, color: on > 0.5 ? C.ink : C.s6, align: 'left', a: la })
+              a.text(r.q, 640, rowY - 30, { size: 15, it: true, color: C.s6, a: on })
+            })
+            a.label('The same person. Different moments.', W / 2, 74, io(t, 0.05, 3.6))
+            a.text('One companion for every one of them.', W / 2, 196, { size: 26, a: io(t, 4.1, 5.0) })
+            a.ripple(W / 2, 270, 4.95, { r1: 150 })
+            a.text('Noticed on your Watch. Talked through on your iPhone.', W / 2, 196, { size: 22, a: io(t, 5.0, 6.05) })
+            a.lockup(6.2, 'Support for the moments that matter.')
+          },
+        },
+      ]
+
+      // ---------- Page ----------
+      const list = document.getElementById('list')
+      const rows = []
+      CONCEPTS.forEach((c, i) => {
+        const sec = document.createElement('section')
+        sec.innerHTML = `
+          <div class="head"><span class="num">0${i + 1}</span><h2>${c.title}</h2></div>
+          <p class="idea">${c.idea}</p>
+          <ul class="beats">${c.beats.map((b) => `<li>${b}</li>`).join('')}</ul>
+          <div class="films">${Object.entries(FONTS).map(([k, f]) => `<figure data-font="${k}"><canvas></canvas><figcaption>${f.label}</figcaption></figure>`).join('')}</div>
+          <div class="bar"><button type="button" aria-label="Play or pause">❚❚</button><input type="range" min="0" max="${DUR}" step="0.01" value="0" aria-label="Scrub" /><output>0.00 s</output></div>`
+        list.append(sec)
+        const films = [...sec.querySelectorAll('figure')].map((fig) => {
+          const canvas = fig.querySelector('canvas')
+          const layer = document.createElement('canvas'); layer.width = W / 2; layer.height = H / 2
+          return { fig, canvas, ctx: canvas.getContext('2d'), layer, L: layer.getContext('2d'), F: FONTS[fig.dataset.font] }
+        })
+        const row = { c, sec, films, t: 0, playing: true, visible: false, btn: sec.querySelector('.bar button'), range: sec.querySelector('input'), out: sec.querySelector('output') }
+        row.btn.onclick = () => { row.playing = !row.playing; sync(row) }
+        row.range.oninput = () => { row.t = +row.range.value; row.playing = false; sync(row); render(row) }
+        films.forEach((f) => (f.canvas.onclick = () => { row.t = 0; row.playing = true; sync(row) }))
+        rows.push(row)
+      })
+      const sync = (row) => { row.btn.textContent = row.playing ? '❚❚' : '▶'; row.range.value = row.t; row.out.textContent = `${row.t.toFixed(2)} s` }
+
+      function render(row) {
+        for (const f of row.films) {
+          if (f.fig.hidden) continue
+          const dpr = Math.min(2, devicePixelRatio || 1)
+          const cw = Math.round(f.canvas.clientWidth * dpr)
+          if (f.canvas.width !== cw) { f.canvas.width = cw; f.canvas.height = Math.round((cw * H) / W) }
+          const S = f.canvas.width / W
+          const { ctx, L } = f
+          L.setTransform(1, 0, 0, 1, 0, 0); L.clearRect(0, 0, W / 2, H / 2); L.setTransform(0.5, 0, 0, 0.5, 0, 0)
+          const api = makeApi(ctx, L, f.F, row.t)
+          row.c.draw(api)
+          ctx.setTransform(1, 0, 0, 1, 0, 0)
+          ctx.fillStyle = C.paper; ctx.fillRect(0, 0, f.canvas.width, f.canvas.height)
+          ctx.filter = `blur(${5 * S}px)`; ctx.imageSmoothingQuality = 'high'
+          ctx.drawImage(f.layer, 0, 0, f.canvas.width, f.canvas.height)
+          ctx.filter = 'none'
+          ctx.setTransform(S, 0, 0, S, 0, 0)
+          api.flush(ctx)
+        }
+      }
+
+      const obs = new IntersectionObserver((es) => es.forEach((e) => { rows.find((r) => r.sec === e.target).visible = e.isIntersecting }), { threshold: 0.15 })
+      rows.forEach((r) => obs.observe(r.sec))
+
+      let last = performance.now()
+      function tick(now) {
+        const dt = Math.min(0.05, (now - last) / 1000); last = now
+        for (const r of rows) {
+          if (!r.visible) continue
+          if (r.playing) { r.t += dt; if (r.t > DUR + 0.5) r.t = 0; sync(r) }
+          render(r)
+        }
+        requestAnimationFrame(tick)
+      }
+
+      document.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => {
+        document.querySelectorAll('[data-view]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+        const v = b.dataset.view
+        document.documentElement.style.setProperty('--cols', v === 'both' ? 2 : 1)
+        rows.forEach((r) => r.films.forEach((f) => (f.fig.hidden = v !== 'both' && f.fig.dataset.font !== v)))
+      }))
+
+      // Seekable for checks: window.seek(conceptIndex, t), or a `seek` DOM event with detail [i, t], paints that frame and pauses the row.
+      window.seek = (i, t) => { const r = rows[i]; r.t = t; r.playing = false; sync(r); render(r) }
+      document.addEventListener('seek', (e) => window.seek(...e.detail))
+      await Promise.all(['400 20px Inter', 'italic 400 20px Inter', '500 20px Inter', "400 20px 'Test Family'", "italic 400 20px 'Test Family'"].map((f) => document.fonts.load(f).catch(() => {})))
+      document.documentElement.dataset.ready = ''
+      requestAnimationFrame(tick)
+    </script>
+  </body>
+</html>
