@@ -449,7 +449,7 @@ export function CaseStudyPage({ id }: Props) {
         aria-labelledby={`case-${key}`}
       >
         <div className="case__text">
-          {isHero && <BackLink className="case__back case__back--inline" />}
+          {isHero && id !== 'ecofabriq' && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} />
@@ -508,7 +508,7 @@ export function CaseStudyPage({ id }: Props) {
         <Nav route={id} />
         {page.showSidebar && (
           <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
-            <BackLink className="case__back" />
+            {id !== 'ecofabriq' && <BackLink className="case__back" />}
             <ol className="case__toc">
               {keys.map((key) => (
                 <li key={key}>

@@ -61,7 +61,7 @@ function goBack(event: MouseEvent<HTMLAnchorElement>) {
   else navigate('work')
 }
 
-/** "< Back" link. Case-study pages place it above their title; Nav shows it for pages without one. */
+/** "< Back" link. Project pages place it under Davebot in the shared nav. */
 export function BackLink({ className = '' }: { className?: string }) {
   return (
     <a className={`nav__back ${className}`.trim()} href="/" onClick={goBack}>
@@ -130,7 +130,7 @@ export function Nav({ route }: Props) {
       <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
-          {route === 'harvard-mit' && <BackLink />}
+          {(route === 'harvard-mit' || route === 'ecofabriq') && <BackLink />}
         </div>
         <nav className="nav__links" aria-label="Primary">
           <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
