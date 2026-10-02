@@ -3,7 +3,7 @@ import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } fr
 import type { ResolvedValues } from 'dialkit'
 import { useTuning } from '../../tuning/useTuning'
 import { navigate, type Route } from '../../lib/router'
-import { DAVEBOT_CONFIG, DAVEBOT_PANEL } from './davebotConfig'
+import { DAVEBOT_CONFIG, DAVEBOT_PANEL, ghostFill } from './davebotConfig'
 import { toMotionTransition } from './motionTransition'
 import { closeDavebot, getDavebotTrigger, openDavebot, takeDavebotQuote, useDavebotOpen } from './davebotStore'
 import { DAVEBOT_ENTRY_BY_ID, rankEntries, type AnswerSegment } from './davebotIndex'
@@ -504,7 +504,7 @@ function DavebotPanel() {
             scale: ghostScale,
           }}
         >
-          <GhostMark size={tuning.ghost.zoomSize} happy={tuning.happy} />
+          <GhostMark size={tuning.ghost.zoomSize} happy={tuning.happy} fill={ghostFill(tuning.ghost)} />
         </motion.span>
         <motion.section
           ref={panelRef}

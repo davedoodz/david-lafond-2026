@@ -44,13 +44,14 @@
   }
 }
 
+/* --ghost-fill comes from the 'Davebot → ghost → color' dial; unset keeps the defaults. */
 .ghost-mark__shell {
-  fill: var(--placeholder);
+  fill: var(--ghost-fill, var(--placeholder));
 }
 
 /* Paper About page: the ghost darkens so it reads against the light dither band. */
 [data-surface='light'] .ghost-mark__shell {
-  fill: #bcbcbc;
+  fill: var(--ghost-fill, #bcbcbc);
 }
 
 .ghost-mark__pupil {

@@ -6,6 +6,13 @@
 
 export const DAVEBOT_PANEL = 'Davebot'
 
+/** CSS fill for the ghost body from the 'ghost → color' dial; undefined keeps the stylesheet default. */
+export function ghostFill(ghost: { color: string; customColor: string }): string | undefined {
+  if (ghost.color === 'gray text') return 'var(--text-muted)'
+  if (ghost.color === 'custom') return ghost.customColor
+  return undefined
+}
+
 const springField = (visualDuration: number, bounce: number) => ({ type: 'spring' as const, visualDuration, bounce })
 const colorField = (value: string) => ({ type: 'color' as const, default: value })
 const textField = (value: string) => ({ type: 'text' as const, default: value })
@@ -25,6 +32,10 @@ export const DAVEBOT_CONFIG = {
     offsetX: [0, -300, 300, 1] as [number, number, number, number],
     offsetY: [0, -200, 200, 1] as [number, number, number, number],
     paletteWidth: [560, 360, 720, 4] as [number, number, number, number],
+    /** Body colour. default: light gray (darker on light pages); gray text: the site's muted
+     *  text gray (--text-muted, e.g. "a product designer."); custom: the colour below. */
+    color: { type: 'select' as const, options: ['default', 'gray text', 'custom'], default: 'default' },
+    customColor: colorField('#a6a09c'),
     morph: springField(0.4, 0.15),
     _collapsed: false,
   },

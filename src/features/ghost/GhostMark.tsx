@@ -67,9 +67,11 @@ export type GhostMarkProps = {
   className?: string
   /** Hovering the body makes him happy (^ ^ eyes, blush). Only the centred Davebot opts in. */
   happy?: HappyLook & { blushColor: string }
+  /** Body colour override (any CSS colour, incl. var()). Unset keeps the stylesheet default. */
+  fill?: string
 }
 
-export function GhostMark({ size, className, happy }: GhostMarkProps) {
+export function GhostMark({ size, className, happy, fill }: GhostMarkProps) {
   const clipId = `ghost-clip-${useId().replaceAll(':', '')}`
   const mountRef = useRef<HTMLSpanElement>(null)
   const eyesRef = useRef<SVGGElement>(null)
@@ -124,7 +126,7 @@ export function GhostMark({ size, className, happy }: GhostMarkProps) {
     <span
       ref={mountRef}
       className={`ghost-mark${happy ? ' ghost-mark--happy' : ''}${className ? ` ${className}` : ''}`}
-      style={size ? ({ '--ghost-size': `${size}px` } as React.CSSProperties) : undefined}
+      style={{ ...(size && { '--ghost-size': `${size}px` }), ...(fill && { '--ghost-fill': fill }) } as React.CSSProperties}
       aria-hidden="true"
     >
       <span className="ghost-mark__body">

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { isLightUnder } from '../../lib/surface'
 import { GhostMark } from './GhostMark'
 import { openDavebotAbout, setDavebotTrigger, toggleDavebot, useDavebotOpen } from './davebotStore'
-import { DAVEBOT_CONFIG, DAVEBOT_PANEL } from './davebotConfig'
+import { DAVEBOT_CONFIG, DAVEBOT_PANEL, ghostFill } from './davebotConfig'
 import { useTuning } from '../../tuning/useTuning'
 import './ghost.css'
 
@@ -124,7 +124,7 @@ export function GhostButton({ className }: GhostButtonProps) {
       aria-keyshortcuts="Meta+K Control+K"
     >
       <span key={hop} className={`ghost-button__body${hop && active ? ' is-hopping' : ''}`}>
-        <GhostMark size={tuning.ghost.navSize} />
+        <GhostMark size={tuning.ghost.navSize} fill={ghostFill(tuning.ghost)} />
       </span>
       <span ref={pillRef} className="ghost-button__pill" data-over={overLight ? 'light' : 'dark'} aria-hidden="true">
         {cue.pill}
