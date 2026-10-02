@@ -35,7 +35,7 @@ const CONFIG = {
   },
   /** `morph` hover: the pill becomes the arrow circle under the cursor; a click sends it off to the right. */
   morph: {
-    shape: { type: 'easing' as const, duration: 0.35, ease: [0.3, 0, 0.2, 1] as [number, number, number, number] },
+    shape: { type: 'easing' as const, duration: 0.18, ease: [0.2, 0.9, 0.1, 1] as [number, number, number, number] },
     exitPx: [220, 40, 600, 1] as [number, number, number, number],
     exit: { type: 'easing' as const, duration: 0.45, ease: [0.5, 0, 0.75, 0] as [number, number, number, number] },
     /** After the circle exits: how long the button stays gone before fading back. */
@@ -87,10 +87,6 @@ export function LetsChat() {
   const [morphPx, setMorphPx] = useState<number | null>(null)
   const [exiting, setExiting] = useState(false)
   const [fadingIn, setFadingIn] = useState(false)
-  // Morph hover is paused until this time (ms, performance.now) — e.g. while the pill regrows after leaving the circle.
-  const morphPausedUntil = useRef(0)
-  // Leave radius for the current morph: at least the circle's, or wider when entering at an edge/corner.
-  const morphRadius = useRef(0)
   useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
 
   // The outline is drawn from measured size: caps move, only the straight lines scale.
@@ -113,51 +109,45 @@ export function LetsChat() {
   const shape = cssTransition(t.morph.shape)
   const exit = cssTransition(t.morph.exit)
 
-  const unmorph = (pause: boolean) => {
+  const unmorph = () => {
     setCurve('morph')
     setMorphPx(null)
-    // Let the pill finish regrowing, then the circle can form again under the cursor.
-    morphPausedUntil.current = pause ? performance.now() + parseFloat(shape.duration) * 1000 : 0
     releaseCursor()
   }
 
   const morphOn = t.hover.preset === 'morph'
-  const onPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
-    if (!morphOn || event.pointerType !== 'mouse' || phase !== 'idle' || exiting) return
+  // Mouse only; the circle forms on enter and follows every move.
+  const anchorRef = useRef<HTMLAnchorElement>(null)
+  const morphAt = (clientX: number) => {
+    const el = anchorRef.current
+    if (!morphOn || !el || phase !== 'idle' || exiting) return
     if (fadingIn) {
       // Hovering during the post-click fade-in ends it, so hover always responds.
       setFadingIn(false)
       setCurve('expand')
     }
-    const rect = event.currentTarget.getBoundingClientRect()
+    // The circle forms under the pointer and follows it along the pill; no dead zone, no pause.
+    const rect = el.getBoundingClientRect()
     const h = rect.height
-    if (morphPx !== null) {
-      // Left the circle: back to the pill until the pointer leaves the button.
-      const dx = event.clientX - (rect.left + morphPx)
-      const dy = event.clientY - (rect.top + h / 2)
-      if (Math.hypot(dx, dy) > morphRadius.current) unmorph(true)
-      return
-    }
-    if (performance.now() < morphPausedUntil.current) return
-    const px = Math.min(Math.max(event.clientX - rect.left, h / 2), rect.width - h / 2)
-    const entry = Math.hypot(event.clientX - (rect.left + px), event.clientY - (rect.top + h / 2))
-    morphRadius.current = Math.max(h / 2, entry) + 4
+    const px = Math.min(Math.max(clientX - rect.left, h / 2), rect.width - h / 2)
+    if (px === morphPx) return
     setCurve('morph')
     setMorphPx(px)
     if (t.morph.absorbCursor) absorbCursor(rect.left + px, rect.top + h / 2)
   }
+  const onPointerMove = (event: PointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType !== 'mouse') return
+    morphAt(event.clientX)
+  }
   const onPointerEnter = (event: PointerEvent<HTMLAnchorElement>) => {
     if (event.pointerType !== 'mouse') return
     window.dispatchEvent(new Event('cursor:hide'))
-    // A fresh hover always starts armed, whatever an earlier click or leave left behind.
-    morphPausedUntil.current = 0
     onPointerMove(event)
   }
   const onPointerLeave = () => {
     window.dispatchEvent(new Event('cursor:show'))
     if (exiting) return
-    if (morphPx !== null) unmorph(false)
-    morphPausedUntil.current = 0
+    if (morphPx !== null) unmorph()
   }
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -270,6 +260,7 @@ export function LetsChat() {
 
   return (
     <a
+      ref={anchorRef}
       className={`chat${phase === 'idle' ? '' : ` is-playing is-${phase}`}${morphPx !== null ? ' is-morph' : ''}${white ? ' is-white' : ''}${exiting ? ' is-exit' : ''}${fadingIn ? ' is-fadein' : ''}`}
       onPointerMove={onPointerMove}
       onPointerEnter={onPointerEnter}
