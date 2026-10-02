@@ -95,6 +95,7 @@
       "endRadius": 0
     },
     "morphMobile": {
+      "enterDistance": 1.73,
       "startArch": 20,
       "startRadius": 60,
       "endArch": 35
@@ -105,9 +106,9 @@
       "bounce": 0.4
     },
     "spacing": {
-      "firstDesktop": 377,
+      "firstDesktop": 207,
       "gapDesktop": 13,
-      "lastDesktop": 395,
+      "lastDesktop": 347,
       "firstMobile": 183,
       "gapMobile": 15,
       "lastMobile": 216
@@ -378,13 +379,13 @@
       }
     },
     "spacing": {
-      "gapDesktop": 205,
+      "gapDesktop": 169,
       "stackToHeadingDesktop": 76,
       "labelTopDesktop": 99,
-      "playFitGap": 101,
-      "playY": 237,
-      "playSpaceBelow": 222,
-      "labelY": -245
+      "playFitGap": 0,
+      "labelY": -78,
+      "playY": 40,
+      "playSpaceBelow": -93
     },
     "grid": {
       "sizeDesktop": 1.1
@@ -450,11 +451,18 @@
       "team": "2 developers, 2 designers, 2 therapists"
     },
     "heroSpacing": {
-      "logosToTitle": 96
+      "logosToTitle": 62,
+      "titleToMeta": 23,
+      "y": {
+        "braid": -54,
+        "logos": 29
+      }
     },
     "logos": {
-      "height": 40,
-      "y": 37
+      "placement": "below meta",
+      "height": 41,
+      "gap": 27,
+      "offset": 28
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
@@ -483,11 +491,13 @@
     "frame": 2738590
   },
   "Unwind case study · order": {
-    "section": "system",
-    "order": "story, persona, moment, overview, notification, dynamic, howItWorks, flows, guided, context, tracking, system, outcomes",
+    "section": "flows",
+    "order": "story, persona, moment, overview, notification, flows, dynamic, howItWorks, guided, context, tracking, system, outcomes",
     "max": 13,
     "keep": {
-      "Overview": "hide"
+      "Overview": "hide",
+      "How it works": "hide",
+      "Context": "hide"
     }
   },
   "Scroll": {
@@ -513,5 +523,11 @@
   },
   "Footer": {
     "desktopHeight": 200
+  },
+  "Unwind intro": {
+    "hero": {
+      "width": 280,
+      "energy": 0.28
+    }
   }
 }
