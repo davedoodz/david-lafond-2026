@@ -33,6 +33,7 @@ const SCROLL_CONFIG = {
     type: 'select' as const,
     options: [
       { value: 'controlled', label: 'controlled' },
+      { value: 'scaled', label: 'native, scaled (multiplier + max step)' },
       { value: 'native', label: 'native (dials off)' },
     ],
     default: 'controlled',
@@ -136,13 +137,17 @@ export function ControlledScroll() {
     }
 
     const onWheel = (e: WheelEvent) => {
-      if (ref.current.mode !== 'controlled') return
+      const mode = ref.current.mode
+      if (mode === 'native') return
       if (e.defaultPrevented || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
       const { maxStep, multiplier, downDistance, upDistance } = ref.current
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1
       const dy = Math.max(-maxStep, Math.min(maxStep, e.deltaY * unit * multiplier))
       if (!dy || scrollableAncestor(e.target, dy)) return
       e.preventDefault()
+      // Scaled: each trackpad/wheel event moves the page straight away, so the OS momentum
+      // curve still drives the feel; only its size changes (multiplier, capped by maxStep).
+      if (mode === 'scaled') return void window.scrollBy({ top: dy, behavior: 'instant' })
       if (!frame) target = pos = window.scrollY
       if (origin === null) origin = window.scrollY
       target += dy

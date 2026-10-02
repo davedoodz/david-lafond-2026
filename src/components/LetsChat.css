@@ -8,10 +8,10 @@
  *   is-return   circle fades back to the outline, still at the start
  *   → idle      pill grows back out to the right from the fixed left edge
  *
- * The outline is three pieces in .chat__shape: two half-circle caps that only
- * translate, and a middle strip whose top/bottom borders are the only thing that
- * resizes (scaleX). The fill is a separate layer clipped to the same edges. LetsChat.tsx measures the pill and sets the visible edges
- * (--chat-l, --chat-r) and the strip scale (--chat-s); the arrow rides the right cap.
+ * The visible shape is one element, .chat__pill: outline and fill together, its left
+ * and right edges set from --chat-l / --chat-r (measured in LetsChat.tsx). The label
+ * and arrow live inside it and are clipped by it (overflow: hidden), so no stroke,
+ * text or arrow can ever show outside the pill or circle mid-transition.
  */
 .chat {
   --chat-h: 51px;
@@ -43,88 +43,56 @@
     color var(--chat-color-ms) ease;
 }
 
-.chat__shape {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.chat__shape > * {
+/* Outline + fill in one rounded box: the pill, the circle and every frame between are the same shape. */
+.chat__pill {
   position: absolute;
   top: 0;
   bottom: 0;
-}
-
-/* One fill layer clipped to the same edges, so a fading fill never shows seams. */
-.chat__fill {
-  left: 0;
-  right: 0;
+  left: var(--chat-l);
+  right: calc(var(--chat-w) - var(--chat-r));
+  z-index: -1;
+  border: 1px solid var(--paper);
   border-radius: 999px;
   background-color: transparent;
-  clip-path: inset(0 calc(var(--chat-w) - var(--chat-r)) 0 var(--chat-l) round 999px);
+  pointer-events: none;
   transition:
-    clip-path var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay),
-    background-color var(--chat-color-ms) ease;
-}
-
-/* Stroke only: caps and strip meet edge to edge, never overlap. */
-.chat__cap,
-.chat__line {
-  border: 1px solid var(--paper);
-  transition:
-    translate var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay),
-    scale var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay),
+    left var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay),
+    right var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay),
+    background-color var(--chat-color-ms) ease,
     border-color var(--chat-color-ms) ease;
+  overflow: hidden;
 }
 
-.chat__cap {
-  width: calc(var(--chat-h) / 2);
-}
-.chat__cap--l {
-  left: 0;
-  border-right: 0;
-  border-radius: calc(var(--chat-h) / 2) 0 0 calc(var(--chat-h) / 2);
-  translate: var(--chat-l) 0;
-}
-.chat__cap--r {
-  right: 0;
-  border-left: 0;
-  border-radius: 0 calc(var(--chat-h) / 2) calc(var(--chat-h) / 2) 0;
-  translate: calc(var(--chat-r) - var(--chat-w)) 0;
-}
-
-.chat__line {
-  left: calc(var(--chat-h) / 2);
-  right: calc(var(--chat-h) / 2);
-  border-left: 0;
-  border-right: 0;
-  transform-origin: left center;
-  translate: var(--chat-l) 0;
-  scale: var(--chat-s) 1;
-}
-
-/* Clipped to the shape's edges, so the sweep wipes it; outsets keep descenders. */
+/* In-flow copies only size the button (and keep the accessible name); the visible label and arrow live in the pill. */
 .chat__label {
   white-space: nowrap;
-  clip-path: inset(
-    -30% calc(var(--chat-w) - var(--chat-r) - var(--chat-gap) - (var(--chat-h) + var(--chat-arrow)) / 2) -30%
-      calc(var(--chat-l) - var(--chat-pad-l))
-  );
-  transition:
-    opacity var(--chat-expand) ease,
-    clip-path var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay);
+  color: transparent;
 }
-
-/* The arrow follows the right cap (transform) and keeps `translate` for the hover nudge. */
-.chat__arrow {
+.chat__arrow-space {
   width: var(--chat-arrow);
   height: var(--chat-arrow);
   flex-shrink: 0;
-  transform: translateX(calc(var(--chat-r) - var(--chat-w)));
+}
+
+/* The pill clips the label; its `left` cancels the pill's own `left` on the same curve, so the text stays put. */
+.chat__text {
+  position: absolute;
+  top: calc((var(--chat-h) - 1.2em) / 2 - 1px);
+  left: calc(var(--chat-pad-l) - var(--chat-l) - 1px);
+  white-space: nowrap;
   transition:
-    transform var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay),
-    translate var(--chat-fill) cubic-bezier(0.22, 1, 0.36, 1);
+    opacity var(--chat-expand) ease,
+    left var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay);
+}
+
+/* The arrow is pinned to the pill's right edge, so it can never drift outside the shape. `translate` is the hover nudge. */
+.chat__arrow {
+  position: absolute;
+  top: calc((var(--chat-h) - var(--chat-arrow)) / 2 - 1px);
+  right: calc((var(--chat-h) - var(--chat-arrow)) / 2 - 1px);
+  width: var(--chat-arrow);
+  height: var(--chat-arrow);
+  transition: translate var(--chat-fill) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 
@@ -157,10 +125,8 @@
     color: var(--hv-text, var(--paper));
     translate: 0 var(--hv-y, 0px);
   }
-  .chat:hover:not(.is-playing):not(.is-morph) .chat__fill {
+  .chat:hover:not(.is-playing):not(.is-morph) .chat__pill {
     background-color: var(--hv-bg, transparent);
-  }
-  .chat:hover:not(.is-playing):not(.is-morph) :is(.chat__cap, .chat__line) {
     border-color: var(--hv-border, var(--paper));
   }
   .chat:hover:not(.is-playing):not(.is-morph) .chat__arrow {
@@ -176,40 +142,36 @@
 .chat:focus-visible:not(.is-playing) .chat__body {
   color: var(--hv-text, var(--paper));
 }
-.chat:focus-visible:not(.is-playing) .chat__fill {
+.chat:focus-visible:not(.is-playing) .chat__pill {
   background-color: var(--hv-bg, transparent);
-}
-.chat:focus-visible:not(.is-playing) :is(.chat__cap, .chat__line) {
   border-color: var(--hv-border, var(--paper));
 }
 
-.chat.is-playing .chat__label,
-.chat.is-morph .chat__label {
+.chat.is-playing .chat__text,
+.chat.is-morph .chat__text {
   opacity: 0;
   transition:
     opacity var(--chat-collapse) ease var(--chat-delay),
-    clip-path var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay);
+    left var(--chat-shape-ms) var(--chat-shape-ease) var(--chat-shape-delay);
 }
-.chat.is-morph .chat__label {
+.chat.is-morph .chat__text {
   transition:
     opacity var(--chat-shape-ms) ease,
-    clip-path var(--chat-shape-ms) var(--chat-shape-ease);
+    left var(--chat-shape-ms) var(--chat-shape-ease);
 }
 
 /* White: morph circle, click collapse/travel, fill. The stroke stays (same colour). */
 .chat.is-white .chat__body {
   color: var(--ink-900);
 }
-.chat.is-white .chat__fill {
+.chat.is-white .chat__pill {
   background-color: var(--paper);
-}
-.chat.is-white :is(.chat__cap, .chat__line) {
   border-color: var(--paper);
 }
 
 /* fill / press keep the label. */
-.chat.is-filled .chat__label,
-.chat.is-pressed .chat__label {
+.chat.is-filled .chat__text,
+.chat.is-pressed .chat__text {
   opacity: 1;
 }
 
@@ -230,8 +192,8 @@
 
 /* Then the pill fades back in place, with no other motion. */
 .chat.is-fadein .chat__body,
-.chat.is-fadein .chat__label,
-.chat.is-fadein .chat__shape > * {
+.chat.is-fadein .chat__text,
+.chat.is-fadein .chat__pill {
   transition: none;
 }
 .chat.is-fadein .chat__body {

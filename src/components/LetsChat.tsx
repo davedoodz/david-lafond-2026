@@ -227,7 +227,6 @@ export function LetsChat() {
   } else if (phase === 'travel' || phase === 'return') {
     right = h
   }
-  const lineScale = w > h ? (right - left - h) / (w - h) : 1
   const timing = { morph: shape, collapse, travel, expand, none: { duration: '0s', ease: 'linear' } }[curve]
   const white = morphPx !== null || exiting || phase === 'armed' || phase === 'travel' || phase === 'filled'
 
@@ -247,7 +246,6 @@ export function LetsChat() {
     '--chat-l': `${left}px`,
     '--chat-r': `${right}px`,
     '--chat-w': `${w}px`,
-    '--chat-s': lineScale,
     '--chat-shape-ms': timing.duration,
     '--chat-shape-ease': timing.ease,
     '--chat-shape-delay': curve === 'collapse' ? `${t.motion.collapseDelayMs}ms` : '0ms',
@@ -272,14 +270,12 @@ export function LetsChat() {
       style={style}
     >
       <span className="chat__body" ref={bodyRef}>
-        <span className="chat__shape" aria-hidden="true">
-          <span className="chat__fill" />
-          <span className="chat__cap chat__cap--l" />
-          <span className="chat__line" />
-          <span className="chat__cap chat__cap--r" />
+        <span className="chat__pill" aria-hidden="true">
+          <span className="chat__text">{t.label}</span>
+          <ArrowRightIcon className="chat__arrow" />
         </span>
         <span className="chat__label">{t.label}</span>
-        <ArrowRightIcon className="chat__arrow" />
+        <span className="chat__arrow-space" />
       </span>
     </a>
   )

@@ -199,16 +199,6 @@
   },
   "Let’s chat": {
     "morph": {
-      "shape": {
-        "type": "easing",
-        "duration": 0.4,
-        "ease": [
-          0.3,
-          0,
-          0.2,
-          1
-        ]
-      },
       "exitPx": 500,
       "exit": {
         "type": "easing",
