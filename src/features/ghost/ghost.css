@@ -214,6 +214,13 @@
   transition-delay: 160ms;
 }
 
+/* The pill sits outside the button's 36px layout box. Make the visible cue part of the
+   same button's hit area only while shown; its click then uses GhostButton's existing
+   highlighted-text handoff, exactly like clicking Davebot. */
+.ghost-button.is-cued .ghost-button__pill {
+  pointer-events: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ghost-button__body.is-hopping {
     animation: none;
