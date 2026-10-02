@@ -44,6 +44,8 @@ const CONFIG = {
     fadeInMs: [4500, 0, 8000, 50] as [number, number, number, number],
     /** The cursor dot is pulled into the circle and drips back out on leave. */
     absorbCursor: true,
+    /** Full-pill outline that stays visible behind the circle while morphed. */
+    trackColor: { type: 'color' as const, default: '#6F6B68' },
   },
   motion: {
     fillMs: [160, 0, 800, 10] as [number, number, number, number],
@@ -321,6 +323,7 @@ export function LetsChat() {
     '--chat-exit': exit.duration,
     '--chat-exit-ease': exit.ease,
     '--chat-fade-in': `${t.morph.fadeInMs}ms`,
+    '--chat-track': t.morph.trackColor,
   } as CSSProperties
 
   return (
@@ -337,6 +340,7 @@ export function LetsChat() {
       style={style}
     >
       <span className="chat__body" ref={bodyRef}>
+        <span className="chat__track" aria-hidden="true" />
         <span className="chat__pill" ref={pillRef} aria-hidden="true">
           <span className="chat__text">{t.label}</span>
           <ArrowRightIcon className="chat__arrow" />

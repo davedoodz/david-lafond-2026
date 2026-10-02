@@ -43,6 +43,21 @@
     color var(--chat-color-ms) ease;
 }
 
+/* Gray outline of the full pill, shown behind the circle while morphed (DialKit › morph › trackColor). */
+.chat__track {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border: 1px solid var(--chat-track);
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.chat.is-morph:not(.is-exit) .chat__track {
+  opacity: 1;
+}
+
 /* Outline + fill in one rounded box: the pill, the circle and every frame between are the same shape. */
 .chat__pill {
   position: absolute;
