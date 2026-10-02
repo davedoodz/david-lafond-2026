@@ -442,6 +442,9 @@ export function CaseStudyPage({ id }: Props) {
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} />
+          ) : isHero && id === 'unwind' ? (
+            // The intro's braided voice band is drawn here (by UnwindIntro's canvas) in place of the eyebrow.
+            <div className="case__braid-slot" aria-hidden="true" />
           ) : (
             <EditableText className="case__eyebrow eyebrow" label={`${key} eyebrow`} value={s.eyebrow} onChange={edit(`${key}.eyebrow`)} />
           )}

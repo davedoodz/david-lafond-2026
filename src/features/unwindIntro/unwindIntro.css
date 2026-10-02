@@ -22,9 +22,9 @@ html[data-unwind-stage] .case .nav {
 .case .nav {
   transition: opacity 240ms ease;
 }
-/* Phones: the hero opens lower so the band has room between the nav and Back. */
-@media (max-width: 800px) {
-  .case[data-work='unwind'] .case__section.case__section--hero[data-layout='rise'] {
-    padding-top: 148px;
-  }
+/* Hero: the band's slot above the title, in place of the eyebrow. */
+.case__braid-slot {
+  width: 100%;
+  height: var(--braid-slot-h, 48px);
+  margin-bottom: 16px;
 }

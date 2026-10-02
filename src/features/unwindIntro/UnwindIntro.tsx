@@ -15,7 +15,7 @@ const lerp = (a: number, b: number, p: number) => a + (b - a) * p
  * screen-tall stage above the hero. The braided voice band lives on one fixed canvas:
  *   - on the stage (top of the page) it fills the screen and the story plays: the band wakes
  *     as someone talks → words link to past entries → the loop → the if-then plan;
- *   - on the hero it is small and keeps moving above the partner logos.
+ *   - on the hero it is small and keeps moving in the slot above the title (where the eyebrow was).
  * Scrolling between the two is physical: the band shrinks or zooms with the scroll position.
  * Scrolling up into the stage starts the story; scrolling back down never skips it, it keeps
  * playing (its words fade as the band shrinks). When it ends on the stage, the page glides
@@ -32,10 +32,12 @@ const CONFIG = {
   restructure: { type: 'select' as const, options: opts('restructure'), default: 'The loop' },
   plan: { type: 'select' as const, options: opts('plan'), default: 'Strike & replace' },
   hero: {
-    /** Width of the band above the logos (px). */
+    /** Width of the band above the title (px). */
     width: [360, 120, 900, 10] as Tuple,
-    /** Distance from the band's centre to the top of the logos (px). */
-    gap: [44, 0, 200, 1] as Tuple,
+    /** Height of the band's slot above the title (px); sets the space it takes. */
+    slot: [48, 16, 200, 1] as Tuple,
+    /** Nudge the band up (−) or down (+) within its slot (px). */
+    y: [0, -100, 100, 1] as Tuple,
     /** How lively the idle band is (voice level, 0 = still). */
     energy: [0.15, 0, 1, 0.01] as Tuple,
   },
@@ -69,6 +71,14 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     if (!enabled) cbRef.current.onDone()
   }, [enabled])
 
+  // The slot above the title takes the band's height; the band itself is drawn on the canvas.
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--braid-slot-h', `${t.hero.slot}px`)
+    window.dispatchEvent(new Event('resize'))
+    return () => void root.style.removeProperty('--braid-slot-h')
+  }, [t.hero.slot])
+
   useEffect(() => {
     if (!enabled) return
     const canvas = canvasRef.current!
@@ -78,20 +88,16 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const dpr = Math.min(2, window.devicePixelRatio || 1)
 
     // Layout, measured on resize/font load only (never per frame): stage height and the
-    // logo row's document position, which the small band sits above.
-    let vw = 0, vh = 0, stageH = 1, logosDocTop = 0
+    // document position of the band's slot above the hero title.
+    let vw = 0, vh = 0, stageH = 1, slotDocY = 0
     const measure = () => {
       vw = window.innerWidth
       vh = window.innerHeight
       canvas.width = Math.round(vw * dpr)
       canvas.height = Math.round(vh * dpr)
       stageH = stage.offsetHeight || vh
-      const hero = document.querySelector<HTMLElement>('.case__section--hero')
-      // The topmost visible hero element (inline Back on phones, else the logos, else the title).
-      const anchor = ['.case__back--inline', '.case__logos', '.case__title']
-        .map((sel) => hero?.querySelector<HTMLElement>(sel))
-        .find((el) => el && el.offsetParent !== null && el.offsetHeight > 0)
-      logosDocTop = anchor ? anchor.getBoundingClientRect().top + window.scrollY : stageH + 160
+      const slot = document.querySelector<HTMLElement>('.case__section--hero .case__braid-slot')?.getBoundingClientRect()
+      slotDocY = slot ? slot.top + slot.height / 2 + window.scrollY : stageH + 120
       wake()
     }
 
@@ -139,12 +145,12 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
         }
       }
 
-      // Scene transform: full-screen fit on the stage → small band above the logos on the hero.
+      // Scene transform: full-screen fit on the stage → small band in its slot above the hero title.
       const sFull = Math.min(vw / (vw < 700 ? 600 : SIZE.W), vh / SIZE.H)
       const full = [sFull, (vw - SIZE.W * sFull) / 2, (vh - SIZE.H * sFull) / 2]
       const half = ((BANDS[s.band] ?? BANDS.braid).width ?? 320) * 0.87
       const sSmall = Math.min(s.hero.width, vw * 0.72) / (2 * half)
-      const ay = logosDocTop - window.scrollY - s.hero.gap
+      const ay = slotDocY - window.scrollY + s.hero.y
       const small = [sSmall, vw / 2 - 480 * sSmall, ay - 245 * sSmall]
       const k = smooth(p)
       const sc = lerp(small[0], full[0], k)
