@@ -1,15 +1,6 @@
-/* Custom cursor dot + ink layer — ported in spirit from ditto's app.js/draw.js.
+/* Custom cursor dot — ported in spirit from ditto's app.js.
    The native cursor is hidden by an inline rule in index.html (html.cur-active), so it is
    gone from first paint, before this stylesheet loads. */
-
-.cur-canvas {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483646; /* TEST (may revert; was 199): ink over everything, just under the dot */
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-}
 
 /* The element only carries the pointer position (transform). The visible circle
    is ::before, so the press scale never multiplies the translate — combining the
@@ -71,7 +62,7 @@
   scale: var(--cur-pressed-scale);
 }
 
-/* Over anything clickable: grows and turns translucent (tuned in "Cursor & ink" → hover). */
+/* Over anything clickable: grows and turns translucent (tuned in "Cursor" → hover). */
 .cur-dot.is-hover::before {
   scale: var(--cur-hover-scale);
   opacity: var(--cur-hover-opacity);

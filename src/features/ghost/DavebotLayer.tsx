@@ -463,7 +463,6 @@ function DavebotPanel() {
       ref={rootRef}
       className="davebot-layer"
       data-surface="dark"
-      data-no-ink
       style={{
         ['--davebot-highlight' as string]: tuning.highlight.show ? tuning.highlight.color : 'transparent',
         ['--davebot-veil' as string]: `rgb(0 0 0 / ${tuning.box.backdropOpacity})`,

@@ -279,7 +279,6 @@ export function LetsChat() {
       data-click={t.click.preset}
       onClick={onClick}
       style={style}
-      data-no-ink
     >
       <span className="chat__body" ref={bodyRef}>
         <span className="chat__shape" aria-hidden="true">

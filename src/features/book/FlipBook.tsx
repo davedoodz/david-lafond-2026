@@ -640,7 +640,6 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     <div
       ref={stageRef}
       className="book"
-      data-no-ink
       style={
         {
           '--book-shadow': look.shadowOpacity,

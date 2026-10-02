@@ -39,7 +39,6 @@ export function EditableText({ as = 'div', value, onChange, className, id, label
     suppressContentEditableWarning: true,
     spellCheck: true,
     'aria-label': `${label} (editable in dev)`,
-    'data-no-ink': true,
     onInput: (event: FormEvent<HTMLElement>) => onChange((event.currentTarget as HTMLElement).innerText),
   })
 }

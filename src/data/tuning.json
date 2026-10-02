@@ -1,9 +1,4 @@
 {
-  "Cursor & ink": {
-    "ink": {
-      "fadeMs": 4000
-    }
-  },
   "Playground": {
     "title": {
       "x": 22,
@@ -104,7 +99,6 @@
       "bounce": 0.4
     },
     "spacing": {
-      "snap": "mandatory",
       "firstDesktop": 277,
       "gapDesktop": 16,
       "lastDesktop": 277,
