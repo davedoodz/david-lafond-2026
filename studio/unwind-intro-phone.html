@@ -62,7 +62,11 @@
       <div id="list"></div>
     </main>
     <script type="module">
-      import { W, TAU, C, clamp, lerp, seg, curl, mount, HERO_BRAID } from './unwind-intro-kit.js'
+      import { W, TAU, C, clamp, lerp, seg, mount, HERO_BRAID } from './unwind-intro-kit.js'
+      // The live hero band itself (same renderer as the Unwind page), not a look-alike.
+      import { drawBraid, setRT } from '../src/features/unwindIntro/introEngine.js'
+      /** drawBraid centres the band at (480, 245) in its 960×540 scene; at scale 1 it is 2 × 320 × 0.87 wide. */
+      const BRAID_W = 2 * 320 * 0.87
 
       // ---------- Assets copied from reself-voice-prototypes ----------
       const img = (f) => { const i = new Image(); i.src = `./assets/proto/${f}`; return i }
@@ -573,13 +577,18 @@
             const rt = clock(t, (x) => lerp(2.3, 0.45, S(x, T.talk, T.calm + 0.6)))
             const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, T.talk, T.calm)))) * (1 - calm)
             const B = D.braid
-            let p = { x: 480 + B.x * u, y: scr.y + scr.h * 0.9 + B.y * u, len: scr.w * 0.8 * B.len, sc: 0.3 * B.scale }
+            let p = { x: 480 + B.x * u, y: scr.y + scr.h * 0.9 + B.y * u, len: scr.w * 0.8 * B.len * B.scale, sc: 0.3 * B.scale }
             p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
             p = mix(p, HERO_BRAID, S(t, T.calm + 0.6, T.hero))
             const speech = 0.45 + 0.4 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
-            a.braid(curl(cx(p.x), cy(p.y), p.len * z, 0), {
-              env: lerp(lerp(0.85 + 0.15 * hb, 0.1, calm), speech, talking * 0.8), scale: p.sc * z, rt, alpha: S(t, T.talk - 0.4, T.talk + 0.3),
-              chaos: () => lerp(1.3, 0, calm), kAmp: () => lerp(1.6 + 0.3 * hb, 0.45, calm), weights: (k) => (k >= 2 ? lerp(1.25, 0.3, calm) : lerp(0.75, 1.1, calm)),
+            const bAlpha = S(t, T.talk - 0.4, T.talk + 0.3), env = lerp(lerp(0.85 + 0.15 * hb, 0.12, calm), speech, talking * 0.8)
+            a.draw((c) => {
+              if (bAlpha <= 0.01) return
+              // Compose the film transform (canvas px per film px) with the band's own scene transform.
+              const m0 = c.getTransform(), k = m0.a, sc = (p.len * z) / BRAID_W, bx = cx(p.x), by = cy(p.y)
+              setRT(rt)
+              drawBraid(c, [sc * k, (bx - 480 * sc) * k + m0.e, (by - 245 * sc) * k + m0.f], { env, alpha: bAlpha })
+              c.setTransform(m0)
             })
 
             a.under((c) => {
