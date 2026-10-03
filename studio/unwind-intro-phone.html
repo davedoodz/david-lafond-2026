@@ -71,6 +71,32 @@
               </optgroup>
             </select>
           </label>
+          <label>Choice cards · subtitles
+            <select data-opt="sub">
+              <option value="heard">Feel heard / Science-backed tools</option>
+              <option value="space">No advice, just space / Tools to see it clearly</option>
+              <option value="listen">I'll just listen / Let's work through it</option>
+              <option value="vent">Vent it out / Find a next step</option>
+              <option value="kind">Be heard, gently / Get a fresh perspective</option>
+              <option value="none">No subtitles</option>
+            </select>
+          </label>
+          <label>Choice cards · icons
+            <select data-opt="emoji">
+              <option value="hands">🫶 / 🧭</option>
+              <option value="heart">💙 / 💡</option>
+              <option value="hug">🫂 / 🧠</option>
+              <option value="ear">👂 / ✨</option>
+              <option value="cloud">☁️ / 🌱</option>
+              <option value="none">No icons</option>
+            </select>
+          </label>
+          <label>Choice cards · align
+            <select data-opt="align">
+              <option value="left">Left</option>
+              <option value="center">Centre</option>
+            </select>
+          </label>
           <label>Nudge wording
             <select data-opt="copy">
               <option value="breath">Take a breath?</option>
@@ -108,7 +134,7 @@
       const STORE = 'unwind-intro-phone:v1'
       const SAVED = (() => { try { return JSON.parse(localStorage.getItem(STORE)) ?? {} } catch { return {} } })()
       const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY }))
-      const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath', ...SAVED.OPT }
+      const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', ...SAVED.OPT }
       document.querySelectorAll('[data-opt]').forEach((s) => {
         if (OPT[s.dataset.opt]) s.value = OPT[s.dataset.opt]
         s.addEventListener('change', () => { OPT[s.dataset.opt] = s.value; save() })
@@ -492,6 +518,22 @@
         c.beginPath(); c.arc(x, y, r, 0, TAU); k > 0.5 ? c.fill() : c.stroke()
         if (k > 0) { c.strokeStyle = '#fff'; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 6, y); c.lineTo(lerp(x - 6, x - 2, k), lerp(y, y + 5, k)); if (k > 0.5) c.lineTo(lerp(x - 2, x + 7, (k - 0.5) * 2), lerp(y + 5, y - 6, (k - 0.5) * 2)); c.stroke() }
       }
+      const CARD_SUB = { heard: ['Feel heard', 'Science-backed tools'], space: ['No advice, just space', 'Tools to see it clearly'], listen: ['I’ll just listen', 'Let’s work through it'], vent: ['Vent it out', 'Find a next step'], kind: ['Be heard, gently', 'Get a fresh perspective'], none: null }
+      const CARD_ICON = { hands: ['🫶', '🧭'], heart: ['💙', '💡'], hug: ['🫂', '🧠'], ear: ['👂', '✨'], cloud: ['☁️', '🌱'], none: null }
+      /** Card height for the current options (content stack + padding). */
+      const cardH = () => 44 + (CARD_ICON[OPT.emoji] ? 40 : 0) + 18 + (CARD_SUB[OPT.sub] ? 22 : 0)
+      /** One choice card (Just listen = 0, Help me think = 1) at (x, y), 166 wide. `on` 0–1 = selected. */
+      function choiceCard(c, x, y, i, on) {
+        const h = cardH(), center = OPT.align === 'center', tx0 = center ? x + 83 : x + 18, al = center ? 'center' : 'left'
+        glass(c, x, y, 166, h, 22, on > 0.5 ? '#EAF6FF' : '#ffffff', 14)
+        if (on > 0.01) { c.save(); c.globalAlpha *= on; c.strokeStyle = BLUE; c.lineWidth = 2; c.beginPath(); c.roundRect(x, y, 166, h, 22); c.stroke(); c.restore() }
+        let yy = y + 22
+        const icon = CARD_ICON[OPT.emoji], sub = CARD_SUB[OPT.sub]
+        if (icon) { em(c, icon[i], center ? x + 83 : x + 31, yy + 14, 26); yy += 40 }
+        tx(c, ['Just listen', 'Help me think'][i], tx0, yy + 9, 15.5, { w: 600, color: '#1f2a2e', align: al }); yy += 18
+        if (sub) tx(c, sub[i], tx0, yy + 13, 12, { color: '#7d8b90', align: al })
+        return h
+      }
       /** Momo header for the agent reflections: avatar, title, and the method it is using. */
       function momoHead(c, t, a, title, method) {
         rise(c, t, a, () => {
@@ -797,14 +839,9 @@
           momoHead(c, t, a, 'What would help most right now?', 'Momo adapts to you')
           rise(c, t, a + 0.4, () => {
             const sel = S(t, pick, pick + 0.3)
-            ;[[22, '🫶', 'Just listen', 'Feel heard', 0], [202, '🧭', 'Help me think', 'Science-backed tools', 1]].forEach(([x, e, l, sub, k]) => {
-              const on = k === 1 ? sel : 0
-              glass(c, x, 180, 166, 120, 22, on > 0.5 ? '#EAF6FF' : '#ffffff', 12)
-              if (on > 0.01) { c.save(); c.globalAlpha *= on; c.strokeStyle = BLUE; c.lineWidth = 2; c.beginPath(); c.roundRect(x, 180, 166, 120, 22); c.stroke(); c.restore() }
-              em(c, e, x + 30, 214, 26); tx(c, l, x + 16, 254, 15.5, { w: 600, color: '#1f2a2e' }); tx(c, sub, x + 16, 278, 12, { color: '#7d8b90' })
-            })
+            choiceCard(c, 22, 180, 0, 0); choiceCard(c, 202, 180, 1, sel)
           })
-          let y = 320
+          let y = 200 + cardH()
           ;[[pick + 0.7, 'Okay, let’s think. One question: what’s the evidence you “always” mess up? 🤔'], [pick + 1.6, 'Two good 1:1s this month. So: sometimes, not always. 🌱']].forEach(([at, text]) => { typing(c, 22, y, t, at - 0.4, at); const h = bubble(c, 22, y, 320, text, t, at); if (t > at - 0.4) y += h + 10 })
           why(c, t, T, 'Momo picks the approach: listening, or tools from CBT, ACT and self-compassion.')
         },
@@ -916,13 +953,12 @@
                 tx(c, 'What would help most', 195, 322, 22, { w: 600, color: '#1f2a2e', align: 'center' })
                 tx(c, 'right now?', 195, 350, 22, { w: 600, color: '#1f2a2e', align: 'center' })
                 c.restore()
-                ;[[22, '🫶', 'Just listen', 'Feel heard', true], [202, '🧭', 'Help me think', 'Science-backed tools', false]].forEach(([x, e, l, sub, pick], i) => {
+                const ch = cardH()
+                ;[[22, true], [202, false]].forEach(([x, pick], i) => {
                   const k = S(t, T.ask + 0.35 + i * 0.12, T.ask + 0.8 + i * 0.12)
                   const sel = pick ? S(t, T.pick - 0.05, T.pick + 0.2) : 0, down = pick ? bump(t, T.pick - 0.08, T.pick + 0.3) : 0, sc = 1 - 0.06 * down
-                  c.save(); c.globalAlpha *= k * (pick ? 1 : 1 - 0.5 * S(t, T.pick, T.pick + 0.3)); c.translate(x + 83, 470 + (1 - k) * 14); c.scale(sc, sc); c.translate(-(x + 83), -470)
-                  glass(c, x, 410, 166, 120, 22, sel > 0.5 ? '#EAF6FF' : '#ffffff', 14)
-                  if (sel > 0.01) { c.save(); c.globalAlpha *= sel; c.strokeStyle = BLUE; c.lineWidth = 2; c.beginPath(); c.roundRect(x, 410, 166, 120, 22); c.stroke(); c.restore() }
-                  em(c, e, x + 30, 444, 26); tx(c, l, x + 16, 484, 15.5, { w: 600, color: '#1f2a2e' }); tx(c, sub, x + 16, 508, 12, { color: '#7d8b90' })
+                  c.save(); c.globalAlpha *= k * (pick ? 1 : 1 - 0.5 * S(t, T.pick, T.pick + 0.3)); c.translate(x + 83, 410 + ch / 2 + (1 - k) * 14); c.scale(sc, sc); c.translate(-(x + 83), -(410 + ch / 2))
+                  choiceCard(c, x, 410, i, sel)
                   c.restore()
                 })
                 c.restore()
@@ -943,8 +979,8 @@
             })
             const sx = (x) => cx(scr.x + x * u), sy = (y) => cy(scr.y + y * u)
             // Glass cursor (prototype .nx-cursor): glides in, presses (shrinks, darkens), lifts away.
-            const TAPS = [[T.press, 195, 340, 250, 520], [T.pick, 105, 480, 230, 640], [T.stop, 345, 790, 260, 640]]
-            if (OPT.reflect === 'choice') TAPS.push([T.cards + 1.3, 282, 300, 300, 520])
+            const TAPS = [[T.press, 195, 340, 250, 520], [T.pick, 105, 410 + cardH() / 2, 230, 640], [T.stop, 345, 790, 260, 640]]
+            if (OPT.reflect === 'choice') TAPS.push([T.cards + 1.3, 282, 180 + cardH() / 2, 300, 520])
             for (const [at, x, y, x0, y0] of TAPS) {
               const vis = Math.min(S(t, at - 1.1, at - 0.8), 1 - S(t, at + 0.45, at + 0.8))
               if (vis <= 0.01) continue
