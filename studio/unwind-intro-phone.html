@@ -116,6 +116,8 @@
       import { drawBraid, setRT } from '../src/features/unwindIntro/introEngine.js'
       /** drawBraid centres the band at (480, 245) in its 960×540 scene; at scale 1 it is 2 × 320 × 0.87 wide. */
       const BRAID_W = 2 * 320 * 0.87
+      /** The band is drawn here first (its 600×260 neighbourhood) so it can be flattened before the voice starts. */
+      const braidOff = Object.assign(document.createElement('canvas'), { width: 600, height: 260 })
 
       // ---------- Assets copied from reself-voice-prototypes ----------
       const img = (f) => { const i = new Image(); i.src = `./assets/proto/${f}`; return i }
@@ -192,9 +194,9 @@
         c.shadowColor = 'transparent'; c.strokeStyle = 'rgba(0,0,0,0.05)'; c.lineWidth = 1; c.stroke()
         c.restore()
       }
-      function momo(c, x, y, size, t, listen = 0) {
+      function momo(c, x, y, size, t, listen = 0, img = IMG.momo) {
         const sq = 1 + 0.035 * listen * Math.sin(t * 9), bob = Math.sin(t * 1.8) * 4
-        c.drawImage(IMG.momo, x - (size * sq) / 2, y - size / 2 + bob - size * 0.03, size * sq, size / sq)
+        c.drawImage(img, x - (size * sq) / 2, y - size / 2 + bob - size * 0.03, size * sq, size / sq)
       }
 
       /** Transcript: words appear on their time, newest in blue, older lines fade toward the top. */
@@ -854,7 +856,7 @@
         T.buzz = T.det + win + D.island.compact // the glimpse dial lengthens the lock-screen beat (applies on reload)
         T.press = T.buzz + 1.7; T.unlock = T.press + 0.1
         T.ask = T.unlock + 0.15; T.pick = T.ask + 2.0; T.voice = T.pick + 0.45
-        let t = T.voice + 0.6
+        let t = T.voice + 1.3 // Momo grows, eyes open, wave flat; the first word starts it all
         T.talk = t; t += WORDS.length * rate + 0.4
                 T.stop = t; T.proc = t + 0.3; T.cards = t + 1.1
         T.check = T.cards + 2.9; T.calm = T.cards + 3.6; T.hero = T.calm + 1.3; T.dur = +(T.hero + 1.4).toFixed(1)
@@ -897,21 +899,23 @@
             const cx = (x) => (x - fx) * z + 480, cy = (y) => (y - fy) * z + 270
 
             // The braid is their voice: it appears only once they talk, then opens into the calm line.
-            const rt = clock(t, (x) => lerp(2.3, 0.45, S(x, T.talk, T.calm + 0.6)))
+            const live = (x) => S(x, T.talk - 0.1, T.talk + 0.6) // 0 = waiting (flat, slow), 1 = voice moving it
+            const rt = clock(t, (x) => lerp(0.25, lerp(2.3, 0.45, S(x, T.talk, T.calm + 0.6)), live(x)))
             const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, T.talk, T.calm)))) * (1 - calm)
             const B = D.braid
             let p = { x: 480 + B.x * u, y: scr.y + scr.h * 0.9 + B.y * u, len: scr.w * 0.8 * B.len * B.scale, sc: 0.3 * B.scale }
             p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
             p = mix(p, HERO_BRAID, S(t, T.calm + 0.6, T.hero))
             const speech = 0.45 + 0.4 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
-            const bAlpha = S(t, T.talk - 0.4, T.talk + 0.3), env = lerp(lerp(0.85 + 0.15 * hb, 0.12, calm), speech, talking * 0.8)
+            const bAlpha = S(t, T.voice - 0.1, T.voice + 0.5), flat = lerp(0.1, 1, live(t)), env = lerp(0, lerp(lerp(0.85 + 0.15 * hb, 0.12, calm), speech, talking * 0.8), live(t))
             a.draw((c) => {
               if (bAlpha <= 0.01) return
               // Compose the film transform (canvas px per film px) with the band's own scene transform.
-              const m0 = c.getTransform(), k = m0.a, sc = (p.len * z) / BRAID_W, bx = cx(p.x), by = cy(p.y)
+              const sc = (p.len * z) / BRAID_W, bx = cx(p.x), by = cy(p.y)
               setRT(rt)
-              drawBraid(c, [sc * k, (bx - 480 * sc) * k + m0.e, (by - 245 * sc) * k + m0.f], { env, alpha: bAlpha })
-              c.setTransform(m0)
+              const o = braidOff.getContext('2d'); o.setTransform(1, 0, 0, 1, 0, 0); o.clearRect(0, 0, 600, 260)
+              drawBraid(o, [1, -180, -115], { env, alpha: 1 })
+              c.save(); c.globalAlpha *= bAlpha; c.drawImage(braidOff, bx - 300 * sc, by - 130 * sc * flat, 600 * sc, 260 * sc * flat); c.restore()
             })
 
             a.under((c) => {
@@ -949,7 +953,6 @@
                 c.save(); c.globalAlpha = ph * ask
                 const e0 = S(t, T.ask, T.ask + 0.5)
                 c.save(); c.globalAlpha *= e0; c.translate(0, (1 - e0) * 12)
-                c.drawImage(IMG.momoOpen, 145, 190, 100, 100)
                 tx(c, 'What would help most', 195, 322, 22, { w: 600, color: '#1f2a2e', align: 'center' })
                 tx(c, 'right now?', 195, 350, 22, { w: 600, color: '#1f2a2e', align: 'center' })
                 c.restore()
@@ -965,8 +968,12 @@
               }
 
               // Inside Momo: the voice screen, the question, the reflection.
-              c.globalAlpha = ph * voiceIn * (1 - S(t, T.cards - 0.4, T.cards))
-              momo(c, 195, 300, 150, t, talking)
+              // One Momo across the cut: grows to the centre with eyes open, then settles and closes its eyes at the first word.
+              const grow = S(t, T.pick + 0.15, T.voice + 0.35), settle = S(t, T.talk - 0.1, T.talk + 0.6), shut = S(t, T.talk - 0.05, T.talk + 0.3)
+              const mx = 195, my = lerp(lerp(240, 330, grow), 300, settle), ms = lerp(lerp(100, 200, grow), 150, settle)
+              const mA = ph * app * S(t, T.ask, T.ask + 0.5) * (1 - S(t, T.cards - 0.4, T.cards))
+              c.globalAlpha = mA * (1 - shut); momo(c, mx, my, ms, t, 0, IMG.momoOpen)
+              c.globalAlpha = mA * shut; momo(c, mx, my, ms, t, talking)
               c.globalAlpha = ph * voiceIn
               transcript(c, tokens, t, 1 - S(t, T.proc - 0.1, T.proc + 0.3))
               controls(c, t, voiceIn * (1 - S(t, T.stop + 0.15, T.stop + 0.55)), 'Freeform', T.stop)
