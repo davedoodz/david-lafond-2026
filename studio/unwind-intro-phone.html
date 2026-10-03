@@ -116,7 +116,8 @@
 
       /** Dials: [default, min, max, step, label]. Read every frame through D. */
       const DIALS = {
-        island: { label: 'Dynamic Island', dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], hgt: [196, 150, 280, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
+        island: { label: 'Dynamic Island', cw: [300, 200, 360, 1, 'Glimpse width'], compact: [1.4, 0, 2.5, 0.05, 'Glimpse time (s)'], dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], hgt: [196, 150, 280, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
+        status: { label: 'Status bar icons', sigX: [0, -40, 40, 0.5, 'Signal X'], sigY: [0, -12, 12, 0.5, 'Signal Y'], wifiX: [0, -40, 40, 0.5, 'Wi-Fi X'], wifiY: [0, -12, 12, 0.5, 'Wi-Fi Y'], batX: [0, -40, 40, 0.5, 'Battery X'], batY: [0, -12, 12, 0.5, 'Battery Y'] },
         cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
         braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
       }
@@ -225,11 +226,12 @@
       function statusBar(c, back = 1, ink = '#1f1f1f', lock = 0) {
         if (lock < 0.99) { c.save(); c.globalAlpha *= 1 - lock; tx(c, '9:41', 52, 30, 16, { w: 600, color: ink }); c.restore() }
         if (lock > 0.01) { c.save(); c.globalAlpha *= lock; tx(c, 'AT&T', 40, 30, 15, { w: 600, color: ink }); c.restore() }
-        c.fillStyle = ink; [0, 1, 2, 3].forEach((i) => c.fillRect(278 + i * 5, 34 - (i + 1) * 2.6, 3, (i + 1) * 2.6))
-        const wx = 306, wy = 35
+        const B = D.status
+        c.fillStyle = ink; [0, 1, 2, 3].forEach((i) => c.fillRect(278 + B.sigX + i * 5, 34 + B.sigY - (i + 1) * 2.6, 3, (i + 1) * 2.6))
+        const wx = 306 + B.wifiX, wy = 35 + B.wifiY
         for (const [r0, r1] of [[9.6, 12.6], [5.6, 8.6]]) { c.beginPath(); c.arc(wx, wy, r1, -Math.PI * 0.75, -Math.PI * 0.25); c.arc(wx, wy, r0, -Math.PI * 0.25, -Math.PI * 0.75, true); c.closePath(); c.fill() }
         c.beginPath(); c.moveTo(wx, wy); c.arc(wx, wy, 4.6, -Math.PI * 0.75, -Math.PI * 0.25); c.closePath(); c.fill()
-        c.beginPath(); c.roundRect(323, 24, 23, 12, 3.5); c.lineWidth = 1; c.strokeStyle = 'rgba(31,31,31,0.4)'; c.stroke(); c.beginPath(); c.roundRect(325, 26, 19, 8, 2); c.fill()
+        c.beginPath(); c.roundRect(323 + B.batX, 24 + B.batY, 23, 12, 3.5); c.lineWidth = 1; c.strokeStyle = 'rgba(31,31,31,0.4)'; c.stroke(); c.beginPath(); c.roundRect(325 + B.batX, 26 + B.batY, 19, 8, 2); c.fill()
         if (back <= 0.01) return
         c.save(); c.globalAlpha *= back
         glass(c, 22, 62, 44, 44, 22, 'rgba(255,255,255,0.55)', 4)
@@ -359,7 +361,10 @@
       const HRC = '#ff6b81', MOVEC = '#34c7a3', HRVC = '#a78bfa'
       /** Story clock: minutes after midnight, 12-hour display without AM/PM. */
       const fmt = (min) => { const h = Math.floor(min / 60), m = Math.floor(min % 60); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}` }
-      const mNow = (t, T, V) => lerp(V.m0, V.m1, seg(t, T.det + 0.3, T.buzz - 0.6))
+      /** First story minute where heart rate is clearly above the person's usual range. */
+      const riseAt = (V) => { for (let m = V.m0; m <= V.m1; m += 0.02) if (V.hr(m) > V.base[1] + 8) return m; return V.m1 }
+      /** Story clock. During the horizontal glimpse it runs up to the abnormal reading; while open it runs on to the nudge. */
+      const mNow = (t, T, V) => { const g = T.det + D.island.compact, mr = (V.mRise ??= riseAt(V)); return t < g ? lerp(V.m0, mr, seg(t, T.det + 0.2, g - 0.15)) : lerp(mr, V.m1, seg(t, g, T.buzz - 0.6)) }
       const noise = (m) => Math.sin(m * 3.1) * 1.2 + Math.sin(m * 7.7) * 0.7
       /** Spring 0 → 1 over x in [0, 1]; bounce 0 is a plain ease-out, 1 overshoots a few times. */
       const springy = (x, b) => { if (x <= 0) return 0; if (x >= 1) return 1; const w = b * 16; return (1 - Math.exp(-6 * x) * Math.cos(w * x)) / (1 - Math.exp(-6) * Math.cos(w)) }
@@ -376,6 +381,7 @@
         else if (name === 'walk') { const k = Math.sin(t * 9) * 2.2; dot(13.2, 3.4, 2.1); line([[12.6, 7], [11.2, 13.4]]); line([[12.4, 8.2], [9.2 - k * 0.4, 11.4]]); line([[12.4, 8.2], [15.6 + k * 0.4, 10.6]]); line([[11.2, 13.4], [8.4 - k, 20.6]]); line([[11.2, 13.4], [14 + k * 0.5, 16.8], [14.6 + k, 21]]) }
         else if (name === 'seated') { dot(9.6, 3.4, 2.1); line([[9.4, 7], [9.8, 13.2], [15.6, 13.2], [16, 20.4]]); line([[9.6, 8.6], [13.6, 11]]); line([[6.2, 9], [6.2, 20.4]], 2); line([[6.2, 15.6], [12.4, 15.6]], 2) }
         else if (name === 'ecg') line([[1.8, 12.4], [6, 12.4], [8, 7.4], [11, 17.8], [14, 4.4], [16.6, 13.4], [18.2, 12.4], [22.2, 12.4]], 2.1)
+        else if (name === 'arrowUp') { line([[12, 20], [12, 5]], 3); line([[5.5, 11], [12, 4.4], [18.5, 11]], 3) }
         else if (name === 'clock') { c.lineWidth = 2.1; c.beginPath(); c.arc(12, 12, 9.2, 0, TAU); c.stroke(); line([[12, 6.6], [12, 12.4], [15.6, 14.4]], 2.1) }
         else if (name === 'lungs') { line([[12, 2.6], [12, 11], [9.8, 13]], 2); line([[12, 11], [14.2, 13]], 2); c.fill(new Path2D('M9.4 6.6c-3 0-6.2 5.4-6.2 10.3 0 2.2 1.1 3.5 2.8 3.5 2.2 0 4.4-1.2 4.8-2.8V8.2c0-.9-.5-1.6-1.4-1.6zM14.6 6.6c3 0 6.2 5.4 6.2 10.3 0 2.2-1.1 3.5-2.8 3.5-2.2 0-4.4-1.2-4.8-2.8V8.2c0-.9.5-1.6 1.4-1.6z')) }
         c.restore()
@@ -428,11 +434,28 @@
       /** Spring-open Dynamic Island. Content fades before the pill closes, so it never sits empty. */
       function island(c, t, T, V) {
         const d = D.island, H = d.hgt + V.extra
-        const open = springy(seg(t, T.det, T.det + d.dur), d.bounce), fade = 1 - S(t, T.buzz - 0.5, T.buzz - 0.32), shut = S(t, T.buzz - 0.4, T.buzz - 0.05)
-        const e = open * (1 - shut)
-        if (e <= 0.003) return
-        const w = lerp(124, d.w, e), h = lerp(36, H, e), r = Math.min(lerp(18, d.r, e), h / 2)
+        const c1 = S(t, T.det, T.det + 0.4), o0 = T.det + d.compact
+        const open = springy(seg(t, o0, o0 + d.dur), d.bounce), fade = 1 - S(t, T.buzz - 0.5, T.buzz - 0.32), shut = S(t, T.buzz - 0.4, T.buzz - 0.05)
+        if (c1 <= 0.003 || shut >= 0.997) return
+        const keep = 1 - shut
+        const w = lerp(124, lerp(lerp(124, d.cw, c1), d.w, open), keep), h = lerp(36, lerp(36, H, open), keep), r = Math.min(lerp(18, lerp(18, d.r, open), keep), h / 2)
         c.fillStyle = '#000'; c.beginPath(); c.roundRect(195 - w / 2, 11, w, h, r); c.fill()
+        // Glimpse: compact Live Activity either side of the camera (heart + line | BPM), before it opens down.
+        const g = c1 * (1 - clamp(open * 3)) * keep
+        if (g > 0.01) {
+          const m = mNow(t, T, V), hr = V.hr(m), high = hr > V.base[1] + 6, still = V.move(m) < 20
+          c.save(); c.globalAlpha *= g
+          sf(c, 'heart', 195 - w / 2 + 22, 29, 15 * (1 + 0.14 * pulse(t * hr / 60)), HRC)
+          const x0 = 195 - w / 2 + 36, ww = Math.max(0, 195 - 50 - x0 - 6), n = 24
+          if (ww > 8) { c.lineWidth = 1.6; c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = !still ? MOVEC : high ? HRC : '#8fb8e8'; c.beginPath()
+            for (let i = 0; i < n; i++) { const mm = m - 4 + (i / (n - 1)) * 4, y = 36 - ((V.hr(mm) - 60) / 50) * 14; i ? c.lineTo(x0 + (i / (n - 1)) * ww, y) : c.moveTo(x0, y) } c.stroke() }
+          const v = String(Math.round(hr)), xr = 195 + w / 2 - 18
+          tx(c, 'BPM', xr, 30, 9.5, { w: 600, color: '#8a8a8a', align: 'right' }); c.font = `600 9.5px ${UI}`
+          const bw = c.measureText('BPM').width
+          tx(c, v, xr - bw - 4, 29, 17, { w: 600, color: high ? '#ff9aab' : !still ? '#7fe3c8' : '#ffffff', align: 'right' })
+          c.font = `600 17px ${UI}`; if (high) sf(c, 'arrowUp', xr - bw - 4 - c.measureText(v).width - 9, 29, 11, '#ff9aab')
+          c.restore()
+        }
         const full = clamp((open - 0.6) / 0.4) * fade
         if (full <= 0.01) return
         const CH = 160 + V.extra + 36, k = Math.min(1, w / 358, h / CH)
@@ -791,7 +814,7 @@
       const WORDS = 'Priya pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'.split(' ')
             function timeline(rate, win) {
         const T = { phoneIn: 0.05, luck: 0.5, luckOut: 2.3, skip: 2.4, det: 2.6 }
-        T.buzz = T.det + win
+        T.buzz = T.det + win + D.island.compact // the glimpse dial lengthens the lock-screen beat (applies on reload)
         T.press = T.buzz + 1.7; T.unlock = T.press + 0.1
         T.ask = T.unlock + 0.15; T.pick = T.ask + 2.0; T.voice = T.pick + 0.45
         let t = T.voice + 0.6
