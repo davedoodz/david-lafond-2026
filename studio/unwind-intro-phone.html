@@ -12,14 +12,21 @@
       .opts { display: flex; flex-wrap: wrap; gap: 10px; }
       .opts label { display: grid; gap: 4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--s4); }
       .opts select { min-width: 190px; padding: 8px 12px; border: 1px solid var(--s2); border-radius: 12px; background: #fff; font: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--ink); }
+      .dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; width: 100%; }
+      .dials fieldset { display: grid; gap: 6px; margin: 0; padding: 10px 14px 12px; border: 1px solid var(--s2); border-radius: 14px; background: #fff; }
+      .dials legend { padding: 0 6px; font-size: 12px; font-weight: 500; }
+      .dials legend button { margin-left: 6px; padding: 2px 8px; border: 1px solid var(--s2); border-radius: 999px; background: none; font: inherit; font-size: 11px; color: var(--s6); cursor: pointer; }
+      .dials label { display: grid; grid-template-columns: 116px 1fr 44px; gap: 10px; align-items: center; font-size: 12px; color: var(--s6); }
+      .dials input { accent-color: var(--ink); }
+      .dials output { text-align: right; font-variant-numeric: tabular-nums; }
     </style>
   </head>
   <body>
     <main>
       <header>
         <div>
-          <h1>Phone only — four ways to show the Watch noticing</h1>
-          <p class="sub">1:58, Momo wishes them luck before the 1:1. After it, the Watch picks up a rise in heart rate and a drop in HRV; each film shows that differently on the phone before Momo's nudge. Then they talk, Dynamic mode asks one question, and Momo reflects it back. The switches apply to every film.</p>
+          <h1>Phone only — Dynamic Island motion designs</h1>
+          <p class="sub">1:58, Momo wishes them luck before the 1:1. At 2:46 the Watch picks up a rise in heart rate and a drop in HRV, and the Dynamic Island shows it with the live heart-rate readout. Each film is a different island motion. Then Momo's nudge, a Freeform voice reflection, and Momo reflects it back. Switches and dials apply to every film.</p>
         </div>
         <div class="opts">
           <label>Phone background
@@ -36,6 +43,10 @@
               <option value="cards">Cards + emoji</option>
               <option value="mood">Mood shift</option>
               <option value="stickers">Sticker board</option>
+              <option value="weather">Inner weather</option>
+              <option value="story">Story slides</option>
+              <option value="day">Your Wednesday</option>
+              <option value="letter">Note from Momo</option>
             </select>
           </label>
           <label>Nudge wording
@@ -46,6 +57,7 @@
             </select>
           </label>
         </div>
+        <div id="dials" class="dials"></div>
       </header>
       <div id="list"></div>
     </main>
@@ -67,6 +79,27 @@
       /** Page switches, read every frame. */
       const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath' }
       document.querySelectorAll('[data-opt]').forEach((s) => (s.onchange = () => (OPT[s.dataset.opt] = s.value)))
+
+      /** Dials: [default, min, max, step, label]. Read every frame through D. */
+      const DIALS = {
+        island: { label: 'Dynamic Island', dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], h: [150, 80, 200, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
+        braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
+      }
+      const D = {}
+      for (const [g, { label, ...f }] of Object.entries(DIALS)) {
+        D[g] = Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v[0]]))
+        const fs = document.createElement('fieldset')
+        fs.innerHTML = `<legend>${label}<button type="button">Reset</button></legend>`
+        for (const [k, [def, min, max, step, name]] of Object.entries(f)) {
+          const row = document.createElement('label')
+          row.innerHTML = `<span>${name}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${def}" data-def="${def}" /><output>${def}</output>`
+          const inp = row.querySelector('input'), out = row.querySelector('output')
+          inp.oninput = () => { D[g][k] = +inp.value; out.textContent = inp.value }
+          fs.append(row)
+        }
+        fs.querySelector('legend button').onclick = () => fs.querySelectorAll('input').forEach((inp) => { inp.value = inp.dataset.def; inp.dispatchEvent(new Event('input')) })
+        document.getElementById('dials').append(fs)
+      }
 
       const S = (t, a, b) => 0.5 - 0.5 * Math.cos(Math.PI * seg(t, a, b))
       const bump = (t, a, b) => Math.sin(Math.PI * seg(t, a, b))
@@ -132,22 +165,6 @@
           }
         })
         c.globalAlpha = 1
-      }
-      function promptCard(c, q, t, inAt, takeAt) {
-        const e = S(t, inAt, inAt + 0.55), g = S(t, takeAt, takeAt + 0.45)
-        const al = e * (1 - g)
-        if (al <= 0.01) return
-        const lines = wrap(c, q, 252, 17, 500), h = 50 + lines.length * 22
-        c.save(); c.globalAlpha = al
-        c.translate(195, 96 + h / 2 + (1 - e) * 12 + g * 24); c.scale(lerp(0.96, 1, e) * lerp(1, 0.94, g), lerp(0.96, 1, e) * lerp(1, 0.94, g)); c.translate(-195, -(96 + h / 2))
-        if (e < 1) c.filter = `blur(${(1 - e) * 6}px)`
-        glass(c, 45, 96, 300, h, 22, 'rgba(255,255,255,0.82)')
-        c.drawImage(IMG.stars, 145, 108, 16, 16)
-        tx(c, 'Tap to answer', 166, 117, 12, { w: 500, color: BLUE, ls: 0.24 })
-        lines.forEach((l, i) => tx(c, l, 195, 142 + i * 22, 17, { w: 500, color: '#2a3438', align: 'center' }))
-        c.strokeStyle = BLUE; c.lineWidth = 2; c.lineCap = 'round'
-        c.beginPath(); c.arc(322, 118, 7, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - seg(t, inAt, inAt + 6))); c.stroke()
-        c.restore()
       }
       function controls(c, t, al, mode, stopAt) {
         if (al <= 0.01) return
@@ -260,63 +277,65 @@
         c.strokeStyle = g; c.lineWidth = lw; c.lineJoin = 'round'; c.lineCap = 'round'; c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke()
         const [lx, ly] = pts[n - 1]; c.fillStyle = rgb([97, 168, 253], [255, 107, 129], hot(t, T)); c.beginPath(); c.arc(lx, ly, 3.4, 0, TAU); c.fill()
       }
-      const DETECT = {
-        /** A Live Activity under the clock: live heart rate, sparkline, HRV. */
-        live(c, t, T, al) {
-          if (al <= 0.01) return
-          const y = 292 + (1 - S(t, T.det, T.det + 0.5)) * 16
-          c.save(); c.globalAlpha *= al
-          glass(c, 16, y, 358, 136, 26, THEMES[OPT.bg].glass, 24)
-          heart(c, 40, y + 25, 15 * (1 + 0.15 * pulse(t * lerp(1.2, 1.7, hot(t, T)))))
-          tx(c, 'Heart rate', 56, y + 25, 13.5, { w: 600, color: '#1f2a2e' }); tx(c, 'Apple Watch', 356, y + 25, 12.5, { color: '#8a979b', align: 'right' })
-          const v = Math.round(hrAt(t, T)), col = rgb([31, 42, 46], [214, 70, 98], hot(t, T))
-          tx(c, String(v), 32, y + 74, 44, { w: 600, color: col, ls: -1 }); c.font = `600 44px ${UI}`
-          tx(c, 'BPM', 32 + c.measureText(String(v)).width + 8, y + 84, 13, { w: 600, color: '#8a979b' })
-          spark(c, 168, y + 48, 186, 46, t, T)
-          const hrv = hrvAt(t, T)
-          c.fillStyle = 'rgba(97,168,253,0.12)'; c.beginPath(); c.roundRect(32, y + 104, 168, 22, 11); c.fill()
-          tx(c, `HRV ${hrv} ms ${hrv < 45 ? '↓' : ''}`, 44, y + 115, 12, { w: 600, color: '#3d7fd0' })
-          tx(c, 'Sitting still', 214, y + 115, 12, { color: '#8a979b' })
-          c.restore()
-        },
-        /** The Dynamic Island grows into a live heart-rate readout. */
-        island(c, t, T) {
-          const e = S(t, T.det, T.det + 0.6) * (1 - S(t, T.buzz - 0.25, T.buzz + 0.3))
-          if (e <= 0.01) return
-          const w = lerp(124, 366, e), h = lerp(36, 98, e)
-          c.fillStyle = '#000'; c.beginPath(); c.roundRect(195 - w / 2, 11, w, h, lerp(18, 36, e)); c.fill()
-          const k = S(t, T.det + 0.35, T.det + 0.7) * (1 - S(t, T.buzz - 0.4, T.buzz))
-          if (k <= 0.01) return
-          c.save(); c.globalAlpha *= k
-          heart(c, 44, 42, 18 * (1 + 0.15 * pulse(t * lerp(1.2, 1.7, hot(t, T)))))
-          tx(c, 'Heart rate', 62, 36, 13, { w: 600, color: '#ffffff' }); tx(c, 'Apple Watch', 62, 54, 11.5, { color: '#9a9a9a' })
-          const v = String(Math.round(hrAt(t, T)))
-          c.font = `600 34px ${UI}`; const vw = c.measureText(v).width
-          tx(c, v, 334 - vw - 4, 45, 34, { w: 600, color: rgb([255, 255, 255], [255, 130, 150], hot(t, T)), ls: -0.5 }); tx(c, 'BPM', 344, 49, 11, { w: 600, color: '#9a9a9a', align: 'right' })
-          spark(c, 36, 70, 318, 26, t, T, 4, 2)
-          c.restore()
-        },
-        /** An afternoon strip: the 1:1 block, and heart rate rising in it and staying high after. */
-        timeline(c, t, T, al) {
-          if (al <= 0.01) return
-          const y = 292 + (1 - S(t, T.det, T.det + 0.5)) * 16
-          c.save(); c.globalAlpha *= al
-          glass(c, 16, y, 358, 150, 26, THEMES[OPT.bg].glass, 24)
-          heart(c, 40, y + 25, 15)
-          tx(c, 'This afternoon', 56, y + 25, 13.5, { w: 600, color: '#1f2a2e' }); tx(c, 'Apple Watch', 356, y + 25, 12.5, { color: '#8a979b', align: 'right' })
-          const X = (hour) => 34 + ((hour - 13) / 3) * 322, base = y + 106
-          c.fillStyle = 'rgba(97,168,253,0.14)'; c.beginPath(); c.roundRect(X(14), y + 44, X(14.75) - X(14), 66, 8); c.fill()
-          tx(c, '1:1 with Priya', X(14) + 8, y + 56, 10.5, { w: 600, color: '#3d7fd0' })
-          ;['1 PM', '2', '3', '4 PM'].forEach((l, i) => tx(c, l, X(13 + i), y + 124, 10.5, { color: '#98a4a8', align: i === 0 ? 'left' : i === 3 ? 'right' : 'center' }))
-          const now = lerp(13, 14.78, S(t, T.det, T.det + 1.8)), bpm = (hour) => lerp(70, 96, S(hour, 14.15, 14.55)) + Math.sin(hour * 40) * 2
-          c.lineWidth = 2.2; c.lineJoin = 'round'; c.beginPath()
-          for (let hh = 13; hh <= now; hh += 0.01) { const px = X(hh), py = base - ((bpm(hh) - 62) / 40) * 56; hh === 13 ? c.moveTo(px, py) : c.lineTo(px, py) }
-          const g = c.createLinearGradient(X(13), 0, X(15), 0); g.addColorStop(0, BLUE); g.addColorStop(0.45, BLUE); g.addColorStop(0.62, HOT); g.addColorStop(1, HOT); c.strokeStyle = g; c.stroke()
-          const ny = base - ((bpm(now) - 62) / 40) * 56
-          c.fillStyle = now > 14.4 ? HOT : BLUE; c.beginPath(); c.arc(X(now), ny, 3.6 + 2 * pulse(t * 1.6), 0, TAU); c.fill()
-          tx(c, now > 14.6 ? 'Still elevated after your 1:1' : ' ', 34, y + 138, 12, { w: 600, color: '#d6465f' })
-          c.restore()
-        },
+      /** The live heart-rate layout (from the lock-screen Live Activity), 358 × 136 at (x, y). */
+      function liveBody(c, x, y, w, t, T, dark) {
+        const ink = dark ? '#ffffff' : '#1f2a2e', sub = dark ? '#9a9a9a' : '#8a979b'
+        heart(c, x + 24, y + 25, 15 * (1 + 0.15 * pulse(t * lerp(1.2, 1.7, hot(t, T)))))
+        tx(c, 'Heart rate', x + 40, y + 25, 13.5, { w: 600, color: ink }); tx(c, 'Apple Watch', x + w - 18, y + 25, 12.5, { color: sub, align: 'right' })
+        const v = String(Math.round(hrAt(t, T)))
+        const col = dark ? rgb([255, 255, 255], [255, 130, 150], hot(t, T)) : rgb([31, 42, 46], [214, 70, 98], hot(t, T))
+        tx(c, v, x + 16, y + 74, 44, { w: 600, color: col, ls: -1 }); c.font = `600 44px ${UI}`
+        tx(c, 'BPM', x + 16 + c.measureText(v).width + 8, y + 84, 13, { w: 600, color: sub })
+        spark(c, x + w * 0.42, y + 48, w * 0.52, 46, t, T)
+        const hrv = hrvAt(t, T)
+        c.fillStyle = dark ? 'rgba(97,168,253,0.22)' : 'rgba(97,168,253,0.12)'; c.beginPath(); c.roundRect(x + 16, y + 104, w * 0.47, 22, 11); c.fill()
+        tx(c, `HRV ${hrv} ms ${hrv < 45 ? '↓' : ''}`, x + 28, y + 115, 12, { w: 600, color: dark ? '#8fc3ff' : '#3d7fd0' })
+        tx(c, 'Sitting still', x + 30 + w * 0.47, y + 115, 12, { color: sub })
+      }
+      /** Spring 0 → 1 over x in [0, 1]; bounce 0 is a plain ease-out, 1 overshoots a few times. */
+      const springy = (x, b) => { if (x <= 0) return 0; if (x >= 1) return 1; const w = b * 16; return (1 - Math.exp(-6 * x) * Math.cos(w * x)) / (1 - Math.exp(-6) * Math.cos(w)) }
+      /** Compact Live Activity: heart on the left, BPM on the right, an optional mini line between. */
+      function islandCompact(c, x, y, w, h, t, T, al, line) {
+        if (al <= 0.01) return
+        c.save(); c.globalAlpha *= al
+        heart(c, x + 24, y + h / 2, 14 * (1 + 0.15 * pulse(t * lerp(1.2, 1.7, hot(t, T)))))
+        tx(c, String(Math.round(hrAt(t, T))), x + w - 46, y + h / 2, 17, { w: 600, color: rgb([255, 255, 255], [255, 130, 150], hot(t, T)), align: 'right' })
+        tx(c, 'BPM', x + w - 16, y + h / 2 + 1, 10, { w: 600, color: '#9a9a9a', align: 'right' })
+        if (line) spark(c, x + 46, y + h / 2 - 8, w - 136, 16, t, T, 4, 1.6)
+        c.restore()
+      }
+      /** The Dynamic Island, in one of five motion styles. Opens at T.det, closes before Momo's nudge. */
+      function island(c, t, T, style) {
+        const d = D.island, shut = S(t, T.buzz - 0.45, T.buzz)
+        const ex = (a) => springy(seg(t, a, a + d.dur), d.bounce)
+        const beat = pulse(t * lerp(1.2, 1.8, hot(t, T)))
+        let w = 124, h = 36, r = 18, full = 0, compact = 0, sc = 1
+        if (style === 'grow' || style === 'breathe') {
+          const e = ex(T.det) * (1 - shut); w = lerp(124, d.w, e); h = lerp(36, d.h, e); r = lerp(18, d.r, e); full = clamp((e - 0.6) / 0.4)
+        } else if (style === 'drop') {
+          const ew = ex(T.det) * (1 - shut), eh = ex(T.det + 0.28) * (1 - shut)
+          w = lerp(124, d.w, ew); h = lerp(36, d.h, eh); r = lerp(18, d.r, Math.min(ew, eh)); full = clamp((eh - 0.6) / 0.4)
+        } else if (style === 'compact') {
+          const c1 = S(t, T.det, T.det + 0.35) * (1 - shut), e = ex(T.det + 1.4) * (1 - shut)
+          w = lerp(lerp(124, 250, c1), d.w, e); h = lerp(36, d.h, e); r = lerp(18, d.r, e); compact = c1 * (1 - clamp(e * 2.5)); full = clamp((e - 0.6) / 0.4)
+        } else if (style === 'minimal') {
+          const e = ex(T.det) * (1 - shut); w = lerp(124, 300, e); h = lerp(36, 46, e); r = lerp(18, 23, e); compact = clamp((e - 0.5) / 0.5)
+        }
+        if (style === 'breathe') sc = 1 + 0.03 * beat * full
+        if (w < 125 && h < 37) return
+        c.save(); c.translate(195, 11); c.scale(sc, sc); c.translate(-195, -11)
+        if (style === 'breathe' && full > 0.01) {
+          const g = c.createRadialGradient(195, 11 + h / 2, 0, 195, 11 + h / 2, w * 0.75)
+          g.addColorStop(0, `rgba(255,107,129,${0.3 * hot(t, T) * full * (0.6 + 0.4 * beat)})`); g.addColorStop(1, 'rgba(255,107,129,0)')
+          c.fillStyle = g; c.fillRect(0, 0, 390, 330)
+        }
+        c.fillStyle = '#000'; c.beginPath(); c.roundRect(195 - w / 2, 11, w, h, Math.min(r, h / 2)); c.fill()
+        if (full > 0.01) {
+          const k = Math.min(1, w / 358, h / 140)
+          c.save(); c.globalAlpha *= full; c.translate(195 - (358 * k) / 2, 11 + (h - 136 * k) / 2); c.scale(k, k); liveBody(c, 0, 0, 358, t, T, true); c.restore()
+        }
+        islandCompact(c, 195 - w / 2, 11, w, h, t, T, compact, style === 'minimal')
+        c.restore()
       }
 
       // ---------- Reflection designs (all start at T.cards; the plan is confirmed at T.check) ----------
@@ -438,26 +457,86 @@
             c.restore()
           })
         },
+        /** Weather report: storm cloud at 2:47 clearing to sun, with a short forecast. */
+        weather(c, t, T) {
+          const a = T.cards, m = S(t, a + 0.4, a + 1.6)
+          rise(c, t, a, () => { tx(c, 'Your inner weather', 26, 132, 22, { w: 600, color: '#1f2a2e' }) })
+          rise(c, t, a + 0.15, () => {
+            const g = c.createLinearGradient(0, 160, 0, 360); g.addColorStop(0, rgb([214, 220, 236], [190, 228, 255], m)); g.addColorStop(1, rgb([236, 232, 244], [234, 247, 255], m))
+            c.save(); c.fillStyle = g; c.beginPath(); c.roundRect(22, 160, 346, 200, 28); c.fill(); c.clip()
+            c.save(); c.globalAlpha *= 1 - m; em(c, '⛈️', 195, 246 - m * 20, 84); c.restore()
+            c.save(); c.globalAlpha *= m; c.translate(195, 246); const sc = lerp(0.7, 1, pop(t, a + 1.1)); c.scale(sc, sc); em(c, '🌤️', 0, 0, 84); c.restore()
+            if (m < 1) for (let i = 0; i < 18; i++) { const x = 60 + ((i * 47) % 280), y = 200 + ((t * 260 + i * 53) % 150); c.strokeStyle = `rgba(110,130,170,${0.5 * (1 - m)})`; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, y); c.lineTo(x - 4, y + 10); c.stroke() }
+            c.restore()
+            tx(c, m > 0.5 ? 'Clearing · 2:52 PM' : 'Stormy · 2:47 PM', 42, 336, 13, { w: 600, color: '#3d5a7a' })
+          })
+          ;[['🌧️', 'The 1:1 rattled you, and you froze.', a + 1.0], ['🔁', 'Third tense 1:1 this month.', a + 1.35], ['🌤️', 'Thursday: write your 3 points first.', a + 1.7]].forEach(([e, l, at], i) => rise(c, t, at, () => {
+            glass(c, 22, 376 + i * 56, 346, 46, 16, '#ffffff', 10); em(c, e, 48, 399 + i * 56, 20); tx(c, l, 70, 399 + i * 56, 14, { w: 500, color: '#2a3438' })
+            if (i === 2) tick(c, 344, 399 + i * 56, 11, S(t, T.check, T.check + 0.35))
+          }))
+        },
+        /** Story slides: Instagram-style progress bars, one big emoji per slide. */
+        story(c, t, T) {
+          const a = T.cards, SL = [['😬', 'You froze when Priya pushed back.', '#FFE9EE'], ['🔁', 'It’s the third tense 1:1 this month.', '#EEE9FF'], ['💪', 'You still knew the answer.', '#E6F7EE'], ['✍️', 'Thursday: write your 3 points first.', '#E7F2FF']]
+          const per = (T.check + 0.6 - a) / SL.length, i = clamp(Math.floor((t - a) / per), 0, SL.length - 1), k = seg(t, a + i * per, a + (i + 1) * per)
+          rise(c, t, a, () => {
+            c.fillStyle = SL[i][2]; c.beginPath(); c.roundRect(14, 110, 362, 560, 30); c.fill()
+            SL.forEach((_, j) => { const x = 30 + j * 84; c.fillStyle = 'rgba(31,42,46,0.15)'; c.beginPath(); c.roundRect(x, 126, 76, 4, 2); c.fill(); c.fillStyle = '#1f2a2e'; c.beginPath(); c.roundRect(x, 126, 76 * (j < i ? 1 : j === i ? k : 0), 4, 2); c.fill() })
+            c.drawImage(IMG.momoOpen, 28, 142, 34, 34); tx(c, 'Momo', 70, 159, 14, { w: 600, color: '#1f2a2e' }); tx(c, 'just now', 116, 159, 12.5, { color: '#7d8b90' })
+            const e = pop(t, a + i * per + 0.05)
+            c.save(); c.translate(195, 340); c.scale(lerp(0.6, 1, clamp(e)), lerp(0.6, 1, clamp(e))); em(c, SL[i][0], 0, 0, 96); c.restore()
+            wrap(c, SL[i][1], 280, 24, 600).forEach((l, j) => tx(c, l, 195, 460 + j * 32, 24, { w: 600, color: '#1f2a2e', align: 'center' }))
+            if (i === SL.length - 1) { const ck = S(t, T.check, T.check + 0.35); c.fillStyle = rgb([28, 28, 30], [97, 168, 253], ck); c.beginPath(); c.roundRect(80, 590, 230, 46, 23); c.fill(); tx(c, ck > 0.5 ? 'Added to Thursday ✓' : 'Add to Thursday', 195, 613, 15, { w: 600, color: '#fff', align: 'center' }) }
+          })
+        },
+        /** Your Wednesday: the day as an emoji timeline, with the plan pinned to Thursday. */
+        day(c, t, T) {
+          const a = T.cards
+          rise(c, t, a, () => { tx(c, 'Your Wednesday', 26, 132, 22, { w: 600, color: '#1f2a2e' }); tx(c, 'Oct 1', 364, 133, 13, { color: '#98a4a8', align: 'right' }) })
+          const ROWS = [['9:10', '☕️', 'Calm morning', '#F2F7FB'], ['1:58', '🍀', 'Prepped with Momo', '#EAF7EF'], ['2:00', '😬', '1:1 with Priya · froze', '#FFEEF2'], ['2:52', '🎙️', 'Talked it through · 0:41', '#EEF5FF'], ['Thu', '✍️', 'Write your 3 points first', '#FFF5E8']]
+          c.strokeStyle = '#dde5ea'; c.lineWidth = 2; c.beginPath(); c.moveTo(66, 176); c.lineTo(66, 176 + S(t, a, a + 2) * 300); c.stroke()
+          ROWS.forEach(([time, e, l, fill], i) => rise(c, t, a + 0.25 + i * 0.32, () => {
+            const y = 176 + i * 68
+            tx(c, time, 26, y + 22, 12, { w: 600, color: '#98a4a8' })
+            c.fillStyle = '#fff'; c.beginPath(); c.arc(66, y + 22, 16, 0, TAU); c.fill(); em(c, e, 66, y + 22, 18)
+            glass(c, 92, y, 276, 44, 14, fill, 0); tx(c, l, 108, y + 22, 14, { w: 500, color: '#2a3438' })
+            if (i === 4) tick(c, 348, y + 22, 11, S(t, T.check, T.check + 0.35))
+          }))
+          rise(c, t, a + 2.0, () => chip(c, 92, 530, '📈  Third tense 1:1 this month', 'rgba(97,168,253,0.14)', '#3d7fd0', 13))
+        },
+        /** A handwritten-style note from Momo, with emoji stamps. */
+        letter(c, t, T) {
+          const a = T.cards
+          rise(c, t, a, () => {
+            c.save(); c.translate(195, 340); c.rotate(-0.012); c.translate(-195, -340)
+            c.fillStyle = '#FFFDF8'; c.shadowColor = 'rgba(80,60,30,0.12)'; c.shadowBlur = 22; c.shadowOffsetY = 8; c.beginPath(); c.roundRect(24, 120, 342, 430, 18); c.fill(); c.shadowColor = 'transparent'
+            c.strokeStyle = 'rgba(97,168,253,0.14)'; c.lineWidth = 1; for (let y = 200; y < 530; y += 30) { c.beginPath(); c.moveTo(44, y); c.lineTo(346, y); c.stroke() }
+            c.drawImage(IMG.momoOpen, 40, 134, 40, 40); tx(c, 'A note from Momo', 88, 155, 15, { w: 600, color: '#1f2a2e' })
+            const L = ['Hey, that sounded hard. 💙', 'Freezing doesn’t mean you didn’t', 'know it. You did.', 'This keeps happening in 1:1s, 🔁', 'so for Thursday, write your', '3 points first. ✍️', 'You’ve got this. 🌱']
+            const n = Math.floor(seg(t, a + 0.3, a + 2.5) * L.length * 22)
+            let left = n
+            L.forEach((l, i) => { const k = Math.min(l.length, Math.max(0, left)); left -= 22; if (k > 0) tx(c, l.slice(0, k), 48, 216 + i * 30, 15.5, { w: 500, color: '#334046' }) })
+            c.restore()
+          })
+          rise(c, t, T.check - 0.2, () => { const sc = clamp(pop(t, T.check - 0.2)); c.save(); c.translate(318, 512); c.rotate(0.2); c.scale(sc, sc); em(c, '🌤️', 0, 0, 44); c.restore() })
+        },
       }
 
       // ---------- Timeline (phone only) ----------
       const WORDS = 'Priya pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'.split(' ')
-      const QUESTION = 'What would you say, if it happened again?', ANSWER = 'That I need two more weeks, and why.'.split(' ')
-      function timeline(rate) {
+            function timeline(rate) {
         const T = { phoneIn: 0.05, luck: 0.5, luckOut: 2.3, skip: 2.4, det: 2.6, buzz: 5.3 }
         T.press = T.buzz + 1.7; T.unlock = T.press + 0.1
         let t = T.unlock + 0.6
         T.talk = t; t += WORDS.length * rate + 0.4
-        T.card = t; T.take = t + 1.25; T.answer = t + 1.55; t = T.answer + ANSWER.length * rate + 0.4
-        T.stop = t; T.proc = t + 0.3; T.cards = t + 1.1
+                T.stop = t; T.proc = t + 0.3; T.cards = t + 1.1
         T.check = T.cards + 2.9; T.calm = T.cards + 3.6; T.hero = T.calm + 1.3; T.dur = +(T.hero + 1.4).toFixed(1)
         return T
       }
 
-      function film(detect, meta) {
+      function film(style, meta) {
         const T = timeline(0.17)
         const tokens = WORDS.map((w, i) => ({ text: w, at: T.talk + i * 0.17 }))
-        tokens.push({ q: true, text: QUESTION, at: T.answer - 0.15 }, ...ANSWER.map((w, i) => ({ text: w, at: T.answer + i * 0.17 })))
         return {
           ...meta, dur: T.dur,
           draw(a) {
@@ -465,7 +544,6 @@
             const calm = S(t, T.talk + 0.6, T.calm + 0.5)
             const talking = Math.min(S(t, T.talk - 0.2, T.talk + 0.2), 1 - S(t, T.stop - 0.2, T.stop + 0.3))
             const app = S(t, T.unlock, T.unlock + 0.45)
-            const watchSide = detect === 'watch' ? S(t, T.det - 0.2, T.det + 0.5) * (1 - S(t, T.buzz - 0.3, T.buzz + 0.4)) : 0
 
             // Warm flush from the moment the body reacts, cooling as they talk.
             a.under((c) => {
@@ -481,20 +559,21 @@
             const u = scr.w / 390
 
             // Camera: lean in on the lock screen (to the island for that variant), the transcript, then the reflection.
-            const inLock = S(t, 0.5, 1.3) * (1 - S(t, T.unlock - 0.2, T.unlock + 0.5)) * (1 - watchSide)
+            const inLock = S(t, 0.5, 1.3) * (1 - S(t, T.unlock - 0.2, T.unlock + 0.5))
             const inTalk = S(t, T.talk - 0.3, T.talk + 0.9) * (1 - S(t, T.stop, T.proc + 0.6))
             const inCards = S(t, T.cards - 0.2, T.cards + 0.8) * (1 - S(t, T.calm - 0.5, T.calm + 0.5))
-            const lockY = detect === 'island' ? lerp(300, 150, S(t, T.det - 0.2, T.det + 0.4) * (1 - S(t, T.buzz - 0.4, T.buzz + 0.2))) : 300
-            const z = 1 + 0.6 * inLock + 0.42 * inTalk + 0.36 * inCards
+            const atIsland = S(t, T.det - 0.2, T.det + 0.4) * (1 - S(t, T.buzz - 0.4, T.buzz + 0.2)), lockY = lerp(300, 110, atIsland)
+            const z = 1 + lerp(0.6, D.island.zoom + 0.6, atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards
             const wsum = inLock + inTalk + inCards, focus = (scr.y + lockY * u) * inLock + (scr.y + 560 * u) * inTalk + (scr.y + 330 * u) * inCards
-            const fx = lerp(480, 560, watchSide), fy = lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
+            const fx = 480, fy = lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
             const view = (c) => { c.translate(480, 270); c.scale(z, z); c.translate(-fx, -fy) }
             const cx = (x) => (x - fx) * z + 480, cy = (y) => (y - fy) * z + 270
 
             // The braid is their voice: it appears only once they talk, then opens into the calm line.
             const rt = clock(t, (x) => lerp(2.3, 0.45, S(x, T.talk, T.calm + 0.6)))
             const hb = pulse(clock(t, (x) => lerp(1.9, 0.9, S(x, T.talk, T.calm)))) * (1 - calm)
-            let p = { x: 480, y: scr.y + scr.h * 0.9, len: scr.w * 0.8, sc: 0.3 }
+            const B = D.braid
+            let p = { x: 480 + B.x * u, y: scr.y + scr.h * 0.9 + B.y * u, len: scr.w * 0.8 * B.len, sc: 0.3 * B.scale }
             p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
             p = mix(p, HERO_BRAID, S(t, T.calm + 0.6, T.hero))
             const speech = 0.45 + 0.4 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
@@ -524,86 +603,42 @@
                 const s1 = S(t, T.skip, T.skip + 0.12), s2 = S(t, T.buzz - 0.7, T.buzz - 0.58)
                 ;[['1:58', 1 - s1], ['2:46', s1 * (1 - s2)], ['2:47', s2]].forEach(([s, k]) => { if (k > 0.01) { c.save(); c.globalAlpha *= k; tx(c, s, 195, 168, 84, { w: 300, color: th.lockInk, align: 'center', ls: -2 }); c.restore() } })
                 notice(c, 300 - (1 - S(t, T.luck, T.luck + 0.5)) * 24, Math.min(S(t, T.luck, T.luck + 0.5), 1 - S(t, T.luckOut, T.luckOut + 0.4)), COPY.luck)
-                const det = Math.min(S(t, T.det, T.det + 0.5), 1 - S(t, T.buzz - 0.15, T.buzz + 0.3))
-                if (detect === 'live') DETECT.live(c, t, T, det)
-                if (detect === 'timeline') DETECT.timeline(c, t, T, det)
                 const nk = S(t, T.buzz, T.buzz + 0.45), press = 1 - 0.03 * bump(t, T.press, T.press + 0.25)
                 c.save(); c.translate(195, 340); c.scale(press, press); c.translate(-195, -340)
                 notice(c, 300 - (1 - nk) * 24, nk, COPY[OPT.copy])
                 c.restore()
                 c.restore()
               }
-              if (detect === 'island') DETECT.island(c, t, T)
+              island(c, t, T, style)
 
               // Inside Momo: the voice screen, the question, the reflection.
               c.globalAlpha = ph * app * (1 - S(t, T.cards - 0.4, T.cards))
               momo(c, 195, 300, 150, t, talking)
               c.globalAlpha = ph * app
               transcript(c, tokens, t, 1 - S(t, T.proc - 0.1, T.proc + 0.3))
-              promptCard(c, QUESTION, t, T.card, T.take)
-              controls(c, t, app * (1 - S(t, T.stop + 0.15, T.stop + 0.55)), 'Dynamic', T.stop)
+              controls(c, t, app * (1 - S(t, T.stop + 0.15, T.stop + 0.55)), 'Freeform', T.stop)
               processing(c, t, Math.min(S(t, T.proc, T.proc + 0.35), 1 - S(t, T.cards - 0.2, T.cards + 0.15)))
               if (t > T.cards - 0.1) REFLECT[OPT.reflect](c, t, T)
               c.restore()
               c.globalAlpha = ph; c.drawImage(IMG.phone, 480 - pw / 2, py - 250, pw, 500)
 
-              // Watch-glimpse variant: the Watch slides in beside the phone, reading the change.
-              if (watchSide > 0.01) {
-                const wk = 260 / WATCH.h, wx = 760 - (1 - watchSide) * 40, wy = 300
-                const shake = Math.sin(t * 75) * 1.8 * bump(t, T.buzz - 0.6, T.buzz - 0.3)
-                c.save(); c.globalAlpha = watchSide
-                const x0 = wx - (WATCH.w * wk) / 2 + shake, y0 = wy - 130
-                c.save(); c.translate(x0 + WATCH.sx * wk, y0 + WATCH.sy * wk); c.scale(wk, wk)
-                c.fillStyle = '#000'; c.beginPath(); c.roundRect(0, 0, WATCH.sw, WATCH.sh, 70); c.fill(); c.clip()
-                heart(c, 120, 110, 40 * (1 + 0.15 * pulse(t * lerp(1.2, 1.7, hot(t, T)))))
-                tx(c, 'HEART RATE', 152, 110, 24, { w: 600, color: '#ff8b9b', ls: 1 })
-                tx(c, String(Math.round(hrAt(t, T))), 60, 210, 110, { w: 600, color: '#ffffff', ls: -3 }); tx(c, 'BPM', 270, 240, 30, { w: 600, color: '#9a9a9a' })
-                spark(c, 50, 300, 300, 90, t, T, 4, 6)
-                tx(c, `HRV ${hrvAt(t, T)} ms`, 60, 420, 26, { w: 600, color: '#8fc3ff' })
-                c.restore()
-                c.drawImage(IMG.watch, x0, y0, WATCH.w * wk, 260)
-                c.restore()
-                // A soft dotted arc: the reading travels to the phone.
-                const k = S(t, T.det + 1.2, T.buzz - 0.2)
-                if (k > 0.01) { c.save(); c.globalAlpha = watchSide * 0.6; c.strokeStyle = BLUE; c.lineWidth = 1.5; c.setLineDash([3, 5]); c.beginPath(); c.moveTo(700, 250); c.quadraticCurveTo(650, 170, lerp(700, 600, k), lerp(250, 200, k)); c.stroke(); c.restore() }
-              }
               c.restore()
             })
             const sx = (x) => cx(scr.x + x * u), sy = (y) => cy(scr.y + y * u)
-            if (detect === 'watch') a.ripple(cx(760), cy(300), T.det + 0.4, { r0: 70, r1: 130, n: 2, dur: 1.4, gap: 0.4, alpha: 0.35, lw: 1.2 })
             a.ripple(sx(195), sy(340), T.press, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
-            a.ripple(sx(195), sy(140), T.take, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
             a.ripple(sx(345), sy(790), T.stop, { r0: 4, r1: 26, n: 1, dur: 0.6, alpha: 0.6 })
             a.hero(T.hero)
           },
         }
       }
 
+      const NOTE = { keeps: 'Momo good-luck note, the Watch reading on the island, Momo’s nudge, Freeform voice, reflection.' }
       const FILMS = [
-        film('live', {
-          title: 'Live heart rate on the lock screen',
-          idea: 'After the good-luck note, a Live Activity from the Watch sits under the clock: the number climbs from 71 to 96 BPM, the sparkline turns from blue to pink and HRV drops. Momo’s nudge replaces it.',
-          beats: ['1:58 Momo: good luck 🍀', '2:46 Live Activity: 71 → 96 BPM, HRV ↓', '2:47 Momo’s nudge', 'voice + Dynamic question', 'reflection', 'calm → hero'],
-          keeps: 'The body-first idea, entirely on the phone. Real numbers you can read.', cuts: 'The Watch hardware itself.', tradeoff: 'Clearest and most literal; the widget is one more card to read before the nudge.',
-        }),
-        film('island', {
-          title: 'Dynamic Island',
-          idea: 'The camera rises to the top of the phone: the Dynamic Island grows into a black readout with a pulsing heart and a climbing heart-rate line, then shrinks back as Momo’s nudge drops in.',
-          beats: ['1:58 Momo: good luck 🍀', '2:46 the island expands: heart rate climbing', '2:47 island closes, nudge', 'voice + Dynamic question', 'reflection', 'calm → hero'],
-          keeps: 'A native-feeling, ambient signal that the Watch is sensing.', cuts: 'The HRV detail (shown as the line only).', tradeoff: 'Most elegant and quick; the readout is small, so it relies on the camera move to be noticed.',
-        }),
-        film('timeline', {
-          title: 'This afternoon',
-          idea: 'A widget shows the afternoon: the 1:1 block, and the heart-rate line drawing across it, rising during the meeting and staying high after. “Still elevated after your 1:1”, then Momo’s nudge.',
-          beats: ['1:58 Momo: good luck 🍀', '2:46 afternoon strip: rise during the 1:1', '“Still elevated”', '2:47 Momo’s nudge', 'reflection', 'calm → hero'],
-          keeps: 'Why now: the calendar context and the body signal together.', cuts: 'The live BPM count.', tradeoff: 'Explains the timing logic best (body + calendar), but it is the most chart-like moment.',
-        }),
-        film('watch', {
-          title: 'Watch glimpse',
-          idea: 'The camera eases right as the Watch slides in beside the phone, showing heart rate climbing and HRV dropping; a soft dotted arc carries the reading across, and the nudge lands on the phone.',
-          beats: ['1:58 Momo: good luck 🍀', '2:46 Watch slides in: 96 BPM, HRV 28', 'reading travels to the phone', '2:47 Momo’s nudge', 'reflection', 'calm → hero'],
-          keeps: 'The actual device doing the sensing, without the Watch notification flow.', cuts: 'Nothing on the phone during detection.', tradeoff: 'Shows the hardware relationship clearly; briefly splits attention between two devices.',
-        }),
+        film('grow', { ...NOTE, title: 'Spring open', idea: 'The pill springs open into the full heart-rate readout (the lock-screen layout, dark): the number counts up, the line turns pink, HRV drops. It springs shut as Momo’s nudge arrives.', beats: ['1:58 good luck 🍀', '2:46 island springs open', '71 → 96 BPM, HRV ↓', '2:47 closes, nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'The most native-feeling. Spring bounce and open time are on the dials.' }),
+        film('drop', { ...NOTE, title: 'Stretch, then drop', idea: 'Two steps: the pill first stretches sideways, then drops down to reveal the readout, like a sheet unrolling from the camera.', beats: ['1:58 good luck 🍀', 'pill stretches', 'drops open', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'A more deliberate, readable motion; a beat slower than the spring.' }),
+        film('compact', { ...NOTE, title: 'Compact, then expand', idea: 'Like a real Live Activity: the island first widens with a pulsing heart and BPM on either side of the camera, then, as the number keeps climbing, it expands into the full readout.', beats: ['1:58 good luck 🍀', 'compact: ♥ … 78 BPM', 'expands as it rises', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'Tells the escalation (quiet signal → worth your attention) best; takes the longest.' }),
+        film('breathe', { ...NOTE, title: 'Heartbeat glow', idea: 'The spring-open readout, plus the island gently swelling with each heartbeat and a soft pink glow behind it that strengthens as the heart rate climbs.', beats: ['1:58 good luck 🍀', 'island opens', 'beats + pink glow', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'Makes the body feel present and tense; the glow is the only non-native touch.' }),
+        film('minimal', { ...NOTE, title: 'Minimal pill', idea: 'The island only widens into a slim pill: heart, a tiny climbing line and BPM. No full card, so the clock stays visible underneath.', beats: ['1:58 good luck 🍀', 'slim pill: ♥ ~~ 96 BPM', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'HRV and the “Sitting still” context.', tradeoff: 'The calmest and most subtle; the least detail about what the Watch saw.' }),
       ]
 
       await mount(FILMS, { fonts: ['inter'] })
