@@ -28,8 +28,8 @@
     <main>
       <header>
         <div>
-          <h1>Phone only — Dynamic Island motion designs</h1>
-          <p class="sub">1:58, Momo wishes them luck before the 1:1. At 2:46 the Watch picks up a rise in heart rate and a drop in HRV, and the Dynamic Island shows it with the live heart-rate readout. Each film is a different island motion. Then Momo's nudge, a Freeform voice reflection, and Momo reflects it back. Switches and dials apply to every film.</p>
+          <h1>Spring open — five heart-rate timing variants</h1>
+          <p class="sub">All use the Spring open island. Each tells the detection story with different timing. Real-time hierarchy: <b>heart rate</b> (pink) and <b>motion</b> (green) are the primary signals, <b>HRV</b> (violet) supports when available, and respiratory rate is left out because Apple Watch measures it during sleep. The pattern that triggers Momo: heart rate rises, movement stays low, and it is unusual against their personal baseline.</p>
         </div>
         <div class="opts">
           <label>Phone background
@@ -116,7 +116,7 @@
 
       /** Dials: [default, min, max, step, label]. Read every frame through D. */
       const DIALS = {
-        island: { label: 'Dynamic Island', dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], h: [150, 80, 200, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
+        island: { label: 'Dynamic Island', dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], hgt: [212, 170, 280, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
         cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
         braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
       }
@@ -353,78 +353,114 @@
         return h
       }
 
-      // ---------- Detection: the Watch notices a fluctuation ----------
-      /** Heart rate (bpm) at time x: resting, then climbing through the detection window and staying high. */
-      const hrAt = (x, T) => lerp(71, 96, S(x, T.det + 0.15, T.det + 1.7)) + Math.sin(x * 5.3) * 1.1 + Math.sin(x * 11.7) * 0.6
-      const hrvAt = (x, T) => Math.round(lerp(52, 28, S(x, T.det + 0.3, T.det + 1.9)))
-      const hot = (x, T) => S(x, T.det + 0.5, T.det + 1.6)
-      function spark(c, x0, y0, w, h, t, T, secs = 4, lw = 2.2) {
-        const n = 48, pts = []
-        for (let i = 0; i < n; i++) { const x = t - (1 - i / (n - 1)) * secs; pts.push([x0 + (i / (n - 1)) * w, y0 + h - ((hrAt(x, T) - 64) / 40) * h]) }
-        const g = c.createLinearGradient(x0, 0, x0 + w, 0); g.addColorStop(0, BLUE); g.addColorStop(1, rgb([97, 168, 253], [255, 107, 129], hot(t, T)))
-        c.strokeStyle = g; c.lineWidth = lw; c.lineJoin = 'round'; c.lineCap = 'round'; c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke()
-        const [lx, ly] = pts[n - 1]; c.fillStyle = rgb([97, 168, 253], [255, 107, 129], hot(t, T)); c.beginPath(); c.arc(lx, ly, 3.4, 0, TAU); c.fill()
-      }
-      /** The live heart-rate layout (from the lock-screen Live Activity), 358 × 136 at (x, y). */
-      function liveBody(c, x, y, w, t, T, dark) {
-        const ink = dark ? '#ffffff' : '#1f2a2e', sub = dark ? '#9a9a9a' : '#8a979b'
-        heart(c, x + 24, y + 25, 15 * (1 + 0.15 * pulse(t * lerp(1.2, 1.7, hot(t, T)))))
-        tx(c, 'Heart rate', x + 40, y + 25, 13.5, { w: 600, color: ink }); tx(c, 'Apple Watch', x + w - 18, y + 25, 12.5, { color: sub, align: 'right' })
-        const v = String(Math.round(hrAt(t, T)))
-        const col = dark ? rgb([255, 255, 255], [255, 130, 150], hot(t, T)) : rgb([31, 42, 46], [214, 70, 98], hot(t, T))
-        tx(c, v, x + 16, y + 74, 44, { w: 600, color: col, ls: -1 }); c.font = `600 44px ${UI}`
-        tx(c, 'BPM', x + 16 + c.measureText(v).width + 8, y + 84, 13, { w: 600, color: sub })
-        spark(c, x + w * 0.42, y + 48, w * 0.52, 46, t, T)
-        const hrv = hrvAt(t, T)
-        c.fillStyle = dark ? 'rgba(97,168,253,0.22)' : 'rgba(97,168,253,0.12)'; c.beginPath(); c.roundRect(x + 16, y + 104, w * 0.47, 22, 11); c.fill()
-        tx(c, `HRV ${hrv} ms ${hrv < 45 ? '↓' : ''}`, x + 28, y + 115, 12, { w: 600, color: dark ? '#8fc3ff' : '#3d7fd0' })
-        tx(c, 'Sitting still', x + 30 + w * 0.47, y + 115, 12, { color: sub })
-      }
+      // ---------- Detection: what the Watch sees, and why it is worth a check-in ----------
+      // Real-time hierarchy: heart rate + motion are primary; HRV supports when available;
+      // respiratory rate is sleep-only on Apple Watch, so it is not used for this.
+      const HRC = '#ff6b81', MOVEC = '#34c7a3', HRVC = '#a78bfa'
+      /** Story clock: minutes after midnight, 12-hour display without AM/PM. */
+      const fmt = (min) => { const h = Math.floor(min / 60), m = Math.floor(min % 60); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}` }
+      const mNow = (t, T, V) => lerp(V.m0, V.m1, seg(t, T.det + 0.3, T.buzz - 0.6))
+      const noise = (m) => Math.sin(m * 3.1) * 1.2 + Math.sin(m * 7.7) * 0.7
       /** Spring 0 → 1 over x in [0, 1]; bounce 0 is a plain ease-out, 1 overshoots a few times. */
       const springy = (x, b) => { if (x <= 0) return 0; if (x >= 1) return 1; const w = b * 16; return (1 - Math.exp(-6 * x) * Math.cos(w * x)) / (1 - Math.exp(-6) * Math.cos(w)) }
-      /** Compact Live Activity: heart on the left, BPM on the right, an optional mini line between. */
-      function islandCompact(c, x, y, w, h, t, T, al, line) {
-        if (al <= 0.01) return
-        c.save(); c.globalAlpha *= al
-        heart(c, x + 24, y + h / 2, 14 * (1 + 0.15 * pulse(t * lerp(1.2, 1.7, hot(t, T)))))
-        tx(c, String(Math.round(hrAt(t, T))), x + w - 46, y + h / 2, 17, { w: 600, color: rgb([255, 255, 255], [255, 130, 150], hot(t, T)), align: 'right' })
-        tx(c, 'BPM', x + w - 16, y + h / 2 + 1, 10, { w: 600, color: '#9a9a9a', align: 'right' })
-        if (line) spark(c, x + 46, y + h / 2 - 8, w - 136, 16, t, T, 4, 1.6)
-        c.restore()
+
+      // Metric icons: one shape and one colour per signal, so they never read as the same thing.
+      function motionIcon(c, x, y, walking, t, color = MOVEC) {
+        c.save(); c.strokeStyle = color; c.fillStyle = color; c.lineWidth = 1.8; c.lineCap = 'round'; c.lineJoin = 'round'
+        c.beginPath(); c.arc(x, y - 7, 2.4, 0, TAU); c.fill(); c.beginPath()
+        if (walking) { const k = Math.sin(t * 9) * 3.5; c.moveTo(x, y - 4); c.lineTo(x, y + 2); c.moveTo(x, y + 2); c.lineTo(x - k, y + 8); c.moveTo(x, y + 2); c.lineTo(x + k, y + 8); c.moveTo(x - 4, y - 1 + k * 0.3); c.lineTo(x + 4, y - 1 - k * 0.3) }
+        else { c.moveTo(x - 1, y - 4); c.lineTo(x - 1, y + 2); c.lineTo(x + 5, y + 2); c.lineTo(x + 5, y + 8); c.moveTo(x - 1, y - 1); c.lineTo(x + 4, y - 1); c.moveTo(x - 5, y + 8); c.lineTo(x - 5, y - 1) }
+        c.stroke(); c.restore()
       }
-      /** The Dynamic Island, in one of five motion styles. Opens at T.det, closes before Momo's nudge. */
-      function island(c, t, T, style) {
-        const d = D.island, shut = S(t, T.buzz - 0.45, T.buzz)
-        const ex = (a) => springy(seg(t, a, a + d.dur), d.bounce)
-        const beat = pulse(t * lerp(1.2, 1.8, hot(t, T)))
-        let w = 124, h = 36, r = 18, full = 0, compact = 0, sc = 1
-        if (style === 'grow' || style === 'breathe') {
-          const e = ex(T.det) * (1 - shut); w = lerp(124, d.w, e); h = lerp(36, d.h, e); r = lerp(18, d.r, e); full = clamp((e - 0.6) / 0.4)
-        } else if (style === 'drop') {
-          const ew = ex(T.det) * (1 - shut), eh = ex(T.det + 0.28) * (1 - shut)
-          w = lerp(124, d.w, ew); h = lerp(36, d.h, eh); r = lerp(18, d.r, Math.min(ew, eh)); full = clamp((eh - 0.6) / 0.4)
-        } else if (style === 'compact') {
-          const c1 = S(t, T.det, T.det + 0.35) * (1 - shut), e = ex(T.det + 1.4) * (1 - shut)
-          w = lerp(lerp(124, 250, c1), d.w, e); h = lerp(36, d.h, e); r = lerp(18, d.r, e); compact = c1 * (1 - clamp(e * 2.5)); full = clamp((e - 0.6) / 0.4)
-        } else if (style === 'minimal') {
-          const e = ex(T.det) * (1 - shut); w = lerp(124, 300, e); h = lerp(36, 46, e); r = lerp(18, 23, e); compact = clamp((e - 0.5) / 0.5)
-        }
-        if (style === 'breathe') sc = 1 + 0.03 * beat * full
-        if (w < 125 && h < 37) return
-        c.save(); c.translate(195, 11); c.scale(sc, sc); c.translate(-195, -11)
-        if (style === 'breathe' && full > 0.01) {
-          const g = c.createRadialGradient(195, 11 + h / 2, 0, 195, 11 + h / 2, w * 0.75)
-          g.addColorStop(0, `rgba(255,107,129,${0.3 * hot(t, T) * full * (0.6 + 0.4 * beat)})`); g.addColorStop(1, 'rgba(255,107,129,0)')
-          c.fillStyle = g; c.fillRect(0, 0, 390, 330)
-        }
-        c.fillStyle = '#000'; c.beginPath(); c.roundRect(195 - w / 2, 11, w, h, Math.min(r, h / 2)); c.fill()
-        if (full > 0.01) {
-          const k = Math.min(1, w / 358, h / 140)
-          c.save(); c.globalAlpha *= full; c.translate(195 - (358 * k) / 2, 11 + (h - 136 * k) / 2); c.scale(k, k); liveBody(c, 0, 0, 358, t, T, true); c.restore()
-        }
-        islandCompact(c, 195 - w / 2, 11, w, h, t, T, compact, style === 'minimal')
-        c.restore()
+      function hrvIcon(c, x, y, color = HRVC) {
+        c.save(); c.strokeStyle = color; c.lineWidth = 1.6; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath()
+        c.moveTo(x - 9, y + 1); c.lineTo(x - 5, y + 1); c.lineTo(x - 3.5, y - 7); c.lineTo(x - 2, y + 4); c.lineTo(x + 3, y + 1); c.lineTo(x + 4.5, y - 7); c.lineTo(x + 6, y + 4); c.lineTo(x + 9, y + 1); c.stroke()
+        c.setLineDash([1.5, 2]); c.beginPath(); c.moveTo(x - 3.5, y + 8); c.lineTo(x + 4.5, y + 8); c.stroke(); c.restore()
       }
+      function baseIcon(c, x, y) { c.save(); c.fillStyle = 'rgba(159,176,182,0.35)'; c.fillRect(x - 8, y - 4, 16, 8); c.strokeStyle = '#9fb0b6'; c.lineWidth = 1.2; c.setLineDash([2, 2]); c.beginPath(); c.moveTo(x - 8, y - 4); c.lineTo(x + 8, y - 4); c.moveTo(x - 8, y + 4); c.lineTo(x + 8, y + 4); c.stroke(); c.restore() }
+      function respIcon(c, x, y) { c.save(); c.strokeStyle = '#6b7280'; c.lineWidth = 1.4; c.lineCap = 'round'; for (const dy of [-4, 0, 4]) { c.beginPath(); c.moveTo(x - 8, y + dy); c.bezierCurveTo(x - 3, y + dy - 3, x + 1, y + dy + 3, x + 8, y + dy); c.stroke() } c.restore() }
+
+      /** Heart-rate history for the window ending now: personal baseline band, optional meeting block, line coloured by context. */
+      function hrLine(c, x0, y0, w, h, m, V) {
+        const lo = 56, hi = 112, Y = (v) => y0 + h - ((v - lo) / (hi - lo)) * h, X = (mm) => x0 + ((mm - (m - V.span)) / V.span) * w
+        if (V.meeting) { const a = Math.max(x0, X(V.meeting[0])), b = Math.min(x0 + w, X(V.meeting[1])); if (b > a) { c.fillStyle = 'rgba(97,168,253,0.16)'; c.fillRect(a, y0 - 4, b - a, h + 8); tx(c, '1:1 with Priya', a + 5, y0 + 4, 9.5, { w: 600, color: '#8fc3ff' }) } }
+        c.fillStyle = `rgba(159,176,182,${V.emphasis ? 0.24 : 0.12})`; c.fillRect(x0, Y(V.base[1]), w, Y(V.base[0]) - Y(V.base[1]))
+        c.save(); c.strokeStyle = `rgba(159,176,182,${V.emphasis ? 0.8 : 0.45})`; c.lineWidth = 1; c.setLineDash([3, 3]); c.beginPath(); c.moveTo(x0, Y(V.base[1])); c.lineTo(x0 + w, Y(V.base[1])); c.moveTo(x0, Y(V.base[0])); c.lineTo(x0 + w, Y(V.base[0])); c.stroke(); c.restore()
+        tx(c, V.emphasis ? `your usual ${V.base[0]}–${V.base[1]}` : 'your usual', x0 + w - 2, Y(V.base[0]) + 8, 9.5, { w: 500, color: '#8a9599', align: 'right' })
+        const n = 64, pts = []
+        for (let i = 0; i < n; i++) { const mm = m - V.span + (i / (n - 1)) * V.span; pts.push([X(mm), Y(V.hr(mm)), V.move(mm) > 20 ? MOVEC : V.hr(mm) > V.base[1] + 6 ? HRC : BLUE]) }
+        c.lineWidth = 2.4; c.lineCap = 'round'
+        for (let i = 1; i < n; i++) { c.strokeStyle = pts[i][2]; c.beginPath(); c.moveTo(pts[i - 1][0], pts[i - 1][1]); c.lineTo(pts[i][0], pts[i][1]); c.stroke() }
+        const [lx, ly, lc] = pts[n - 1]; c.fillStyle = lc; c.beginPath(); c.arc(lx, ly, 3.6, 0, TAU); c.fill()
+        tx(c, fmt(m - V.span), x0, y0 + h + 12, 9.5, { color: '#8a9599' }); tx(c, 'now', x0 + w, y0 + h + 12, 9.5, { color: '#8a9599', align: 'right' })
+      }
+      const CHECK_ICON = { hr: (c, x, y) => heart(c, x, y, 12, HRC), move: (c, x, y, t) => motionIcon(c, x, y, false, t), base: (c, x, y) => baseIcon(c, x, y), hrv: (c, x, y) => hrvIcon(c, x, y), resp: (c, x, y) => respIcon(c, x, y), ask: (c, x, y) => c.drawImage(IMG.momoOpen, x - 9, y - 9, 18, 18) }
+      /** The expanded island content, 358 × (176 + V.extra), dark. Heart rate, motion and HRV each sit in their own cluster. */
+      function readout(c, t, T, V) {
+        const m = mNow(t, T, V), hr = V.hr(m), hrv = Math.round(V.hrv(m)), mv = V.move(m), still = mv < 20
+        const mid = (V.base[0] + V.base[1]) / 2, high = hr > V.base[1] + 6
+        // Heart rate (primary)
+        c.fillStyle = 'rgba(255,107,129,0.2)'; c.beginPath(); c.roundRect(16, 12, 28, 28, 9); c.fill(); heart(c, 30, 26, 13 * (1 + 0.16 * pulse(t * hr / 60)), HRC)
+        tx(c, 'Heart rate', 54, 20, 13.5, { w: 600, color: '#ffffff' }); tx(c, 'Apple Watch · live', 54, 35, 10.5, { color: '#8a8a8a' })
+        const [label, ink, fill] = V.status?.(m, hr, still) ?? (!still ? ['Moving · expected', MOVEC, 'rgba(52,199,163,0.18)'] : high ? [`+${Math.round(hr - mid)} BPM vs your usual`, '#ff9aab', 'rgba(255,107,129,0.2)'] : ['Within your usual', '#a0a0a0', 'rgba(255,255,255,0.08)'])
+        c.font = `600 11px ${UI}`; const cw = c.measureText(label).width + 20; c.fillStyle = fill; c.beginPath(); c.roundRect(342 - cw, 15, cw, 22, 11); c.fill(); tx(c, label, 342 - cw / 2, 26, 11, { w: 600, color: ink, align: 'center' })
+        const v = String(Math.round(hr)); tx(c, v, 16, 80, 40, { w: 600, color: rgb([255, 255, 255], [255, 140, 158], clamp((hr - V.base[1]) / 14)), ls: -1 }); c.font = `600 40px ${UI}`; tx(c, 'BPM', 16 + c.measureText(v).width + 6, 90, 11.5, { w: 600, color: '#8a8a8a' })
+        hrLine(c, 140, 50, 202, 50, m, V)
+        c.fillStyle = 'rgba(255,255,255,0.08)'; c.fillRect(16, 124, 326, 1)
+        // Motion (primary) and HRV (supporting): separate tiles, separate colours.
+        c.fillStyle = 'rgba(52,199,163,0.14)'; c.beginPath(); c.roundRect(16, 132, 159, 44, 12); c.fill(); motionIcon(c, 36, 155, !still, t)
+        tx(c, 'Motion', 54, 145, 10.5, { w: 500, color: '#8fd9c4' }); tx(c, still ? `Still · ${Math.max(1, Math.round(m - V.stillSince))} min` : `Walking · ${Math.round(mv)}/min`, 54, 163, 13, { w: 600, color: '#ffffff' })
+        c.fillStyle = 'rgba(167,139,250,0.16)'; c.beginPath(); c.roundRect(183, 132, 159, 44, 12); c.fill(); hrvIcon(c, 203, 154)
+        tx(c, 'HRV · supporting', 221, 145, 10.5, { w: 500, color: '#c4b5fd' }); tx(c, `${hrv} ms${hrv <= Math.round(V.hrv(V.m0)) - 8 ? ' ↓' : ''}`, 221, 163, 13, { w: 600, color: '#ffffff' })
+        // Optional: the detection logic, line by line.
+        ;(V.checks ?? []).forEach(([f, kind, text, state], i) => {
+          const k = S(t, lerp(T.det, T.buzz - 0.8, f), lerp(T.det, T.buzz - 0.8, f) + 0.3)
+          if (k <= 0.01) return
+          const y = 196 + i * 23
+          c.save(); c.globalAlpha *= k * (state === 'off' ? 0.55 : 1)
+          CHECK_ICON[kind](c, 28, y, t)
+          tx(c, text, 46, y, 12, { w: state === 'go' ? 600 : 500, color: state === 'go' ? '#8fc3ff' : state === 'off' ? '#8a8a8a' : '#e5e5e5' })
+          if (state === 'ok' || state === 'weak') { c.fillStyle = state === 'ok' ? '#34c759' : 'rgba(52,199,89,0.45)'; c.beginPath(); c.arc(332, y, 7, 0, TAU); c.fill(); c.strokeStyle = '#000'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(328.5, y); c.lineTo(331, y + 2.5); c.lineTo(335.5, y - 2.5); c.stroke() }
+          if (state === 'off') tx(c, 'not used', 342, y, 10.5, { color: '#8a8a8a', align: 'right' })
+          c.restore()
+        })
+      }
+      /** Spring-open Dynamic Island. Content fades before the pill closes, so it never sits empty. */
+      function island(c, t, T, V) {
+        const d = D.island, H = d.hgt + V.extra
+        const open = springy(seg(t, T.det, T.det + d.dur), d.bounce), fade = 1 - S(t, T.buzz - 0.5, T.buzz - 0.32), shut = S(t, T.buzz - 0.4, T.buzz - 0.05)
+        const e = open * (1 - shut)
+        if (e <= 0.003) return
+        const w = lerp(124, d.w, e), h = lerp(36, H, e), r = Math.min(lerp(18, d.r, e), h / 2)
+        c.fillStyle = '#000'; c.beginPath(); c.roundRect(195 - w / 2, 11, w, h, r); c.fill()
+        const full = clamp((open - 0.6) / 0.4) * fade
+        if (full <= 0.01) return
+        const CH = 176 + V.extra + 36, k = Math.min(1, w / 358, h / CH)
+        c.save(); c.beginPath(); c.roundRect(195 - w / 2, 11, w, h, r); c.clip(); c.globalAlpha *= full
+        c.translate(195 - (358 * k) / 2, 11 + (h - CH * k) / 2); c.scale(k, k); c.translate(0, 36); readout(c, t, T, V); c.restore()
+      }
+
+      /** Five timing scenarios, all Spring open. Times are story minutes (2:46 PM = 886). */
+      const SCEN = [
+        { id: 'sudden', win: 3.0, m0: 884, m1: 887, span: 8, base: [64, 78], stillSince: 879, extra: 0,
+          hr: (m) => 73 + 31 * S(m, 885.2, 886.2) + noise(m), hrv: (m) => lerp(52, 27, S(m, 885.4, 886.6)), move: () => 3,
+          meta: { title: 'Sudden rise', idea: 'Two minutes after the 1:1: heart rate jumps from 73 to 104 BPM in about a minute while the Motion tile stays on “Still”. The pink line climbs out of the grey “your usual” band. HRV drops in its own tile.', beats: ['1:58 good luck 🍀', '2:44 island opens: 73 BPM, still', '2:45–2:46 HR jumps to 104', 'still · HRV ↓', '2:47 Momo’s nudge'], keeps: 'The core rule in one glance: HR up, motion low.', cuts: 'The meeting itself.', tradeoff: 'Fast and dramatic; it reads as a spike, not as “unusual for you”.' } },
+        { id: 'build', win: 4.2, m0: 840, m1: 887, span: 50, base: [64, 78], stillSince: 840, extra: 0, meeting: [840, 885],
+          hr: (m) => 75 + 9 * S(m, 845, 870) + 9 * S(m, 876, 884) + noise(m), hrv: (m) => lerp(55, 30, S(m, 845, 885)), move: () => 3,
+          status: (m, hr, still) => (m > 885.2 ? ['Still high after your 1:1', '#ff9aab', 'rgba(255,107,129,0.2)'] : null),
+          meta: { title: 'Builds through the meeting', idea: 'The island opens at 2:00 and the clock runs through the 1:1: heart rate creeps up while they sit (Still · 45 min), the meeting block ends at 2:45, and the line does not come back down. That is the moment Momo checks in.', beats: ['1:58 good luck 🍀', '2:00 → 2:45 HR creeps up, seated', '1:1 ends, HR stays high', '2:47 Momo’s nudge'], keeps: 'Calendar context + sustained elevation.', cuts: 'A sharp spike.', tradeoff: 'The most realistic and the clearest “why now”; the clock moves fast, so it needs the zoom.' } },
+        { id: 'usual', win: 3.4, m0: 872, m1: 887, span: 20, base: [64, 78], emphasis: true, stillSince: 860, extra: 0,
+          hr: (m) => 70 + 27 * S(m, 880, 885.5) + noise(m), hrv: (m) => lerp(50, 28, S(m, 881, 886)), move: () => 2,
+          meta: { title: 'Unusual for you', idea: 'The personal baseline is the hero: a labelled band “your usual 64–78” for this hour, and the chip counts how far above it they are (“+26 BPM vs your usual”). Motion stays still.', beats: ['1:58 good luck 🍀', '2:32 within your usual', '2:42 climbs out of the band', '+26 vs usual · still', '2:47 Momo’s nudge'], keeps: 'Personal baseline, the part that makes it intelligent.', cuts: 'Meeting context.', tradeoff: 'Best at “compared to you, not to everyone”; slightly more to read.' } },
+        { id: 'checks', win: 4.6, m0: 884, m1: 887, span: 8, base: [64, 78], stillSince: 879, extra: 150,
+          hr: (m) => 73 + 30 * S(m, 885.0, 886.0) + noise(m), hrv: (m) => lerp(52, 28, S(m, 885.3, 886.5)), move: () => 3,
+          checks: [[0.3, 'hr', 'Heart rate up ~30 BPM in 2 min', 'ok'], [0.42, 'move', 'Barely moving · sitting', 'ok'], [0.54, 'base', 'Unusual for you at this hour', 'ok'], [0.66, 'hrv', 'HRV lower · supporting signal', 'weak'], [0.76, 'resp', 'Breathing rate · measured in sleep', 'off'], [0.88, 'ask', 'Possible stress → Momo checks in', 'go']],
+          meta: { title: 'Signal check', idea: 'The island shows the reasoning: heart rate up, barely moving, unusual for you (all primary, green), HRV lower as a lighter “supporting” check, respiratory rate shown but marked “not used” (Apple measures it during sleep). Then “Possible stress → Momo checks in”.', beats: ['1:58 good luck 🍀', '2:44 island opens', 'HR ✓ · motion ✓ · baseline ✓', 'HRV supporting · breathing not used', '2:47 Momo’s nudge'], keeps: 'The whole detection hierarchy, explicit.', cuts: 'Nothing; it is the longest island.', tradeoff: 'Clearest for the case study’s system section; the most text in the intro.' } },
+        { id: 'walk', win: 4.2, m0: 884, m1: 887, span: 6, base: [64, 78], stillSince: 885.9, extra: 0,
+          hr: (m) => 74 + 20 * S(m, 884.7, 885.4) + 7 * S(m, 886.1, 886.8) + noise(m), hrv: (m) => lerp(50, 29, S(m, 885.8, 886.7)), move: (m) => (m > 884.6 && m < 885.9 ? 96 : 3),
+          status: (m, hr, still) => (!still ? ['Walking · expected', MOVEC, 'rgba(52,199,163,0.18)'] : m > 886.2 ? ['Still, and still rising', '#ff9aab', 'rgba(255,107,129,0.2)'] : ['Sat down', '#a0a0a0', 'rgba(255,255,255,0.08)']),
+          meta: { title: 'Not just exercise', idea: 'Contrast that proves the point: walking back to their desk raises heart rate, but Motion says “Walking”, the line is green and the chip says “expected”. Then they sit, and instead of settling it keeps rising: “Still, and still rising”.', beats: ['1:58 good luck 🍀', '2:44 walking: HR up, expected', '2:46 sits down', 'HR keeps rising while still', '2:47 Momo’s nudge'], keeps: 'Why motion matters, by showing a false alarm being ignored.', cuts: 'Personal baseline label.', tradeoff: 'The smartest-looking logic; two events in a few seconds.' } },
+      ]
 
       // ---------- Reflection designs (all start at T.cards; the plan is confirmed at T.check) ----------
       function chip(c, x, y, label, fill, ink, size = 12.5) { c.font = `500 ${size}px ${UI}`; const w = c.measureText(label).width + 22; c.fillStyle = fill; c.beginPath(); c.roundRect(x, y - 12, w, 24, 12); c.fill(); tx(c, label, x + 11, y, size, { w: 500, color: ink }); return w }
@@ -753,8 +789,9 @@
 
       // ---------- Timeline (phone only) ----------
       const WORDS = 'Priya pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'.split(' ')
-            function timeline(rate) {
-        const T = { phoneIn: 0.05, luck: 0.5, luckOut: 2.3, skip: 2.4, det: 2.6, buzz: 5.3 }
+            function timeline(rate, win) {
+        const T = { phoneIn: 0.05, luck: 0.5, luckOut: 2.3, skip: 2.4, det: 2.6 }
+        T.buzz = T.det + win
         T.press = T.buzz + 1.7; T.unlock = T.press + 0.1
         let t = T.unlock + 0.6
         T.talk = t; t += WORDS.length * rate + 0.4
@@ -763,8 +800,8 @@
         return T
       }
 
-      function film(style, meta) {
-        const T = timeline(0.17)
+      function film(V) {
+        const T = timeline(0.17, V.win), meta = V.meta
         const tokens = WORDS.map((w, i) => ({ text: w, at: T.talk + i * 0.17 }))
         return {
           ...meta, dur: T.dur,
@@ -791,8 +828,8 @@
             const inLock = S(t, 0.5, 1.3) * (1 - S(t, T.unlock - 0.2, T.unlock + 0.5))
             const inTalk = S(t, T.talk - 0.3, T.talk + 0.9) * (1 - S(t, T.stop, T.proc + 0.6))
             const inCards = S(t, T.cards - 0.2, T.cards + 0.8) * (1 - S(t, T.calm - 0.5, T.calm + 0.5))
-            const atIsland = S(t, T.det - 0.2, T.det + 0.4) * (1 - S(t, T.buzz - 0.4, T.buzz + 0.2)), lockY = lerp(300, 110, atIsland)
-            const z = 1 + lerp(0.6, D.island.zoom + 0.6, atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards
+            const IH = D.island.hgt + V.extra, atIsland = S(t, T.det - 0.2, T.det + 0.4) * (1 - S(t, T.buzz - 0.4, T.buzz + 0.2)), lockY = lerp(300, 11 + IH / 2 + 24, atIsland)
+            const z = 1 + lerp(0.6, 0.6 + D.island.zoom * Math.min(1, 212 / IH), atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards
             const wsum = inLock + inTalk + inCards, focus = (scr.y + lockY * u) * inLock + (scr.y + 560 * u) * inTalk + (scr.y + 330 * u) * inCards
             const fx = 480, fy = lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
             const view = (c) => { c.translate(480, 270); c.scale(z, z); c.translate(-fx, -fy) }
@@ -834,8 +871,7 @@
               if (lock > 0.01) {
                 c.save(); c.globalAlpha *= lock
                 tx(c, 'Wednesday, October 1', 195, 104, 17, { w: 500, color: th.dateInk, align: 'center' })
-                const s1 = S(t, T.skip, T.skip + 0.12), s2 = S(t, T.buzz - 0.7, T.buzz - 0.58)
-                ;[['1:58', 1 - s1], ['2:46', s1 * (1 - s2)], ['2:47', s2]].forEach(([s, k]) => { if (k > 0.01) { c.save(); c.globalAlpha *= k; tx(c, s, 195, 168, 84, { w: 300, color: th.lockInk, align: 'center', ls: -2 }); c.restore() } })
+                tx(c, fmt(t < T.skip ? 838 : mNow(t, T, V)), 195, 168, 84, { w: 300, color: th.lockInk, align: 'center', ls: -2 })
                 notice(c, 300 - (1 - S(t, T.luck, T.luck + 0.5)) * 24, Math.min(S(t, T.luck, T.luck + 0.5), 1 - S(t, T.luckOut, T.luckOut + 0.4)), COPY.luck)
                 const nk = S(t, T.buzz, T.buzz + 0.45), down = bump(t, T.press - 0.08, T.press + 0.3), press = 1 - 0.05 * down
                 c.save(); c.translate(195, 340); c.scale(press, press); c.translate(-195, -340)
@@ -844,7 +880,7 @@
                 c.restore()
                 c.restore()
               }
-              island(c, t, T, style)
+              island(c, t, T, V)
 
               // Inside Momo: the voice screen, the question, the reflection.
               c.globalAlpha = ph * app * (1 - S(t, T.cards - 0.4, T.cards))
@@ -881,14 +917,7 @@
         }
       }
 
-      const NOTE = { keeps: 'Momo good-luck note, the Watch reading on the island, Momo’s nudge, Freeform voice, reflection.' }
-      const FILMS = [
-        film('grow', { ...NOTE, title: 'Spring open', idea: 'The pill springs open into the full heart-rate readout (the lock-screen layout, dark): the number counts up, the line turns pink, HRV drops. It springs shut as Momo’s nudge arrives.', beats: ['1:58 good luck 🍀', '2:46 island springs open', '71 → 96 BPM, HRV ↓', '2:47 closes, nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'The most native-feeling. Spring bounce and open time are on the dials.' }),
-        film('drop', { ...NOTE, title: 'Stretch, then drop', idea: 'Two steps: the pill first stretches sideways, then drops down to reveal the readout, like a sheet unrolling from the camera.', beats: ['1:58 good luck 🍀', 'pill stretches', 'drops open', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'A more deliberate, readable motion; a beat slower than the spring.' }),
-        film('compact', { ...NOTE, title: 'Compact, then expand', idea: 'Like a real Live Activity: the island first widens with a pulsing heart and BPM on either side of the camera, then, as the number keeps climbing, it expands into the full readout.', beats: ['1:58 good luck 🍀', 'compact: ♥ … 78 BPM', 'expands as it rises', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'Tells the escalation (quiet signal → worth your attention) best; takes the longest.' }),
-        film('breathe', { ...NOTE, title: 'Heartbeat glow', idea: 'The spring-open readout, plus the island gently swelling with each heartbeat and a soft pink glow behind it that strengthens as the heart rate climbs.', beats: ['1:58 good luck 🍀', 'island opens', 'beats + pink glow', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'Nothing.', tradeoff: 'Makes the body feel present and tense; the glow is the only non-native touch.' }),
-        film('minimal', { ...NOTE, title: 'Minimal pill', idea: 'The island only widens into a slim pill: heart, a tiny climbing line and BPM. No full card, so the clock stays visible underneath.', beats: ['1:58 good luck 🍀', 'slim pill: ♥ ~~ 96 BPM', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'HRV and the “Sitting still” context.', tradeoff: 'The calmest and most subtle; the least detail about what the Watch saw.' }),
-      ]
+      const FILMS = SCEN.map(film)
 
       document.getElementById('resetAll').onclick = () => { localStorage.removeItem(STORE); location.reload() }
       await mount(FILMS, { fonts: ['inter'] })
