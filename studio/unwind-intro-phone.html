@@ -135,7 +135,7 @@
       // Settings survive a refresh (localStorage). "Reset all" in the header clears them.
       const STORE = 'unwind-intro-phone:v1'
       const SAVED = (() => { try { return JSON.parse(localStorage.getItem(STORE)) ?? {} } catch { return {} } })()
-      const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY }))
+      const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY, CARD }))
       const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', ...SAVED.OPT }
       document.querySelectorAll('[data-opt]').forEach((s) => {
         if (OPT[s.dataset.opt]) s.value = OPT[s.dataset.opt]
@@ -146,6 +146,7 @@
       const DIALS = {
         island: { label: 'Dynamic Island', cw: [300, 200, 360, 1, 'Glimpse width'], compact: [1.4, 0, 2.5, 0.05, 'Glimpse time (s)'], dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], hgt: [196, 150, 280, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
         status: { label: 'Status bar icons', sigX: [0, -40, 40, 0.5, 'Signal X'], sigY: [0, -12, 12, 0.5, 'Signal Y'], wifiX: [0, -40, 40, 0.5, 'Wi-Fi X'], wifiY: [0, -12, 12, 0.5, 'Wi-Fi Y'], batX: [0, -40, 40, 0.5, 'Battery X'], batY: [0, -12, 12, 0.5, 'Battery Y'] },
+        cards: { label: 'Choice cards · icon', size: [26, 12, 60, 1, 'Icon size'], ix: [0, -60, 60, 1, 'Icon X'], iy: [0, -40, 40, 1, 'Icon Y'] },
         cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
         braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
       }
@@ -520,10 +521,32 @@
         c.beginPath(); c.arc(x, y, r, 0, TAU); k > 0.5 ? c.fill() : c.stroke()
         if (k > 0) { c.strokeStyle = '#fff'; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 6, y); c.lineTo(lerp(x - 6, x - 2, k), lerp(y, y + 5, k)); if (k > 0.5) c.lineTo(lerp(x - 2, x + 7, (k - 0.5) * 2), lerp(y + 5, y - 6, (k - 0.5) * 2)); c.stroke() }
       }
-      const CARD_SUB = { heard: ['Feel heard', 'Science-backed tools'], space: ['No advice, just space', 'Tools to see it clearly'], listen: ['I’ll just listen', 'Let’s work through it'], vent: ['Vent it out', 'Find a next step'], kind: ['Be heard, gently', 'Get a fresh perspective'], none: null }
-      const CARD_ICON = { hands: ['🫶', '🧭'], heart: ['💙', '💡'], hug: ['🫂', '🧠'], ear: ['👂', '✨'], cloud: ['☁️', '🌱'], none: null }
+      const CARD_SUB_DEFAULT = { heard: ['Feel heard', 'Science-backed tools'], space: ['No advice, just space', 'Tools to see it clearly'], listen: ['I’ll just listen', 'Let’s work through it'], vent: ['Vent it out', 'Find a next step'], kind: ['Be heard, gently', 'Get a fresh perspective'] }
+      const CARD_ICON_DEFAULT = { hands: ['🫶', '🧭'], heart: ['💙', '💡'], hug: ['🫂', '🧠'], ear: ['👂', '✨'], cloud: ['☁️', '🌱'] }
+      /** Editable card text, saved: titles are shared; subtitles and icons are kept per preset. */
+      const CARD = { titles: SAVED.CARD?.titles ?? ['Just listen', 'Help me think'], subs: { ...CARD_SUB_DEFAULT, ...SAVED.CARD?.subs }, icons: { ...CARD_ICON_DEFAULT, ...SAVED.CARD?.icons } }
+      const CARD_SUB = new Proxy({}, { get: (_, k) => (k === 'none' ? null : CARD.subs[k]) })
+      const CARD_ICON = new Proxy({}, { get: (_, k) => (k === 'none' ? null : CARD.icons[k]) })
+      {
+        const ed = document.createElement('fieldset'); ed.innerHTML = '<legend>Choice cards · text</legend>'
+        const refills = []
+        const field = (name, get, set) => {
+          const row = document.createElement('label'); row.className = 'txt'
+          row.innerHTML = `<span>${name}</span><textarea rows="1"></textarea>`
+          const ta = row.querySelector('textarea'), fill = () => { const v = get(); ta.disabled = v == null; ta.value = v ?? '(none selected)' }
+          fill(); refills.push(fill); ta.oninput = () => { set(ta.value); save() }; ed.append(row)
+        }
+        ;[0, 1].forEach((i) => {
+          const card = ['Left card', 'Right card'][i]
+          field(`${card} · icon`, () => CARD_ICON[OPT.emoji]?.[i], (v) => (CARD.icons[OPT.emoji][i] = v))
+          field(`${card} · title`, () => CARD.titles[i], (v) => (CARD.titles[i] = v))
+          field(`${card} · subtitle`, () => CARD_SUB[OPT.sub]?.[i], (v) => (CARD.subs[OPT.sub][i] = v))
+        })
+        for (const k of ['sub', 'emoji']) document.querySelector(`[data-opt=${k}]`).addEventListener('change', () => refills.forEach((r) => r()))
+        document.getElementById('dials').append(ed)
+      }
       /** Card height for the current options (content stack + padding). */
-      const cardH = () => 44 + (CARD_ICON[OPT.emoji] ? 40 : 0) + 18 + (CARD_SUB[OPT.sub] ? 22 : 0)
+      const cardH = () => 44 + (CARD_ICON[OPT.emoji] ? 14 + D.cards.size : 0) + 18 + (CARD_SUB[OPT.sub] ? 22 : 0)
       /** One choice card (Just listen = 0, Help me think = 1) at (x, y), 166 wide. `on` 0–1 = selected. */
       function choiceCard(c, x, y, i, on) {
         const h = cardH(), center = OPT.align === 'center', tx0 = center ? x + 83 : x + 18, al = center ? 'center' : 'left'
@@ -531,8 +554,8 @@
         if (on > 0.01) { c.save(); c.globalAlpha *= on; c.strokeStyle = BLUE; c.lineWidth = 2; c.beginPath(); c.roundRect(x, y, 166, h, 22); c.stroke(); c.restore() }
         let yy = y + 22
         const icon = CARD_ICON[OPT.emoji], sub = CARD_SUB[OPT.sub]
-        if (icon) { em(c, icon[i], center ? x + 83 : x + 31, yy + 14, 26); yy += 40 }
-        tx(c, ['Just listen', 'Help me think'][i], tx0, yy + 9, 15.5, { w: 600, color: '#1f2a2e', align: al }); yy += 18
+        if (icon) { const sz = D.cards.size; em(c, icon[i], (center ? x + 83 : x + 18 + sz / 2) + D.cards.ix, yy + sz / 2 + D.cards.iy, sz); yy += 14 + sz }
+        tx(c, CARD.titles[i], tx0, yy + 9, 15.5, { w: 600, color: '#1f2a2e', align: al }); yy += 18
         if (sub) tx(c, sub[i], tx0, yy + 13, 12, { color: '#7d8b90', align: al })
         return h
       }
