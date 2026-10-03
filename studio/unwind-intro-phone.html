@@ -970,7 +970,7 @@
               }
               island(c, t, T, V)
 
-              // First screen in Momo: what would help? They pick "Just listen", which opens Freeform.
+              // First screen in Momo: what would help? They pick "Help me think", which opens Freeform.
               const ask = app * (1 - S(t, T.voice - 0.15, T.voice + 0.3)), voiceIn = S(t, T.voice - 0.1, T.voice + 0.4)
               if (ask > 0.01) {
                 c.save(); c.globalAlpha = ph * ask
@@ -980,7 +980,7 @@
                 tx(c, 'right now?', 195, 350, 22, { w: 600, color: '#1f2a2e', align: 'center' })
                 c.restore()
                 const ch = cardH()
-                ;[[22, true], [202, false]].forEach(([x, pick], i) => {
+                ;[[22, false], [202, true]].forEach(([x, pick], i) => {
                   const k = S(t, T.ask + 0.35 + i * 0.12, T.ask + 0.8 + i * 0.12)
                   const sel = pick ? S(t, T.pick - 0.05, T.pick + 0.2) : 0, down = pick ? bump(t, T.pick - 0.08, T.pick + 0.3) : 0, sc = 1 - 0.06 * down
                   c.save(); c.globalAlpha *= k * (pick ? 1 : 1 - 0.5 * S(t, T.pick, T.pick + 0.3)); c.translate(x + 83, 410 + ch / 2 + (1 - k) * 14); c.scale(sc, sc); c.translate(-(x + 83), -(410 + ch / 2))
@@ -1009,7 +1009,7 @@
             })
             const sx = (x) => cx(scr.x + x * u), sy = (y) => cy(scr.y + y * u)
             // Glass cursor (prototype .nx-cursor): glides in, presses (shrinks, darkens), lifts away.
-            const TAPS = [[T.press, 195, 340, 250, 520], [T.pick, 105, 410 + cardH() / 2, 230, 640], [T.stop, 345, 790, 260, 640]]
+            const TAPS = [[T.press, 195, 340, 250, 520], [T.pick, 285, 410 + cardH() / 2, 250, 640], [T.stop, 345, 790, 260, 640]]
             if (OPT.reflect === 'choice') TAPS.push([T.cards + 1.3, 282, 180 + cardH() / 2, 300, 520])
             for (const [at, x, y, x0, y0] of TAPS) {
               const vis = Math.min(S(t, at - 1.1, at - 0.8), 1 - S(t, at + 0.45, at + 0.8))
