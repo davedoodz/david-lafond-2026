@@ -18,6 +18,9 @@
       .dials legend button { margin-left: 6px; padding: 2px 8px; border: 1px solid var(--s2); border-radius: 999px; background: none; font: inherit; font-size: 11px; color: var(--s6); cursor: pointer; }
       .dials label { display: grid; grid-template-columns: 116px 1fr 44px; gap: 10px; align-items: center; font-size: 12px; color: var(--s6); }
       .dials input { accent-color: var(--ink); }
+      .reset-all { padding: 7px 14px; border: 1px solid var(--s2); border-radius: 999px; background: #fff; font: inherit; font-size: 12px; color: var(--s6); cursor: pointer; }
+      .dials label.txt { grid-template-columns: 116px 1fr; }
+      .dials textarea { resize: vertical; padding: 6px 8px; border: 1px solid var(--s2); border-radius: 8px; font: inherit; font-size: 12.5px; color: var(--ink); }
       .dials output { text-align: right; font-variant-numeric: tabular-nums; }
     </style>
   </head>
@@ -35,6 +38,11 @@
               <option value="silk">Blue silk wallpaper</option>
               <option value="mist">Lavender mist</option>
               <option value="dusk">Dusk to calm</option>
+              <option value="cloud">Sky + clouds</option>
+              <option value="haze">Blue haze</option>
+              <option value="morning">Morning light</option>
+              <option value="water">Still water</option>
+              <option value="silkSoft">Silk, faded</option>
             </select>
           </label>
           <label>Reflection
@@ -47,6 +55,20 @@
               <option value="story">Story slides</option>
               <option value="day">Your Wednesday</option>
               <option value="letter">Note from Momo</option>
+              <optgroup label="Momo · think it through (science-backed)">
+                <option value="reframe">Reframe the thought (CBT)</option>
+                <option value="traps">Spot thinking traps</option>
+                <option value="ifthen">If–then plan</option>
+                <option value="sigh">Calm the body (cyclic sigh)</option>
+                <option value="distance">Step back (friend's view)</option>
+                <option value="label">Name the feeling</option>
+              </optgroup>
+              <optgroup label="Momo · feel heard">
+                <option value="heard">Just listening</option>
+                <option value="compassion">Self-compassion</option>
+                <option value="strengths">What you did well</option>
+                <option value="choice">Listen or help? (Momo adapts)</option>
+              </optgroup>
             </select>
           </label>
           <label>Nudge wording
@@ -58,6 +80,7 @@
           </label>
         </div>
         <div id="dials" class="dials"></div>
+        <button type="button" id="resetAll" class="reset-all">Reset all settings</button>
       </header>
       <div id="list"></div>
     </main>
@@ -81,24 +104,32 @@
       const SH = (PHONE.sh / PHONE.sw) * 390
 
       /** Page switches, read every frame. */
-      const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath' }
-      document.querySelectorAll('[data-opt]').forEach((s) => (s.onchange = () => (OPT[s.dataset.opt] = s.value)))
+      // Settings survive a refresh (localStorage). "Reset all" in the header clears them.
+      const STORE = 'unwind-intro-phone:v1'
+      const SAVED = (() => { try { return JSON.parse(localStorage.getItem(STORE)) ?? {} } catch { return {} } })()
+      const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY }))
+      const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath', ...SAVED.OPT }
+      document.querySelectorAll('[data-opt]').forEach((s) => {
+        if (OPT[s.dataset.opt]) s.value = OPT[s.dataset.opt]
+        s.addEventListener('change', () => { OPT[s.dataset.opt] = s.value; save() })
+      })
 
       /** Dials: [default, min, max, step, label]. Read every frame through D. */
       const DIALS = {
         island: { label: 'Dynamic Island', dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], h: [150, 80, 200, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
+        cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
         braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
       }
       const D = {}
       for (const [g, { label, ...f }] of Object.entries(DIALS)) {
-        D[g] = Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v[0]]))
+        D[g] = { ...Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v[0]])), ...SAVED.D?.[g] }
         const fs = document.createElement('fieldset')
         fs.innerHTML = `<legend>${label}<button type="button">Reset</button></legend>`
         for (const [k, [def, min, max, step, name]] of Object.entries(f)) {
           const row = document.createElement('label')
-          row.innerHTML = `<span>${name}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${def}" data-def="${def}" /><output>${def}</output>`
+          row.innerHTML = `<span>${name}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${D[g][k]}" data-def="${def}" /><output>${D[g][k]}</output>`
           const inp = row.querySelector('input'), out = row.querySelector('output')
-          inp.oninput = () => { D[g][k] = +inp.value; out.textContent = inp.value }
+          inp.oninput = () => { D[g][k] = +inp.value; out.textContent = inp.value; save() }
           fs.append(row)
         }
         fs.querySelector('legend button').onclick = () => fs.querySelectorAll('input').forEach((inp) => { inp.value = inp.dataset.def; inp.dispatchEvent(new Event('input')) })
@@ -183,16 +214,21 @@
         c.strokeStyle = '#1f1f1f'; c.lineWidth = 2; c.lineCap = 'round'
         c.beginPath(); c.arc(229, y, 7.5, -2.4, 2.9); c.stroke(); c.beginPath(); c.moveTo(222, y - 9); c.lineTo(222.5, y - 4); c.lineTo(227.5, y - 4.5); c.stroke()
         c.fillStyle = '#1f1f1f'; c.fillRect(282.5, y - 7, 3, 14); c.fillRect(288.5, y - 7, 3, 14)
-        const press = 1 - 0.08 * bump(t, stopAt, stopAt + 0.25)
+        const press = 1 - 0.16 * bump(t, stopAt - 0.05, stopAt + 0.3)
         c.save(); c.translate(345, y); c.scale(press, press); c.translate(-345, -y)
         btn(345, '#1c1c1e')
         const g = c.createLinearGradient(337, y - 8, 353, y + 8); g.addColorStop(0, '#CDEBFF'); g.addColorStop(1, '#3E8EF7')
         c.fillStyle = g; c.beginPath(); c.roundRect(337, y - 8, 16, 16, 3.5); c.fill()
         c.restore(); c.restore()
       }
-      function statusBar(c, back = 1, ink = '#1f1f1f') {
-        tx(c, '9:41', 52, 30, 16, { w: 600, color: ink })
-        c.fillStyle = ink; [0, 1, 2, 3].forEach((i) => c.fillRect(298 + i * 5, 34 - (i + 1) * 2.6, 3, (i + 1) * 2.6))
+      /** `lock` 1 = lock screen (carrier at top left, as on iOS), 0 = in app (time). */
+      function statusBar(c, back = 1, ink = '#1f1f1f', lock = 0) {
+        if (lock < 0.99) { c.save(); c.globalAlpha *= 1 - lock; tx(c, '9:41', 52, 30, 16, { w: 600, color: ink }); c.restore() }
+        if (lock > 0.01) { c.save(); c.globalAlpha *= lock; tx(c, 'AT&T', 40, 30, 15, { w: 600, color: ink }); c.restore() }
+        c.fillStyle = ink; [0, 1, 2, 3].forEach((i) => c.fillRect(278 + i * 5, 34 - (i + 1) * 2.6, 3, (i + 1) * 2.6))
+        const wx = 306, wy = 35
+        for (const [r0, r1] of [[9.6, 12.6], [5.6, 8.6]]) { c.beginPath(); c.arc(wx, wy, r1, -Math.PI * 0.75, -Math.PI * 0.25); c.arc(wx, wy, r0, -Math.PI * 0.25, -Math.PI * 0.75, true); c.closePath(); c.fill() }
+        c.beginPath(); c.moveTo(wx, wy); c.arc(wx, wy, 4.6, -Math.PI * 0.75, -Math.PI * 0.25); c.closePath(); c.fill()
         c.beginPath(); c.roundRect(323, 24, 23, 12, 3.5); c.lineWidth = 1; c.strokeStyle = 'rgba(31,31,31,0.4)'; c.stroke(); c.beginPath(); c.roundRect(325, 26, 19, 8, 2); c.fill()
         if (back <= 0.01) return
         c.save(); c.globalAlpha *= back
@@ -219,6 +255,11 @@
         silk: { lockInk: 'rgba(214,252,255,0.96)', dateInk: 'rgba(226,253,255,0.95)', glass: 'rgba(255,255,255,0.62)', veil: 0.8, statusInk: '#ffffff' },
         mist: { lockInk: '#3a3560', dateInk: '#4c4770', glass: 'rgba(255,255,255,0.72)', veil: 0.35 },
         dusk: { lockInk: '#40334a', dateInk: '#56475e', glass: 'rgba(255,255,255,0.7)', veil: 0.45 },
+        cloud: { lockInk: '#2c4a66', dateInk: '#3f5d78', glass: 'rgba(255,255,255,0.7)', veil: 0.5 },
+        haze: { lockInk: '#2b4569', dateInk: '#3e5878', glass: 'rgba(255,255,255,0.68)', veil: 0.45 },
+        morning: { lockInk: '#2a4766', dateInk: '#3c5a77', glass: 'rgba(255,255,255,0.72)', veil: 0.4 },
+        water: { lockInk: '#24476b', dateInk: '#365c7e', glass: 'rgba(255,255,255,0.7)', veil: 0.45 },
+        silkSoft: { lockInk: '#21486e', dateInk: '#2f5579', glass: 'rgba(255,255,255,0.66)', veil: 0.55 },
       }
       /** Fills the phone screen (390-pt units). `app` 0 = lock screen, 1 = inside Unwind; `calm` cools warm themes. */
       function screenBg(c, t, app, talking, calm) {
@@ -237,6 +278,33 @@
           const g = c.createLinearGradient(0, 0, 0, SH)
           g.addColorStop(0, rgb([253, 228, 214], [228, 240, 252], calm)); g.addColorStop(0.5, rgb([240, 222, 240], [236, 236, 250], calm)); g.addColorStop(1, rgb([222, 226, 250], [206, 230, 252], calm))
           c.fillStyle = g; c.fillRect(0, 0, 390, SH)
+        } else if (OPT.bg === 'cloud') {
+          const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#c9e2fa'); g.addColorStop(0.6, '#e4f0fc'); g.addColorStop(1, '#f5f9fd'); c.fillStyle = g; c.fillRect(0, 0, 390, SH)
+          ;[[70, 250, 80], [310, 170, 64], [230, 440, 100], [60, 640, 74], [320, 720, 92]].forEach(([x, y, r], i) => {
+            const cx2 = x + Math.sin(t * 0.18 + i * 1.7) * 22
+            ;[[-0.6, 0.12, 0.72], [0, 0, 1], [0.62, 0.1, 0.78]].forEach(([dx, dy, k]) => {
+              const rg = c.createRadialGradient(cx2 + dx * r, y + dy * r, 0, cx2 + dx * r, y + dy * r, r * k); rg.addColorStop(0, 'rgba(255,255,255,0.8)'); rg.addColorStop(1, 'rgba(255,255,255,0)')
+              c.fillStyle = rg; c.fillRect(0, 0, 390, SH)
+            })
+          })
+        } else if (OPT.bg === 'haze') {
+          c.fillStyle = '#eaf2fd'; c.fillRect(0, 0, 390, SH)
+          ;[['#b9d9ff', 80, 200, 260], ['#d3dcff', 320, 430, 280], ['#c6e9ff', 120, 720, 260], ['#ffffff', 280, 120, 200]].forEach(([col, x, y, r], i) => {
+            const dx = Math.sin(t * 0.3 + i * 2) * 30, dy = Math.cos(t * 0.25 + i) * 24
+            const rg = c.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r); rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(234,242,253,0)')
+            c.fillStyle = rg; c.fillRect(0, 0, 390, SH)
+          })
+        } else if (OPT.bg === 'morning') {
+          const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#bcd9f7'); g.addColorStop(0.45, '#e2eefb'); g.addColorStop(1, '#fbfcfe'); c.fillStyle = g; c.fillRect(0, 0, 390, SH)
+          const rg = c.createRadialGradient(270, 120, 0, 270, 120, 380); rg.addColorStop(0, `rgba(255,255,255,${0.85 + 0.05 * Math.sin(t * 0.8)})`); rg.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = rg; c.fillRect(0, 0, 390, SH)
+          c.save(); c.globalAlpha = 0.18; c.fillStyle = '#ffffff'; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(270, 120); const a2 = 1.7 + i * 0.22 + Math.sin(t * 0.2) * 0.03; c.lineTo(270 + Math.cos(a2) * 900, 120 + Math.sin(a2) * 900); c.lineTo(270 + Math.cos(a2 + 0.07) * 900, 120 + Math.sin(a2 + 0.07) * 900); c.fill() } c.restore()
+        } else if (OPT.bg === 'water') {
+          const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#d3e7fb'); g.addColorStop(1, '#eef6fd'); c.fillStyle = g; c.fillRect(0, 0, 390, SH)
+          for (let i = 0; i < 6; i++) { const k = ((t * 0.12 + i / 6) % 1), r = 30 + k * 420; c.strokeStyle = `rgba(255,255,255,${0.75 * (1 - k)})`; c.lineWidth = 2; c.beginPath(); c.ellipse(195, 640, r, r * 0.32, 0, 0, TAU); c.stroke(); c.strokeStyle = `rgba(97,168,253,${0.12 * (1 - k)})`; c.beginPath(); c.ellipse(195, 644, r, r * 0.32, 0, 0, TAU); c.stroke() }
+        } else if (OPT.bg === 'silkSoft') {
+          const k = Math.max(390 / IMG.silk.naturalWidth, SH / IMG.silk.naturalHeight)
+          c.drawImage(IMG.silk, (390 - IMG.silk.naturalWidth * k) / 2, (SH - IMG.silk.naturalHeight * k) / 2, IMG.silk.naturalWidth * k, IMG.silk.naturalHeight * k)
+          c.fillStyle = 'rgba(246,250,255,0.58)'; c.fillRect(0, 0, 390, SH)
         } else {
           const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#fbfdff'); g.addColorStop(0.55, '#f1f6fb'); g.addColorStop(1, '#d6eafa'); c.fillStyle = g; c.fillRect(0, 0, 390, SH)
         }
@@ -248,11 +316,27 @@
       }
 
       // ---------- Notifications ----------
-      const COPY = {
+      const COPY_DEFAULT = {
         luck: { title: 'Good luck with Priya 🍀', body: 'You’ve prepared for this. One slow breath before you walk in.' },
         breath: { title: 'Take a breath?', body: 'Your heart rate has stayed high since your 1:1. A 30-second check-in might help.' },
         talk: { title: 'Want to talk it through?', body: 'You seem tense since your meeting. I’m here for 30 seconds, whenever you’re ready.' },
         moment: { title: 'A moment for you', body: 'Your heart rate is elevated after your 1:1 with Priya. Tap to reflect.' },
+      }
+      const COPY = Object.fromEntries(Object.entries(COPY_DEFAULT).map(([k, v]) => [k, { ...v, ...SAVED.COPY?.[k] }]))
+      // Editable notification text (applies live to every film).
+      {
+        const ed = document.createElement('fieldset'); ed.innerHTML = '<legend>Notification text</legend>'
+        const refills = []
+        for (const [key, f, name] of [['luck', 'title', 'Before · title'], ['luck', 'body', 'Before · body'], [null, 'title', 'Nudge · title'], [null, 'body', 'Nudge · body']]) {
+          const row = document.createElement('label'); row.className = 'txt'
+          row.innerHTML = `<span>${name}</span><textarea rows="${f === 'body' ? 2 : 1}"></textarea>`
+          const ta = row.querySelector('textarea'), k = () => key ?? OPT.copy
+          const fill = () => { ta.value = COPY[k()][f] }; fill(); refills.push(fill)
+          ta.oninput = () => { COPY[k()][f] = ta.value; save() }
+          ed.append(row)
+        }
+        document.querySelector('[data-opt=copy]').addEventListener('change', () => refills.forEach((r) => r()))
+        document.getElementById('dials').append(ed)
       }
       function notice(c, y, al, n) {
         if (al <= 0.01) return
@@ -348,6 +432,22 @@
         c.lineWidth = 1.6; c.strokeStyle = k > 0.5 ? BLUE : '#c9d3d6'; c.fillStyle = BLUE
         c.beginPath(); c.arc(x, y, r, 0, TAU); k > 0.5 ? c.fill() : c.stroke()
         if (k > 0) { c.strokeStyle = '#fff'; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 6, y); c.lineTo(lerp(x - 6, x - 2, k), lerp(y, y + 5, k)); if (k > 0.5) c.lineTo(lerp(x - 2, x + 7, (k - 0.5) * 2), lerp(y + 5, y - 6, (k - 0.5) * 2)); c.stroke() }
+      }
+      /** Momo header for the agent reflections: avatar, title, and the method it is using. */
+      function momoHead(c, t, a, title, method) {
+        rise(c, t, a, () => {
+          c.drawImage(IMG.momoOpen, 22, 110, 44, 44)
+          tx(c, title, 76, 124, 16.5, { w: 600, color: '#1f2a2e' })
+          c.drawImage(IMG.stars, 76, 138, 12, 12); tx(c, method, 92, 145, 12, { w: 500, color: BLUE })
+        })
+      }
+      /** A small "why it works" note at the bottom of the screen. */
+      function why(c, t, T, text) {
+        rise(c, t, T.check - 0.3, () => {
+          const lines = wrap(c, text, 316, 12), h = 20 + lines.length * 16
+          glass(c, 22, 500, 346, h, 14, 'rgba(255,255,255,0.7)', 0)
+          lines.forEach((l, k) => tx(c, l, 37, 518 + k * 16, 12, { color: '#5d6b70' }))
+        })
       }
       const rise = (c, t, at, fn, d = 0.5) => { const e = S(t, at, at + d); if (e <= 0.01) return; c.save(); c.globalAlpha *= e; c.translate(0, (1 - e) * 16); fn(); c.restore() }
       function bubble(c, x, y, w, text, t, at, o = {}) {
@@ -524,6 +624,131 @@
           })
           rise(c, t, T.check - 0.2, () => { const sc = clamp(pop(t, T.check - 0.2)); c.save(); c.translate(318, 512); c.rotate(0.2); c.scale(sc, sc); em(c, '🌤️', 0, 0, 44); c.restore() })
         },
+        // ---- Momo · think it through (science-backed). Each names its method in a small "why it works" chip. ----
+        /** CBT cognitive restructuring: the automatic thought, the evidence, a balanced thought. */
+        reframe(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'Let’s look at that thought', 'Cognitive reframing · CBT')
+          rise(c, t, a + 0.4, () => { glass(c, 22, 180, 346, 76, 18, '#FFF1F4', 0); tx(c, 'THE THOUGHT', 38, 200, 10.5, { w: 600, color: '#c4485f', ls: 0.8 }); tx(c, '“I froze. I always mess these up.” 😣', 38, 228, 14.5, { w: 500, color: '#2a3438' }) })
+          rise(c, t, a + 1.0, () => { glass(c, 22, 266, 346, 112, 18, '#ffffff', 14); tx(c, 'WHAT ACTUALLY HAPPENED', 38, 286, 10.5, { w: 600, color: '#7d8b90', ls: 0.8 })
+            ;['✅ You knew the answer', '✅ Your last two 1:1s went fine', '➖ One pause, in front of everyone'].forEach((l, k) => tx(c, l, 38, 312 + k * 22, 13.5, { color: '#2a3438' })) })
+          rise(c, t, a + 1.7, () => { glass(c, 22, 388, 346, 84, 18, '#EAF6FF', 0); tx(c, 'A MORE BALANCED THOUGHT', 38, 408, 10.5, { w: 600, color: BLUE, ls: 0.8 })
+            wrap(c, '“I paused under pressure. I still know my stuff.” 🌱', 310, 14.5, 500).forEach((l, k) => tx(c, l, 38, 434 + k * 20, 14.5, { w: 500, color: '#1f2a2e' })) })
+          why(c, t, T, 'Why it works: testing a thought against evidence lowers its pull (Beck, CBT).')
+        },
+        /** Cognitive distortions: Momo tags the traps in their own words. */
+        traps(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'I noticed two thinking traps', 'Cognitive distortions · CBT')
+          const L = [['“I always mess these up”', '🔭 All-or-nothing', '#FFF1F4', '#c4485f'], ['“Everyone thinks I’m incompetent”', '🔮 Mind reading', '#F3EEFF', '#7a5ad0']]
+          L.forEach(([q, tag, fill, ink], k) => rise(c, t, a + 0.5 + k * 0.7, () => {
+            const y = 180 + k * 108
+            glass(c, 22, y, 346, 96, 18, '#ffffff', 14); tx(c, q, 38, y + 28, 14.5, { w: 500, color: '#2a3438' })
+            const pk = clamp(pop(t, a + 0.85 + k * 0.7)); c.save(); c.translate(38, y + 64); c.scale(pk, pk); chip(c, 0, 0, tag, fill, ink, 12.5); c.restore()
+          }))
+          rise(c, t, a + 2.0, () => { glass(c, 22, 404, 346, 70, 18, '#EAF6FF', 0); em(c, '💡', 46, 439, 20); wrap(c, 'Try: “Sometimes I freeze. Today I did, once.”', 270, 14, 500).forEach((l, k) => tx(c, l, 68, 430 + k * 19, 14, { w: 500, color: '#1f2a2e' })) })
+          why(c, t, T, 'Why it works: naming a distortion makes it easier to step out of (Burns).')
+        },
+        /** Implementation intentions: an if–then plan for Thursday. */
+        ifthen(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'A plan for next time', 'If–then planning · Gollwitzer')
+          rise(c, t, a + 0.45, () => { glass(c, 22, 180, 346, 92, 20, '#FFF6EA', 0); tx(c, 'IF', 38, 204, 12, { w: 700, color: '#c27a1e', ls: 1 }); em(c, '😳', 344, 206, 20)
+            wrap(c, 'Priya pushes back on Thursday and I feel myself freeze…', 300, 14.5, 500).forEach((l, k) => tx(c, l, 38, 230 + k * 20, 14.5, { w: 500, color: '#2a3438' })) })
+          rise(c, t, a + 0.9, () => { c.strokeStyle = '#c9d3d6'; c.lineWidth = 2; c.beginPath(); c.moveTo(195, 276); c.lineTo(195, 296); c.stroke(); c.beginPath(); c.moveTo(189, 290); c.lineTo(195, 297); c.lineTo(201, 290); c.stroke() })
+          rise(c, t, a + 1.2, () => { glass(c, 22, 300, 346, 112, 20, '#EAF6FF', 0); tx(c, 'THEN', 38, 324, 12, { w: 700, color: BLUE, ls: 1 }); em(c, '🫁', 344, 326, 20)
+            wrap(c, 'I take one slow breath, look at my 3 points, and say: “Can I take a second to answer that?”', 300, 14.5, 500).forEach((l, k) => tx(c, l, 38, 350 + k * 20, 14.5, { w: 500, color: '#1f2a2e' }))
+            tick(c, 344, 392, 11, S(t, T.check, T.check + 0.35)) })
+          rise(c, t, a + 1.8, () => chip(c, 22, 436, '📅  Reminder: Thu 9:55 AM, before the 1:1', 'rgba(97,168,253,0.14)', '#3d7fd0', 12.5))
+          why(c, t, T, 'Why it works: if–then plans roughly double follow-through (Gollwitzer & Sheeran).')
+        },
+        /** Cyclic sighing: a guided breath ring, with heart rate settling. */
+        sigh(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'First, let’s settle your body', 'Cyclic sighing · Stanford, 2023')
+          rise(c, t, a + 0.4, () => {
+            const ph = ((t - a - 0.4) / 2.4) % 1, inn = ph < 0.5, k = inn ? S(ph, 0, 0.5) : 1 - S(ph, 0.5, 1)
+            const r = 54 + 46 * k
+            const g = c.createRadialGradient(195, 300, 0, 195, 300, r); g.addColorStop(0, 'rgba(203,239,254,0.95)'); g.addColorStop(1, 'rgba(97,168,253,0.25)')
+            c.fillStyle = g; c.beginPath(); c.arc(195, 300, r, 0, TAU); c.fill(); c.strokeStyle = 'rgba(97,168,253,0.4)'; c.lineWidth = 2; c.beginPath(); c.arc(195, 300, 100, 0, TAU); c.stroke()
+            tx(c, inn ? 'Breathe in… then a little more' : 'Long, slow breath out', 195, 300, 14.5, { w: 600, color: '#1f2a2e', align: 'center' })
+          })
+          rise(c, t, a + 1.2, () => { glass(c, 22, 424, 346, 56, 18, '#ffffff', 12); heart(c, 46, 452, 15)
+            const bpm = Math.round(lerp(96, 78, S(t, a + 1.2, T.check + 0.4))); tx(c, `${bpm} BPM`, 64, 452, 15, { w: 600, color: rgb([214, 70, 98], [61, 127, 208], S(t, a + 1.2, T.check + 0.4)) }); tx(c, 'settling 😌', 356, 452, 13, { color: '#7d8b90', align: 'right' }) })
+          why(c, t, T, 'Why it works: 5 min of long exhales lowered stress more than meditation (Balban et al., 2023).')
+        },
+        /** Self-distancing: what would you tell a friend? */
+        distance(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'Try seeing it from outside', 'Self-distancing · Kross')
+          rise(c, t, a + 0.45, () => bubble(c, 22, 180, 300, 'If a friend froze in a meeting, what would you tell them? 🫂', t, a + 0.45))
+          rise(c, t, a + 1.25, () => bubble(c, 90, 262, 278, '“It happens. You clearly knew it. Just ask for a moment next time.”', t, a + 1.25, { me: true }))
+          rise(c, t, a + 2.0, () => { glass(c, 22, 368, 346, 76, 18, '#EAF6FF', 0); em(c, '💙', 46, 406, 20); wrap(c, 'Now say it to yourself, using your own name.', 270, 14.5, 500).forEach((l, k) => tx(c, l, 68, 397 + k * 20, 14.5, { w: 500, color: '#1f2a2e' })) })
+          why(c, t, T, 'Why it works: talking to yourself in the third person cools emotion (Kross et al., 2014).')
+        },
+        /** Affect labeling: pick the precise feeling. */
+        label(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'Which word fits best?', 'Affect labeling · Lieberman')
+          const F = [['😳', 'Embarrassed'], ['😤', 'Frustrated'], ['😟', 'Anxious'], ['😔', 'Disappointed'], ['😶', 'Overwhelmed'], ['😠', 'Annoyed']]
+          F.forEach(([e, w], k) => {
+            const x = 22 + (k % 2) * 178, y = 180 + Math.floor(k / 2) * 66, pk = clamp(pop(t, a + 0.4 + k * 0.12)), on = k === 0 && t > T.check - 0.6
+            if (pk <= 0.01) return
+            c.save(); c.globalAlpha *= pk; glass(c, x, y, 168, 56, 18, on ? BLUE : '#ffffff', on ? 0 : 12); em(c, e, x + 28, y + 28, 22); tx(c, w, x + 50, y + 28, 14.5, { w: 600, color: on ? '#ffffff' : '#2a3438' }); c.restore()
+          })
+          rise(c, t, T.check, () => { glass(c, 22, 390, 346, 64, 18, '#EAF6FF', 0); wrap(c, 'Embarrassed, not incompetent. Naming it already takes the edge off. 🌤️', 300, 14, 500).forEach((l, k) => tx(c, l, 38, 412 + k * 19, 14, { w: 500, color: '#1f2a2e' })) })
+          why(c, t, T, 'Why it works: putting feelings into words calms the amygdala (Lieberman et al., 2007).')
+        },
+        // ---- Momo · feel heard ----
+        /** Active listening: Momo reflects back, no advice. */
+        heard(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'I’m here. No fixing, just listening', 'Feel heard')
+          let y = 180
+          ;[[a + 0.5, 'You were put on the spot, in front of everyone. That’s a lot. 🫶'], [a + 1.3, 'And it’s still on loop in your head. That makes sense.'], [a + 2.1, 'Want to keep talking, or just sit with it for a minute?']].forEach(([at, text]) => { typing(c, 22, y, t, at - 0.45, at); const h = bubble(c, 22, y, 310, text, t, at); if (t > at - 0.45) y += h + 10 })
+          rise(c, t, T.check - 0.2, () => { chip(c, 22, y + 22, '🎙️ Keep talking', '#ffffff', '#2a3438', 13); chip(c, 160, y + 22, '🌙 Just sit with it', 'rgba(97,168,253,0.14)', '#3d7fd0', 13) })
+        },
+        /** Self-compassion (Neff): three short steps. */
+        compassion(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'Be a little kinder to yourself', 'Self-compassion · Neff')
+          ;[['🤍', 'This was hard.', 'Mindfulness', '#ffffff'], ['🫂', 'Everyone freezes sometimes.', 'Common humanity', '#F3EEFF'], ['🌱', 'You’re allowed to be learning.', 'Kindness', '#EAF7EF']].forEach(([e, l, tag, fill], k) => rise(c, t, a + 0.45 + k * 0.55, () => {
+            const y = 180 + k * 86; glass(c, 22, y, 346, 74, 20, fill, 10); em(c, e, 52, y + 37, 26)
+            tx(c, l, 84, y + 30, 15.5, { w: 600, color: '#1f2a2e' }); tx(c, tag, 84, y + 52, 12, { color: '#7d8b90' })
+          }))
+          rise(c, t, T.check - 0.1, () => { const pk = clamp(pop(t, T.check - 0.1)); c.save(); c.translate(195, 470); c.scale(pk, pk); c.fillStyle = BLUE; c.beginPath(); c.roundRect(-110, -22, 220, 44, 22); c.fill(); tx(c, 'Hand on heart, 3 breaths 💙', 0, 0, 14, { w: 600, color: '#fff', align: 'center' }); c.restore() })
+          why(c, t, T, 'Why it works: self-compassion lowers rumination after setbacks (Neff, 2003).')
+        },
+        /** Strengths: what they did well, as small badges. */
+        strengths(c, t, T) {
+          const a = T.cards
+          momoHead(c, t, a, 'What you did well today', 'Strengths spotting')
+          ;[['🎯', 'You prepared', 'Momo saw your 3 notes at 1:50'], ['🧠', 'You knew the answer', 'You said so, twice'], ['🎙️', 'You talked it out', 'Within 5 minutes, not hours']].forEach(([e, l, sub], k) => {
+            const y = 180 + k * 86, pk = clamp(pop(t, a + 0.45 + k * 0.45))
+            if (pk <= 0.01) return
+            c.save(); c.globalAlpha *= pk; c.translate(195, y + 37); c.scale(lerp(0.85, 1, pk), lerp(0.85, 1, pk)); c.translate(-195, -(y + 37))
+            glass(c, 22, y, 346, 74, 20, '#ffffff', 12); c.fillStyle = '#FFF6E0'; c.beginPath(); c.arc(56, y + 37, 22, 0, TAU); c.fill(); em(c, e, 56, y + 37, 22)
+            tx(c, l, 90, y + 29, 15.5, { w: 600, color: '#1f2a2e' }); tx(c, sub, 90, y + 51, 12.5, { color: '#7d8b90' }); c.restore()
+          })
+          rise(c, t, T.check, () => chip(c, 22, 460, '⭐  3 wins logged to your week', 'rgba(255,190,80,0.18)', '#a8661a', 13))
+        },
+        /** Momo asks what they need, then adapts (the agent choosing a mode). */
+        choice(c, t, T) {
+          const a = T.cards, pick = T.cards + 1.3
+          momoHead(c, t, a, 'What would help most right now?', 'Momo adapts to you')
+          rise(c, t, a + 0.4, () => {
+            const sel = S(t, pick, pick + 0.3)
+            ;[[22, '🫶', 'Just listen', 'Feel heard', 0], [202, '🧭', 'Help me think', 'Science-backed tools', 1]].forEach(([x, e, l, sub, k]) => {
+              const on = k === 1 ? sel : 0
+              glass(c, x, 180, 166, 120, 22, on > 0.5 ? '#EAF6FF' : '#ffffff', 12)
+              if (on > 0.01) { c.save(); c.globalAlpha *= on; c.strokeStyle = BLUE; c.lineWidth = 2; c.beginPath(); c.roundRect(x, 180, 166, 120, 22); c.stroke(); c.restore() }
+              em(c, e, x + 30, 214, 26); tx(c, l, x + 16, 254, 15.5, { w: 600, color: '#1f2a2e' }); tx(c, sub, x + 16, 278, 12, { color: '#7d8b90' })
+            })
+          })
+          let y = 320
+          ;[[pick + 0.7, 'Okay, let’s think. One question: what’s the evidence you “always” mess up? 🤔'], [pick + 1.6, 'Two good 1:1s this month. So: sometimes, not always. 🌱']].forEach(([at, text]) => { typing(c, 22, y, t, at - 0.4, at); const h = bubble(c, 22, y, 320, text, t, at); if (t > at - 0.4) y += h + 10 })
+          why(c, t, T, 'Momo picks the approach: listening, or tools from CBT, ACT and self-compassion.')
+        },
       }
 
       // ---------- Timeline (phone only) ----------
@@ -602,7 +827,7 @@
               c.save(); view(c); c.globalAlpha = ph
               c.translate(480, py); c.scale(lift, lift); c.translate(-480, -py)
               c.save(); c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip(); c.translate(scr.x, scr.y); c.scale(u, u)
-              statusBar(c, app, app > 0.5 ? '#1f1f1f' : th.statusInk ?? '#1f1f1f')
+              statusBar(c, app, app > 0.5 ? '#1f1f1f' : th.statusInk ?? '#1f1f1f', 1 - app)
 
               // Lock screen: the good-luck note, the afternoon passing, the Watch noticing, Momo's nudge.
               const lock = 1 - app
@@ -612,9 +837,10 @@
                 const s1 = S(t, T.skip, T.skip + 0.12), s2 = S(t, T.buzz - 0.7, T.buzz - 0.58)
                 ;[['1:58', 1 - s1], ['2:46', s1 * (1 - s2)], ['2:47', s2]].forEach(([s, k]) => { if (k > 0.01) { c.save(); c.globalAlpha *= k; tx(c, s, 195, 168, 84, { w: 300, color: th.lockInk, align: 'center', ls: -2 }); c.restore() } })
                 notice(c, 300 - (1 - S(t, T.luck, T.luck + 0.5)) * 24, Math.min(S(t, T.luck, T.luck + 0.5), 1 - S(t, T.luckOut, T.luckOut + 0.4)), COPY.luck)
-                const nk = S(t, T.buzz, T.buzz + 0.45), press = 1 - 0.03 * bump(t, T.press, T.press + 0.25)
+                const nk = S(t, T.buzz, T.buzz + 0.45), down = bump(t, T.press - 0.08, T.press + 0.3), press = 1 - 0.05 * down
                 c.save(); c.translate(195, 340); c.scale(press, press); c.translate(-195, -340)
-                notice(c, 300 - (1 - nk) * 24, nk, COPY[OPT.copy])
+                const nh = notice(c, 300 - (1 - nk) * 24, nk, COPY[OPT.copy])
+                if (nh && down > 0.01) { c.fillStyle = `rgba(20,40,60,${0.1 * down})`; c.beginPath(); c.roundRect(16, 300, 358, nh, 24); c.fill() }
                 c.restore()
                 c.restore()
               }
@@ -634,8 +860,22 @@
               c.restore()
             })
             const sx = (x) => cx(scr.x + x * u), sy = (y) => cy(scr.y + y * u)
-            a.ripple(sx(195), sy(340), T.press, { r0: 4, r1: 30, n: 1, dur: 0.6, alpha: 0.6 })
-            a.ripple(sx(345), sy(790), T.stop, { r0: 4, r1: 26, n: 1, dur: 0.6, alpha: 0.6 })
+            // Glass cursor (prototype .nx-cursor): glides in, presses (shrinks, darkens), lifts away.
+            const TAPS = [[T.press, 195, 340, 250, 520], [T.stop, 345, 790, 260, 640]]
+            if (OPT.reflect === 'choice') TAPS.push([T.cards + 1.3, 282, 300, 300, 520])
+            for (const [at, x, y, x0, y0] of TAPS) {
+              const vis = Math.min(S(t, at - 1.1, at - 0.8), 1 - S(t, at + 0.45, at + 0.8))
+              if (vis <= 0.01) continue
+              const go = S(t, at - 1.0, at - 0.12), off = S(t, at + 0.3, at + 0.8), down = bump(t, at - 0.08, at + 0.3)
+              const px = sx(lerp(lerp(x0, x, go), x + 40, off)), py2 = sy(lerp(lerp(y0, y, go), y + 60, off)), r = D.cursor.size * u * z * (1 - D.cursor.press * down)
+              a.draw((c) => {
+                c.save(); c.globalAlpha = vis * ph
+                c.shadowColor = 'rgba(0,0,0,0.18)'; c.shadowBlur = 18; c.shadowOffsetY = 4
+                c.fillStyle = `rgba(210,214,222,${D.cursor.fill + 0.2 * down})`; c.beginPath(); c.arc(px, py2, r, 0, TAU); c.fill()
+                c.shadowColor = 'transparent'; c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 1; c.stroke()
+                c.restore()
+              })
+            }
             a.hero(T.hero)
           },
         }
@@ -650,6 +890,7 @@
         film('minimal', { ...NOTE, title: 'Minimal pill', idea: 'The island only widens into a slim pill: heart, a tiny climbing line and BPM. No full card, so the clock stays visible underneath.', beats: ['1:58 good luck 🍀', 'slim pill: ♥ ~~ 96 BPM', '2:47 nudge', 'Freeform voice', 'reflection → hero'], cuts: 'HRV and the “Sitting still” context.', tradeoff: 'The calmest and most subtle; the least detail about what the Watch saw.' }),
       ]
 
+      document.getElementById('resetAll').onclick = () => { localStorage.removeItem(STORE); location.reload() }
       await mount(FILMS, { fonts: ['inter'] })
     </script>
   </body>
