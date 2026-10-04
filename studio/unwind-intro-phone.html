@@ -30,7 +30,7 @@
     <main>
       <header>
         <div>
-          <h1>Signal check — five variants</h1>
+          <h1>Signal check · checklist ticks</h1>
           <p class="sub">All use the Spring open island. Each tells the detection story with different timing. Real-time hierarchy: <b>heart rate</b> (pink) and <b>motion</b> (green) are the primary signals, <b>HRV</b> (violet) supports when available, and respiratory rate is left out because Apple Watch measures it during sleep. The pattern that triggers Momo: heart rate rises, movement stays low, and it is unusual against their personal baseline.</p>
         </div>
         <div class="opts">
@@ -99,6 +99,20 @@
               <option value="center">Centre</option>
             </select>
           </label>
+          <label>Momo · eyes close
+            <select data-opt="eyes">
+              <option value="fade">Cross-fade</option>
+              <option value="blink">Soft blink</option>
+              <option value="dissolve">Slow dissolve</option>
+            </select>
+          </label>
+          <label>Momo · move and scale
+            <select data-opt="mease">
+              <option value="smooth">Smooth</option>
+              <option value="spring">Gentle spring</option>
+              <option value="float">Float (slow in, slow out)</option>
+            </select>
+          </label>
           <label>Thinking traps (CBT) design
             <select data-opt="cbt">
               <option value="cards">Quote cards + tags</option>
@@ -155,7 +169,7 @@
       const STORE = 'unwind-intro-phone:v1'
       const SAVED = (() => { try { return JSON.parse(localStorage.getItem(STORE)) ?? {} } catch { return {} } })()
       const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY, CARD, CHECKS }))
-      const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', cbt: 'cards', handoff: 'fade', ...SAVED.OPT }
+      const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', cbt: 'cards', handoff: 'fade', eyes: 'fade', mease: 'smooth', ...SAVED.OPT }
       document.querySelectorAll('[data-opt]').forEach((s) => {
         if (OPT[s.dataset.opt]) s.value = OPT[s.dataset.opt]
         s.addEventListener('change', () => { OPT[s.dataset.opt] = s.value; save() })
@@ -167,6 +181,8 @@
         status: { label: 'Status bar icons', sigX: [0, -40, 40, 0.5, 'Signal X'], sigY: [0, -12, 12, 0.5, 'Signal Y'], wifiX: [0, -40, 40, 0.5, 'Wi-Fi X'], wifiY: [0, -12, 12, 0.5, 'Wi-Fi Y'], batX: [0, -40, 40, 0.5, 'Battery X'], batY: [0, -12, 12, 0.5, 'Battery Y'] },
         cards: { label: 'Choice cards · icon', size: [26, 12, 60, 1, 'Icon size'], ix: [0, -60, 60, 1, 'Icon X'], iy: [0, -40, 40, 1, 'Icon Y'] },
         cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
+        signal: { label: 'Signal check timing (s)', rise: [1.6, 0.6, 4, 0.05, 'Heart rate climbs'], gap: [0.6, 0, 2, 0.05, 'Pause before first check'], row: [0.85, 0.3, 2, 0.05, 'Per check'], hold: [1.2, 0.3, 3, 0.05, 'Hold before nudge'] },
+        momo: { label: 'Momo · Just-chose → talking', grow: [0.8, 0.2, 2, 0.05, 'Grow time (s)'], wait: [1.3, 0, 4, 0.05, 'Wait before first word (s)'], eyesAt: [0, -0.8, 1.5, 0.05, 'Eyes close at (s from word)'], eyes: [0.35, 0.05, 1.5, 0.05, 'Eyes close time (s)'], settle: [0.7, 0.1, 2, 0.05, 'Settle time (s)'], openY: [330, 200, 420, 1, 'Waiting Y'], openS: [200, 100, 280, 1, 'Waiting size'], talkY: [300, 200, 420, 1, 'Talking Y'], talkS: [150, 80, 260, 1, 'Talking size'] },
         braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
       }
       const D = {}
@@ -411,7 +427,8 @@
       /** Story clock: minutes after midnight, 12-hour display without AM/PM. */
       const fmt = (min) => { const h = Math.floor(min / 60), m = Math.floor(min % 60); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}` }
       /** Story clock while the island is open: runs from the scenario's start to the nudge. */
-      const mNow = (t, T, V) => lerp(V.m0, V.m1, seg(t, T.det + 0.3, T.buzz - 0.6))
+      const RISE_END = 886.2 // story minute the heart-rate jump has finished (Signal check scenario)
+      const mNow = (t, T, V) => (t < T.risen ? lerp(V.m0, RISE_END, seg(t, T.det + 0.3, T.risen)) : lerp(RISE_END, V.m1, seg(t, T.risen, T.buzz - 0.6)))
       const noise = (m) => Math.sin(m * 3.1) * 1.2 + Math.sin(m * 7.7) * 0.7
       /** Spring 0 → 1 over x in [0, 1]; bounce 0 is a plain ease-out, 1 overshoots a few times. */
       const springy = (x, b) => { if (x <= 0) return 0; if (x >= 1) return 1; const w = b * 16; return (1 - Math.exp(-6 * x) * Math.cos(w * x)) / (1 - Math.exp(-6) * Math.cos(w)) }
@@ -467,9 +484,9 @@
         // The detection logic, row by row (editable rows; hidden rows collapse).
         if (!V.checks) return
         const rows = shownChecks(), n = rows.length, st = V.style ?? 'list'
-        const start = T.det + 0.55, end = T.buzz - 0.95
-        const at = (i) => (n > 1 ? lerp(start, end, i / (n - 1)) : (start + end) / 2)
-        const K = rows.map((_, i) => S(t, at(i), at(i) + 0.3))
+        const start = T.risen + D.signal.gap
+        const at = (i) => start + i * D.signal.row
+        const K = rows.map((_, i) => S(t, at(i), at(i) + Math.min(0.35, D.signal.row * 0.6)))
         const latest = K.reduce((m, k, i) => (k > 0.5 ? i : m), -1)
         const pa = S(t, start - 0.35, start)
         rows.forEach((r, i) => {
@@ -971,11 +988,12 @@
       // ---------- Timeline (phone only) ----------
       const WORDS = 'Sarah pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'.split(' ')
             function timeline(rate, win) {
-        const T = { phoneIn: 0.05, luck: 0.5, luckOut: 2.3, skip: 2.4, det: 2.6 }
-        T.buzz = T.det + win
+        const T = { phoneIn: 0.05, luck: 0.5, luckOut: 2.3, skip: 2.4, det: 2.6 }, G = D.signal
+        T.risen = T.det + 0.3 + G.rise
+        T.buzz = T.risen + G.gap + shownChecks().length * G.row + G.hold
         T.press = T.buzz + 1.7; T.unlock = T.press + 0.1
         T.ask = T.unlock + 0.15; T.pick = T.ask + 2.0; T.voice = T.pick + 0.45
-        let t = T.voice + 1.3 // Momo grows, eyes open, wave flat; the first word starts it all
+        let t = T.voice + D.momo.wait // Momo grows, eyes open, wave flat; the first word starts it all
         T.talk = t; t += WORDS.length * rate + 0.4
                 T.stop = t; T.proc = t + 0.3; T.cards = t + 1.1
         T.check = T.cards + 2.9; T.calm = T.cards + 3.6; T.hero = T.calm + 1.3; T.dur = +(T.hero + 1.4).toFixed(1)
@@ -983,11 +1001,14 @@
       }
 
       function film(V) {
-        const T = timeline(0.17, V.win), meta = V.meta
-        const tokens = WORDS.map((w, i) => ({ text: w, at: T.talk + i * 0.17 }))
-        return {
+        let T = timeline(0.17, V.win), tokens
+        const meta = V.meta
+        const F = {
           ...meta, dur: T.dur,
           draw(a) {
+            // Timing dials apply live: rebuild the timeline each frame and keep the scrubber length in step.
+            T = timeline(0.17, V.win); tokens = WORDS.map((w, i) => ({ text: w, at: T.talk + i * 0.17 }))
+            if (F.dur !== T.dur) { F.dur = T.dur; document.querySelectorAll('section .bar input[type=range]').forEach((r) => (r.max = T.dur)) }
             const t = a.t
             const calm = S(t, T.talk + 0.6, T.calm + 0.5)
             const talking = Math.min(S(t, T.talk - 0.2, T.talk + 0.2), 1 - S(t, T.stop - 0.2, T.stop + 0.3))
@@ -1096,11 +1117,19 @@
 
               // Inside Momo: the voice screen, the question, the reflection.
               // One Momo across the cut: grows to the centre with eyes open, then settles and closes its eyes at the first word.
-              const grow = S(t, T.pick + 0.15, T.voice + 0.35), settle = S(t, T.talk - 0.1, T.talk + 0.6), shut = S(t, T.talk - 0.05, T.talk + 0.3)
-              const mx = 195, my = lerp(lerp(240, 330, grow), 300, settle), ms = lerp(lerp(100, 200, grow), 150, settle)
+              const M = D.momo, EZ = { smooth: (x) => x * x * (3 - 2 * x), spring: (x) => springy(x, 0.25), float: (x) => (x < 0.5 ? 16 * x ** 5 : 1 - (-2 * x + 2) ** 5 / 2) }[OPT.mease]
+              const grow = EZ(seg(t, T.pick + 0.15, T.pick + 0.15 + M.grow)), settle = EZ(seg(t, T.talk + M.eyesAt, T.talk + M.eyesAt + M.settle))
+              const e0 = T.talk + M.eyesAt
+              const shut = OPT.eyes === 'blink' ? S(t, e0 + M.eyes * 0.45, e0 + M.eyes * 0.55) : OPT.eyes === 'dissolve' ? S(t, e0, e0 + M.eyes * 2.2) : S(t, e0, e0 + M.eyes)
+              const squint = OPT.eyes === 'blink' ? 1 - 0.1 * bump(t, e0, e0 + M.eyes) : 1
+              const mx = 195, my = lerp(lerp(240, M.openY, grow), M.talkY, settle), ms = lerp(lerp(100, M.openS, grow), M.talkS, settle)
               const mA = ph * app * S(t, T.ask, T.ask + 0.5) * (1 - S(t, T.cards - 0.4, T.cards))
+              c.save(); c.translate(mx, my); c.scale(1, squint); c.translate(-mx, -my)
+              const soft = OPT.eyes === 'dissolve' ? 3 * Math.sin(Math.PI * shut) : 0
+              if (soft > 0.2) c.filter = `blur(${soft}px)`
               c.globalAlpha = mA * (1 - shut); momo(c, mx, my, ms, t, 0, IMG.momoOpen)
               c.globalAlpha = mA * shut; momo(c, mx, my, ms, t, talking)
+              c.restore()
               c.globalAlpha = ph * voiceIn
               transcript(c, tokens, t, 1 - S(t, T.proc - 0.1, T.proc + 0.3))
               controls(c, t, voiceIn * (1 - S(t, T.stop + 0.15, T.stop + 0.55)), 'Freeform', T.stop)
@@ -1131,16 +1160,13 @@
             a.hero(T.hero, HO === 'settle' ? { alpha: { phone: S(t, T.hero + 0.1, T.hero + 0.6) } } : {})
           },
         }
+        return F
       }
 
       const CHK = SCEN.find((v) => v.id === 'checks')
       const variant = (style, win, title, idea, tradeoff) => ({ ...CHK, style, win, meta: { ...CHK.meta, title, idea, tradeoff } })
       const FILMS = [
-        variant('list', 7.2, 'Signal check · one by one', 'Each row fades in on its own beat, then “Possible stress → Momo checks in”.', 'The original; quick and clear.'),
-        variant('pending', 7.6, 'Signal check · checklist ticks', 'All rows appear dimmed with a small spinner, as if the Watch is checking; each brightens and gets its tick in turn.', 'Shows the system “working” and previews what it checks; slightly busier at first.'),
-        variant('focus', 7.6, 'Signal check · spotlight', 'Rows appear one at a time and the newest sits on a soft highlight while earlier rows dim, so the eye always knows where to read.', 'Best for reading one point at a time.'),
-        variant('meter', 7.6, 'Signal check · stress signal meter', 'As each check confirms, a “Stress signal” bar fills from blue to pink (HRV counts half, breathing counts zero), then Momo checks in.', 'Makes the weighting visible; one more element to read.'),
-        variant('focus', 10.0, 'Signal check · slow read', 'Spotlight style with about 1.2 s per row, for a calmer pace.', 'Easiest to read; the intro gets ~2.5 s longer.'),
+        variant('pending', 0, 'Signal check · checklist ticks', 'The island opens on a normal reading; heart rate climbs out of the usual band; only then do the checks appear dimmed with spinners and tick one by one, before Momo checks in. All timings are on the dials.', 'Timing dials apply live; the scrubber length updates on reload.'),
       ].map(film)
 
       document.getElementById('resetAll').onclick = () => { localStorage.removeItem(STORE); location.reload() }
