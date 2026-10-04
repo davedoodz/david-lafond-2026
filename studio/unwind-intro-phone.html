@@ -34,6 +34,7 @@
         <div>
           <h1>Signal check · checklist ticks</h1>
           <p class="sub">All use the Spring open island. Each tells the detection story with different timing. Real-time hierarchy: <b>heart rate</b> (pink) and <b>motion</b> (green) are the primary signals, <b>HRV</b> (violet) supports when available, and respiratory rate is left out because Apple Watch measures it during sleep. The pattern that triggers Momo: heart rate rises, movement stays low, and it is unusual against their personal baseline.</p>
+          <p class="sub">The approved saved cut is implemented on <a href="/work/unwind">the Unwind case study</a>. Production settings and copy are fixed in <code>src/features/unwindIntro/phoneFilm.js</code>; these studio controls remain local experiments. Both versions share <code>braid.js</code>. The site hands off to its live hero, supports scroll-back replay, and skips the film for reduced motion.</p>
         </div>
         <div class="opts">
           <label>Lock screen wallpaper
@@ -158,7 +159,7 @@
     <script type="module">
       import { W, TAU, C, clamp, lerp, seg, mount, HERO_BRAID, HERO_LAYERS } from './unwind-intro-kit.js'
       // The live hero band itself (same renderer as the Unwind page), not a look-alike.
-      import { drawBraid, setRT } from '../src/features/unwindIntro/introEngine.js'
+      import { drawBraid, setRT } from '../src/features/unwindIntro/braid.js'
       /** drawBraid centres the band at (480, 245) in its 960×540 scene; at scale 1 it is 2 × 320 × 0.87 wide. */
       const BRAID_W = 2 * 320 * 0.87
       /** The band is drawn here first (its 600×260 neighbourhood) so it can be flattened before the voice starts. */
