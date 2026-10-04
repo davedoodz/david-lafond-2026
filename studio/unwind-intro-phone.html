@@ -102,6 +102,15 @@
               <option value="center">Centre</option>
             </select>
           </label>
+          <label>Pause icon
+            <select data-opt="pause">
+              <option value="bars">Solid bars (before)</option>
+              <option value="rounded">Rounded bars</option>
+              <option value="filled">Lucide pause, filled</option>
+              <option value="lucide">Lucide pause, outline</option>
+              <option value="circle">Lucide circle-pause</option>
+            </select>
+          </label>
           <label>Momo · eyes close
             <select data-opt="eyes">
               <option value="fade">Cross-fade</option>
@@ -172,7 +181,7 @@
       const STORE = 'unwind-intro-phone:v1'
       const SAVED = (() => { try { return JSON.parse(localStorage.getItem(STORE)) ?? {} } catch { return {} } })()
       const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY, CARD, CHECKS }))
-      const OPT = { bg: 'paper', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', cbt: 'cards', handoff: 'fade', eyes: 'fade', mease: 'smooth', ...SAVED.OPT }
+      const OPT = { bg: 'paper', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', cbt: 'cards', handoff: 'fade', eyes: 'fade', mease: 'smooth', pause: 'bars', ...SAVED.OPT }
       document.querySelectorAll('[data-opt]').forEach((s) => {
         if (OPT[s.dataset.opt]) s.value = OPT[s.dataset.opt]
         s.addEventListener('change', () => { OPT[s.dataset.opt] = s.value; save() })
@@ -182,6 +191,7 @@
       const DIALS = {
         island: { label: 'Dynamic Island', dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], hgt: [196, 150, 280, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
         status: { label: 'Status bar icons', sigX: [0, -40, 40, 0.5, 'Signal X'], sigY: [0, -12, 12, 0.5, 'Signal Y'], wifiX: [0, -40, 40, 0.5, 'Wi-Fi X'], wifiY: [0, -12, 12, 0.5, 'Wi-Fi Y'], batX: [0, -40, 40, 0.5, 'Battery X'], batY: [0, -12, 12, 0.5, 'Battery Y'] },
+        notif: { label: 'Notification · Momo icon', y: [0, -14, 14, 0.5, 'Momo Y'], x: [0, -10, 10, 0.5, 'Momo X'], size: [38, 24, 48, 1, 'Momo size'] },
         cards: { label: 'Choice cards · icon', size: [26, 12, 60, 1, 'Icon size'], ix: [0, -60, 60, 1, 'Icon X'], iy: [0, -40, 40, 1, 'Icon Y'] },
         cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
         signal: { label: 'Signal check timing (s)', rise: [1.6, 0.6, 4, 0.05, 'Heart rate climbs'], gap: [0.6, 0, 2, 0.05, 'Pause before first check'], row: [0.85, 0.3, 2, 0.05, 'Per check'], hold: [1.2, 0.3, 3, 0.05, 'Hold before nudge'] },
@@ -283,7 +293,12 @@
         // Lucide icons (24-grid, stroke 2) at 20 px: rotate-ccw and pause.
         const lucide = (x, d) => { c.save(); c.translate(x - 10, y - 10); c.scale(20 / 24, 20 / 24); c.lineWidth = 2; c.lineJoin = 'round'; d.forEach((p) => c.stroke(new Path2D(p))); c.restore() }
         lucide(229, ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5'])
-        lucide(287, ['M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z', 'M6 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z'])
+        const P = OPT.pause
+        if (P === 'bars') { c.fillStyle = '#1f1f1f'; c.fillRect(282.5, y - 7, 3, 14); c.fillRect(288.5, y - 7, 3, 14) }
+        else if (P === 'rounded') { c.fillStyle = '#1f1f1f'; c.beginPath(); c.roundRect(281.5, y - 7.5, 4, 15, 2); c.roundRect(288.5, y - 7.5, 4, 15, 2); c.fill() }
+        else if (P === 'filled') { c.save(); c.translate(277, y - 10); c.scale(20 / 24, 20 / 24); c.fillStyle = '#1f1f1f'; c.beginPath(); c.roundRect(6, 4, 4, 16, 1); c.roundRect(14, 4, 4, 16, 1); c.fill(); c.restore() }
+        else if (P === 'circle') lucide(287, ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M10 15V9', 'M14 15V9'])
+        else lucide(287, ['M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z', 'M6 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z'])
         const press = 1 - 0.16 * bump(t, stopAt - 0.05, stopAt + 0.3)
         c.save(); c.translate(345, y); c.scale(press, press); c.translate(-345, -y)
         btn(345, '#1c1c1e')
@@ -336,7 +351,8 @@
       /** Fills the phone screen (390-pt units). `app` 0 = lock screen, 1 = inside Unwind; `calm` cools warm themes. */
       function screenBg(c, t, app, talking, calm) {
         const th = THEMES[OPT.bg]
-        if (OPT.bg === 'paper') {
+        if (app >= 0.999) { const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#fbfdff'); g.addColorStop(0.55, '#f1f6fb'); g.addColorStop(1, '#d6eafa'); c.fillStyle = g; c.fillRect(-40, -40, 470, SH + 80) }
+        else if (OPT.bg === 'paper') {
           const W0 = IMG.lockwall.naturalWidth, H0 = IMG.lockwall.naturalHeight, k = Math.max(390 / W0, SH / H0)
           c.drawImage(IMG.lockwall, (390 - W0 * k) / 2, (SH - H0 * k) / 2, W0 * k, H0 * k)
         } else if (OPT.bg === 'silk') {
@@ -421,7 +437,7 @@
         glass(c, 16, y, 358, h, 24, THEMES[OPT.bg].glass, 24)
         c.fillStyle = '#ffffff'; c.beginPath(); c.roundRect(30, y + 14, 40, 40, 11); c.fill()
         c.fillStyle = '#EAF5FF'; c.beginPath(); c.roundRect(30, y + 14, 40, 40, 11); c.fill()
-        c.drawImage(IMG.momoOpen, 31, y + 16, 38, 38)
+        { const N = D.notif; c.drawImage(IMG.momoOpen, 50 - N.size / 2 + N.x, y + 35 - N.size / 2 + N.y, N.size, N.size) }
         tx(c, 'Momo', 82, y + 23, 13, { w: 600, color: '#5d6b70' }); tx(c, 'now', 356, y + 23, 13, { color: '#8a979b', align: 'right' })
         tx(c, n.title, 82, y + 44, 15, { w: 600, color: '#1f2a2e' })
         lines.forEach((l, i) => tx(c, l, 82, y + 64 + i * 19, 14, { color: '#3b484c' }))
