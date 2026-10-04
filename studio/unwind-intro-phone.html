@@ -189,12 +189,12 @@
 
       /** Dials: [default, min, max, step, label]. Read every frame through D. */
       const DIALS = {
-        island: { label: 'Dynamic Island', dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], hgt: [196, 150, 280, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
+        island: { label: 'Dynamic Island', pad: [0, 0, 120, 1, 'Extend bottom'], dur: [0.6, 0.2, 1.6, 0.05, 'Open time (s)'], bounce: [0.35, 0, 1, 0.05, 'Spring bounce'], w: [366, 200, 382, 1, 'Open width'], hgt: [196, 150, 280, 1, 'Open height'], r: [44, 16, 60, 1, 'Corner radius'], zoom: [0.45, 0, 1.2, 0.05, 'Camera zoom'] },
         status: { label: 'Status bar icons', sigX: [0, -40, 40, 0.5, 'Signal X'], sigY: [0, -12, 12, 0.5, 'Signal Y'], wifiX: [0, -40, 40, 0.5, 'Wi-Fi X'], wifiY: [0, -12, 12, 0.5, 'Wi-Fi Y'], batX: [0, -40, 40, 0.5, 'Battery X'], batY: [0, -12, 12, 0.5, 'Battery Y'] },
         notif: { label: 'Notification · Momo icon', y: [0, -14, 14, 0.5, 'Momo Y'], x: [0, -10, 10, 0.5, 'Momo X'], size: [38, 24, 48, 1, 'Momo size'] },
         cards: { label: 'Choice cards · icon', size: [26, 12, 60, 1, 'Icon size'], ix: [0, -60, 60, 1, 'Icon X'], iy: [0, -40, 40, 1, 'Icon Y'] },
         cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
-        seq: { label: '1 · Sequence timing (s)', luck: [0.5, 0, 3, 0.05, 'Good-luck note appears'], luckHold: [1.8, 0.5, 5, 0.05, 'Good-luck note stays'], toIsland: [0.3, 0, 2, 0.05, 'Gap → island opens'], nudgeRead: [1.7, 0.5, 5, 0.05, 'Nudge on screen before tap'], askRead: [2.0, 0.5, 5, 0.05, 'Choice screen before tap'], toVoice: [0.45, 0.1, 2, 0.05, 'Tap → voice screen'], word: [0.17, 0.08, 0.5, 0.01, 'Per spoken word'], afterTalk: [0.4, 0, 3, 0.05, 'After last word'], handoff: [1.6, 0.5, 4, 0.05, 'Hand-off to hero'], endHold: [1.4, 0, 4, 0.05, 'Hold on hero'] },
+        seq: { label: '1 · Sequence timing (s)', luck: [0.5, 0, 3, 0.05, 'Good-luck note appears'], luckHold: [1.8, 0.5, 5, 0.05, 'Good-luck note stays'], pass: [2.2, 0.5, 6, 0.05, 'Time passes → evening'], toIsland: [0.3, 0, 2, 0.05, 'Gap → island opens'], nudgeRead: [1.7, 0.5, 5, 0.05, 'Nudge on screen before tap'], askRead: [2.0, 0.5, 5, 0.05, 'Choice screen before tap'], toVoice: [0.45, 0.1, 2, 0.05, 'Tap → voice screen'], word: [0.17, 0.08, 0.5, 0.01, 'Per spoken word'], afterTalk: [0.4, 0, 3, 0.05, 'After last word'], handoff: [1.6, 0.5, 4, 0.05, 'Hand-off to hero'], endHold: [1.4, 0, 4, 0.05, 'Hold on hero'] },
         signal: { label: '2 · Signal check timing (s)', rise: [1.6, 0.6, 4, 0.05, 'Heart rate climbs'], gap: [0.6, 0, 2, 0.05, 'Pause before first check'], row: [0.85, 0.3, 2, 0.05, 'Per check'], hold: [1.2, 0.3, 3, 0.05, 'Hold before nudge'] },
         momo: { label: '3 · Momo · choice → talking', grow: [0.8, 0.2, 2, 0.05, 'Grow time (s)'], wait: [1.3, 0, 4, 0.05, 'Wait before first word (s)'], eyesAt: [0, -0.8, 1.5, 0.05, 'Eyes close at (s from word)'], eyes: [0.35, 0.05, 1.5, 0.05, 'Eyes close time (s)'], settle: [0.7, 0.1, 2, 0.05, 'Settle time (s)'], openY: [330, 200, 420, 1, 'Waiting Y'], openS: [200, 100, 280, 1, 'Waiting size'], talkY: [300, 200, 420, 1, 'Talking Y'], talkS: [150, 80, 260, 1, 'Talking size'] },
         braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
@@ -411,7 +411,7 @@
       // ---------- Notifications ----------
       const COPY_DEFAULT = {
         luck: { title: 'Good luck with Sarah 🍀', body: 'You’ve prepared for this. One slow breath before you walk in.' },
-        breath: { title: 'Take a breath?', body: 'Your heart rate has stayed high since your 1:1. A 30-second check-in might help.' },
+        breath: { title: 'Take a breath?', body: 'Your heart rate jumped while you were sitting still. A 30-second check-in might help.' },
         talk: { title: 'Want to talk it through?', body: 'You seem tense since your meeting. I’m here for 30 seconds, whenever you’re ready.' },
         moment: { title: 'A moment for you', body: 'Your heart rate is elevated after your 1:1 with Sarah. Tap to reflect.' },
       }
@@ -453,6 +453,7 @@
       /** Story clock: minutes after midnight, 12-hour display without AM/PM. */
       const fmt = (min) => { const h = Math.floor(min / 60), m = Math.floor(min % 60); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}` }
       /** Story clock while the island is open: runs from the scenario's start to the nudge. */
+      const EVE = 234 // display offset: the detection happens in the evening (2:44 → 6:38)
       const RISE_END = 886.2 // story minute the heart-rate jump has finished (Signal check scenario)
       const mNow = (t, T, V) => (t < T.risen ? lerp(V.m0, RISE_END, seg(t, T.det + 0.3, T.risen)) : lerp(RISE_END, V.m1, seg(t, T.risen, T.buzz - 0.6)))
       const noise = (m) => Math.sin(m * 3.1) * 1.2 + Math.sin(m * 7.7) * 0.7
@@ -542,7 +543,7 @@
       }
       /** Spring-open Dynamic Island. Content fades before the pill closes, so it never sits empty. */
       function island(c, t, T, V) {
-        const d = D.island, H = d.hgt + extraOf(V)
+        const d = D.island, H = d.hgt + extraOf(V) + d.pad
         const open = springy(seg(t, T.det, T.det + d.dur), d.bounce), fade = 1 - S(t, T.buzz - 0.5, T.buzz - 0.32), shut = S(t, T.buzz - 0.4, T.buzz - 0.05)
         const e = open * (1 - shut)
         if (e <= 0.003) return
@@ -552,7 +553,7 @@
         if (full <= 0.01) return
         const CH = 160 + extraOf(V) + 36, k = Math.min(1, w / 358, h / CH)
         c.save(); c.beginPath(); c.roundRect(195 - w / 2, 11, w, h, r); c.clip(); c.globalAlpha *= full
-        c.translate(195 - (358 * k) / 2, 11 + (h - CH * k) / 2); c.scale(k, k); c.translate(0, 36); readout(c, t, T, V); c.restore()
+        c.translate(195 - (358 * k) / 2, 11 + (h - d.pad * (h / H) - CH * k) / 2); c.scale(k, k); c.translate(0, 36); readout(c, t, T, V); c.restore()
       }
 
       /** Signal-check rows: editable text, each can be hidden. Kind sets the icon; state sets the right-hand mark. */
@@ -1015,7 +1016,7 @@
       const WORDS = 'Sarah pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'.split(' ')
             function timeline(rate, win) {
         const Q = D.seq, G = D.signal, T = { phoneIn: 0.05, luck: Q.luck }
-        T.luckOut = T.luck + Q.luckHold; T.skip = T.luckOut + 0.1; T.det = T.luckOut + Q.toIsland
+        T.luckOut = T.luck + Q.luckHold; T.skip = T.luckOut + 0.1; T.passEnd = T.skip + Q.pass; T.det = T.passEnd + Q.toIsland
         T.risen = T.det + 0.3 + G.rise
         T.buzz = T.risen + G.gap + shownChecks().length * G.row + G.hold
         T.press = T.buzz + Q.nudgeRead; T.unlock = T.press + 0.1
@@ -1097,7 +1098,11 @@
             a.under((c) => {
               if (ph <= 0.01) return
               c.save(); view(c); handT(c); c.globalAlpha = ph; c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip()
-              c.translate(scr.x, scr.y); c.scale(u, u); screenBg(c, t, app, talking, calm); c.restore()
+              c.translate(scr.x, scr.y); c.scale(u, u); screenBg(c, t, app, talking, calm)
+              // Evening: the lock-screen wallpaper dims to dusk while time passes (lock screen only).
+              const eve = S(t, T.skip + 0.2, T.passEnd) * (1 - app)
+              if (eve > 0.01) { const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, `rgba(18,22,70,${0.5 * eve})`); g.addColorStop(0.6, `rgba(60,40,110,${0.32 * eve})`); g.addColorStop(1, `rgba(255,140,120,${0.18 * eve})`); c.fillStyle = g; c.fillRect(0, 0, 390, SH) }
+              c.restore()
             })
             a.draw((c) => {
               if (ph <= 0.01) return
@@ -1113,7 +1118,14 @@
                 c.save(); c.globalAlpha *= lock
                 const RND = "'SF Pro Rounded', ui-rounded, Inter, system-ui, sans-serif"
                 c.font = `500 17px ${th.rounded ? RND : UI}`; c.fillStyle = th.dateInk; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Wednesday, October 1', 195, 104)
-                c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'; c.fillText(fmt(t < T.skip ? 838 : mNow(t, T, V)), 195, 170); c.letterSpacing = '0px'
+                c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'; c.fillText(fmt(t < T.skip ? 838 : t < T.passEnd ? lerp(838, V.m0 + EVE, S(t, T.skip, T.passEnd)) : mNow(t, T, V) + EVE), 195, 170)
+                // Time passing: the 1:1 ticks by as a calendar card, and the wallpaper dims toward evening.
+                const pa = Math.min(S(t, T.skip + 0.1, T.skip + 0.5), 1 - S(t, T.passEnd - 0.2, T.passEnd + 0.3)), done = S(t, lerp(T.skip, T.passEnd, 0.35), lerp(T.skip, T.passEnd, 0.5))
+                if (pa > 0.01) { c.save(); c.globalAlpha *= pa
+                  glass(c, 16, 300, 358, 64, 22, th.glass, 24)
+                  sf(c, 'clock', 44, 332, 20, done > 0.5 ? '#34c759' : '#61A8FD')
+                  tx(c, '1:1 with Sarah', 66, 322, 15, { w: 600, color: '#1f2a2e' }); tx(c, done > 0.5 ? 'Ended 2:45 PM' : '2:00 – 2:45 PM · now', 66, 343, 13, { color: '#3b484c' })
+                  c.restore() }; c.letterSpacing = '0px'
                 if (th.buttons) {
                   ;[[71, 'M0 2.4H10.38V1.91C10.38.62 9.74 0 8.51 0H1.87C.64 0 0 .62 0 1.91ZM3.96 22.96H6.42C7.65 22.96 8.28 22.34 8.28 21.05V10.16C8.28 9.09 8.53 8.31 8.92 7.71L9.59 6.73C10.06 6 10.38 5.31 10.38 4.44V3.6H0V4.44C0 5.31.32 6 .79 6.73L1.45 7.71C1.85 8.31 2.09 9.09 2.09 10.16V21.05C2.09 22.34 2.73 22.96 3.96 22.96Z', 10.38, 22.96], [319, 'M3.29 20H22.47C24.65 20 25.76 18.91 25.76 16.75V5.77C25.76 3.61 24.65 2.53 22.47 2.53H19.47C18.64 2.53 18.39 2.36 17.91 1.84L17.07.89C16.55.32 16.02 0 14.93 0H10.75C9.67 0 9.14.32 8.61.89L7.77 1.84C7.3 2.35 7.04 2.53 6.22 2.53H3.29C1.1 2.53 0 3.61 0 5.77V16.75C0 18.91 1.1 20 3.29 20ZM12.88 16.91C9.7 16.91 7.15 14.37 7.15 11.17 7.15 7.98 9.7 5.44 12.88 5.44 16.06 5.44 18.6 7.98 18.6 11.17 18.6 14.37 16.05 16.91 12.88 16.91ZM12.88 15.31C15.17 15.31 17.01 13.48 17.01 11.17 17.01 8.87 15.17 7.03 12.88 7.03 10.59 7.03 8.74 8.87 8.74 11.17 8.74 13.48 10.6 15.31 12.88 15.31Z', 25.76, 20]].forEach(([x, d, w, h]) => {
                     const y = SH - 50 - 25 - 34 * (SH / 852) + 34
