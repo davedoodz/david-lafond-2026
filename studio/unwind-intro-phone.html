@@ -1133,7 +1133,7 @@
                 }
                 // Time passing: the 1:1 ticks by as a calendar card, and the wallpaper dims toward evening.
                 // Meeting card first; Momo's note then stacks on top (newest first) and pushes it down; it returns as "Ended" at 3:00.
-                const pa = Math.min(S(t, T.meet, T.meet + 0.5), 1 - S(t, T.passEnd - 0.2, T.passEnd + 0.3)), done = S(t, T.k[0] + D.seq.fade * 0.4, T.k[0] + D.seq.fade)
+                const pa = Math.min(S(t, T.meet, T.meet + 0.5), 1 - S(t, T.k[1] - 0.5, T.k[1] + D.seq.fade * 0.5)) // gone before 5:00, done = S(t, T.k[0] + D.seq.fade * 0.4, T.k[0] + D.seq.fade)
                 const stacked = S(t, T.luck, T.luck + 0.5) * (1 - S(t, T.luckOut, T.luckOut + 0.5)), my = 300 + stacked * 112 + (1 - S(t, T.meet, T.meet + 0.5)) * 24
                 if (pa > 0.01) { c.save(); c.globalAlpha *= pa
                   glass(c, 16, my, 358, 64, 22, th.glass, 24)
