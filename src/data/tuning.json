@@ -261,15 +261,14 @@
     }
   },
   "Hero": {
+    "intro2": "Now, I’m bringing this perspective to product design — where ideas can move faster and reach further.",
     "align": {
       "x": 65
     },
     "spacing": {
       "titleToIntroDesktop": 28,
       "introToIntroDesktop": 20,
-      "introToNameDesktop": 51,
-      "introToIntroMobile": 19,
-      "introToNameMobile": 32
+      "introToIntroMobile": 19
     },
     "peekDesktop": 95,
     "peekMobile": 95
@@ -441,7 +440,8 @@
   },
   "Unwind case study": {
     "page": {
-      "snap": "off"
+      "snap": "off",
+      "sectionReveal": "still"
     },
     "hero": {
       "title": "A Novel Multimodal AI Reflection System for Behavioral Change",
@@ -470,9 +470,33 @@
       "problemTitle": "Support usually comes too late.",
       "problemBody": "Most wellness tools wait for us to open them often after the emotional intensity and useful context have already faded.",
       "opportunityTitle": "Three technologies just converged ",
-      "opportunityBody": "Wearables can sense physiological change. Voice can capture subtle emotional and acoustic cues. Realtime AI can connect both to the moment—making wellness support more situational.",
+      "opportunityBody": "1. Wearables senses physiological change. \n\n2. Voice captures subtle emotional cues. \n\n3. Realtime AI can connect both to the moment.",
       "solutionTitle": "A private check-in, at the moment it matters.",
-      "solutionBody": "The Watch surfaces the moment. The phone gives you somewhere to talk. AI connects signal, story and history to help interrupt recurring patterns before they become habits."
+      "solutionBody": "The Watch surfaces the moment. The phone gives you somewhere to talk. AI connects signal, story and history to help interrupt recurring patterns before they become habits.",
+      "preset": "custom",
+      "layout": "left",
+      "opportunityArt": "converge",
+      "reveal": "cascade"
+    },
+    "persona": {
+      "body": "Generally independent and capable, but prone to stress, rumination and replaying difficult moments. They want a private, low-friction emotional outlet.",
+      "image": "bottom",
+      "blockGap": 100,
+      "moments": {
+        "m2Quote": "“Argh, why did I say that?”",
+        "m3Quote": "“There's always so much to do…”",
+        "m4Quote": "“It's happening tomorrow again...”"
+      },
+      "float": {
+        "preset": "drift",
+        "pace": 4.9,
+        "cardWidth": 330,
+        "spread": 169,
+        "bob": 20,
+        "eyebrowGap": 17,
+        "bodyGap": 22,
+        "tagsGap": 40
+      }
     }
   },
   "Nav Momo": {
@@ -499,7 +523,9 @@
     "keep": {
       "Overview": "hide",
       "How it works": "hide",
-      "Context": "hide"
+      "The moment": "hide",
+      "Context": "hide",
+      "Tracking change": "hide"
     }
   },
   "Scroll": {
