@@ -285,6 +285,7 @@ export function CaseStudyPage({ id }: Props) {
     page: {
       snap: string
       showSidebar: boolean
+      showSections: boolean
       textSize: 'compact' | 'balanced' | 'display'
       contentWidth: number
       textWidth: number
@@ -532,15 +533,17 @@ export function CaseStudyPage({ id }: Props) {
         {page.showSidebar && (
           <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
             <BackLink className="case__back" />
-            <ol className="case__toc">
-              {keys.map((key) => (
-                <li key={key}>
-                  <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
-                    {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
-                  </button>
-                </li>
-              ))}
-            </ol>
+            {page.showSections && (
+              <ol className="case__toc">
+                {keys.map((key) => (
+                  <li key={key}>
+                    <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
+                      {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
           </aside>
         )}
         {renderSection('hero', hero, true)}

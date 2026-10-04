@@ -37,32 +37,39 @@ export type Story = {
   art: string
   opportunityArt: string
   motion: string
+  reveal: string
   artWidth: number
   rowGap: number
   titleScale: number
   textWidth: number
 }
 
-type Look = Pick<Story, 'art' | 'opportunityArt' | 'motion'>
-/** Named art and motion combinations; layout remains independently adjustable. */
+type Look = Pick<Story, 'art' | 'opportunityArt' | 'motion' | 'reveal'>
+/** Named art, motion, and entrance combinations; layout remains independently adjustable. */
 const STORY_PRESETS: Record<string, Look> = {
-  'calm cards': { art: 'card', opportunityArt: 'three', motion: 'draw' },
-  editorial: { art: 'line', opportunityArt: 'three', motion: 'draw' },
-  converge: { art: 'card', opportunityArt: 'converge', motion: 'pulse' },
-  outline: { art: 'outline', opportunityArt: 'single', motion: 'pulse' },
-  minimal: { art: 'none', opportunityArt: 'three', motion: 'off' },
-  columns: { art: 'card', opportunityArt: 'three', motion: 'draw' },
+  'calm cards': { art: 'card', opportunityArt: 'three', motion: 'draw', reveal: 'soft rise' },
+  editorial: { art: 'line', opportunityArt: 'three', motion: 'draw', reveal: 'cascade' },
+  converge: { art: 'card', opportunityArt: 'converge', motion: 'pulse', reveal: 'from sides' },
+  outline: { art: 'outline', opportunityArt: 'single', motion: 'pulse', reveal: 'scale in' },
+  minimal: { art: 'none', opportunityArt: 'three', motion: 'off', reveal: 'still' },
+  columns: { art: 'card', opportunityArt: 'three', motion: 'draw', reveal: 'soft rise' },
 }
 
 /** `arts` replaces the Unwind graphics (problem, opportunity, solution) for another case study. */
 export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode] }) {
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const ref = useRef<HTMLElement>(null)
+  const wasLive = useRef(false)
   const [live, setLive] = useState(false)
+  const [revealCycle, setRevealCycle] = useState(0)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const observer = new IntersectionObserver(([e]) => setLive(e.isIntersecting), { threshold: 0.25 })
+    const observer = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !wasLive.current) setRevealCycle((cycle) => cycle + 1)
+      wasLive.current = e.isIntersecting
+      setLive(e.isIntersecting)
+    }, { threshold: 0.25 })
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
@@ -80,11 +87,12 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
       data-story-layout={look.layout}
       data-story-art={look.art}
       data-story-motion={look.motion}
+      data-story-reveal={look.reveal}
       data-live={live || undefined}
       aria-label="Problem, opportunity and solution"
       style={{ '--story-art-w': `${s.artWidth}px`, '--story-gap': `${s.rowGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
     >
-      <ol className="case__story-cols">
+      <ol key={revealCycle} className="case__story-cols">
         {rows.map(([k, label, title, body, art], i) => (
           <li key={k} data-row={k} style={{ '--i': i } as CSSProperties}>
             {look.art !== 'none' && <div className="story-art">{art}</div>}

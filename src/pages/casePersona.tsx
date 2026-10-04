@@ -1,14 +1,19 @@
 /**
- * User persona for the Unwind case study, rebuilt from the one-page persona sheet so it reads
- * top to bottom: who she is, what drives her and gets in her way, then the four moments.
- * Icons follow the Re:Self language: ink line work, Unwind blue accents. Only `.pa-b` moves.
+ * Shared case-study persona: identity, traits, then the key contexts. With `float` dials
+ * (Unwind) the contexts become cards that appear around the portrait; otherwise they render
+ * as a list (Filo). Icons follow the Re:Self language: ink line work, Unwind blue accents.
+ * Only `.pa-b` moves.
  */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Brain, Briefcase, Building2, CalendarDays, CalendarCheck, MessageCircle, RefreshCw, RotateCcw, Sparkles, Watch, type LucideIcon } from 'lucide-react'
 import { EditableText } from '../components/EditableText'
 
 type Tuple = [number, number, number, number]
 type Edit = (path: string) => (next: string) => void
 const text = (d: string) => ({ type: 'text' as const, default: d })
+
+const PROFILE_TAG_ICONS: LucideIcon[] = [CalendarDays, Briefcase, Watch, Brain, Sparkles, Building2]
+const FLOAT_TAG_ICONS: LucideIcon[] = [MessageCircle, RotateCcw, RefreshCw, CalendarCheck]
 
 export const PERSONA_DIALS = {
   eyebrow: text('User persona'),
@@ -72,6 +77,46 @@ export const PERSONA_DIALS = {
   },
   _collapsed: true,
 }
+/** Key-context cards floating around the portrait. Text stays in `moments`. */
+export const FLOAT_DIALS = {
+  /** one/two at a time: cards fade in and out in turn · pop: springy entrance · drift: all stay up · still: no motion (easiest to edit). */
+  preset: { type: 'select' as const, options: ['one at a time', 'two at a time', 'pop', 'drift', 'still'], default: 'one at a time' },
+  content: { type: 'select' as const, options: ['quote + tag', 'quote', 'title + quote', 'full'], default: 'quote + tag' },
+  /** Seconds between one card and the next. */
+  pace: [3.2, 1.5, 8, 0.1] as Tuple,
+  cardWidth: [250, 160, 360, 5] as Tuple,
+  /** How far cards reach past the portrait's edges (px). */
+  spread: [56, -40, 200, 1] as Tuple,
+  /** Float height (px). */
+  bob: [6, 0, 20, 1] as Tuple,
+  /** Profile chip arrangement. */
+  profileLayout: { type: 'select' as const, options: ['wrapped', '3 top / 3 bottom'], default: 'wrapped' },
+  /** Vertical distance between the text block and portrait (px). */
+  introGap: [32, 0, 160, 1] as Tuple,
+  /** Vertical distance between the eyebrow and title (px). */
+  eyebrowGap: [14, 0, 80, 1] as Tuple,
+  /** Vertical distance between the title and body (px). */
+  titleGap: [14, 0, 120, 1] as Tuple,
+  /** Vertical distance between the body and profile chips (px). */
+  bodyGap: [14, 0, 120, 1] as Tuple,
+  /** Extra distance after the profile chips before the portrait (px). */
+  tagsGap: [10, 0, 100, 1] as Tuple,
+  _collapsed: false,
+}
+export type Float = {
+  preset: string
+  content: string
+  pace: number
+  cardWidth: number
+  spread: number
+  bob: number
+  profileLayout: string
+  introGap: number
+  eyebrowGap: number
+  titleGap: number
+  bodyGap: number
+  tagsGap: number
+}
 
 export type Persona = {
   eyebrow: string
@@ -92,6 +137,8 @@ export type Persona = {
   driven: Record<'title' | 'd1' | 'd2' | 'd3', string>
   challenges: Record<'title' | 'c1' | 'c2' | 'c3', string>
   moments: Record<string, string>
+  /** Present only where the config adds FLOAT_DIALS. */
+  float?: Float
 }
 
 type Look = Pick<Persona, 'traits' | 'contexts' | 'motion'>
@@ -173,11 +220,17 @@ function Icon({ name }: { name: string }) {
 export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
   const look = { ...(PERSONA_PRESETS[p.preset] ?? p), image: p.image }
   const ref = useRef<HTMLElement>(null)
+  const wasLive = useRef(false)
   const [live, setLive] = useState(false)
+  const [floatCycle, setFloatCycle] = useState(0)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const observer = new IntersectionObserver(([e]) => setLive(e.isIntersecting), { threshold: 0.1 })
+    const observer = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !wasLive.current) setFloatCycle((cycle) => cycle + 1)
+      wasLive.current = e.isIntersecting
+      setLive(e.isIntersecting)
+    }, { threshold: 0.1 })
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
@@ -186,6 +239,8 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
     .map((t) => t.trim())
     .filter(Boolean)
   const m = p.moments
+  const float = p.float
+  const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const traitList = (group: 'driven' | 'challenges', items: [string, string][]) => (
     <div className="persona__traits-group">
       <EditableText as="h3" className="eyebrow" label={`${group} heading`} value={p[group].title} onChange={edit(`persona.${group}.title`)} />
@@ -210,6 +265,8 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
       data-persona-traits={look.traits}
       data-persona-contexts={look.contexts}
       data-persona-motion={look.motion}
+      data-float={float?.preset}
+      data-profile-layout={float?.profileLayout}
       data-live={live || undefined}
       style={
         {
@@ -217,6 +274,19 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
           '--persona-img-r': `${p.imageRadius}px`,
           '--persona-title': p.titleScale,
           '--persona-gap': `${p.blockGap}px`,
+          ...(float
+            ? {
+                '--persona-intro-gap': `${float.introGap}px`,
+                '--persona-eyebrow-gap': `${float.eyebrowGap}px`,
+                '--persona-title-gap': `${float.titleGap}px`,
+                '--persona-body-gap': `${float.bodyGap}px`,
+                '--persona-tags-gap': `${float.tagsGap}px`,
+                '--float-pace': `${float.pace}s`,
+                '--float-w': `${float.cardWidth}px`,
+                '--float-spread': `${float.spread}px`,
+                '--float-bob': `${float.bob}px`,
+              }
+            : {}),
         } as CSSProperties
       }
     >
@@ -227,66 +297,105 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
           <EditableText className="persona__body" label="Persona body" value={p.body} onChange={edit('persona.body')} />
           {p.showTags && tags.length > 0 && (
             <ul className="persona__tags" aria-label="Profile">
-              {tags.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
+              {tags.map((t, i) => {
+                const TagIcon = PROFILE_TAG_ICONS[i]
+                return (
+                  <li key={t}>
+                    {TagIcon && <TagIcon className="persona__tag-icon" size={14} strokeWidth={1.8} aria-hidden="true" />}
+                    {t}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>
         {look.image !== 'none' && (
-          <img
-            className="persona__photo"
-            src="/work/unwind/persona/overthinker.jpg"
-            alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
-            width={1374}
-            height={1145}
-            loading="lazy"
-            decoding="async"
-          />
+          <div className="persona__stage">
+            <img
+              className="persona__photo"
+              src="/work/unwind/persona/overthinker.jpg"
+              alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
+              width={1374}
+              height={1145}
+              loading="lazy"
+              decoding="async"
+            />
+            {float && (
+              <ul key={floatCycle} className="persona__floats" aria-label={m.title}>
+                {SCENES.map((scene, i) => {
+                  const n = `m${i + 1}`
+                  const TagIcon = FLOAT_TAG_ICONS[i]
+                  return (
+                    <li key={n} className="persona__float" data-slot={i} style={{ '--i': i } as CSSProperties}>
+                      {shows('full') && (
+                        <svg className="persona__float-scene" viewBox="0 0 120 80" aria-hidden="true">
+                          {scene}
+                        </svg>
+                      )}
+                      {shows('title + quote', 'full') && (
+                        <EditableText as="h3" className="persona__moment-title" label={`Context ${i + 1} title`} value={m[`${n}Title`]} onChange={edit(`persona.moments.${n}Title`)} />
+                      )}
+                      <EditableText as="p" className="persona__quote" label={`Context ${i + 1} quote`} value={m[`${n}Quote`]} onChange={edit(`persona.moments.${n}Quote`)} />
+                      {shows('quote + tag', 'full') && (
+                        <p className="persona__tag">
+                          <TagIcon size={14} strokeWidth={1.8} aria-hidden="true" />
+                          <EditableText as="span" label={`Context ${i + 1} tag`} value={m[`${n}Tag`]} onChange={edit(`persona.moments.${n}Tag`)} />
+                        </p>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="persona__traits">
-        {traitList('driven', [
-          ['d1', 'bolt'],
-          ['d2', 'heart'],
-          ['d3', 'growth'],
-        ])}
-        {traitList('challenges', [
-          ['c1', 'loop'],
-          ['c2', 'inward'],
-          ['c3', 'alone'],
-        ])}
-      </div>
+      {!float && (
+        <div className="persona__traits">
+          {traitList('driven', [
+            ['d1', 'bolt'],
+            ['d2', 'heart'],
+            ['d3', 'growth'],
+          ])}
+          {traitList('challenges', [
+            ['c1', 'loop'],
+            ['c2', 'inward'],
+            ['c3', 'alone'],
+          ])}
+        </div>
+      )}
 
-      <div className="persona__moments">
-        <header>
-          <EditableText as="p" className="eyebrow" label="Contexts eyebrow" value={m.eyebrow} onChange={edit('persona.moments.eyebrow')} />
-          <EditableText as="h2" className="persona__title persona__title--sub" label="Contexts title" value={m.title} onChange={edit('persona.moments.title')} />
-          <EditableText className="persona__body" label="Contexts body" value={m.body} onChange={edit('persona.moments.body')} />
-        </header>
-        <ol hidden={look.contexts === 'scenario'}>
-          {SCENES.map((scene, i) => {
-            const n = `m${i + 1}`
-            return (
-              <li key={n} style={{ '--i': i } as CSSProperties}>
-                <svg className="persona__scene" viewBox="0 0 120 80" aria-hidden="true">
-                  {scene}
-                </svg>
-                <div className="persona__moment-text">
-                  <span className="persona__step">{String(i + 1).padStart(2, '0')}</span>
-                  <EditableText as="h3" className="persona__moment-title" label={`Context ${i + 1} title`} value={m[`${n}Title`]} onChange={edit(`persona.moments.${n}Title`)} />
-                  <EditableText className="persona__moment-body" label={`Context ${i + 1} body`} value={m[`${n}Body`]} onChange={edit(`persona.moments.${n}Body`)} />
-                </div>
-                {p.showQuotes && (
-                  <EditableText as="p" className="persona__quote" label={`Context ${i + 1} quote`} value={m[`${n}Quote`]} onChange={edit(`persona.moments.${n}Quote`)} />
-                )}
-                <EditableText as="p" className="persona__tag" label={`Context ${i + 1} tag`} value={m[`${n}Tag`]} onChange={edit(`persona.moments.${n}Tag`)} />
-              </li>
-            )
-          })}
-        </ol>
-      </div>
+      {!float && (
+        <div className="persona__moments">
+          <header>
+            <EditableText as="p" className="eyebrow" label="Contexts eyebrow" value={m.eyebrow} onChange={edit('persona.moments.eyebrow')} />
+            <EditableText as="h2" className="persona__title persona__title--sub" label="Contexts title" value={m.title} onChange={edit('persona.moments.title')} />
+            <EditableText className="persona__body" label="Contexts body" value={m.body} onChange={edit('persona.moments.body')} />
+          </header>
+          <ol hidden={look.contexts === 'scenario'}>
+            {SCENES.map((scene, i) => {
+              const n = `m${i + 1}`
+              return (
+                <li key={n} style={{ '--i': i } as CSSProperties}>
+                  <svg className="persona__scene" viewBox="0 0 120 80" aria-hidden="true">
+                    {scene}
+                  </svg>
+                  <div className="persona__moment-text">
+                    <span className="persona__step">{String(i + 1).padStart(2, '0')}</span>
+                    <EditableText as="h3" className="persona__moment-title" label={`Context ${i + 1} title`} value={m[`${n}Title`]} onChange={edit(`persona.moments.${n}Title`)} />
+                    <EditableText className="persona__moment-body" label={`Context ${i + 1} body`} value={m[`${n}Body`]} onChange={edit(`persona.moments.${n}Body`)} />
+                  </div>
+                  {p.showQuotes && (
+                    <EditableText as="p" className="persona__quote" label={`Context ${i + 1} quote`} value={m[`${n}Quote`]} onChange={edit(`persona.moments.${n}Quote`)} />
+                  )}
+                  <EditableText as="p" className="persona__tag" label={`Context ${i + 1} tag`} value={m[`${n}Tag`]} onChange={edit(`persona.moments.${n}Tag`)} />
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      )}
     </section>
   )
 }

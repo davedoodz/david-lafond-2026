@@ -4,7 +4,7 @@
  * prototype video placed relative to the text. All copy is editable on the page
  * in dev and autosaves to tuning.json, like the About story.
  */
-import { PERSONA_DIALS } from './casePersona'
+import { FLOAT_DIALS, PERSONA_DIALS } from './casePersona'
 import { EVIDENCE_DIALS, PRINCIPLES_DIALS, REFRAME_DIALS } from './filoSections'
 
 type Tuple = [number, number, number, number]
@@ -68,6 +68,8 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
 const pageDials = {
   snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'mandatory' },
   showSidebar: true,
+  /** Section list in the sidebar (Problem · Solution, Persona, …). Off: only Back shows. */
+  showSections: false,
   /** Reading density across every case-study section. */
   textSize: { type: 'select' as const, options: ['compact', 'balanced', 'display'], default: 'compact' },
   /** Widest the content column gets (px). */
@@ -262,16 +264,21 @@ export const UNWIND_CONFIG = {
     art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
     /** three: a tile per technology · converge: all three flow into the moment · single: one row of icons */
     opportunityArt: { type: 'select' as const, options: ['three', 'converge', 'single'], default: 'three' },
-    /** Only the blue marks move. */
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
+    /** Entrance animation replayed whenever the story re-enters the viewport. */
+    reveal: {
+      type: 'select' as const,
+      options: ['soft rise', 'cascade', 'from sides', 'scale in', 'still'],
+      default: 'soft rise',
+    },
     artWidth: [300, 160, 480, 5] as Tuple,
     rowGap: [44, 8, 140, 1] as Tuple,
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     _collapsed: true,
   },
-  /** Persona sheet, reorganised to read top to bottom (rendered as `persona`). */
-  persona: PERSONA_DIALS,
+  /** Persona sheet, reorganised to read top to bottom (rendered as `persona`); key contexts float around the portrait. */
+  persona: { ...PERSONA_DIALS, float: FLOAT_DIALS },
   system: sectionDials({
     eyebrow: 'System',
     title: 'Watch, phone and AI, with therapists shaping the model.',
