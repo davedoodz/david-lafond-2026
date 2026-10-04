@@ -32,7 +32,7 @@
           <p class="sub">All use the Spring open island. Each tells the detection story with different timing. Real-time hierarchy: <b>heart rate</b> (pink) and <b>motion</b> (green) are the primary signals, <b>HRV</b> (violet) supports when available, and respiratory rate is left out because Apple Watch measures it during sleep. The pattern that triggers Momo: heart rate rises, movement stays low, and it is unusual against their personal baseline.</p>
         </div>
         <div class="opts">
-          <label>Phone background
+          <label>Lock screen wallpaper
             <select data-opt="bg">
               <option value="soft">Soft white (prototype)</option>
               <option value="silk">Blue silk wallpaper</option>
@@ -339,7 +339,8 @@
         } else {
           const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#fbfdff'); g.addColorStop(0.55, '#f1f6fb'); g.addColorStop(1, '#d6eafa'); c.fillStyle = g; c.fillRect(0, 0, 390, SH)
         }
-        if (th.veil * app > 0.01) { c.fillStyle = `rgba(250,252,255,${th.veil * app})`; c.fillRect(0, 0, 390, SH) }
+        // The wallpaper is lock screen only; inside Momo the app is always the prototype's soft white.
+        if (app > 0.01) { c.save(); c.globalAlpha *= app; const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#fbfdff'); g.addColorStop(0.55, '#f1f6fb'); g.addColorStop(1, '#d6eafa'); c.fillStyle = g; c.fillRect(0, 0, 390, SH); c.restore() }
         if (talking > 0.01) {
           const rg = c.createRadialGradient(195, SH + 40, 0, 195, SH + 40, 420); rg.addColorStop(0, `rgba(120,190,252,${0.55 * talking})`); rg.addColorStop(1, 'rgba(120,190,252,0)')
           c.fillStyle = rg; c.fillRect(0, 0, 390, SH)
