@@ -280,8 +280,10 @@
         const btn = (x, fill) => { glass(c, x - 23, y - 23, 46, 46, 23, fill, fill === '#1c1c1e' ? 14 : 6) }
         btn(229, 'rgba(255,255,255,0.55)'); btn(287, 'rgba(255,255,255,0.55)')
         c.strokeStyle = '#1f1f1f'; c.lineWidth = 2; c.lineCap = 'round'
-        c.beginPath(); c.arc(229, y, 7.5, -2.1, 3.0); c.stroke(); c.beginPath(); c.moveTo(220.3, y - 10.2); c.lineTo(221.3, y - 4.6); c.lineTo(226.8, y - 5.7); c.stroke()
-        c.fillStyle = '#1f1f1f'; c.fillRect(282.5, y - 7, 3, 14); c.fillRect(288.5, y - 7, 3, 14)
+        // Lucide icons (24-grid, stroke 2) at 20 px: rotate-ccw and pause.
+        const lucide = (x, d) => { c.save(); c.translate(x - 10, y - 10); c.scale(20 / 24, 20 / 24); c.lineWidth = 2; c.lineJoin = 'round'; d.forEach((p) => c.stroke(new Path2D(p))); c.restore() }
+        lucide(229, ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5'])
+        lucide(287, ['M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z', 'M6 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z'])
         const press = 1 - 0.16 * bump(t, stopAt - 0.05, stopAt + 0.3)
         c.save(); c.translate(345, y); c.scale(press, press); c.translate(-345, -y)
         btn(345, '#1c1c1e')
@@ -1002,8 +1004,9 @@
         T.ask = T.unlock + 0.15; T.pick = T.ask + 2.0; T.voice = T.pick + 0.45
         let t = T.voice + D.momo.wait // Momo grows, eyes open, wave flat; the first word starts it all
         T.talk = t; t += WORDS.length * rate + 0.4
-                T.stop = t; T.proc = t + 0.3; T.cards = t + 1.1
-        T.check = T.cards + 2.9; T.calm = T.cards + 3.6; T.hero = T.calm + 1.3; T.dur = +(T.hero + 1.4).toFixed(1)
+        // No stop tap, no reflection: the recording keeps going while the film settles into the hero.
+        T.stop = T.proc = T.cards = T.check = 1e9
+        T.calm = t; T.hero = T.calm + 1.6; T.dur = +(T.hero + 1.4).toFixed(1)
         return T
       }
 
@@ -1044,7 +1047,7 @@
 
             // Camera: lean in on the lock screen (to the island for that variant), the transcript, then the reflection.
             const inLock = S(t, 0.5, 1.3) * (1 - S(t, T.unlock - 0.2, T.unlock + 0.5))
-            const inTalk = S(t, T.talk - 0.3, T.talk + 0.9) * (1 - S(t, T.stop, T.proc + 0.6)), inAsk = S(t, T.ask, T.ask + 0.7) * (1 - S(t, T.voice, T.voice + 0.6))
+            const inTalk = S(t, T.talk - 0.3, T.talk + 0.9) * (1 - S(t, T.calm - 0.4, T.hero)), inAsk = S(t, T.ask, T.ask + 0.7) * (1 - S(t, T.voice, T.voice + 0.6))
             const inCards = S(t, T.cards - 0.2, T.cards + 0.8) * (1 - S(t, T.calm - 0.5, T.calm + 0.5))
             const IH = D.island.hgt + extraOf(V), atIsland = S(t, T.det - 0.2, T.det + 0.4) * (1 - S(t, T.buzz - 0.4, T.buzz + 0.2)), lockY = lerp(300, 11 + IH / 2 + 24, atIsland)
             const z = 1 + lerp(0.6, 0.6 + D.island.zoom * Math.min(1, 196 / IH), atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards + 0.4 * inAsk
@@ -1110,7 +1113,7 @@
               }
               island(c, t, T, V)
 
-              // First screen in Momo: what would help? They pick "Help me think", which opens Freeform.
+              // First screen in Momo: what would help? They pick "Just listen", which opens Freeform.
               const ask = app * (1 - S(t, T.voice - 0.15, T.voice + 0.3)), voiceIn = S(t, T.voice - 0.1, T.voice + 0.4)
               if (ask > 0.01) {
                 c.save(); c.globalAlpha = ph * ask
@@ -1120,7 +1123,7 @@
                 tx(c, 'right now?', 195, 350, 22, { w: 600, color: '#1f2a2e', align: 'center' })
                 c.restore()
                 const ch = cardH()
-                ;[[22, false], [202, true]].forEach(([x, pick], i) => {
+                ;[[22, true], [202, false]].forEach(([x, pick], i) => {
                   const k = S(t, T.ask + 0.35 + i * 0.12, T.ask + 0.8 + i * 0.12)
                   const sel = pick ? S(t, T.pick - 0.05, T.pick + 0.2) : 0, down = pick ? bump(t, T.pick - 0.08, T.pick + 0.3) : 0, sc = 1 - 0.06 * down
                   c.save(); c.globalAlpha *= k * (pick ? 1 : 1 - 0.5 * S(t, T.pick, T.pick + 0.3)); c.translate(x + 83, 410 + ch / 2 + (1 - k) * 14); c.scale(sc, sc); c.translate(-(x + 83), -(410 + ch / 2))
@@ -1157,7 +1160,7 @@
             })
             const sx = (x) => cx(scr.x + x * u), sy = (y) => cy(scr.y + y * u)
             // Glass cursor (prototype .nx-cursor): glides in, presses (shrinks, darkens), lifts away.
-            const TAPS = [[T.press, 195, 340, 250, 520], [T.pick, 285, 410 + cardH() / 2, 250, 640], [T.stop, 345, 790, 260, 640]]
+            const TAPS = [[T.press, 195, 340, 250, 520], [T.pick, 105, 410 + cardH() / 2, 230, 640]]
             if (OPT.reflect === 'choice') TAPS.push([T.cards + 1.3, 282, 180 + cardH() / 2, 300, 520])
             for (const [at, x, y, x0, y0] of TAPS) {
               const vis = Math.min(S(t, at - 1.1, at - 0.8), 1 - S(t, at + 0.45, at + 0.8))
