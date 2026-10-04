@@ -1334,7 +1334,8 @@ html[data-case-snap] .case__group > * {
   padding: 6px 12px;
   border-radius: 999px;
   background: #fff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font);
+  font-weight: 500;
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
