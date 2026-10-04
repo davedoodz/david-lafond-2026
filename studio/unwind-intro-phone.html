@@ -482,7 +482,23 @@
       const respIcon = (c, x, y) => sf(c, 'lungs', x, y, 16, '#6b7280')
 
       /** Heart-rate history for the window ending now: personal baseline band, optional meeting block, line coloured by context. */
+      /** Today's heart rate, 12:00 → now, as evenly spaced readings (the last point is live). Meeting spike, partial recovery, smaller bumps, then the evening rise. */
+      const DAY = [72, 68, 71, 70, 79, 101, 94, 84, 77, 82, 75, 79, 73, 81, 84]
+      function hrDay(c, x0, y0, w, h, m, V) {
+        const lo = 60, hi = 108, Y = (v) => y0 + h - clamp((v - lo) / (hi - lo)) * h
+        const vals = [...DAY, V.hr(m)], n = vals.length, X = (i) => x0 + (i / (n - 1)) * w
+        // The 1:1 (2:00–2:45) sits around readings 4.5–6.2 on this 12:00–6:38 axis.
+        c.fillStyle = 'rgba(97,168,253,0.12)'; c.beginPath(); c.roundRect(X(4.5), y0 - 4, X(6.2) - X(4.5), h + 8, 4); c.fill()
+        tx(c, '1:1', X(4.5) + 3, y0 + 3, 8.5, { w: 600, color: '#8fc3ff' })
+        c.fillStyle = 'rgba(255,255,255,0.06)'; c.beginPath(); c.roundRect(x0, Y(V.base[1]), w, Y(V.base[0]) - Y(V.base[1]), 3); c.fill()
+        const col = (v) => (v > V.base[1] + 6 ? HRC : '#8fb8e8')
+        c.lineWidth = 1.8; c.lineCap = 'round'; c.lineJoin = 'round'
+        for (let i = 1; i < n; i++) { c.strokeStyle = col(Math.max(vals[i - 1], vals[i])); c.beginPath(); c.moveTo(X(i - 1), Y(vals[i - 1])); c.lineTo(X(i), Y(vals[i])); c.stroke() }
+        vals.forEach((v, i) => { c.fillStyle = col(v); c.beginPath(); c.arc(X(i), Y(v), i === n - 1 ? 3.2 : 1.6, 0, TAU); c.fill() })
+        tx(c, '12 PM', x0, y0 + h + 9, 8.5, { color: '#6f6f6f' }); tx(c, 'now', x0 + w, y0 + h + 9, 8.5, { color: '#6f6f6f', align: 'right' })
+      }
       function hrLine(c, x0, y0, w, h, m, V) {
+        if (V.day) return hrDay(c, x0, y0, w, h, m, V)
         const lo = 56, hi = 112, Y = (v) => y0 + h - ((v - lo) / (hi - lo)) * h, X = (mm) => x0 + ((mm - (m - V.span)) / V.span) * w
         if (V.meeting) { const a = Math.max(x0, X(V.meeting[0])), b = Math.min(x0 + w, X(V.meeting[1])); if (b > a) { c.fillStyle = 'rgba(97,168,253,0.12)'; c.beginPath(); c.roundRect(a, y0 - 2, b - a, h + 4, 4); c.fill(); tx(c, '1:1', a + 5, y0 + 6, 9.5, { w: 600, color: '#8fc3ff' }) } }
         c.fillStyle = `rgba(255,255,255,${V.emphasis ? 0.09 : 0.05})`; c.beginPath(); c.roundRect(x0, Y(V.base[1]), w, Y(V.base[0]) - Y(V.base[1]), 3); c.fill()
@@ -594,8 +610,8 @@
         { id: 'usual', win: 3.4, m0: 872, m1: 887, span: 20, base: [64, 78], emphasis: true, stillSince: 860, extra: 0,
           hr: (m) => 70 + 27 * S(m, 880, 885.5) + noise(m), hrv: (m) => lerp(50, 28, S(m, 881, 886)), move: () => 2,
           meta: { title: 'Unusual for you', idea: 'The personal baseline is the hero: a labelled band “your usual 64–78” for this hour, and the chip counts how far above it they are (“+26 BPM vs your usual”). Motion stays still.', beats: ['1:58 good luck 🍀', '2:32 within your usual', '2:42 climbs out of the band', '+26 vs usual · still', '2:47 Momo’s nudge'], keeps: 'Personal baseline, the part that makes it intelligent.', cuts: 'Meeting context.', tradeoff: 'Best at “compared to you, not to everyone”; slightly more to read.' } },
-        { id: 'checks', win: 7.2, m0: 884, m1: 887, span: 8, base: [64, 78], stillSince: 879, extra: 150,
-          hr: (m) => 73 + 30 * S(m, 885.0, 886.0) + noise(m), hrv: (m) => lerp(52, 28, S(m, 885.3, 886.5)), move: () => 3,
+        { id: 'checks', win: 7.2, m0: 884, m1: 887, span: 8, base: [64, 78], stillSince: 879, extra: 150, day: true,
+          hr: (m) => 79 + 24 * S(m, 885.0, 886.0) + noise(m), hrv: (m) => lerp(52, 28, S(m, 885.3, 886.5)), move: () => 3,
           checks: true,
           meta: { title: 'Signal check', idea: 'The island shows the reasoning: heart rate up, barely moving, unusual for you (all primary, green), HRV lower as a lighter “supporting” check, respiratory rate shown but marked “not used” (Apple measures it during sleep). Then “Possible stress → Momo checks in”.', beats: ['1:58 good luck 🍀', '2:44 island opens', 'HR ✓ · motion ✓ · baseline ✓', 'HRV supporting · breathing not used', '2:47 Momo’s nudge'], keeps: 'The whole detection hierarchy, explicit.', cuts: 'Nothing; it is the longest island.', tradeoff: 'Clearest for the case study’s system section; the most text in the intro.' } },
         { id: 'walk', win: 4.2, m0: 884, m1: 887, span: 6, base: [64, 78], stillSince: 885.9, extra: 0,
