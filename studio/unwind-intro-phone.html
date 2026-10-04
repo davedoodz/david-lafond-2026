@@ -180,7 +180,7 @@
       // Settings survive a refresh (localStorage). "Reset all" in the header clears them.
       const STORE = 'unwind-intro-phone:v1'
       const SAVED = (() => { try { return JSON.parse(localStorage.getItem(STORE)) ?? {} } catch { return {} } })()
-      const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY, CARD, CHECKS, VOICE }))
+      const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY, CARD, CHECKS, VOICE, MEET }))
       const OPT = { bg: 'paper', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', cbt: 'cards', handoff: 'fade', eyes: 'fade', mease: 'smooth', pause: 'bars', ...SAVED.OPT }
       document.querySelectorAll('[data-opt]').forEach((s) => {
         if (OPT[s.dataset.opt]) s.value = OPT[s.dataset.opt]
@@ -410,19 +410,19 @@
 
       // ---------- Notifications ----------
       const COPY_DEFAULT = {
-        luck: { title: 'Good luck with Sarah 🍀', body: 'You’ve prepared for this. One slow breath before you walk in.' },
+        luck: { title: 'Good luck with Sarah 🍀', body: 'Deep breaths before you walk in.\nYou totally got this! 😌' },
         breath: { title: 'Take a breath?', body: 'Your heart rate jumped while you were sitting still. A 30-second check-in might help.' },
         talk: { title: 'Want to talk it through?', body: 'You seem tense since your meeting. I’m here for 30 seconds, whenever you’re ready.' },
         moment: { title: 'A moment for you', body: 'Your heart rate is elevated after your 1:1 with Sarah. Tap to reflect.' },
       }
-      const COPY = Object.fromEntries(Object.entries(COPY_DEFAULT).map(([k, v]) => [k, Object.fromEntries(Object.entries({ ...v, ...SAVED.COPY?.[k] }).map(([f, x]) => [f, String(x).replace(/Priya/g, 'Sarah')]))]))
+      const COPY = Object.fromEntries(Object.entries(COPY_DEFAULT).map(([k, v]) => [k, Object.fromEntries(Object.entries({ ...v, ...SAVED.COPY?.[k] }).map(([f, x]) => [f, String(x).replace(/Priya/g, 'Sarah').replace('walk in. You totally', 'walk in.\nYou totally')]))]))
       // Editable notification text (applies live to every film).
       {
         const ed = document.createElement('fieldset'); ed.innerHTML = '<legend>Notification text</legend>'
         const refills = []
         for (const [key, f, name] of [['luck', 'title', 'Before · title'], ['luck', 'body', 'Before · body'], [null, 'title', 'Nudge · title'], [null, 'body', 'Nudge · body']]) {
           const row = document.createElement('label'); row.className = 'txt'
-          row.innerHTML = `<span>${name}</span><textarea rows="${f === 'body' ? 2 : 1}"></textarea>`
+          row.innerHTML = `<span>${name}</span><textarea rows="${f === 'body' ? 3 : 1}"></textarea>`
           const ta = row.querySelector('textarea'), k = () => key ?? OPT.copy
           const fill = () => { ta.value = COPY[k()][f] }; fill(); refills.push(fill)
           ta.oninput = () => { COPY[k()][f] = ta.value; save() }
@@ -433,7 +433,7 @@
       }
       function notice(c, y, al, n) {
         if (al <= 0.01) return
-        const lines = wrap(c, n.body, 262, 14), h = 64 + lines.length * 19
+        const lines = n.body.split('\n').flatMap((para) => wrap(c, para, 262, 14)), h = 64 + lines.length * 19
         c.save(); c.globalAlpha *= al
         glass(c, 16, y, 358, h, 24, THEMES[OPT.bg].glass, 24)
         c.fillStyle = '#ffffff'; c.beginPath(); c.roundRect(30, y + 14, 40, 40, 11); c.fill()
@@ -1026,6 +1026,18 @@
       }
 
       // ---------- Timeline (phone only) ----------
+      /** Meeting card text (editable, saved). */
+      const MEET = { title: '1:1 with Sarah', now: '2:00 – 2:45 PM · now', ended: 'Ended 2:45 PM', ...SAVED.MEET }
+      {
+        const ed = document.createElement('fieldset'); ed.innerHTML = '<legend>Meeting card text</legend>'
+        for (const [k, name] of [['title', 'Title'], ['now', 'During'], ['ended', 'After (3:00)']]) {
+          const row = document.createElement('label'); row.className = 'txt'
+          row.innerHTML = `<span>${name}</span><textarea rows="1"></textarea>`
+          const ta = row.querySelector('textarea'); ta.value = MEET[k]; ta.oninput = () => { MEET[k] = ta.value; save() }
+          ed.append(row)
+        }
+        document.getElementById('dials').append(ed)
+      }
       /** Voice transcript (editable, saved). Words appear one at a time at the "Per spoken word" pace. */
       const VOICE_DEFAULT = 'Sarah pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'
       const VOICE = { text: SAVED.VOICE?.text ?? VOICE_DEFAULT }
@@ -1163,7 +1175,7 @@
                 if (pa > 0.01) { c.save(); c.globalAlpha *= pa
                   glass(c, 16, my, 358, 64, 22, th.glass, 24)
                   sf(c, 'clock', 44, my + 32, 20, done > 0.5 ? '#34c759' : '#61A8FD')
-                  tx(c, '1:1 with Sarah', 66, my + 22, 15, { w: 600, color: '#1f2a2e' }); tx(c, done > 0.5 ? 'Ended 2:45 PM' : '2:00 – 2:45 PM · now', 66, my + 43, 13, { color: '#3b484c' })
+                  tx(c, MEET.title, 66, my + 22, 15, { w: 600, color: '#1f2a2e' }); tx(c, done > 0.5 ? MEET.ended : MEET.now, 66, my + 43, 13, { color: '#3b484c' })
                   c.restore() }; c.letterSpacing = '0px'
                 if (th.buttons) {
                   ;[[71, 'M0 2.4H10.38V1.91C10.38.62 9.74 0 8.51 0H1.87C.64 0 0 .62 0 1.91ZM3.96 22.96H6.42C7.65 22.96 8.28 22.34 8.28 21.05V10.16C8.28 9.09 8.53 8.31 8.92 7.71L9.59 6.73C10.06 6 10.38 5.31 10.38 4.44V3.6H0V4.44C0 5.31.32 6 .79 6.73L1.45 7.71C1.85 8.31 2.09 9.09 2.09 10.16V21.05C2.09 22.34 2.73 22.96 3.96 22.96Z', 10.38, 22.96], [319, 'M3.29 20H22.47C24.65 20 25.76 18.91 25.76 16.75V5.77C25.76 3.61 24.65 2.53 22.47 2.53H19.47C18.64 2.53 18.39 2.36 17.91 1.84L17.07.89C16.55.32 16.02 0 14.93 0H10.75C9.67 0 9.14.32 8.61.89L7.77 1.84C7.3 2.35 7.04 2.53 6.22 2.53H3.29C1.1 2.53 0 3.61 0 5.77V16.75C0 18.91 1.1 20 3.29 20ZM12.88 16.91C9.7 16.91 7.15 14.37 7.15 11.17 7.15 7.98 9.7 5.44 12.88 5.44 16.06 5.44 18.6 7.98 18.6 11.17 18.6 14.37 16.05 16.91 12.88 16.91ZM12.88 15.31C15.17 15.31 17.01 13.48 17.01 11.17 17.01 8.87 15.17 7.03 12.88 7.03 10.59 7.03 8.74 8.87 8.74 11.17 8.74 13.48 10.6 15.31 12.88 15.31Z', 25.76, 20]].forEach(([x, d, w, h]) => {
