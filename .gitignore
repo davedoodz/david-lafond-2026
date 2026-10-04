@@ -4,3 +4,6 @@ dist
 *.local
 .vercel
 .env*
+
+# Apple SF Pro Rounded, copied locally from macOS for studio mockups (not redistributable)
+studio/fonts/SFNSRounded.ttf
