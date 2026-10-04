@@ -1097,7 +1097,7 @@
 
             a.under((c) => {
               if (ph <= 0.01) return
-              c.save(); view(c); handT(c); c.globalAlpha = ph; c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip()
+              c.save(); view(c); handT(c); c.globalAlpha = ph; c.beginPath(); c.roundRect(scr.x - 3, scr.y - 3, scr.w + 6, scr.h + 6, scr.r + 6); c.clip()
               c.translate(scr.x, scr.y); c.scale(u, u); screenBg(c, t, app, talking, calm)
               c.restore()
             })
