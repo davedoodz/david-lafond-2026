@@ -194,7 +194,7 @@
         notif: { label: 'Notification · Momo icon', y: [0, -14, 14, 0.5, 'Momo Y'], x: [0, -10, 10, 0.5, 'Momo X'], size: [38, 24, 48, 1, 'Momo size'] },
         cards: { label: 'Choice cards · icon', size: [26, 12, 60, 1, 'Icon size'], ix: [0, -60, 60, 1, 'Icon X'], iy: [0, -40, 40, 1, 'Icon Y'] },
         cursor: { label: 'Tap cursor', size: [34, 14, 70, 1, 'Size'], press: [0.18, 0, 0.5, 0.01, 'Press shrink'], fill: [0.42, 0.1, 0.9, 0.01, 'Fill opacity'] },
-        seq: { label: '1 · Sequence timing (s)', luck: [0.5, 0, 3, 0.05, 'Good-luck note appears'], luckHold: [1.8, 0.5, 5, 0.05, 'Good-luck note stays'], pass: [2.2, 0.5, 6, 0.05, 'Time passes → evening'], toIsland: [0.3, 0, 2, 0.05, 'Gap → island opens'], nudgeRead: [1.7, 0.5, 5, 0.05, 'Nudge on screen before tap'], askRead: [2.0, 0.5, 5, 0.05, 'Choice screen before tap'], toVoice: [0.45, 0.1, 2, 0.05, 'Tap → voice screen'], word: [0.17, 0.08, 0.5, 0.01, 'Per spoken word'], afterTalk: [0.4, 0, 3, 0.05, 'After last word'], handoff: [1.6, 0.5, 4, 0.05, 'Hand-off to hero'], endHold: [1.4, 0, 4, 0.05, 'Hold on hero'] },
+        seq: { label: '1 · Sequence timing (s)', meet: [0.4, 0, 3, 0.05, 'Meeting card appears'], meetToLuck: [1.2, 0.2, 4, 0.05, 'Meeting card → good-luck note'], luckHold: [2.0, 0.5, 6, 0.05, 'Both cards on screen'], fade: [0.6, 0.2, 2, 0.05, 'Each hour fade'], hold3: [1.4, 0, 5, 0.05, 'Hold on 3:00 (Ended)'], hold5: [0.8, 0, 5, 0.05, 'Hold on 5:00'], toIsland: [0.3, 0, 2, 0.05, 'Gap → island opens'], nudgeRead: [1.7, 0.5, 5, 0.05, 'Nudge on screen before tap'], askRead: [2.0, 0.5, 5, 0.05, 'Choice screen before tap'], toVoice: [0.45, 0.1, 2, 0.05, 'Tap → voice screen'], word: [0.17, 0.08, 0.5, 0.01, 'Per spoken word'], afterTalk: [0.4, 0, 3, 0.05, 'After last word'], handoff: [1.6, 0.5, 4, 0.05, 'Hand-off to hero'], endHold: [1.4, 0, 4, 0.05, 'Hold on hero'] },
         signal: { label: '2 · Signal check timing (s)', rise: [1.6, 0.6, 4, 0.05, 'Heart rate climbs'], gap: [0.6, 0, 2, 0.05, 'Pause before first check'], row: [0.85, 0.3, 2, 0.05, 'Per check'], hold: [1.2, 0.3, 3, 0.05, 'Hold before nudge'] },
         momo: { label: '3 · Momo · choice → talking', grow: [0.8, 0.2, 2, 0.05, 'Grow time (s)'], wait: [1.3, 0, 4, 0.05, 'Wait before first word (s)'], eyesAt: [0, -0.8, 1.5, 0.05, 'Eyes close at (s from word)'], eyes: [0.35, 0.05, 1.5, 0.05, 'Eyes close time (s)'], settle: [0.7, 0.1, 2, 0.05, 'Settle time (s)'], openY: [330, 200, 420, 1, 'Waiting Y'], openS: [200, 100, 280, 1, 'Waiting size'], talkY: [300, 200, 420, 1, 'Talking Y'], talkS: [150, 80, 260, 1, 'Talking size'] },
         braid: { label: 'Braided wave (while talking)', x: [0, -150, 150, 1, 'Move X'], y: [0, -500, 80, 1, 'Move Y'], scale: [1, 0.3, 3, 0.05, 'Scale'], len: [1, 0.3, 1.6, 0.05, 'Length'] },
@@ -1015,8 +1015,11 @@
       // ---------- Timeline (phone only) ----------
       const WORDS = 'Sarah pushed back on my timeline in front of everyone, and I just… froze. I knew the answer. I keep replaying it.'.split(' ')
             function timeline(rate, win) {
-        const Q = D.seq, G = D.signal, T = { phoneIn: 0.05, luck: Q.luck }
-        T.luckOut = T.luck + Q.luckHold; T.skip = T.luckOut + 0.1; T.passEnd = T.skip + Q.pass; T.det = T.passEnd + Q.toIsland
+        const Q = D.seq, G = D.signal, T = { phoneIn: 0.05, meet: Q.meet }
+        T.luck = T.meet + Q.meetToLuck; T.luckOut = T.luck + Q.luckHold; T.skip = T.luckOut + 0.1
+        // Hour steps: fade to 3:00, hold, fade to 5:00, hold, fade to the evening reading.
+        T.k = [T.skip, T.skip + Q.fade + Q.hold3, T.skip + 2 * Q.fade + Q.hold3 + Q.hold5]
+        T.passEnd = T.k[2] + Q.fade; T.det = T.passEnd + Q.toIsland
         T.risen = T.det + 0.3 + G.rise
         T.buzz = T.risen + G.gap + shownChecks().length * G.row + G.hold
         T.press = T.buzz + Q.nudgeRead; T.unlock = T.press + 0.1
@@ -1119,19 +1122,23 @@
                 if (t < T.skip || t >= T.passEnd) c.fillText(fmt(t < T.skip ? 838 : mNow(t, T, V) + EVE), 195, 170)
                 else {
                   // Hours ease by: each time holds, then soft cross-fades upward into the next (blur + drift, no ticking).
-                  const STEPS = [838, 900, 1020, V.m0 + EVE], f = seg(t, T.skip, T.passEnd) * 3, i = Math.min(2, Math.floor(f)), x = f - i
-                  const k = S(x, 0.45, 1), base = c.globalAlpha
-                  ;[[STEPS[i], 1 - k, -14 * k], [STEPS[i + 1], k, 14 * (1 - k)]].forEach(([m, al, dy]) => {
+                  const STEPS = [838, 900, 1020, V.m0 + EVE], F = D.seq.fade
+                  const j = T.k.findIndex((k) => t >= k && t < k + F), held = STEPS[T.k.filter((k) => t >= k + F).length]
+                  const pairs = j < 0 ? [[held, 1, 0]] : (() => { const k = S(t, T.k[j], T.k[j] + F); return [[STEPS[j], 1 - k, -14 * k], [STEPS[j + 1], k, 14 * (1 - k)]] })()
+                  const base = c.globalAlpha
+                  pairs.forEach(([m, al, dy]) => {
                     if (al <= 0.01) return
                     c.save(); c.globalAlpha = base * al; const b = 6 * (1 - al); if (b > 0.3) c.filter = `blur(${b}px)`; c.fillText(fmt(m), 195, 170 + dy); c.restore()
                   })
                 }
                 // Time passing: the 1:1 ticks by as a calendar card, and the wallpaper dims toward evening.
-                const pa = Math.min(S(t, T.skip + 0.1, T.skip + 0.5), 1 - S(t, T.passEnd - 0.2, T.passEnd + 0.3)), done = S(t, lerp(T.skip, T.passEnd, 0.35), lerp(T.skip, T.passEnd, 0.5))
+                // Meeting card first; Momo's note then stacks on top (newest first) and pushes it down; it returns as "Ended" at 3:00.
+                const pa = Math.min(S(t, T.meet, T.meet + 0.5), 1 - S(t, T.passEnd - 0.2, T.passEnd + 0.3)), done = S(t, T.k[0] + D.seq.fade * 0.4, T.k[0] + D.seq.fade)
+                const stacked = S(t, T.luck, T.luck + 0.5) * (1 - S(t, T.luckOut, T.luckOut + 0.5)), my = 300 + stacked * 112 + (1 - S(t, T.meet, T.meet + 0.5)) * 24
                 if (pa > 0.01) { c.save(); c.globalAlpha *= pa
-                  glass(c, 16, 300, 358, 64, 22, th.glass, 24)
-                  sf(c, 'clock', 44, 332, 20, done > 0.5 ? '#34c759' : '#61A8FD')
-                  tx(c, '1:1 with Sarah', 66, 322, 15, { w: 600, color: '#1f2a2e' }); tx(c, done > 0.5 ? 'Ended 2:45 PM' : '2:00 – 2:45 PM · now', 66, 343, 13, { color: '#3b484c' })
+                  glass(c, 16, my, 358, 64, 22, th.glass, 24)
+                  sf(c, 'clock', 44, my + 32, 20, done > 0.5 ? '#34c759' : '#61A8FD')
+                  tx(c, '1:1 with Sarah', 66, my + 22, 15, { w: 600, color: '#1f2a2e' }); tx(c, done > 0.5 ? 'Ended 2:45 PM' : '2:00 – 2:45 PM · now', 66, my + 43, 13, { color: '#3b484c' })
                   c.restore() }; c.letterSpacing = '0px'
                 if (th.buttons) {
                   ;[[71, 'M0 2.4H10.38V1.91C10.38.62 9.74 0 8.51 0H1.87C.64 0 0 .62 0 1.91ZM3.96 22.96H6.42C7.65 22.96 8.28 22.34 8.28 21.05V10.16C8.28 9.09 8.53 8.31 8.92 7.71L9.59 6.73C10.06 6 10.38 5.31 10.38 4.44V3.6H0V4.44C0 5.31.32 6 .79 6.73L1.45 7.71C1.85 8.31 2.09 9.09 2.09 10.16V21.05C2.09 22.34 2.73 22.96 3.96 22.96Z', 10.38, 22.96], [319, 'M3.29 20H22.47C24.65 20 25.76 18.91 25.76 16.75V5.77C25.76 3.61 24.65 2.53 22.47 2.53H19.47C18.64 2.53 18.39 2.36 17.91 1.84L17.07.89C16.55.32 16.02 0 14.93 0H10.75C9.67 0 9.14.32 8.61.89L7.77 1.84C7.3 2.35 7.04 2.53 6.22 2.53H3.29C1.1 2.53 0 3.61 0 5.77V16.75C0 18.91 1.1 20 3.29 20ZM12.88 16.91C9.7 16.91 7.15 14.37 7.15 11.17 7.15 7.98 9.7 5.44 12.88 5.44 16.06 5.44 18.6 7.98 18.6 11.17 18.6 14.37 16.05 16.91 12.88 16.91ZM12.88 15.31C15.17 15.31 17.01 13.48 17.01 11.17 17.01 8.87 15.17 7.03 12.88 7.03 10.59 7.03 8.74 8.87 8.74 11.17 8.74 13.48 10.6 15.31 12.88 15.31Z', 25.76, 20]].forEach(([x, d, w, h]) => {
