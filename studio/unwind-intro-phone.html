@@ -1118,7 +1118,7 @@
                 c.save(); c.globalAlpha *= lock
                 const RND = "'SF Pro Rounded', ui-rounded, Inter, system-ui, sans-serif"
                 c.font = `500 17px ${th.rounded ? RND : UI}`; c.fillStyle = th.dateInk; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Wednesday, October 1', 195, 104)
-                c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'; c.fillText(fmt(t < T.skip ? 838 : t < T.passEnd ? lerp(838, V.m0 + EVE, S(t, T.skip, T.passEnd)) : mNow(t, T, V) + EVE), 195, 170)
+                c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'; c.fillText(fmt(t < T.skip ? 838 : t < T.passEnd ? [838, 900, 1020, V.m0 + EVE][Math.min(3, Math.floor(seg(t, T.skip, T.passEnd) * 4))] : mNow(t, T, V) + EVE), 195, 170)
                 // Time passing: the 1:1 ticks by as a calendar card, and the wallpaper dims toward evening.
                 const pa = Math.min(S(t, T.skip + 0.1, T.skip + 0.5), 1 - S(t, T.passEnd - 0.2, T.passEnd + 0.3)), done = S(t, lerp(T.skip, T.passEnd, 0.35), lerp(T.skip, T.passEnd, 0.5))
                 if (pa > 0.01) { c.save(); c.globalAlpha *= pa
