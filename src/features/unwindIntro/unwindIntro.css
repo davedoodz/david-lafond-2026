@@ -1,5 +1,5 @@
-/* A real screen-tall stage above the Unwind hero: scrolling up to it zooms the band
-   into the full-screen story; scrolling down shrinks it back above the partner logos. */
+/* The approved phone film plays on a screen-tall stage. Its final voice band lands
+   in the live hero slot; scrolling back to the stage replays the film. */
 .unwind-stage {
   height: 100svh;
 }
