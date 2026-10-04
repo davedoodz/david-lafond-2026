@@ -1115,7 +1115,17 @@
                 c.save(); c.globalAlpha *= lock
                 const RND = "'SF Pro Rounded', ui-rounded, Inter, system-ui, sans-serif"
                 c.font = `500 17px ${th.rounded ? RND : UI}`; c.fillStyle = th.dateInk; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Wednesday, October 1', 195, 104)
-                c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'; c.fillText(fmt(t < T.skip ? 838 : t < T.passEnd ? [838, 900, 1020, V.m0 + EVE][Math.min(3, Math.floor(seg(t, T.skip, T.passEnd) * 4))] : mNow(t, T, V) + EVE), 195, 170)
+                c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'
+                if (t < T.skip || t >= T.passEnd) c.fillText(fmt(t < T.skip ? 838 : mNow(t, T, V) + EVE), 195, 170)
+                else {
+                  // Hours ease by: each time holds, then soft cross-fades upward into the next (blur + drift, no ticking).
+                  const STEPS = [838, 900, 1020, V.m0 + EVE], f = seg(t, T.skip, T.passEnd) * 3, i = Math.min(2, Math.floor(f)), x = f - i
+                  const k = S(x, 0.45, 1), base = c.globalAlpha
+                  ;[[STEPS[i], 1 - k, -14 * k], [STEPS[i + 1], k, 14 * (1 - k)]].forEach(([m, al, dy]) => {
+                    if (al <= 0.01) return
+                    c.save(); c.globalAlpha = base * al; const b = 6 * (1 - al); if (b > 0.3) c.filter = `blur(${b}px)`; c.fillText(fmt(m), 195, 170 + dy); c.restore()
+                  })
+                }
                 // Time passing: the 1:1 ticks by as a calendar card, and the wallpaper dims toward evening.
                 const pa = Math.min(S(t, T.skip + 0.1, T.skip + 0.5), 1 - S(t, T.passEnd - 0.2, T.passEnd + 0.3)), done = S(t, lerp(T.skip, T.passEnd, 0.35), lerp(T.skip, T.passEnd, 0.5))
                 if (pa > 0.01) { c.save(); c.globalAlpha *= pa
