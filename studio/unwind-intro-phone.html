@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;1,14..32,400&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./unwind-intro-kit.css" />
     <style>
+      /* SF Pro Rounded for the lock-screen clock: Apple system font, loaded from a local copy (gitignored); falls back to Inter. */
+      @font-face { font-family: 'SF Pro Rounded'; src: url('./fonts/SFNSRounded.ttf') format('truetype'); font-weight: 100 900; }
       .opts { display: flex; flex-wrap: wrap; gap: 10px; }
       .opts label { display: grid; gap: 4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--s4); }
       .opts select { min-width: 190px; padding: 8px 12px; border: 1px solid var(--s2); border-radius: 12px; background: #fff; font: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--ink); }
@@ -36,6 +38,7 @@
         <div class="opts">
           <label>Lock screen wallpaper
             <select data-opt="bg">
+              <option value="paper">Paper lock screen (Fri, Sep 25)</option>
               <option value="soft">Soft white (prototype)</option>
               <option value="silk">Blue silk wallpaper</option>
               <option value="mist">Lavender mist</option>
@@ -154,8 +157,8 @@
 
       // ---------- Assets copied from reself-voice-prototypes ----------
       const img = (f) => { const i = new Image(); i.src = `./assets/proto/${f}`; return i }
-      const IMG = { phone: img('iphone.webp'), watch: img('watch.webp'), momo: img('momo.webp'), momoOpen: img('momo-open.webp'), stars: img('stars.png'), silk: img('silk.webp') }
-      await Promise.all(Object.values(IMG).map((i) => i.decode().catch(() => {})))
+      const IMG = { lockwall: img('lockwall.webp'), phone: img('iphone.webp'), watch: img('watch.webp'), momo: img('momo.webp'), momoOpen: img('momo-open.webp'), stars: img('stars.png'), silk: img('silk.webp') }
+      await Promise.all([...Object.values(IMG).map((i) => i.decode().catch(() => {})), document.fonts.load("500 88px 'SF Pro Rounded'").catch(() => {})])
 
       const UI = 'Inter, -apple-system, system-ui, sans-serif'
       const EMOJI = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
@@ -169,7 +172,7 @@
       const STORE = 'unwind-intro-phone:v1'
       const SAVED = (() => { try { return JSON.parse(localStorage.getItem(STORE)) ?? {} } catch { return {} } })()
       const save = () => localStorage.setItem(STORE, JSON.stringify({ OPT, D, COPY, CARD, CHECKS }))
-      const OPT = { bg: 'soft', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', cbt: 'cards', handoff: 'fade', eyes: 'fade', mease: 'smooth', ...SAVED.OPT }
+      const OPT = { bg: 'paper', reflect: 'chat', copy: 'breath', sub: 'heard', emoji: 'hands', align: 'left', cbt: 'cards', handoff: 'fade', eyes: 'fade', mease: 'smooth', ...SAVED.OPT }
       document.querySelectorAll('[data-opt]').forEach((s) => {
         if (OPT[s.dataset.opt]) s.value = OPT[s.dataset.opt]
         s.addEventListener('change', () => { OPT[s.dataset.opt] = s.value; save() })
@@ -317,6 +320,7 @@
 
       // ---------- Phone backgrounds ----------
       const THEMES = {
+        paper: { lockInk: '#9CF6FF', dateInk: '#9CF6FF', glass: 'rgba(255,255,255,0.62)', statusInk: '#ffffff', rounded: true, buttons: true },
         soft: { lockInk: '#2a3438', dateInk: '#3b484c', glass: 'rgba(255,255,255,0.82)', veil: 0 },
         silk: { lockInk: 'rgba(214,252,255,0.96)', dateInk: 'rgba(226,253,255,0.95)', glass: 'rgba(255,255,255,0.62)', veil: 0.8, statusInk: '#ffffff' },
         mist: { lockInk: '#3a3560', dateInk: '#4c4770', glass: 'rgba(255,255,255,0.72)', veil: 0.35 },
@@ -330,7 +334,10 @@
       /** Fills the phone screen (390-pt units). `app` 0 = lock screen, 1 = inside Unwind; `calm` cools warm themes. */
       function screenBg(c, t, app, talking, calm) {
         const th = THEMES[OPT.bg]
-        if (OPT.bg === 'silk') {
+        if (OPT.bg === 'paper') {
+          const W0 = IMG.lockwall.naturalWidth, H0 = IMG.lockwall.naturalHeight, k = Math.max(390 / W0, SH / H0)
+          c.drawImage(IMG.lockwall, (390 - W0 * k) / 2, (SH - H0 * k) / 2, W0 * k, H0 * k)
+        } else if (OPT.bg === 'silk') {
           const k = Math.max(390 / IMG.silk.naturalWidth, SH / IMG.silk.naturalHeight)
           c.drawImage(IMG.silk, (390 - IMG.silk.naturalWidth * k) / 2, (SH - IMG.silk.naturalHeight * k) / 2, IMG.silk.naturalWidth * k, IMG.silk.naturalHeight * k)
         } else if (OPT.bg === 'mist') {
@@ -1083,8 +1090,16 @@
               const lock = 1 - app
               if (lock > 0.01) {
                 c.save(); c.globalAlpha *= lock
-                tx(c, 'Wednesday, October 1', 195, 104, 17, { w: 500, color: th.dateInk, align: 'center' })
-                tx(c, fmt(t < T.skip ? 838 : mNow(t, T, V)), 195, 168, 84, { w: 300, color: th.lockInk, align: 'center', ls: -2 })
+                const RND = "'SF Pro Rounded', ui-rounded, Inter, system-ui, sans-serif"
+                c.font = `500 17px ${th.rounded ? RND : UI}`; c.fillStyle = th.dateInk; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Wednesday, October 1', 195, 104)
+                c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'; c.fillText(fmt(t < T.skip ? 838 : mNow(t, T, V)), 195, 170); c.letterSpacing = '0px'
+                if (th.buttons) {
+                  ;[[71, 'M0 2.4H10.38V1.91C10.38.62 9.74 0 8.51 0H1.87C.64 0 0 .62 0 1.91ZM3.96 22.96H6.42C7.65 22.96 8.28 22.34 8.28 21.05V10.16C8.28 9.09 8.53 8.31 8.92 7.71L9.59 6.73C10.06 6 10.38 5.31 10.38 4.44V3.6H0V4.44C0 5.31.32 6 .79 6.73L1.45 7.71C1.85 8.31 2.09 9.09 2.09 10.16V21.05C2.09 22.34 2.73 22.96 3.96 22.96Z', 10.38, 22.96], [319, 'M3.29 20H22.47C24.65 20 25.76 18.91 25.76 16.75V5.77C25.76 3.61 24.65 2.53 22.47 2.53H19.47C18.64 2.53 18.39 2.36 17.91 1.84L17.07.89C16.55.32 16.02 0 14.93 0H10.75C9.67 0 9.14.32 8.61.89L7.77 1.84C7.3 2.35 7.04 2.53 6.22 2.53H3.29C1.1 2.53 0 3.61 0 5.77V16.75C0 18.91 1.1 20 3.29 20ZM12.88 16.91C9.7 16.91 7.15 14.37 7.15 11.17 7.15 7.98 9.7 5.44 12.88 5.44 16.06 5.44 18.6 7.98 18.6 11.17 18.6 14.37 16.05 16.91 12.88 16.91ZM12.88 15.31C15.17 15.31 17.01 13.48 17.01 11.17 17.01 8.87 15.17 7.03 12.88 7.03 10.59 7.03 8.74 8.87 8.74 11.17 8.74 13.48 10.6 15.31 12.88 15.31Z', 25.76, 20]].forEach(([x, d, w, h]) => {
+                    const y = SH - 50 - 25 - 34 * (SH / 852) + 34
+                    c.fillStyle = 'rgba(21,21,21,0.35)'; c.beginPath(); c.arc(x, y, 25, 0, TAU); c.fill()
+                    c.save(); c.translate(x - w / 2, y - h / 2); c.fillStyle = '#fff'; c.fill(new Path2D(d), 'evenodd'); c.restore()
+                  })
+                }
                 notice(c, 300 - (1 - S(t, T.luck, T.luck + 0.5)) * 24, Math.min(S(t, T.luck, T.luck + 0.5), 1 - S(t, T.luckOut, T.luckOut + 0.4)), COPY.luck)
                 const nk = S(t, T.buzz, T.buzz + 0.45), down = bump(t, T.press - 0.08, T.press + 0.3), press = 1 - 0.05 * down
                 c.save(); c.translate(195, 340); c.scale(press, press); c.translate(-195, -340)
