@@ -113,6 +113,44 @@
   padding: 96px var(--case-frame-edge) 64px;
 }
 
+/* Every case-study section enters with a light, floating motion. The page observer removes
+   data-reveal-live on exit and adds it again on re-entry, replaying the selected preset. */
+.case[data-section-reveal='float up'] .case__light > .case__section[data-reveal-live='true'] {
+  animation: case-reveal-float-up 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case[data-section-reveal='drift in'] .case__light > .case__section[data-reveal-live='true'] {
+  animation: case-reveal-drift-in 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live='true'] {
+  animation: case-reveal-float-left 950ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live='true']:nth-of-type(even) {
+  animation-name: case-reveal-float-right;
+}
+.case[data-section-reveal='soft bloom'] .case__light > .case__section[data-reveal-live='true'] {
+  animation: case-reveal-soft-bloom 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes case-reveal-float-up {
+  from { opacity: 0.5; translate: 0 28px; rotate: 0.3deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+@keyframes case-reveal-drift-in {
+  from { opacity: 0.35; translate: 0 18px; scale: 0.985; rotate: -0.25deg; }
+  to { opacity: 1; translate: 0 0; scale: 1; rotate: 0deg; }
+}
+@keyframes case-reveal-float-left {
+  from { opacity: 0.35; translate: -32px 18px; rotate: -0.4deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+@keyframes case-reveal-float-right {
+  from { opacity: 0.35; translate: 32px 18px; rotate: 0.4deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+@keyframes case-reveal-soft-bloom {
+  from { opacity: 0.25; translate: 0 10px; scale: 0.97; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+
 .case__section[data-layout='text'],
 .case__section[data-layout='bottom'],
 .case__section[data-layout='top'],

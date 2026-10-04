@@ -287,6 +287,7 @@ export function CaseStudyPage({ id }: Props) {
       showSidebar: boolean
       showSections: boolean
       textSize: 'compact' | 'balanced' | 'display'
+      sectionReveal: 'float up' | 'drift in' | 'float from sides' | 'soft bloom' | 'still'
       contentWidth: number
       textWidth: number
     }
@@ -375,12 +376,26 @@ export function CaseStudyPage({ id }: Props) {
       },
       { rootMargin: '-50% 0px -50% 0px' },
     )
-    sections.forEach((s) => observer.observe(s))
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const el = entry.target as HTMLElement
+          if (entry.isIntersecting) el.dataset.revealLive = 'true'
+          else delete el.dataset.revealLive
+        }
+      },
+      { threshold: 0.18 },
+    )
+    sections.forEach((s) => {
+      observer.observe(s)
+      revealObserver.observe(s)
+    })
     const dark = main.querySelector('.case__dark')
     const darkObserver = new IntersectionObserver(([entry]) => setOnDark(entry.isIntersecting), { rootMargin: '0px 0px -60% 0px' })
     if (dark) darkObserver.observe(dark)
     return () => {
       observer.disconnect()
+      revealObserver.disconnect()
       darkObserver.disconnect()
     }
   }, [orderSig])
@@ -525,6 +540,7 @@ export function CaseStudyPage({ id }: Props) {
       data-work={id}
       data-intro={intro || undefined}
       data-text-size={page.textSize}
+      data-section-reveal={page.sectionReveal}
       style={{ '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
     >
       {id === 'unwind' && <UnwindIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}

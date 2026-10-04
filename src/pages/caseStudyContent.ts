@@ -70,8 +70,13 @@ const pageDials = {
   showSidebar: true,
   /** Section list in the sidebar (Problem · Solution, Persona, …). Off: only Back shows. */
   showSections: false,
-  /** Reading density across every case-study section. */
   textSize: { type: 'select' as const, options: ['compact', 'balanced', 'display'], default: 'compact' },
+  /** How each case-study section enters and re-enters the viewport. */
+  sectionReveal: {
+    type: 'select' as const,
+    options: ['float up', 'drift in', 'float from sides', 'soft bloom', 'still'],
+    default: 'float up',
+  },
   /** Widest the content column gets (px). */
   contentWidth: [1040, 600, 1400, 10] as Tuple,
   /** Text column width when the video sits beside it (px). */
