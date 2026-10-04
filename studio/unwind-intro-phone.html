@@ -1099,9 +1099,6 @@
               if (ph <= 0.01) return
               c.save(); view(c); handT(c); c.globalAlpha = ph; c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip()
               c.translate(scr.x, scr.y); c.scale(u, u); screenBg(c, t, app, talking, calm)
-              // Evening: the lock-screen wallpaper dims to dusk while time passes (lock screen only).
-              const eve = S(t, T.skip + 0.2, T.passEnd) * (1 - app)
-              if (eve > 0.01) { const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, `rgba(18,22,70,${0.5 * eve})`); g.addColorStop(0.6, `rgba(60,40,110,${0.32 * eve})`); g.addColorStop(1, `rgba(255,140,120,${0.18 * eve})`); c.fillStyle = g; c.fillRect(0, 0, 390, SH) }
               c.restore()
             })
             a.draw((c) => {
