@@ -1052,7 +1052,7 @@
           inp.value = v
           inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale', 'tipScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
           if (cssVar) section.style.setProperty(cssVar, String(v))
-          else if (k === 'lineSp') applyLineSpacing(v)
+          else if (k === 'lineSp') { applyLineSpacing(v); centerLabels() }
           return v
         }
         // Arrow tips keep the same gap to every halo edge; they follow Halo size and Arrow gap live.
@@ -1061,6 +1061,7 @@
           const R = 78 * look.haloScale
           svg.querySelectorAll('.edge').forEach((g) => {
             const pts = fitEdge(EDGES[+g.dataset.edge], o, R, look.arrowGap, look.titleGap)
+            edgePts.set(g, pts)
             // A filled tip sits on the line's end, not over it: the line stops at the tip's base,
             // so translucent arrows show no darker overlap.
             const line = pts.map((p) => [...p])
@@ -1084,7 +1085,32 @@
               if (!t.classList.contains('is-gone') || section.dataset.edit === 'on') slot++
             })
           })
+          centerLabels()
         }
+        // Each label block (icons + text) is centred on the run of its arrow it sits beside:
+        // horizontally on a horizontal run, vertically on a vertical one. Runs span start to tip.
+        const edgePts = new Map()
+        function centerLabels() {
+          svg.querySelectorAll('.edge').forEach((g) => {
+            const pts = edgePts.get(g)
+            const lbl = g.querySelector('.edge__label')
+            if (!pts || !lbl.childElementCount) return
+            lbl.removeAttribute('transform')
+            const b = lbl.getBBox()
+            if (!b.width) return
+            const cx = b.x + b.width / 2, cy = b.y + b.height / 2
+            let best = null
+            for (let i = 1; i < pts.length; i++) {
+              const [x1, y1] = pts[i - 1], [x2, y2] = pts[i]
+              const horiz = Math.abs(y2 - y1) < Math.abs(x2 - x1)
+              const along = horiz ? Math.min(Math.max(cx, Math.min(x1, x2)), Math.max(x1, x2)) : Math.min(Math.max(cy, Math.min(y1, y2)), Math.max(y1, y2))
+              const d = horiz ? Math.hypot(cx - along, cy - y1) : Math.hypot(cx - x1, cy - along)
+              if (!best || d < best.d) best = { d, horiz, mid: horiz ? (x1 + x2) / 2 : (y1 + y2) / 2 }
+            }
+            lbl.setAttribute('transform', best.horiz ? `translate(${(best.mid - cx).toFixed(2)} 0)` : `translate(0 ${(best.mid - cy).toFixed(2)})`)
+          })
+        }
+        document.fonts.ready.then(() => { alignEndLabels(svg); centerLabels() })
         const geometry = ['haloScale', 'arrowGap', 'titleGap', 'tipScale']
         lookInputs.forEach((inp) => {
           const k = inp.dataset.look
@@ -1143,6 +1169,7 @@
           retarget()
           applyLineSpacing(look.lineSp)
           alignEndLabels(svg)
+          centerLabels()
         }
         applyLabels()
         const editBtn = section.querySelector('[data-act="edit"]')
