@@ -859,28 +859,31 @@
             const delay = flows[k].delay
             const g = svg.querySelector(`.edge[data-edge="${e}"]`)
             const rows = [...g.querySelectorAll('.lbl-row')]
-            rows.forEach((r, i) => {
+            const items = rows.filter((r) => r.classList.contains('lbl-item') && !r.classList.contains('is-gone'))
+            const intro = !reduceMotion && !shown.has(e)
+            const revealDur = REVEALS[reveal].duration ?? 520
+            // One bullet at a time: its text and icon appear, its icon gets the blue spotlight,
+            // and only after that spotlight does the next bullet appear.
+            const sched = []
+            let cursor = delay + timing.text
+            rows.forEach((r) => {
               r.getAnimations().forEach((a) => a.cancel())
               r.classList.remove('is-spot')
-              if (!reduceMotion && !shown.has(e)) {
-                const rowDelay = delay + timing.text + i * timing.stagger
-                r.animate(
-                  REVEALS[reveal].frames,
-                  { duration: REVEALS[reveal].duration ?? 520, delay: rowDelay, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
-                )
-                // The bullet's icon does its motion as its text arrives.
-                const glyph = r.querySelector('.lbl-glyph')
-                const motion = ICON_MOTION[r.dataset.item]
-                if (glyph && motion) {
-                  glyph.getAnimations().forEach((a) => a.cancel())
-                  glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), delay: rowDelay, easing: 'ease-in-out' })
-                }
+              if (!intro) return
+              r.animate(REVEALS[reveal].frames, { duration: revealDur, delay: cursor, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' })
+              const glyph = r.querySelector('.lbl-glyph')
+              const motion = ICON_MOTION[r.dataset.item]
+              if (glyph && motion) {
+                glyph.getAnimations().forEach((a) => a.cancel())
+                glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), delay: cursor, easing: 'ease-in-out' })
               }
+              if (items.includes(r)) {
+                sched.push(cursor + revealDur)
+                cursor += revealDur + timing.spot
+              } else cursor += timing.stagger
             })
-            const items = rows.filter((r) => r.classList.contains('lbl-item') && !r.classList.contains('is-gone'))
-            // The spotlight (blue icon) starts the moment the first bullet's text has fully appeared.
-            const revealed = delay + timing.text + rows.indexOf(items[0]) * timing.stagger + (REVEALS[reveal].duration ?? 520)
-            return { items, spotFrom: reduceMotion || shown.has(e) ? 0 : revealed, last: -1 }
+            // After the intro round, the spotlight cycles through the bullets as before.
+            return { items, sched, cycleFrom: intro && sched.length ? cursor : 0, last: -1 }
           })
           svg.querySelectorAll('.edge:not(.is-on) .lbl-row.is-spot').forEach((r) => r.classList.remove('is-spot'))
           started = performance.now()
@@ -933,8 +936,10 @@
           }
           // Spotlight: one bullet at a time turns ink, its icon turns blue and does its small motion.
           for (const l of labels) {
-            if (!l.items.length || t < l.spotFrom) continue
-            const idx = Math.floor((t - l.spotFrom) / timing.spot) % l.items.length
+            if (!l.items.length) continue
+            // Intro: each bullet lights up as soon as its text is in; then the regular cycle.
+            const idx = t < l.cycleFrom ? l.sched.filter((at) => t >= at).length - 1 : Math.floor((t - l.cycleFrom) / timing.spot) % l.items.length
+            if (idx < 0) continue
             if (idx === l.last) continue
             l.items.forEach((r, i) => r.classList.toggle('is-spot', i === idx))
             l.last = idx
@@ -943,8 +948,8 @@
             // If the icon is still moving from its text reveal, let that motion finish instead of restarting it.
             if (glyph && motion && !reduceMotion && !glyph.getAnimations().some((a) => a.playState === 'running')) glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), easing: 'ease-in-out' })
           }
-          // A step never ends mid-spotlight: it lasts at least one full round of every label's bullets.
-          const spotEnd = Math.max(0, ...labels.filter((l) => l.items.length).map((l) => l.spotFrom + l.items.length * timing.spot))
+          // A step never ends mid-spotlight: the intro round, or one full round for labels already shown.
+          const spotEnd = Math.max(0, ...labels.filter((l) => l.items.length).map((l) => l.cycleFrom || l.items.length * timing.spot))
           const dur = Math.max(stepDuration(), spotEnd)
           section.style.setProperty('--progress', String(Math.min(1, t / dur)))
           if (playing && t > dur) show(step + 1)
