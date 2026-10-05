@@ -118,8 +118,6 @@
       .story .pulse { fill: var(--unwind); opacity: 0; }
       .story .ring { fill: none; stroke: var(--unwind); stroke-width: 1.5; opacity: 0; }
       .story .tide { fill: none; stroke: var(--unwind); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.1 9; opacity: 0; }
-      .story .comet { fill: none; stroke: var(--unwind); stroke-width: 3; stroke-linecap: round; }
-      .story .comet--glow { stroke-width: 9; stroke-opacity: 0.45; }
       .story[data-feel='breathe'] .node.is-on .node__halo { animation: halo-breathe 5.2s ease-in-out infinite; }
       @keyframes halo-breathe { 50% { opacity: 0.16; } }
       @media (prefers-reduced-motion: reduce) { .story .node__halo { animation: none !important; } }
@@ -470,11 +468,20 @@
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
       const ease = (x) => 0.5 - Math.cos(Math.PI * Math.min(1, Math.max(0, x))) / 2
       // Flow feels. All follow the case study's rule: ink stays still, only Unwind blue moves.
+      // Same strand palette as the voice band (src/features/unwindIntro/braid.js).
+      const BRAID_PAL = ['#53BFFE', '#00D0FF', '#B9A7F5', '#FFB3C7']
       const FEELS = {
         breathe: { name: 'Breathe', note: 'Lines draw in slowly, then glow in and out like a breath.', step: 5600, draw: 1600 },
         ripple: { name: 'Ripple', note: 'One soft dot crosses each line; a ring spreads where it lands.', step: 5000, draw: 1200 },
         tide: { name: 'Tide', note: 'Fine blue dots drift slowly along the line, like the Live flow option.', step: 5400, draw: 1400 },
-        comet: { name: 'Soft comet', note: 'A blurred streak of light glides along each line.', step: 4800, draw: 1000 },
+        comet: { name: 'Braided comet', note: 'A short braided wave: four soft strands twist around each other as they glide along the line.', step: 4800, draw: 1000,
+          braid: { mode: 'comet', strands: 4, win: 170, thick: 2.6, amp: 7, wave: 0.075, spin: 0.006, phase: 2.4, travel: 2400, blur: 1.4, alpha: 0.85 } },
+        ribbon: { name: 'Braided ribbon', note: 'The whole line becomes the braid: strands roll gently along it, end to end.', step: 5600, draw: 1400,
+          braid: { mode: 'ribbon', strands: 4, thick: 1.5, amp: 4.5, wave: 0.045, spin: 0.0035, phase: 2.4, blur: 1, alpha: 0.75 } },
+        wake: { name: 'Braided wake', note: 'The braid draws the line: wavy at the moving tip, settling into a calm thread behind it.', step: 5400, draw: 600,
+          braid: { mode: 'wake', strands: 4, thick: 2.2, amp: 8, wave: 0.06, spin: 0.005, phase: 2.4, travel: 2600, blur: 1.2, alpha: 0.85 } },
+        thread: { name: 'Braided thread', note: 'Two blue strands, tight and fine, spiral quickly along each line.', step: 4600, draw: 900,
+          braid: { mode: 'comet', strands: 2, win: 120, thick: 1.4, amp: 4.5, wave: 0.12, spin: 0.009, phase: Math.PI, travel: 1800, blur: 0.6, alpha: 0.95 } },
         ink: { name: 'Ink in', note: 'The line draws once and holds. Stillest; the caption does the work.', step: 5200, draw: 2000 },
         pulse: { name: 'Pulse dots', note: 'Three dots chase along each line. The first version.', step: 4200, draw: 900 },
       }
@@ -531,8 +538,48 @@
         const svg = section.querySelector('svg')
         const layer = svg.querySelector('.story-flow')
         const lines = [...svg.querySelectorAll('.edge__line')]
+        // Braided strands, ported from the case-study voice band (braid.js): same palette, a phase
+        // offset per strand, and a soft blur. Each strand is a filled ribbon offset along the edge normal.
+        function drawBraid(f, B, after, live) {
+          f.g.style.opacity = live ? String(B.alpha * Math.min(1, after / 500)) : '0'
+          if (!live) return
+          let a, b, env
+          if (B.mode === 'comet') {
+            const pos = ((after + f.k * 420) / B.travel) % 1
+            const head = pos * (f.len + B.win)
+            a = head - B.win; b = head
+            env = (u) => Math.pow(Math.sin(Math.PI * u), 0.8) * (0.3 + 0.7 * u)
+          } else if (B.mode === 'ribbon') {
+            a = 0; b = f.len
+            const breath = 0.75 + 0.25 * Math.cos(after / 1400)
+            const fade = Math.min(1, 40 / f.len)
+            env = (u) => Math.min(1, u / fade, (1 - u) / fade) * breath
+          } else {
+            // wake: the tip travels the edge once per cycle, leaving a thinning calm thread.
+            const cyc = ((after + f.k * 300) % (B.travel + 900)) / B.travel
+            a = 0; b = Math.min(1, cyc) * f.len
+            const hold = cyc > 1 ? 1 - (cyc - 1) * (B.travel / 900) : 1
+            env = (u) => (0.12 + 0.88 * u * u) * Math.min(1, (1 - u) * 14 + 0.15) * hold
+          }
+          const lo = Math.max(0, a), hi = Math.min(f.len, b)
+          const span = b - a || 1
+          const win = f.pts.filter((p) => p.s >= lo && p.s <= hi)
+          f.strands.forEach((path, k) => {
+            if (win.length < 2) return path.setAttribute('d', '')
+            const up = [], dn = []
+            for (const p of win) {
+              const e = env((p.s - a) / span)
+              const o = B.amp * e * Math.sin(p.s * B.wave * (1 + k * 0.18) - after * B.spin * (1 + k * 0.35) + k * B.phase)
+              const h = Math.max(0.35, B.thick * (0.35 + 0.65 * e) * (0.85 + 0.15 * Math.sin(p.s * 0.09 - after * 0.004 + k)))
+              up.push(`${(p.x + p.nx * (o - h)).toFixed(1)} ${(p.y + p.ny * (o - h)).toFixed(1)}`)
+              dn.push(`${(p.x + p.nx * (o + h)).toFixed(1)} ${(p.y + p.ny * (o + h)).toFixed(1)}`)
+            }
+            path.setAttribute('d', `M${up.join('L')}L${dn.reverse().join('L')}Z`)
+          })
+        }
+
         const SVGNS = 'http://www.w3.org/2000/svg'
-        svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>')
+        svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>')
         let step = 0, playing = !reduceMotion, started = 0, flows = [], labels = [], feel = FEELS.breathe
         const timing = {}
         const el = (tag, attrs) => {
@@ -552,20 +599,36 @@
           svg.querySelectorAll('.edge').forEach((g) => g.classList.toggle('is-on', s.edges.includes(+g.dataset.edge)))
           svg.querySelectorAll('.node').forEach((g) => g.classList.toggle('is-on', s.nodes.includes(g.dataset.node)))
           layer.innerHTML = ''
+          lines.forEach((line) => (line.style.opacity = ''))
           flows = s.edges.map((e, k) => {
             const d = lines[e].getAttribute('d')
             const trace = el('path', { class: 'trace', d, pathLength: 1 })
             const len = trace.getTotalLength()
-            const f = { trace, len, k, end: trace.getPointAtLength(len) }
+            const f = { trace, len, k, base: lines[e], end: trace.getPointAtLength(len) }
             if (feel === FEELS.pulse) f.dots = [0, 1, 2].map(() => el('circle', { r: 4.5, class: 'pulse' }))
             if (feel === FEELS.ripple) {
               f.ring = el('circle', { class: 'ring', cx: f.end.x, cy: f.end.y, r: 4 })
               f.dot = el('circle', { r: 5, class: 'pulse' })
             }
             if (feel === FEELS.tide) f.tide = el('path', { class: 'tide', d })
-            if (feel === FEELS.comet) {
-              f.glow = el('path', { class: 'comet comet--glow', d, filter: 'url(#story-soft)' })
-              f.head = el('path', { class: 'comet', d })
+            if (feel.braid) {
+              // Sample the edge every 3 units with unit normals, so strands can be offset sideways.
+              const pts = []
+              for (let s = 0; s <= len; s += 3) {
+                const p = trace.getPointAtLength(s), q = trace.getPointAtLength(Math.min(len, s + 1)), r = trace.getPointAtLength(Math.max(0, s - 1))
+                const dx = q.x - r.x, dy = q.y - r.y, m = Math.hypot(dx, dy) || 1
+                pts.push({ s, x: p.x, y: p.y, nx: -dy / m, ny: dx / m })
+              }
+              const g = el('g', { filter: 'url(#story-braid)' })
+              f.pts = pts
+              f.strands = BRAID_PAL.slice(0, feel.braid.strands).map((col) => {
+                const p = document.createElementNS(SVGNS, 'path')
+                p.setAttribute('class', 'braid-strand')
+                p.setAttribute('fill', col)
+                g.append(p)
+                return p
+              })
+              f.g = g
             }
             return f
           })
@@ -618,16 +681,12 @@
               f.trace.style.opacity = live ? '0.25' : '1'
               f.tide.style.opacity = live ? String(Math.min(1, after / 600)) : '0'
               f.tide.style.strokeDashoffset = String(-after * 0.014)
-            } else if (feel === FEELS.comet) {
-              const seg = 70, travel = f.len + seg
-              const pos = live ? ((after + f.k * 400) / 2200) % 1 : 0
-              const off = String(seg - pos * travel)
-              for (const p of [f.glow, f.head]) {
-                p.style.strokeDasharray = `${seg} ${f.len + seg}`
-                p.style.strokeDashoffset = off
-                p.style.opacity = live ? '' : '0'
-              }
-              f.trace.style.opacity = live ? '0.35' : '1'
+            } else if (feel.braid) {
+              drawBraid(f, feel.braid, after, live)
+              // Ribbon and wake are the line themselves; the comets ride on a faint guide.
+              const own = feel.braid.mode !== 'comet'
+              f.trace.style.opacity = live ? (own ? '0' : '0.3') : '1'
+              f.base.style.opacity = live && own ? '0.12' : ''
             }
           }
           // Spotlight: one bullet at a time turns ink, its icon turns blue and does its small motion.
@@ -652,12 +711,26 @@
           inp.value = k === 'speed' ? timing[k] : timing[k] / 1000
           inp.nextElementSibling.textContent = k === 'speed' ? `${(+timing[k]).toFixed(2)}×` : `${(timing[k] / 1000).toFixed(2)}s`
         })
-        const resetTiming = () => {
-          Object.assign(timing, { step: feel.step, draw: feel.draw, text: Math.round(feel.draw * 0.5), stagger: 180, spot: 900, speed: 1 })
+        const defaults = () => ({ step: feel.step, draw: feel.draw, text: Math.round(feel.draw * 0.5), stagger: 180, spot: 900, speed: 1 })
+        // Saved values are clamped to the slider ranges, so stale or edited storage can't break playback.
+        const clampTiming = (saved = {}) => Object.fromEntries(TIMING_FIELDS.map(([k, , min, max]) => {
+          const scale = k === 'speed' ? 1 : 1000
+          const v = Number(saved[k])
+          return [k, Number.isFinite(v) ? Math.min(max * scale, Math.max(min * scale, v)) : defaults()[k]]
+        }))
+        const loadTiming = () => {
+          Object.assign(timing, clampTiming(settings.timings[feelKey] ?? defaults()))
           syncTiming()
+        }
+        const resetTiming = () => {
+          delete settings.timings[feelKey]
+          saveSettings()
+          loadTiming()
         }
         timingInputs.forEach((inp) => inp.addEventListener('input', () => {
           timing[inp.dataset.t] = inp.dataset.t === 'speed' ? +inp.value : +inp.value * 1000
+          settings.timings[feelKey] = { ...timing }
+          saveSettings()
           syncTiming()
         }))
         // Re-run the step so new text/draw timings are visible right away.
@@ -665,11 +738,17 @@
         section.querySelector('[data-act="reset"]').addEventListener('click', () => { resetTiming(); show(step) })
 
         const feelSelect = section.querySelector('[data-act="feel"]')
+        let feelKey = 'breathe'
         const setFeel = (key) => {
-          feel = FEELS[key]
-          section.dataset.feel = key
+          feelKey = FEELS[key] ? key : 'breathe'
+          feel = FEELS[feelKey]
+          feelSelect.value = feelKey
+          settings.feel = feelKey
+          saveSettings()
+          section.dataset.feel = feelKey
+          if (feel.braid) svg.querySelector('#story-braid feGaussianBlur').setAttribute('stdDeviation', String(feel.braid.blur))
           section.querySelector('.story__feelnote').textContent = feel.note
-          resetTiming()
+          loadTiming()
           show(step)
         }
         feelSelect.addEventListener('change', () => setFeel(feelSelect.value))
@@ -682,11 +761,24 @@
           if (b) { setPlaying(false); show(+b.dataset.step) }
         })
         setPlaying(playing)
-        setFeel('breathe')
+        setFeel(settings.feel)
         requestAnimationFrame(frame)
       }
 
       const root = document.getElementById('options')
+      // Studio settings survive a refresh: walkthrough feel, timing per feel, and each option's arrow preset.
+      const SETTINGS_KEY = 'unwind-system-design:settings'
+      const settings = (() => {
+        try {
+          const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
+          return { feel: s.feel, timings: s.timings && typeof s.timings === 'object' ? s.timings : {}, arrows: s.arrows && typeof s.arrows === 'object' ? s.arrows : {} }
+        } catch {
+          return { timings: {}, arrows: {} }
+        }
+      })()
+      const saveSettings = () => {
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)) } catch { /* storage blocked: settings stay for this session */ }
+      }
       mountStory()
       OPTIONS.forEach((o, i) => {
         const section = document.createElement('section')
@@ -700,11 +792,19 @@
             <button type="button">Download SVG</button>
           </div>
           ${render(o)}`
-        section.querySelector('select').addEventListener('change', (event) => {
-          const preset = ARROWS[event.target.value]
-          const next = { ...o, ...preset, name: o.name, presetDash: preset.dash }
-          section.querySelector('svg').outerHTML = render(next)
+        const select = section.querySelector('select')
+        const applyArrows = (value) => {
+          const key = ARROWS[value] ? value : 'original'
+          select.value = key
+          const preset = ARROWS[key]
+          section.querySelector('svg').outerHTML = render({ ...o, ...preset, name: o.name, presetDash: preset.dash })
+        }
+        select.addEventListener('change', () => {
+          settings.arrows[o.id] = select.value
+          saveSettings()
+          applyArrows(select.value)
         })
+        if (settings.arrows[o.id]) applyArrows(settings.arrows[o.id])
         section.querySelector('button').addEventListener('click', () => {
           const blob = new Blob([section.querySelector('svg').outerHTML], { type: 'image/svg+xml' })
           const a = document.createElement('a')
