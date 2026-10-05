@@ -165,7 +165,8 @@
       .story .lbl-item text { transition: fill 0.35s ease; }
       .story .lbl-icon { transition: stroke 0.35s ease; }
       .story .lbl-item.is-spot text { fill: var(--ink-900); }
-      .story .lbl-item.is-spot .lbl-icon { stroke: var(--unwind); }
+      /* Once an icon has had the spotlight it stays blue (.is-lit); the ink text still moves on. */
+      .story .lbl-item:is(.is-spot, .is-lit) .lbl-icon { stroke: var(--unwind); }
     </style>
   </head>
   <body>
@@ -870,6 +871,7 @@
               r.getAnimations().forEach((a) => a.cancel())
               r.classList.remove('is-spot')
               if (!intro) return
+              r.classList.remove('is-lit')
               r.animate(REVEALS[reveal].frames, { duration: revealDur, delay: cursor, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' })
               const glyph = r.querySelector('.lbl-glyph')
               const motion = ICON_MOTION[r.dataset.item]
@@ -942,6 +944,7 @@
             if (idx < 0) continue
             if (idx === l.last) continue
             l.items.forEach((r, i) => r.classList.toggle('is-spot', i === idx))
+            l.items[idx].classList.add('is-lit')
             l.last = idx
             const glyph = l.items[idx].querySelector('.lbl-glyph')
             const motion = ICON_MOTION[l.items[idx].dataset.item]
