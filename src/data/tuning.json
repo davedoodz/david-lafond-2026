@@ -468,11 +468,11 @@
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
-      "problemBody": "Most wellness tools wait for us to open them often after the emotional intensity and useful context have already faded.",
+      "problemBody": "Most wellness tools wait for us to reach for them—after the moment has already passed.",
       "opportunityTitle": "Three technologies just converged ",
-      "opportunityBody": "1. Wearables senses physiological change. \n\n2. Voice captures subtle emotional cues. \n\n3. Realtime AI can connect both to the moment.",
-      "solutionTitle": "A private check-in, at the moment it matters.",
-      "solutionBody": "The Watch surfaces the moment. The phone gives you somewhere to talk. AI connects signal, story and history to help interrupt recurring patterns before they become habits.",
+      "opportunityBody": "1. Wearables can sense physiological changes.  \n2. Voice can reveal subtle emotional cues.  \n3. Agentic AI can understand personal context.\n",
+      "solutionTitle": "A private check-in, right when it matters.",
+      "solutionBody": "The watch catches the moment, you talk it out, and AI helps you make sense of it.\n",
       "preset": "custom",
       "layout": "left",
       "opportunityArt": "converge",
@@ -571,6 +571,14 @@
       "problemTitle": "Fashion doesn’t have a discovery problem. It has a follow-through problem.",
       "problemBody": "Designers already find compelling new materials. Most disappear during\n development because nobody can answer how they perform, how to manufacture with\n them or whether supply can scale.",
       "opportunityTitle": "AI can move the work forward not just talk about it."
+    }
+  },
+  "Momo welcome": {
+    "blackOverlay": 0.16,
+    "prototypeWidth": 305,
+    "momo": {
+      "size": 60,
+      "y": 4
     }
   }
 }
