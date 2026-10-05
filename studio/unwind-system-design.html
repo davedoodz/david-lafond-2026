@@ -678,6 +678,7 @@
           <div class="story__timing" aria-label="Look">
             ${LOOK_FIELDS.map(([k, name, min, max, stepv]) => `<label>${name} <input type="range" data-look="${k}" min="${min}" max="${max}" step="${stepv}" /><output></output></label>`).join('')}
             <label><input type="checkbox" data-act="halo" /> Show halo</label>
+            <label><input type="checkbox" data-act="waves-all" /> Braided waves</label>
             <button type="button" data-act="reset-look">Reset look</button>
           </div>
           <div class="story__timing" aria-label="Text">
@@ -845,8 +846,9 @@
           // Text: rows of each active label enter one after another in this step's reveal style.
           const reveal = REVEALS[settings.reveal[step]] ? settings.reveal[step] : 'rise'
           revealSelect.value = reveal
-          waveOn = waveFor(step)
-          waveToggle.checked = waveOn
+          waveToggle.checked = waveFor(step)
+          waveToggle.disabled = settings.look.waves === false
+          waveOn = waveToggle.checked && !waveToggle.disabled
           layer.style.display = waveOn ? '' : 'none'
           syncStepDur()
           labels = s.edges.map((e) => {
@@ -1049,11 +1051,16 @@
         const setHalo = (on) => { haloToggle.checked = on; section.dataset.halo = on ? 'on' : 'off' }
         setHalo(settings.look.halo !== false)
         haloToggle.addEventListener('change', () => { settings.look.halo = haloToggle.checked; saveSettings(); setHalo(haloToggle.checked) })
+        // Master switch for the braided flow; per-step "Wave this step" choices are kept and apply again when it is back on.
+        const wavesAllToggle = section.querySelector('[data-act="waves-all"]')
+        wavesAllToggle.checked = settings.look.waves !== false
+        wavesAllToggle.addEventListener('change', () => { settings.look.waves = wavesAllToggle.checked; saveSettings(); show(step) })
         section.querySelector('[data-act="reset-look"]').addEventListener('click', () => {
           settings.look = {}
           saveSettings()
           lookInputs.forEach((inp) => { look[inp.dataset.look] = setLook(inp.dataset.look) })
           setHalo(true)
+          wavesAllToggle.checked = true
           retarget()
           show(step)
         })
