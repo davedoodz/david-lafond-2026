@@ -595,6 +595,7 @@
           </div>
           <div class="story__timing" aria-label="Text">
             <label>Text in (this step) <select data-act="reveal">${Object.entries(REVEALS).map(([k, r]) => `<option value="${k}">${r.name}</option>`).join('')}</select></label>
+            <label><input type="checkbox" data-act="wave" /> Wave this step</label>
             <button type="button" data-act="edit">Edit text</button>
             <button type="button" data-act="reset-text">Reset text</button>
           </div>
@@ -605,6 +606,11 @@
         const svg = section.querySelector('svg')
         const layer = svg.querySelector('.story-flow')
         const revealSelect = section.querySelector('[data-act="reveal"]')
+        const waveToggle = section.querySelector('[data-act="wave"]')
+        // The flow (braid, pulse, …) plays only on chosen steps; by default steps 1 and 5.
+        const WAVE_STEPS = [0, 4]
+        const waveFor = (i) => (typeof settings.waves[i] === 'boolean' ? settings.waves[i] : WAVE_STEPS.includes(i))
+        let waveOn = true
         const lines = [...svg.querySelectorAll('.edge__line')]
         // Braided strands, ported from the case-study voice band (braid.js): same palette, a phase
         // offset per strand, and a soft blur. Each strand is a filled ribbon offset along the edge normal.
@@ -728,6 +734,9 @@
           // Text: rows of each active label enter one after another in this step's reveal style.
           const reveal = REVEALS[settings.reveal[step]] ? settings.reveal[step] : 'rise'
           revealSelect.value = reveal
+          waveOn = waveFor(step)
+          waveToggle.checked = waveOn
+          layer.style.display = waveOn ? '' : 'none'
           labels = s.edges.map((e) => {
             const g = svg.querySelector(`.edge[data-edge="${e}"]`)
             const rows = [...g.querySelectorAll('.lbl-row')]
@@ -752,6 +761,8 @@
           const after = (t - timing.draw) * timing.speed
           const live = !reduceMotion && after > 0
           for (const f of flows) {
+            // Steps without a wave keep the plain ink line; the head turns blue once it's drawn.
+            if (!waveOn) { f.base.parentNode.classList.toggle('is-live', live); continue }
             f.trace.style.strokeDashoffset = String(1 - drawn)
             if (feel === FEELS.breathe) {
               f.trace.style.opacity = live ? String(0.55 + 0.45 * Math.cos((after / 2600) * 2 * Math.PI)) : '1'
@@ -944,6 +955,7 @@
         section.querySelector('[data-act="reset-text"]').addEventListener('click', () => { settings.labels = {}; saveSettings(); applyLabels() })
 
         revealSelect.addEventListener('change', () => { settings.reveal[step] = revealSelect.value; saveSettings(); show(step) })
+        waveToggle.addEventListener('change', () => { settings.waves[step] = waveToggle.checked; saveSettings(); show(step) })
 
         const playBtn = section.querySelector('[data-act="play"]')
         const setPlaying = (v) => { playing = v; playBtn.textContent = v ? 'Pause' : 'Play' }
@@ -964,9 +976,9 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal) }
+          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves) }
         } catch {
-          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {} }
+          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {} }
         }
       })()
       const saveSettings = () => {
