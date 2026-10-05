@@ -862,10 +862,20 @@
             rows.forEach((r, i) => {
               r.getAnimations().forEach((a) => a.cancel())
               r.classList.remove('is-spot')
-              if (!reduceMotion && !shown.has(e)) r.animate(
-                REVEALS[reveal].frames,
-                { duration: REVEALS[reveal].duration ?? 520, delay: delay + timing.text + i * timing.stagger, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
-              )
+              if (!reduceMotion && !shown.has(e)) {
+                const rowDelay = delay + timing.text + i * timing.stagger
+                r.animate(
+                  REVEALS[reveal].frames,
+                  { duration: REVEALS[reveal].duration ?? 520, delay: rowDelay, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
+                )
+                // The bullet's icon does its motion as its text arrives.
+                const glyph = r.querySelector('.lbl-glyph')
+                const motion = ICON_MOTION[r.dataset.item]
+                if (glyph && motion) {
+                  glyph.getAnimations().forEach((a) => a.cancel())
+                  glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), delay: rowDelay, easing: 'ease-in-out' })
+                }
+              }
             })
             const items = rows.filter((r) => r.classList.contains('lbl-item') && !r.classList.contains('is-gone'))
             return { items, spotFrom: delay + timing.text + rows.length * timing.stagger + 400, last: -1 }
