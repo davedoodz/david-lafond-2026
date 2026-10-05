@@ -716,9 +716,11 @@
               const full = lines[e].getTotalLength()
               lines[e].getAnimations().forEach((a) => a.cancel())
               lines[e].animate(
-                [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0 }],
+                [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full, stroke: BLUE }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0, stroke: BLUE }],
                 { duration: timing.draw, easing: 'cubic-bezier(.4,0,.2,1)' },
               )
+              // Blue only while growing; then it settles back to its ink colour.
+              lines[e].animate([{ stroke: BLUE }, { stroke: lines[e].getAttribute('stroke') }], { duration: 600, delay: timing.draw, easing: 'ease-out', fill: 'backwards' })
               lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) =>
                 head.animate([{ opacity: 0 }, { opacity: 0, offset: 0.85 }, { opacity: getComputedStyle(head).opacity }], { duration: timing.draw }))
             }
