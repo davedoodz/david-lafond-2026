@@ -460,11 +460,13 @@
         return [fitPoint(p[0], p[1], o, R, gap, titleGap), ...p.slice(1, -1), fitPoint(p[n - 1], p[n - 2], o, R, gap, titleGap)]
       }
 
-      function arrowHead(points, o, color, width) {
+      /** Arrowhead size (side length); its depth along the line is size × cos(0.6). */
+      const headSize = (o, width, scale = 1) => (o.arrow === 'triangle' ? 7 + width * 1.5 : 7 + width * 2) * scale
+      function arrowHead(points, o, color, width, scale = 1) {
         const [x, y] = points[points.length - 1]
         const [px, py] = points[points.length - 2]
         const a = Math.atan2(y - py, x - px)
-        const s = o.arrow === 'triangle' ? 7 + width * 1.5 : 7 + width * 2
+        const s = headSize(o, width, scale)
         const p1 = [x - s * Math.cos(a - 0.6), y - s * Math.sin(a - 0.6)]
         const p2 = [x - s * Math.cos(a + 0.6), y - s * Math.sin(a + 0.6)]
         if (o.arrow === 'triangle') {
@@ -648,6 +650,7 @@
         ['momoX', 'Momo x', -80, 80, 1, 0, '--momo-x'],
         ['momoY', 'Momo y', -80, 80, 1, 0, '--momo-y'],
         ['momoScale', 'Momo size', 0.4, 2, 0.05, 1, '--momo-scale'],
+        ['tipScale', 'Arrow tip', 0.5, 2.5, 0.05, 1],
       ]
       // How label rows enter, chosen per step.
       const REVEALS = {
@@ -1047,7 +1050,7 @@
           const v = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
           const inp = lookInputs.find((x) => x.dataset.look === k)
           inp.value = v
-          inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
+          inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale', 'tipScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
           if (cssVar) section.style.setProperty(cssVar, String(v))
           else if (k === 'lineSp') applyLineSpacing(v)
           return v
@@ -1058,9 +1061,18 @@
           const R = 78 * look.haloScale
           svg.querySelectorAll('.edge').forEach((g) => {
             const pts = fitEdge(EDGES[+g.dataset.edge], o, R, look.arrowGap, look.titleGap)
-            g.querySelector('.edge__line').setAttribute('d', path(pts, o.radius))
+            // A filled tip sits on the line's end, not over it: the line stops at the tip's base,
+            // so translucent arrows show no darker overlap.
+            const line = pts.map((p) => [...p])
+            if (o.arrow === 'triangle') {
+              const [x, y] = line[line.length - 1], [px, py] = line[line.length - 2]
+              const m = Math.hypot(x - px, y - py) || 1
+              const cut = Math.min(m - 1, headSize(o, o.stroke, look.tipScale) * Math.cos(0.6) + o.stroke / 2 - 0.5)
+              line[line.length - 1] = [x - ((x - px) / m) * cut, y - ((y - py) / m) * cut]
+            }
+            g.querySelector('.edge__line').setAttribute('d', path(line, o.radius))
             const head = g.querySelector(':scope > path:not(.edge__line)')
-            head.outerHTML = arrowHead(pts, o, head.getAttribute(o.arrow === 'triangle' ? 'fill' : 'stroke'), o.stroke)
+            head.outerHTML = arrowHead(pts, o, head.getAttribute(o.arrow === 'triangle' ? 'fill' : 'stroke'), o.stroke, look.tipScale)
           })
           // Titles hang a fixed gap below the halo, whatever its size.
           svg.querySelectorAll('.node').forEach((g) => {
@@ -1073,7 +1085,7 @@
             })
           })
         }
-        const geometry = ['haloScale', 'arrowGap', 'titleGap']
+        const geometry = ['haloScale', 'arrowGap', 'titleGap', 'tipScale']
         lookInputs.forEach((inp) => {
           const k = inp.dataset.look
           look[k] = setLook(k, settings.look[k])
