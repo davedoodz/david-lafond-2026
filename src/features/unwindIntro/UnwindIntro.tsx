@@ -61,7 +61,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     let vw = 0, vh = 0, dpr = 1, stageH = 1, slotY = 0, slotX = 0
     let ready = false, disposed = false, playing = false, armed = true
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
-    let interrupted = false
+    let interrupted = false, enteredStage = false
     // Hover to replay: the band in the hero is a button. Hovering eases `swell` 0 → 1 (band grows and
     // speaks a little louder, the "Replay intro" pill drops under it); clicking replays the film.
     // Delegated listeners + a fresh lookup, so a re-rendered hero keeps working.
@@ -94,6 +94,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const start = () => {
       if (!ready) return
       playing = true; armed = false; time = 0; handoffY = null; interrupted = false
+      enteredStage = progress() > .03
       setReplayable(false)
       cbRef.current.onStart?.()
     }
@@ -105,6 +106,14 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       const dt = last && !document.hidden ? Math.min(0.1, (now - last) / 1000) * s.speed : 0
       last = now; rt += dt
       let p = progress()
+      if (playing && p > .03) enteredStage = true
+      // A manual skip ends playback now, not at the film's elapsed-time deadline.
+      // During replay's scroll-up, wait until the stage has actually been entered.
+      if (playing && enteredStage && p <= .03 && handoffY === null) {
+        playing = false
+        setReplayable(true)
+        cbRef.current.onDone()
+      }
       if (!playing && p < .03) armed = true
       if (ready && !playing && armed && p > s.startAt) start()
       if (playing) {
