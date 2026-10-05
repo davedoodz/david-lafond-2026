@@ -117,6 +117,9 @@
       .story .edge > path:not(.edge__line) { transition: fill 0.4s ease, opacity 0.4s ease; opacity: var(--arrow-op, 1); }
       .story .edge.is-live > path:not(.edge__line) { opacity: 1; }
       .story .edge.is-live > path:not(.edge__line) { fill: var(--unwind); }
+      .story .edge.is-wave .edge__line { stroke: var(--unwind); }
+      .story .edge.is-wave > path:not(.edge__line):not([fill='none']) { fill: var(--unwind); }
+      .story .edge.is-wave > path[fill='none']:not(.edge__line) { stroke: var(--unwind); }
       .story .node { opacity: var(--idle-op, 1); transition: opacity 0.6s ease; }
       .story .node.is-on { opacity: 1; }
       .story .edge.is-past { opacity: var(--past-op, 0.25); }
@@ -704,9 +707,12 @@
           layer.innerHTML = ''
           lines.forEach((line) => {
             line.style.opacity = ''
-            line.parentNode.classList.remove('is-live')
+            line.parentNode.classList.remove('is-live', 'is-wave')
           })
+          // On wave steps the active arrows (line and head) stay blue while the waves run.
+          const wave = waveFor(step)
           flows = s.edges.map((e, k) => {
+            if (wave) lines[e].parentNode.classList.add('is-wave')
             const d = lines[e].getAttribute('d')
             const trace = el('path', { class: 'trace', d, pathLength: 1 })
             const len = trace.getTotalLength()
@@ -719,8 +725,8 @@
                 [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full, stroke: BLUE }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0, stroke: BLUE }],
                 { duration: timing.draw, easing: 'cubic-bezier(.4,0,.2,1)' },
               )
-              // Blue only while growing; then it settles back to its ink colour.
-              lines[e].animate([{ stroke: BLUE }, { stroke: lines[e].getAttribute('stroke') }], { duration: 600, delay: timing.draw, easing: 'ease-out', fill: 'backwards' })
+              // Blue only while growing; then it settles back to ink (wave steps stay blue throughout).
+              if (!wave) lines[e].animate([{ stroke: BLUE }, { stroke: lines[e].getAttribute('stroke') }], { duration: 600, delay: timing.draw, easing: 'ease-out', fill: 'backwards' })
               // The head is blue while growing, then settles to ink with the line.
               lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
                 const paint = head.getAttribute('fill') === 'none' ? 'stroke' : 'fill'
@@ -729,7 +735,7 @@
                   [{ opacity: 0, [paint]: BLUE }, { opacity: 0, [paint]: BLUE, offset: 0.85 }, { opacity: op, [paint]: BLUE }],
                   { duration: timing.draw },
                 )
-                head.animate([{ [paint]: BLUE }, { [paint]: head.getAttribute(paint) }], { duration: 600, delay: timing.draw, easing: 'ease-out' })
+                if (!wave) head.animate([{ [paint]: BLUE }, { [paint]: head.getAttribute(paint) }], { duration: 600, delay: timing.draw, easing: 'ease-out' })
               })
             }
             if (feel === FEELS.pulse) f.dots = [0, 1, 2].map(() => el('circle', { r: 4.5, class: 'pulse' }))
