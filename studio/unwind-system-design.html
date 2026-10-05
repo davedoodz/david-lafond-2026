@@ -109,24 +109,30 @@
       .option__head { flex-wrap: wrap; }
       .option__head label { font-size: 13px; }
       select { font: inherit; padding: 6px 10px; border: 1px solid var(--stone-400); border-radius: 8px; background: white; }
-      /* Step focus: arrows and their labels outside the current step are hidden; nodes stay faintly visible for orientation. */
-      .story .edge, .story .node { transition: opacity 0.6s ease; }
-      .story .edge { opacity: 0; }
-      .story .node { opacity: 0.16; }
-      .story .edge.is-on, .story .node.is-on { opacity: 1; }
+      /* Step focus: current arrows full, earlier steps dimmed (--past-op), later hidden. Idle actors use --idle-op. */
+      .story .edge { transition: opacity 0.6s ease; opacity: 0; }
+      .story .edge.is-on { opacity: 1; }
       /* --arrow-op: the plain ink arrow (line + head) for active steps; blue arrowheads stay full. */
       .story .edge__line { opacity: var(--arrow-op, 1); }
       .story .edge > path:not(.edge__line) { transition: fill 0.4s ease, opacity 0.4s ease; opacity: var(--arrow-op, 1); }
       .story .edge.is-live > path:not(.edge__line) { opacity: 1; }
       .story .edge.is-live > path:not(.edge__line) { fill: var(--unwind); }
-      .story .node__halo { opacity: 0; transition: opacity 0.6s ease; }
-      .story .node.is-on .node__halo { opacity: 0.1; }
+      .story .node { opacity: var(--idle-op, 1); transition: opacity 0.6s ease; }
+      .story .node.is-on { opacity: 1; }
+      .story .edge.is-past { opacity: var(--past-op, 0.25); }
+      .story .story-flow { opacity: var(--wave-op, 1); }
+      .story .node__halo { opacity: 0; transition: opacity 0.6s ease; transform-box: fill-box; transform-origin: center; transform: scale(var(--halo-scale, 1)); }
+      .story .node.is-on .node__halo { opacity: var(--halo-op, 0.1); }
+      .story[data-halo='off'] .node__halo { display: none; }
+      .story .lbl-row { transform-box: fill-box; transform-origin: left center; }
+      .story[data-edit='on'] .lbl-row { cursor: text; }
+      .story[data-edit='on'] .lbl-row:hover text { fill: var(--unwind); }
       .story .trace { fill: none; stroke: var(--unwind); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
       .story .pulse { fill: var(--unwind); opacity: 0; }
       .story .ring { fill: none; stroke: var(--unwind); stroke-width: 1.5; opacity: 0; }
       .story .tide { fill: none; stroke: var(--unwind); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.1 9; opacity: 0; }
       .story[data-feel='breathe'] .node.is-on .node__halo { animation: halo-breathe 5.2s ease-in-out infinite; }
-      @keyframes halo-breathe { 50% { opacity: 0.16; } }
+      @keyframes halo-breathe { 50% { opacity: calc(var(--halo-op, 0.1) * 1.6); } }
       @media (prefers-reduced-motion: reduce) { .story .node__halo { animation: none !important; } }
       .story__caption { display: flex; gap: 16px; align-items: baseline; min-height: 64px; }
       .story__num { font-size: 32px; color: var(--unwind); letter-spacing: -0.04em; }
@@ -139,6 +145,7 @@
       .story__timing { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 4px 0 8px; font-size: 13px; color: var(--stone-600); }
       .story__timing label { display: inline-flex; align-items: center; gap: 8px; }
       .story__timing input { width: 96px; accent-color: var(--unwind); }
+      .story__timing input[type='checkbox'] { width: auto; margin: 0; }
       .story__timing output { font-variant-numeric: tabular-nums; color: var(--ink-900); min-width: 40px; }
       .story__timing button { font: inherit; font-size: 13px; background: none; border: 1px solid var(--stone-400); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
       .story .lbl-glyph { transform-box: fill-box; transform-origin: center; }
@@ -377,12 +384,12 @@
       }
 
       function label(l, o) {
-        const lh = o.labelSize * 1.3
+        const lh = o.labelSize * 1.3 // base; the story's Line spacing slider shifts rows from here
         const out = []
         let y = l.y
         const text = (content, x, anchor, y) =>
           `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${o.labelSize}" fill="${o.label}">${content}</text>`
-        const row = (inner, cls = '') => `<g class="lbl-row${cls}">${inner}</g>`
+        const row = (inner, cls = '') => `<g class="lbl-row${cls}"><g class="lbl-shift">${inner}</g></g>`
         if (l.lines) for (const line of l.lines) (out.push(row(text(esc(line), l.x, l.anchor, y))), (y += lh))
         if (l.head) {
           out.push(row(text(esc(l.head), l.x, l.anchor, y), ' lbl-head'))
@@ -519,6 +526,26 @@
         'micro-reflection prompting': [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-4px) scale(1.12)' }, { transform: 'translateY(0) scale(1)' }],
       }
 
+      // [key, name, min, max, step, default, css var]; line spacing has no var, it shifts label rows.
+      const LOOK_FIELDS = [
+        ['pastOp', 'Past steps', 0, 1, 0.05, 0.25, '--past-op'],
+        ['idleOp', 'Idle icons', 0, 1, 0.05, 1, '--idle-op'],
+        ['waveOp', 'Wave', 0, 1, 0.05, 1, '--wave-op'],
+        ['haloOp', 'Halo opacity', 0, 0.4, 0.01, 0.1, '--halo-op'],
+        ['haloScale', 'Halo size', 0.2, 1.6, 0.05, 1, '--halo-scale'],
+        ['lineSp', 'Line spacing', 1, 2.4, 0.05, 1.3, null],
+      ]
+      // How label rows enter, chosen per step.
+      const REVEALS = {
+        rise: { name: 'Rise', frames: [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }] },
+        fade: { name: 'Fade', duration: 700, frames: [{ opacity: 0 }, { opacity: 1 }] },
+        slide: { name: 'Slide in', frames: [{ opacity: 0, transform: 'translateX(-14px)' }, { opacity: 1, transform: 'none' }] },
+        drop: { name: 'Drop', frames: [{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }] },
+        blur: { name: 'Focus', duration: 700, frames: [{ opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0)' }] },
+        pop: { name: 'Pop', duration: 420, frames: [{ opacity: 0, transform: 'scale(0.9)' }, { opacity: 1, transform: 'none' }] },
+        wipe: { name: 'Wipe', duration: 650, frames: [{ opacity: 1, clipPath: 'inset(-20% 100% -20% 0)' }, { opacity: 1, clipPath: 'inset(-20% 0 -20% 0)' }] },
+      }
+
       function mountStory() {
         const base = OPTIONS.find((o) => o.id === 'hairline')
         const o = { ...base, id: 'story', story: true }
@@ -541,12 +568,23 @@
             <button type="button" data-act="reset">Reset timing</button>
             <label>Arrow opacity <input type="range" data-act="arrow-op" min="0" max="1" step="0.05" /><output></output></label>
           </div>
+          <div class="story__timing" aria-label="Look">
+            ${LOOK_FIELDS.map(([k, name, min, max, stepv]) => `<label>${name} <input type="range" data-look="${k}" min="${min}" max="${max}" step="${stepv}" /><output></output></label>`).join('')}
+            <label><input type="checkbox" data-act="halo" /> Show halo</label>
+            <button type="button" data-act="reset-look">Reset look</button>
+          </div>
+          <div class="story__timing" aria-label="Text">
+            <label>Text in (this step) <select data-act="reveal">${Object.entries(REVEALS).map(([k, r]) => `<option value="${k}">${r.name}</option>`).join('')}</select></label>
+            <button type="button" data-act="edit">Edit text</button>
+            <button type="button" data-act="reset-text">Reset text</button>
+          </div>
           ${render(o)}
           <nav class="story__steps">${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
         root.append(section)
 
         const svg = section.querySelector('svg')
         const layer = svg.querySelector('.story-flow')
+        const revealSelect = section.querySelector('[data-act="reveal"]')
         const lines = [...svg.querySelectorAll('.edge__line')]
         // Braided strands, ported from the case-study voice band (braid.js): same palette, a phase
         // offset per strand, and a soft blur. Each strand is a filled ribbon offset along the edge normal.
@@ -609,7 +647,13 @@
           section.querySelector('.story__title').textContent = s.title
           section.querySelector('.story__text').textContent = s.text
           section.querySelectorAll('[data-step]').forEach((b) => b.setAttribute('aria-current', String(+b.dataset.step === step)))
-          svg.querySelectorAll('.edge').forEach((g) => g.classList.toggle('is-on', s.edges.includes(+g.dataset.edge)))
+          // Earlier steps stay on screen, dimmed; later ones stay hidden.
+          const past = new Set(STORY.slice(0, step).flatMap((p) => p.edges))
+          svg.querySelectorAll('.edge').forEach((g) => {
+            const on = s.edges.includes(+g.dataset.edge)
+            g.classList.toggle('is-on', on)
+            g.classList.toggle('is-past', !on && past.has(+g.dataset.edge))
+          })
           svg.querySelectorAll('.node').forEach((g) => g.classList.toggle('is-on', s.nodes.includes(g.dataset.node)))
           layer.innerHTML = ''
           lines.forEach((line) => {
@@ -648,7 +692,9 @@
             }
             return f
           })
-          // Text: rows of each active label rise in one after another while the line draws.
+          // Text: rows of each active label enter one after another in this step's reveal style.
+          const reveal = REVEALS[settings.reveal[step]] ? settings.reveal[step] : 'rise'
+          revealSelect.value = reveal
           labels = s.edges.map((e) => {
             const g = svg.querySelector(`.edge[data-edge="${e}"]`)
             const rows = [...g.querySelectorAll('.lbl-row')]
@@ -656,8 +702,8 @@
               r.getAnimations().forEach((a) => a.cancel())
               r.classList.remove('is-spot')
               if (!reduceMotion) r.animate(
-                [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
-                { duration: 520, delay: timing.text + i * timing.stagger, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
+                REVEALS[reveal].frames,
+                { duration: REVEALS[reveal].duration ?? 520, delay: timing.text + i * timing.stagger, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
               )
             })
             const items = rows.filter((r) => r.classList.contains('lbl-item'))
@@ -787,6 +833,66 @@
         })
         setArrowOp(settings.arrowOpacity ?? 1)
 
+        // Look: opacity of earlier steps, idle icons, wave and halo, halo size, and label line spacing.
+        const BASE_LH = 1.3
+        const applyLineSpacing = (v) => svg.querySelectorAll('.edge__label').forEach((lbl) =>
+          lbl.querySelectorAll('.lbl-shift').forEach((g, i) => g.setAttribute('transform', `translate(0 ${(i * (v - BASE_LH) * o.labelSize).toFixed(2)})`)))
+        const lookInputs = [...section.querySelectorAll('[data-look]')]
+        const setLook = (k, raw) => {
+          const [, , min, max, , def, cssVar] = LOOK_FIELDS.find((f) => f[0] === k)
+          const n = Number(raw)
+          const v = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
+          const inp = lookInputs.find((x) => x.dataset.look === k)
+          inp.value = v
+          inp.nextElementSibling.textContent = k === 'lineSp' || k === 'haloScale' ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
+          if (cssVar) section.style.setProperty(cssVar, String(v))
+          else applyLineSpacing(v)
+          return v
+        }
+        lookInputs.forEach((inp) => {
+          setLook(inp.dataset.look, settings.look[inp.dataset.look])
+          inp.addEventListener('input', () => { settings.look[inp.dataset.look] = setLook(inp.dataset.look, inp.value); saveSettings() })
+        })
+        const haloToggle = section.querySelector('[data-act="halo"]')
+        const setHalo = (on) => { haloToggle.checked = on; section.dataset.halo = on ? 'on' : 'off' }
+        setHalo(settings.look.halo !== false)
+        haloToggle.addEventListener('change', () => { settings.look.halo = haloToggle.checked; saveSettings(); setHalo(haloToggle.checked) })
+        section.querySelector('[data-act="reset-look"]').addEventListener('click', () => {
+          settings.look = {}
+          saveSettings()
+          lookInputs.forEach((inp) => setLook(inp.dataset.look))
+          setHalo(true)
+        })
+
+        // Label text: in edit mode, click a label line to rewrite it. Overrides key on edge + row index,
+        // so bullet icons and their motions stay tied to the original item.
+        const rowText = (r) => [...r.querySelectorAll('text')].pop()
+        const labelRows = [...svg.querySelectorAll('.edge')].flatMap((g) =>
+          [...g.querySelectorAll('.lbl-row')].map((r, i) => ({ key: `${g.dataset.edge}:${i}`, r, original: rowText(r).textContent })))
+        const applyLabels = () => labelRows.forEach(({ key, r, original }) => { rowText(r).textContent = settings.labels[key] ?? original })
+        applyLabels()
+        const editBtn = section.querySelector('[data-act="edit"]')
+        editBtn.addEventListener('click', () => {
+          const on = section.dataset.edit !== 'on'
+          section.dataset.edit = on ? 'on' : 'off'
+          editBtn.textContent = on ? 'Done editing' : 'Edit text'
+          if (on) setPlaying(false)
+        })
+        svg.addEventListener('click', (e) => {
+          if (section.dataset.edit !== 'on') return
+          const hit = labelRows.find(({ r }) => r.contains(e.target))
+          if (!hit) return
+          const next = window.prompt('Label text', rowText(hit.r).textContent)
+          if (next === null) return
+          if (next.trim() === '' || next === hit.original) delete settings.labels[hit.key]
+          else settings.labels[hit.key] = next
+          saveSettings()
+          applyLabels()
+        })
+        section.querySelector('[data-act="reset-text"]').addEventListener('click', () => { settings.labels = {}; saveSettings(); applyLabels() })
+
+        revealSelect.addEventListener('change', () => { settings.reveal[step] = revealSelect.value; saveSettings(); show(step) })
+
         const playBtn = section.querySelector('[data-act="play"]')
         const setPlaying = (v) => { playing = v; playBtn.textContent = v ? 'Pause' : 'Play' }
         playBtn.addEventListener('click', () => { setPlaying(!playing); if (playing) started = performance.now() })
@@ -805,9 +911,10 @@
       const settings = (() => {
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
-          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: s.timings && typeof s.timings === 'object' ? s.timings : {}, arrows: s.arrows && typeof s.arrows === 'object' ? s.arrows : {} }
+          const obj = (v) => (v && typeof v === 'object' ? v : {})
+          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal) }
         } catch {
-          return { timings: {}, arrows: {} }
+          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {} }
         }
       })()
       const saveSettings = () => {
