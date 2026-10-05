@@ -721,8 +721,16 @@
               )
               // Blue only while growing; then it settles back to its ink colour.
               lines[e].animate([{ stroke: BLUE }, { stroke: lines[e].getAttribute('stroke') }], { duration: 600, delay: timing.draw, easing: 'ease-out', fill: 'backwards' })
-              lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) =>
-                head.animate([{ opacity: 0 }, { opacity: 0, offset: 0.85 }, { opacity: getComputedStyle(head).opacity }], { duration: timing.draw }))
+              // The head stays blue through the grow (and the line's settle), never ink mid-animation.
+              lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
+                const paint = head.getAttribute('fill') === 'none' ? 'stroke' : 'fill'
+                const op = getComputedStyle(head).opacity
+                head.animate(
+                  [{ opacity: 0, [paint]: BLUE }, { opacity: 0, [paint]: BLUE, offset: 0.85 }, { opacity: op, [paint]: BLUE }],
+                  { duration: timing.draw },
+                )
+                head.animate([{ [paint]: BLUE }, { [paint]: BLUE }], { duration: 600, delay: timing.draw })
+              })
             }
             if (feel === FEELS.pulse) f.dots = [0, 1, 2].map(() => el('circle', { r: 4.5, class: 'pulse' }))
             if (feel === FEELS.ripple) {
