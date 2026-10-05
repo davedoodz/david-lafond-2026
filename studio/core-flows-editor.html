@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Unwind — Core flows section editor</title>
+<style>
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+  :root { --ink: #171717; --stone: #6f6b68; --line: #dcd9d6; --blue: #4f9cf9; --font: 'Beatrice', system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; display: grid; grid-template-columns: 1fr 380px; height: 100vh; overflow: hidden; background: #e9e8e6; color: var(--ink); font-family: var(--font); letter-spacing: -0.01em; }
+  button, input, select, textarea { font: inherit; font-size: 12.5px; color: var(--ink); }
+  button { padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; cursor: pointer; }
+  button.on, button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* ---------- Stage: the real section at 1440×900 (or 390×844), scaled to fit ---------- */
+  .stage { position: relative; display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 20px; }
+  .bar b { margin-right: auto; font-weight: 500; }
+  .bar a { color: var(--stone); font-size: 12.5px; }
+  .viewport { position: relative; overflow: hidden; }
+  .page { position: absolute; left: 50%; top: 50%; translate: -50% -50%; scale: var(--fit, 0.6); border-radius: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 24px 60px rgb(0 0 0 / 0.1); overflow: clip; }
+
+  /* Section (mirrors src/pages/CaseStudyPage.css .case__flows). */
+  .sec { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: var(--v-align, center); align-items: center; gap: var(--head-gap); padding: var(--pad-top) 24px var(--pad-bottom); background: var(--bg); font-family: var(--font); }
+  .head { display: grid; justify-items: var(--head-align); text-align: var(--head-align); width: min(100%, var(--head-w)); }
+  .head[data-align='left'] { justify-items: start; text-align: left; }
+  .eyebrow { margin: 0 0 var(--eyebrow-gap); font-size: var(--eyebrow-size); line-height: 1.2; letter-spacing: 0.05em; text-transform: uppercase; color: var(--eyebrow-color); }
+  .title { margin: 0; font-size: var(--title-size); font-weight: 400; line-height: 1.15; letter-spacing: -0.02em; color: var(--title-color); text-wrap: balance; }
+  .body { margin: 14px 0 0; max-width: 560px; font-size: var(--body-size); line-height: 1.45; color: var(--stone); }
+  [contenteditable]:hover { outline: 1px dashed rgb(79 156 249 / 0.6); outline-offset: 4px; }
+  [contenteditable]:focus { outline: 1px solid var(--blue); outline-offset: 4px; }
+
+  .row { position: relative; display: flex; justify-content: center; align-items: var(--row-align); gap: var(--gap); margin: 0; padding: 0; list-style: none; translate: var(--row-x) var(--row-y); perspective: 1600px; }
+  .row > li { position: relative; touch-action: none; cursor: grab; transform-style: preserve-3d; }
+  .row > li.dragging { cursor: grabbing; }
+  .row > li.sel::after { content: ''; position: absolute; inset: -10px; border: 1px dashed var(--blue); border-radius: 18px; pointer-events: none; }
+  .row > li > .in { opacity: 1; translate: 0 0; transition: opacity var(--enter-fade) ease calc(var(--i) * var(--enter-stagger)), translate var(--enter-ms) cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * var(--enter-stagger)), scale var(--enter-ms) cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * var(--enter-stagger)), filter var(--enter-ms) ease calc(var(--i) * var(--enter-stagger)); }
+  .row.pre[data-enter='rise'] > li > .in { opacity: 0; translate: 0 calc(var(--page-h) * 0.6); }
+  .row.pre[data-enter='fade'] > li > .in { opacity: 0; }
+  .row.pre[data-enter='float'] > li > .in { opacity: 0; translate: 0 40px; }
+  .row.pre[data-enter='scale'] > li > .in { opacity: 0; scale: 0.9; }
+  .row.pre[data-enter='blur'] > li > .in { opacity: 0; filter: blur(14px); }
+  .row.pre > li > .in { transition: none; }
+
+  .phone { display: block; height: var(--phone-h); aspect-ratio: 530 / 1080; object-fit: contain; filter: drop-shadow(0 30px 40px rgb(23 23 23 / var(--shadow))); pointer-events: none; user-select: none; }
+  .label { margin: var(--label-gap) 0 0; font-size: var(--label-size); text-align: center; color: var(--label-color); letter-spacing: -0.03em; white-space: nowrap; }
+  .sec[data-labels='off'] .label { display: none; }
+
+  /* Lock screen with a live notification (same motion as the site, sized from the phone width). */
+  .lock { position: relative; overflow: hidden; aspect-ratio: 874 / 1780; height: var(--phone-h); border-radius: 13% / 6.4%; filter: drop-shadow(0 30px 40px rgb(23 23 23 / calc(var(--shadow) + 0.02))); font-size: calc(var(--phone-h) * 0.022); pointer-events: none; }
+  .lock img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .note { position: absolute; left: 6%; right: 6%; top: var(--note-top); padding: 1.04em 1.13em; border-radius: 1.74em; background: rgb(245 245 247 / 0.62); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); color: #111; line-height: 1.3; animation: lock-note 7s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+  .note__row { display: flex; align-items: center; gap: 0.6em; margin-bottom: 0.43em; }
+  .note__row img { position: static; width: 1.74em; height: 1.74em; border-radius: 0.43em; }
+  .note__app, .note__time { font-size: 0.913em; letter-spacing: 0.04em; color: rgb(17 17 17 / 0.6); }
+  .note__time { margin-left: auto; letter-spacing: 0; color: rgb(17 17 17 / 0.5); }
+  .note__title { margin: 0; font-weight: 600; }
+  .note__text { margin: 0.17em 0 0; }
+  .note__actions { display: grid; gap: 0.43em; max-height: 0; overflow: hidden; animation: lock-actions 7s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
+  .note__actions span { padding: 0.7em; border-radius: 1.04em; background: rgb(255 255 255 / 0.7); text-align: center; font-weight: 500; }
+  .note__actions span:first-child { color: #0a7bd6; }
+  .page[data-still] .note, .page[data-still] .note__actions { animation: none; }
+  .page[data-still] .note__actions { max-height: 8em; margin-top: 0.78em; }
+  @keyframes lock-note { 0%, 8% { opacity: 0; translate: 0 -2em; scale: 0.96; } 16%, 88% { opacity: 1; translate: 0 0; scale: 1; } 96%, 100% { opacity: 0; translate: 0 -1em; scale: 0.98; } }
+  @keyframes lock-actions { 0%, 38% { max-height: 0; margin-top: 0; } 48%, 88% { max-height: 8em; margin-top: 0.78em; } 100% { max-height: 0; margin-top: 0; } }
+
+  /* ---------- Panel ---------- */
+  .panel { overflow: auto; padding: 14px 16px 60px; border-left: 1px solid var(--line); background: #f7f6f5; }
+  .panel h2 { margin: 18px 0 8px; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--stone); }
+  .presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .presets button { display: grid; gap: 4px; justify-items: center; padding: 8px 4px 6px; border-radius: 10px; font-size: 11px; }
+  .presets svg { width: 64px; height: 30px; }
+  .presets button.on svg rect { fill: #fff; }
+  fieldset { margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  legend { padding: 0 6px; font-size: 12px; font-weight: 500; }
+  .c { display: grid; grid-template-columns: 112px 1fr 46px; gap: 8px; align-items: center; margin: 4px 0; font-size: 12px; color: var(--stone); }
+  .c.wide { grid-template-columns: 112px 1fr; }
+  .c input[type='range'] { width: 100%; accent-color: var(--ink); }
+  .c output { text-align: right; font-variant-numeric: tabular-nums; }
+  .c select, .c input[type='text'], .c textarea { width: 100%; padding: 5px 7px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+  .c textarea { resize: vertical; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .hint { margin: 6px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--stone); }
+  .toast { position: fixed; left: 50%; bottom: 20px; translate: -50% 0; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 12.5px; opacity: 0; transition: opacity 200ms; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bar">
+      <b>Core flows · section editor</b>
+      <button data-view="desktop">Desktop 1440</button>
+      <button data-view="mobile">Mobile 390</button>
+      <button id="replay">Replay entrance</button>
+      <button id="still">Pause notification</button>
+      <a href="/work/unwind" target="_blank" rel="noreferrer">Live section ↗</a>
+    </div>
+    <div class="viewport" id="viewport">
+      <div class="page" id="page">
+        <section class="sec" id="sec">
+          <div class="head" id="head">
+            <p class="eyebrow" id="eyebrow" contenteditable="plaintext-only" spellcheck="false"></p>
+            <h2 class="title" id="title" contenteditable="plaintext-only" spellcheck="false"></h2>
+            <p class="body" id="body" contenteditable="plaintext-only" spellcheck="false"></p>
+          </div>
+          <ol class="row" id="row"></ol>
+        </section>
+      </div>
+    </div>
+  </div>
+  <aside class="panel" id="panel"></aside>
+  <div class="toast" id="toast"></div>
+
+<script type="module">
+const KEY = 'core-flows-editor-v1'
+const SOURCES = {
+  notification: 'Notification (lock screen)',
+  voice: 'Voice · Freeform',
+  entries: 'Entries',
+  dynamic: 'Dynamic mode',
+  'guided-woop': 'Guided · WOOP',
+  'guided-models': 'Guided · models',
+}
+const VIEWS = { desktop: { w: 1440, h: 900 }, mobile: { w: 390, h: 844 } }
+
+/**
+ * Position presets. Each returns per-phone transforms for amount `a` (px, the "Preset amount" dial).
+ * x/y px, rot/rotY deg, scale, z (stacking). Phones are listed left → right.
+ */
+const P = (x, y, rot = [0, 0, 0], rotY = [0, 0, 0], scale = [1, 1, 1], z = [1, 1, 1]) => [0, 1, 2].map((i) => ({ x: x[i], y: y[i], rot: rot[i], rotY: rotY[i], scale: scale[i], z: z[i] }))
+const PRESETS = {
+  staggered: { name: 'Staggered', make: (a) => P([0, 0, 0], [-a, 0, a]) },
+  rising: { name: 'Rising', make: (a) => P([0, 0, 0], [a, 0, -a]) },
+  level: { name: 'Level row', make: () => P([0, 0, 0], [0, 0, 0]) },
+  arch: { name: 'Arch', make: (a) => P([0, 0, 0], [a * 0.6, -a * 0.6, a * 0.6]) },
+  valley: { name: 'Valley', make: (a) => P([0, 0, 0], [-a * 0.6, a * 0.6, -a * 0.6]) },
+  spotlight: { name: 'Spotlight', make: (a) => P([a * 0.5, 0, -a * 0.5], [a * 0.4, 0, a * 0.4], undefined, undefined, [0.86, 1.1, 0.86], [1, 3, 1]) },
+  fan: { name: 'Fan', make: (a) => P([a * 0.5, 0, -a * 0.5], [a * 0.5, 0, a * 0.5], [-7, 0, 7], undefined, [0.96, 1, 0.96], [1, 2, 1]) },
+  stack: { name: 'Overlap', make: (a) => P([a * 2.6, 0, -a * 2.6], [a * 0.4, 0, a * 0.4], undefined, undefined, [0.88, 1, 0.88], [1, 3, 1]) },
+  cascade: { name: 'Cascade', make: (a) => P([a * 1.8, 0, -a * 1.8], [-a, 0, a], undefined, undefined, [1, 1, 1], [1, 2, 3]) },
+  perspective: { name: 'Perspective', make: (a) => P([a * 0.6, 0, -a * 0.6], [0, 0, 0], undefined, [22, 0, -22], [0.94, 1, 0.94], [1, 2, 1]) },
+  tilt: { name: 'Tilted', make: (a) => P([0, 0, 0], [-a * 0.5, 0, a * 0.5], [-4, -4, -4], [0, 0, 0]) },
+  scatter: { name: 'Scatter', make: (a) => P([a * 0.3, 0, -a * 0.2], [a * 0.9, -a * 0.5, a * 0.3], [-5, 2, 6], undefined, [0.95, 1.02, 0.97], [1, 2, 1]) },
+}
+
+const DEFAULT = {
+  view: 'desktop',
+  section: {
+    eyebrow: 'Core flows', title: 'Notice. Reflect. Look back.', body: 'Edit this optional intro line, or hide it.',
+    showEyebrow: true, showTitle: true, showBody: false, showLabels: true,
+    headAlign: 'center', headWidth: 640, vAlign: 'center',
+    bg: '#f5f5f5', titleColor: '#0b0a09', eyebrowColor: '#a6a09c', labelColor: '#6f6b68',
+    eyebrowSize: 14, eyebrowGap: 16, titleSize: 31.2, bodySize: 16,
+    padTop: 96, padBottom: 64, headGap: 96,
+    phoneH: 522, gap: 50, rowAlign: 'flex-start', rowX: 0, rowY: 0,
+    labelSize: 14, labelGap: 18, shadow: 0.12,
+    parallax: 70, scroll: 0, mobileScale: 0.45,
+    enter: 'rise', enterMs: 1100, enterFade: 700, enterStagger: 140,
+  },
+  layout: { preset: 'staggered', amount: 56 },
+  phones: [
+    { src: 'notification', label: 'A gentle nudge', show: true, opacity: 1 },
+    { src: 'voice', label: 'Say what happened', show: true, opacity: 1 },
+    { src: 'entries', label: 'Your entries', show: true, opacity: 1 },
+  ],
+  note: { app: 'UNWIND', time: 'now', title: 'Something changed.', body: 'Your heart rate rose while you were still. How are you feeling?', primary: 'Talk for 30 seconds', secondary: 'Not now', top: 36 },
+}
+const clone = (v) => JSON.parse(JSON.stringify(v))
+const applyPreset = (s) => {
+  if (s.layout.preset === 'custom') return
+  PRESETS[s.layout.preset].make(s.layout.amount).forEach((t, i) => Object.assign(s.phones[i], t))
+}
+function load() {
+  const base = clone(DEFAULT)
+  applyPreset(base)
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY))
+    if (saved) return { ...base, ...saved, section: { ...base.section, ...saved.section }, layout: { ...base.layout, ...saved.layout }, note: { ...base.note, ...saved.note }, phones: base.phones.map((p, i) => ({ ...p, ...saved.phones?.[i] })) }
+  } catch {}
+  return base
+}
+let S = load()
+let selected = 1
+const save = () => localStorage.setItem(KEY, JSON.stringify(S))
+const $ = (id) => document.getElementById(id)
+const page = $('page'), sec = $('sec'), row = $('row')
+
+/* ---------- Stage ---------- */
+function phoneEl(p) {
+  if (p.src === 'notification') {
+    const n = S.note
+    const el = document.createElement('div')
+    el.className = 'lock'
+    el.innerHTML = `<img src="/work/unwind/flows/lockscreen.webp" alt="" draggable="false" />
+      <div class="note"><div class="note__row"><img src="/work/unwind/flows/unwind-icon.svg" alt="" /><span class="note__app"></span><span class="note__time"></span></div>
+      <p class="note__title"></p><p class="note__text"></p><div class="note__actions"><span></span><span></span></div></div>`
+    el.querySelector('.note__app').textContent = n.app
+    el.querySelector('.note__time').textContent = n.time
+    el.querySelector('.note__title').textContent = n.title
+    el.querySelector('.note__text').textContent = n.body
+    const [a, b] = el.querySelectorAll('.note__actions span'); a.textContent = n.primary; b.textContent = n.secondary
+    return el
+  }
+  const v = document.createElement('video')
+  Object.assign(v, { className: 'phone', src: `/work/unwind/flows/${p.src}.mp4`, poster: `/work/unwind/flows/${p.src}.webp`, muted: true, loop: true, playsInline: true, autoplay: true })
+  return v
+}
+let built = ''
+function buildRow() {
+  const sig = JSON.stringify([S.phones.map((p) => [p.src, p.show]), S.note])
+  if (sig === built) return
+  built = sig
+  row.replaceChildren(...S.phones.map((p, i) => {
+    const li = document.createElement('li')
+    li.dataset.i = i
+    const inner = document.createElement('div'); inner.className = 'in'
+    const label = document.createElement('p'); label.className = 'label'; label.contentEditable = 'plaintext-only'; label.spellcheck = false
+    label.addEventListener('input', () => { S.phones[i].label = label.textContent; save(); refreshPanel() })
+    label.addEventListener('pointerdown', (e) => e.stopPropagation())
+    inner.append(phoneEl(p), label)
+    li.append(inner)
+    li.addEventListener('pointerdown', (e) => startDrag(e, i))
+    return li
+  }))
+}
+function render() {
+  const V = VIEWS[S.view], s = S.section, mobile = S.view === 'mobile'
+  page.style.width = `${V.w}px`; page.style.height = `${V.h}px`
+  fit()
+  buildRow()
+  const edge = mobile ? 39 : 44
+  const gap = mobile ? Math.min(s.gap, 8) : s.gap
+  const phoneH = mobile ? ((V.w - 2 * edge - 2 * gap) / 3) * (1080 / 530) : s.phoneH
+  const k = mobile ? s.mobileScale : 1
+  const vars = {
+    '--bg': s.bg, '--title-color': s.titleColor, '--eyebrow-color': s.eyebrowColor, '--label-color': s.labelColor,
+    '--eyebrow-size': `${mobile ? 12 : s.eyebrowSize}px`, '--eyebrow-gap': `${s.eyebrowGap}px`,
+    '--title-size': `${mobile ? s.titleSize * 0.6 : s.titleSize}px`, '--body-size': `${mobile ? 13 : s.bodySize}px`,
+    '--pad-top': `${mobile ? 84 : s.padTop}px`, '--pad-bottom': `${s.padBottom}px`, '--head-gap': `${mobile ? Math.round(s.headGap * 0.6) : s.headGap}px`,
+    '--head-align': s.headAlign, '--head-w': `${s.headWidth}px`, '--v-align': s.vAlign,
+    '--phone-h': `${phoneH}px`, '--gap': `${gap}px`, '--row-align': s.rowAlign, '--row-x': `${s.rowX * k}px`, '--row-y': `${s.rowY * k}px`,
+    '--label-size': `${mobile ? 11 : s.labelSize}px`, '--label-gap': `${mobile ? 10 : s.labelGap}px`, '--shadow': s.shadow,
+    '--enter-ms': `${s.enterMs}ms`, '--enter-fade': `${s.enterFade}ms`, '--enter-stagger': `${s.enterStagger}ms`, '--page-h': `${V.h}px`,
+    '--note-top': `${S.note.top}%`,
+  }
+  for (const [n, v] of Object.entries(vars)) sec.style.setProperty(n, v)
+  $('head').dataset.align = s.headAlign
+  sec.dataset.labels = s.showLabels ? 'on' : 'off'
+  row.dataset.enter = s.enter
+  for (const [id, show] of [['eyebrow', s.showEyebrow], ['title', s.showTitle], ['body', s.showBody]]) {
+    const el = $(id)
+    el.hidden = !show
+    if (document.activeElement !== el && el.textContent !== s[id]) el.textContent = s[id]
+  }
+  $('head').hidden = !s.showEyebrow && !s.showTitle && !s.showBody
+  ;[...row.children].forEach((li, i) => {
+    const p = S.phones[i]
+    li.hidden = !p.show
+    li.style.setProperty('--i', i)
+    li.classList.toggle('sel', i === selected)
+    const flow = s.scroll * s.parallax * (mobile ? 0.5 : 1) * (1 + i * 0.45)
+    li.style.transform = `translate(${p.x * k}px, ${p.y * k + flow}px) rotate(${p.rot}deg) rotateY(${p.rotY}deg) scale(${p.scale})`
+    li.style.zIndex = p.z
+    li.style.opacity = p.opacity
+    const label = li.querySelector('.label')
+    if (document.activeElement !== label && label.textContent !== p.label) label.textContent = p.label
+  })
+  document.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === S.view))
+}
+function fit() {
+  const V = VIEWS[S.view], vp = $('viewport')
+  page.style.setProperty('--fit', Math.min((vp.clientWidth - 40) / V.w, (vp.clientHeight - 40) / V.h).toFixed(4))
+}
+new ResizeObserver(() => fit()).observe($('viewport'))
+for (const id of ['eyebrow', 'title', 'body']) $(id).addEventListener('input', (e) => { S.section[id] = e.target.textContent; save(); refreshPanel() })
+
+/* Drag a phone on the stage: moves its X/Y and switches the layout to custom. */
+function startDrag(e, i) {
+  selected = i
+  const li = e.currentTarget, sx = e.clientX, sy = e.clientY, p = S.phones[i], x0 = p.x, y0 = p.y
+  const scale = parseFloat(page.style.getPropertyValue('--fit')) * (S.view === 'mobile' ? S.section.mobileScale : 1)
+  li.setPointerCapture(e.pointerId); li.classList.add('dragging')
+  let moved = false
+  const move = (ev) => {
+    const dx = (ev.clientX - sx) / scale, dy = (ev.clientY - sy) / scale
+    if (!moved && Math.hypot(dx, dy) < 3) return
+    moved = true
+    p.x = Math.round(x0 + dx); p.y = Math.round(y0 + dy)
+    S.layout.preset = 'custom'
+    render(); refreshPanel()
+  }
+  const up = () => { li.classList.remove('dragging'); li.removeEventListener('pointermove', move); li.removeEventListener('pointerup', up); save(); render(); buildPanel() }
+  li.addEventListener('pointermove', move); li.addEventListener('pointerup', up)
+  render(); buildPanel()
+}
+
+function replay() {
+  row.classList.add('pre')
+  void row.offsetWidth
+  requestAnimationFrame(() => row.classList.remove('pre'))
+}
+
+/* ---------- Panel (every control reads and writes S; refreshPanel() syncs values) ---------- */
+const panel = $('panel')
+let refreshers = []
+const refreshPanel = () => refreshers.forEach((f) => f())
+function changed(structural) { save(); render(); structural ? buildPanel() : refreshPanel() }
+function ctl(parent, label, input, out) {
+  const l = document.createElement('label'); l.className = out ? 'c' : 'c wide'
+  const s = document.createElement('span'); s.textContent = label
+  l.append(s, input); if (out) l.append(out)
+  parent.append(l)
+}
+function range(parent, label, obj, key, min, max, step, { onSet, custom } = {}) {
+  const i = Object.assign(document.createElement('input'), { type: 'range', min, max, step })
+  const o = document.createElement('output')
+  const sync = () => { i.value = obj()[key]; o.textContent = +(+obj()[key]).toFixed(2) }
+  i.oninput = () => { obj()[key] = +i.value; if (custom) S.layout.preset = 'custom'; onSet?.(); o.textContent = i.value; save(); render(); refreshPanel() }
+  refreshers.push(sync); sync(); ctl(parent, label, i, o)
+}
+function select(parent, label, obj, key, options, onSet) {
+  const sel = document.createElement('select')
+  for (const [v, t] of Object.entries(options)) sel.append(new Option(t, v))
+  refreshers.push(() => (sel.value = obj()[key])); sel.value = obj()[key]
+  sel.onchange = () => { obj()[key] = sel.value; onSet?.(); changed(true) }
+  ctl(parent, label, sel)
+}
+function text(parent, label, obj, key, rows = 1) {
+  const t = document.createElement('textarea'); t.rows = rows
+  refreshers.push(() => { if (document.activeElement !== t) t.value = obj()[key] }); t.value = obj()[key]
+  t.oninput = () => { obj()[key] = t.value; save(); built = ''; render() }
+  ctl(parent, label, t)
+}
+function check(parent, label, obj, key) {
+  const c = Object.assign(document.createElement('input'), { type: 'checkbox' })
+  refreshers.push(() => (c.checked = obj()[key])); c.checked = obj()[key]
+  c.onchange = () => { obj()[key] = c.checked; changed(false) }
+  const l = document.createElement('label'); l.className = 'c wide'; const s = document.createElement('span'); s.textContent = label
+  const w = document.createElement('span'); w.append(c); l.append(s, w); parent.append(l)
+}
+function color(parent, label, obj, key) {
+  const c = Object.assign(document.createElement('input'), { type: 'color' })
+  refreshers.push(() => (c.value = obj()[key])); c.value = obj()[key]
+  c.oninput = () => { obj()[key] = c.value; save(); render() }
+  ctl(parent, label, c)
+}
+const group = (title) => { const f = document.createElement('fieldset'); f.innerHTML = `<legend>${title}</legend>`; panel.append(f); return f }
+const h2 = (t) => { const h = document.createElement('h2'); h.textContent = t; panel.append(h) }
+function thumb(preset) {
+  const t = preset === 'custom' ? S.phones : PRESETS[preset].make(30)
+  const rects = t.map((p, i) => {
+    const w = 14 * p.scale, h = 26 * p.scale, cx = 14 + i * 18 + p.x * 0.18, cy = 15 + p.y * 0.18
+    return { z: p.z, svg: `<rect x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" rx="3" fill="${i === 1 ? '#171717' : '#8a8683'}" stroke="#fff" transform="rotate(${p.rot} ${cx} ${cy}) translate(${cx} 0) scale(${Math.cos((p.rotY * Math.PI) / 180)} 1) translate(${-cx} 0)" />` }
+  })
+  return `<svg viewBox="0 0 64 30">${rects.sort((a, b) => a.z - b.z).map((r) => r.svg).join('')}</svg>`
+}
+
+function buildPanel() {
+  refreshers = []
+  panel.replaceChildren()
+  const sec_ = () => S.section, lay = () => S.layout, note = () => S.note
+
+  h2('Position preset')
+  const grid = document.createElement('div'); grid.className = 'presets'
+  for (const key of [...Object.keys(PRESETS), 'custom']) {
+    const b = document.createElement('button')
+    b.className = S.layout.preset === key ? 'on' : ''
+    b.innerHTML = `${thumb(key)}<span>${key === 'custom' ? 'Custom' : PRESETS[key].name}</span>`
+    b.onclick = () => { S.layout.preset = key; applyPreset(S); changed(true); replay() }
+    grid.append(b)
+  }
+  panel.append(grid)
+  const lg = group('Layout')
+  range(lg, 'Preset amount', lay, 'amount', 0, 200, 1, { onSet: () => applyPreset(S) })
+  range(lg, 'Phone height', sec_, 'phoneH', 300, 720, 1)
+  range(lg, 'Gap between', sec_, 'gap', -120, 200, 1)
+  range(lg, 'Row X', sec_, 'rowX', -400, 400, 1)
+  range(lg, 'Row Y', sec_, 'rowY', -300, 300, 1)
+  select(lg, 'Row align', sec_, 'rowAlign', { 'flex-start': 'Top', center: 'Centre', 'flex-end': 'Bottom' })
+  range(lg, 'Mobile offsets ×', sec_, 'mobileScale', 0, 1, 0.01)
+  const hint = document.createElement('p'); hint.className = 'hint'
+  hint.textContent = 'Drag a phone on the stage to move it. Click a phone to select it. Click any text on the stage to edit it.'
+  lg.append(hint)
+
+  h2('Phones')
+  const tabs = document.createElement('div'); tabs.className = 'tabs'
+  S.phones.forEach((p, i) => { const b = document.createElement('button'); b.textContent = `${['Left', 'Middle', 'Right'][i]}`; b.className = i === selected ? 'on' : ''; b.onclick = () => { selected = i; render(); buildPanel() }; tabs.append(b) })
+  panel.append(tabs)
+  const pg = group(`${['Left', 'Middle', 'Right'][selected]} phone`)
+  const ph = () => S.phones[selected]
+  check(pg, 'Show', ph, 'show')
+  select(pg, 'Prototype', ph, 'src', SOURCES)
+  text(pg, 'Label', ph, 'label')
+  range(pg, 'X', ph, 'x', -500, 500, 1, { custom: true })
+  range(pg, 'Y', ph, 'y', -400, 400, 1, { custom: true })
+  range(pg, 'Scale', ph, 'scale', 0.4, 1.6, 0.01, { custom: true })
+  range(pg, 'Rotate', ph, 'rot', -30, 30, 0.5, { custom: true })
+  range(pg, 'Turn (3D)', ph, 'rotY', -60, 60, 1, { custom: true })
+  range(pg, 'Stack order', ph, 'z', 0, 5, 1, { custom: true })
+  range(pg, 'Opacity', ph, 'opacity', 0, 1, 0.01)
+  const swap = document.createElement('div'); swap.className = 'tabs'
+  for (const [label, d] of [['← Move left', -1], ['Move right →', 1]]) {
+    const b = document.createElement('button'); b.textContent = label
+    b.onclick = () => { const j = selected + d; if (j < 0 || j > 2) return; const keep = ['src', 'label', 'show', 'opacity']; for (const k of keep) [S.phones[selected][k], S.phones[j][k]] = [S.phones[j][k], S.phones[selected][k]]; selected = j; changed(true) }
+    swap.append(b)
+  }
+  pg.append(swap)
+  if (S.phones.some((p) => p.src === 'notification' && p.show)) {
+    const ng = group('Notification')
+    text(ng, 'App', note, 'app'); text(ng, 'Time', note, 'time'); text(ng, 'Title', note, 'title'); text(ng, 'Body', note, 'body', 2)
+    text(ng, 'Primary', note, 'primary'); text(ng, 'Secondary', note, 'secondary')
+    range(ng, 'Top (%)', note, 'top', 10, 70, 0.5)
+  }
+
+  h2('Heading')
+  const hg = group('Text')
+  check(hg, 'Eyebrow', sec_, 'showEyebrow'); text(hg, 'Eyebrow text', sec_, 'eyebrow')
+  check(hg, 'Title', sec_, 'showTitle'); text(hg, 'Title text', sec_, 'title', 2)
+  check(hg, 'Intro line', sec_, 'showBody'); text(hg, 'Intro text', sec_, 'body', 2)
+  check(hg, 'Phone labels', sec_, 'showLabels')
+  const tg = group('Type and spacing')
+  select(tg, 'Align', sec_, 'headAlign', { center: 'Centre', left: 'Left' })
+  range(tg, 'Max width', sec_, 'headWidth', 280, 1100, 10)
+  range(tg, 'Eyebrow size', sec_, 'eyebrowSize', 10, 20, 0.5)
+  range(tg, 'Eyebrow → title', sec_, 'eyebrowGap', 0, 48, 1)
+  range(tg, 'Title size', sec_, 'titleSize', 18, 64, 0.2)
+  range(tg, 'Intro size', sec_, 'bodySize', 12, 22, 0.5)
+  range(tg, 'Heading → phones', sec_, 'headGap', 0, 260, 1)
+  range(tg, 'Label size', sec_, 'labelSize', 10, 20, 0.5)
+  range(tg, 'Phone → label', sec_, 'labelGap', 0, 48, 1)
+  range(tg, 'Top padding', sec_, 'padTop', 0, 240, 1)
+  range(tg, 'Bottom padding', sec_, 'padBottom', 0, 240, 1)
+  select(tg, 'Vertical', sec_, 'vAlign', { center: 'Centre', 'flex-start': 'Top', 'flex-end': 'Bottom', 'space-between': 'Spread' })
+
+  h2('Look')
+  const cg = group('Colour')
+  color(cg, 'Background', sec_, 'bg'); color(cg, 'Title', sec_, 'titleColor'); color(cg, 'Eyebrow', sec_, 'eyebrowColor'); color(cg, 'Labels', sec_, 'labelColor')
+  range(cg, 'Phone shadow', sec_, 'shadow', 0, 0.4, 0.01)
+
+  h2('Motion')
+  const mg = group('Entrance and scroll')
+  select(mg, 'Entrance', sec_, 'enter', { rise: 'Rise from below', float: 'Float up', fade: 'Fade', scale: 'Scale in', blur: 'Blur in', none: 'None' }, () => setTimeout(replay))
+  range(mg, 'Move time (ms)', sec_, 'enterMs', 0, 2400, 10)
+  range(mg, 'Fade time (ms)', sec_, 'enterFade', 0, 2000, 10)
+  range(mg, 'Stagger (ms)', sec_, 'enterStagger', 0, 600, 10)
+  range(mg, 'Parallax (px)', sec_, 'parallax', 0, 200, 1)
+  range(mg, 'Scroll preview', sec_, 'scroll', -1, 1, 0.01)
+
+  h2('Settings')
+  const sg = document.createElement('div'); sg.className = 'tabs'
+  const btn = (t, fn, cls = '') => { const b = document.createElement('button'); b.textContent = t; b.className = cls; b.onclick = fn; sg.append(b) }
+  btn('Copy JSON', async () => { await navigator.clipboard.writeText(JSON.stringify(S, null, 2)); toast('Settings copied') }, 'primary')
+  btn('Import JSON', () => { const raw = prompt('Paste settings JSON'); if (!raw) return; try { localStorage.setItem(KEY, raw); S = load(); built = ''; changed(true); toast('Imported') } catch { toast('That JSON could not be read') } })
+  btn('Reset all', () => { if (!confirm('Reset every setting to the live section?')) return; localStorage.removeItem(KEY); S = load(); built = ''; selected = 1; changed(true); replay() })
+  panel.append(sg)
+  const note2 = document.createElement('p'); note2.className = 'hint'
+  note2.textContent = 'Changes save in this browser automatically. Copy JSON when you want them applied to the live case study.'
+  panel.append(note2)
+}
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1600) }
+
+document.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { S.view = b.dataset.view; save(); render(); replay() }))
+$('replay').onclick = replay
+$('still').onclick = (e) => { const on = page.toggleAttribute('data-still'); e.target.classList.toggle('on', on) }
+// Exposed for scripted checks.
+window.editor = { get state() { return S }, set(path, v) { const ks = path.split('.'); let o = S; while (ks.length > 1) o = o[ks.shift()]; o[ks[0]] = v; if (path.startsWith('layout')) applyPreset(S); changed(true) }, preset(k) { S.layout.preset = k; applyPreset(S); changed(true) } }
+
+render()
+buildPanel()
+replay()
+await document.fonts.ready
+document.documentElement.dataset.ready = ''
+</script>
+</body>
+</html>
