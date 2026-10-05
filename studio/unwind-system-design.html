@@ -171,35 +171,6 @@
       .story .lbl-item.is-spot text { fill: var(--ink-900); }
       /* Once an icon has had the spotlight it stays blue (.is-lit); the ink text still moves on. */
       .story .lbl-item:is(.is-spot, .is-lit) .lbl-icon { stroke: var(--unwind); }
-      /* App snippets: small pieces of the real Unwind UI beside the diagram, one per step. */
-      .story .snip-slot { overflow: visible; }
-      .story .snip { --s: calc(var(--snip-scale, 1) * var(--slot-scale, 1)); box-sizing: border-box; width: 300px; display: grid; gap: 10px; opacity: 0; transform: translateY(12px) scale(var(--s)); transition: opacity 0.6s ease, transform 0.7s cubic-bezier(.2,.7,.2,1); transition-delay: 0s; font-family: var(--font); letter-spacing: -0.01em; color: var(--ink-900); }
-      .story .snip-slot[data-side='left'] .snip { transform-origin: 0 0; }
-      .story .snip-slot[data-side='right'] .snip { transform-origin: 100% 0; }
-      .story .snip-slot.is-on .snip { opacity: 1; transform: translateY(0) scale(var(--s)); transition-delay: 0.5s; }
-      .story .snip-slot.is-past .snip { opacity: var(--past-op, 0.25); transform: translateY(0) scale(var(--s)); }
-      .story[data-snips='off'] .snip-slot { display: none; }
-      .story .snip__cap { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8f94; }
-      .story .snip__card { background: #fff; border-radius: 24px; padding: 20px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px rgb(23 43 77 / 0.08); }
-      .story .snip svg.lucide { display: inline-block; margin: 0; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-      .story .snip__watch { justify-self: start; width: 220px; height: 186px; border-radius: 48px; background: #000; border: 6px solid #e9e4dc; box-shadow: 0 12px 32px rgb(23 43 77 / 0.12); display: grid; place-items: center; align-content: center; gap: 6px; color: #fff; }
-      .story .snip-slot[data-side='right'] .snip__watch { justify-self: end; }
-      .story .snip__watch b { font-size: 50px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
-      .story .snip__watch span { font-size: 13px; color: #cfe9ff; display: flex; align-items: center; gap: 6px; }
-      .story .snip__watch span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--unwind); }
-      .story .snip__watch img { width: 40px; height: 40px; margin-top: 6px; }
-      .story .snip__sync { display: grid; justify-items: center; text-align: center; gap: 6px; }
-      .story .snip__sync img { width: 64px; height: 64px; }
-      .story .snip__sync h4, .story .snip__insight h4 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
-      .story .snip__sync p, .story .snip__insight p { margin: 0; font-size: 13px; line-height: 1.4; color: #6b7076; }
-      .story .snip__sources { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--unwind); font-size: 13px; }
-      .story .snip__insight { display: grid; gap: 8px; }
-      .story .snip__head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #6b7076; }
-      .story .snip__head img { width: 30px; height: 30px; }
-      .story .snip__quote { display: grid; gap: 4px; border-radius: 14px; background: #f3f8fc; padding: 10px 12px; font-size: 12px; color: #6b7076; }
-      .story .snip__quote span { display: flex; align-items: center; gap: 6px; color: var(--unwind); }
-      .story .snip__quote svg.lucide { width: 14px; height: 14px; }
-      .story .snip__quote em { font-style: normal; color: var(--ink-900); font-size: 13px; }
     </style>
   </head>
   <body>
@@ -224,7 +195,6 @@
       import { __iconData as scanHeart } from '/node_modules/lucide-react/dist/esm/icons/scan-heart.mjs'
       import { __iconData as timer } from '/node_modules/lucide-react/dist/esm/icons/timer.mjs'
       import { __iconData as lightbulb } from '/node_modules/lucide-react/dist/esm/icons/lightbulb.mjs'
-      import { __iconData as heart } from '/node_modules/lucide-react/dist/esm/icons/heart.mjs'
       const POINT_ICONS = {
         'physiological signals': activity, 'movement + activity': footprints, 'gentle nudge': bell,
         'voice reflection': mic, patterns: chart, 'action plans': target,
@@ -325,7 +295,7 @@
         // Narrow enough that labels stay ≈10px on a 390px phone.
         diamond: {
           name: 'Symmetric · diamond (phone)',
-          W: 760, H: 1300, type: { labelSize: 20, titleSize: 17 },
+          W: 760, H: 1240, type: { labelSize: 20, titleSize: 17 },
           nodes: { user: [380, 120], watch: [130, 440], phone: [630, 440], ai: [380, 780], experts: [380, 1100] },
           edges: [
             { points: [[302, 104], [114, 104], [114, 362]], label: { x: 36, y: 56, anchor: 'start' } },
@@ -681,7 +651,6 @@
         ['momoY', 'Momo y', -80, 80, 1, 0, '--momo-y'],
         ['momoScale', 'Momo size', 0.4, 2, 0.05, 1, '--momo-scale'],
         ['tipScale', 'Arrow tip', 0.5, 2.5, 0.05, 1],
-        ['snipScale', 'Snippet size', 0.5, 1.6, 0.05, 1, '--snip-scale'],
       ]
       // How label rows enter, chosen per step.
       const REVEALS = {
@@ -721,7 +690,6 @@
             ${LOOK_FIELDS.map(([k, name, min, max, stepv]) => `<label>${name} <input type="range" data-look="${k}" min="${min}" max="${max}" step="${stepv}" /><output></output></label>`).join('')}
             <label><input type="checkbox" data-act="halo" /> Show halo</label>
             <label><input type="checkbox" data-act="waves-all" /> Braided waves</label>
-            <label><input type="checkbox" data-act="snips" /> App snippets</label>
             <button type="button" data-act="reset-look">Reset look</button>
           </div>
           <div class="story__timing" aria-label="Text">
@@ -741,36 +709,6 @@
         root.append(section)
 
         const svg = section.querySelector('svg')
-        // App snippets: real Unwind UI (copy and pieces from the watch nudge, sync and insights screens)
-        // in the diagram's empty corners. Each step names what each side shows; a side keeps its last
-        // snippet, dimmed, until a later step replaces it.
-        const lucideSvg = (icon) => `<svg class="lucide" viewBox="0 0 24 24">${icon.node.map(([tag, a]) => `<${tag} ${Object.entries(a).filter(([k]) => k !== 'key').map(([k, v]) => `${k}="${v}"`).join(' ')}/>`).join('')}</svg>`
-        const SNIPS = {
-          nudge: { cap: 'On your wrist · a gentle nudge', html: `<div class="snip__watch"><b>6:12</b><span>HRV 38 ms · 104 bpm</span><img src="${assets.momoStill}" alt="" /></div>` },
-          sync: { cap: 'Momo · connecting the dots', html: `<div class="snip__card snip__sync"><img src="${assets.momoStill}" alt="" /><h4>Connecting the dots.</h4><p>Body signals from your Watch.<br />Meaning from your voice.</p><div class="snip__sources">${lucideSvg(heart)}<span>+</span>${lucideSvg(mic)}</div></div>` },
-          insight: { cap: 'On your phone · your patterns', html: `<div class="snip__card snip__insight"><div class="snip__head"><span>Your patterns · Week</span><img src="${assets.momoStill}" alt="" /></div><h4>More room to recover</h4><p>Higher body stress often coincided with meeting-heavy days in your journal.</p><div class="snip__quote"><span>${lucideSvg(mic)} 12 voice reflections</span><em>“I noticed I carry meetings with me afterward.”</em></div></div>` },
-        }
-        // Per step: which snippet each side shows. Slots sit in each layout's empty corners (viewBox units).
-        const STEP_SNIPS = [{ left: 'nudge' }, { left: 'sync' }, { right: 'insight' }, { left: 'nudge', right: 'insight' }]
-        const SNIP_SLOTS = {
-          userTop: { left: [40, 690], right: [900, 690] },
-          aiAbove: { left: [40, 40], right: [900, 40] },
-          // Portrait: the corners beside the experts are narrow, so snippets start smaller there.
-          diamond: { left: [20, 1000], right: [440, 1000], scale: 0.72 },
-        }[LAYOUT_KEY]
-        svg.insertAdjacentHTML('beforeend', `<g class="snips">${Object.entries(SNIPS).flatMap(([key, sn]) => ['left', 'right'].filter((side) => STEP_SNIPS.some((m) => m[side] === key)).map((side) =>
-          `<foreignObject class="snip-slot" data-snip="${key}" data-side="${side}" x="${SNIP_SLOTS[side][0]}" y="${SNIP_SLOTS[side][1]}" width="300" height="340" style="--slot-scale: ${SNIP_SLOTS.scale ?? 1}"><div xmlns="http://www.w3.org/1999/xhtml" class="snip"><div class="snip__cap">${sn.cap}</div>${sn.html}</div></foreignObject>`)).join('')}</g>`)
-        const updateSnips = (i) => {
-          const now = STEP_SNIPS[i]
-          // Each side shows its newest snippet at or before this step; it is current only if this step set it.
-          const latest = {}
-          STEP_SNIPS.slice(0, i + 1).forEach((m) => Object.assign(latest, m))
-          svg.querySelectorAll('.snip-slot').forEach((fo) => {
-            const { snip, side } = fo.dataset
-            fo.classList.toggle('is-on', now[side] === snip)
-            fo.classList.toggle('is-past', now[side] !== snip && latest[side] === snip)
-          })
-        }
         const layer = svg.querySelector('.story-flow')
         const revealSelect = section.querySelector('[data-act="reveal"]')
         const waveToggle = section.querySelector('[data-act="wave"]')
@@ -894,7 +832,6 @@
             g.classList.toggle('is-past', !on && past.has(+g.dataset.edge))
           })
           svg.querySelectorAll('.node').forEach((g) => g.classList.toggle('is-on', s.nodes.includes(g.dataset.node)))
-          updateSnips(step)
           layer.innerHTML = ''
           lines.forEach((line) => {
             line.style.opacity = ''
@@ -1153,7 +1090,7 @@
           const v = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
           const inp = lookInputs.find((x) => x.dataset.look === k)
           inp.value = v
-          inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale', 'tipScale', 'snipScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
+          inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale', 'tipScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
           if (cssVar) section.style.setProperty(cssVar, String(v))
           else if (k === 'lineSp') { applyLineSpacing(v); centerLabels() }
           return v
@@ -1235,17 +1172,12 @@
         const wavesAllToggle = section.querySelector('[data-act="waves-all"]')
         wavesAllToggle.checked = settings.look.waves !== false
         wavesAllToggle.addEventListener('change', () => { settings.look.waves = wavesAllToggle.checked; saveSettings(); show(step) })
-        const snipsToggle = section.querySelector('[data-act="snips"]')
-        const setSnips = (on) => { snipsToggle.checked = on; section.dataset.snips = on ? 'on' : 'off' }
-        setSnips(settings.look.snips !== false)
-        snipsToggle.addEventListener('change', () => { settings.look.snips = snipsToggle.checked; saveSettings(); setSnips(snipsToggle.checked) })
         section.querySelector('[data-act="reset-look"]').addEventListener('click', () => {
           settings.look = {}
           saveSettings()
           lookInputs.forEach((inp) => { look[inp.dataset.look] = setLook(inp.dataset.look) })
           setHalo(true)
           wavesAllToggle.checked = true
-          setSnips(true)
           retarget()
           show(step)
         })
