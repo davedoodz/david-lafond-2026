@@ -576,8 +576,8 @@
       // then the whole loop. Both directions of each exchange play together. Edge indices follow EDGE_INFO.
       const STORY = [
         { title: 'You and your watch', text: 'The watch senses physiological signals and movement, and answers with a gentle nudge.', edges: [0, 1], nodes: ['user', 'watch'] },
-        { title: 'Watch and AI', text: 'The watch shares key moments with the AI, guided by the experts’ framework; the AI learns the right time to nudge.', edges: [4, 5, 8], nodes: ['watch', 'ai', 'experts'] },
-        { title: 'AI, phone and you', text: 'The AI sends personal insights to your phone; you reflect, and your journal and context flow back.', edges: [7, 6, 3, 2], nodes: ['ai', 'phone', 'user'] },
+        { title: 'Watch and AI', text: 'The watch shares key moments with the AI, guided by the experts’ framework; the AI learns the right time to nudge.', edges: [4, 8, 5], nodes: ['watch', 'ai', 'experts'] },
+        { title: 'AI, phone and you', text: 'The AI sends personal insights to your phone; you reflect, and your journal and context flow back.', edges: [7, 3, 2, 6], nodes: ['ai', 'phone', 'user'] },
         { title: 'The full loop', text: 'Every exchange runs both ways, so each nudge fits you a little better.', edges: [0, 1, 2, 3, 4, 5, 6, 7, 8], nodes: Object.keys(NODES) },
       ]
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -608,6 +608,7 @@
         ['text', 'Text start', 0, 3, 0.05],
         ['stagger', 'Text stagger', 0.04, 0.8, 0.01],
         ['spot', 'Bullet spotlight', 0.3, 2.5, 0.05],
+        ['gap', 'Next arrow', 0, 3, 0.05],
         ['speed', 'Flow speed', 0.25, 2, 0.05],
       ]
       // Small motion per bullet icon, played when the bullet takes the spotlight (icon units, 24-grid).
@@ -792,19 +793,22 @@
             line.style.opacity = ''
             line.parentNode.classList.remove('is-live', 'is-blue')
           })
+          // Arrows in a step enter one after another, in STORY order (send, then reply), `gap` apart.
+          let order = 0
           flows = s.edges.map((e, k) => {
             lines[e].parentNode.classList.add('is-blue')
+            const delay = reduceMotion || shown.has(e) ? 0 : order++ * timing.gap
             const d = lines[e].getAttribute('d')
             const trace = el('path', { class: 'trace', d, pathLength: 1 })
             const len = trace.getTotalLength()
-            const f = { trace, len, k, base: lines[e], end: trace.getPointAtLength(len) }
+            const f = { trace, len, k, delay, base: lines[e], end: trace.getPointAtLength(len) }
             // Newly shown arrows grow from start to end; the head appears as the line reaches it.
             if (!reduceMotion && !shown.has(e)) {
               const full = lines[e].getTotalLength()
               lines[e].getAnimations().forEach((a) => a.cancel())
               lines[e].animate(
                 [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full, stroke: BLUE }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0, stroke: BLUE }],
-                { duration: timing.draw, easing: 'cubic-bezier(.4,0,.2,1)' },
+                { duration: timing.draw, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' },
               )
               // Line and head grow in blue and stay blue (CSS .is-blue) for the step and after it.
               lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
@@ -812,7 +816,7 @@
                 const op = getComputedStyle(head).opacity
                 head.animate(
                   [{ opacity: 0, [paint]: BLUE }, { opacity: 0, [paint]: BLUE, offset: 0.85 }, { opacity: op, [paint]: BLUE }],
-                  { duration: timing.draw },
+                  { duration: timing.draw, delay, fill: 'backwards' },
                 )
               })
             }
@@ -851,7 +855,8 @@
           waveOn = waveToggle.checked && !waveToggle.disabled
           layer.style.display = waveOn ? '' : 'none'
           syncStepDur()
-          labels = s.edges.map((e) => {
+          labels = s.edges.map((e, k) => {
+            const delay = flows[k].delay
             const g = svg.querySelector(`.edge[data-edge="${e}"]`)
             const rows = [...g.querySelectorAll('.lbl-row')]
             rows.forEach((r, i) => {
@@ -859,11 +864,11 @@
               r.classList.remove('is-spot')
               if (!reduceMotion && !shown.has(e)) r.animate(
                 REVEALS[reveal].frames,
-                { duration: REVEALS[reveal].duration ?? 520, delay: timing.text + i * timing.stagger, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
+                { duration: REVEALS[reveal].duration ?? 520, delay: delay + timing.text + i * timing.stagger, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
               )
             })
             const items = rows.filter((r) => r.classList.contains('lbl-item') && !r.classList.contains('is-gone'))
-            return { items, spotFrom: timing.text + rows.length * timing.stagger + 400, last: -1 }
+            return { items, spotFrom: delay + timing.text + rows.length * timing.stagger + 400, last: -1 }
           })
           svg.querySelectorAll('.edge:not(.is-on) .lbl-row.is-spot').forEach((r) => r.classList.remove('is-spot'))
           started = performance.now()
@@ -871,10 +876,12 @@
 
         function frame(now) {
           const t = now - started
-          const drawn = ease(t / timing.draw)
-          const after = (t - timing.draw) * timing.speed
-          const live = !reduceMotion && after > 0
           for (const f of flows) {
+            // Each flow runs on its own clock, starting when its arrow starts drawing.
+            const tf = t - f.delay
+            const drawn = ease(tf / timing.draw)
+            const after = (tf - timing.draw) * timing.speed
+            const live = !reduceMotion && after > 0
             // Steps without a wave keep the plain ink line and ink head (at the arrow opacity).
             if (!waveOn) continue
             f.trace.style.strokeDashoffset = String(1 - drawn)
@@ -937,7 +944,7 @@
           inp.value = k === 'speed' ? timing[k] : timing[k] / 1000
           inp.nextElementSibling.textContent = k === 'speed' ? `${(+timing[k]).toFixed(2)}×` : `${(timing[k] / 1000).toFixed(2)}s`
         })
-        const defaults = () => ({ step: feel.step, draw: feel.draw, text: Math.round(feel.draw * 0.5), stagger: 180, spot: 900, speed: 1 })
+        const defaults = () => ({ step: feel.step, draw: feel.draw, text: Math.round(feel.draw * 0.5), stagger: 180, spot: 900, gap: 700, speed: 1 })
         // Saved values are clamped to the slider ranges, so stale or edited storage can't break playback.
         const clampTiming = (saved = {}) => Object.fromEntries(TIMING_FIELDS.map(([k, , min, max]) => {
           const scale = k === 'speed' ? 1 : 1000
