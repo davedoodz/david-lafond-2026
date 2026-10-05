@@ -878,7 +878,9 @@
               }
             })
             const items = rows.filter((r) => r.classList.contains('lbl-item') && !r.classList.contains('is-gone'))
-            return { items, spotFrom: delay + timing.text + rows.length * timing.stagger + 400, last: -1 }
+            // The spotlight (blue icon) starts the moment the first bullet's text has fully appeared.
+            const revealed = delay + timing.text + rows.indexOf(items[0]) * timing.stagger + (REVEALS[reveal].duration ?? 520)
+            return { items, spotFrom: reduceMotion || shown.has(e) ? 0 : revealed, last: -1 }
           })
           svg.querySelectorAll('.edge:not(.is-on) .lbl-row.is-spot').forEach((r) => r.classList.remove('is-spot'))
           started = performance.now()
@@ -938,7 +940,8 @@
             l.last = idx
             const glyph = l.items[idx].querySelector('.lbl-glyph')
             const motion = ICON_MOTION[l.items[idx].dataset.item]
-            if (glyph && motion && !reduceMotion) glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), easing: 'ease-in-out' })
+            // If the icon is still moving from its text reveal, let that motion finish instead of restarting it.
+            if (glyph && motion && !reduceMotion && !glyph.getAnimations().some((a) => a.playState === 'running')) glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), easing: 'ease-in-out' })
           }
           // A step never ends mid-spotlight: it lasts at least one full round of every label's bullets.
           const spotEnd = Math.max(0, ...labels.filter((l) => l.items.length).map((l) => l.spotFrom + l.items.length * timing.spot))
