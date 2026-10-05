@@ -172,20 +172,19 @@
 
     <script type="module">
       import { __iconData as activity } from '/node_modules/lucide-react/dist/esm/icons/activity.mjs'
+      import { __iconData as footprints } from '/node_modules/lucide-react/dist/esm/icons/footprints.mjs'
+      import { __iconData as shield } from '/node_modules/lucide-react/dist/esm/icons/shield-check.mjs'
+      import { __iconData as bell } from '/node_modules/lucide-react/dist/esm/icons/bell-ring.mjs'
       import { __iconData as mic } from '/node_modules/lucide-react/dist/esm/icons/mic.mjs'
-      import { __iconData as footsteps } from '/node_modules/lucide-react/dist/esm/icons/footprints.mjs'
-      import { __iconData as audio } from '/node_modules/lucide-react/dist/esm/icons/audio-lines.mjs'
-      import { __iconData as book } from '/node_modules/lucide-react/dist/esm/icons/book-open.mjs'
-      import { __iconData as branch } from '/node_modules/lucide-react/dist/esm/icons/git-branch.mjs'
+      import { __iconData as layers } from '/node_modules/lucide-react/dist/esm/icons/layers.mjs'
+      import { __iconData as notebook } from '/node_modules/lucide-react/dist/esm/icons/notebook-pen.mjs'
+      import { __iconData as chart } from '/node_modules/lucide-react/dist/esm/icons/chart-spline.mjs'
       import { __iconData as target } from '/node_modules/lucide-react/dist/esm/icons/target.mjs'
-      import { __iconData as touch } from '/node_modules/lucide-react/dist/esm/icons/hand.mjs'
-      import { __iconData as refresh } from '/node_modules/lucide-react/dist/esm/icons/refresh-cw.mjs'
-      import { __iconData as message } from '/node_modules/lucide-react/dist/esm/icons/message-circle.mjs'
       const POINT_ICONS = {
-        biometrics: activity, 'voice entries': mic, movement: footsteps, 'surrounding noise': audio,
-        'daily entries': book, counterfactuals: branch, 'behavior plans': target,
-        'touch & scroll interactions': touch, 'content updates': refresh,
-        'counterfactual generation': branch, 'micro-reflection prompting': message,
+        'physiological signals': activity, 'movement + activity': footprints,
+        'evidence-based framework': shield, 'gentle nudge': bell,
+        'voice reflection': mic, 'user context': layers,
+        'voice journal': notebook, patterns: chart, 'action plans': target,
       }
       const assets = Object.fromEntries(await Promise.all(['user', 'cloud', 'phone', 'watch', 'therapist'].map(async name => {
         const response = await fetch(`assets/blue-${name}.png`)
@@ -211,67 +210,70 @@
       const STONE = '#6f6b68'
       const STONE_LIGHT = '#a6a09c'
       const BLUE = '#53BFFE'
-      const W = 1460
-      const H = 724
-
       // ---------- Content (one source for every option) ----------
-      // The layout mirrors around the centre row (y 378): every top edge has a bottom twin of the
-      // same length (0↔6, 1↔7, 2↔4, 3↔5), so paired flows travel at the same pace.
-      const NODES = {
-        user: { x: 112, y: 378, title: ['USER'], icon: 'user', titleBelow: 92 },
-        watch: { x: 512, y: 128, title: ['WATCH APP'], icon: 'watch', titleBelow: 82 },
-        db: { x: 907, y: 378, title: ['SECURE DATABASE', '+ NOVEL AI MODEL'], icon: 'cloud', titleBelow: 76 },
-        therapist: { x: 1313, y: 378, title: ['REGISTERED THERAPISTS'], icon: 'therapist', titleBelow: 92 },
-        phone: { x: 512, y: 628, title: ['PHONE APP'], icon: 'phone', titleBelow: 80 },
+      const NODE_INFO = {
+        user: { title: ['USER'], icon: 'user' },
+        watch: { title: ['WATCH'], sub: 'Detect + nudge', icon: 'watch' },
+        ai: { title: ['PERSONALIZED AI'], sub: 'Connect the dots', icon: 'cloud' },
+        experts: { title: ['CLINICAL EXPERTS'], icon: 'therapist' },
+        phone: { title: ['PHONE'], sub: 'Reflect + understand', icon: 'phone' },
       }
-      // kind: data (user → system), ai (model output), training (therapists)
-      const EDGES = [
-        {
-          kind: 'data',
-          points: [[112, 266], [112, 128], [450, 128]],
-          label: { x: 138, y: 164, anchor: 'start', head: 'Contextual user data:', items: ['biometrics', 'voice entries', 'movement', 'surrounding noise'] },
-        },
-        {
-          kind: 'ai',
-          points: [[907, 266], [907, 128], [574, 128]],
-          label: { x: 883, y: 164, anchor: 'end', lines: ['Micro-reflection', 'prompt generation'] },
-        },
-        {
-          kind: 'ai',
-          points: [[502, 222], [502, 368], [192, 368]],
-          label: { x: 476, y: 318, anchor: 'end', lines: ['Context-aware daily', 'micro-reflection prompts'] },
-        },
-        {
-          kind: 'data',
-          points: [[522, 222], [522, 368], [818, 368]],
-          label: { x: 548, y: 336, anchor: 'start', lines: ['Contextual user data'] },
-        },
-        {
-          kind: 'ai',
-          points: [[502, 534], [502, 388], [192, 388]],
-          label: { x: 476, y: 422, anchor: 'end', head: 'Interactive journal space:', items: ['daily entries', 'counterfactuals', 'behavior plans'] },
-        },
-        {
-          kind: 'data',
-          points: [[522, 534], [522, 388], [818, 388]],
-          label: { x: 548, y: 422, anchor: 'start', lines: ['Activity user data'] },
-        },
-        {
-          kind: 'data',
-          points: [[112, 490], [112, 628], [450, 628]],
-          label: { x: 138, y: 556, anchor: 'start', head: 'Activity user data:', items: ['touch & scroll interactions', 'content updates'] },
-        },
-        {
-          kind: 'ai',
-          points: [[907, 490], [907, 628], [574, 628]],
-          label: { x: 883, y: 590, anchor: 'end', lines: ['Daily entries +', 'counterfactual generation'] },
-        },
-        {
-          kind: 'training',
-          points: [[1232, 378], [998, 378]],
-          label: { x: 1000, y: 314, anchor: 'start', head: 'Training data:', items: ['counterfactual generation', 'micro-reflection prompting'] },
-        },
+      // kind: data (user → system), ai (model output), training (experts). Every label line is a Lucide-icon bullet.
+      const EDGE_INFO = [
+        { kind: 'data', items: ['physiological signals', 'movement + activity'] },
+        { kind: 'training', items: ['evidence-based framework'] },
+        { kind: 'ai', items: ['gentle nudge'] },
+        { kind: 'data' },
+        { kind: 'ai', items: ['voice journal', 'patterns', 'action plans'] },
+        { kind: 'data', items: ['voice reflection', 'user context'] },
       ]
+      // Compositions. Points are rough routes; the story trims both ends to the halo/title gap.
+      // `open` edges end in free space (the phone's outputs list), so their tip is left as drawn.
+      const LAYOUTS = {
+        wide: {
+          name: 'Wide · AI centre',
+          W: 1460, H: 980, type: {},
+          nodes: { user: [200, 400], watch: [720, 110], ai: [720, 400], experts: [1240, 700], phone: [200, 700] },
+          edges: [
+            { points: [[720, 240], [720, 320]], label: { x: 744, y: 268, anchor: 'start' } },
+            { points: [[1240, 620], [1240, 400], [820, 400]], label: { x: 840, y: 384, anchor: 'start' } },
+            { points: [[620, 400], [300, 400]], label: { x: 320, y: 384, anchor: 'start' } },
+            { points: [[200, 510], [200, 620]] },
+            { points: [[200, 830], [200, 880]], open: true, label: { x: 176, y: 912, anchor: 'start' } },
+            { points: [[300, 700], [720, 700], [720, 540]], label: { x: 696, y: 600, anchor: 'end' } },
+          ],
+        },
+        // User on top, devices beside each other, AI and experts below: reads top-down and holds up
+        // when the figure shrinks to a phone column (larger type for that reason).
+        stacked: {
+          name: 'Stacked · user on top',
+          W: 1000, H: 1290, type: { labelSize: 17, titleSize: 14 },
+          nodes: { user: [500, 130], phone: [180, 480], watch: [820, 480], ai: [500, 830], experts: [500, 1160] },
+          edges: [
+            { points: [[820, 560], [820, 830], [600, 830]], label: { x: 796, y: 660, anchor: 'end' } },
+            { points: [[500, 1080], [500, 920]], label: { x: 524, y: 1022, anchor: 'start' } },
+            { points: [[500, 750], [500, 250]], label: { x: 524, y: 480, anchor: 'start' } },
+            { points: [[420, 130], [180, 130], [180, 400]] },
+            { points: [[260, 480], [310, 480]], open: true, label: { x: 320, y: 458, anchor: 'start' } },
+            { points: [[180, 560], [180, 830], [400, 830]], label: { x: 204, y: 660, anchor: 'start' } },
+          ],
+        },
+      }
+      const LAYOUT_KEY = (() => {
+        try {
+          const k = JSON.parse(localStorage.getItem('unwind-system-design:settings'))?.layout
+          return LAYOUTS[k] ? k : 'wide'
+        } catch {
+          return 'wide'
+        }
+      })()
+      const LAYOUT = LAYOUTS[LAYOUT_KEY]
+      const { W, H } = LAYOUT
+      const NODES = Object.fromEntries(Object.entries(NODE_INFO).map(([k, n]) => [k, { ...n, x: LAYOUT.nodes[k][0], y: LAYOUT.nodes[k][1] }]))
+      const EDGES = EDGE_INFO.map((e, i) => {
+        const l = LAYOUT.edges[i]
+        return { ...e, points: l.points, open: l.open, label: e.items ? { ...l.label, items: e.items } : null }
+      })
 
       // ---------- Options ----------
       const OPTIONS = [
@@ -383,7 +385,7 @@
       const nearestNode = (x, y) => Object.values(NODES).reduce((a, n) => (Math.hypot(n.x - x, n.y - y) < Math.hypot(a.x - x, a.y - y) ? n : a))
       /** Distance from a node's centre, along unit direction (ux, uy) at perpendicular offset `off`, to its edge. */
       function clearance(node, o, R, titleGap, ux, uy, off) {
-        if (uy > 0.5 && node.title) return titleBaseline(node, o, R, titleGap, node.title.length - 1) - node.y
+        if (uy > 0.5 && node.title) return titleBaseline(node, o, R, titleGap, node.title.length - (node.sub ? 0 : 1)) - node.y
         return Math.sqrt(Math.max(0, R * R - off * off))
       }
       /** Moves one end of an edge along its straight run so it sits `gap` outside its node. */
@@ -396,9 +398,10 @@
         const t = (node.x - x) * ux + (node.y - y) * uy - along
         return [x + ux * t, y + uy * t]
       }
-      function fitEdge(points, o, R = 78, gap = 14, titleGap = 18) {
-        const n = points.length
-        return [fitPoint(points[0], points[1], o, R, gap, titleGap), ...points.slice(1, -1), fitPoint(points[n - 1], points[n - 2], o, R, gap, titleGap)]
+      function fitEdge(e, o, R = 78, gap = 14, titleGap = 14) {
+        const p = e.points, n = p.length
+        const end = e.open ? p[n - 1] : fitPoint(p[n - 1], p[n - 2], o, R, gap, titleGap)
+        return [fitPoint(p[0], p[1], o, R, gap, titleGap), ...p.slice(1, -1), end]
       }
 
       function arrowHead(points, o, color, width) {
@@ -422,11 +425,13 @@
           `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${o.labelSize}" fill="${o.label}">${content}</text>`
         const row = (inner, cls = '') => `<g class="lbl-row${cls}"><g class="lbl-shift">${inner}</g></g>`
         if (l.lines) for (const line of l.lines) (out.push(row(text(esc(line), l.x, l.anchor, y))), (y += lh))
-        if (l.head) {
-          out.push(row(text(esc(l.head), l.x, l.anchor, y), ' lbl-head'))
-          y += lh
-          // Bullets hang from the head's left edge (right-aligned heads keep their bullets on its left too).
-          const width = Math.max(...[l.head, ...l.items].map((s) => s.length)) * o.labelSize * 0.5
+        if (l.items) {
+          if (l.head) {
+            out.push(row(text(esc(l.head), l.x, l.anchor, y), ' lbl-head'))
+            y += lh
+          }
+          // Bullets hang from the block's left edge (right-aligned blocks keep their icons on the left too).
+          const width = Math.max(...[l.head ?? '', ...l.items].map((s) => s.length)) * o.labelSize * 0.5 + (l.head ? 0 : o.labelSize + 16)
           const left = l.anchor === 'end' ? l.x - width : l.x
           for (const item of l.items) {
             const size = o.labelSize
@@ -446,13 +451,10 @@
 
 
       function titleText(node, o) {
-        const below = node.titleBelow ?? 104
-        return node.title
-          .map(
-            (line, i) =>
-              `<text x="${node.x}" y="${node.y + below + i * o.titleSize * 1.35}" text-anchor="middle" font-size="${o.titleSize}" font-weight="${o.titleWeight}" letter-spacing="${o.titleTrack ?? 0.04}em" fill="${INK}">${esc(line)}</text>`,
-          )
-          .join('')
+        const title = node.title.map((line, i) =>
+          `<text x="${node.x}" y="${titleBaseline(node, o, 78, 14, i)}" text-anchor="middle" font-size="${o.titleSize}" font-weight="${o.titleWeight}" letter-spacing="${o.titleTrack ?? 0.04}em" fill="${INK}">${esc(line)}</text>`)
+        if (node.sub) title.push(`<text x="${node.x}" y="${titleBaseline(node, o, 78, 14, node.title.length)}" text-anchor="middle" font-size="${o.titleSize + 1}" fill="${STONE}">${esc(node.sub)}</text>`)
+        return title.join('')
       }
 
       function render(o) {
@@ -467,13 +469,13 @@
           const dash = o.presetDash ?? kind.dash ?? o.dash
           const cls = o.animate ? ' class="flow"' : ''
           parts.push(`<g class="edge" data-edge="${index}">`)
-          const pts = o.story ? fitEdge(e.points, o) : e.points
+          const pts = fitEdge(e, o)
           parts.push(
             `<path class="edge__line" d="${path(pts, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${cls} />`,
           )
           parts.push(arrowHead(pts, o, kind.color ?? o.arrowColor ?? color, o.stroke))
           if (o.dots) parts.push(`<circle cx="${e.points[0][0]}" cy="${e.points[0][1]}" r="3.5" fill="${o.arrowColor ?? INK}" />`)
-          parts.push(`<g class="edge__label">${label(e.label, o)}</g></g>`)
+          parts.push(`<g class="edge__label">${e.label ? label(e.label, o) : ''}</g></g>`)
         })
 
         for (const [key, node] of Object.entries(NODES)) {
@@ -493,9 +495,9 @@
             ['Training data', STONE, '6 7'],
           ]
           items.forEach(([name, color, dash], i) => {
-            const x = 1000 + i * 140
-            parts.push(`<path d="M${x} 90 h28" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round"${dash ? ` stroke-dasharray="${dash}"` : ''} />`)
-            parts.push(`<text x="${x + 38}" y="95" font-size="13" fill="${STONE}">${name}</text>`)
+            const x = W - 440 + i * 140
+            parts.push(`<path d="M${x} ${H - 34} h28" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round"${dash ? ` stroke-dasharray="${dash}"` : ''} />`)
+            parts.push(`<text x="${x + 38}" y="${H - 29}" font-size="13" fill="${STONE}">${name}</text>`)
           })
         }
 
@@ -503,15 +505,15 @@
       }
 
       // ---------- Animated walkthrough (Hairline treatment) ----------
-      // Edge indices follow EDGES: 0 user→watch, 1 AI→watch, 2 watch→user, 3 watch→AI,
-      // 4 phone→user, 5 phone→AI, 6 user→phone, 7 AI→phone, 8 therapists→AI.
+      // Edge indices follow EDGE_INFO: 0 watch→AI, 1 experts→AI, 2 AI→user, 3 user→phone,
+      // 4 phone→outputs, 5 phone→AI.
       const STORY = [
-        { title: 'You live your day', text: 'Your watch picks up body signals, voice, movement and noise. Your phone records how you use the app.', edges: [0, 6], nodes: ['user', 'watch', 'phone'] },
-        { title: 'Context goes to the model', text: 'Both apps send that context to the secure database and AI model.', edges: [3, 5], nodes: ['watch', 'phone', 'db'] },
-        { title: 'Therapists train it', text: 'Registered therapists teach the model how to write counterfactuals and reflection prompts.', edges: [8], nodes: ['therapist', 'db'] },
-        { title: 'The model responds', text: 'It sends a timely prompt to your watch, and entries and counterfactuals to your phone.', edges: [1, 7], nodes: ['db', 'watch', 'phone'] },
-        { title: 'You reflect', text: 'A short prompt on your wrist; a journal with what-ifs and behavior plans on your phone.', edges: [2, 4], nodes: ['watch', 'phone', 'user'] },
-        { title: 'The loop repeats', text: 'Each reflection becomes new context, so the next prompt fits you better.', edges: [0, 6, 3, 5, 8, 1, 7, 2, 4], nodes: Object.keys(NODES) },
+        { title: 'Your watch notices', text: 'The watch picks up physiological signals, movement and activity, and sends them to the personalized AI.', edges: [0], nodes: ['watch', 'ai'] },
+        { title: 'Experts set the framework', text: 'Clinical experts give the AI an evidence-based framework to work from.', edges: [1], nodes: ['experts', 'ai'] },
+        { title: 'A gentle nudge', text: 'The AI connects the dots and sends you a gentle nudge at the right moment.', edges: [2], nodes: ['ai', 'user'] },
+        { title: 'You reflect', text: 'On your phone you reflect and understand: a voice journal, patterns over time, and action plans.', edges: [3, 4], nodes: ['user', 'phone'] },
+        { title: 'Context flows back', text: 'Your voice reflection and context return to the AI, so the next nudge fits you better.', edges: [5], nodes: ['phone', 'ai'] },
+        { title: 'The loop repeats', text: 'Each reflection sharpens the next nudge.', edges: [0, 1, 2, 3, 4, 5], nodes: Object.keys(NODES) },
       ]
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
       const ease = (x) => 0.5 - Math.cos(Math.PI * Math.min(1, Math.max(0, x))) / 2
@@ -545,17 +547,15 @@
       ]
       // Small motion per bullet icon, played when the bullet takes the spotlight (icon units, 24-grid).
       const ICON_MOTION = {
-        biometrics: [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(0.95)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }],
-        'voice entries': [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-2px)' }, { transform: 'translateY(0)' }],
-        movement: [{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }],
-        'surrounding noise': [{ transform: 'scaleY(1)' }, { transform: 'scaleY(1.4)' }, { transform: 'scaleY(0.75)' }, { transform: 'scaleY(1.2)' }, { transform: 'scaleY(1)' }],
-        'daily entries': [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0.6)' }, { transform: 'scaleX(1.12)' }, { transform: 'scaleX(1)' }],
-        counterfactuals: [{ transform: 'rotate(0)' }, { transform: 'rotate(16deg)' }, { transform: 'rotate(-10deg)' }, { transform: 'rotate(0)' }],
-        'counterfactual generation': [{ transform: 'rotate(0)' }, { transform: 'rotate(16deg)' }, { transform: 'rotate(-10deg)' }, { transform: 'rotate(0)' }],
-        'behavior plans': [{ transform: 'scale(1)' }, { transform: 'scale(0.75)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
-        'touch & scroll interactions': [{ transform: 'rotate(0)' }, { transform: 'rotate(-16deg)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(0)' }],
-        'content updates': [{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }],
-        'micro-reflection prompting': [{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-4px) scale(1.12)' }, { transform: 'translateY(0) scale(1)' }],
+        'physiological signals': [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(0.95)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }],
+        'movement + activity': [{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }],
+        'evidence-based framework': [{ transform: 'scale(1)' }, { transform: 'scale(1.22)' }, { transform: 'scale(1)' }],
+        'gentle nudge': [{ transform: 'rotate(0)' }, { transform: 'rotate(-14deg)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(0)' }],
+        'voice reflection': [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-2px)' }, { transform: 'translateY(0)' }],
+        'user context': [{ transform: 'translateY(0)' }, { transform: 'translateY(-3px)' }, { transform: 'translateY(1px)' }, { transform: 'translateY(0)' }],
+        'voice journal': [{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg)' }, { transform: 'rotate(6deg)' }, { transform: 'rotate(0)' }],
+        patterns: [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0.6)' }, { transform: 'scaleX(1.12)' }, { transform: 'scaleX(1)' }],
+        'action plans': [{ transform: 'scale(1)' }, { transform: 'scale(0.75)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
       }
 
       // [key, name, min, max, step, default, css var]; line spacing has no var, it shifts label rows.
@@ -583,7 +583,7 @@
 
       function mountStory() {
         const base = OPTIONS.find((o) => o.id === 'hairline')
-        const o = { ...base, id: 'story', story: true }
+        const o = { ...base, ...LAYOUT.type, id: 'story', story: true }
         const section = document.createElement('section')
         section.className = 'option story'
         section.id = 'story'
@@ -591,6 +591,7 @@
           <div class="option__head">
             <h2>Animated — how it works</h2>
             <p class="story__feelnote"></p>
+            <label>Layout <select data-act="layout" aria-label="Composition">${Object.entries(LAYOUTS).map(([k, l]) => `<option value="${k}"${k === LAYOUT_KEY ? ' selected' : ''}>${l.name}</option>`).join('')}</select></label>
             <label>Feel <select data-act="feel" aria-label="Flow feel">${Object.entries(FEELS).map(([k, f]) => `<option value="${k}">${f.name}</option>`).join('')}</select></label>
             <button type="button" data-act="play">Pause</button>
           </div>
@@ -954,7 +955,7 @@
         const retarget = () => {
           const R = 78 * look.haloScale
           svg.querySelectorAll('.edge').forEach((g) => {
-            const pts = fitEdge(EDGES[+g.dataset.edge].points, o, R, look.arrowGap, look.titleGap)
+            const pts = fitEdge(EDGES[+g.dataset.edge], o, R, look.arrowGap, look.titleGap)
             g.querySelector('.edge__line').setAttribute('d', path(pts, o.radius))
             const head = g.querySelector(':scope > path:not(.edge__line)')
             head.outerHTML = arrowHead(pts, o, head.getAttribute(o.arrow === 'triangle' ? 'fill' : 'stroke'), o.stroke)
@@ -995,7 +996,7 @@
         // so bullet icons and their motions stay tied to the original item.
         const rowText = (r) => [...r.querySelectorAll('text')].pop()
         const labelRows = [...svg.querySelectorAll('.edge')].flatMap((g) =>
-          [...g.querySelectorAll('.lbl-row')].map((r, i) => ({ key: `${g.dataset.edge}:${i}`, r, original: rowText(r).textContent })))
+          [...g.querySelectorAll('.lbl-row')].map((r) => ({ key: `${g.dataset.edge}:${rowText(r).textContent}`, r, original: rowText(r).textContent })))
         // An empty override removes the line; the rows below close the gap (edit mode shows it faded).
         const applyLabels = () => {
           labelRows.forEach(({ key, r, original }) => {
@@ -1056,6 +1057,12 @@
         })
         setPlaying(playing)
         setFeel(settings.feel)
+        // Layout swaps the node/edge geometry every option is built from, so it applies on reload.
+        section.querySelector('[data-act="layout"]').addEventListener('change', (e) => {
+          settings.layout = e.target.value
+          saveSettings()
+          location.reload()
+        })
         requestAnimationFrame(frame)
       }
 
@@ -1066,7 +1073,7 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur) }
+          return { feel: s.feel, layout: s.layout, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur) }
         } catch {
           return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {} }
         }
