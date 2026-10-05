@@ -127,6 +127,8 @@
       .story[data-halo='off'] .node__halo { display: none; }
       .story .lbl-row { transform-box: fill-box; transform-origin: left center; }
       .story[data-edit='on'] .lbl-row { cursor: text; }
+      .story .lbl-row.is-gone { display: none; }
+      .story[data-edit='on'] .lbl-row.is-gone { display: inline; opacity: 0.3 !important; }
       .story[data-edit='on'] .lbl-row:hover text { fill: var(--unwind); }
       .story .trace { fill: none; stroke: var(--unwind); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
       .story .pulse { fill: var(--unwind); opacity: 0; }
@@ -765,7 +767,7 @@
                 { duration: REVEALS[reveal].duration ?? 520, delay: timing.text + i * timing.stagger, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' },
               )
             })
-            const items = rows.filter((r) => r.classList.contains('lbl-item'))
+            const items = rows.filter((r) => r.classList.contains('lbl-item') && !r.classList.contains('is-gone'))
             return { items, spotFrom: timing.text + rows.length * timing.stagger + 400, last: -1 }
           })
           svg.querySelectorAll('.edge:not(.is-on) .lbl-row.is-spot').forEach((r) => r.classList.remove('is-spot'))
@@ -896,8 +898,16 @@
 
         // Look: opacity of earlier steps, idle icons, wave and halo, halo size, and label line spacing.
         const BASE_LH = 1.3
-        const applyLineSpacing = (v) => svg.querySelectorAll('.edge__label').forEach((lbl) =>
-          lbl.querySelectorAll('.lbl-shift').forEach((g, i) => g.setAttribute('transform', `translate(0 ${(i * (v - BASE_LH) * o.labelSize).toFixed(2)})`)))
+        // Rows sit at their rendered y (base 1.3 line height); shift each to its place at the chosen
+        // spacing, skipping removed rows unless edit mode shows them.
+        const applyLineSpacing = (v) => svg.querySelectorAll('.edge__label').forEach((lbl) => {
+          let slot = 0
+          lbl.querySelectorAll('.lbl-row').forEach((row, i) => {
+            const dy = (slot * v - i * BASE_LH) * o.labelSize
+            row.querySelector('.lbl-shift').setAttribute('transform', `translate(0 ${dy.toFixed(2)})`)
+            if (!row.classList.contains('is-gone') || section.dataset.edit === 'on') slot++
+          })
+        })
         const lookInputs = [...section.querySelectorAll('[data-look]')]
         const setLook = (k, raw) => {
           const [, , min, max, , def, cssVar] = LOOK_FIELDS.find((f) => f[0] === k)
@@ -949,7 +959,15 @@
         const rowText = (r) => [...r.querySelectorAll('text')].pop()
         const labelRows = [...svg.querySelectorAll('.edge')].flatMap((g) =>
           [...g.querySelectorAll('.lbl-row')].map((r, i) => ({ key: `${g.dataset.edge}:${i}`, r, original: rowText(r).textContent })))
-        const applyLabels = () => labelRows.forEach(({ key, r, original }) => { rowText(r).textContent = settings.labels[key] ?? original })
+        // An empty override removes the line; the rows below close the gap (edit mode shows it faded).
+        const applyLabels = () => {
+          labelRows.forEach(({ key, r, original }) => {
+            const v = settings.labels[key]
+            r.classList.toggle('is-gone', v === '')
+            rowText(r).textContent = v ? v : original
+          })
+          applyLineSpacing(look.lineSp)
+        }
         applyLabels()
         const editBtn = section.querySelector('[data-act="edit"]')
         editBtn.addEventListener('click', () => {
@@ -957,15 +975,16 @@
           section.dataset.edit = on ? 'on' : 'off'
           editBtn.textContent = on ? 'Done editing' : 'Edit text'
           if (on) setPlaying(false)
+          applyLineSpacing(look.lineSp)
         })
         svg.addEventListener('click', (e) => {
           if (section.dataset.edit !== 'on') return
           const hit = labelRows.find(({ r }) => r.contains(e.target))
           if (!hit) return
-          const next = window.prompt('Label text', rowText(hit.r).textContent)
+          const next = window.prompt('Label text (leave empty to remove this line)', hit.r.classList.contains('is-gone') ? hit.original : rowText(hit.r).textContent)
           if (next === null) return
-          if (next.trim() === '' || next === hit.original) delete settings.labels[hit.key]
-          else settings.labels[hit.key] = next
+          if (next === hit.original) delete settings.labels[hit.key]
+          else settings.labels[hit.key] = next.trim() === '' ? '' : next
           saveSettings()
           applyLabels()
         })
