@@ -109,7 +109,10 @@
       .option__head { flex-wrap: wrap; }
       .option__head label { font-size: 13px; }
       select { font: inherit; padding: 6px 10px; border: 1px solid var(--stone-400); border-radius: 8px; background: white; }
-      .story .edge, .story .node { transition: opacity 0.6s ease; opacity: 0.16; }
+      /* Step focus: arrows and their labels outside the current step are hidden; nodes stay faintly visible for orientation. */
+      .story .edge, .story .node { transition: opacity 0.6s ease; }
+      .story .edge { opacity: 0; }
+      .story .node { opacity: 0.16; }
       .story .edge.is-on, .story .node.is-on { opacity: 1; }
       .story .edge > path:not(.edge__line) { transition: fill 0.4s ease; }
       .story .edge.is-live > path:not(.edge__line) { fill: var(--unwind); }
