@@ -46,9 +46,11 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
   useEffect(() => {
     const root = document.documentElement
     root.style.setProperty('--braid-slot-h', `${t.hero.slot}px`)
+    // The replay button's hit area is the band itself, not the full-width slot.
+    root.style.setProperty('--braid-w', `${t.hero.width}px`)
     window.dispatchEvent(new Event('resize'))
-    return () => { root.style.removeProperty('--braid-slot-h') }
-  }, [t.hero.slot])
+    return () => { root.style.removeProperty('--braid-slot-h'); root.style.removeProperty('--braid-w') }
+  }, [t.hero.slot, t.hero.width])
 
   useEffect(() => {
     if (!enabled) return
@@ -60,6 +62,23 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     let ready = false, disposed = false, playing = false, armed = true
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
     let interrupted = false
+    // Hover to replay: the band in the hero is a button. Hovering eases `swell` 0 → 1 (band grows and
+    // speaks a little louder, the "Replay intro" pill drops under it); clicking replays the film.
+    // Delegated listeners + a fresh lookup, so a re-rendered hero keeps working.
+    const SLOT = '.case__section--hero .case__braid-slot'
+    const slotBtn = () => document.querySelector<HTMLButtonElement>(SLOT)
+    let hovering = false, swell = 0, replayable = false
+    const setHover = (on: boolean) => { hovering = on && replayable; slotBtn()?.toggleAttribute('data-hover', hovering); wake() }
+    const setReplayable = (on: boolean) => {
+      replayable = on
+      const b = slotBtn()
+      if (b) { b.disabled = !on; b.toggleAttribute('aria-hidden', !on) }
+      if (!on) setHover(false)
+    }
+    const inSlot = (n: EventTarget | null) => n instanceof Element && !!n.closest(SLOT)
+    const onOver = (e: Event) => { if (inSlot(e.target)) setHover(true) }
+    const onOut = (e: Event) => { if (inSlot(e.target) && !inSlot((e as PointerEvent | FocusEvent).relatedTarget)) setHover(false) }
+    const onClick = (e: Event) => { if (replayable && inSlot(e.target)) replayRef.current() }
     const progress = () => 1 - clamp(window.scrollY / stageH)
     const measure = () => {
       if (disposed) return
@@ -75,6 +94,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const start = () => {
       if (!ready) return
       playing = true; armed = false; time = 0; handoffY = null; interrupted = false
+      setReplayable(false)
       cbRef.current.onStart?.()
     }
     const interrupt = () => { interrupted = true }
@@ -95,7 +115,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
           window.scrollTo({ top: handoffY + (stageH - handoffY) * k, behavior: 'instant' })
           p = progress()
         }
-        if (time >= PHONE_TIMELINE.dur) { playing = false; cbRef.current.onDone() }
+        if (time >= PHONE_TIMELINE.dur) { playing = false; setReplayable(true); cbRef.current.onDone() }
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const ending = playing ? smooth(clamp((time - PHONE_TIMELINE.hero + .35) / .35)) : 1
@@ -111,23 +131,29 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
         ctx.globalAlpha = filmAlpha; ctx.drawImage(filmCanvas, 0, 0); ctx.globalAlpha = 1
       }
       const ay = slotY - window.scrollY
+      swell += ((hovering ? 1 : 0) - swell) * (1 - Math.exp(-dt / s.speed * 10))
       if (ay > -200 && ay < vh + 200) {
-        const scale = Math.min(s.hero.width, vw * .72) / (2 * 320 * .87)
+        const scale = Math.min(s.hero.width, vw * .72) / (2 * 320 * .87) * (1 + .14 * swell)
         setRT(rt)
-        drawBraid(ctx, [scale * dpr, (slotX - 480 * scale) * dpr, (ay - 245 * scale) * dpr], { env: s.hero.energy, alpha: Math.max(ending, 1 - filmAlpha) })
+        drawBraid(ctx, [scale * dpr, (slotX - 480 * scale) * dpr, (ay - 245 * scale) * dpr], { env: s.hero.energy + .3 * swell, alpha: Math.max(ending, 1 - filmAlpha) })
       }
       root.toggleAttribute('data-unwind-stage', p > .5)
       if (!document.hidden && (playing || (ay > -200 && ay < vh + 200))) raf = requestAnimationFrame(frame)
       else last = 0
     }
     function wake() { if (!raf && !disposed) raf = requestAnimationFrame(frame) }
-    replayRef.current = () => { window.scrollTo({ top: 0, behavior: 'instant' }); start(); wake() }
+    // Replay from the hero: glide back up to the stage, then the film plays from its first frame.
+    replayRef.current = () => {
+      if (!ready) return
+      start(); wake()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
     measure()
     void loadPhoneFilm().then(() => {
       if (disposed) return
       ready = true
       if (progress() > tRef.current.startAt) start()
-      else cbRef.current.onDone()
+      else { setReplayable(true); cbRef.current.onDone() }
       wake()
     }).catch((error) => {
       if (disposed) return
@@ -136,6 +162,11 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       window.scrollTo({ top: stageH, behavior: 'instant' })
     })
     const visibility = () => { last = 0; wake() }
+    document.addEventListener('pointerover', onOver)
+    document.addEventListener('pointerout', onOut)
+    document.addEventListener('focusin', onOver)
+    document.addEventListener('focusout', onOut)
+    document.addEventListener('click', onClick)
     window.addEventListener('scroll', wake, { passive: true })
     window.addEventListener('resize', measure)
     window.addEventListener('wheel', interrupt, { passive: true })
@@ -152,6 +183,9 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       window.removeEventListener('wheel', interrupt); window.removeEventListener('touchstart', interrupt)
       window.removeEventListener('keydown', interrupt); document.removeEventListener('visibilitychange', visibility)
       root.removeAttribute('data-unwind-stage'); replayRef.current = () => {}
+      document.removeEventListener('pointerover', onOver); document.removeEventListener('pointerout', onOut)
+      document.removeEventListener('focusin', onOver); document.removeEventListener('focusout', onOut)
+      document.removeEventListener('click', onClick); setReplayable(false)
     }
   }, [enabled])
 
