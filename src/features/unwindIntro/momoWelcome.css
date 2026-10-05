@@ -1,0 +1,86 @@
+.momo-welcome {
+  width: min(380px, calc((100svh - 112px) * 1312 / 2672), calc(100vw - 64px));
+  flex: none;
+  text-align: center;
+}
+.momo-welcome__phone {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1312 / 2672;
+  isolation: isolate;
+}
+.momo-welcome__screen {
+  position: absolute;
+  inset: 2% 4.8%;
+  border-radius: 14% / 6.7%;
+  overflow: hidden;
+  container-type: inline-size;
+  background: #53bffe;
+  color: white;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.momo-welcome__shader,
+.momo-welcome__shade,
+.momo-welcome__content {
+  position: absolute;
+  inset: 0;
+}
+.momo-welcome__shader canvas { display: block; width: 100%; height: 100%; }
+.momo-welcome__shade { background: #000; opacity: var(--welcome-overlay, .34); pointer-events: none; }
+.momo-welcome__frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.momo-welcome button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+.momo-welcome__mascot {
+  position: absolute;
+  top: 16%;
+  left: 16%;
+  width: 68%;
+  height: 33%;
+  padding: 0;
+  background: none;
+}
+.momo-welcome__mascot > img { width: 100%; height: 100%; object-fit: contain; }
+.momo-welcome__brand { position: absolute; top: 57.5%; left: 21%; width: 58%; height: auto; }
+.momo-welcome__actions { position: absolute; top: 72%; left: 8%; width: 84%; display: grid; gap: 2.8cqw; }
+.momo-welcome__actions button {
+  min-height: 13cqw;
+  padding: 2.5cqw 2cqw;
+  border-radius: 999px;
+  font-size: 5cqw;
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: 1.2;
+  transition: transform 220ms cubic-bezier(.22, 1, .36, 1), filter 220ms ease;
+}
+.momo-welcome__primary { background: #3cb7f3; }
+.momo-welcome__secondary { background: rgb(255 255 255 / .35); }
+.momo-welcome__actions button:active { transform: scale(.97); }
+.momo-welcome__legal {
+  position: absolute;
+  top: 89%;
+  left: 5%;
+  width: 90%;
+  margin: 0;
+  font-size: 3.7cqw;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -.035em;
+}
+.momo-welcome__legal u { text-underline-offset: .16em; text-decoration-thickness: 1px; }
+.momo-welcome__enter { opacity: 0; transform: translateY(10px); }
+.momo-welcome__phone[data-entered='true'] .momo-welcome__enter {
+  animation: momo-welcome-enter 1100ms cubic-bezier(.22, 1, .36, 1) var(--delay) both;
+}
+.momo-welcome__phone[data-visible='false'] .momo-welcome__enter { animation-play-state: paused; }
+.momo-welcome__replay { margin-top: 16px; padding: 8px 16px; background: transparent; color: var(--ink-950); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.momo-welcome button:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+@media (hover: hover) and (pointer: fine) {
+  .momo-welcome__actions button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+}
+@keyframes momo-welcome-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .momo-welcome__phone[data-entered] .momo-welcome__enter { animation: none; opacity: 1; transform: none; }
+  .momo-welcome__actions button { transition: none; }
+}

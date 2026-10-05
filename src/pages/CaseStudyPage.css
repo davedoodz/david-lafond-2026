@@ -1241,25 +1241,18 @@ html[data-case-snap] .case__group > * {
   justify-self: center;
 }
 
-/* The exact Paper phone artwork, centered below the hero copy. */
+/* In-flow phone: reserve its full height, including the bezel and replay control. */
 .case__devices {
-  position: absolute;
-  top: var(--hero-devices-top, 56svh);
-  left: 50%;
-  translate: -50% 0;
   display: flex;
-  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  flex: none;
 }
 .case .case__section--hero:has(.case__devices) {
-  height: max(100svh, calc(var(--hero-devices-top, 56svh) + var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) + var(--hero-phone-y, 0px) + 6svh));
-}
-.case__hero-phone {
-  display: block;
-  height: calc(var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1));
-  width: auto;
-  max-width: calc(100vw - 48px);
-  object-fit: contain;
-  translate: 0 var(--hero-phone-y, 0px);
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+  padding-bottom: 64px;
 }
 /* Persona `scenario`: the moments header becomes one scenario card. */
 [data-persona-contexts='scenario'] .persona__moments header {

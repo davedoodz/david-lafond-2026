@@ -196,14 +196,6 @@ export const UNWIND_CONFIG = {
     logosToTitle: [16, -40, 160, 1] as Tuple,
     titleToMeta: [40, 0, 200, 1] as Tuple,
     metaToPhone: [44, 0, 240, 1] as Tuple,
-    /** Phone height (svh); the whole phone shows, no cut at the fold. */
-    phoneHeight: [56, 30, 90, 1] as Tuple,
-    /** Extra scale on the hero phone (1 = as sized). */
-    phoneScale: [1, 0.5, 1.6, 0.01] as Tuple,
-    /** Moves the hero phone up (−) or down (+), px. */
-    phoneY: [0, -300, 300, 1] as Tuple,
-    /** Top of the centered phone, % of the screen height. */
-    devicesTop: [56, 20, 90, 0.5] as Tuple,
     /** Moves each hero element up (−) or down (+), px, without changing the layout around it. */
     y: {
       braid: [0, -200, 200, 1] as Tuple,
