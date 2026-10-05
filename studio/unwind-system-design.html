@@ -581,14 +581,60 @@
       }
 
       // ---------- Animated walkthrough (Hairline treatment) ----------
-      // Linear: user ↔ watch, then watch ↔ AI (with the experts' framework), then AI ↔ phone ↔ user,
-      // then the whole loop. Both directions of each exchange play together. Edge indices follow EDGE_INFO.
-      const STORY = [
-        { title: 'You and your watch', text: 'The watch senses physiological signals and movement, and answers with a gentle nudge.', edges: [0, 1], nodes: ['user', 'watch'] },
-        { title: 'Watch and AI', text: 'The watch shares key moments with the AI, guided by the experts’ framework; the AI learns the right time to nudge.', edges: [4, 8, 5], nodes: ['watch', 'ai', 'experts'] },
-        { title: 'AI, phone and you', text: 'The AI sends personal insights to your phone; you reflect, and your journal and context flow back.', edges: [7, 3, 2, 6], nodes: ['ai', 'phone', 'user'] },
-        { title: 'The full loop', text: 'Every exchange runs both ways, so each nudge fits you a little better.', edges: [0, 1, 2, 3, 4, 5, 6, 7, 8], nodes: Object.keys(NODES) },
-      ]
+      // Story orders: different logics for which arrows appear in which step; all end on the full loop.
+      // Within a step, arrows enter in the listed order. Edge indices follow EDGE_INFO:
+      // 0 user→watch, 1 watch→user, 2 user→phone, 3 phone→user, 4 watch→ai, 5 ai→watch, 6 phone→ai, 7 ai→phone, 8 experts→ai.
+      const FULL = { title: 'The full loop', text: 'Every exchange runs both ways, so each nudge fits you a little better.', edges: [0, 1, 2, 3, 4, 5, 6, 7, 8], nodes: Object.keys(NODES) }
+      const ORDERS = {
+        device: {
+          name: 'By device (pairs)',
+          waves: [0, 2],
+          steps: [
+            { title: 'You and your watch', text: 'The watch senses physiological signals and movement, and answers with a gentle nudge.', edges: [0, 1], nodes: ['user', 'watch'] },
+            { title: 'Watch and AI', text: 'The watch shares key moments with the AI, guided by the experts’ framework; the AI learns the right time to nudge.', edges: [4, 8, 5], nodes: ['watch', 'ai', 'experts'] },
+            { title: 'AI, phone and you', text: 'The AI sends personal insights to your phone; you reflect, and your journal and context flow back.', edges: [7, 3, 2, 6], nodes: ['ai', 'phone', 'user'] },
+          ],
+        },
+        moment: {
+          name: 'Follow one moment',
+          waves: [0, 2],
+          steps: [
+            { title: 'Notice', text: 'Your watch picks up a change in your body and passes the key moment to the AI, read through the experts’ framework.', edges: [0, 4, 8], nodes: ['user', 'watch', 'ai', 'experts'] },
+            { title: 'Nudge', text: 'The AI picks the right time, and the watch gives you a gentle nudge.', edges: [5, 1], nodes: ['ai', 'watch', 'user'] },
+            { title: 'Reflect', text: 'You talk it through on your phone; your journal and context reach the AI.', edges: [2, 6], nodes: ['user', 'phone', 'ai'] },
+            { title: 'Understand', text: 'The AI sends personal insights back, and your phone shows you patterns and action plans.', edges: [7, 3], nodes: ['ai', 'phone', 'user'] },
+          ],
+        },
+        inout: {
+          name: 'Data in, answers out',
+          waves: [1, 2],
+          steps: [
+            { title: 'You share', text: 'Your body signals reach the watch and your voice reaches the phone; the experts set the framework.', edges: [0, 2, 8], nodes: ['user', 'watch', 'phone', 'experts', 'ai'] },
+            { title: 'Data in', text: 'Both devices pass what they learned to the AI: key moments, your journal and context.', edges: [4, 6], nodes: ['watch', 'phone', 'ai'] },
+            { title: 'Answers out', text: 'The AI answers each device: when to nudge, and what insights to share.', edges: [5, 7], nodes: ['ai', 'watch', 'phone'] },
+            { title: 'Back to you', text: 'A gentle nudge on your wrist, patterns and plans on your phone.', edges: [1, 3], nodes: ['watch', 'phone', 'user'] },
+          ],
+        },
+        loops: {
+          name: 'Watch loop, then phone loop',
+          waves: [0, 1],
+          steps: [
+            { title: 'The watch loop', text: 'Signals go from you to the watch and on to the AI, guided by the experts; the right nudge comes back.', edges: [0, 4, 8, 5, 1], nodes: ['user', 'watch', 'ai', 'experts'] },
+            { title: 'The phone loop', text: 'Your reflection goes from the phone to the AI; insights, patterns and plans come back.', edges: [2, 6, 7, 3], nodes: ['user', 'phone', 'ai'] },
+          ],
+        },
+      }
+      const ORDER_KEY = (() => {
+        try {
+          const k = JSON.parse(localStorage.getItem('unwind-system-design:settings'))?.order
+          return ORDERS[k] ? k : 'device'
+        } catch {
+          return 'device'
+        }
+      })()
+      const STORY = [...ORDERS[ORDER_KEY].steps, FULL]
+      // Per-step settings (reveal, waves, step time) are kept per order; 'device' keeps its original plain keys.
+      const stepKey = (i) => (ORDER_KEY === 'device' ? i : `${ORDER_KEY}:${i}`)
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
       const ease = (x) => 0.5 - Math.cos(Math.PI * Math.min(1, Math.max(0, x))) / 2
       // Flow feels. All follow the case study's rule: ink stays still, only Unwind blue moves.
@@ -674,6 +720,7 @@
             <h2>Animated — how it works</h2>
             <p class="story__feelnote"></p>
             <label>Layout <select data-act="layout" aria-label="Composition">${[['auto', `Auto (now ${LAYOUTS[LAYOUT_KEY].name})`], ...Object.entries(LAYOUTS).map(([k, l]) => [k, l.name])].map(([k, name]) => `<option value="${k}"${k === LAYOUT_CHOICE ? ' selected' : ''}>${name}</option>`).join('')}</select></label>
+            <label>Order <select data-act="order" aria-label="Story order">${Object.entries(ORDERS).map(([k, r]) => `<option value="${k}"${k === ORDER_KEY ? ' selected' : ''}>${r.name}</option>`).join('')}</select></label>
             <label>Feel <select data-act="feel" aria-label="Flow feel">${Object.entries(FEELS).map(([k, f]) => `<option value="${k}">${f.name}</option>`).join('')}</select></label>
             <button type="button" data-act="play">Pause</button>
           </div>
@@ -712,9 +759,9 @@
         const layer = svg.querySelector('.story-flow')
         const revealSelect = section.querySelector('[data-act="reveal"]')
         const waveToggle = section.querySelector('[data-act="wave"]')
-        // The flow (braid, pulse, …) plays only on chosen steps; by default the two exchange halves (1 and 3).
-        const WAVE_STEPS = [0, 2]
-        const waveFor = (i) => (typeof settings.waves[i] === 'boolean' ? settings.waves[i] : WAVE_STEPS.includes(i))
+        // The flow (braid, pulse, …) plays only on chosen steps; each order names its default wave steps.
+        const WAVE_STEPS = ORDERS[ORDER_KEY].waves
+        const waveFor = (i) => (typeof settings.waves[stepKey(i)] === 'boolean' ? settings.waves[stepKey(i)] : WAVE_STEPS.includes(i))
         let waveOn = true
         // Arrows row: start and draw time for each arrow this step draws. Saved per arrow (edge index),
         // so a time set here applies wherever that arrow first appears.
@@ -752,11 +799,11 @@
         // Each step can hold for its own time; otherwise it uses the Step slider.
         const stepDurInput = section.querySelector('[data-act="step-dur"]')
         const stepDuration = () => {
-          const v = Number(settings.stepDur[step])
+          const v = Number(settings.stepDur[stepKey(step)])
           return Number.isFinite(v) && v > 0 ? Math.min(20000, Math.max(1000, v)) : timing.step
         }
         const syncStepDur = () => {
-          const custom = settings.stepDur[step] != null
+          const custom = settings.stepDur[stepKey(step)] != null
           stepDurInput.value = stepDuration() / 1000
           stepDurInput.nextElementSibling.textContent = `${(stepDuration() / 1000).toFixed(1)}s${custom ? '' : ' (default)'}`
         }
@@ -897,7 +944,7 @@
             return f
           })
           // Text: rows of each active label enter one after another in this step's reveal style.
-          const reveal = REVEALS[settings.reveal[step]] ? settings.reveal[step] : 'rise'
+          const reveal = REVEALS[settings.reveal[stepKey(step)]] ? settings.reveal[stepKey(step)] : 'rise'
           revealSelect.value = reveal
           waveToggle.checked = waveFor(step)
           waveToggle.disabled = settings.look.waves === false
@@ -1237,8 +1284,8 @@
         })
         section.querySelector('[data-act="reset-text"]').addEventListener('click', () => { settings.labels = {}; saveSettings(); applyLabels(); show(step) })
 
-        revealSelect.addEventListener('change', () => { settings.reveal[step] = revealSelect.value; saveSettings(); show(step) })
-        waveToggle.addEventListener('change', () => { settings.waves[step] = waveToggle.checked; saveSettings(); show(step) })
+        revealSelect.addEventListener('change', () => { settings.reveal[stepKey(step)] = revealSelect.value; saveSettings(); show(step) })
+        waveToggle.addEventListener('change', () => { settings.waves[stepKey(step)] = waveToggle.checked; saveSettings(); show(step) })
 
         const playBtn = section.querySelector('[data-act="play"]')
         const setPlaying = (v) => { playing = v; playBtn.textContent = v ? 'Pause' : 'Play' }
@@ -1255,11 +1302,11 @@
           previewTimer = setTimeout(() => show(target), timing.draw + 700)
         })
         stepDurInput.addEventListener('input', () => {
-          settings.stepDur[step] = +stepDurInput.value * 1000
+          settings.stepDur[stepKey(step)] = +stepDurInput.value * 1000
           saveSettings()
           syncStepDur()
         })
-        section.querySelector('[data-act="step-dur-reset"]').addEventListener('click', () => { delete settings.stepDur[step]; saveSettings(); syncStepDur() })
+        section.querySelector('[data-act="step-dur-reset"]').addEventListener('click', () => { delete settings.stepDur[stepKey(step)]; saveSettings(); syncStepDur() })
         section.querySelector('.story__steps').addEventListener('click', (e) => {
           const b = e.target.closest('[data-step]')
           if (b) go(+b.dataset.step)
@@ -1267,6 +1314,12 @@
         setPlaying(playing)
         setFeel(settings.feel)
         // Layout swaps the node/edge geometry every option is built from, so it applies on reload.
+        // Order changes the step list (buttons, per-step settings), so it also applies on reload.
+        section.querySelector('[data-act="order"]').addEventListener('change', (e) => {
+          settings.order = e.target.value
+          saveSettings()
+          location.reload()
+        })
         section.querySelector('[data-act="layout"]').addEventListener('change', (e) => {
           settings.layout = e.target.value
           saveSettings()
@@ -1282,7 +1335,7 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, layout: s.layout, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime) }
+          return { feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime) }
         } catch {
           return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {} }
         }
