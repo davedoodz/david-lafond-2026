@@ -140,6 +140,10 @@
       .story .lbl-row.is-gone { display: none; }
       .story[data-edit='on'] .lbl-row.is-gone { display: inline; opacity: 0.3 !important; }
       .story[data-edit='on'] .lbl-row:hover text { fill: var(--unwind); }
+      .story[data-edit='on'] .node text { cursor: text; }
+      .story[data-edit='on'] .node text:hover { fill: var(--unwind); }
+      .story .node text.is-gone { display: none; }
+      .story[data-edit='on'] .node text.is-gone { display: inline; opacity: 0.3; }
       .story .trace { fill: none; stroke: var(--unwind); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
       .story .pulse { fill: var(--unwind); opacity: 0; }
       .story .ring { fill: none; stroke: var(--unwind); stroke-width: 1.5; opacity: 0; }
@@ -436,7 +440,9 @@
       const nearestNode = (x, y) => Object.values(NODES).reduce((a, n) => (Math.hypot(n.x - x, n.y - y) < Math.hypot(a.x - x, a.y - y) ? n : a))
       /** Distance from a node's centre, along unit direction (ux, uy) at perpendicular offset `off`, to its edge. */
       function clearance(node, o, R, titleGap, ux, uy, off) {
-        if (uy > 0.5 && node.title) return titleBaseline(node, o, R, titleGap, node.title.length - (node.sub ? 0 : 1)) - node.y
+        // `shown` counts title lines still on screen (lines can be removed in edit mode).
+        const lines = node.shown ?? (node.title ? node.title.length + (node.sub ? 1 : 0) : 0)
+        if (uy > 0.5 && lines > 0) return titleBaseline(node, o, R, titleGap, lines - 1) - node.y
         return Math.sqrt(Math.max(0, R * R - off * off))
       }
       /** Moves one end of an edge along its straight run so it sits `gap` outside its node. */
@@ -1059,7 +1065,12 @@
           // Titles hang a fixed gap below the halo, whatever its size.
           svg.querySelectorAll('.node').forEach((g) => {
             const node = NODES[g.dataset.node]
-            g.querySelectorAll('text').forEach((t, i) => t.setAttribute('y', titleBaseline(node, o, R, look.titleGap, i).toFixed(2)))
+            // Removed lines leave no gap (edit mode keeps their slot so they can be clicked back).
+            let slot = 0
+            g.querySelectorAll('text').forEach((t) => {
+              t.setAttribute('y', titleBaseline(node, o, R, look.titleGap, slot).toFixed(2))
+              if (!t.classList.contains('is-gone') || section.dataset.edit === 'on') slot++
+            })
           })
         }
         const geometry = ['haloScale', 'arrowGap', 'titleGap']
@@ -1098,6 +1109,9 @@
         const rowText = (r) => [...r.querySelectorAll('text')].pop()
         const labelRows = [...svg.querySelectorAll('.edge')].flatMap((g) =>
           [...g.querySelectorAll('.lbl-row')].map((r) => ({ key: `${g.dataset.edge}:${rowText(r).textContent}`, r, original: rowText(r).textContent })))
+        // Node titles and subtitles (WATCH / Detect + nudge …) edit the same way, keyed node:<key>:<line>.
+        const nodeLines = [...svg.querySelectorAll('.node')].flatMap((g) =>
+          [...g.querySelectorAll('text')].map((t, i) => ({ key: `node:${g.dataset.node}:${i}`, t, original: t.textContent })))
         // An empty override removes the line; the rows below close the gap (edit mode shows it faded).
         const applyLabels = () => {
           labelRows.forEach(({ key, r, original }) => {
@@ -1105,6 +1119,16 @@
             r.classList.toggle('is-gone', v === '')
             rowText(r).textContent = v ? v : original
           })
+          nodeLines.forEach(({ key, t, original }) => {
+            const v = settings.labels[key]
+            t.classList.toggle('is-gone', v === '')
+            t.textContent = v ? v : original
+          })
+          // Arrows leaving a node downward stop below its last remaining line.
+          svg.querySelectorAll('.node').forEach((g) => {
+            NODES[g.dataset.node].shown = section.dataset.edit === 'on' ? undefined : g.querySelectorAll('text:not(.is-gone)').length
+          })
+          retarget()
           applyLineSpacing(look.lineSp)
           alignEndLabels(svg)
         }
@@ -1115,20 +1139,24 @@
           section.dataset.edit = on ? 'on' : 'off'
           editBtn.textContent = on ? 'Done editing' : 'Edit text'
           if (on) setPlaying(false)
-          applyLineSpacing(look.lineSp)
+          applyLabels()
+          show(step)
         })
         svg.addEventListener('click', (e) => {
           if (section.dataset.edit !== 'on') return
-          const hit = labelRows.find(({ r }) => r.contains(e.target))
+          const hit = labelRows.find(({ r }) => r.contains(e.target)) ?? nodeLines.find(({ t }) => t === e.target)
           if (!hit) return
-          const next = window.prompt('Label text (leave empty to remove this line)', hit.r.classList.contains('is-gone') ? hit.original : rowText(hit.r).textContent)
+          const el = hit.r ?? hit.t
+          const current = hit.r ? rowText(hit.r).textContent : hit.t.textContent
+          const next = window.prompt('Text (leave empty to remove this line)', el.classList.contains('is-gone') ? hit.original : current)
           if (next === null) return
           if (next === hit.original) delete settings.labels[hit.key]
           else settings.labels[hit.key] = next.trim() === '' ? '' : next
           saveSettings()
           applyLabels()
+          show(step)
         })
-        section.querySelector('[data-act="reset-text"]').addEventListener('click', () => { settings.labels = {}; saveSettings(); applyLabels() })
+        section.querySelector('[data-act="reset-text"]').addEventListener('click', () => { settings.labels = {}; saveSettings(); applyLabels(); show(step) })
 
         revealSelect.addEventListener('change', () => { settings.reveal[step] = revealSelect.value; saveSettings(); show(step) })
         waveToggle.addEventListener('change', () => { settings.waves[step] = waveToggle.checked; saveSettings(); show(step) })
