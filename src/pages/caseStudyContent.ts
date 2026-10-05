@@ -211,16 +211,8 @@ export const UNWIND_CONFIG = {
     phoneScale: [1, 0.5, 1.6, 0.01] as Tuple,
     /** Moves the hero phone up (−) or down (+), px. */
     phoneY: [0, -300, 300, 1] as Tuple,
-    /** Under the title: the phone alone, or the Apple Watch (left) beside the phone (right). */
-    devices: { type: 'select' as const, options: ['watch + phone', 'phone'], default: 'watch + phone' },
-    /** Watch height as a share of the phone's height. */
-    watchSize: [0.64, 0.4, 1.4, 0.01] as Tuple,
-    /** Space between the watch and the phone (px). */
-    devicesGap: [56, -80, 240, 1] as Tuple,
-    /** Top of the watch + phone pair, % of the screen height; they run past the fold. */
+    /** Top of the centered phone, % of the screen height. */
     devicesTop: [56, 20, 90, 0.5] as Tuple,
-    /** Drops the watch below the phone's top edge, % of the screen height. */
-    watchY: [9, -30, 40, 0.5] as Tuple,
     /** Moves each hero element up (−) or down (+), px, without changing the layout around it. */
     y: {
       braid: [0, -200, 200, 1] as Tuple,

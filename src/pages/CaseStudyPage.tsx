@@ -56,26 +56,6 @@ function NotificationDemo({ media }: { media: Media }) {
   )
 }
 
-/**
- * Hero Apple Watch: the notification prototype's watch screen (`?embed=watch`) in the Starlight
- * frame. Frame PNG is 540×860 with the screen cut-out at x 72, y 193, 396×479.
- */
-function HeroWatch() {
-  const hidePanel = (e: SyntheticEvent<HTMLIFrameElement>) => {
-    const doc = e.currentTarget.contentDocument
-    if (!doc) return
-    const style = doc.createElement('style')
-    style.textContent = '.dialkit-panel,[class*="dialkit"]{display:none!important}'
-    doc.head.append(style)
-  }
-  return (
-    <div className="case__watch" aria-hidden="true">
-      <iframe src="/work/unwind/notification/notification.html?embed=watch" title="Unwind watch notification" tabIndex={-1} onLoad={hidePanel} />
-      <img src="/work/unwind/watch/starlight.png" alt="" width={540} height={860} draggable={false} />
-    </div>
-  )
-}
-
 /** Partner logo row for the hero; placement and size come from the "logos" dials. */
 function LogoRow({ l }: { l: Logos }) {
   return (
@@ -343,7 +323,7 @@ export function CaseStudyPage({ id }: Props) {
   }, [orderSig])
   const heroSpacing = (
     all as unknown as {
-      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devices: string; watchSize: number; devicesGap: number; devicesTop: number; watchY: number; y: { braid: number; title: number; meta: number; logos: number } }
+      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devicesTop: number; y: { braid: number; title: number; meta: number; logos: number } }
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
@@ -468,9 +448,6 @@ export function CaseStudyPage({ id }: Props) {
                   '--hero-phone-h': `${heroSpacing.phoneHeight}svh`,
                   '--hero-phone-scale': heroSpacing.phoneScale,
                   '--hero-phone-y': `${heroSpacing.phoneY}px`,
-                  '--hero-watch-size': heroSpacing.watchSize,
-                  '--hero-devices-gap': `${heroSpacing.devicesGap}px`,
-                  '--hero-watch-y': `${heroSpacing.watchY}svh`,
                   '--hero-devices-top': `${heroSpacing.devicesTop}svh`,
                   '--hero-braid-y': `${heroSpacing.y.braid}px`,
                   '--hero-title-y': `${heroSpacing.y.title}px`,
@@ -525,15 +502,12 @@ export function CaseStudyPage({ id }: Props) {
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
-        {hasVideo &&
-          (isHero && heroSpacing?.devices === 'watch + phone' ? (
-            <div className="case__devices">
-              <HeroWatch />
-              <ProtoMedia media={s.media} eager />
-            </div>
-          ) : (
-            <ProtoMedia media={s.media} eager={isHero} />
-          ))}
+        {isHero && id === 'unwind' ? (
+          // Exact 2× Paper export, including bezel: file 01M2EBW39E793RGX29545TP971, frame 77W-0.
+          <div className="case__devices">
+            <img className="case__hero-phone" src="/work/unwind/hero/momo-paper.png" width={838} height={1746} alt="Momo welcome screen with the blue cloud mascot, Get started and account sign-in options" fetchPriority="high" />
+          </div>
+        ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
         {hasPlaceholder && <MediaPlaceholder label={s.media.placeholder ?? ''} size={s.media.size} x={s.media.x} y={s.media.y} radius={s.media.radius} />}
         {hasDemo && <NotificationDemo media={s.media} />}

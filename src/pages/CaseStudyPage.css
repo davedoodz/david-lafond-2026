@@ -1506,10 +1506,7 @@ html[data-case-snap] .case__group > * {
   justify-self: center;
 }
 
-/* Hero devices: the Apple Watch (notification prototype) left of the phone, both rising
-   from below the fold. Pinned to a share of the screen height so the crop is the same on
-   every screen. The fold crops them on the first screen; the hero is tall enough to hold them
-   whole, so scrolling down reveals the full devices before the next section. */
+/* The exact Paper phone artwork, centered below the hero copy. */
 .case__devices {
   position: absolute;
   top: var(--hero-devices-top, 56svh);
@@ -1518,48 +1515,17 @@ html[data-case-snap] .case__group > * {
   display: flex;
   width: max-content;
   align-items: flex-start;
-  gap: var(--hero-devices-gap, 56px);
 }
 .case .case__section--hero:has(.case__devices) {
   height: max(100svh, calc(var(--hero-devices-top, 56svh) + var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) + var(--hero-phone-y, 0px) + 6svh));
 }
-.case__watch {
-  position: relative;
-  flex: none;
-  height: calc(var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1) * var(--hero-watch-size, 0.64));
-  aspect-ratio: 540 / 860;
-  translate: 0 calc(var(--hero-phone-y, 0px) + var(--hero-watch-y, 9svh));
-}
-.case__watch iframe {
-  position: absolute;
-  left: calc(72 / 540 * 100%);
-  top: calc(193 / 860 * 100%);
-  width: calc(396 / 540 * 100%);
-  height: calc(479 / 860 * 100%);
-  border: 0;
-  border-radius: 14%/12%;
-  background: #000;
-  pointer-events: none;
-}
-.case__watch img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  user-select: none;
-}
-@media (max-width: 800px) {
-  .case__devices {
-    gap: 16px;
-  }
-  .case .case__section--hero .case__devices .case__media {
-    height: min(var(--hero-phone-h, 56svh), 44svh);
-    scale: 1;
-  }
-  .case__watch {
-    height: calc(min(var(--hero-phone-h, 56svh), 44svh) * var(--hero-watch-size, 0.64));
-  }
+.case__hero-phone {
+  display: block;
+  height: calc(var(--hero-phone-h, 56svh) * var(--hero-phone-scale, 1));
+  width: auto;
+  max-width: calc(100vw - 48px);
+  object-fit: contain;
+  translate: 0 var(--hero-phone-y, 0px);
 }
 /* Persona `scenario`: the moments header becomes one scenario card. */
 [data-persona-contexts='scenario'] .persona__moments header {
