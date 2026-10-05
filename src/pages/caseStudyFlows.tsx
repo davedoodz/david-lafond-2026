@@ -187,13 +187,15 @@ function LockNotification() {
     <div className="case__phone lock" aria-hidden="true">
       <img className="lock__bg" src="/work/unwind/flows/lockscreen.webp" alt="" draggable={false} />
       <div className="lock__note">
-        <div className="lock__row">
-          <img className="lock__icon" src="/work/unwind/flows/unwind-icon.svg" alt="" />
-          <span className="lock__app">UNWIND</span>
-          <span className="lock__time">now</span>
+        <span className="lock__icon" />
+        <div className="lock__copy">
+          <div className="lock__row">
+            <span className="lock__app">Momo</span>
+            <span className="lock__time">now</span>
+          </div>
+          <p className="lock__title">Something changed.</p>
+          <p className="lock__text">Your heart rate rose while you were still. How are you feeling?</p>
         </div>
-        <p className="lock__title">Something changed.</p>
-        <p className="lock__text">Your heart rate rose while you were still. How are you feeling?</p>
         <div className="lock__actions">
           <span>Talk for 30 seconds</span>
           <span>Not now</span>
