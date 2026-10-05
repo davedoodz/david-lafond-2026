@@ -116,6 +116,13 @@
       .story .node.is-on .node__halo { opacity: 0.1; }
       .story .trace { fill: none; stroke: var(--unwind); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
       .story .pulse { fill: var(--unwind); opacity: 0; }
+      .story .ring { fill: none; stroke: var(--unwind); stroke-width: 1.5; opacity: 0; }
+      .story .tide { fill: none; stroke: var(--unwind); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0.1 9; opacity: 0; }
+      .story .comet { fill: none; stroke: var(--unwind); stroke-width: 3; stroke-linecap: round; }
+      .story .comet--glow { stroke-width: 9; stroke-opacity: 0.45; }
+      .story[data-feel='breathe'] .node.is-on .node__halo { animation: halo-breathe 5.2s ease-in-out infinite; }
+      @keyframes halo-breathe { 50% { opacity: 0.16; } }
+      @media (prefers-reduced-motion: reduce) { .story .node__halo { animation: none !important; } }
       .story__caption { display: flex; gap: 16px; align-items: baseline; min-height: 64px; }
       .story__num { font-size: 32px; color: var(--unwind); letter-spacing: -0.04em; }
       .story__title { font-size: 20px; font-weight: 500; }
@@ -446,8 +453,17 @@
         { title: 'You reflect', text: 'A short prompt on your wrist; a journal with what-ifs and behavior plans on your phone.', edges: [2, 4], nodes: ['watch', 'phone', 'user'] },
         { title: 'The loop repeats', text: 'Each reflection becomes new context, so the next prompt fits you better.', edges: [0, 6, 3, 5, 8, 1, 7, 2, 4], nodes: Object.keys(NODES) },
       ]
-      const STEP_MS = 4200
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+      const ease = (x) => 0.5 - Math.cos(Math.PI * Math.min(1, Math.max(0, x))) / 2
+      // Flow feels. All follow the case study's rule: ink stays still, only Unwind blue moves.
+      const FEELS = {
+        breathe: { name: 'Breathe', note: 'Lines draw in slowly, then glow in and out like a breath.', step: 5600, draw: 1600 },
+        ripple: { name: 'Ripple', note: 'One soft dot crosses each line; a ring spreads where it lands.', step: 5000, draw: 1200 },
+        tide: { name: 'Tide', note: 'Fine blue dots drift slowly along the line, like the Live flow option.', step: 5400, draw: 1400 },
+        comet: { name: 'Soft comet', note: 'A blurred streak of light glides along each line.', step: 4800, draw: 1000 },
+        ink: { name: 'Ink in', note: 'The line draws once and holds. Stillest; the caption does the work.', step: 5200, draw: 2000 },
+        pulse: { name: 'Pulse dots', note: 'Three dots chase along each line. The first version.', step: 4200, draw: 900 },
+      }
 
       function mountStory() {
         const base = OPTIONS.find((o) => o.id === 'hairline')
@@ -458,7 +474,8 @@
         section.innerHTML = `
           <div class="option__head">
             <h2>Animated — how it works</h2>
-            <p>The Hairline diagram, told one step at a time.</p>
+            <p class="story__feelnote"></p>
+            <label>Feel <select data-act="feel" aria-label="Flow feel">${Object.entries(FEELS).map(([k, f]) => `<option value="${k}">${f.name}</option>`).join('')}</select></label>
             <button type="button" data-act="play">Pause</button>
           </div>
           <div class="story__caption" aria-live="polite">
@@ -472,7 +489,15 @@
         const svg = section.querySelector('svg')
         const layer = svg.querySelector('.story-flow')
         const lines = [...svg.querySelectorAll('.edge__line')]
-        let step = 0, playing = !reduceMotion, started = 0, raf = 0, pulses = []
+        const SVGNS = 'http://www.w3.org/2000/svg'
+        svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>')
+        let step = 0, playing = !reduceMotion, started = 0, flows = [], feel = FEELS.breathe
+        const el = (tag, attrs) => {
+          const n = document.createElementNS(SVGNS, tag)
+          for (const k in attrs) n.setAttribute(k, attrs[k])
+          layer.append(n)
+          return n
+        }
 
         function show(i) {
           step = (i + STORY.length) % STORY.length
@@ -483,41 +508,81 @@
           section.querySelectorAll('[data-step]').forEach((b) => b.setAttribute('aria-current', String(+b.dataset.step === step)))
           svg.querySelectorAll('.edge').forEach((g) => g.classList.toggle('is-on', s.edges.includes(+g.dataset.edge)))
           svg.querySelectorAll('.node').forEach((g) => g.classList.toggle('is-on', s.nodes.includes(g.dataset.node)))
-          // Blue overlay per active edge: the line draws in, then dots travel along it.
-          layer.innerHTML = s.edges.map((e) => `<path class="trace" d="${lines[e].getAttribute('d')}" pathLength="1"/>`).join('')
-          const traces = [...layer.querySelectorAll('.trace')]
-          pulses = traces.map((t) => {
-            const dots = [0, 1, 2].map(() => {
-              const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-              c.setAttribute('r', '4.5')
-              c.setAttribute('class', 'pulse')
-              layer.append(c)
-              return c
-            })
-            return { path: t, len: t.getTotalLength(), dots }
+          layer.innerHTML = ''
+          flows = s.edges.map((e, k) => {
+            const d = lines[e].getAttribute('d')
+            const trace = el('path', { class: 'trace', d, pathLength: 1 })
+            const len = trace.getTotalLength()
+            const f = { trace, len, k, end: trace.getPointAtLength(len) }
+            if (feel === FEELS.pulse) f.dots = [0, 1, 2].map(() => el('circle', { r: 4.5, class: 'pulse' }))
+            if (feel === FEELS.ripple) {
+              f.ring = el('circle', { class: 'ring', cx: f.end.x, cy: f.end.y, r: 4 })
+              f.dot = el('circle', { r: 5, class: 'pulse' })
+            }
+            if (feel === FEELS.tide) f.tide = el('path', { class: 'tide', d })
+            if (feel === FEELS.comet) {
+              f.glow = el('path', { class: 'comet comet--glow', d, filter: 'url(#story-soft)' })
+              f.head = el('path', { class: 'comet', d })
+            }
+            return f
           })
           started = performance.now()
         }
 
         function frame(now) {
           const t = now - started
-          const draw = Math.min(1, t / 900)
-          for (const p of pulses) {
-            p.path.style.strokeDashoffset = String(1 - draw)
-            p.dots.forEach((dot, k) => {
-              const phase = (t - 900 - k * 500) / 1500
-              const visible = !reduceMotion && phase >= 0
-              dot.style.opacity = visible ? String(Math.sin(Math.PI * (phase % 1))) : '0'
-              if (visible) {
-                const pt = p.path.getPointAtLength((phase % 1) * p.len)
-                dot.setAttribute('cx', pt.x)
-                dot.setAttribute('cy', pt.y)
+          const drawn = ease(t / feel.draw)
+          const after = t - feel.draw
+          const live = !reduceMotion && after > 0
+          for (const f of flows) {
+            f.trace.style.strokeDashoffset = String(1 - drawn)
+            if (feel === FEELS.breathe) {
+              f.trace.style.opacity = live ? String(0.55 + 0.45 * Math.cos((after / 2600) * 2 * Math.PI)) : '1'
+            } else if (feel === FEELS.pulse) {
+              f.dots.forEach((dot, k) => {
+                const phase = (after - k * 500) / 1500
+                const on = live && phase >= 0
+                dot.style.opacity = on ? String(Math.sin(Math.PI * (phase % 1))) : '0'
+                if (on) { const p = f.trace.getPointAtLength((phase % 1) * f.len); dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y) }
+              })
+            } else if (feel === FEELS.ripple) {
+              // 2.4s cycle: 1.6s glide (eased), then the ring spreads at the arrow.
+              const c = live ? ((after - f.k * 300) / 2400) : -1
+              const glide = c >= 0 ? (c % 1) / (1.6 / 2.4) : -1
+              const on = glide >= 0 && glide <= 1
+              f.dot.style.opacity = on ? String(Math.min(1, glide * 6, (1 - glide) * 6)) : '0'
+              if (on) { const p = f.trace.getPointAtLength(ease(glide) * f.len); f.dot.setAttribute('cx', p.x); f.dot.setAttribute('cy', p.y) }
+              const r = glide > 1 ? (glide - 1) / 0.5 : 0
+              f.ring.setAttribute('r', String(4 + 22 * ease(r)))
+              f.ring.style.opacity = r > 0 ? String(0.6 * (1 - r)) : '0'
+            } else if (feel === FEELS.tide) {
+              f.trace.style.opacity = live ? '0.25' : '1'
+              f.tide.style.opacity = live ? String(Math.min(1, after / 600)) : '0'
+              f.tide.style.strokeDashoffset = String(-after * 0.014)
+            } else if (feel === FEELS.comet) {
+              const seg = 70, travel = f.len + seg
+              const pos = live ? ((after + f.k * 400) / 2200) % 1 : 0
+              const off = String(seg - pos * travel)
+              for (const p of [f.glow, f.head]) {
+                p.style.strokeDasharray = `${seg} ${f.len + seg}`
+                p.style.strokeDashoffset = off
+                p.style.opacity = live ? '' : '0'
               }
-            })
+              f.trace.style.opacity = live ? '0.35' : '1'
+            }
           }
-          if (playing && t > STEP_MS) show(step + 1)
-          raf = requestAnimationFrame(frame)
+          if (playing && t > feel.step) show(step + 1)
+          requestAnimationFrame(frame)
         }
+
+        const feelSelect = section.querySelector('[data-act="feel"]')
+        const setFeel = (key) => {
+          feel = FEELS[key]
+          section.dataset.feel = key
+          section.querySelector('.story__feelnote').textContent = feel.note
+          show(step)
+        }
+        feelSelect.addEventListener('change', () => setFeel(feelSelect.value))
 
         const playBtn = section.querySelector('[data-act="play"]')
         const setPlaying = (v) => { playing = v; playBtn.textContent = v ? 'Pause' : 'Play' }
@@ -527,8 +592,8 @@
           if (b) { setPlaying(false); show(+b.dataset.step) }
         })
         setPlaying(playing)
-        show(0)
-        raf = requestAnimationFrame(frame)
+        setFeel('breathe')
+        requestAnimationFrame(frame)
       }
 
       const root = document.getElementById('options')
