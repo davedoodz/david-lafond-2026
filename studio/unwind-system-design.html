@@ -830,8 +830,11 @@
             const motion = ICON_MOTION[l.items[idx].dataset.item]
             if (glyph && motion && !reduceMotion) glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), easing: 'ease-in-out' })
           }
-          section.style.setProperty('--progress', String(Math.min(1, t / stepDuration())))
-          if (playing && t > stepDuration()) show(step + 1)
+          // A step never ends mid-spotlight: it lasts at least one full round of every label's bullets.
+          const spotEnd = Math.max(0, ...labels.filter((l) => l.items.length).map((l) => l.spotFrom + l.items.length * timing.spot))
+          const dur = Math.max(stepDuration(), spotEnd)
+          section.style.setProperty('--progress', String(Math.min(1, t / dur)))
+          if (playing && t > dur) show(step + 1)
           requestAnimationFrame(frame)
         }
 
