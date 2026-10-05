@@ -596,6 +596,11 @@
           <div class="story__timing" aria-label="Text">
             <label>Text in (this step) <select data-act="reveal">${Object.entries(REVEALS).map(([k, r]) => `<option value="${k}">${r.name}</option>`).join('')}</select></label>
             <label><input type="checkbox" data-act="wave" /> Wave this step</label>
+            <label>This step lasts <input type="range" data-act="step-dur" min="1" max="20" step="0.1" /><output></output></label>
+            <button type="button" data-act="step-dur-reset">Use default</button>
+            <button type="button" data-act="prev">← Prev</button>
+            <button type="button" data-act="next">Next →</button>
+            <button type="button" data-act="preview">Preview transition into this step</button>
             <button type="button" data-act="edit">Edit text</button>
             <button type="button" data-act="reset-text">Reset text</button>
           </div>
@@ -611,6 +616,17 @@
         const WAVE_STEPS = [0, 4]
         const waveFor = (i) => (typeof settings.waves[i] === 'boolean' ? settings.waves[i] : WAVE_STEPS.includes(i))
         let waveOn = true
+        // Each step can hold for its own time; otherwise it uses the Step slider.
+        const stepDurInput = section.querySelector('[data-act="step-dur"]')
+        const stepDuration = () => {
+          const v = Number(settings.stepDur[step])
+          return Number.isFinite(v) && v > 0 ? Math.min(20000, Math.max(1000, v)) : timing.step
+        }
+        const syncStepDur = () => {
+          const custom = settings.stepDur[step] != null
+          stepDurInput.value = stepDuration() / 1000
+          stepDurInput.nextElementSibling.textContent = `${(stepDuration() / 1000).toFixed(1)}s${custom ? '' : ' (default)'}`
+        }
         const lines = [...svg.querySelectorAll('.edge__line')]
         // Braided strands, ported from the case-study voice band (braid.js): same palette, a phase
         // offset per strand, and a soft blur. Each strand is a filled ribbon offset along the edge normal.
@@ -737,6 +753,7 @@
           waveOn = waveFor(step)
           waveToggle.checked = waveOn
           layer.style.display = waveOn ? '' : 'none'
+          syncStepDur()
           labels = s.edges.map((e) => {
             const g = svg.querySelector(`.edge[data-edge="${e}"]`)
             const rows = [...g.querySelectorAll('.lbl-row')]
@@ -809,8 +826,8 @@
             const motion = ICON_MOTION[l.items[idx].dataset.item]
             if (glyph && motion && !reduceMotion) glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), easing: 'ease-in-out' })
           }
-          section.style.setProperty('--progress', String(Math.min(1, t / timing.step)))
-          if (playing && t > timing.step) show(step + 1)
+          section.style.setProperty('--progress', String(Math.min(1, t / stepDuration())))
+          if (playing && t > stepDuration()) show(step + 1)
           requestAnimationFrame(frame)
         }
 
@@ -960,9 +977,26 @@
         const playBtn = section.querySelector('[data-act="play"]')
         const setPlaying = (v) => { playing = v; playBtn.textContent = v ? 'Pause' : 'Play' }
         playBtn.addEventListener('click', () => { setPlaying(!playing); if (playing) started = performance.now() })
+        // Transitions: step back/forward from the current state, or replay "previous → this step".
+        let previewTimer
+        const go = (i) => { clearTimeout(previewTimer); setPlaying(false); show(i) }
+        section.querySelector('[data-act="prev"]').addEventListener('click', () => go(step - 1))
+        section.querySelector('[data-act="next"]').addEventListener('click', () => go(step + 1))
+        section.querySelector('[data-act="preview"]').addEventListener('click', () => {
+          const target = step
+          go(target - 1)
+          // Hold the previous step until its lines are drawn, then advance so the change is visible.
+          previewTimer = setTimeout(() => show(target), timing.draw + 700)
+        })
+        stepDurInput.addEventListener('input', () => {
+          settings.stepDur[step] = +stepDurInput.value * 1000
+          saveSettings()
+          syncStepDur()
+        })
+        section.querySelector('[data-act="step-dur-reset"]').addEventListener('click', () => { delete settings.stepDur[step]; saveSettings(); syncStepDur() })
         section.querySelector('.story__steps').addEventListener('click', (e) => {
           const b = e.target.closest('[data-step]')
-          if (b) { setPlaying(false); show(+b.dataset.step) }
+          if (b) go(+b.dataset.step)
         })
         setPlaying(playing)
         setFeel(settings.feel)
@@ -976,9 +1010,9 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves) }
+          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur) }
         } catch {
-          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {} }
+          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {} }
         }
       })()
       const saveSettings = () => {
