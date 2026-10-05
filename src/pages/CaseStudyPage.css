@@ -588,6 +588,17 @@ html[data-case-snap] .case__moment {
   object-fit: contain;
   filter: drop-shadow(0 30px 40px rgb(23 23 23 / 0.12));
 }
+/* The recordings have the page colour in the four corners outside the phone frame. A mask traced
+   from the frame (flows/phone-mask.png, same 530×1080 size) hides them, so the wrapper's
+   drop-shadow follows the phone instead of the box. */
+.case__phone-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat;
+  -webkit-mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat;
+}
 .case__phone-label {
   margin: 18px 0 0;
   font-size: var(--text-small);

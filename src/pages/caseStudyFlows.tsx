@@ -16,7 +16,12 @@ export function PhoneVideo({ name, className = '' }: { name: string; className?:
     return () => observer.disconnect()
   }, [])
   const { src, poster } = flow(name)
-  return <video ref={ref} className={`case__phone ${className}`.trim()} src={src} poster={poster} muted loop playsInline preload="metadata" aria-hidden="true" />
+  // The wrapper carries size and shadow; the video is clipped to the phone outline (see .case__phone-video).
+  return (
+    <span className={`case__phone ${className}`.trim()} aria-hidden="true">
+      <video ref={ref} className="case__phone-video" src={src} poster={poster} muted loop playsInline preload="metadata" />
+    </span>
+  )
 }
 
 type Edit = (path: string) => (next: string) => void
