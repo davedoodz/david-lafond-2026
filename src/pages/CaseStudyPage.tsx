@@ -5,6 +5,7 @@ import { Footer } from '../components/Footer'
 import { BackLink, Nav } from '../components/Nav'
 import type { Work } from '../data/works'
 import { UnwindIntro } from '../features/unwindIntro/UnwindIntro'
+import { MomoWelcome } from '../features/unwindIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
@@ -323,7 +324,7 @@ export function CaseStudyPage({ id }: Props) {
   }, [orderSig])
   const heroSpacing = (
     all as unknown as {
-      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; phoneHeight: number; phoneScale: number; phoneY: number; devicesTop: number; y: { braid: number; title: number; meta: number; logos: number } }
+      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; y: { braid: number; title: number; meta: number; logos: number } }
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
@@ -445,10 +446,6 @@ export function CaseStudyPage({ id }: Props) {
                   '--hero-logos-gap': `${heroSpacing.logosToTitle}px`,
                   '--hero-meta-gap': `${heroSpacing.titleToMeta}px`,
                   '--media-gap': `${heroSpacing.metaToPhone}px`,
-                  '--hero-phone-h': `${heroSpacing.phoneHeight}svh`,
-                  '--hero-phone-scale': heroSpacing.phoneScale,
-                  '--hero-phone-y': `${heroSpacing.phoneY}px`,
-                  '--hero-devices-top': `${heroSpacing.devicesTop}svh`,
                   '--hero-braid-y': `${heroSpacing.y.braid}px`,
                   '--hero-title-y': `${heroSpacing.y.title}px`,
                   '--hero-meta-y': `${heroSpacing.y.meta}px`,
@@ -503,9 +500,8 @@ export function CaseStudyPage({ id }: Props) {
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
         {isHero && id === 'unwind' ? (
-          // Exact 2× Paper export, including bezel: file 01M2EBW39E793RGX29545TP971, frame 77W-0.
           <div className="case__devices">
-            <img className="case__hero-phone" src="/work/unwind/hero/momo-paper.png" width={838} height={1746} alt="Momo welcome screen with the blue cloud mascot, Get started and account sign-in options" fetchPriority="high" />
+            <MomoWelcome />
           </div>
         ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
