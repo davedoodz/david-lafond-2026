@@ -7,10 +7,34 @@ import './unwindIntro.css'
 type Tuple = [number, number, number, number]
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 const smooth = (v: number) => v * v * (3 - 2 * v)
+// Ordered authored boundaries. Each dial retimes one whole sequence without changing its poses.
+const SEQUENCES = [
+  { key: 'phoneArrival', end: PHONE_TIMELINE.meet },
+  { key: 'meetingNotice', end: PHONE_TIMELINE.luck },
+  { key: 'goodLuckNotice', end: PHONE_TIMELINE.skip },
+  { key: 'threePm', end: PHONE_TIMELINE.k[1] },
+  { key: 'fivePm', end: PHONE_TIMELINE.k[2] },
+  { key: 'evening', end: PHONE_TIMELINE.det },
+  { key: 'bodySignals', end: PHONE_TIMELINE.risen },
+  { key: 'signalChecks', end: PHONE_TIMELINE.buzz },
+  { key: 'momoNudge', end: PHONE_TIMELINE.press },
+  { key: 'openApp', end: PHONE_TIMELINE.ask },
+  { key: 'reflectionChoice', end: PHONE_TIMELINE.pick },
+  { key: 'momoEntrance', end: PHONE_TIMELINE.talk },
+  { key: 'voiceReflection', end: PHONE_TIMELINE.calm },
+  { key: 'heroHandoff', end: PHONE_TIMELINE.hero },
+  { key: 'heroHold', end: PHONE_TIMELINE.dur },
+] as const
+type SequenceKey = (typeof SEQUENCES)[number]['key']
+const TIMING = Object.fromEntries(SEQUENCES.map((sequence, i) => [
+  sequence.key, [sequence.end - (i ? SEQUENCES[i - 1].end : 0), 0.05, 30, 0.05],
+])) as Record<SequenceKey, Tuple>
 const CONFIG = {
   enabled: true,
   replay: { type: 'action' as const, label: 'Replay intro' },
   speed: [1, 0.1, 1.5, 0.05] as Tuple,
+  /** Seconds at speed 1. Applied on the next Replay intro, so edits never jump mid-scene. */
+  timingSeconds: { ...TIMING, _collapsed: false },
   hero: {
     width: [360, 120, 900, 10] as Tuple,
     slot: [48, 16, 200, 1] as Tuple,
@@ -62,6 +86,8 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     let ready = false, disposed = false, playing = false, armed = true
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
     let interrupted = false, enteredStage = false
+    let sequenceIndex = 0, sequenceTime = 0
+    let sequenceDurations = tRef.current.timingSeconds
     // Hover to replay: the band in the hero is a button. Hovering eases `swell` 0 → 1 (band grows and
     // speaks a little louder, the "Replay intro" pill drops under it); clicking replays the film.
     // Delegated listeners + a fresh lookup, so a re-rendered hero keeps working.
@@ -94,6 +120,8 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const start = () => {
       if (!ready) return
       playing = true; armed = false; time = 0; handoffY = null; interrupted = false
+      sequenceIndex = 0; sequenceTime = 0
+      sequenceDurations = { ...tRef.current.timingSeconds }
       enteredStage = progress() > .03
       setReplayable(false)
       cbRef.current.onStart?.()
@@ -117,7 +145,17 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       if (!playing && p < .03) armed = true
       if (ready && !playing && armed && p > s.startAt) start()
       if (playing) {
-        time += dt
+        sequenceTime += dt
+        while (sequenceIndex < SEQUENCES.length && sequenceTime >= sequenceDurations[SEQUENCES[sequenceIndex].key]) {
+          sequenceTime -= sequenceDurations[SEQUENCES[sequenceIndex].key]
+          sequenceIndex++
+        }
+        if (sequenceIndex === SEQUENCES.length) time = PHONE_TIMELINE.dur
+        else {
+          const sequence = SEQUENCES[sequenceIndex]
+          const from = sequenceIndex ? SEQUENCES[sequenceIndex - 1].end : 0
+          time = from + (sequence.end - from) * sequenceTime / sequenceDurations[sequence.key]
+        }
         if (time >= PHONE_TIMELINE.calm && s.returnToHero && !interrupted) {
           handoffY ??= window.scrollY
           const k = smooth(clamp((time - PHONE_TIMELINE.calm) / (PHONE_TIMELINE.hero - PHONE_TIMELINE.calm)))
