@@ -56,6 +56,9 @@
         margin: 0 auto;
         padding: 48px 44px 24px;
       }
+      @media (max-width: 600px) {
+        header, .option { padding-inline: 12px; }
+      }
       .option__head {
         display: flex;
         align-items: baseline;
@@ -88,9 +91,11 @@
       .option__head button:hover {
         border-color: var(--ink-900);
       }
+      /* The whole figure always fits the screen: width is capped so its height never exceeds the viewport. */
       svg {
         display: block;
-        width: 100%;
+        width: min(100%, calc((100svh - 24px) * var(--ar, 1.5)));
+        margin-inline: auto;
         height: auto;
       }
       .flow {
@@ -258,15 +263,34 @@
             { points: [[180, 560], [180, 830], [400, 830]], label: { x: 204, y: 660, anchor: 'start' } },
           ],
         },
+        // Phone: one column of nodes with every label to the right of its arrow, so labels get the full
+        // width and can be drawn large (≈11px on a 360px screen). The nudge loops back up the right edge.
+        column: {
+          name: 'Phone · single column',
+          W: 700, H: 1250, type: { labelSize: 22, titleSize: 20 },
+          nodes: { user: [150, 100], phone: [150, 420], ai: [150, 760], watch: [150, 1100], experts: [480, 1100] },
+          edges: [
+            { points: [[150, 1020], [150, 880]], label: { x: 174, y: 940, anchor: 'start' } },
+            { points: [[480, 1020], [480, 780], [240, 780]], label: { x: 252, y: 762, anchor: 'start' } },
+            { points: [[230, 720], [660, 720], [660, 100], [230, 100]], label: { x: 636, y: 260, anchor: 'end' } },
+            { points: [[150, 210], [150, 330]] },
+            { points: [[240, 420], [290, 420]], open: true, label: { x: 300, y: 394, anchor: 'start' } },
+            { points: [[150, 560], [150, 680]], label: { x: 174, y: 600, anchor: 'start' } },
+          ],
+        },
       }
-      const LAYOUT_KEY = (() => {
+      // Saved choice, or 'auto': landscape screens get Wide, portrait (phones) get Stacked.
+      const LAYOUT_CHOICE = (() => {
         try {
           const k = JSON.parse(localStorage.getItem('unwind-system-design:settings'))?.layout
-          return LAYOUTS[k] ? k : 'wide'
+          return LAYOUTS[k] ? k : 'auto'
         } catch {
-          return 'wide'
+          return 'auto'
         }
       })()
+      const portrait = matchMedia('(orientation: portrait)')
+      const LAYOUT_KEY = LAYOUT_CHOICE === 'auto' ? (portrait.matches ? 'column' : 'wide') : LAYOUT_CHOICE
+      if (LAYOUT_CHOICE === 'auto') portrait.addEventListener('change', () => location.reload())
       const LAYOUT = LAYOUTS[LAYOUT_KEY]
       const { W, H } = LAYOUT
       const NODES = Object.fromEntries(Object.entries(NODE_INFO).map(([k, n]) => [k, { ...n, x: LAYOUT.nodes[k][0], y: LAYOUT.nodes[k][1] }]))
@@ -501,7 +525,7 @@
           })
         }
 
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Beatrice, system-ui, sans-serif" letter-spacing="-0.01em" role="img" aria-label="Unwind system design — ${o.name}">${parts.join('')}</svg>`
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="--ar: ${(W / H).toFixed(4)}" font-family="Beatrice, system-ui, sans-serif" letter-spacing="-0.01em" role="img" aria-label="Unwind system design — ${o.name}">${parts.join('')}</svg>`
       }
 
       // ---------- Animated walkthrough (Hairline treatment) ----------
@@ -591,7 +615,7 @@
           <div class="option__head">
             <h2>Animated — how it works</h2>
             <p class="story__feelnote"></p>
-            <label>Layout <select data-act="layout" aria-label="Composition">${Object.entries(LAYOUTS).map(([k, l]) => `<option value="${k}"${k === LAYOUT_KEY ? ' selected' : ''}>${l.name}</option>`).join('')}</select></label>
+            <label>Layout <select data-act="layout" aria-label="Composition">${[['auto', `Auto (now ${LAYOUTS[LAYOUT_KEY].name})`], ...Object.entries(LAYOUTS).map(([k, l]) => [k, l.name])].map(([k, name]) => `<option value="${k}"${k === LAYOUT_CHOICE ? ' selected' : ''}>${name}</option>`).join('')}</select></label>
             <label>Feel <select data-act="feel" aria-label="Flow feel">${Object.entries(FEELS).map(([k, f]) => `<option value="${k}">${f.name}</option>`).join('')}</select></label>
             <button type="button" data-act="play">Pause</button>
           </div>
