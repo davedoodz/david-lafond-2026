@@ -111,7 +111,8 @@
       select { font: inherit; padding: 6px 10px; border: 1px solid var(--stone-400); border-radius: 8px; background: white; }
       .story .edge, .story .node { transition: opacity 0.6s ease; opacity: 0.16; }
       .story .edge.is-on, .story .node.is-on { opacity: 1; }
-      .story .edge.is-on > path:not(.edge__line) { fill: var(--unwind); transition: fill 0.4s ease 0.8s; }
+      .story .edge > path:not(.edge__line) { transition: fill 0.4s ease; }
+      .story .edge.is-live > path:not(.edge__line) { fill: var(--unwind); }
       .story .node__halo { opacity: 0; transition: opacity 0.6s ease; }
       .story .node.is-on .node__halo { opacity: 0.1; }
       .story .trace { fill: none; stroke: var(--unwind); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
@@ -192,26 +193,28 @@
       const STONE_LIGHT = '#a6a09c'
       const BLUE = '#53BFFE'
       const W = 1460
-      const H = 720
+      const H = 724
 
       // ---------- Content (one source for every option) ----------
+      // The layout mirrors around the centre row (y 378): every top edge has a bottom twin of the
+      // same length (0↔6, 1↔7, 2↔4, 3↔5), so paired flows travel at the same pace.
       const NODES = {
-        user: { x: 112, y: 385, title: ['USER'], icon: 'user' },
-        watch: { x: 512, y: 130, title: ['WATCH APP'], icon: 'watch', titleBelow: 82 },
-        db: { x: 907, y: 378, title: ['SECURE DATABASE', '+ NOVEL AI MODEL'], icon: 'cloud' },
-        therapist: { x: 1313, y: 385, title: ['REGISTERED THERAPISTS'], icon: 'therapist' },
-        phone: { x: 512, y: 618, title: ['PHONE APP'], icon: 'phone', titleBelow: 80 },
+        user: { x: 112, y: 378, title: ['USER'], icon: 'user', titleBelow: 92 },
+        watch: { x: 512, y: 128, title: ['WATCH APP'], icon: 'watch', titleBelow: 82 },
+        db: { x: 907, y: 378, title: ['SECURE DATABASE', '+ NOVEL AI MODEL'], icon: 'cloud', titleBelow: 76 },
+        therapist: { x: 1313, y: 378, title: ['REGISTERED THERAPISTS'], icon: 'therapist', titleBelow: 92 },
+        phone: { x: 512, y: 628, title: ['PHONE APP'], icon: 'phone', titleBelow: 80 },
       }
       // kind: data (user → system), ai (model output), training (therapists)
       const EDGES = [
         {
           kind: 'data',
-          points: [[112, 292], [112, 128], [452, 128]],
+          points: [[112, 266], [112, 128], [450, 128]],
           label: { x: 138, y: 164, anchor: 'start', head: 'Contextual user data:', items: ['biometrics', 'voice entries', 'movement', 'surrounding noise'] },
         },
         {
           kind: 'ai',
-          points: [[907, 302], [907, 128], [572, 128]],
+          points: [[907, 266], [907, 128], [574, 128]],
           label: { x: 883, y: 164, anchor: 'end', lines: ['Micro-reflection', 'prompt generation'] },
         },
         {
@@ -226,23 +229,23 @@
         },
         {
           kind: 'ai',
-          points: [[502, 532], [502, 388], [192, 388]],
+          points: [[502, 534], [502, 388], [192, 388]],
           label: { x: 476, y: 422, anchor: 'end', head: 'Interactive journal space:', items: ['daily entries', 'counterfactuals', 'behavior plans'] },
         },
         {
           kind: 'data',
-          points: [[522, 532], [522, 388], [818, 388]],
+          points: [[522, 534], [522, 388], [818, 388]],
           label: { x: 548, y: 422, anchor: 'start', lines: ['Activity user data'] },
         },
         {
           kind: 'data',
-          points: [[112, 502], [112, 612], [448, 612]],
-          label: { x: 138, y: 548, anchor: 'start', head: 'Activity user data:', items: ['touch & scroll interactions', 'content updates'] },
+          points: [[112, 490], [112, 628], [450, 628]],
+          label: { x: 138, y: 556, anchor: 'start', head: 'Activity user data:', items: ['touch & scroll interactions', 'content updates'] },
         },
         {
           kind: 'ai',
-          points: [[907, 520], [907, 612], [576, 612]],
-          label: { x: 883, y: 556, anchor: 'end', lines: ['Daily entries +', 'counterfactual', 'generation'] },
+          points: [[907, 490], [907, 628], [574, 628]],
+          label: { x: 883, y: 572, anchor: 'end', lines: ['Daily entries +', 'counterfactual', 'generation'] },
         },
         {
           kind: 'training',
@@ -545,19 +548,22 @@
           if (!live) return
           let a, b, env
           if (B.mode === 'comet') {
-            const pos = ((after + f.k * 420) / B.travel) % 1
+            const pos = (after / B.travel) % 1
             const head = pos * (f.len + B.win)
             a = head - B.win; b = head
+            if (after / B.travel >= f.len / (f.len + B.win)) f.arrived = true
             env = (u) => Math.pow(Math.sin(Math.PI * u), 0.8) * (0.3 + 0.7 * u)
           } else if (B.mode === 'ribbon') {
             a = 0; b = f.len
+            f.arrived = true
             const breath = 0.75 + 0.25 * Math.cos(after / 1400)
             const fade = Math.min(1, 40 / f.len)
             env = (u) => Math.min(1, u / fade, (1 - u) / fade) * breath
           } else {
             // wake: the tip travels the edge once per cycle, leaving a thinning calm thread.
-            const cyc = ((after + f.k * 300) % (B.travel + 900)) / B.travel
+            const cyc = (after % (B.travel + 900)) / B.travel
             a = 0; b = Math.min(1, cyc) * f.len
+            if (after / B.travel >= 1) f.arrived = true
             const hold = cyc > 1 ? 1 - (cyc - 1) * (B.travel / 900) : 1
             env = (u) => (0.12 + 0.88 * u * u) * Math.min(1, (1 - u) * 14 + 0.15) * hold
           }
@@ -599,7 +605,10 @@
           svg.querySelectorAll('.edge').forEach((g) => g.classList.toggle('is-on', s.edges.includes(+g.dataset.edge)))
           svg.querySelectorAll('.node').forEach((g) => g.classList.toggle('is-on', s.nodes.includes(g.dataset.node)))
           layer.innerHTML = ''
-          lines.forEach((line) => (line.style.opacity = ''))
+          lines.forEach((line) => {
+            line.style.opacity = ''
+            line.parentNode.classList.remove('is-live')
+          })
           flows = s.edges.map((e, k) => {
             const d = lines[e].getAttribute('d')
             const trace = el('path', { class: 'trace', d, pathLength: 1 })
@@ -683,11 +692,14 @@
               f.tide.style.strokeDashoffset = String(-after * 0.014)
             } else if (feel.braid) {
               drawBraid(f, feel.braid, after, live)
-              // Ribbon and wake are the line themselves; the comets ride on a faint guide.
+              // No blue before the braid: the ink line holds until the strands arrive. Ribbon and wake
+              // become the line themselves, so the ink fades under them.
               const own = feel.braid.mode !== 'comet'
-              f.trace.style.opacity = live ? (own ? '0' : '0.3') : '1'
+              f.trace.style.opacity = '0'
               f.base.style.opacity = live && own ? '0.12' : ''
             }
+            // Arrowheads turn blue only once the flow reaches them.
+            f.base.parentNode.classList.toggle('is-live', feel.braid ? !!f.arrived : live)
           }
           // Spotlight: one bullet at a time turns ink, its icon turns blue and does its small motion.
           for (const l of labels) {
