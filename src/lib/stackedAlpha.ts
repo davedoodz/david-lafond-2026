@@ -1,7 +1,7 @@
 /**
  * Momo clips are plain H.264 MP4s with the colour (premultiplied) in the top half and the alpha
  * mask in the bottom half. This recombines them on a WebGL canvas, so transparency never depends on
- * codec alpha support. Shared by the site's Momo component and the studio diagrams.
+ * codec alpha support.
  */
 const VERT = `attribute vec2 p;varying vec2 uv;void main(){uv=vec2((p.x+1.)*.5,(1.-p.y)*.5);gl_Position=vec4(p,0.,1.);}`
 const FRAG = `precision mediump float;varying vec2 uv;uniform sampler2D t;

@@ -122,17 +122,17 @@
       .story .edge > path:not(.edge__line) { transition: fill 0.4s ease, opacity 0.4s ease; opacity: var(--arrow-op, 1); }
       .story .edge.is-live > path:not(.edge__line) { opacity: 1; }
       .story .edge.is-live > path:not(.edge__line) { fill: var(--unwind); }
-      .story .edge.is-wave .edge__line { stroke: var(--unwind); }
-      .story .edge.is-wave > path:not(.edge__line):not([fill='none']) { fill: var(--unwind); }
-      .story .edge.is-wave > path[fill='none']:not(.edge__line) { stroke: var(--unwind); }
+      /* Arrows of the current and earlier steps are Unwind blue; earlier ones are translucent (--past-op). */
+      .story .edge:is(.is-blue, .is-past) .edge__line { stroke: var(--unwind); }
+      .story .edge:is(.is-blue, .is-past) > path:not(.edge__line):not([fill='none']) { fill: var(--unwind); }
+      .story .edge:is(.is-blue, .is-past) > path[fill='none']:not(.edge__line) { stroke: var(--unwind); }
       .story .node { opacity: var(--idle-op, 1); transition: opacity 0.6s ease; }
       .story .node.is-on { opacity: 1; }
       .story .edge.is-past { opacity: var(--past-op, 0.25); }
       .story .story-flow { opacity: var(--wave-op, 1); }
       .story .node__halo { opacity: 0; transition: opacity 0.6s ease; transform-box: fill-box; transform-origin: center; transform: scale(var(--halo-scale, 1)); }
-      .story .node :is(image, foreignObject) { transform-box: fill-box; transform-origin: center; transform: scale(var(--icon-scale, 1)); }
-      .momo-canvas { display: block; width: 100%; height: 100%; }
-      .momo-live .momo-still { visibility: hidden; }
+      .story .node image { transform-box: fill-box; transform-origin: center; transform: scale(var(--icon-scale, 1)); }
+      .story .node .momo-still { transform: translate(calc(var(--momo-x, 0) * 1px), calc(var(--momo-y, 0) * 1px)) scale(calc(var(--icon-scale, 1) * var(--momo-scale, 1))); }
       .story .node.is-on .node__halo { opacity: var(--halo-op, 0.1); }
       .story[data-halo='off'] .node__halo { display: none; }
       .story .lbl-row { transform-box: fill-box; transform-origin: left center; }
@@ -178,7 +178,6 @@
     <main id="options"></main>
 
     <script type="module">
-      import { stackedAlpha } from '/src/lib/stackedAlpha.ts'
       import { __iconData as activity } from '/node_modules/lucide-react/dist/esm/icons/activity.mjs'
       import { __iconData as footprints } from '/node_modules/lucide-react/dist/esm/icons/footprints.mjs'
       import { __iconData as shield } from '/node_modules/lucide-react/dist/esm/icons/shield-check.mjs'
@@ -216,25 +215,6 @@
         reader.onerror = reject
         reader.readAsDataURL(blob)
       }))
-      // Momo's open-eyes listening loop: one hidden video decoded once (stacked colour/alpha, same
-      // shader as the site), copied into every Momo canvas each frame. Diagrams re-render freely.
-      const momoVideo = Object.assign(document.createElement('video'), { src: '/work/unwind/momo-listening.mp4', muted: true, loop: true, playsInline: true, preload: 'auto' })
-      const momoGL = document.createElement('canvas')
-      stackedAlpha(momoVideo, momoGL)
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) momoVideo.play().catch(() => {})
-      const copyMomo = () => {
-        if (momoGL.width) {
-          document.documentElement.classList.add('momo-live')
-          document.querySelectorAll('canvas.momo-canvas').forEach((c) => {
-            if (c.width !== momoGL.width) { c.width = momoGL.width; c.height = momoGL.height }
-            const ctx = c.getContext('2d')
-            ctx.clearRect(0, 0, c.width, c.height)
-            ctx.drawImage(momoGL, 0, 0)
-          })
-        }
-        requestAnimationFrame(copyMomo)
-      }
-      requestAnimationFrame(copyMomo)
       const ARROWS = {
         original: { name: 'Original treatment' },
         solid: { name: 'Solid · open tip', dash: '', arrow: 'chevron', animate: false },
@@ -565,11 +545,9 @@
           if (o.disc) parts.push(`<circle cx="${node.x}" cy="${node.y}" r="${o.disc}" fill="#fff" filter="url(#shadow-${o.id})" />`)
           const size = o.disc ? 112 : 142
           if (node.icon === 'momo') {
-            // Momo (open eyes, listening loop). The still is the fallback and what SVG downloads keep;
-            // the live canvas sits on top once the clip is decoding.
-            const still = size * 1.18, live = size * 1.2
+            // Momo, open eyes (still). Studio controls nudge and scale it inside its halo.
+            const still = size * 1.18
             parts.push(`<image class="momo-still" href="${assets.momoStill}" x="${node.x - still / 2}" y="${node.y - still * 0.4125}" width="${still}" height="${still}" preserveAspectRatio="xMidYMid meet"/>`)
-            parts.push(`<foreignObject class="momo-live" x="${node.x - live / 2}" y="${node.y - live * 0.4375}" width="${live}" height="${live}"><canvas xmlns="http://www.w3.org/1999/xhtml" class="momo-canvas"></canvas></foreignObject>`)
           } else {
             parts.push(`<image href="${assets[node.icon]}" x="${node.x - size / 2}" y="${node.y - size / 2}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`)
           }
@@ -594,14 +572,12 @@
       }
 
       // ---------- Animated walkthrough (Hairline treatment) ----------
-      // Every step is an exchange; both directions of a pair play together, starting from the user.
-      // Edge indices follow EDGE_INFO.
+      // Linear: user ↔ watch, then watch ↔ AI (with the experts' framework), then AI ↔ phone ↔ user,
+      // then the whole loop. Both directions of each exchange play together. Edge indices follow EDGE_INFO.
       const STORY = [
         { title: 'You and your watch', text: 'The watch senses physiological signals and movement, and answers with a gentle nudge.', edges: [0, 1], nodes: ['user', 'watch'] },
-        { title: 'Watch and AI', text: 'The watch shares key moments with the AI, which learns the right time to nudge.', edges: [4, 5], nodes: ['watch', 'ai'] },
-        { title: 'You and your phone', text: 'You speak a voice reflection; the phone shows you patterns and action plans.', edges: [2, 3], nodes: ['user', 'phone'] },
-        { title: 'Phone and AI', text: 'Your journal and context reach the AI, which sends back personal insights.', edges: [6, 7], nodes: ['phone', 'ai'] },
-        { title: 'Experts guide the AI', text: 'Clinical experts give the AI an evidence-based framework to work from.', edges: [8], nodes: ['experts', 'ai'] },
+        { title: 'Watch and AI', text: 'The watch shares key moments with the AI, guided by the experts’ framework; the AI learns the right time to nudge.', edges: [4, 5, 8], nodes: ['watch', 'ai', 'experts'] },
+        { title: 'AI, phone and you', text: 'The AI sends personal insights to your phone; you reflect, and your journal and context flow back.', edges: [7, 6, 3, 2], nodes: ['ai', 'phone', 'user'] },
         { title: 'The full loop', text: 'Every exchange runs both ways, so each nudge fits you a little better.', edges: [0, 1, 2, 3, 4, 5, 6, 7, 8], nodes: Object.keys(NODES) },
       ]
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -661,6 +637,9 @@
         ['lineSp', 'Line spacing', 1, 2.4, 0.05, 1.3, null],
         ['arrowGap', 'Arrow gap', 0, 48, 1, 14, null],
         ['titleGap', 'Title gap', 0, 48, 1, 14, null],
+        ['momoX', 'Momo x', -80, 80, 1, 0, '--momo-x'],
+        ['momoY', 'Momo y', -80, 80, 1, 0, '--momo-y'],
+        ['momoScale', 'Momo size', 0.4, 2, 0.05, 1, '--momo-scale'],
       ]
       // How label rows enter, chosen per step.
       const REVEALS = {
@@ -720,8 +699,8 @@
         const layer = svg.querySelector('.story-flow')
         const revealSelect = section.querySelector('[data-act="reveal"]')
         const waveToggle = section.querySelector('[data-act="wave"]')
-        // The flow (braid, pulse, …) plays only on chosen steps; by default steps 1 and 5.
-        const WAVE_STEPS = [0, 4]
+        // The flow (braid, pulse, …) plays only on chosen steps; by default the two exchange halves (1 and 3).
+        const WAVE_STEPS = [0, 2]
         const waveFor = (i) => (typeof settings.waves[i] === 'boolean' ? settings.waves[i] : WAVE_STEPS.includes(i))
         let waveOn = true
         // Each step can hold for its own time; otherwise it uses the Step slider.
@@ -810,12 +789,10 @@
           layer.innerHTML = ''
           lines.forEach((line) => {
             line.style.opacity = ''
-            line.parentNode.classList.remove('is-live', 'is-wave')
+            line.parentNode.classList.remove('is-live', 'is-blue')
           })
-          // On wave steps the active arrows (line and head) stay blue while the waves run.
-          const wave = waveFor(step)
           flows = s.edges.map((e, k) => {
-            if (wave) lines[e].parentNode.classList.add('is-wave')
+            lines[e].parentNode.classList.add('is-blue')
             const d = lines[e].getAttribute('d')
             const trace = el('path', { class: 'trace', d, pathLength: 1 })
             const len = trace.getTotalLength()
@@ -828,9 +805,7 @@
                 [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full, stroke: BLUE }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0, stroke: BLUE }],
                 { duration: timing.draw, easing: 'cubic-bezier(.4,0,.2,1)' },
               )
-              // Blue only while growing; then it settles back to ink (wave steps stay blue throughout).
-              if (!wave) lines[e].animate([{ stroke: BLUE }, { stroke: lines[e].getAttribute('stroke') }], { duration: 600, delay: timing.draw, easing: 'ease-out', fill: 'backwards' })
-              // The head is blue while growing, then settles to ink with the line.
+              // Line and head grow in blue and stay blue (CSS .is-blue) for the step and after it.
               lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
                 const paint = head.getAttribute('fill') === 'none' ? 'stroke' : 'fill'
                 const op = getComputedStyle(head).opacity
@@ -838,7 +813,6 @@
                   [{ opacity: 0, [paint]: BLUE }, { opacity: 0, [paint]: BLUE, offset: 0.85 }, { opacity: op, [paint]: BLUE }],
                   { duration: timing.draw },
                 )
-                if (!wave) head.animate([{ [paint]: BLUE }, { [paint]: head.getAttribute(paint) }], { duration: 600, delay: timing.draw, easing: 'ease-out' })
               })
             }
             if (feel === FEELS.pulse) f.dots = [0, 1, 2].map(() => el('circle', { r: 4.5, class: 'pulse' }))
@@ -1037,7 +1011,7 @@
           const v = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
           const inp = lookInputs.find((x) => x.dataset.look === k)
           inp.value = v
-          inp.nextElementSibling.textContent = k === 'arrowGap' || k === 'titleGap' ? `${v}px` : ['lineSp', 'haloScale', 'iconScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
+          inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
           if (cssVar) section.style.setProperty(cssVar, String(v))
           else if (k === 'lineSp') applyLineSpacing(v)
           return v
