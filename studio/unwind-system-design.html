@@ -130,7 +130,9 @@
       .story .edge.is-past { opacity: var(--past-op, 0.25); }
       .story .story-flow { opacity: var(--wave-op, 1); }
       .story .node__halo { opacity: 0; transition: opacity 0.6s ease; transform-box: fill-box; transform-origin: center; transform: scale(var(--halo-scale, 1)); }
-      .story .node image { transform-box: fill-box; transform-origin: center; transform: scale(var(--icon-scale, 1)); }
+      .story .node :is(image, foreignObject) { transform-box: fill-box; transform-origin: center; transform: scale(var(--icon-scale, 1)); }
+      .momo-canvas { display: block; width: 100%; height: 100%; }
+      .momo-live .momo-still { visibility: hidden; }
       .story .node.is-on .node__halo { opacity: var(--halo-op, 0.1); }
       .story[data-halo='off'] .node__halo { display: none; }
       .story .lbl-row { transform-box: fill-box; transform-origin: left center; }
@@ -176,6 +178,7 @@
     <main id="options"></main>
 
     <script type="module">
+      import { stackedAlpha } from '/src/lib/stackedAlpha.ts'
       import { __iconData as activity } from '/node_modules/lucide-react/dist/esm/icons/activity.mjs'
       import { __iconData as footprints } from '/node_modules/lucide-react/dist/esm/icons/footprints.mjs'
       import { __iconData as shield } from '/node_modules/lucide-react/dist/esm/icons/shield-check.mjs'
@@ -203,6 +206,31 @@
         })
         return [name, data]
       })))
+      assets.momoStill = await fetch('/work/unwind/intro/momo-open.webp').then((r) => r.blob()).then((blob) => new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      }))
+      // Momo's open-eyes listening loop: one hidden video decoded once (stacked colour/alpha, same
+      // shader as the site), copied into every Momo canvas each frame. Diagrams re-render freely.
+      const momoVideo = Object.assign(document.createElement('video'), { src: '/work/unwind/momo-listening.mp4', muted: true, loop: true, playsInline: true, preload: 'auto' })
+      const momoGL = document.createElement('canvas')
+      stackedAlpha(momoVideo, momoGL)
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) momoVideo.play().catch(() => {})
+      const copyMomo = () => {
+        if (momoGL.width) {
+          document.documentElement.classList.add('momo-live')
+          document.querySelectorAll('canvas.momo-canvas').forEach((c) => {
+            if (c.width !== momoGL.width) { c.width = momoGL.width; c.height = momoGL.height }
+            const ctx = c.getContext('2d')
+            ctx.clearRect(0, 0, c.width, c.height)
+            ctx.drawImage(momoGL, 0, 0)
+          })
+        }
+        requestAnimationFrame(copyMomo)
+      }
+      requestAnimationFrame(copyMomo)
       const ARROWS = {
         original: { name: 'Original treatment' },
         solid: { name: 'Solid · open tip', dash: '', arrow: 'chevron', animate: false },
@@ -219,7 +247,7 @@
       const NODE_INFO = {
         user: { title: ['USER'], icon: 'user' },
         watch: { title: ['WATCH'], sub: 'Detect + nudge', icon: 'watch' },
-        ai: { title: ['PERSONALIZED AI'], sub: 'Connect the dots', icon: 'cloud' },
+        ai: { title: ['PERSONALIZED AI'], sub: 'Connect the dots', icon: 'momo' },
         experts: { title: ['CLINICAL EXPERTS'], icon: 'therapist' },
         phone: { title: ['PHONE'], sub: 'Reflect + understand', icon: 'phone' },
       }
@@ -278,7 +306,77 @@
             { points: [[150, 560], [150, 680]], label: { x: 174, y: 600, anchor: 'start' } },
           ],
         },
+        // ---- User as the core focus: the user sits at the centre and everything happens around them.
+        // Stage: the user in the middle, their devices on the left, the AI (Momo) on the right.
+        stage: {
+          name: 'User focus · stage, AI right',
+          W: 1700, H: 940, type: {},
+          nodes: { user: [700, 450], watch: [330, 170], phone: [330, 730], ai: [1080, 450], experts: [1580, 450] },
+          edges: [
+            { points: [[410, 170], [1080, 170], [1080, 360]], label: { x: 860, y: 206, anchor: 'start' } },
+            { points: [[1500, 450], [1170, 450]], label: { x: 1182, y: 434, anchor: 'start' } },
+            { points: [[1000, 450], [780, 450]], label: { x: 818, y: 434, anchor: 'start' } },
+            { points: [[700, 560], [700, 730], [410, 730]] },
+            { points: [[250, 730], [210, 730]], open: true, label: { x: 200, y: 712, anchor: 'end' } },
+            { points: [[330, 850], [330, 900], [1080, 900], [1080, 560]], label: { x: 760, y: 866, anchor: 'start' } },
+          ],
+        },
+        // Ring: phone, watch and AI orbit the user on three sides; experts sit behind the AI.
+        ring: {
+          name: 'User focus · ring, AI right',
+          W: 1400, H: 930, type: {},
+          nodes: { user: [720, 450], watch: [720, 110], ai: [1140, 450], experts: [1140, 800], phone: [300, 450] },
+          edges: [
+            { points: [[800, 110], [1140, 110], [1140, 360]], label: { x: 830, y: 146, anchor: 'start' } },
+            { points: [[1140, 720], [1140, 560]], label: { x: 1116, y: 650, anchor: 'end' } },
+            { points: [[1060, 450], [800, 450]], label: { x: 840, y: 434, anchor: 'start' } },
+            { points: [[640, 450], [380, 450]] },
+            { points: [[300, 560], [300, 640]], open: true, label: { x: 276, y: 672, anchor: 'start' } },
+            { points: [[300, 370], [300, 260], [1100, 260], [1100, 360]], label: { x: 380, y: 226, anchor: 'start' } },
+          ],
+        },
+        // Hub: the user at the centre of the lower row between watch and phone; both feed the AI
+        // above, which answers straight down to the user. Experts sit on top. Portrait (tablet/phone).
+        hub: {
+          name: 'User focus · hub, portrait',
+          W: 900, H: 1120, type: { labelSize: 18, titleSize: 15 },
+          nodes: { experts: [450, 110], ai: [450, 450], user: [450, 820], watch: [140, 820], phone: [760, 820] },
+          edges: [
+            { points: [[140, 730], [140, 450], [360, 450]], label: { x: 164, y: 600, anchor: 'start' } },
+            { points: [[450, 230], [450, 360]], label: { x: 474, y: 300, anchor: 'start' } },
+            { points: [[450, 580], [450, 730]], label: { x: 474, y: 660, anchor: 'start' } },
+            { points: [[530, 820], [670, 820]] },
+            { points: [[760, 950], [760, 1010]], open: true, label: { x: 720, y: 1046, anchor: 'start' } },
+            { points: [[760, 730], [760, 450], [540, 450]], label: { x: 736, y: 600, anchor: 'end' } },
+          ],
+        },
+        // Cross: watch above the user, phone below, the AI to the right with experts beyond it.
+        cross: {
+          name: 'User focus · cross',
+          W: 1440, H: 1060, type: {},
+          nodes: { user: [390, 500], watch: [390, 120], phone: [390, 880], ai: [840, 500], experts: [1300, 500] },
+          edges: [
+            { points: [[470, 120], [840, 120], [840, 410]], label: { x: 500, y: 156, anchor: 'start' } },
+            { points: [[1220, 500], [930, 500]], label: { x: 942, y: 484, anchor: 'start' } },
+            { points: [[760, 500], [470, 500]], label: { x: 500, y: 484, anchor: 'start' } },
+            { points: [[390, 610], [390, 800]] },
+            { points: [[310, 880], [260, 880]], open: true, label: { x: 250, y: 862, anchor: 'end' } },
+            { points: [[470, 880], [840, 880], [840, 590]], label: { x: 500, y: 826, anchor: 'start' } },
+          ],
+        },
       }
+      // Mirror a composition left↔right (labels swap their anchor so text still reads away from the arrow).
+      const mirror = (L, name) => ({
+        ...L,
+        name,
+        nodes: Object.fromEntries(Object.entries(L.nodes).map(([k, [x, y]]) => [k, [L.W - x, y]])),
+        edges: L.edges.map((e) => ({
+          ...e,
+          points: e.points.map(([x, y]) => [L.W - x, y]),
+          label: e.label && { ...e.label, x: L.W - e.label.x, anchor: e.label.anchor === 'end' ? 'start' : 'end' },
+        })),
+      })
+      LAYOUTS.stageMirror = mirror(LAYOUTS.stage, 'User focus · stage, AI left')
       // Saved choice, or 'auto': landscape screens get Wide, portrait (phones) get Stacked.
       const LAYOUT_CHOICE = (() => {
         try {
@@ -454,9 +552,11 @@
             out.push(row(text(esc(l.head), l.x, l.anchor, y), ' lbl-head'))
             y += lh
           }
-          // Bullets hang from the block's left edge (right-aligned blocks keep their icons on the left too).
+          // Bullets hang from a shared left edge. Right-aligned blocks start at a rough width guess and are
+          // wrapped in .lbl-end so alignEndLabels() can measure the real text and pin the right edge to x.
           const width = Math.max(...[l.head ?? '', ...l.items].map((s) => s.length)) * o.labelSize * 0.5 + (l.head ? 0 : o.labelSize + 16)
           const left = l.anchor === 'end' ? l.x - width : l.x
+          if (l.anchor === 'end') out.push(`<g class="lbl-end" data-x="${l.x}">`)
           for (const item of l.items) {
             const size = o.labelSize
             const glyph = POINT_ICONS[item].node.map(([tag, attrs]) =>
@@ -469,8 +569,18 @@
             ))
             y += lh
           }
+          if (l.anchor === 'end') out.push('</g>')
         }
         return out.join('')
+      }
+
+      /** Pins every right-aligned bullet block's measured right edge to its anchor x. Call after insert. */
+      function alignEndLabels(root) {
+        root.querySelectorAll('.lbl-end').forEach((g) => {
+          g.removeAttribute('transform')
+          const b = g.getBBox()
+          if (b.width) g.setAttribute('transform', `translate(${(+g.dataset.x - (b.x + b.width)).toFixed(2)} 0)`)
+        })
       }
 
 
@@ -507,7 +617,15 @@
           if (o.story) parts.push(`<circle class="node__halo" cx="${node.x}" cy="${node.y}" r="78" fill="${BLUE}" />`)
           if (o.disc) parts.push(`<circle cx="${node.x}" cy="${node.y}" r="${o.disc}" fill="#fff" filter="url(#shadow-${o.id})" />`)
           const size = o.disc ? 112 : 142
-          parts.push(`<image href="${assets[node.icon]}" x="${node.x - size / 2}" y="${node.y - size / 2}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`)
+          if (node.icon === 'momo') {
+            // Momo (open eyes, listening loop). The still is the fallback and what SVG downloads keep;
+            // the live canvas sits on top once the clip is decoding.
+            const still = size * 1.18, live = size * 1.2
+            parts.push(`<image class="momo-still" href="${assets.momoStill}" x="${node.x - still / 2}" y="${node.y - still * 0.4125}" width="${still}" height="${still}" preserveAspectRatio="xMidYMid meet"/>`)
+            parts.push(`<foreignObject class="momo-live" x="${node.x - live / 2}" y="${node.y - live * 0.4375}" width="${live}" height="${live}"><canvas xmlns="http://www.w3.org/1999/xhtml" class="momo-canvas"></canvas></foreignObject>`)
+          } else {
+            parts.push(`<image href="${assets[node.icon]}" x="${node.x - size / 2}" y="${node.y - size / 2}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`)
+          }
           parts.push(titleText(node, o), '</g>')
         }
         if (o.story) parts.push('<g class="story-flow"></g>')
@@ -1029,6 +1147,7 @@
             rowText(r).textContent = v ? v : original
           })
           applyLineSpacing(look.lineSp)
+          alignEndLabels(svg)
         }
         applyLabels()
         const editBtn = section.querySelector('[data-act="edit"]')
@@ -1124,6 +1243,7 @@
           select.value = key
           const preset = ARROWS[key]
           section.querySelector('svg').outerHTML = render({ ...o, ...preset, name: o.name, presetDash: preset.dash })
+          alignEndLabels(section)
         }
         select.addEventListener('change', () => {
           settings.arrows[o.id] = select.value
@@ -1141,6 +1261,9 @@
         })
         root.append(section)
       })
+      // Right-aligned blocks are measured; measure again once Beatrice has loaded.
+      alignEndLabels(document)
+      document.fonts.ready.then(() => alignEndLabels(document))
     </script>
   </body>
 </html>
