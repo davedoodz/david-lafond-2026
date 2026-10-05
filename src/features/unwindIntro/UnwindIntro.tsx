@@ -82,7 +82,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const ctx = canvas.getContext('2d')!
     const filmCanvas = document.createElement('canvas'), filmCtx = filmCanvas.getContext('2d')!
     const root = document.documentElement
-    let vw = 0, vh = 0, dpr = 1, stageH = 1, slotY = 0, slotX = 0
+    let vw = 0, vh = 0, dpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
     let ready = false, disposed = false, playing = false, armed = true
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
     let interrupted = false, enteredStage = false
@@ -115,6 +115,10 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       const box = document.querySelector('.case__section--hero .case__braid-slot')?.getBoundingClientRect()
       slotY = box ? box.top + box.height / 2 + window.scrollY : stageH + 120
       slotX = box ? box.left + box.width / 2 : vw / 2
+      // Desktop landing matches the hero composition: band level with the navigation,
+      // centered phone continuing below the fold. Keep the narrow-screen band below the nav.
+      const nav = document.querySelector('.case .nav')?.getBoundingClientRect()
+      landingY = vw > 800 && box && nav ? Math.max(stageH, slotY - (nav.top + nav.height / 2)) : stageH
       wake()
     }
     const start = () => {
@@ -159,7 +163,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
         if (time >= PHONE_TIMELINE.calm && s.returnToHero && !interrupted) {
           handoffY ??= window.scrollY
           const k = smooth(clamp((time - PHONE_TIMELINE.calm) / (PHONE_TIMELINE.hero - PHONE_TIMELINE.calm)))
-          window.scrollTo({ top: handoffY + (stageH - handoffY) * k, behavior: 'instant' })
+          window.scrollTo({ top: handoffY + (landingY - handoffY) * k, behavior: 'instant' })
           p = progress()
         }
         if (time >= PHONE_TIMELINE.dur) { playing = false; setReplayable(true); cbRef.current.onDone() }
