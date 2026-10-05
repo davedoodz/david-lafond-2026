@@ -376,20 +376,29 @@
         return d
       }
 
-      /** Moves an edge's tip so it stops `gap` short of the target node's halo (radius R), along its
-       * final straight run. Off-centre runs (paired edges) use the circle chord, so every tip sits the
-       * same distance from the halo edge. */
-      function fitEnd(points, R = 78, gap = 14) {
-        const [x, y] = points[points.length - 1]
-        const [px, py] = points[points.length - 2]
-        const node = Object.values(NODES).reduce((a, n) => (Math.hypot(n.x - x, n.y - y) < Math.hypot(a.x - x, a.y - y) ? n : a))
+      // Story geometry: titles hang `titleGap` below the halo, and every arrow end (start or tip)
+      // keeps `gap` from whatever it meets first — the halo, or the title when it leaves downward.
+      const CAP = 0.72 // cap height of the title face, as a share of font size
+      const titleBaseline = (node, o, R, titleGap, i) => node.y + R + titleGap + CAP * o.titleSize + i * o.titleSize * 1.35
+      const nearestNode = (x, y) => Object.values(NODES).reduce((a, n) => (Math.hypot(n.x - x, n.y - y) < Math.hypot(a.x - x, a.y - y) ? n : a))
+      /** Distance from a node's centre, along unit direction (ux, uy) at perpendicular offset `off`, to its edge. */
+      function clearance(node, o, R, titleGap, ux, uy, off) {
+        if (uy > 0.5 && node.title) return titleBaseline(node, o, R, titleGap, node.title.length - 1) - node.y
+        return Math.sqrt(Math.max(0, R * R - off * off))
+      }
+      /** Moves one end of an edge along its straight run so it sits `gap` outside its node. */
+      function fitPoint([x, y], [px, py], o, R, gap, titleGap) {
+        const node = nearestNode(x, y)
         const len = Math.hypot(x - px, y - py) || 1
-        const ux = (x - px) / len, uy = (y - py) / len
-        const off = Math.abs((node.x - x) * uy - (node.y - y) * ux) // perpendicular distance to centre
-        const along = Math.sqrt(Math.max(0, R * R - off * off)) + gap
-        const ax = (node.x - x) * ux + (node.y - y) * uy // centre's position along the run, from the tip
-        const t = ax - along // move the tip forward by t (negative = pull back)
-        return [...points.slice(0, -1), [x + ux * t, y + uy * t]]
+        const ux = (x - px) / len, uy = (y - py) / len // pointing into the node
+        const off = Math.abs((node.x - x) * uy - (node.y - y) * ux)
+        const along = clearance(node, o, R, titleGap, -ux, -uy, off) + gap
+        const t = (node.x - x) * ux + (node.y - y) * uy - along
+        return [x + ux * t, y + uy * t]
+      }
+      function fitEdge(points, o, R = 78, gap = 14, titleGap = 18) {
+        const n = points.length
+        return [fitPoint(points[0], points[1], o, R, gap, titleGap), ...points.slice(1, -1), fitPoint(points[n - 1], points[n - 2], o, R, gap, titleGap)]
       }
 
       function arrowHead(points, o, color, width) {
@@ -458,7 +467,7 @@
           const dash = o.presetDash ?? kind.dash ?? o.dash
           const cls = o.animate ? ' class="flow"' : ''
           parts.push(`<g class="edge" data-edge="${index}">`)
-          const pts = o.story ? fitEnd(e.points, o.haloR, o.arrowGap) : e.points
+          const pts = o.story ? fitEdge(e.points, o) : e.points
           parts.push(
             `<path class="edge__line" d="${path(pts, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${cls} />`,
           )
@@ -559,6 +568,7 @@
         ['iconScale', 'Icon size', 0.5, 1.6, 0.05, 1, '--icon-scale'],
         ['lineSp', 'Line spacing', 1, 2.4, 0.05, 1.3, null],
         ['arrowGap', 'Arrow gap', 0, 48, 1, 14, null],
+        ['titleGap', 'Title gap', 0, 48, 1, 14, null],
       ]
       // How label rows enter, chosen per step.
       const REVEALS = {
@@ -934,20 +944,28 @@
           const v = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
           const inp = lookInputs.find((x) => x.dataset.look === k)
           inp.value = v
-          inp.nextElementSibling.textContent = k === 'arrowGap' ? `${v}px` : ['lineSp', 'haloScale', 'iconScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
+          inp.nextElementSibling.textContent = k === 'arrowGap' || k === 'titleGap' ? `${v}px` : ['lineSp', 'haloScale', 'iconScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
           if (cssVar) section.style.setProperty(cssVar, String(v))
           else if (k === 'lineSp') applyLineSpacing(v)
           return v
         }
         // Arrow tips keep the same gap to every halo edge; they follow Halo size and Arrow gap live.
         const look = {}
-        const retarget = () => svg.querySelectorAll('.edge').forEach((g) => {
-          const pts = fitEnd(EDGES[+g.dataset.edge].points, 78 * look.haloScale, look.arrowGap)
-          g.querySelector('.edge__line').setAttribute('d', path(pts, o.radius))
-          const head = g.querySelector(':scope > path:not(.edge__line)')
-          head.outerHTML = arrowHead(pts, o, head.getAttribute(o.arrow === 'triangle' ? 'fill' : 'stroke'), o.stroke)
-        })
-        const geometry = ['haloScale', 'arrowGap']
+        const retarget = () => {
+          const R = 78 * look.haloScale
+          svg.querySelectorAll('.edge').forEach((g) => {
+            const pts = fitEdge(EDGES[+g.dataset.edge].points, o, R, look.arrowGap, look.titleGap)
+            g.querySelector('.edge__line').setAttribute('d', path(pts, o.radius))
+            const head = g.querySelector(':scope > path:not(.edge__line)')
+            head.outerHTML = arrowHead(pts, o, head.getAttribute(o.arrow === 'triangle' ? 'fill' : 'stroke'), o.stroke)
+          })
+          // Titles hang a fixed gap below the halo, whatever its size.
+          svg.querySelectorAll('.node').forEach((g) => {
+            const node = NODES[g.dataset.node]
+            g.querySelectorAll('text').forEach((t, i) => t.setAttribute('y', titleBaseline(node, o, R, look.titleGap, i).toFixed(2)))
+          })
+        }
+        const geometry = ['haloScale', 'arrowGap', 'titleGap']
         lookInputs.forEach((inp) => {
           const k = inp.dataset.look
           look[k] = setLook(k, settings.look[k])
