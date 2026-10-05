@@ -703,6 +703,7 @@
             <button type="button" data-act="edit">Edit text</button>
             <button type="button" data-act="reset-text">Reset text</button>
           </div>
+          <div class="story__timing" aria-label="Arrows" data-act="arrow-times"></div>
           ${render(o)}
           <nav class="story__steps">${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
         root.append(section)
@@ -715,6 +716,39 @@
         const WAVE_STEPS = [0, 2]
         const waveFor = (i) => (typeof settings.waves[i] === 'boolean' ? settings.waves[i] : WAVE_STEPS.includes(i))
         let waveOn = true
+        // Arrows row: start and draw time for each arrow this step draws. Saved per arrow (edge index),
+        // so a time set here applies wherever that arrow first appears.
+        const arrowTimes = section.querySelector('[data-act="arrow-times"]')
+        const sec = (ms) => `${(ms / 1000).toFixed(2)}s`
+        function renderArrowTimes() {
+          const fresh = flows.filter((f) => f.fresh)
+          if (!fresh.length) { arrowTimes.innerHTML = '<span>Arrows: all already drawn in this step</span>'; return }
+          arrowTimes.innerHTML = fresh.map((f) => {
+            const { from, to } = EDGE_INFO[f.e]
+            const own = settings.edgeTime[f.e] ?? {}
+            return `<span class="arrow-time" data-edge="${f.e}"><b>${from} → ${to}</b>
+              <label>Starts <input type="range" data-k="start" min="0" max="10" step="0.05" value="${f.delay / 1000}" /><output>${sec(f.delay)}${own.start == null ? ' (auto)' : ''}</output></label>
+              <label>Draw <input type="range" data-k="draw" min="0.2" max="4" step="0.05" value="${f.draw / 1000}" /><output>${sec(f.draw)}${own.draw == null ? ' (default)' : ''}</output></label>
+              <button type="button" data-k="reset">Use default</button></span>`
+          }).join('')
+        }
+        arrowTimes.addEventListener('input', (ev) => {
+          const inp = ev.target.closest('input[data-k]')
+          if (!inp) return
+          const e = +inp.closest('[data-edge]').dataset.edge
+          settings.edgeTime[e] = { ...settings.edgeTime[e], [inp.dataset.k]: +inp.value * 1000 }
+          saveSettings()
+          inp.nextElementSibling.textContent = sec(+inp.value * 1000)
+        })
+        // Replay the step once a slider settles, so the new timing is visible.
+        arrowTimes.addEventListener('change', () => show(step))
+        arrowTimes.addEventListener('click', (ev) => {
+          const btn = ev.target.closest('button[data-k="reset"]')
+          if (!btn) return
+          delete settings.edgeTime[+btn.closest('[data-edge]').dataset.edge]
+          saveSettings()
+          show(step)
+        })
         // Each step can hold for its own time; otherwise it uses the Step slider.
         const stepDurInput = section.querySelector('[data-act="step-dur"]')
         const stepDuration = () => {
@@ -803,22 +837,27 @@
             line.style.opacity = ''
             line.parentNode.classList.remove('is-live', 'is-blue')
           })
-          // Arrows in a step enter one after another, in STORY order (send, then reply), `gap` apart.
+          // Arrows in a step enter one after another, in STORY order (send, then reply), `gap` apart,
+          // unless an arrow has its own start/draw time (settings.edgeTime, set in the Arrows row).
           let order = 0
           flows = s.edges.map((e, k) => {
             lines[e].parentNode.classList.add('is-blue')
-            const delay = reduceMotion || shown.has(e) ? 0 : order++ * timing.gap
+            const fresh = !reduceMotion && !shown.has(e)
+            const own = settings.edgeTime[e] ?? {}
+            const auto = fresh ? order++ * timing.gap : 0
+            const delay = fresh ? (own.start ?? auto) : 0
+            const draw = own.draw ?? timing.draw
             const d = lines[e].getAttribute('d')
             const trace = el('path', { class: 'trace', d, pathLength: 1 })
             const len = trace.getTotalLength()
-            const f = { trace, len, k, delay, base: lines[e], end: trace.getPointAtLength(len) }
+            const f = { trace, len, k, e, fresh, delay, draw, auto, base: lines[e], end: trace.getPointAtLength(len) }
             // Newly shown arrows grow from start to end; the head appears as the line reaches it.
             if (!reduceMotion && !shown.has(e)) {
               const full = lines[e].getTotalLength()
               lines[e].getAnimations().forEach((a) => a.cancel())
               lines[e].animate(
                 [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full, stroke: BLUE }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0, stroke: BLUE }],
-                { duration: timing.draw, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' },
+                { duration: draw, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' },
               )
               // Line and head grow in blue and stay blue (CSS .is-blue) for the step and after it.
               lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
@@ -826,7 +865,7 @@
                 const op = getComputedStyle(head).opacity
                 head.animate(
                   [{ opacity: 0, [paint]: BLUE }, { opacity: 0, [paint]: BLUE, offset: 0.85 }, { opacity: op, [paint]: BLUE }],
-                  { duration: timing.draw, delay, fill: 'backwards' },
+                  { duration: draw, delay, fill: 'backwards' },
                 )
               })
             }
@@ -865,6 +904,7 @@
           waveOn = waveToggle.checked && !waveToggle.disabled
           layer.style.display = waveOn ? '' : 'none'
           syncStepDur()
+          renderArrowTimes()
           labels = s.edges.map((e, k) => {
             const delay = flows[k].delay
             const g = svg.querySelector(`.edge[data-edge="${e}"]`)
@@ -905,8 +945,8 @@
           for (const f of flows) {
             // Each flow runs on its own clock, starting when its arrow starts drawing.
             const tf = t - f.delay
-            const drawn = ease(tf / timing.draw)
-            const after = (tf - timing.draw) * timing.speed
+            const drawn = ease(tf / f.draw)
+            const after = (tf - f.draw) * timing.speed
             const live = !reduceMotion && after > 0
             // Steps without a wave keep the plain ink line and ink head (at the arrow opacity).
             if (!waveOn) continue
@@ -1242,9 +1282,9 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, layout: s.layout, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur) }
+          return { feel: s.feel, layout: s.layout, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime) }
         } catch {
-          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {} }
+          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {} }
         }
       })()
       const saveSettings = () => {
