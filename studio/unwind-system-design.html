@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Re:Self system design — options</title>
+    <title>Unwind system design — options</title>
     <style>
       @font-face {
         font-family: 'Beatrice';
@@ -106,19 +106,72 @@
           animation: none;
         }
       }
+      .option__head { flex-wrap: wrap; }
+      .option__head label { font-size: 13px; }
+      select { font: inherit; padding: 6px 10px; border: 1px solid var(--stone-400); border-radius: 8px; background: white; }
+      .story .edge, .story .node { transition: opacity 0.6s ease; opacity: 0.16; }
+      .story .edge.is-on, .story .node.is-on { opacity: 1; }
+      .story .edge.is-on > path:not(.edge__line) { fill: var(--unwind); transition: fill 0.4s ease 0.8s; }
+      .story .node__halo { opacity: 0; transition: opacity 0.6s ease; }
+      .story .node.is-on .node__halo { opacity: 0.1; }
+      .story .trace { fill: none; stroke: var(--unwind); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+      .story .pulse { fill: var(--unwind); opacity: 0; }
+      .story__caption { display: flex; gap: 16px; align-items: baseline; min-height: 64px; }
+      .story__num { font-size: 32px; color: var(--unwind); letter-spacing: -0.04em; }
+      .story__title { font-size: 20px; font-weight: 500; }
+      .story__text { margin: 4px 0 0; color: var(--stone-600); font-size: 16px; max-width: 720px; }
+      .story__steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+      .story__steps button { font: inherit; font-size: 13px; color: var(--stone-600); background: none; border: 1px solid var(--stone-400); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+      .story__steps button span { margin-right: 6px; color: var(--stone-400); }
+      .story__steps button[aria-current='true'] { color: var(--ink-900); border-color: var(--ink-900); }
     </style>
   </head>
   <body>
     <header>
-      <h1>Re:Self system design</h1>
+      <h1>Unwind system design</h1>
       <p>
-        Five treatments in the site's system: paper background, ink strokes and text, Beatrice. The computer app is
-        now the phone app, and its activity data is touch-based.
+        Five treatments with blue illustrations and Lucide point icons. Choose an arrow preset per diagram; SVG downloads include the selected style and embedded illustrations.
       </p>
     </header>
     <main id="options"></main>
 
-    <script>
+    <script type="module">
+      import { __iconData as activity } from '/node_modules/lucide-react/dist/esm/icons/activity.mjs'
+      import { __iconData as mic } from '/node_modules/lucide-react/dist/esm/icons/mic.mjs'
+      import { __iconData as footsteps } from '/node_modules/lucide-react/dist/esm/icons/footprints.mjs'
+      import { __iconData as audio } from '/node_modules/lucide-react/dist/esm/icons/audio-lines.mjs'
+      import { __iconData as book } from '/node_modules/lucide-react/dist/esm/icons/book-open.mjs'
+      import { __iconData as branch } from '/node_modules/lucide-react/dist/esm/icons/git-branch.mjs'
+      import { __iconData as target } from '/node_modules/lucide-react/dist/esm/icons/target.mjs'
+      import { __iconData as touch } from '/node_modules/lucide-react/dist/esm/icons/hand.mjs'
+      import { __iconData as refresh } from '/node_modules/lucide-react/dist/esm/icons/refresh-cw.mjs'
+      import { __iconData as message } from '/node_modules/lucide-react/dist/esm/icons/message-circle.mjs'
+      const POINT_ICONS = {
+        biometrics: activity, 'voice entries': mic, movement: footsteps, 'surrounding noise': audio,
+        'daily entries': book, counterfactuals: branch, 'behavior plans': target,
+        'touch & scroll interactions': touch, 'content updates': refresh,
+        'counterfactual generation': branch, 'micro-reflection prompting': message,
+      }
+      const assets = Object.fromEntries(await Promise.all(['user', 'cloud', 'phone', 'watch', 'therapist'].map(async name => {
+        const response = await fetch(`assets/blue-${name}.png`)
+        if (!response.ok) throw new Error(`Unable to load blue-${name}`)
+        const blob = await response.blob()
+        const data = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+        return [name, data]
+      })))
+      const ARROWS = {
+        original: { name: 'Original treatment' },
+        solid: { name: 'Solid · open tip', dash: '', arrow: 'chevron', animate: false },
+        dotted: { name: 'Dotted · open tip', dash: '0.1 10', arrow: 'chevron', animate: false },
+        dashed: { name: 'Dashed · filled tip', dash: '8 7', arrow: 'triangle', animate: false },
+        fine: { name: 'Fine · filled tip', dash: '', stroke: 1.2, arrow: 'triangle', animate: false },
+        flowing: { name: 'Flowing · dotted', dash: '0.1 12', arrow: 'chevron', animate: true },
+      }
       const INK = '#171717'
       const STONE = '#6f6b68'
       const STONE_LIGHT = '#a6a09c'
@@ -128,11 +181,11 @@
 
       // ---------- Content (one source for every option) ----------
       const NODES = {
-        user: { x: 112, y: 385, title: ['RE:SELF USER'], icon: 'person' },
-        watch: { x: 512, y: 130, title: ['RE:SELF WATCH APP'], icon: 'watch', titleBelow: 82 },
+        user: { x: 112, y: 385, title: ['USER'], icon: 'user' },
+        watch: { x: 512, y: 130, title: ['WATCH APP'], icon: 'watch', titleBelow: 82 },
         db: { x: 907, y: 378, title: ['SECURE DATABASE', '+ NOVEL AI MODEL'], icon: 'cloud' },
-        therapist: { x: 1313, y: 385, title: ['REGISTERED THERAPISTS', 'COLLABORATING WITH RE:SELF'], icon: 'therapist' },
-        phone: { x: 512, y: 618, title: ['RE:SELF PHONE APP'], icon: 'phone', titleBelow: 80 },
+        therapist: { x: 1313, y: 385, title: ['REGISTERED THERAPISTS'], icon: 'therapist' },
+        phone: { x: 512, y: 618, title: ['PHONE APP'], icon: 'phone', titleBelow: 80 },
       }
       // kind: data (user → system), ai (model output), training (therapists)
       const EDGES = [
@@ -313,39 +366,18 @@
           const width = Math.max(...[l.head, ...l.items].map((s) => s.length)) * o.labelSize * 0.5
           const left = l.anchor === 'end' ? l.x - width : l.x
           for (const item of l.items) {
-            out.push(text(`•&#160;&#160;${esc(item)}`, left + o.labelSize * 1.1, 'start', y))
+            const size = o.labelSize
+            const glyph = POINT_ICONS[item].node.map(([tag, attrs]) =>
+              `<${tag} ${Object.entries(attrs).filter(([key]) => key !== 'key').map(([key, value]) => `${key}="${value}"`).join(' ')}/>`
+            ).join('')
+            out.push(`<g aria-label="${esc(item)}" transform="translate(${left + 8} ${y - size + 2}) scale(${size / 24})" fill="none" stroke="${o.label}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${glyph}</g>`)
+            out.push(text(esc(item), left + size + 16, 'start', y))
             y += lh
           }
         }
         return out.join('')
       }
 
-      const ICONS = {
-        // Drawn after David's Canva diagram: chunky rounded outlines, bust-style people, pulse watch, puffy AI cloud.
-        person: (x, y, w) => `
-          <circle cx="${x}" cy="${y - 30}" r="26" />
-          <path d="M${x - 50} ${y + 58} v-20 q0 -34 28 -40 q22 14 44 0 q28 6 28 40 v20 q0 8 -8 8 h-84 q-8 0 -8 -8 z" />`,
-        therapist: (x, y, w) => `
-          ${ICONS.person(x, y, w)}
-          <path d="M${x - 21} ${y - 1} l21 34 l21 -34 M${x} ${y + 33} v33" />
-          <path d="M${x + 22} ${y + 44} h16 M${x + 30} ${y + 36} v16" />`,
-        watch: (x, y, w) => `
-          <path d="M${x - 24} ${y - 36} l5 -20 h38 l5 20 M${x - 24} ${y + 36} l5 20 h38 l5 -20" />
-          <rect x="${x - 38}" y="${y - 36}" width="76" height="72" rx="20" />
-          <path d="M${x + 38} ${y - 8} h6 v16 h-6" />
-          <path d="M${x - 26} ${y + 2} h13 l4 -9 l6 18 l6 -22 l5 13 h18" stroke-width="${w * 0.8}" />`,
-        cloud: (x, y, w) => `
-          <path d="M${x - 42} ${y + 32} h86 a24 24 0 0 0 2 -48 a34 34 0 0 0 -63 -10 a27 27 0 0 0 -25 58 z" />
-          <text x="${x + 2}" y="${y + 19}" text-anchor="middle" font-size="28" font-weight="500" stroke="none" fill="currentColor" letter-spacing="0">AI</text>`,
-        phone: (x, y, w) => `
-          <rect x="${x - 32}" y="${y - 56}" width="64" height="112" rx="14" />
-          <path d="M${x - 9} ${y - 46} h18" />
-          <g stroke-width="${w * 0.55}" stroke-linecap="butt">
-            <path d="M${x - 19} ${y - 30} h38 M${x - 19} ${y - 22} h38 M${x - 19} ${y - 14} h38 M${x - 19} ${y - 6} h38 M${x - 19} ${y + 2} h38" stroke-dasharray="3 2.5" />
-            <circle cx="${x}" cy="${y + 26}" r="11" stroke-dasharray="0.1 5.6" stroke-linecap="round" stroke-width="${w * 0.9}" />
-            <circle cx="${x}" cy="${y + 26}" r="2.5" fill="currentColor" />
-          </g>`,
-      }
 
       function titleText(node, o) {
         const below = node.titleBelow ?? 104
@@ -361,28 +393,31 @@
         const parts = []
         parts.push(`<defs><filter id="shadow-${o.id}" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.08"/></filter></defs>`)
         parts.push(`<rect width="${W}" height="${H}" fill="#f5f5f5" />`)
+        if (o.animate) parts.push('<style>.flow{animation:flow 1.6s linear infinite}@keyframes flow{to{stroke-dashoffset:-24}}@media(prefers-reduced-motion:reduce){.flow{animation:none}}</style>')
 
-        for (const e of EDGES) {
+        EDGES.forEach((e, index) => {
           const kind = o.kinds?.[e.kind] ?? {}
           const color = kind.color ?? o.line ?? INK
-          const dash = kind.dash ?? o.dash
+          const dash = o.presetDash ?? kind.dash ?? o.dash
           const cls = o.animate ? ' class="flow"' : ''
+          parts.push(`<g class="edge" data-edge="${index}">`)
           parts.push(
-            `<path d="${path(e.points, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${cls} />`,
+            `<path class="edge__line" d="${path(e.points, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${cls} />`,
           )
           parts.push(arrowHead(e.points, o, kind.color ?? o.arrowColor ?? color, o.stroke))
           if (o.dots) parts.push(`<circle cx="${e.points[0][0]}" cy="${e.points[0][1]}" r="3.5" fill="${o.arrowColor ?? INK}" />`)
-          parts.push(label(e.label, o))
-        }
+          parts.push(`<g class="edge__label">${label(e.label, o)}</g></g>`)
+        })
 
-        for (const node of Object.values(NODES)) {
+        for (const [key, node] of Object.entries(NODES)) {
+          parts.push(`<g class="node" data-node="${key}">`)
+          if (o.story) parts.push(`<circle class="node__halo" cx="${node.x}" cy="${node.y}" r="78" fill="${BLUE}" />`)
           if (o.disc) parts.push(`<circle cx="${node.x}" cy="${node.y}" r="${o.disc}" fill="#fff" filter="url(#shadow-${o.id})" />`)
-          const scale = o.disc ? 0.78 : 1
-          parts.push(
-            `<g color="${INK}" fill="none" stroke="${INK}" stroke-width="${(o.icon * 1.7) / scale}" stroke-linecap="round" stroke-linejoin="round" transform="translate(${node.x} ${node.y}) scale(${scale}) translate(${-node.x} ${-node.y})">${ICONS[node.icon](node.x, node.y, (o.icon * 1.7) / scale)}</g>`,
-          )
-          parts.push(titleText(node, o))
+          const size = o.disc ? 112 : 142
+          parts.push(`<image href="${assets[node.icon]}" x="${node.x - size / 2}" y="${node.y - size / 2}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`)
+          parts.push(titleText(node, o), '</g>')
         }
+        if (o.story) parts.push('<g class="story-flow"></g>')
 
         if (o.legend) {
           const items = [
@@ -397,10 +432,107 @@
           })
         }
 
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Beatrice, system-ui, sans-serif" letter-spacing="-0.01em" role="img" aria-label="Re:Self system design — ${o.name}">${parts.join('')}</svg>`
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Beatrice, system-ui, sans-serif" letter-spacing="-0.01em" role="img" aria-label="Unwind system design — ${o.name}">${parts.join('')}</svg>`
+      }
+
+      // ---------- Animated walkthrough (Hairline treatment) ----------
+      // Edge indices follow EDGES: 0 user→watch, 1 AI→watch, 2 watch→user, 3 watch→AI,
+      // 4 phone→user, 5 phone→AI, 6 user→phone, 7 AI→phone, 8 therapists→AI.
+      const STORY = [
+        { title: 'You live your day', text: 'Your watch picks up body signals, voice, movement and noise. Your phone records how you use the app.', edges: [0, 6], nodes: ['user', 'watch', 'phone'] },
+        { title: 'Context goes to the model', text: 'Both apps send that context to the secure database and AI model.', edges: [3, 5], nodes: ['watch', 'phone', 'db'] },
+        { title: 'Therapists train it', text: 'Registered therapists teach the model how to write counterfactuals and reflection prompts.', edges: [8], nodes: ['therapist', 'db'] },
+        { title: 'The model responds', text: 'It sends a timely prompt to your watch, and entries and counterfactuals to your phone.', edges: [1, 7], nodes: ['db', 'watch', 'phone'] },
+        { title: 'You reflect', text: 'A short prompt on your wrist; a journal with what-ifs and behavior plans on your phone.', edges: [2, 4], nodes: ['watch', 'phone', 'user'] },
+        { title: 'The loop repeats', text: 'Each reflection becomes new context, so the next prompt fits you better.', edges: [0, 6, 3, 5, 8, 1, 7, 2, 4], nodes: Object.keys(NODES) },
+      ]
+      const STEP_MS = 4200
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+
+      function mountStory() {
+        const base = OPTIONS.find((o) => o.id === 'hairline')
+        const o = { ...base, id: 'story', story: true }
+        const section = document.createElement('section')
+        section.className = 'option story'
+        section.id = 'story'
+        section.innerHTML = `
+          <div class="option__head">
+            <h2>Animated — how it works</h2>
+            <p>The Hairline diagram, told one step at a time.</p>
+            <button type="button" data-act="play">Pause</button>
+          </div>
+          <div class="story__caption" aria-live="polite">
+            <span class="story__num"></span>
+            <div><strong class="story__title"></strong><p class="story__text"></p></div>
+          </div>
+          ${render(o)}
+          <nav class="story__steps">${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
+        root.append(section)
+
+        const svg = section.querySelector('svg')
+        const layer = svg.querySelector('.story-flow')
+        const lines = [...svg.querySelectorAll('.edge__line')]
+        let step = 0, playing = !reduceMotion, started = 0, raf = 0, pulses = []
+
+        function show(i) {
+          step = (i + STORY.length) % STORY.length
+          const s = STORY[step]
+          section.querySelector('.story__num').textContent = String(step + 1).padStart(2, '0')
+          section.querySelector('.story__title').textContent = s.title
+          section.querySelector('.story__text').textContent = s.text
+          section.querySelectorAll('[data-step]').forEach((b) => b.setAttribute('aria-current', String(+b.dataset.step === step)))
+          svg.querySelectorAll('.edge').forEach((g) => g.classList.toggle('is-on', s.edges.includes(+g.dataset.edge)))
+          svg.querySelectorAll('.node').forEach((g) => g.classList.toggle('is-on', s.nodes.includes(g.dataset.node)))
+          // Blue overlay per active edge: the line draws in, then dots travel along it.
+          layer.innerHTML = s.edges.map((e) => `<path class="trace" d="${lines[e].getAttribute('d')}" pathLength="1"/>`).join('')
+          const traces = [...layer.querySelectorAll('.trace')]
+          pulses = traces.map((t) => {
+            const dots = [0, 1, 2].map(() => {
+              const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+              c.setAttribute('r', '4.5')
+              c.setAttribute('class', 'pulse')
+              layer.append(c)
+              return c
+            })
+            return { path: t, len: t.getTotalLength(), dots }
+          })
+          started = performance.now()
+        }
+
+        function frame(now) {
+          const t = now - started
+          const draw = Math.min(1, t / 900)
+          for (const p of pulses) {
+            p.path.style.strokeDashoffset = String(1 - draw)
+            p.dots.forEach((dot, k) => {
+              const phase = (t - 900 - k * 500) / 1500
+              const visible = !reduceMotion && phase >= 0
+              dot.style.opacity = visible ? String(Math.sin(Math.PI * (phase % 1))) : '0'
+              if (visible) {
+                const pt = p.path.getPointAtLength((phase % 1) * p.len)
+                dot.setAttribute('cx', pt.x)
+                dot.setAttribute('cy', pt.y)
+              }
+            })
+          }
+          if (playing && t > STEP_MS) show(step + 1)
+          raf = requestAnimationFrame(frame)
+        }
+
+        const playBtn = section.querySelector('[data-act="play"]')
+        const setPlaying = (v) => { playing = v; playBtn.textContent = v ? 'Pause' : 'Play' }
+        playBtn.addEventListener('click', () => { setPlaying(!playing); if (playing) started = performance.now() })
+        section.querySelector('.story__steps').addEventListener('click', (e) => {
+          const b = e.target.closest('[data-step]')
+          if (b) { setPlaying(false); show(+b.dataset.step) }
+        })
+        setPlaying(playing)
+        show(0)
+        raf = requestAnimationFrame(frame)
       }
 
       const root = document.getElementById('options')
+      mountStory()
       OPTIONS.forEach((o, i) => {
         const section = document.createElement('section')
         section.className = 'option'
@@ -409,14 +541,20 @@
           <div class="option__head">
             <h2>${String(i + 1).padStart(2, '0')} — ${o.name}</h2>
             <p>${o.note}</p>
+            <label>Arrows <select aria-label="Arrow style for ${o.name}">${Object.entries(ARROWS).map(([value, preset]) => `<option value="${value}">${preset.name}</option>`).join('')}</select></label>
             <button type="button">Download SVG</button>
           </div>
           ${render(o)}`
+        section.querySelector('select').addEventListener('change', (event) => {
+          const preset = ARROWS[event.target.value]
+          const next = { ...o, ...preset, name: o.name, presetDash: preset.dash }
+          section.querySelector('svg').outerHTML = render(next)
+        })
         section.querySelector('button').addEventListener('click', () => {
           const blob = new Blob([section.querySelector('svg').outerHTML], { type: 'image/svg+xml' })
           const a = document.createElement('a')
           a.href = URL.createObjectURL(blob)
-          a.download = `reself-system-design-${o.id}.svg`
+          a.download = `unwind-system-design-${o.id}-${section.querySelector('select').value}.svg`
           a.click()
           URL.revokeObjectURL(a.href)
         })
