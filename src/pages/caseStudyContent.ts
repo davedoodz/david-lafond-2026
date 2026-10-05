@@ -155,9 +155,9 @@ export const RECRUITER_COPY = {
   moment: copy({ eyebrow: 'Product UI' }),
   notification: copy({ eyebrow: 'Get me at the right moment', title: 'Useful without feeling invasive.' }),
   dynamic: copy({
-    eyebrow: 'Help me get it out',
-    title: 'Less distance between feeling something and saying it.',
-    body: 'Voice first, no blank page. As you talk, Unwind offers a follow-up at natural pauses. Tap to answer, or keep going.',
+    eyebrow: 'Connected insights',
+    title: 'Your body signals. Your story. A clearer picture.',
+    body: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.',
   }),
   flows: copy({ eyebrow: 'Product UI · core flows' }),
   guided: copy({ eyebrow: 'Product UI · guided' }),
@@ -327,13 +327,13 @@ export const UNWIND_CONFIG = {
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
     _collapsed: true,
   },
-  dynamic: sectionDials({
-    eyebrow: 'Dynamic mode',
-    title: 'It asks the right question at the right moment.',
-    body: 'As you talk, Unwind offers a follow-up at natural pauses. Tap to answer, or keep going.',
-    video: 'dynamic',
-    layout: 'bottom',
-  }),
+  /** Keep the section key to preserve its saved position; the device demo replaces Dynamic Mode. */
+  dynamic: {
+    eyebrow: { type: 'text' as const, default: 'Connected insights' },
+    title: { type: 'text' as const, default: 'Your body signals. Your story. A clearer picture.' },
+    body: { type: 'text' as const, default: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.' },
+    _collapsed: true,
+  },
   context: sectionDials({
     eyebrow: 'Context',
     title: 'It learns what stress looks like for you.',

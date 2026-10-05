@@ -15,6 +15,7 @@ import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } 
 import { PersonaSection, type Persona } from './casePersona'
 import { EvidenceSection, MediaPlaceholder, PrinciplesSection, ReframeSection } from './filoSections'
 import { FiloOpportunityArt, FiloProblemArt, FiloSolutionArt } from './filoStoryArt'
+import { DeviceInsights } from './DeviceInsights'
 import './CaseStudyPage.css'
 
 type Id = Extract<Work['id'], 'unwind' | 'filo'>
@@ -412,6 +413,7 @@ export function CaseStudyPage({ id }: Props) {
 
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
+    if (id === 'unwind' && key === 'dynamic') return <DeviceInsights key={key} copy={s} edit={edit} />
     if (key === 'story')
       return (
         <StoryRow
