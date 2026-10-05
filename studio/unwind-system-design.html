@@ -114,7 +114,10 @@
       .story .edge { opacity: 0; }
       .story .node { opacity: 0.16; }
       .story .edge.is-on, .story .node.is-on { opacity: 1; }
-      .story .edge > path:not(.edge__line) { transition: fill 0.4s ease; }
+      /* --arrow-op: the plain ink arrow (line + head) for active steps; blue arrowheads stay full. */
+      .story .edge__line { opacity: var(--arrow-op, 1); }
+      .story .edge > path:not(.edge__line) { transition: fill 0.4s ease, opacity 0.4s ease; opacity: var(--arrow-op, 1); }
+      .story .edge.is-live > path:not(.edge__line) { opacity: 1; }
       .story .edge.is-live > path:not(.edge__line) { fill: var(--unwind); }
       .story .node__halo { opacity: 0; transition: opacity 0.6s ease; }
       .story .node.is-on .node__halo { opacity: 0.1; }
@@ -536,6 +539,7 @@
           <div class="story__timing" aria-label="Timing">
             ${TIMING_FIELDS.map(([k, name, min, max, stepv]) => `<label>${name} <input type="range" data-t="${k}" min="${min}" max="${max}" step="${stepv}" /><output></output></label>`).join('')}
             <button type="button" data-act="reset">Reset timing</button>
+            <label>Arrow opacity <input type="range" data-act="arrow-op" min="0" max="1" step="0.05" /><output></output></label>
           </div>
           ${render(o)}
           <nav class="story__steps">${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
@@ -699,7 +703,7 @@
               // become the line themselves, so the ink fades under them.
               const own = feel.braid.mode !== 'comet'
               f.trace.style.opacity = '0'
-              f.base.style.opacity = live && own ? '0.12' : ''
+              f.base.style.opacity = live && own ? 'calc(var(--arrow-op, 1) * 0.12)' : ''
             }
             // Arrowheads turn blue only once the flow reaches them.
             f.base.parentNode.classList.toggle('is-live', feel.braid ? !!f.arrived : live)
@@ -768,6 +772,21 @@
         }
         feelSelect.addEventListener('change', () => setFeel(feelSelect.value))
 
+        const arrowOp = section.querySelector('[data-act="arrow-op"]')
+        const setArrowOp = (v) => {
+          const n = Number(v)
+          const op = Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 1
+          arrowOp.value = op
+          arrowOp.nextElementSibling.textContent = `${Math.round(op * 100)}%`
+          section.style.setProperty('--arrow-op', String(op))
+          return op
+        }
+        arrowOp.addEventListener('input', () => {
+          settings.arrowOpacity = setArrowOp(arrowOp.value)
+          saveSettings()
+        })
+        setArrowOp(settings.arrowOpacity ?? 1)
+
         const playBtn = section.querySelector('[data-act="play"]')
         const setPlaying = (v) => { playing = v; playBtn.textContent = v ? 'Pause' : 'Play' }
         playBtn.addEventListener('click', () => { setPlaying(!playing); if (playing) started = performance.now() })
@@ -786,7 +805,7 @@
       const settings = (() => {
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
-          return { feel: s.feel, timings: s.timings && typeof s.timings === 'object' ? s.timings : {}, arrows: s.arrows && typeof s.arrows === 'object' ? s.arrows : {} }
+          return { feel: s.feel, arrowOpacity: s.arrowOpacity, timings: s.timings && typeof s.timings === 'object' ? s.timings : {}, arrows: s.arrows && typeof s.arrows === 'object' ? s.arrows : {} }
         } catch {
           return { timings: {}, arrows: {} }
         }
