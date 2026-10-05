@@ -721,7 +721,7 @@
               )
               // Blue only while growing; then it settles back to its ink colour.
               lines[e].animate([{ stroke: BLUE }, { stroke: lines[e].getAttribute('stroke') }], { duration: 600, delay: timing.draw, easing: 'ease-out', fill: 'backwards' })
-              // The head stays blue through the grow (and the line's settle), never ink mid-animation.
+              // The head is blue while growing, then settles to ink with the line.
               lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
                 const paint = head.getAttribute('fill') === 'none' ? 'stroke' : 'fill'
                 const op = getComputedStyle(head).opacity
@@ -729,7 +729,7 @@
                   [{ opacity: 0, [paint]: BLUE }, { opacity: 0, [paint]: BLUE, offset: 0.85 }, { opacity: op, [paint]: BLUE }],
                   { duration: timing.draw },
                 )
-                head.animate([{ [paint]: BLUE }, { [paint]: BLUE }], { duration: 600, delay: timing.draw })
+                head.animate([{ [paint]: BLUE }, { [paint]: head.getAttribute(paint) }], { duration: 600, delay: timing.draw, easing: 'ease-out' })
               })
             }
             if (feel === FEELS.pulse) f.dots = [0, 1, 2].map(() => el('circle', { r: 4.5, class: 'pulse' }))
@@ -790,8 +790,8 @@
           const after = (t - timing.draw) * timing.speed
           const live = !reduceMotion && after > 0
           for (const f of flows) {
-            // Steps without a wave keep the plain ink line; the head turns blue once it's drawn.
-            if (!waveOn) { f.base.parentNode.classList.toggle('is-live', live); continue }
+            // Steps without a wave keep the plain ink line and ink head (at the arrow opacity).
+            if (!waveOn) continue
             f.trace.style.strokeDashoffset = String(1 - drawn)
             if (feel === FEELS.breathe) {
               f.trace.style.opacity = live ? String(0.55 + 0.45 * Math.cos((after / 2600) * 2 * Math.PI)) : '1'
