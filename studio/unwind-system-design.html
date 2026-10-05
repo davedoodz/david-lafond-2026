@@ -371,6 +371,22 @@
         return d
       }
 
+      /** Moves an edge's tip so it stops `gap` short of the target node's halo (radius R), along its
+       * final straight run. Off-centre runs (paired edges) use the circle chord, so every tip sits the
+       * same distance from the halo edge. */
+      function fitEnd(points, R = 78, gap = 14) {
+        const [x, y] = points[points.length - 1]
+        const [px, py] = points[points.length - 2]
+        const node = Object.values(NODES).reduce((a, n) => (Math.hypot(n.x - x, n.y - y) < Math.hypot(a.x - x, a.y - y) ? n : a))
+        const len = Math.hypot(x - px, y - py) || 1
+        const ux = (x - px) / len, uy = (y - py) / len
+        const off = Math.abs((node.x - x) * uy - (node.y - y) * ux) // perpendicular distance to centre
+        const along = Math.sqrt(Math.max(0, R * R - off * off)) + gap
+        const ax = (node.x - x) * ux + (node.y - y) * uy // centre's position along the run, from the tip
+        const t = ax - along // move the tip forward by t (negative = pull back)
+        return [...points.slice(0, -1), [x + ux * t, y + uy * t]]
+      }
+
       function arrowHead(points, o, color, width) {
         const [x, y] = points[points.length - 1]
         const [px, py] = points[points.length - 2]
@@ -437,10 +453,11 @@
           const dash = o.presetDash ?? kind.dash ?? o.dash
           const cls = o.animate ? ' class="flow"' : ''
           parts.push(`<g class="edge" data-edge="${index}">`)
+          const pts = o.story ? fitEnd(e.points, o.haloR, o.arrowGap) : e.points
           parts.push(
-            `<path class="edge__line" d="${path(e.points, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${cls} />`,
+            `<path class="edge__line" d="${path(pts, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${cls} />`,
           )
-          parts.push(arrowHead(e.points, o, kind.color ?? o.arrowColor ?? color, o.stroke))
+          parts.push(arrowHead(pts, o, kind.color ?? o.arrowColor ?? color, o.stroke))
           if (o.dots) parts.push(`<circle cx="${e.points[0][0]}" cy="${e.points[0][1]}" r="3.5" fill="${o.arrowColor ?? INK}" />`)
           parts.push(`<g class="edge__label">${label(e.label, o)}</g></g>`)
         })
@@ -536,6 +553,7 @@
         ['haloScale', 'Halo size', 0.2, 1.6, 0.05, 1, '--halo-scale'],
         ['iconScale', 'Icon size', 0.5, 1.6, 0.05, 1, '--icon-scale'],
         ['lineSp', 'Line spacing', 1, 2.4, 0.05, 1.3, null],
+        ['arrowGap', 'Arrow gap', 0, 48, 1, 14, null],
       ]
       // How label rows enter, chosen per step.
       const REVEALS = {
@@ -859,15 +877,32 @@
           const v = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
           const inp = lookInputs.find((x) => x.dataset.look === k)
           inp.value = v
-          inp.nextElementSibling.textContent = ['lineSp', 'haloScale', 'iconScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
+          inp.nextElementSibling.textContent = k === 'arrowGap' ? `${v}px` : ['lineSp', 'haloScale', 'iconScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
           if (cssVar) section.style.setProperty(cssVar, String(v))
-          else applyLineSpacing(v)
+          else if (k === 'lineSp') applyLineSpacing(v)
           return v
         }
-        lookInputs.forEach((inp) => {
-          setLook(inp.dataset.look, settings.look[inp.dataset.look])
-          inp.addEventListener('input', () => { settings.look[inp.dataset.look] = setLook(inp.dataset.look, inp.value); saveSettings() })
+        // Arrow tips keep the same gap to every halo edge; they follow Halo size and Arrow gap live.
+        const look = {}
+        const retarget = () => svg.querySelectorAll('.edge').forEach((g) => {
+          const pts = fitEnd(EDGES[+g.dataset.edge].points, 78 * look.haloScale, look.arrowGap)
+          g.querySelector('.edge__line').setAttribute('d', path(pts, o.radius))
+          const head = g.querySelector(':scope > path:not(.edge__line)')
+          head.outerHTML = arrowHead(pts, o, head.getAttribute(o.arrow === 'triangle' ? 'fill' : 'stroke'), o.stroke)
         })
+        const geometry = ['haloScale', 'arrowGap']
+        lookInputs.forEach((inp) => {
+          const k = inp.dataset.look
+          look[k] = setLook(k, settings.look[k])
+          inp.addEventListener('input', () => {
+            settings.look[k] = look[k] = setLook(k, inp.value)
+            saveSettings()
+            if (geometry.includes(k)) retarget()
+          })
+          // Flows sample the line path, so rebuild them once the slider settles.
+          if (geometry.includes(k)) inp.addEventListener('change', () => show(step))
+        })
+        retarget()
         const haloToggle = section.querySelector('[data-act="halo"]')
         const setHalo = (on) => { haloToggle.checked = on; section.dataset.halo = on ? 'on' : 'off' }
         setHalo(settings.look.halo !== false)
@@ -875,8 +910,10 @@
         section.querySelector('[data-act="reset-look"]').addEventListener('click', () => {
           settings.look = {}
           saveSettings()
-          lookInputs.forEach((inp) => setLook(inp.dataset.look))
+          lookInputs.forEach((inp) => { look[inp.dataset.look] = setLook(inp.dataset.look) })
           setHalo(true)
+          retarget()
+          show(step)
         })
 
         // Label text: in edit mode, click a label line to rewrite it. Overrides key on edge + row index,
