@@ -50,6 +50,8 @@ const CONFIG = {
     width: [360, 120, 900, 10] as Tuple,
     slot: [48, 16, 200, 1] as Tuple,
     energy: [0.15, 0, 1, 0.01] as Tuple,
+    /** Extra space (px) between the top of the screen and the braid once the intro lands. */
+    topGap: [0, 0, 300, 1] as Tuple,
   },
   startAt: [0.35, 0.05, 0.95, 0.01] as Tuple,
   returnToHero: true,
@@ -88,6 +90,8 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     window.dispatchEvent(new Event('resize'))
     return () => { root.style.removeProperty('--braid-slot-h'); root.style.removeProperty('--braid-w') }
   }, [t.hero.slot, t.hero.width])
+  // The landing scroll is measured, not drawn: re-measure when the gap dial moves.
+  useEffect(() => { window.dispatchEvent(new Event(UNWIND_BRAID_LAYOUT_EVENT)) }, [t.hero.topGap])
 
   useEffect(() => {
     if (!enabled) return
@@ -153,7 +157,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       // Desktop landing matches the hero composition: band level with the navigation,
       // centered phone continuing below the fold. Keep the narrow-screen band below the nav.
       const nav = document.querySelector('.case .nav')?.getBoundingClientRect()
-      landingY = vw > 800 && box && nav ? Math.max(stageH, slotY - (nav.top + nav.height / 2)) : stageH
+      landingY = vw > 800 && box && nav ? Math.max(stageH, slotY - (nav.top + nav.height / 2) - tRef.current.hero.topGap) : stageH
       wake()
     }
     const start = () => {
