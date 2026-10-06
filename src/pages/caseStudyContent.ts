@@ -294,7 +294,8 @@ export const UNWIND_CONFIG = {
       default: 'soft rise',
     },
     artWidth: [300, 160, 480, 5] as Tuple,
-    rowGap: [44, 8, 140, 1] as Tuple,
+    /** Vertical space between Problem, Opportunity and Solution (px). */
+    rowGap: [44, 8, 600, 1] as Tuple,
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     /** Captions inside the art cards; clear a field to remove that caption. */
@@ -451,7 +452,8 @@ export const FILO_CONFIG = {
     opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
     artWidth: [300, 160, 480, 5] as Tuple,
-    rowGap: [44, 8, 140, 1] as Tuple,
+    /** Vertical space between Problem, Opportunity and Solution (px). */
+    rowGap: [44, 8, 600, 1] as Tuple,
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     _collapsed: true,
