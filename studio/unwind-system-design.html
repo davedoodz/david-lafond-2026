@@ -670,7 +670,8 @@
       ]
       // Small motion per bullet icon, played when the bullet takes the spotlight (icon units, 24-grid).
       const ICON_MOTION = {
-        'physiological signals': [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(0.95)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }],
+        // 'drawbeat': the trace draws left to right, then pulses like a heartbeat (handled by playIcon).
+        'physiological signals': 'drawbeat',
         'movement + activity': [{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }],
         'evidence-based framework': [{ transform: 'scale(1)' }, { transform: 'scale(1.22)' }, { transform: 'scale(1)' }],
         'gentle nudge': [{ transform: 'rotate(0)' }, { transform: 'rotate(-14deg)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(0)' }],
@@ -697,6 +698,7 @@
         flip: { name: 'Flip', frames: [{ transform: 'scaleX(1)' }, { transform: 'scaleX(-1)' }, { transform: 'scaleX(1)' }] },
         heartbeat: { name: 'Heartbeat', frames: [{ transform: 'scale(1)' }, { transform: 'scale(1.25)', offset: 0.15 }, { transform: 'scale(1)', offset: 0.3 }, { transform: 'scale(1.18)', offset: 0.45 }, { transform: 'scale(1)' }] },
         draw: { name: 'Draw line', frames: 'draw' },
+        drawbeat: { name: 'Draw + heartbeat', frames: 'drawbeat' },
         stack: { name: 'Stack up', frames: 'stack' },
         none: { name: 'None', frames: null },
       }
@@ -839,11 +841,16 @@
             ))
             return
           }
-          if (motion !== 'draw') return glyph.animate(motion, { duration, delay, easing: 'ease-in-out' })
+          if (motion !== 'draw' && motion !== 'drawbeat') return glyph.animate(motion, { duration, delay, easing: 'ease-in-out' })
           const line = [...glyph.querySelectorAll('path, polyline')].pop()
           if (!line) return
           line.setAttribute('pathLength', '1')
-          line.animate([{ strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: duration * 1.3, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' })
+          // Draw left to right whatever direction the path was authored in (a negative offset reveals from its end).
+          const total = line.getTotalLength()
+          const from = line.getPointAtLength(0).x > line.getPointAtLength(total).x ? -1 : 1
+          line.animate([{ strokeDasharray: 1, strokeDashoffset: from }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: duration * 1.3, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' })
+          // Then a heartbeat: two quick pulses once the line is drawn.
+          if (motion === 'drawbeat') glyph.animate(MOTIONS.heartbeat.frames, { duration: duration * 1.1, delay: delay + duration * 1.3, easing: 'ease-in-out' })
         }
         // Size uses the CSS `scale` property, so it stacks with the motion's `transform` keyframes.
         const applyIconScales = () => svg.querySelectorAll('.lbl-item').forEach((r) => {
