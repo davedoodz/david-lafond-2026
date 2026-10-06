@@ -558,6 +558,22 @@
     "desktopHeight": 200
   },
   "Unwind intro": {
+    "speed": 1.2,
+    "timingSeconds": {
+      "meetingNotice": 1.2,
+      "goodLuckNotice": 2.75,
+      "threePm": 1.5,
+      "fivePm": 0.8,
+      "evening": 0.9,
+      "bodySignals": 1.6,
+      "signalChecks": 3.5,
+      "momoNudge": 2.4,
+      "reflectionChoice": 2,
+      "momoEntrance": 1.75,
+      "voiceReflection": 4.75,
+      "heroHandoff": 1.6,
+      "heroHold": 1.45
+    },
     "hero": {
       "width": 280,
       "energy": 0.28

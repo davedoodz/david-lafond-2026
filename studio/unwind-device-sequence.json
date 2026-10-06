@@ -1,0 +1,185 @@
+{
+  "version": 3,
+  "font": "apple",
+  "colors": {
+    "tint": "#8fb3d9",
+    "amount": 0.52,
+    "shade": 1.03,
+    "accent": "#4f9cf9"
+  },
+  "context": {
+    "view": "page",
+    "scale": 0.72,
+    "fold": 0.05,
+    "gap": 76,
+    "riseMs": 1200,
+    "riseDelay": 200,
+    "riseStagger": 150,
+    "riseEase": "cubic-bezier(.16,1,.3,1)",
+    "riseOnPlay": true
+  },
+  "layout": {
+    "meta": {
+      "x": 0,
+      "y": -19,
+      "s": 1
+    },
+    "title": {
+      "x": 0,
+      "y": -15,
+      "s": 1
+    },
+    "logos": {
+      "x": 0,
+      "y": -8,
+      "s": 1
+    },
+    "phone": {
+      "x": -34,
+      "y": 34,
+      "s": 1
+    },
+    "watch": {
+      "x": -7,
+      "y": 86,
+      "s": 1
+    },
+    "avatar": {
+      "x": 0,
+      "y": 0,
+      "s": 1
+    },
+    "braid": {
+      "x": 0,
+      "y": 0,
+      "s": 1
+    },
+    "nav": {
+      "x": 0,
+      "y": 0,
+      "s": 1
+    }
+  },
+  "steps": [
+    {
+      "label": "Notification arrives",
+      "caption": "The watch notices a stressful day and gently checks in.",
+      "duration": 3.5,
+      "watch": "notification",
+      "phone": "off",
+      "title": "Rough day?",
+      "body": "It seems like you had a pretty stressful day. Want to talk about it?",
+      "primary": "Talk",
+      "secondary": "Not now",
+      "phoneTitle": "",
+      "phoneBody": "",
+      "tapStyle": "cursor",
+      "faceStyle": "digital",
+      "connectStyle": "momo",
+      "transition": "fade",
+      "transitionMs": 600,
+      "prompt": "So what’s on your mind?",
+      "transcript": ""
+    },
+    {
+      "label": "Taps “Talk”",
+      "caption": "One tap says yes. No typing, no app hunting.",
+      "duration": 2.2,
+      "watch": "pressed",
+      "phone": "off",
+      "title": "Rough day?",
+      "body": "It seems like you had a pretty stressful day. Want to talk about it?",
+      "primary": "Talk",
+      "secondary": "Not now",
+      "phoneTitle": "",
+      "phoneBody": "",
+      "tapStyle": "cursor",
+      "faceStyle": "digital",
+      "connectStyle": "momo",
+      "transition": "fade",
+      "transitionMs": 600,
+      "prompt": "So what’s on your mind?",
+      "transcript": ""
+    },
+    {
+      "label": "Watch hands off",
+      "caption": "The watch passes the moment to the phone.",
+      "duration": 1.8,
+      "watch": "handoff",
+      "phone": "lock",
+      "title": "Opening on iPhone",
+      "body": "Pick up your phone to keep talking.",
+      "primary": "",
+      "secondary": "",
+      "phoneTitle": "",
+      "phoneBody": "",
+      "tapStyle": "cursor",
+      "faceStyle": "digital",
+      "connectStyle": "momo",
+      "transition": "fade",
+      "transitionMs": 600,
+      "prompt": "So what’s on your mind?",
+      "transcript": ""
+    },
+    {
+      "label": "Taps the notification",
+      "caption": "The phone is already waiting. One tap opens Unwind.",
+      "duration": 2.6,
+      "watch": "handoff",
+      "phone": "lockNotifTap",
+      "title": "Opening on iPhone",
+      "body": "Pick up your phone to keep talking.",
+      "primary": "",
+      "secondary": "",
+      "phoneTitle": "Unwind",
+      "phoneBody": "Ready when you are. Tap to start talking.",
+      "tapStyle": "cursor",
+      "faceStyle": "digital",
+      "connectStyle": "momo",
+      "transition": "cut",
+      "transitionMs": 600,
+      "prompt": "So what’s on your mind?",
+      "transcript": ""
+    },
+    {
+      "label": "Momo asks",
+      "caption": "A single open question, then space to answer.",
+      "duration": 2.6,
+      "watch": "handoff",
+      "phone": "voicePrompt",
+      "title": "Listening",
+      "body": "On iPhone",
+      "primary": "",
+      "secondary": "",
+      "phoneTitle": "",
+      "phoneBody": "",
+      "tapStyle": "cursor",
+      "faceStyle": "digital",
+      "connectStyle": "momo",
+      "transition": "zoom",
+      "transitionMs": 800,
+      "prompt": "So what’s on your mind?",
+      "transcript": "Honestly, today was a lot. My manager moved the deadline up again and I just froze in that meeting. And then on the way home I kept replaying"
+    },
+    {
+      "label": "Voice journaling",
+      "caption": "They talk it through, for as long as they need.",
+      "duration": 8,
+      "watch": "handoff",
+      "phone": "voice",
+      "title": "Listening",
+      "body": "On iPhone",
+      "primary": "",
+      "secondary": "",
+      "phoneTitle": "",
+      "phoneBody": "",
+      "tapStyle": "cursor",
+      "faceStyle": "digital",
+      "connectStyle": "momo",
+      "transition": "blur",
+      "transitionMs": 600,
+      "prompt": "So what’s on your mind?",
+      "transcript": "Honestly, today was a lot. My manager moved the deadline up again and I just froze in that meeting. And then on the way home I kept replaying"
+    }
+  ]
+}

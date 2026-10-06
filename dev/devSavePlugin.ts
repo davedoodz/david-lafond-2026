@@ -13,6 +13,7 @@ import type { Plugin } from 'vite'
 const FILES = {
   tuning: 'src/data/tuning.json',
   signature: 'src/data/signature.json',
+  deviceSequence: 'studio/unwind-device-sequence.json',
 } as const
 
 type SaveBody = { file: keyof typeof FILES; key?: string; data: unknown }
