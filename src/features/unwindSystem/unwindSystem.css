@@ -77,6 +77,10 @@
 .unwind-system .story .edge__line { stroke: var(--system-card-ink); }
 .unwind-system .story .edge > path:not(.edge__line):not([fill='none']) { fill: var(--system-card-ink); }
 .unwind-system .story .node__halo { fill: var(--system-icon-circle, #fff); }
+/* Text colour dials (case study "text" group): node titles, arrow label text, lit label icons. */
+.unwind-system .story .node text { fill: var(--system-title-color, var(--system-card-ink)); }
+.unwind-system .story .lbl-row text { fill: var(--system-label-color, var(--system-card-ink)); }
+.unwind-system .story .lbl-item:is(.is-spot, .is-lit) .lbl-icon { stroke: var(--system-label-icon, var(--unwind)); }
 /* The embed keeps the studio controls in the DOM, hidden; their display rules must not show them. */
 .story [hidden] { display: none !important; }
 /* Step focus: current arrows full, earlier steps dimmed (--past-op), later hidden. Idle actors use --idle-op. */

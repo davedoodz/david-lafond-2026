@@ -17,6 +17,7 @@ type SequenceDials = {
   stepHold: { youShare: number; dataIn: number; answersOut: number; backToYou: number }
   arrowTips: { animation: TipAnimation }
   labels: { size: number }
+  text: { titles: string; labels: string; icons: string }
   entrance: { preset: EntrancePreset; duration: number; distance: number; delay: number; stagger: number }
 } & Record<`${NodeIcon}Icon`, { x: number; y: number; scale: number }>
 
@@ -146,6 +147,12 @@ export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
     /** Px between each blue node icon and its title (studio "Title gap"). */
     titleGap: [14, 0, 48, 1] as Tuple,
   },
+  /** Diagram text colours: node titles (WATCH, USER…), arrow label text, and the label icons once lit. */
+  text: {
+    titles: { type: 'color' as const, default: '#171717' },
+    labels: { type: 'color' as const, default: '#171717' },
+    icons: { type: 'color' as const, default: '#159DD2' },
+  },
   system: {
     scale: [1, 0.5, 1.5, 0.01] as Tuple,
   },
@@ -230,6 +237,9 @@ export function UnwindSystemFigure() {
     '--system-text-scale': speed.momoText.scale,
     '--system-text-color': speed.momoText.color,
     '--system-icon-circle': speed.icons.circleColor,
+    '--system-title-color': speed.text.titles,
+    '--system-label-color': speed.text.labels,
+    '--system-label-icon': speed.text.icons,
     '--system-diagram-scale': speed.system.scale,
     ...Object.fromEntries(NODE_ICONS.flatMap((n) => [
       [`--system-${n}-x`, `${speed[`${n}Icon`].x}px`],
