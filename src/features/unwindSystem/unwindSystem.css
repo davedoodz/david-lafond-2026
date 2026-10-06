@@ -1,6 +1,16 @@
 /* Unwind system diagram (mountUnwindSystem.js). Shared by the studio and the case study embed. */
 /* The whole figure always fits the screen: width is capped so its height never exceeds the viewport. */
 .story > svg { display: block; width: min(100%, calc((100svh - 24px) * var(--ar, 1.5))); height: auto; margin-inline: auto; }
+/* Case-study Full loop: fill the media column while retaining the studio's exact story geometry. */
+.unwind-system {
+  width: min(100%, 1200px);
+  justify-self: center;
+  --ink-900: #171717;
+  --stone-600: #6f6b68;
+  --stone-400: #a6a09c;
+  --unwind: #53bffe;
+}
+.unwind-system > div, .unwind-system .story { width: 100%; }
 /* The embed keeps the studio controls in the DOM, hidden; their display rules must not show them. */
 .story [hidden] { display: none !important; }
 /* Step focus: current arrows full, earlier steps dimmed (--past-op), later hidden. Idle actors use --idle-op. */

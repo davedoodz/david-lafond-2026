@@ -56,6 +56,7 @@ const toDataUrl = (url) => fetch(url).then((r) => {
  */
 export async function mountUnwindSystem(root, { mode = 'embed', narrow = false } = {}) {
   const studio = mode === 'studio'
+  const fullLoop = mode === 'full-loop'
   const settings = studio ? loadStudioSettings() : normalize(structuredClone(baked))
   let saveTimer
   // Only user changes save: mounting applies the loaded settings without writing them back, so a
@@ -414,11 +415,11 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
       const kind = o.kinds?.[e.kind] ?? {}
       const color = kind.color ?? o.line ?? INK
       const dash = o.presetDash ?? kind.dash ?? o.dash
-      const cls = o.animate ? ' class="flow"' : ''
+      const cls = o.animate ? 'edge__line flow' : 'edge__line'
       parts.push(`<g class="edge" data-edge="${index}">`)
       const pts = fitEdge(e, o)
       parts.push(
-        `<path class="edge__line" d="${path(pts, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${cls} />`,
+        `<path class="${cls}" d="${path(pts, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''} />`,
       )
       parts.push(arrowHead(pts, o, kind.color ?? o.arrowColor ?? color, o.stroke))
       if (o.dots) parts.push(`<circle cx="${e.points[0][0]}" cy="${e.points[0][1]}" r="3.5" fill="${o.arrowColor ?? INK}" />`)
@@ -623,7 +624,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
         <label>Feel <select data-act="feel" aria-label="Flow feel">${Object.entries(FEELS).map(([k, f]) => `<option value="${k}">${f.name}</option>`).join('')}</select></label>
         <button type="button" data-act="play">Pause</button>
       </div>
-      <div class="story__caption" aria-live="polite">
+      <div class="story__caption" aria-live="polite"${fullLoop ? ' hidden' : ''}>
         <span class="story__num"></span>
         <div><strong class="story__title"></strong><p class="story__text"></p></div>
       </div>
@@ -652,7 +653,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
       <div class="story__timing" aria-label="Arrows" data-act="arrow-times"${studio ? '' : ' hidden'}></div>
       <div class="story__timing" aria-label="Icon motion" data-act="icon-motions"${studio ? '' : ' hidden'}></div>
       ${render(o)}
-      <nav class="story__steps">${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
+      <nav class="story__steps"${fullLoop ? ' hidden' : ''}>${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
     root.append(section)
 
     const svg = section.querySelector('svg')
@@ -1359,9 +1360,13 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
     })
     requestAnimationFrame(frame)
     return {
-      // Reduced motion: the full loop, still; the step pills still walk through it.
+      // The case study presents the tuned final state, without the walkthrough UI or auto-advance.
       start() {
-        if (reduceMotion) { show(STORY.length - 1); return }
+        if (fullLoop || reduceMotion) {
+          setPlaying(false)
+          show(STORY.length - 1)
+          return
+        }
         setPlaying(true)
         show(0)
       },

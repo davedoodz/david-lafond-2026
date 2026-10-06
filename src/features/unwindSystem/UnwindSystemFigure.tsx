@@ -5,9 +5,8 @@ import { mountUnwindSystem, type UnwindSystemHandle } from './mountUnwindSystem'
 const NARROW = '(max-width: 720px)'
 
 /**
- * The Unwind system walkthrough on the case study: you, the watch, the phone, Momo and the experts,
- * one exchange at a time. It plays the tuning baked in ./settings.json (edit it in
- * studio/unwind-system-design.html) and starts when it scrolls into view.
+ * The case study's system figure: the studio walkthrough's tuned “Full loop” state,
+ * without its caption, controls or step navigation.
  */
 export function UnwindSystemFigure() {
   const ref = useRef<HTMLDivElement>(null)
@@ -28,23 +27,13 @@ export function UnwindSystemFigure() {
     const root = host.appendChild(document.createElement('div'))
     let cancelled = false
     let handle: UnwindSystemHandle | undefined
-    let observer: IntersectionObserver | undefined
-    mountUnwindSystem(root, { mode: 'embed', narrow }).then((h) => {
-      if (cancelled) return h.destroy()
-      handle = h
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (!entry.isIntersecting) return
-          h.start()
-          observer?.disconnect()
-        },
-        { threshold: 0.35 },
-      )
-      observer.observe(root)
+    mountUnwindSystem(root, { mode: 'full-loop', narrow }).then((mounted) => {
+      if (cancelled) return mounted.destroy()
+      handle = mounted
+      mounted.start()
     })
     return () => {
       cancelled = true
-      observer?.disconnect()
       handle?.destroy()
       root.remove()
     }
