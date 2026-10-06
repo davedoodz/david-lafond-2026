@@ -94,12 +94,17 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const ctx = canvas.getContext('2d')!
     const filmCanvas = document.createElement('canvas'), filmCtx = filmCanvas.getContext('2d')!
     const root = document.documentElement
-    let vw = 0, vh = 0, dpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
+    let vw = 0, vh = 0, dpr = 1, filmDpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
     let ready = false, disposed = false, playing = false, armed = true
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
-    let interrupted = false, enteredStage = false
+    let interrupted = false, enteredStage = false, handedOff = false
     let sequenceIndex = 0, sequenceTime = 0
     let sequenceDurations = tRef.current.timingSeconds
+    const completeHandoff = () => {
+      if (handedOff) return
+      handedOff = true
+      cbRef.current.onDone()
+    }
     const videos = MOMO_CLIPS.map(clip => momoVideos.current[clip]!)
     const canvases = MOMO_CLIPS.map(clip => momoCanvases.current[clip]!)
     const stopDecoders = videos.map((video, i) => stackedAlpha(video, canvases[i]))
@@ -134,8 +139,12 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const measure = () => {
       if (disposed) return
       vw = window.innerWidth; vh = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1)
-      canvas.width = filmCanvas.width = Math.round(vw * dpr)
-      canvas.height = filmCanvas.height = Math.round(vh * dpr)
+      // The film is already soft and its source phone is 500px tall. Rendering that full-screen
+      // offscreen canvas at Retina 2× doubles each dimension for no visible gain and stalls the
+      // scroll handoff. Keep the hero braid crisp on the main canvas; cap only the film buffer.
+      filmDpr = Math.min(1.5, dpr)
+      canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr)
+      filmCanvas.width = Math.round(vw * filmDpr); filmCanvas.height = Math.round(vh * filmDpr)
       stageH = stage.offsetHeight || vh
       const box = document.querySelector('.case__section--hero .case__braid-slot')?.getBoundingClientRect()
       slotY = box ? box.top + box.height / 2 + window.scrollY : stageH + 120
@@ -148,7 +157,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     }
     const start = () => {
       if (!ready) return
-      playing = true; armed = false; time = 0; handoffY = null; interrupted = false
+      playing = true; armed = false; time = 0; handoffY = null; interrupted = false; handedOff = false
       sequenceIndex = 0; sequenceTime = 0
       for (const video of videos) video.currentTime = 0
       sequenceDurations = { ...tRef.current.timingSeconds }
@@ -170,7 +179,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       if (playing && enteredStage && p <= .03 && handoffY === null) {
         playing = false
         setReplayable(true)
-        cbRef.current.onDone()
+        completeHandoff()
       }
       if (!playing && p < .03) armed = true
       if (ready && !playing && armed && p > s.startAt) start()
@@ -195,7 +204,10 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
           window.scrollTo({ top: handoffY + (landingY - handoffY) * k, behavior: 'instant' })
           p = progress()
         }
-        if (time >= PHONE_TIMELINE.dur) { playing = false; setReplayable(true); cbRef.current.onDone() }
+        // The visual handoff is complete when the braid reaches its hero slot. Reveal the
+        // live phone now instead of waiting through the film's trailing hold.
+        if (time >= PHONE_TIMELINE.hero) completeHandoff()
+        if (time >= PHONE_TIMELINE.dur) { playing = false; setReplayable(true); completeHandoff() }
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const ending = playing ? smooth(clamp((time - PHONE_TIMELINE.hero + .35) / .35)) : 1
@@ -206,12 +218,14 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       if (filmAlpha > .001) {
         const scale = Math.min(vw / (vw < 700 ? 480 : 960), vh / 540)
         filmCtx.setTransform(1, 0, 0, 1, 0, 0); filmCtx.clearRect(0, 0, filmCanvas.width, filmCanvas.height)
-        drawPhoneFilm(filmCtx, time, [scale * dpr, (vw - 960 * scale) / 2 * dpr, (vh - 540 * scale) / 2 * dpr], {
+        drawPhoneFilm(filmCtx, time, [scale * filmDpr, (vw - 960 * scale) / 2 * filmDpr, (vh - 540 * scale) / 2 * filmDpr], {
           x: (slotX - vw / 2) / scale + 480,
           y: (slotY - window.scrollY - vh / 2) / scale + 270,
           width: Math.min(s.hero.width, vw * .72) / scale,
         }, s.phonePosition, momoFrames)
-        ctx.globalAlpha = filmAlpha; ctx.drawImage(filmCanvas, 0, 0); ctx.globalAlpha = 1
+        ctx.globalAlpha = filmAlpha
+        ctx.drawImage(filmCanvas, 0, 0, canvas.width, canvas.height)
+        ctx.globalAlpha = 1
       }
       const ay = slotY - window.scrollY
       swell += ((hovering ? 1 : 0) - swell) * (1 - Math.exp(-dt / s.speed * 10))

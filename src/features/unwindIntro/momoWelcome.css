@@ -11,6 +11,7 @@
   aspect-ratio: 1312 / 2672;
   isolation: isolate;
 }
+.momo-welcome__phone[data-phase='rising'] { will-change: transform, opacity; }
 .momo-welcome__screen {
   position: absolute;
   inset: 2% 4.8%;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ShaderFitOptions, ShaderMount, getShaderColorFromString, meshGradientFragmentShader } from '@paper-design/shaders'
 import { Momo, type MomoMode } from '../../components/MomoCard'
 import { releaseShader } from '../../lib/releaseShader'
@@ -31,7 +31,8 @@ const CONFIG = {
   },
   /** Seconds on one looping clock. Each element fades up at its start time, holds, then fades out together. */
   timing: {
-    loop: [12, 4, 30, 0.5] as Tuple,
+    /** Scales the full authored 12-second sequence while preserving every relative cue. */
+    fullLoopDuration: [12, 4, 30, 0.5] as Tuple,
     shadeAt: [0.6, 0, 6, 0.1] as Tuple,
     shadeIn: [1.2, 0, 4, 0.1] as Tuple,
     shadeOut: [0.96, 0, 4, 0.05] as Tuple,
@@ -153,14 +154,14 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
   // Replaying the intro (active → false) hides the phone again so it rises once more at the handoff.
   const { distance, delay, fade } = t.rise
   const springKey = JSON.stringify(t.rise.spring)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active) { setPhase('waiting'); return }
     if (reduced) { setPhase('landed'); return }
     if (phaseRef.current === 'landed' || !visible) return
     const el = phone.current!
     const motion = toCssTiming(JSON.parse(springKey))
     const anims = [
-      el.animate([{ transform: `translateY(${distance}px)` }, { transform: 'none' }], { duration: parseFloat(motion.duration) * 1000, delay: delay * 1000, easing: motion.easing, fill: 'backwards' }),
+      el.animate([{ transform: `translate3d(0, ${distance}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }], { duration: parseFloat(motion.duration) * 1000, delay: delay * 1000, easing: motion.easing, fill: 'backwards' }),
       el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: Math.max(1, fade * 1000), delay: delay * 1000, easing: 'ease-out', fill: 'backwards' }),
     ]
     setPhase('rising')
@@ -177,8 +178,9 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
   const T = t.timing
   useEffect(() => {
     if (phase !== 'landed' || reduced) return
-    const loop = T.loop * 1000
-    const s = (x: number) => x * 1000
+    const timeScale = T.fullLoopDuration / 12
+    const loop = T.fullLoopDuration * 1000
+    const s = (authoredSeconds: number) => authoredSeconds * timeScale * 1000
     const hidden = { opacity: 0, transform: `translateY(${T.lift}px)` }
     const shown = { opacity: 1, transform: 'none' }
     const element = (el: HTMLElement, at: number) =>
@@ -195,7 +197,7 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
     for (const a of anims) a.startTime = start
     loopRef.current = anims
     return () => { anims.forEach(a => a.cancel()); loopRef.current = [] }
-  }, [phase, reduced, loopKey, t.blackOverlay, T.loop, T.shadeAt, T.shadeIn, T.shadeOut, T.momoAt, T.logoAt, T.buttonsAt, T.legalAt, T.fadeIn, T.lift, T.holdUntil, T.fadeOut])
+  }, [phase, reduced, loopKey, t.blackOverlay, T.fullLoopDuration, T.shadeAt, T.shadeIn, T.shadeOut, T.momoAt, T.logoAt, T.buttonsAt, T.legalAt, T.fadeIn, T.lift, T.holdUntil, T.fadeOut])
 
   // Off screen: hold the loop where it is.
   useEffect(() => {

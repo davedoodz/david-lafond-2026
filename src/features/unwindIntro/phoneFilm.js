@@ -366,7 +366,9 @@ function film(V) {
       let p = { x: 480 + B.x * u, y: scr.y + scr.h * 0.9 + B.y * u, len: scr.w * 0.8 * B.len * B.scale, sc: 0.3 * B.scale }
       if (HO === 'fade' || HO === 'dissolve') p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
       const target = a.braidTarget ?? { x: 480, y: 45.3, width: 187 }
-      p = mix(p, { x: (target.x - 480) / z + fx, y: (target.y - 270 - offsetY) / z + fy, len: target.width / z, sc: .336 }, S(t, T.calm + 0.6, T.hero))
+      // Move as soon as the handoff begins. The former +0.6s offset read as a stall,
+      // then forced the full trip into the shortened remainder of the transition.
+      p = mix(p, { x: (target.x - 480) / z + fx, y: (target.y - 270 - offsetY) / z + fy, len: target.width / z, sc: .336 }, S(t, T.calm, T.hero))
       const speech = 0.45 + 0.4 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
       const bAlpha = S(t, T.voice - 0.1, T.voice + 0.5) * (1-S(t,T.hero-.35,T.hero)), flat = lerp(0.1, 1, live(t)), env = lerp(0, lerp(lerp(0.85 + 0.15 * hb, 0.12, calm), speech, talking * 0.8), live(t))
       a.draw((c) => {
