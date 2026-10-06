@@ -750,7 +750,7 @@ html[data-case-snap] .case__moment {
 .case__flows-row {
   width: min(1160px, calc(100vw - 2 * var(--case-frame-edge)));
   margin-top: clamp(100px, 11.25svh, 133px);
-  perspective: 1600px;
+  --flows-gap: 50px;
 }
 .case__flow-card {
   position: relative;
@@ -764,6 +764,20 @@ html[data-case-snap] .case__moment {
 }
 .case__flow-card[data-position='center'] {
   z-index: 2;
+}
+/* Perspective lives on each card, not the row: while a card fades (opacity < 1)
+   the browser flattens its 3D children, so a row perspective would only reach the
+   tilted phone once the fade ended and the tilt would pop in. The origin points at
+   the row centre so the settled view matches the row perspective. */
+.case__flow-card {
+  perspective: 1600px;
+  perspective-origin: 50% 50%;
+}
+.case__flow-card[data-position='left'] {
+  perspective-origin: calc(150% + var(--flows-gap)) 50%;
+}
+.case__flow-card[data-position='right'] {
+  perspective-origin: calc(-50% - var(--flows-gap)) 50%;
 }
 .case__flows[data-seen] .case__flow-card {
   opacity: 1;
@@ -942,6 +956,7 @@ html[data-case-snap] .case__moment {
   .case__flows-row {
     width: calc(100vw - 2 * var(--edge));
     gap: 8px;
+    --flows-gap: 8px;
     margin-top: clamp(42px, 7svh, 68px);
     translate: none;
   }
