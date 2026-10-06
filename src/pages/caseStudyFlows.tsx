@@ -279,11 +279,12 @@ function LockNotification() {
 }
 
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
-export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; woopLabel: string; modelsLabel: string }
+export type GuidedReveal = 'rise' | 'cascade' | 'focus' | 'from sides' | 'wipe' | 'still'
+export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string }
 export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
   const ref = useRiseOnView()
   return (
-    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} aria-labelledby="case-guided">
+    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} aria-labelledby="case-guided">
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="guided eyebrow" value={g.eyebrow} onChange={edit('guided.eyebrow')} />
         <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} />
@@ -292,12 +293,12 @@ export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
       <ol className="case__guided-row">
         {(
           [
-            ['guided-loop', g.modelsLabel, 'modelsLabel'],
+            ['guided-woop-pick', g.modelsLabel, 'modelsLabel'],
             ['guided-woop', g.woopLabel, 'woopLabel'],
           ] as const
         ).map(([name, label, field], i) => (
           <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
-            <PhoneVideo name={name} className={name === 'guided-loop' ? 'case__phone--bare' : ''} />
+            <PhoneVideo name={name} className={name === 'guided-woop-pick' ? 'case__phone--bare' : ''} />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}

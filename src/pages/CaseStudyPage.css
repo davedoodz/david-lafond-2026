@@ -1026,6 +1026,93 @@ html[data-case-snap] .case__moment {
 [data-resetting] .case__rise {
   transition: none;
 }
+/* Guided entrance variants (data-guided-reveal). They reuse the rise-on-view states: the
+   copy lines (--c) go first, then the two videos (--i). `rise` is the shared rule above. */
+.case__guided .case__section-copy > * {
+  --c: 0;
+}
+.case__guided .case__section-copy > :nth-child(2) {
+  --c: 1;
+}
+.case__guided .case__section-copy > :nth-child(3) {
+  --c: 2;
+}
+.case__guided {
+  --dir: 1;
+}
+.case__guided[data-from='above'] {
+  --dir: -1;
+}
+.case__guided[data-guided-reveal='cascade'] .case__section-copy > *,
+.case__guided[data-guided-reveal='focus'] .case__section-copy > *,
+.case__guided[data-guided-reveal='from sides'] .case__section-copy > *,
+.case__guided[data-guided-reveal='wipe'] .case__section-copy > * {
+  opacity: 0;
+  transition:
+    opacity 600ms ease calc(var(--c) * 90ms),
+    transform 900ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--c) * 90ms),
+    filter 700ms ease calc(var(--c) * 90ms),
+    clip-path 900ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--c) * 90ms);
+}
+.case__guided:not([data-guided-reveal='rise']) .case__rise {
+  transition:
+    opacity 700ms ease calc(320ms + var(--i) * 140ms),
+    transform 1100ms cubic-bezier(0.16, 1, 0.3, 1) calc(320ms + var(--i) * 140ms),
+    filter 800ms ease calc(320ms + var(--i) * 140ms),
+    clip-path 1100ms cubic-bezier(0.16, 1, 0.3, 1) calc(320ms + var(--i) * 140ms);
+}
+/* cascade: lines and videos lift a short distance in sequence. */
+.case__guided[data-guided-reveal='cascade'] .case__section-copy > * {
+  transform: translate3d(0, calc(var(--dir) * 24px), 0);
+}
+.case__guided[data-guided-reveal='cascade'] .case__rise {
+  transform: translate3d(0, calc(var(--dir) * 96px), 0) scale(0.96);
+}
+/* focus: everything resolves from a soft blur and a slight zoom-out. */
+.case__guided[data-guided-reveal='focus'] .case__section-copy > * {
+  transform: scale(1.04);
+  filter: blur(10px);
+}
+.case__guided[data-guided-reveal='focus'] .case__rise {
+  transform: scale(0.92);
+  filter: blur(14px);
+}
+/* from sides: copy settles down from above; the videos meet from the left and right. */
+.case__guided[data-guided-reveal='from sides'] .case__section-copy > * {
+  transform: translate3d(0, -16px, 0);
+}
+.case__guided[data-guided-reveal='from sides'] .case__rise {
+  transform: translate3d(calc((var(--i) * 2 - 1) * 22vw), 0, 0) rotate(calc((var(--i) * 2 - 1) * 4deg));
+}
+/* wipe: copy lines rise out of a mask; the videos unroll from the bottom edge. */
+.case__guided[data-guided-reveal='wipe'] .case__section-copy > * {
+  transform: translate3d(0, 0.5em, 0);
+  clip-path: inset(0 0 100% 0);
+}
+.case__guided[data-guided-reveal='wipe'] .case__rise {
+  transform: translate3d(0, 40px, 0);
+  clip-path: inset(100% -30% -30% -30%);
+}
+/* Settled, leaving, and reset states for every variant above. */
+.case__guided:not([data-guided-reveal='rise'], [data-guided-reveal='still'])[data-seen] :is(.case__rise, .case__section-copy > *),
+.case__guided:not([data-guided-reveal='rise'], [data-guided-reveal='still'])[data-exiting] :is(.case__rise, .case__section-copy > *) {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: inset(-30%);
+}
+.case__guided:not([data-guided-reveal='rise'], [data-guided-reveal='still'])[data-exiting] :is(.case__rise, .case__section-copy > *) {
+  opacity: 0;
+  transition: opacity 400ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+.case__guided:not([data-guided-reveal='rise'], [data-guided-reveal='still'])[data-resetting] :is(.case__rise, .case__section-copy > *) {
+  transition: none;
+}
+.case__guided[data-guided-reveal='still'] :is(.case__rise, .case__section-copy > *) {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
 .case__flow-device {
   transform-origin: 50% 50%;
   transform-style: preserve-3d;

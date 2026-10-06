@@ -14,7 +14,7 @@ type Tuple = [number, number, number, number]
 export const PROTO_VIDEOS = {
   'welcome-park': { w: 522, h: 1080, dir: 'proto' },
   'freeform-evening': { w: 522, h: 1080, dir: 'proto' },
-  'guided-loop': { w: 460, h: 810, dir: 'flows' },
+  'guided-woop-pick': { w: 460, h: 810, dir: 'flows' },
   'guided-woop': { w: 530, h: 1080, dir: 'flows' },
   voice: { w: 530, h: 1080, dir: 'flows' },
   dynamic: { w: 530, h: 1080, dir: 'flows' },
@@ -362,6 +362,8 @@ export const UNWIND_CONFIG = {
     title: { type: 'text' as const, default: 'Evidence-based models, spoken out loud.' },
     body: { type: 'text' as const, default: 'Pick a framework and answer one question at a time.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
+    /** Entrance for the header copy and both videos: `rise` keeps the copy still and slides the videos up. */
+    reveal: { type: 'select' as const, options: ['rise', 'cascade', 'focus', 'from sides', 'wipe', 'still'], default: 'rise' },
     woopLabel: { type: 'text' as const, default: 'WOOP · plan for next time' },
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
     _collapsed: true,
