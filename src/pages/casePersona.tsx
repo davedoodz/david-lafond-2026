@@ -123,8 +123,10 @@ export const FLOAT_DIALS = {
     pillsGap: [0.1, 0, 1.5, 0.05] as Tuple,
     /** Pause after the last pill before the portrait. */
     imageGap: [0.1, 0, 1.5, 0.05] as Tuple,
-    /** Pause after the portrait lands before the first floating card. */
-    floatsGap: [0.3, 0, 3, 0.05] as Tuple,
+    /** From the portrait starting to appear to the first floating bubble (either scroll direction). */
+    floatsDelay: [1.2, 0, 4, 0.05] as Tuple,
+    /** Between one floating bubble and the next (drift). */
+    floatStagger: [0.35, 0, 1.5, 0.05] as Tuple,
     _collapsed: false,
   },
   _collapsed: false,
@@ -139,7 +141,8 @@ type Entrance = {
   pillStagger: number
   pillsGap: number
   imageGap: number
-  floatsGap: number
+  floatsDelay: number
+  floatStagger: number
 }
 export type Float = {
   preset: string
@@ -174,10 +177,10 @@ function entranceTimeline(e: Entrance, pills: number, reverse: boolean, floatsIn
     const pillsStart = text[2] + e.duration + e.pillsGap
     const pill = step(pillsStart, pills, e.pillStagger)
     const image = (pills ? pill[pills - 1] + e.duration : pillsStart) + e.imageGap
-    return { text, pill, image, floats: image + e.duration + e.floatsGap }
+    return { text, pill, image, floats: image + e.floatsDelay }
   }
   const image = 0
-  const floats = image + e.duration + e.floatsGap
+  const floats = image + e.floatsDelay
   const pillsStart = floats + floatsIn + e.pillsGap
   const pill = step(pillsStart, pills, e.pillStagger).reverse()
   const textStart = (pills ? pill[0] + e.duration : pillsStart) + e.pillsGap
@@ -329,8 +332,8 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
   const float = p.float
   // Entrance order follows scroll direction (see entranceTimeline).
   const ent = float?.entrance
-  // Drift starts each card at 0.2s + i × 0.35s (CSS); the looping presets show one card per beat.
-  const floatsIn = float?.preset === 'drift' ? 0.2 + 0.35 * (SCENES.length - 1) : (ent?.duration ?? 0)
+  // Drift starts card i at floatStagger × i (CSS); the looping presets show one card per beat.
+  const floatsIn = float?.preset === 'drift' && ent ? ent.floatStagger * (SCENES.length - 1) : (ent?.duration ?? 0)
   const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0, fromAbove, floatsIn) : null
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const traitList = (group: 'driven' | 'challenges', items: [string, string][]) => (
@@ -375,6 +378,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
                 '--pe-text-2': `${timeline.text[2]}s`,
                 '--pe-image': `${timeline.image}s`,
                 '--pe-floats': `${timeline.floats}s`,
+                '--pe-float-stagger': `${ent.floatStagger}s`,
               }
             : {}),
           '--persona-img-w': `${p.imageWidth}px`,
