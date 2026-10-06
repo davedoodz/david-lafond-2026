@@ -15,6 +15,8 @@ const CONFIG = {
   /** Button look. flat: the original fills · glass: clear Liquid Glass · tinted: blue glass primary · frosted: heavier frost · prominent: white primary. */
   buttons: {
     style: { type: 'select' as const, options: ['flat', 'glass', 'tinted', 'frosted', 'prominent'], default: 'flat' },
+    primaryColor: { type: 'color' as const, default: '#3cb7f3' },
+    secondaryColor: { type: 'color' as const, default: '#ffffff' },
     /** White stroke inside the Get started button. */
     primaryStroke: false,
     strokeWidth: [1.5, 0.25, 6, 0.25] as Tuple,
@@ -214,6 +216,8 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
     '--welcome-type-x': `${t.wordmark.x}cqw`,
     '--welcome-type-y': `${t.wordmark.y}cqw`,
     '--welcome-stroke': t.buttons.primaryStroke ? `${t.buttons.strokeWidth}px` : '0px',
+    '--welcome-primary': t.buttons.primaryColor,
+    '--welcome-secondary': t.buttons.secondaryColor,
   } as CSSProperties
 
   return <div className="momo-welcome" ref={host} role="img" aria-label="Animated Momo welcome screen" style={style}>
