@@ -186,7 +186,10 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
           const from = sequenceIndex ? SEQUENCES[sequenceIndex - 1].end : 0
           time = from + (sequence.end - from) * sequenceTime / sequenceDurations[sequence.key]
         }
-        if (time >= PHONE_TIMELINE.calm && s.returnToHero && !interrupted) {
+        // An input event alone must not strand the viewer on the empty stage.
+        // Only honor interruption when they have actually scrolled into the case study.
+        if (time >= PHONE_TIMELINE.calm && s.returnToHero && (!interrupted || p > 0)) {
+          interrupted = false
           handoffY ??= window.scrollY
           const k = smooth(clamp((time - PHONE_TIMELINE.calm) / (PHONE_TIMELINE.hero - PHONE_TIMELINE.calm)))
           window.scrollTo({ top: handoffY + (landingY - handoffY) * k, behavior: 'instant' })
