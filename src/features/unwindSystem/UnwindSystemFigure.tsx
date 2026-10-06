@@ -17,7 +17,7 @@ type SequenceDials = {
   stepHold: { youShare: number; dataIn: number; answersOut: number; backToYou: number }
   arrowTips: { animation: TipAnimation }
   labels: { size: number }
-  entrance: { preset: EntrancePreset; duration: number; distance: number; delay: number; stagger: number; play: 'once' | 'every entry' }
+  entrance: { preset: EntrancePreset; duration: number; distance: number; delay: number; stagger: number }
 } & Record<`${NodeIcon}Icon`, { x: number; y: number; scale: number }>
 
 /** Blue node illustrations with their own dials; `momo` is the runtime's `ai` node (see unwindSystem.css). */
@@ -171,7 +171,6 @@ export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
     delay: [0, 0, 1.5, 0.05] as Tuple,
     /** Cascade and unfold: seconds between the surface, the lockup and the diagram. */
     stagger: [0.15, 0, 0.8, 0.01] as Tuple,
-    play: { type: 'select' as const, options: ['once', 'every entry'], default: 'once' },
     replay: { type: 'action' as const, label: 'Replay entrance' },
   },
   userIcon: iconDials(),
@@ -273,12 +272,13 @@ export function UnwindSystemFigure() {
   }, [speed.arrowTips.animation])
 
   // Card entrance: built paused on its first frame (so the card never flashes in before it plays),
-  // played when the card comes into view. Changing a dial rebuilds it and replays it if in view.
-  const { preset, duration, distance, delay, stagger, play } = speed.entrance
+  // played once 15% of the card is in view, and re-armed only once the card has fully left the
+  // viewport, so every scroll back replays it. Changing a dial rebuilds it and replays it if in view.
+  const { preset, duration, distance, delay, stagger } = speed.entrance
   useEffect(() => {
     const card = cardRef.current
     if (!card || preset === 'none' || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const dials = { preset, duration, distance, delay, stagger, play }
+    const dials = { preset, duration, distance, delay, stagger }
     let anims: Animation[] = []
     const arm = () => {
       anims.forEach((a) => a.cancel())
@@ -287,17 +287,15 @@ export function UnwindSystemFigure() {
     }
     arm()
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        anims.forEach((a) => a.play())
-        if (play === 'once') observer.disconnect()
-      } else arm()
-    }, { threshold: 0.15 })
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.15) anims.forEach((a) => { if (a.playState === 'paused') a.play() })
+      else if (!entry.isIntersecting) arm()
+    }, { threshold: [0, 0.15] })
     observer.observe(card)
     return () => {
       observer.disconnect()
       anims.forEach((a) => a.cancel())
     }
-  }, [preset, duration, distance, delay, stagger, play, entranceKey])
+  }, [preset, duration, distance, delay, stagger, entranceKey])
 
   // The layout is built once per mount, so a width change across NARROW remounts the diagram.
   useEffect(() => {
