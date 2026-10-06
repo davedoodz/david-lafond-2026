@@ -813,19 +813,28 @@
           saveSettings()
           show(step)
         })
-        // Icon motion row: one menu per bullet icon in this step. Saved per bullet (settings.iconMotion),
-        // so a choice applies wherever that bullet appears. 'Original' keeps the icon's own motion.
+        // Icon motion row: a motion menu and a size slider per bullet icon in this step. Saved per bullet
+        // (settings.iconMotion, settings.iconScale), so a choice applies wherever that bullet appears.
+        // 'Original' keeps the icon's own motion.
         const motionFor = (item) => {
           const k = settings.iconMotion[item]
           return MOTIONS[k] && k !== 'original' ? MOTIONS[k].frames : ICON_MOTION[item]
         }
+        // Size uses the CSS `scale` property, so it stacks with the motion's `transform` keyframes.
+        const applyIconScales = () => svg.querySelectorAll('.lbl-item').forEach((r) => {
+          const v = Number(settings.iconScale[r.dataset.item])
+          r.querySelector('.lbl-glyph').style.scale = v > 0 && v !== 1 ? String(v) : ''
+        })
+        applyIconScales()
         const iconMotions = section.querySelector('[data-act="icon-motions"]')
         function renderIconMotions() {
           const items = [...new Set(STORY[step].edges.flatMap((e) =>
             [...svg.querySelectorAll(`.edge[data-edge="${e}"] .lbl-item:not(.is-gone)`)].map((r) => r.dataset.item)))]
           iconMotions.innerHTML = `<span>Icon motion</span>${items.map((item) => {
             const cur = MOTIONS[settings.iconMotion[item]] ? settings.iconMotion[item] : 'original'
-            return `<label>${item} <select data-item="${item}">${Object.entries(MOTIONS).map(([k, m]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${m.name}</option>`).join('')}</select></label>`
+            const size = Number(settings.iconScale[item]) || 1
+            return `<label>${item} <select data-item="${item}">${Object.entries(MOTIONS).map(([k, m]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${m.name}</option>`).join('')}</select>` +
+              `<input type="range" data-scale="${item}" min="0.5" max="2" step="0.05" value="${size}" aria-label="${item} size" /><output>${size.toFixed(2)}×</output></label>`
           }).join('')}<button type="button" data-act="preview-icons">Preview</button>`
         }
         // Play every icon in this step once, so a choice can be judged without replaying the step.
@@ -844,6 +853,15 @@
           else settings.iconMotion[sel.dataset.item] = sel.value
           saveSettings()
           previewIcons()
+        })
+        iconMotions.addEventListener('input', (ev) => {
+          const inp = ev.target.closest('input[data-scale]')
+          if (!inp) return
+          if (+inp.value === 1) delete settings.iconScale[inp.dataset.scale]
+          else settings.iconScale[inp.dataset.scale] = +inp.value
+          saveSettings()
+          inp.nextElementSibling.textContent = `${(+inp.value).toFixed(2)}×`
+          applyIconScales()
         })
         iconMotions.addEventListener('click', (ev) => { if (ev.target.closest('[data-act="preview-icons"]')) previewIcons() })
         // Each step can hold for its own time; otherwise it uses the Step slider.
@@ -1395,9 +1413,9 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime), iconMotion: obj(s.iconMotion) }
+          return { feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime), iconMotion: obj(s.iconMotion), iconScale: obj(s.iconScale) }
         } catch {
-          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {}, iconMotion: {} }
+          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {}, iconMotion: {}, iconScale: {} }
         }
       })()
       const saveSettings = () => {
