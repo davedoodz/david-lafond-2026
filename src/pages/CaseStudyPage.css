@@ -790,6 +790,8 @@ html[data-case-snap] .case__moment {
   width: min(1160px, calc(100vw - 2 * var(--case-frame-edge)));
   margin-top: clamp(100px, 11.25svh, 133px);
   --flows-gap: 50px;
+  scale: var(--flows-scale, 1);
+  transform-origin: 50% 0;
 }
 .case__flow-card {
   position: relative;

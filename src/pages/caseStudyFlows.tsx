@@ -115,7 +115,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
 }
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; notificationLabel: string; voiceLabel: string; entriesLabel: string }
+export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; phoneScale: number; notificationLabel: string; voiceLabel: string; entriesLabel: string }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -155,7 +155,15 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
     ['entries', f.entriesLabel, 'right'],
   ] as const
   return (
-    <section ref={ref} className="case__section case__flows" data-section="flows" data-layout="flows" data-copy-align={f.align} aria-labelledby="case-flows">
+    <section
+      ref={ref}
+      className="case__section case__flows"
+      data-section="flows"
+      data-layout="flows"
+      data-copy-align={f.align}
+      aria-labelledby="case-flows"
+      style={{ '--flows-scale': f.phoneScale } as CSSProperties}
+    >
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="flows eyebrow" value={f.eyebrow} onChange={edit('flows.eyebrow')} />
         <EditableText as="h2" id="case-flows" className="case__title" label="flows title" value={f.title} onChange={edit('flows.title')} />
