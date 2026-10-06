@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText } from './storyArt'
 import { cardSurface, useSystemBase, type GlassDials } from '../features/unwindSystem/systemSurface'
@@ -94,21 +94,6 @@ const STORY_PRESETS: Record<string, Look> = {
 export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode] }) {
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const glassVars = useStoryGlass(s.glass)
-  const ref = useRef<HTMLElement>(null)
-  const wasLive = useRef(false)
-  const [live, setLive] = useState(false)
-  const [revealCycle, setRevealCycle] = useState(0)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !wasLive.current) setRevealCycle((cycle) => cycle + 1)
-      wasLive.current = e.isIntersecting
-      setLive(e.isIntersecting)
-    }, { threshold: 0.25 })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
   const rows = [
     ['problem', s.problemLabel, s.problemTitle, s.problemBody, arts?.[0] ?? <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} />],
     ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, arts?.[1] ?? <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} />],
@@ -116,7 +101,6 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
   ] as const
   return (
     <section
-      ref={ref}
       className="case__section case__story"
       data-section="story"
       data-layout="story"
@@ -125,13 +109,12 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
       data-story-art={look.art}
       data-story-motion={look.motion}
       data-story-reveal={look.reveal}
-      data-live={live || undefined}
       aria-label="Problem, opportunity and solution"
       style={{ ...glassVars, '--story-art-w': `${s.artWidth}px`, '--story-gap': `${s.rowGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
     >
-      <ol key={revealCycle} className="case__story-cols">
+      <ol className="case__story-cols">
         {rows.map(([k, label, title, body, art], i) => (
-          <li key={k} data-row={k} style={{ '--i': i } as CSSProperties}>
+          <StoryItem key={k} row={k}>
             {look.art !== 'none' && <div className="story-art">{art}</div>}
             <div className="case__story-text">
               <span className="case__story-step">{String(i + 1).padStart(2, '0')}</span>
@@ -139,11 +122,38 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
               <EditableText as="h2" className="case__story-title" label={`${label} title`} value={title} onChange={edit(`story.${k}Title`)} />
               <EditableText className="case__story-body" label={`${label} body`} value={body} onChange={edit(`story.${k}Body`)} />
             </div>
-          </li>
+          </StoryItem>
         ))}
       </ol>
     </section>
   )
+}
+
+/**
+ * One story row, triggered on its own: its entrance and art sequence replay from the start
+ * each time the row comes back into view, and its loops pause while it is off screen.
+ * `data-live` is set directly (not React state) so the restart lands in the same frame.
+ */
+function StoryItem({ row, children }: { row: string; children: ReactNode }) {
+  const ref = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !('live' in el.dataset)) {
+        el.dataset.live = ''
+        // Restart the row's CSS animations (entrance, draws, reveals) from their first frame.
+        el.getAnimations({ subtree: true }).forEach((a) => { a.cancel(); a.play() })
+      } else if (!e.isIntersecting && 'live' in el.dataset) {
+        // Animations restarted from script no longer follow the CSS pause, so pause them here too.
+        delete el.dataset.live
+        el.getAnimations({ subtree: true }).forEach((a) => a.pause())
+      }
+    }, { threshold: 0.35 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  return <li ref={ref} data-row={row}>{children}</li>
 }
 
 /**

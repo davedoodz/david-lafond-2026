@@ -310,8 +310,8 @@ export function OpportunityArt({ variant, text = STORY_ART_TEXT }: { variant: st
           />
         ))}
         {/* The moment appears once all three lines have converged. Lines end at 0.7s + 1.6s;
-            this row's --i (1) already adds 0.35s, so --at is the remainder. */}
-        <g className="sa-after" style={{ "--at": "1.95s" } as CSSProperties}>
+            the last line (--i 2) ends at 0.7s + 1.6s. */}
+        <g className="sa-after" style={{ "--at": "2.3s" } as CSSProperties}>
           <circle
             className="sa-b sa-ping"
             cx={206}

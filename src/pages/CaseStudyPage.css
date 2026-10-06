@@ -728,7 +728,8 @@ html[data-case-snap] .case__moment {
   transform-box: fill-box;
   transform-origin: center;
 }
-.case__story:not([data-live]) * {
+.case__story li:not([data-live]),
+.case__story li:not([data-live]) * {
   animation-play-state: paused !important;
 }
 [data-story-motion='draw'] .sa-draw {
