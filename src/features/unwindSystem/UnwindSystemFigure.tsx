@@ -8,6 +8,7 @@ type SequenceDials = {
   sequenceSpeed: number
   motionSpeed: number
   card: { show: boolean; radius: number; fill: string; scaleX: number; scaleY: number }
+  gradient: { show: boolean; opacity: number; palette: GradientPalette; deep: string; mid: string; glow: string; light: string; spread: number; x: number; y: number }
   shadow: { show: boolean; color: string; opacity: number; x: number; y: number; blur: number; spread: number }
   momoLogo: { x: number; y: number; scale: number; outline: number; smile: number; color: string }
   momoText: { x: number; y: number; scale: number; color: string }
@@ -64,6 +65,31 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
   }
 }
 
+/** Mesh-style card gradient (after Craftwork's Prism Gradients): a deep corner, a blue body, a glow edge, fading to a light field. */
+const GRADIENT_PALETTES = {
+  prism: { deep: '#1B1F2A', mid: '#3D8DBF', glow: '#73CBDD', light: '#EEF0F8' },
+  unwind: { deep: '#0B3A5C', mid: '#2FA6EA', glow: '#9BDCFF', light: '#F4F8FC' },
+  dusk: { deep: '#221B3A', mid: '#5B6FD8', glow: '#B59CF0', light: '#F3F0FA' },
+  lagoon: { deep: '#0E2E2E', mid: '#2E9C9A', glow: '#8FE3D4', light: '#EEF7F4' },
+  ember: { deep: '#2A1714', mid: '#D8664A', glow: '#F6B48A', light: '#FBF3EE' },
+} as const
+type GradientPalette = keyof typeof GRADIENT_PALETTES | 'custom'
+
+/** Layered radial gradients over a light field; `opacity` fades the whole gradient over the solid card fill. */
+function cardGradient(g: SequenceDials['gradient']) {
+  if (!g.show || g.opacity <= 0) return 'none'
+  const c = g.palette === 'custom' ? g : GRADIENT_PALETTES[g.palette] ?? GRADIENT_PALETTES.prism
+  const a = (color: string, strength = 1) => `color-mix(in srgb, ${color} ${Math.round(g.opacity * strength * 100)}%, transparent)`
+  const s = g.spread
+  const at = (x: number, y: number) => `${x + g.x}% ${y + g.y}%`
+  return [
+    `radial-gradient(${70 * s}% ${60 * s}% at ${at(0, 100)}, ${a(c.deep)} 0%, ${a(c.deep, 0)} 100%)`,
+    `radial-gradient(${85 * s}% ${95 * s}% at ${at(0, 55)}, ${a(c.mid)} 0%, ${a(c.mid, 0.6)} 40%, ${a(c.mid, 0)} 100%)`,
+    `radial-gradient(${75 * s}% ${65 * s}% at ${at(0, 0)}, ${a(c.glow)} 0%, ${a(c.glow, 0)} 100%)`,
+    `linear-gradient(${a(c.light)}, ${a(c.light)})`,
+  ].join(', ')
+}
+
 export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
   /** Changes the hold between story beats. */
   sequenceSpeed: [1, 0.25, 3, 0.05] as Tuple,
@@ -75,6 +101,21 @@ export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
     fill: { type: 'color' as const, default: '#53BFFE' },
     scaleX: [1, 0.5, 1.5, 0.01] as Tuple,
     scaleY: [1, 0.5, 1.5, 0.01] as Tuple,
+  },
+  /** Mesh gradient over the fill. Palette presets set the four colours; pick `custom` to use the colour dials. */
+  gradient: {
+    show: true,
+    opacity: [1, 0, 1, 0.01] as Tuple,
+    palette: { type: 'select' as const, options: [...Object.keys(GRADIENT_PALETTES), 'custom'], default: 'prism' },
+    deep: { type: 'color' as const, default: GRADIENT_PALETTES.prism.deep },
+    mid: { type: 'color' as const, default: GRADIENT_PALETTES.prism.mid },
+    glow: { type: 'color' as const, default: GRADIENT_PALETTES.prism.glow },
+    light: { type: 'color' as const, default: GRADIENT_PALETTES.prism.light },
+    /** Size of the colour blooms (1 = reference). */
+    spread: [1, 0.4, 2, 0.01] as Tuple,
+    /** Moves the blooms, % of the card. */
+    x: [0, -50, 100, 1] as Tuple,
+    y: [0, -50, 50, 1] as Tuple,
   },
   shadow: {
     show: false,
@@ -172,6 +213,7 @@ export function UnwindSystemFigure() {
   const colors = cardColors(speed.card.show ? speed.card.fill : '#F5F5F5')
   const style = {
     '--system-card-fill': speed.card.fill,
+    '--system-card-gradient': cardGradient(speed.gradient),
     '--system-card-opacity': speed.card.show ? 1 : 0,
     // Card size comes from insets (not a transform), so radius and shadow stay undistorted.
     '--system-card-radius': `${speed.card.radius}px`,

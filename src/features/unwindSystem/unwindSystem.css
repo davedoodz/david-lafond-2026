@@ -31,7 +31,7 @@
   inset: var(--system-card-inset-y, 0) var(--system-card-inset-x, 0);
   z-index: 0;
   pointer-events: none;
-  background: var(--system-card-fill, #53bffe);
+  background: var(--system-card-gradient, none), var(--system-card-fill, #53bffe);
   border-radius: var(--system-card-radius, 48px);
   box-shadow: var(--system-card-shadow, none);
   opacity: var(--system-card-opacity, 1);
