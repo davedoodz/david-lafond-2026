@@ -126,12 +126,23 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
       el.dataset.seen = ''
       return
     }
-    // Rise once the section is mostly on screen, so the whole slide is visible;
-    // reset after it fully leaves so the phones rise again on the next visit.
+    // Enter by rising once most of the section is visible. On the way out,
+    // hold the phones in place and fade them; reset the hidden rise position
+    // only when the section starts entering again.
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.intersectionRatio >= 0.6) el.dataset.seen = ''
-        else if (!entry.isIntersecting) delete el.dataset.seen
+        if (entry.intersectionRatio >= 0.6) {
+          delete el.dataset.exiting
+          el.dataset.seen = ''
+        } else if ('seen' in el.dataset) {
+          delete el.dataset.seen
+          el.dataset.exiting = ''
+        } else if (entry.isIntersecting && 'exiting' in el.dataset) {
+          el.dataset.resetting = ''
+          delete el.dataset.exiting
+          void el.offsetWidth
+          delete el.dataset.resetting
+        }
       },
       { threshold: [0, 0.6] },
     )

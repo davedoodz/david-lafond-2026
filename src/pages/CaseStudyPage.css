@@ -810,6 +810,14 @@ html[data-case-snap] .case__moment {
   opacity: 1;
   transform: translate3d(0, 0, 0);
 }
+.case__flows[data-exiting] .case__flow-card {
+  opacity: 0;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 400ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+.case__flows[data-resetting] .case__flow-card {
+  transition: none;
+}
 .case__flow-device {
   transform-origin: 50% 50%;
   transform-style: preserve-3d;
