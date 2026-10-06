@@ -699,6 +699,7 @@
         ['momoY', 'Momo y', -80, 80, 1, 0, '--momo-y'],
         ['momoScale', 'Momo size', 0.4, 2, 0.05, 1, '--momo-scale'],
         ['tipScale', 'Arrow tip', 0.5, 2.5, 0.05, 1],
+        ['labelGap', 'Label gap', 4, 40, 1, 16],
       ]
       // How label rows enter, chosen per step.
       const REVEALS = {
@@ -968,7 +969,8 @@
             rows.forEach((r) => {
               r.getAnimations().forEach((a) => a.cancel())
               r.classList.remove('is-spot')
-              if (!intro) return
+              // Already on screen (no entrance): its icon has had its turn, so it is blue.
+              if (!intro) return r.classList.add('is-lit')
               r.classList.remove('is-lit')
               r.animate(REVEALS[reveal].frames, { duration: revealDur, delay: cursor, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' })
               const glyph = r.querySelector('.lbl-glyph')
@@ -986,6 +988,8 @@
             return { items, sched, cycleFrom: intro && sched.length ? Math.max(cursor, sched[sched.length - 1] + 1) : 0, last: -1 }
           })
           svg.querySelectorAll('.edge:not(.is-on) .lbl-row.is-spot').forEach((r) => r.classList.remove('is-spot'))
+          // Earlier steps' bullets count as done, even if a step was skipped to get here.
+          svg.querySelectorAll('.edge.is-past .lbl-item').forEach((r) => r.classList.add('is-lit'))
           started = performance.now()
         }
 
@@ -1140,7 +1144,7 @@
           const v = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def
           const inp = lookInputs.find((x) => x.dataset.look === k)
           inp.value = v
-          inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale', 'tipScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
+          inp.nextElementSibling.textContent = ['arrowGap', 'titleGap', 'momoX', 'momoY', 'labelGap'].includes(k) ? `${v}px` : ['lineSp', 'haloScale', 'iconScale', 'momoScale', 'tipScale'].includes(k) ? `${v.toFixed(2)}×` : `${Math.round(v * 100)}%`
           if (cssVar) section.style.setProperty(cssVar, String(v))
           else if (k === 'lineSp') { applyLineSpacing(v); centerLabels() }
           return v
@@ -1204,13 +1208,21 @@
               const horiz = Math.abs(y2 - y1) < Math.abs(x2 - x1)
               const along = horiz ? Math.min(Math.max(cx, Math.min(x1, x2)), Math.max(x1, x2)) : Math.min(Math.max(cy, Math.min(y1, y2)), Math.max(y1, y2))
               const d = horiz ? Math.hypot(cx - along, cy - y1) : Math.hypot(cx - x1, cy - along)
-              if (!best || d < best.d) best = { d, horiz, mid: horiz ? (x1 + x2) / 2 : (y1 + y2) / 2 }
+              if (!best || d < best.d) best = { d, horiz, mid: horiz ? (x1 + x2) / 2 : (y1 + y2) / 2, lineY: y1 }
             }
-            lbl.setAttribute('transform', best.horiz ? `translate(${(best.mid - cx).toFixed(2)} 0)` : `translate(0 ${(best.mid - cy).toFixed(2)})`)
+            if (!best.horiz) return lbl.setAttribute('transform', `translate(0 ${(best.mid - cy).toFixed(2)})`)
+            // Beside a horizontal run, every block keeps the same gap to its line, whatever its line count:
+            // above, the last baseline sits `labelGap` over the line; below, the first cap top sits `labelGap` under it.
+            let dy = 0
+            if (baselines.length) {
+              const top = Math.min(...baselines.map((r) => r.base - r.cap)), bottom = Math.max(...baselines.map((r) => r.base))
+              dy = cy < best.lineY ? best.lineY - look.labelGap - bottom : best.lineY + look.labelGap - top
+            }
+            lbl.setAttribute('transform', `translate(${(best.mid - cx).toFixed(2)} ${dy.toFixed(2)})`)
           })
         }
         document.fonts.ready.then(() => { alignEndLabels(svg); centerLabels() })
-        const geometry = ['haloScale', 'arrowGap', 'titleGap', 'tipScale']
+        const geometry = ['haloScale', 'arrowGap', 'titleGap', 'tipScale', 'labelGap']
         lookInputs.forEach((inp) => {
           const k = inp.dataset.look
           look[k] = setLook(k, settings.look[k])
