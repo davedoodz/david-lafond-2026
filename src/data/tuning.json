@@ -666,27 +666,54 @@
       "scaleX": 0.78,
       "scaleY": 0.87
     },
+    "gradient": {
+      "opacity": 0.16,
+      "palette": "unwind",
+      "deep": "#8f9bf9",
+      "mid": "#e0e2e4",
+      "glow": "#ffffff",
+      "light": "#d3d4d9",
+      "spread": 1.55,
+      "x": -17,
+      "y": 50
+    },
+    "glass": {
+      "show": true,
+      "tint": 1,
+      "blur": 15,
+      "saturate": 1.7,
+      "edge": 1,
+      "sheen": 1,
+      "sheenAngle": 232,
+      "glow": 0.21
+    },
     "shadow": {
       "show": true,
-      "opacity": 0.17,
-      "x": 3
+      "color": "#a7dbff",
+      "opacity": 0.49,
+      "x": 3,
+      "spread": -10
     },
     "momoLogo": {
       "x": 57,
       "y": 32,
       "scale": 0.4,
       "outline": 5.2,
-      "color": "#62abdc"
+      "color": "#159dd278"
     },
     "momoText": {
       "x": -25,
       "y": 30,
       "scale": 0.61,
-      "color": "#62abdc"
+      "color": "#159dd27a"
     },
     "icons": {
-      "circleColor": "#5dd6fa",
+      "circleColor": "#4caaf7",
       "titleGap": 13
+    },
+    "text": {
+      "titles": "#159DD2",
+      "labels": "#159DD2"
     },
     "stepHold": {
       "youShare": 0.5,
@@ -696,6 +723,14 @@
     },
     "arrowTips": {
       "animation": "slide"
+    },
+    "labels": {
+      "size": 1.1
+    },
+    "entrance": {
+      "preset": "tilt",
+      "duration": 2.05,
+      "distance": 132
     },
     "userIcon": {
       "y": -4,
