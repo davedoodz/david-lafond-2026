@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText } from './storyArt'
-import { useSystemSurface } from '../features/unwindSystem/systemSurface'
+import { cardSurface, useSystemBase, type GlassDials } from '../features/unwindSystem/systemSurface'
 
 /** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
 const flow = (name: string) => ({ src: `/work/unwind/flows/${name}.mp4`, poster: `/work/unwind/flows/${name}.webp` })
@@ -50,6 +50,29 @@ export type Story = {
   textWidth: number
   /** Unwind art captions; other case studies pass their own `arts`. */
   artText?: StoryArtText
+  /** Unwind glass art cards (art: 'glass'). */
+  glass?: StoryGlass
+}
+
+type StoryGlass = Required<GlassDials> & { glowBlur: number; radius: number; padding: number }
+/** Without the system card on the page, glass sits on a plain light fill. */
+const FALLBACK_BASE = { fill: '#F5F5F5', gradient: { show: false, opacity: 0, palette: 'prism', deep: '', mid: '', glow: '', light: '', spread: 1, x: 0, y: 0 } } as const
+
+/** The art cards' glass: the system card's fill + gradient, with the story's own (size-scaled) glass dials. */
+function useStoryGlass(glass: StoryGlass | undefined): CSSProperties | undefined {
+  const base = useSystemBase() ?? FALLBACK_BASE
+  if (!glass) return undefined
+  const s = cardSurface(base.fill, base.gradient, glass)
+  return {
+    '--glass-fill': s.fill,
+    '--glass-gradient': s.gradient,
+    '--glass-backdrop': s.backdrop,
+    '--glass-edge': s.edge,
+    '--glass-glow': s.glow,
+    '--glass-glow-blur': `${glass.glowBlur}px`,
+    '--glass-radius': `${glass.radius}px`,
+    '--glass-pad': `${glass.padding}px`,
+  } as CSSProperties
 }
 
 type Look = Pick<Story, 'art' | 'opportunityArt' | 'motion' | 'reveal'>
@@ -66,7 +89,7 @@ const STORY_PRESETS: Record<string, Look> = {
 /** `arts` replaces the Unwind graphics (problem, opportunity, solution) for another case study. */
 export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode] }) {
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
-  const glass = useSystemSurface()
+  const glassVars = useStoryGlass(s.glass)
   const ref = useRef<HTMLElement>(null)
   const wasLive = useRef(false)
   const [live, setLive] = useState(false)
@@ -99,7 +122,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
       data-story-reveal={look.reveal}
       data-live={live || undefined}
       aria-label="Problem, opportunity and solution"
-      style={{ ...glass, '--story-art-w': `${s.artWidth}px`, '--story-gap': `${s.rowGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
+      style={{ ...glassVars, '--story-art-w': `${s.artWidth}px`, '--story-gap': `${s.rowGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
     >
       <ol key={revealCycle} className="case__story-cols">
         {rows.map(([k, label, title, body, art], i) => (

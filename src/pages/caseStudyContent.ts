@@ -257,8 +257,29 @@ export const UNWIND_CONFIG = {
     /** Look presets set art and motion; Layout stays independently adjustable. */
     preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'converge', 'outline', 'minimal', 'columns', 'custom'], default: 'calm cards' },
     layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
-    /** glass: the system card's glass surface (tuned under Unwind system sequence → gradient / glass). */
+    /** glass: the system card's fill + gradient with the glass dials below (story → glass). */
     art: { type: 'select' as const, options: ['glass', 'card', 'line', 'outline', 'none'], default: 'glass' },
+    /**
+     * Glass for the three art cards. Colours come from the system card (Unwind system sequence →
+     * card fill / gradient); these dials start from the system card's glass, scaled to the cards'
+     * size (≈⅓ of the system card): blur, radius and glow blur shrink, the 1px rim stays crisp.
+     */
+    glass: {
+      tint: [1, 0.05, 1, 0.01] as Tuple,
+      blur: [5, 0, 40, 0.5] as Tuple,
+      saturate: [1.7, 1, 3, 0.05] as Tuple,
+      /** White rim: opacity, width and top highlight (px). */
+      edge: [1, 0, 1, 0.01] as Tuple,
+      edgeWidth: [1, 0, 4, 0.25] as Tuple,
+      highlight: [1.5, 0, 6, 0.25] as Tuple,
+      sheen: [1, 0, 1, 0.01] as Tuple,
+      sheenAngle: [232, 0, 360, 1] as Tuple,
+      glow: [0.21, 0, 1, 0.01] as Tuple,
+      glowBlur: [16, 0, 80, 1] as Tuple,
+      radius: [12, 0, 48, 1] as Tuple,
+      padding: [18, 0, 48, 1] as Tuple,
+      _collapsed: false,
+    },
     /** three: a tile per technology · converge: all three flow into the moment · single: one row of icons */
     opportunityArt: { type: 'select' as const, options: ['three', 'converge', 'single'], default: 'three' },
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },

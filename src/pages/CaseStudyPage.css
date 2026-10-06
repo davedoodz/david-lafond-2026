@@ -629,14 +629,13 @@ html[data-case-snap] .case__moment {
   border-radius: 24px;
   background: #eef8ff;
 }
-/* Glass: the system card's tuned surface, published as --glass-* (see systemSurface.ts).
-   Same layering as the system card: surface on ::before, palette glow under it on ::after
-   (so the backdrop blur refracts it), art above both. Fallbacks give a plain frosted card
-   if the system figure is not on the page. */
+/* Glass: the system card's fill + gradient with the story's own glass dials, as --glass-*
+   (see useStoryGlass). Same layering as the system card: surface on ::before, palette glow
+   under it on ::after (so the backdrop blur refracts it), art above both. */
 [data-story-art='glass'] .story-art {
   position: relative;
   isolation: isolate;
-  padding: 18px;
+  padding: var(--glass-pad, 18px);
 }
 [data-story-art='glass'] .story-art > * {
   position: relative;
@@ -651,7 +650,7 @@ html[data-case-snap] .case__moment {
 [data-story-art='glass'] .story-art::before {
   inset: 0;
   z-index: 0;
-  border-radius: 24px;
+  border-radius: var(--glass-radius, 12px);
   background: var(--glass-gradient, none), var(--glass-fill, rgb(245 248 252 / 0.7));
   box-shadow: var(--glass-edge, inset 0 0 0 1px rgb(255 255 255 / 0.8));
   -webkit-backdrop-filter: var(--glass-backdrop, blur(16px) saturate(1.6));
@@ -661,7 +660,7 @@ html[data-case-snap] .case__moment {
   inset: -4%;
   z-index: -1;
   background: var(--glass-glow, none);
-  filter: blur(36px);
+  filter: blur(var(--glass-glow-blur, 16px));
 }
 [data-story-art='outline'] .story-art {
   padding: 18px;

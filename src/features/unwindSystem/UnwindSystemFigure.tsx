@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { MomoMark } from '../unwindIntro/MomoMark'
 import { mountUnwindSystem, TIP_ANIMATIONS, type TipAnimation, type UnwindSystemHandle } from './mountUnwindSystem'
-import { publishSystemSurface, type SystemSurface } from './systemSurface'
+import { cardSurface, GRADIENT_PALETTES, publishSystemBase, type GradientDials } from './systemSurface'
 import { useTuningController } from '../../tuning/useTuning'
 
 type Tuple = [number, number, number, number]
@@ -9,7 +9,7 @@ type SequenceDials = {
   sequenceSpeed: number
   motionSpeed: number
   card: { show: boolean; radius: number; fill: string; scaleX: number; scaleY: number }
-  gradient: { show: boolean; opacity: number; palette: GradientPalette; deep: string; mid: string; glow: string; light: string; spread: number; x: number; y: number }
+  gradient: GradientDials
   glass: { show: boolean; tint: number; blur: number; saturate: number; edge: number; sheen: number; sheenAngle: number; glow: number }
   shadow: { show: boolean; color: string; opacity: number; x: number; y: number; blur: number; spread: number }
   momoLogo: { x: number; y: number; scale: number; outline: number; smile: number; color: string }
@@ -68,46 +68,6 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
     ]
     default: return []
   }
-}
-
-/** Mesh-style card gradient (after Craftwork's Prism Gradients): a deep corner, a blue body, a glow edge, fading to a light field. */
-const GRADIENT_PALETTES = {
-  prism: { deep: '#1B1F2A', mid: '#3D8DBF', glow: '#73CBDD', light: '#EEF0F8' },
-  unwind: { deep: '#0B3A5C', mid: '#2FA6EA', glow: '#9BDCFF', light: '#F4F8FC' },
-  dusk: { deep: '#221B3A', mid: '#5B6FD8', glow: '#B59CF0', light: '#F3F0FA' },
-  lagoon: { deep: '#0E2E2E', mid: '#2E9C9A', glow: '#8FE3D4', light: '#EEF7F4' },
-  ember: { deep: '#2A1714', mid: '#D8664A', glow: '#F6B48A', light: '#FBF3EE' },
-} as const
-type GradientPalette = keyof typeof GRADIENT_PALETTES | 'custom'
-
-/** Layered radial gradients over a light field; `opacity` fades the whole gradient over the solid card fill. */
-function cardGradient(g: SequenceDials['gradient']) {
-  if (!g.show || g.opacity <= 0) return 'none'
-  const c = paletteColors(g)
-  const a = (color: string, strength = 1) => `color-mix(in srgb, ${color} ${Math.round(g.opacity * strength * 100)}%, transparent)`
-  const s = g.spread
-  const at = (x: number, y: number) => `${x + g.x}% ${y + g.y}%`
-  return [
-    `radial-gradient(${70 * s}% ${60 * s}% at ${at(0, 100)}, ${a(c.deep)} 0%, ${a(c.deep, 0)} 100%)`,
-    `radial-gradient(${85 * s}% ${95 * s}% at ${at(0, 55)}, ${a(c.mid)} 0%, ${a(c.mid, 0.6)} 40%, ${a(c.mid, 0)} 100%)`,
-    `radial-gradient(${75 * s}% ${65 * s}% at ${at(0, 0)}, ${a(c.glow)} 0%, ${a(c.glow, 0)} 100%)`,
-    `linear-gradient(${a(c.light)}, ${a(c.light)})`,
-  ].join(', ')
-}
-
-function paletteColors(g: SequenceDials['gradient']) {
-  return g.palette === 'custom' ? g : GRADIENT_PALETTES[g.palette] ?? GRADIENT_PALETTES.prism
-}
-
-/** Soft palette blooms behind a glass card, so the backdrop blur has colour to refract. */
-function glassGlow(g: SequenceDials['gradient'], strength: number) {
-  const c = paletteColors(g)
-  const a = (color: string, k = 1) => `color-mix(in srgb, ${color} ${Math.round(Math.min(1, strength * k) * 100)}%, transparent)`
-  return [
-    `radial-gradient(30% 28% at 24% 74%, ${a(c.mid)} 0%, ${a(c.mid, 0)} 100%)`,
-    `radial-gradient(26% 26% at 76% 24%, ${a(c.glow)} 0%, ${a(c.glow, 0)} 100%)`,
-    `radial-gradient(22% 20% at 60% 78%, ${a(c.deep, 0.5)} 0%, ${a(c.deep, 0)} 100%)`,
-  ].join(', ')
 }
 
 export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
@@ -250,22 +210,9 @@ export function UnwindSystemFigure() {
   const speed = values as unknown as SequenceDials
   const glass = speed.card.show && speed.glass.show ? speed.glass : null
   const colors = cardColors(speed.card.show ? speed.card.fill : '#F5F5F5')
-  // Glass: the fill and gradient turn see-through (tint), the backdrop blurs, and a white edge and
-  // sheen sit on top. The glow paints soft palette blooms behind the card for the glass to blur.
-  const surface: SystemSurface = {
-    fill: glass ? `color-mix(in srgb, ${speed.card.fill} ${Math.round(glass.tint * 100)}%, transparent)` : speed.card.fill,
-    gradient: [
-      ...(glass && glass.sheen > 0 ? [`linear-gradient(${glass.sheenAngle}deg, rgb(255 255 255 / ${glass.sheen}) 0%, rgb(255 255 255 / 0) 42%, rgb(255 255 255 / 0) 68%, rgb(255 255 255 / ${glass.sheen * 0.5}) 100%)`] : []),
-      cardGradient({ ...speed.gradient, opacity: speed.gradient.opacity * (glass ? glass.tint : 1) }),
-    ].join(', '),
-    backdrop: glass ? `blur(${glass.blur}px) saturate(${glass.saturate})` : 'none',
-    edge: glass && glass.edge > 0
-      ? `inset 0 0 0 1px rgb(255 255 255 / ${glass.edge}), inset 0 1.5px 0 rgb(255 255 255 / ${Math.min(1, glass.edge * 1.5)})`
-      : '0 0 #0000',
-    glow: glass && glass.glow > 0 ? glassGlow(speed.gradient, glass.glow) : 'none',
-  }
-  // The story art cards wear the same surface (see systemSurface.ts).
-  useEffect(() => publishSystemSurface(surface))
+  const surface = cardSurface(speed.card.fill, speed.gradient, glass)
+  // The story art cards take this fill + gradient and apply their own glass (see systemSurface.ts).
+  useEffect(() => publishSystemBase({ fill: speed.card.fill, gradient: speed.gradient }))
   const style = {
     '--system-card-fill': surface.fill,
     '--system-card-gradient': surface.gradient,
