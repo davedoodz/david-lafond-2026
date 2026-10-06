@@ -677,7 +677,8 @@
         'voice reflection': [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-2px)' }, { transform: 'translateY(0)' }],
         'user context': [{ transform: 'translateY(0)' }, { transform: 'translateY(-3px)' }, { transform: 'translateY(1px)' }, { transform: 'translateY(0)' }],
         'voice journal': [{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg)' }, { transform: 'rotate(6deg)' }, { transform: 'rotate(0)' }],
-        patterns: [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0.6)' }, { transform: 'scaleX(1.12)' }, { transform: 'scaleX(1)' }],
+        // 'draw': the chart line draws itself (handled by playIcon).
+        patterns: 'draw',
         'action plans': [{ transform: 'scale(1)' }, { transform: 'scale(0.75)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
         'key moments': [{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(0.95)' }, { transform: 'scale(1)' }],
         'nudge timing': [{ transform: 'rotate(0)' }, { transform: 'rotate(20deg)' }, { transform: 'rotate(-8deg)' }, { transform: 'rotate(0)' }],
@@ -694,6 +695,7 @@
         spin: { name: 'Spin', frames: [{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }] },
         flip: { name: 'Flip', frames: [{ transform: 'scaleX(1)' }, { transform: 'scaleX(-1)' }, { transform: 'scaleX(1)' }] },
         heartbeat: { name: 'Heartbeat', frames: [{ transform: 'scale(1)' }, { transform: 'scale(1.25)', offset: 0.15 }, { transform: 'scale(1)', offset: 0.3 }, { transform: 'scale(1.18)', offset: 0.45 }, { transform: 'scale(1)' }] },
+        draw: { name: 'Draw line', frames: 'draw' },
         none: { name: 'None', frames: null },
       }
 
@@ -816,9 +818,20 @@
         // Icon motion row: a motion menu and a size slider per bullet icon in this step. Saved per bullet
         // (settings.iconMotion, settings.iconScale), so a choice applies wherever that bullet appears.
         // 'Original' keeps the icon's own motion.
+        // Returns keyframes, or 'draw' for the line-drawing motion (the icon's last stroke draws itself).
         const motionFor = (item) => {
           const k = settings.iconMotion[item]
           return MOTIONS[k] && k !== 'original' ? MOTIONS[k].frames : ICON_MOTION[item]
+        }
+        function playIcon(glyph, motion, delay = 0) {
+          glyph.getAnimations({ subtree: true }).forEach((a) => a.cancel())
+          if (!motion || reduceMotion) return
+          const duration = timing.spot * 0.85
+          if (motion !== 'draw') return glyph.animate(motion, { duration, delay, easing: 'ease-in-out' })
+          const line = [...glyph.querySelectorAll('path, polyline')].pop()
+          if (!line) return
+          line.setAttribute('pathLength', '1')
+          line.animate([{ strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: duration * 1.3, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' })
         }
         // Size uses the CSS `scale` property, so it stacks with the motion's `transform` keyframes.
         const applyIconScales = () => svg.querySelectorAll('.lbl-item').forEach((r) => {
@@ -841,10 +854,7 @@
         const previewIcons = () => STORY[step].edges.forEach((e) =>
           svg.querySelectorAll(`.edge[data-edge="${e}"] .lbl-item:not(.is-gone)`).forEach((r) => {
             const glyph = r.querySelector('.lbl-glyph')
-            const motion = motionFor(r.dataset.item)
-            if (!glyph || !motion || reduceMotion) return
-            glyph.getAnimations().forEach((a) => a.cancel())
-            glyph.animate(motion, { duration: timing.spot * 0.85, easing: 'ease-in-out' })
+            if (glyph) playIcon(glyph, motionFor(r.dataset.item))
           }))
         iconMotions.addEventListener('change', (ev) => {
           const sel = ev.target.closest('select[data-item]')
@@ -1040,9 +1050,7 @@
               r.classList.remove('is-lit')
               r.animate(REVEALS[reveal].frames, { duration: revealDur, delay: cursor, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' })
               const glyph = r.querySelector('.lbl-glyph')
-              const motion = motionFor(r.dataset.item)
-              glyph?.getAnimations().forEach((a) => a.cancel())
-              if (glyph && motion) glyph.animate(motion, { duration: timing.spot * 0.85, delay: cursor, easing: 'ease-in-out' })
+              if (glyph) playIcon(glyph, motionFor(r.dataset.item), cursor)
               if (items.includes(r)) {
                 sched.push(cursor)
                 cursor += timing.bullet
