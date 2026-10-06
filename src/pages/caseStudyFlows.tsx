@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
-import { OpportunityArt, ProblemArt, SolutionArt } from './storyArt'
+import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText } from './storyArt'
 
 /** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
 const flow = (name: string) => ({ src: `/work/unwind/flows/${name}.mp4`, poster: `/work/unwind/flows/${name}.webp` })
@@ -47,6 +47,8 @@ export type Story = {
   rowGap: number
   titleScale: number
   textWidth: number
+  /** Unwind art captions; other case studies pass their own `arts`. */
+  artText?: StoryArtText
 }
 
 type Look = Pick<Story, 'art' | 'opportunityArt' | 'motion' | 'reveal'>
@@ -79,9 +81,9 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
     return () => observer.disconnect()
   }, [])
   const rows = [
-    ['problem', s.problemLabel, s.problemTitle, s.problemBody, arts?.[0] ?? <ProblemArt key="p" />],
-    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, arts?.[1] ?? <OpportunityArt key="o" variant={look.opportunityArt} />],
-    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, arts?.[2] ?? <SolutionArt key="s" />],
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody, arts?.[0] ?? <ProblemArt key="p" text={s.artText} />],
+    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, arts?.[1] ?? <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} />],
+    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, arts?.[2] ?? <SolutionArt key="s" text={s.artText} />],
   ] as const
   return (
     <section
@@ -114,21 +116,21 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
   )
 }
 
-/* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; phoneScale: number; notificationLabel: string; voiceLabel: string; entriesLabel: string }
-export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
+/**
+ * Phones rise into a section once most of it is visible. On the way out they
+ * hold in place and fade; the hidden rise position is restored only when the
+ * section starts entering again, so every return replays the rise.
+ * Cards opt in with `.case__rise` and a `--i` stagger index.
+ */
+function useRiseOnView() {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduced) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       el.dataset.seen = ''
       return
     }
-    // Enter by rising once most of the section is visible. On the way out,
-    // hold the phones in place and fade them; reset the hidden rise position
-    // only when the section starts entering again.
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.intersectionRatio >= 0.6) {
@@ -149,6 +151,13 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
+  return ref
+}
+
+/* ---------- Core flows: three phone films, composed as one hero image ---------- */
+export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; phoneScale: number; notificationLabel: string; voiceLabel: string; entriesLabel: string }
+export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
+  const ref = useRiseOnView()
   const phones = [
     ['notification', f.notificationLabel, 'left'],
     ['voice', f.voiceLabel, 'center'],
@@ -170,7 +179,7 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
       </div>
       <ol className="case__flows-row">
         {phones.map(([name, label, position], i) => (
-          <li key={name} className="case__flow-card" data-position={position} style={{ '--i': i } as CSSProperties}>
+          <li key={name} className="case__flow-card case__rise" data-position={position} style={{ '--i': i } as CSSProperties}>
             <div className="case__flow-device">{name === 'notification' ? <LockNotification /> : <PhoneVideo name={name} />}</div>
             <EditableText as="p" className="case__phone-label" label={`${name} label`} value={label} onChange={edit(`flows.${name}Label`)} />
           </li>
@@ -210,8 +219,9 @@ function LockNotification() {
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; woopLabel: string; modelsLabel: string }
 export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
+  const ref = useRiseOnView()
   return (
-    <section className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} aria-labelledby="case-guided">
+    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} aria-labelledby="case-guided">
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="guided eyebrow" value={g.eyebrow} onChange={edit('guided.eyebrow')} />
         <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} />
@@ -223,8 +233,8 @@ export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
             ['guided-models', g.modelsLabel, 'modelsLabel'],
             ['guided-woop', g.woopLabel, 'woopLabel'],
           ] as const
-        ).map(([name, label, field]) => (
-          <li key={name}>
+        ).map(([name, label, field], i) => (
+          <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
             <PhoneVideo name={name} />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>

@@ -6,6 +6,7 @@
  */
 import { FLOAT_DIALS, PERSONA_DIALS } from './casePersona'
 import { EVIDENCE_DIALS, PRINCIPLES_DIALS, REFRAME_DIALS } from './filoSections'
+import { STORY_ART_TEXT, type StoryArtText } from './storyArt'
 
 type Tuple = [number, number, number, number]
 
@@ -270,6 +271,11 @@ export const UNWIND_CONFIG = {
     rowGap: [44, 8, 140, 1] as Tuple,
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
+    /** Captions inside the art cards; clear a field to remove that caption. */
+    artText: {
+      ...Object.fromEntries(Object.entries(STORY_ART_TEXT).map(([k, v]) => [k, { type: 'text' as const, default: v }])) as Record<keyof StoryArtText, { type: 'text'; default: string }>,
+      _collapsed: false,
+    },
     _collapsed: true,
   },
   /** Persona sheet, reorganised to read top to bottom (rendered as `persona`); key contexts float around the portrait. */

@@ -56,11 +56,12 @@ const toDataUrl = (url) => fetch(url).then((r) => {
  * that chrome and plays the same walkthrough once `start()` is called by the host.
  * Returns { start, pause, setTitleGap, setStepHolds, setTipAnimation, destroy }.
  */
-export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, sequenceSpeed: requestedSequenceSpeed = 1, motionSpeed: requestedMotionSpeed = 1, titleGap, stepHolds: requestedStepHolds, tipAnimation: requestedTipAnimation = 'fade' } = {}) {
+export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, sequenceSpeed: requestedSequenceSpeed = 1, motionSpeed: requestedMotionSpeed = 1, titleGap, stepHolds: requestedStepHolds, tipAnimation: requestedTipAnimation = 'fade', labelScale: requestedLabelScale = 1 } = {}) {
   const studio = mode === 'studio'
   const sequence = mode === 'sequence'
   const sequenceSpeed = Math.min(4, Math.max(0.1, Number(requestedSequenceSpeed) || 1))
   const motionSpeed = Math.min(4, Math.max(0.1, Number(requestedMotionSpeed) || 1))
+  const labelScale = Math.min(2, Math.max(0.5, Number(requestedLabelScale) || 1))
   // Case study: per-step hold times in ms (index = step), overriding the baked step time; and how arrow tips enter.
   let stepHolds = Array.isArray(requestedStepHolds) ? requestedStepHolds : null
   let tipAnimation = requestedTipAnimation
@@ -618,7 +619,9 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
 
   function mountStory() {
     const base = OPTIONS.find((o) => o.id === 'hairline')
+    // The case study's Label size dial scales every bullet (icon and text) from the layout's baked size.
     const o = { ...base, ...LAYOUT.type, id: 'story', story: true }
+    if (!studio) o.labelSize *= labelScale
     const section = document.createElement('section')
     section.className = 'option story'
     section.id = 'story'

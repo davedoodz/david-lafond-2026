@@ -35,5 +35,7 @@ export function mountUnwindSystem(
     stepHolds?: number[]
     /** Initial arrow-tip entrance preset (default 'fade'). */
     tipAnimation?: TipAnimation
+    /** Embed/sequence only: multiplier for every arrow label (icon and text), 0.5–2. Set at mount. */
+    labelScale?: number
   },
 ): Promise<UnwindSystemHandle>

@@ -8,24 +8,39 @@ const INK = "#171717";
 const STONE = "#a6a09c";
 const BLUE = "#53bffe";
 
+/** Editable art captions (DialKit `story → artText`); an empty string removes that caption. */
+export type StoryArtText = {
+  problemMoment: string;
+  problemOpened: string;
+  opportunityMoment: string;
+  solutionCheckIn: string;
+};
+export const STORY_ART_TEXT: StoryArtText = {
+  problemMoment: "the moment",
+  problemOpened: "app opened",
+  opportunityMoment: "the moment",
+  solutionCheckIn: "check-in, right then",
+};
+
 const label = (
   x: number,
   y: number,
   t: string,
   fill = STONE,
   anchor: "start" | "middle" | "end" = "middle",
-) => (
-  <text
-    x={x}
-    y={y}
-    fontSize={11}
-    fill={fill}
-    textAnchor={anchor}
-    letterSpacing="0.02em"
-  >
-    {t}
-  </text>
-);
+) =>
+  t.trim() ? (
+    <text
+      x={x}
+      y={y}
+      fontSize={11}
+      fill={fill}
+      textAnchor={anchor}
+      letterSpacing="0.02em"
+    >
+      {t}
+    </text>
+  ) : null;
 
 /** Emotional intensity over time: rises, peaks, fades. Shared by Problem and Solution. */
 const CURVE = "M14 128 C60 128 72 34 104 34 C136 34 156 118 226 124";
@@ -106,7 +121,7 @@ function Spark({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
 }
 
 /** Problem: the feeling peaks, and the app only opens after it has faded. */
-export function ProblemArt() {
+export function ProblemArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) {
   return (
     <svg
       viewBox="0 0 240 160"
@@ -123,7 +138,7 @@ export function ProblemArt() {
         strokeWidth={2.4}
         strokeLinecap="round"
       />
-      {label(104, 22, "the moment")}
+      {label(104, 22, text.problemMoment)}
       <path
         d="M200 128 V62"
         stroke={INK}
@@ -132,13 +147,13 @@ export function ProblemArt() {
         strokeLinecap="round"
       />
       <Phone x={200} y={38} s={0.8} />
-      {label(200, 154, "app opened", INK)}
+      {label(200, 154, text.problemOpened, INK)}
     </svg>
   );
 }
 
 /** Solution: the same curve, met at its peak by a check-in on the wrist. */
-export function SolutionArt() {
+export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) {
   return (
     <svg
       viewBox="0 0 240 160"
@@ -173,13 +188,13 @@ export function SolutionArt() {
         strokeDasharray="2 4"
         strokeLinecap="round"
       />
-      {label(104, 154, "check-in, right then", INK)}
+      {label(104, 154, text.solutionCheckIn, INK)}
     </svg>
   );
 }
 
 /** Opportunity: the three technologies, either as three tiles or converging on the moment. */
-export function OpportunityArt({ variant }: { variant: string }) {
+export function OpportunityArt({ variant, text = STORY_ART_TEXT }: { variant: string; text?: StoryArtText }) {
   if (variant === "converge")
     return (
       <svg
@@ -212,7 +227,7 @@ export function OpportunityArt({ variant }: { variant: string }) {
           opacity={0.18}
         />
         <circle className="sa-b" cx={206} cy={80} r={6} fill={BLUE} />
-        {label(206, 110, "the moment", INK)}
+        {label(206, 110, text.opportunityMoment, INK)}
       </svg>
     );
   if (variant === "single")

@@ -15,6 +15,8 @@ type SequenceDials = {
   system: { scale: number }
   stepHold: { youShare: number; dataIn: number; answersOut: number; backToYou: number }
   arrowTips: { animation: TipAnimation }
+  labels: { size: number }
+  entrance: { preset: EntrancePreset; duration: number; distance: number; delay: number; stagger: number; play: 'once' | 'every entry' }
 } & Record<`${NodeIcon}Icon`, { x: number; y: number; scale: number }>
 
 /** Blue node illustrations with their own dials; `momo` is the runtime's `ai` node (see unwindSystem.css). */
@@ -26,6 +28,41 @@ const iconDials = () => ({
   y: [0, -60, 60, 1] as Tuple,
   scale: [1, 0.5, 1.6, 0.01] as Tuple,
 })
+
+/** How the whole card arrives. Transform and opacity only; each frame is a "from" state that settles to the CSS value. */
+const ENTRANCES = ['none', 'fade', 'rise', 'scale', 'tilt', 'cascade', 'unfold'] as const
+type EntrancePreset = (typeof ENTRANCES)[number]
+const EASE_OUT = 'cubic-bezier(.2,.8,.2,1)'
+
+/** Builds paused entrance animations at their first frame; the host plays them when the card is in view. */
+function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): Animation[] {
+  const d = e.distance
+  const timing = (i = 0, extra: KeyframeAnimationOptions = {}): KeyframeAnimationOptions =>
+    ({ duration: e.duration * 1000, delay: (e.delay + i * e.stagger) * 1000, easing: EASE_OUT, fill: 'backwards', ...extra })
+  const parts = [card.querySelector<HTMLElement>('.unwind-system__brand'), card.querySelector<HTMLElement>('.unwind-system__diagram')]
+    .filter((el): el is HTMLElement => !!el)
+  // A lone keyframe defaults to offset 1 (an exit); offset 0 makes it the start, settling to the CSS value.
+  const from = (frame: Keyframe): Keyframe[] => [{ ...frame, offset: 0 }]
+  const whole = (frame: Keyframe) => [card.animate(from(frame), timing())]
+  const content = () => parts.map((el, i) => el.animate(from({ opacity: 0, transform: `translateY(${d / 2}px)` }), timing(i + 1)))
+  switch (e.preset) {
+    case 'fade': return whole({ opacity: 0 })
+    case 'rise': return whole({ opacity: 0, transform: `translateY(${d}px)` })
+    case 'scale': return whole({ opacity: 0, transform: `scale(${1 - d / 1000})` })
+    case 'tilt': return whole({ opacity: 0, transform: `perspective(1600px) translateY(${d}px) rotateX(${Math.min(30, d / 4)}deg)` })
+    // Surface first, then the Momo lockup, then the diagram.
+    case 'cascade': return [
+      card.animate(from({ opacity: 0, transform: `translateY(${d}px)` }), timing(0, { pseudoElement: '::before' })),
+      ...content(),
+    ]
+    // The surface opens from its top edge; the content fades up inside it.
+    case 'unfold': return [
+      card.animate([{ offset: 0, opacity: 0, transform: 'scaleY(0.4)', transformOrigin: 'top center' }, { offset: 1, transformOrigin: 'top center' }], timing(0, { pseudoElement: '::before' })),
+      ...content(),
+    ]
+    default: return []
+  }
+}
 
 export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
   /** Changes the hold between story beats. */
@@ -81,6 +118,21 @@ export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
   arrowTips: {
     animation: { type: 'select' as const, options: [...TIP_ANIMATIONS], default: 'fade' },
   },
+  /** Arrow labels (bullet icon and text) for every arrow, as a multiple of the baked size. Rebuilds the diagram. */
+  labels: {
+    size: [1, 0.5, 2, 0.05] as Tuple,
+  },
+  /** How the card enters view. Seconds; distance in px (scale preset: 1000 px = full size). */
+  entrance: {
+    preset: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
+    duration: [0.9, 0.2, 3, 0.05] as Tuple,
+    distance: [48, 0, 200, 1] as Tuple,
+    delay: [0, 0, 1.5, 0.05] as Tuple,
+    /** Cascade and unfold: seconds between the surface, the lockup and the diagram. */
+    stagger: [0.15, 0, 0.8, 0.01] as Tuple,
+    play: { type: 'select' as const, options: ['once', 'every entry'], default: 'once' },
+    replay: { type: 'action' as const, label: 'Replay entrance' },
+  },
   userIcon: iconDials(),
   watchIcon: iconDials(),
   phoneIcon: iconDials(),
@@ -110,8 +162,12 @@ function cardColors(fill: string) {
  */
 export function UnwindSystemFigure() {
   const ref = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
   const [narrow, setNarrow] = useState(() => matchMedia(NARROW).matches)
-  const { values } = useTuningController('Unwind system sequence', UNWIND_SYSTEM_SEQUENCE_CONFIG)
+  const [entranceKey, setEntranceKey] = useState(0)
+  const { values } = useTuningController('Unwind system sequence', UNWIND_SYSTEM_SEQUENCE_CONFIG, {
+    onAction: (action) => { if (action === 'entrance.replay') setEntranceKey((k) => k + 1) },
+  })
   const speed = values as unknown as SequenceDials
   const colors = cardColors(speed.card.show ? speed.card.fill : '#F5F5F5')
   const style = {
@@ -174,6 +230,33 @@ export function UnwindSystemFigure() {
     if (inViewRef.current) handleRef.current?.start()
   }, [speed.arrowTips.animation])
 
+  // Card entrance: built paused on its first frame (so the card never flashes in before it plays),
+  // played when the card comes into view. Changing a dial rebuilds it and replays it if in view.
+  const { preset, duration, distance, delay, stagger, play } = speed.entrance
+  useEffect(() => {
+    const card = cardRef.current
+    if (!card || preset === 'none' || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const dials = { preset, duration, distance, delay, stagger, play }
+    let anims: Animation[] = []
+    const arm = () => {
+      anims.forEach((a) => a.cancel())
+      anims = entranceAnimations(card, dials)
+      anims.forEach((a) => a.pause())
+    }
+    arm()
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        anims.forEach((a) => a.play())
+        if (play === 'once') observer.disconnect()
+      } else arm()
+    }, { threshold: 0.15 })
+    observer.observe(card)
+    return () => {
+      observer.disconnect()
+      anims.forEach((a) => a.cancel())
+    }
+  }, [preset, duration, distance, delay, stagger, play, entranceKey])
+
   // The layout is built once per mount, so a width change across NARROW remounts the diagram.
   useEffect(() => {
     const host = ref.current
@@ -185,7 +268,7 @@ export function UnwindSystemFigure() {
     let observer: IntersectionObserver | undefined
     mountUnwindSystem(root, {
       mode: 'sequence', narrow, sequenceSpeed: speed.sequenceSpeed, motionSpeed: speed.motionSpeed,
-      titleGap: titleGapRef.current, stepHolds: stepHoldsRef.current, tipAnimation: tipRef.current,
+      titleGap: titleGapRef.current, stepHolds: stepHoldsRef.current, tipAnimation: tipRef.current, labelScale: speed.labels.size,
     }).then((mounted) => {
       if (cancelled) return mounted.destroy()
       handle = handleRef.current = mounted
@@ -204,10 +287,10 @@ export function UnwindSystemFigure() {
       if (handleRef.current === handle) handleRef.current = undefined
       root.remove()
     }
-  }, [narrow, speed.sequenceSpeed, speed.motionSpeed])
+  }, [narrow, speed.sequenceSpeed, speed.motionSpeed, speed.labels.size])
 
   return (
-    <div className="case__figure unwind-system" style={style}>
+    <div ref={cardRef} className="case__figure unwind-system" style={style}>
       <div className="unwind-system__brand" aria-label="Momo">
         <MomoMark className="unwind-system__mark" color="var(--system-logo-color)" outline={speed.momoLogo.outline} smile={speed.momoLogo.smile} />
         <span className="unwind-system__type" aria-hidden="true" />
