@@ -1542,6 +1542,44 @@ html[data-case-snap] .case__group > * {
 [data-float='still'] .persona__float {
   animation: none;
 }
+/* Persona entrance (float → entrance dials): text rows, then pills, then the portrait.
+   Keyframes and delays come from casePersona's entranceTimeline as --pe-* vars. */
+.case__persona .persona__who > :is(.eyebrow, .persona__title, .persona__body) {
+  animation: var(--pe-text-kf, none) var(--pe-dur, 0.7s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case__persona .persona__who > .persona__title {
+  animation-delay: var(--pe-text-stagger, 0s);
+}
+.case__persona .persona__who > .persona__body {
+  animation-delay: calc(var(--pe-text-stagger, 0s) * 2);
+}
+.case__persona .persona__tags > li {
+  animation: var(--pe-pills-kf, none) var(--pe-dur, 0.7s) calc(var(--pe-pills-start, 0s) + var(--pe-i, 0) * var(--pe-pill-stagger, 0s)) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case__persona .persona__photo {
+  animation: var(--pe-image-kf, none) var(--pe-dur, 0.7s) var(--pe-image, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* Floating cards start their loop only once the portrait has landed. */
+.case__persona .persona__floats {
+  animation: pe-hold var(--pe-floats, 0s) step-end both;
+}
+/* First value: the card's show/hide loop, shifted to start after the portrait; second: the bob. */
+.case__persona:is([data-float='one at a time'], [data-float='two at a time'], [data-float='pop']) .persona__float {
+  animation-delay: calc(var(--pe-floats, 0s) + var(--i) * var(--float-pace, 3.2s)), 0s;
+}
+.case__persona[data-float='drift'] .persona__float {
+  animation-delay: calc(var(--pe-floats, 0s) + 0.2s + var(--i) * 0.35s), calc(var(--i) * -1.1s);
+}
+@keyframes pe-hold { from { visibility: hidden; } to { visibility: visible; } }
+@keyframes pe-rise { from { opacity: 0; transform: translateY(var(--pe-dist, 24px)); } }
+@keyframes pe-fade { from { opacity: 0; } }
+@keyframes pe-scale { from { opacity: 0; transform: scale(0.92); } }
+@keyframes pe-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes pe-slide { from { opacity: 0; transform: translateX(calc(-1 * var(--pe-dist, 24px))); } }
 
 .case__persona:not([data-live]) .persona__float {
   animation-play-state: paused;

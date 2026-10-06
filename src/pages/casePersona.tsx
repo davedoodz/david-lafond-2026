@@ -79,6 +79,8 @@ export const PERSONA_DIALS = {
   _collapsed: true,
 }
 /** Key-context cards floating around the portrait. Text stays in `moments`. */
+/** Persona entrance presets: transform and opacity only. */
+const ENTRANCES = ['rise', 'fade', 'scale', 'pop', 'slide', 'none'] as const
 export const FLOAT_DIALS = {
   /** one/two at a time: cards fade in and out in turn · pop: springy entrance · drift: all stay up · still: no motion (easiest to edit). */
   preset: { type: 'select' as const, options: ['one at a time', 'two at a time', 'pop', 'drift', 'still'], default: 'one at a time' },
@@ -102,7 +104,42 @@ export const FLOAT_DIALS = {
   bodyGap: [14, 0, 120, 1] as Tuple,
   /** Extra distance after the profile chips before the portrait (px). */
   tagsGap: [10, 0, 100, 1] as Tuple,
+  /**
+   * Entrance, replayed each time the section comes into view: text block, then the profile pills,
+   * then the portrait; the floating cards start only after the portrait has landed.
+   * Seconds; distance in px.
+   */
+  entrance: {
+    text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
+    pills: { type: 'select' as const, options: [...ENTRANCES], default: 'pop' },
+    image: { type: 'select' as const, options: [...ENTRANCES], default: 'scale' },
+    duration: [0.7, 0.2, 2, 0.05] as Tuple,
+    distance: [24, 0, 120, 1] as Tuple,
+    /** Between eyebrow, title and body. */
+    textStagger: [0.12, 0, 0.6, 0.01] as Tuple,
+    /** Between one pill and the next. */
+    pillStagger: [0.07, 0, 0.4, 0.01] as Tuple,
+    /** Pause after the text block before the first pill. */
+    pillsGap: [0.1, 0, 1.5, 0.05] as Tuple,
+    /** Pause after the last pill before the portrait. */
+    imageGap: [0.1, 0, 1.5, 0.05] as Tuple,
+    /** Pause after the portrait lands before the first floating card. */
+    floatsGap: [0.3, 0, 3, 0.05] as Tuple,
+    _collapsed: false,
+  },
   _collapsed: false,
+}
+type Entrance = {
+  text: string
+  pills: string
+  image: string
+  duration: number
+  distance: number
+  textStagger: number
+  pillStagger: number
+  pillsGap: number
+  imageGap: number
+  floatsGap: number
 }
 export type Float = {
   preset: string
@@ -117,8 +154,23 @@ export type Float = {
   titleGap: number
   bodyGap: number
   tagsGap: number
+  entrance?: Entrance
 }
 
+/**
+ * Entrance timeline (seconds): text rows, then pills, then the portrait, then the floating cards.
+ * Each step waits for the previous one to finish; returns per-element delays and the float start.
+ */
+/** Preset name → keyframes name in CaseStudyPage.css (`pe-*`). */
+const kf = (preset: string) => (preset === 'none' ? 'none' : `pe-${preset}`)
+
+function entranceTimeline(e: Entrance, pills: number) {
+  const text = [0, 1, 2].map((i) => i * e.textStagger)
+  const pillsStart = text[2] + e.duration + e.pillsGap
+  const pill = Array.from({ length: pills }, (_, i) => pillsStart + i * e.pillStagger)
+  const image = (pills ? pill[pills - 1] + e.duration : pillsStart) + e.imageGap
+  return { text, pill, image, floats: image + e.duration + e.floatsGap }
+}
 export type Persona = {
   eyebrow: string
   title: string
@@ -230,6 +282,10 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
     if (!el) return
     const observer = new IntersectionObserver(([e]) => {
       if (e.isIntersecting && !wasLive.current) setFloatCycle((cycle) => cycle + 1)
+      // Replay the intro entrance (text, pills, portrait) from its first frame on every entry.
+      if (e.isIntersecting && !wasLive.current) el.getAnimations({ subtree: true }).forEach((a) => {
+        if (a instanceof CSSAnimation && a.animationName.startsWith('pe-')) { a.cancel(); a.play() }
+      })
       wasLive.current = e.isIntersecting
       setLive(e.isIntersecting)
     }, { threshold: 0.1 })
@@ -242,6 +298,9 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
     .filter(Boolean)
   const m = p.moments
   const float = p.float
+  // Entrance: text → pills → portrait → floating cards (see entranceTimeline).
+  const ent = float?.entrance
+  const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0) : null
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const traitList = (group: 'driven' | 'challenges', items: [string, string][]) => (
     <div className="persona__traits-group">
@@ -273,6 +332,20 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
       data-live={live || undefined}
       style={
         {
+          ...(ent && timeline
+            ? {
+                '--pe-text-kf': kf(ent.text),
+                '--pe-pills-kf': kf(ent.pills),
+                '--pe-image-kf': kf(ent.image),
+                '--pe-dur': `${ent.duration}s`,
+                '--pe-dist': `${ent.distance}px`,
+                '--pe-text-stagger': `${ent.textStagger}s`,
+                '--pe-pills-start': `${timeline.pill[0] ?? 0}s`,
+                '--pe-pill-stagger': `${ent.pillStagger}s`,
+                '--pe-image': `${timeline.image}s`,
+                '--pe-floats': `${timeline.floats}s`,
+              }
+            : {}),
           '--persona-img-w': `${p.imageWidth}px`,
           '--persona-img-r': `${p.imageRadius}px`,
           '--persona-title': p.titleScale,
@@ -303,7 +376,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
               {tags.map((t, i) => {
                 const TagIcon = PROFILE_TAG_ICONS[i]
                 return (
-                  <li key={t}>
+                  <li key={t} style={{ '--pe-i': i } as CSSProperties}>
                     {TagIcon && <TagIcon className="persona__tag-icon" size={14} strokeWidth={1.8} aria-hidden="true" />}
                     {t}
                   </li>
