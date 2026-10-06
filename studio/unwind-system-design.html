@@ -166,10 +166,9 @@
       .story__timing output { font-variant-numeric: tabular-nums; color: var(--ink-900); min-width: 40px; }
       .story__timing button { font: inherit; font-size: 13px; background: none; border: 1px solid var(--stone-400); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
       .story .lbl-glyph { transform-box: fill-box; transform-origin: center; }
-      .story .lbl-item text { transition: fill 0.35s ease; }
+      /* Bullet text keeps one colour; only the icon turns blue (once, then stays: .is-lit). */
+      .story .lbl-item text { fill: var(--ink-900); }
       .story .lbl-icon { transition: stroke 0.35s ease; }
-      .story .lbl-item.is-spot text { fill: var(--ink-900); }
-      /* Once an icon has had the spotlight it stays blue (.is-lit); the ink text still moves on. */
       .story .lbl-item:is(.is-spot, .is-lit) .lbl-icon { stroke: var(--unwind); }
     </style>
   </head>
@@ -1037,8 +1036,9 @@
           // Spotlight: one bullet at a time turns ink, its icon turns blue and does its small motion.
           for (const l of labels) {
             if (!l.items.length) continue
-            // Intro: each bullet lights up as soon as its text is in; then the regular cycle.
-            const idx = t < l.cycleFrom ? l.sched.filter((at) => t >= at).length - 1 : Math.floor((t - l.cycleFrom) / timing.spot) % l.items.length
+            // Each bullet lights up once, as soon as its text is in; there is no repeating cycle.
+            if (t >= l.cycleFrom) continue
+            const idx = l.sched.filter((at) => t >= at).length - 1
             if (idx < 0) continue
             if (idx === l.last) continue
             l.items.forEach((r, i) => r.classList.toggle('is-spot', i === idx))
@@ -1050,7 +1050,7 @@
             if (glyph && motion && !reduceMotion && !glyph.getAnimations().some((a) => a.playState === 'running')) glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), easing: 'ease-in-out' })
           }
           // A step never ends mid-spotlight: the intro round, or one full round for labels already shown.
-          const spotEnd = Math.max(0, ...labels.filter((l) => l.items.length).map((l) => l.cycleFrom || l.items.length * timing.spot))
+          const spotEnd = Math.max(0, ...labels.map((l) => l.cycleFrom))
           const dur = Math.max(stepDuration(), spotEnd)
           section.style.setProperty('--progress', String(Math.min(1, t / dur)))
           if (playing && t > dur) show(step + 1)
