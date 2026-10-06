@@ -703,7 +703,7 @@ html[data-case-snap] .case__moment {
   text-align: center;
 }
 .case__flows .case__phone-label {
-  font-size: 14px;
+  display: none;
 }
 
 /* Core flows: the saved editor Custom preset. The outer phones move inward
