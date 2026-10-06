@@ -257,7 +257,8 @@ export const UNWIND_CONFIG = {
     /** Look presets set art and motion; Layout stays independently adjustable. */
     preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'converge', 'outline', 'minimal', 'columns', 'custom'], default: 'calm cards' },
     layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
-    art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
+    /** glass: the system card's glass surface (tuned under Unwind system sequence → gradient / glass). */
+    art: { type: 'select' as const, options: ['glass', 'card', 'line', 'outline', 'none'], default: 'glass' },
     /** three: a tile per technology · converge: all three flow into the moment · single: one row of icons */
     opportunityArt: { type: 'select' as const, options: ['three', 'converge', 'single'], default: 'three' },
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },

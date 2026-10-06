@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { MomoMark } from '../unwindIntro/MomoMark'
 import { mountUnwindSystem, TIP_ANIMATIONS, type TipAnimation, type UnwindSystemHandle } from './mountUnwindSystem'
+import { publishSystemSurface, type SystemSurface } from './systemSurface'
 import { useTuningController } from '../../tuning/useTuning'
 
 type Tuple = [number, number, number, number]
@@ -249,19 +250,28 @@ export function UnwindSystemFigure() {
   const speed = values as unknown as SequenceDials
   const glass = speed.card.show && speed.glass.show ? speed.glass : null
   const colors = cardColors(speed.card.show ? speed.card.fill : '#F5F5F5')
-  const style = {
-    // Glass: the fill and gradient turn see-through (tint), the backdrop blurs, and a white edge and
-    // sheen sit on top. The glow paints soft palette blooms behind the card for the glass to blur.
-    '--system-card-fill': glass ? `color-mix(in srgb, ${speed.card.fill} ${Math.round(glass.tint * 100)}%, transparent)` : speed.card.fill,
-    '--system-card-gradient': [
+  // Glass: the fill and gradient turn see-through (tint), the backdrop blurs, and a white edge and
+  // sheen sit on top. The glow paints soft palette blooms behind the card for the glass to blur.
+  const surface: SystemSurface = {
+    fill: glass ? `color-mix(in srgb, ${speed.card.fill} ${Math.round(glass.tint * 100)}%, transparent)` : speed.card.fill,
+    gradient: [
       ...(glass && glass.sheen > 0 ? [`linear-gradient(${glass.sheenAngle}deg, rgb(255 255 255 / ${glass.sheen}) 0%, rgb(255 255 255 / 0) 42%, rgb(255 255 255 / 0) 68%, rgb(255 255 255 / ${glass.sheen * 0.5}) 100%)`] : []),
       cardGradient({ ...speed.gradient, opacity: speed.gradient.opacity * (glass ? glass.tint : 1) }),
     ].join(', '),
-    '--system-card-backdrop': glass ? `blur(${glass.blur}px) saturate(${glass.saturate})` : 'none',
-    '--system-card-edge': glass && glass.edge > 0
+    backdrop: glass ? `blur(${glass.blur}px) saturate(${glass.saturate})` : 'none',
+    edge: glass && glass.edge > 0
       ? `inset 0 0 0 1px rgb(255 255 255 / ${glass.edge}), inset 0 1.5px 0 rgb(255 255 255 / ${Math.min(1, glass.edge * 1.5)})`
       : '0 0 #0000',
-    '--system-card-glow': glass && glass.glow > 0 ? glassGlow(speed.gradient, glass.glow) : 'none',
+    glow: glass && glass.glow > 0 ? glassGlow(speed.gradient, glass.glow) : 'none',
+  }
+  // The story art cards wear the same surface (see systemSurface.ts).
+  useEffect(() => publishSystemSurface(surface))
+  const style = {
+    '--system-card-fill': surface.fill,
+    '--system-card-gradient': surface.gradient,
+    '--system-card-backdrop': surface.backdrop,
+    '--system-card-edge': surface.edge,
+    '--system-card-glow': surface.glow,
     '--system-card-opacity': speed.card.show ? 1 : 0,
     // Card size comes from insets (not a transform), so radius and shadow stay undistorted.
     '--system-card-radius': `${speed.card.radius}px`,
