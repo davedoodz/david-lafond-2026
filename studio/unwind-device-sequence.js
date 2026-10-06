@@ -55,7 +55,7 @@ const PHONE_SCREENS = {
   'video:voice': 'Recording: voice',
   'video:dynamic': 'Recording: dynamic mode',
   'video:entries': 'Recording: entries',
-  'video:guided-mode': 'Recording: guided models',
+  'video:guided-switch': 'Recording: guided models',
   'video:guided-woop': 'Recording: guided WOOP',
   'video:freeform-evening': 'Recording: freeform evening',
   'video:welcome-park': 'Recording: welcome',

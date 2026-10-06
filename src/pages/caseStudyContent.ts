@@ -14,7 +14,7 @@ type Tuple = [number, number, number, number]
 export const PROTO_VIDEOS = {
   'welcome-park': { w: 522, h: 1080, dir: 'proto' },
   'freeform-evening': { w: 522, h: 1080, dir: 'proto' },
-  'guided-mode': { w: 460, h: 810, dir: 'flows' },
+  'guided-switch': { w: 460, h: 810, dir: 'flows' },
   'guided-woop': { w: 530, h: 1080, dir: 'flows' },
   voice: { w: 530, h: 1080, dir: 'flows' },
   dynamic: { w: 530, h: 1080, dir: 'flows' },

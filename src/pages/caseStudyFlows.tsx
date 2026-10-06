@@ -6,13 +6,20 @@ import { cardSurface, useSystemBase, type GlassDials } from '../features/unwindS
 /** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
 const flow = (name: string) => ({ src: `/work/unwind/flows/${name}.mp4`, poster: `/work/unwind/flows/${name}.webp` })
 
-/** A phone recording that plays only while on screen (and not for reduced motion). */
+/** A phone recording that plays only while on screen (and not for reduced motion); each return starts it from the beginning. */
 export function PhoneVideo({ name, className = '' }: { name: string; className?: string }) {
   const ref = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     const video = ref.current
     if (!video || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const observer = new IntersectionObserver(([e]) => (e.isIntersecting ? void video.play().catch(() => {}) : video.pause()), { threshold: 0.3 })
+    const observer = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return video.pause()
+        video.currentTime = 0
+        void video.play().catch(() => {})
+      },
+      { threshold: 0.3 },
+    )
     observer.observe(video)
     return () => observer.disconnect()
   }, [])
@@ -285,12 +292,12 @@ export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
       <ol className="case__guided-row">
         {(
           [
-            ['guided-mode', g.modelsLabel, 'modelsLabel'],
+            ['guided-switch', g.modelsLabel, 'modelsLabel'],
             ['guided-woop', g.woopLabel, 'woopLabel'],
           ] as const
         ).map(([name, label, field], i) => (
           <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
-            <PhoneVideo name={name} className={name === 'guided-mode' ? 'case__phone--bare' : ''} />
+            <PhoneVideo name={name} className={name === 'guided-switch' ? 'case__phone--bare' : ''} />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}
