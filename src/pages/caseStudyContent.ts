@@ -312,10 +312,6 @@ export const UNWIND_CONFIG = {
     notificationLabel: { type: 'text' as const, default: 'A gentle nudge' },
     voiceLabel: { type: 'text' as const, default: 'Say what happened' },
     entriesLabel: { type: 'text' as const, default: 'Your entries' },
-    /** Vertical offset between neighbouring phones (px). */
-    stagger: [56, 0, 160, 1] as Tuple,
-    /** How far each phone slides with scroll (px). */
-    parallax: [70, 0, 200, 1] as Tuple,
     _collapsed: true,
   },
   /** Guided WOOP and Gross models side by side (rendered as `guided`). */

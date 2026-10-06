@@ -697,58 +697,90 @@ html[data-case-snap] .case__moment {
   -webkit-mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat;
 }
 .case__phone-label {
-  margin: 18px 0 0;
+  margin: 22px 0 0;
   font-size: var(--text-small);
   color: var(--stone-600);
   text-align: center;
 }
-.case__flows,
-.case__guided {
+.case__flows .case__phone-label {
+  font-size: clamp(17px, 1.25vw, 20px);
+}
+
+/* Core flows: one composed image, matching the three-phone art direction.
+   Phones share a baseline; the outer pair lean inward by the same amount. */
+.case__flows {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 40px;
-}
-/* Room for the staggered row: the heading stays clear of the highest phone. */
-.case__flows {
-  gap: calc(40px + var(--stagger));
+  justify-content: flex-start;
+  gap: 0;
+  padding: clamp(74px, 7.5svh, 90px) var(--case-frame-edge) clamp(34px, 4svh, 48px);
 }
 .case__flows .case__phone {
-  height: min(58svh, 580px);
+  height: min(62.5svh, 735px);
 }
 .case__flows-head {
   display: grid;
+  flex: none;
   justify-items: center;
+  max-width: 760px;
   text-align: center;
-  max-width: 640px;
+}
+.case__flows-head .case__title {
+  font-size: clamp(42px, 3vw, 48px);
+}
+.case__flows-head .case__eyebrow {
+  font-size: clamp(15px, 1.15vw, 18px);
+  letter-spacing: 0.04em;
+}
+.case__flows-head .case__eyebrow {
+  margin-bottom: 22px;
 }
 .case__flows-row,
 .case__guided-row {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: clamp(20px, 3.5vw, 56px);
+  gap: clamp(20px, 2.25vw, 38px);
   margin: 0;
   padding: 0;
   list-style: none;
 }
-
-/* Core flows: each phone sits on its own step and slides at its own rate with scroll;
-   the first time the row is seen, they rise out of the bottom in turn. */
-.case__flows-row > li {
-  translate: 0 calc(var(--k) * var(--stagger) + var(--flow, 0) * var(--parallax) * (1 + var(--i) * 0.45));
+.case__flows-row {
+  width: min(1160px, calc(100vw - 2 * var(--case-frame-edge)));
+  margin-top: clamp(100px, 11.25svh, 133px);
+  translate: clamp(-48px, -3vw, -24px) 0;
 }
-.case__flows-row > li > * {
+.case__flow-card {
+  --enter-x: 0px;
+  flex: none;
   opacity: 0;
-  translate: 0 60svh;
+  transform: translate3d(var(--enter-x), min(28svh, 280px), 0) scale(0.91);
   transition:
-    opacity 700ms ease calc(var(--i) * 140ms),
-    translate 1100ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 140ms);
+    opacity 600ms ease-out calc(var(--i) * 110ms),
+    transform 1050ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 110ms);
 }
-.case__flows[data-seen] .case__flows-row > li > * {
+.case__flow-card[data-position='left'] {
+  --enter-x: -56px;
+}
+.case__flow-card[data-position='right'] {
+  --enter-x: 56px;
+}
+.case__flows[data-seen] .case__flow-card {
   opacity: 1;
-  translate: 0 0;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+.case__flow-device {
+  transform-origin: 50% 82%;
+}
+.case__flow-card[data-position='left'] .case__flow-device {
+  transform: rotate(1.6deg);
+}
+.case__flow-card[data-position='center'] .case__flow-device {
+  transform: scale(1.018);
+}
+.case__flow-card[data-position='right'] .case__flow-device {
+  transform: rotate(-1.6deg);
 }
 
 /* Lock screen with a live notification. */
@@ -893,29 +925,50 @@ html[data-case-snap] .case__moment {
   .case__story-title {
     font-size: calc(var(--text-display) * 0.9 * var(--case-heading-scale));
   }
-  .case__flows {
-    gap: calc(28px + var(--stagger) * 0.5);
+  .case__section.case__flows[data-layout='flows'] {
+    justify-content: flex-start;
+    gap: 0;
+    padding: 84px var(--edge) 32px;
   }
-  .case__flows-row,
+  .case__flows-head .case__eyebrow {
+    margin-bottom: 14px;
+  }
+  .case__flows-head .case__title {
+    font-size: clamp(28px, 8vw, 34px);
+  }
+  .case__flows-head .case__eyebrow {
+    font-size: 13px;
+  }
+  .case__flows-row {
+    width: calc(100vw - 2 * var(--edge) - 8px);
+    gap: 8px;
+    margin-top: clamp(42px, 7svh, 68px);
+    translate: none;
+  }
   .case__guided-row {
     gap: 8px;
   }
-  /* Phones size by width so each row fits the screen exactly. */
-  .case__flows .case__phone,
-  .case__guided .case__phone {
+  .case__flow-card {
+    width: calc((100vw - 2 * var(--edge) - 24px) / 3);
+    min-width: 0;
+  }
+  .case__flows .case__phone {
+    width: 100%;
     height: auto;
-    width: calc((100vw - 2 * var(--edge) - 16px) / 3);
   }
   .case__guided .case__phone {
     width: calc((100vw - 2 * var(--edge) - 8px) / 2.2);
-  }
-  .case__flows-row > li {
-    translate: 0 calc(var(--k) * var(--stagger) * 0.45 + var(--flow, 0) * var(--parallax) * 0.5 * (1 + var(--i) * 0.45));
+    height: auto;
   }
   .case__phone-label {
     margin-top: 10px;
     font-size: 11px;
     line-height: 1.25;
+  }
+  .case__flows .case__phone-label {
+    width: 100%;
+    font-size: 11px;
+    text-wrap: balance;
   }
   .case__section[data-layout='rise'] {
     padding-top: 88px;
@@ -950,10 +1003,9 @@ html[data-case-snap] .case__moment {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .case__flows-row > li,
-  .case__flows-row > li > * {
-    translate: none;
+  .case__flow-card {
     opacity: 1;
+    transform: none;
     transition: none;
   }
   .lock__note,

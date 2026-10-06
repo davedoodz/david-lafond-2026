@@ -5,7 +5,7 @@ import { mountUnwindSystem, type UnwindSystemHandle } from './mountUnwindSystem'
 const NARROW = '(max-width: 720px)'
 
 /**
- * The case study's system figure: the studio walkthrough's tuned “Full loop” state,
+ * The case study's system figure: the studio walkthrough's exact timed sequence,
  * without its caption, controls or step navigation.
  */
 export function UnwindSystemFigure() {
@@ -27,13 +27,19 @@ export function UnwindSystemFigure() {
     const root = host.appendChild(document.createElement('div'))
     let cancelled = false
     let handle: UnwindSystemHandle | undefined
-    mountUnwindSystem(root, { mode: 'full-loop', narrow }).then((mounted) => {
+    let observer: IntersectionObserver | undefined
+    mountUnwindSystem(root, { mode: 'sequence', narrow }).then((mounted) => {
       if (cancelled) return mounted.destroy()
       handle = mounted
-      mounted.start()
+      observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) mounted.start()
+        else mounted.pause()
+      }, { threshold: 0.35 })
+      observer.observe(root)
     })
     return () => {
       cancelled = true
+      observer?.disconnect()
       handle?.destroy()
       root.remove()
     }

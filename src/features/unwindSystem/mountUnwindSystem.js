@@ -50,13 +50,13 @@ const toDataUrl = (url) => fetch(url).then((r) => {
 }))
 
 /**
- * Mounts the diagram into `root`. Embed mode shows only the caption, the figure and the step pills,
- * and plays once `start()` is called (the host decides when it is in view).
+ * Mounts the diagram into `root`. Embed mode shows the caption and step pills; sequence mode hides
+ * that chrome and plays the same walkthrough once `start()` is called by the host.
  * Returns { start, destroy }.
  */
 export async function mountUnwindSystem(root, { mode = 'embed', narrow = false } = {}) {
   const studio = mode === 'studio'
-  const fullLoop = mode === 'full-loop'
+  const sequence = mode === 'sequence'
   const settings = studio ? loadStudioSettings() : normalize(structuredClone(baked))
   let saveTimer
   // Only user changes save: mounting applies the loaded settings without writing them back, so a
@@ -624,7 +624,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
         <label>Feel <select data-act="feel" aria-label="Flow feel">${Object.entries(FEELS).map(([k, f]) => `<option value="${k}">${f.name}</option>`).join('')}</select></label>
         <button type="button" data-act="play">Pause</button>
       </div>
-      <div class="story__caption" aria-live="polite"${fullLoop ? ' hidden' : ''}>
+      <div class="story__caption" aria-live="polite"${sequence ? ' hidden' : ''}>
         <span class="story__num"></span>
         <div><strong class="story__title"></strong><p class="story__text"></p></div>
       </div>
@@ -653,7 +653,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
       <div class="story__timing" aria-label="Arrows" data-act="arrow-times"${studio ? '' : ' hidden'}></div>
       <div class="story__timing" aria-label="Icon motion" data-act="icon-motions"${studio ? '' : ' hidden'}></div>
       ${render(o)}
-      <nav class="story__steps"${fullLoop ? ' hidden' : ''}>${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
+      <nav class="story__steps"${sequence ? ' hidden' : ''}>${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
     root.append(section)
 
     const svg = section.querySelector('svg')
@@ -869,7 +869,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
     const SVGNS = 'http://www.w3.org/2000/svg'
     svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>')
     // The embed waits for start() (its host calls it once the figure is in view).
-    let step = 0, playing = studio && !reduceMotion, started = 0, flows = [], labels = [], feel = FEELS.breathe
+    let step = 0, playing = studio && !reduceMotion, presented = false, started = 0, flows = [], labels = [], feel = FEELS.breathe
     const timing = {}
     const el = (tag, attrs) => {
       const n = document.createElementNS(SVGNS, tag)
@@ -1360,15 +1360,24 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
     })
     requestAnimationFrame(frame)
     return {
-      // The case study presents the tuned final state, without the walkthrough UI or auto-advance.
+      // The case study uses the same sequence and timings as the studio, minus its walkthrough chrome.
       start() {
-        if (fullLoop || reduceMotion) {
+        if (reduceMotion) {
           setPlaying(false)
           show(STORY.length - 1)
           return
         }
         setPlaying(true)
-        show(0)
+        if (!presented) {
+          presented = true
+          show(0)
+        } else {
+          // Resume by replaying the current step; this avoids skipping ahead after time off-screen.
+          show(step)
+        }
+      },
+      pause() {
+        setPlaying(false)
       },
     }
   }
@@ -1416,6 +1425,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
   document.fonts.ready.then(() => { if (!destroyed) alignEndLabels(root) })
   return {
     start: story.start,
+    pause: story.pause,
     destroy() {
       destroyed = true
       clearTimeout(saveTimer)

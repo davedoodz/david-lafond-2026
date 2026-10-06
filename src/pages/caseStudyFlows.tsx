@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { OpportunityArt, ProblemArt, SolutionArt } from './storyArt'
 
@@ -114,71 +114,44 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
   )
 }
 
-/* ---------- Core flows: three phones, staggered, sliding with scroll ---------- */
-export type Flows = { eyebrow: string; title: string; notificationLabel: string; voiceLabel: string; entriesLabel: string; stagger: number; parallax: number }
+/* ---------- Core flows: three phone films, composed as one hero image ---------- */
+export type Flows = { eyebrow: string; title: string; notificationLabel: string; voiceLabel: string; entriesLabel: string }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRef<HTMLElement>(null)
-  // Scroll drives a --flow progress (-1 → 1 as the row crosses the screen); phones offset from it.
-  useLayoutEffect(() => {
+  useEffect(() => {
     const el = ref.current
     if (!el) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let top = 0, h = 0, frame = 0, seen = false
-    const measure = () => {
-      const r = el.getBoundingClientRect()
-      top = r.top + window.scrollY
-      h = r.height
+    if (reduced) {
+      el.dataset.seen = ''
+      return
     }
-    const update = () => {
-      frame = 0
-      const vh = window.innerHeight
-      const center = top + h / 2 - window.scrollY
-      const p = Math.max(-1, Math.min(1, (center - vh / 2) / vh))
-      el.style.setProperty('--flow', reduced ? '0' : p.toFixed(4))
-      if (!seen && center < vh * 0.95) {
-        seen = true
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
         el.dataset.seen = ''
-      }
-    }
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(update)
-    }
-    const ro = new ResizeObserver(() => {
-      measure()
-      schedule()
-    })
-    ro.observe(el)
-    measure()
-    update()
-    window.addEventListener('scroll', schedule, { passive: true })
-    return () => {
-      cancelAnimationFrame(frame)
-      ro.disconnect()
-      window.removeEventListener('scroll', schedule)
-    }
+        observer.disconnect()
+      },
+      { threshold: 0.22 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
   const phones = [
-    ['notification', f.notificationLabel],
-    ['voice', f.voiceLabel],
-    ['entries', f.entriesLabel],
+    ['notification', f.notificationLabel, 'left'],
+    ['voice', f.voiceLabel, 'center'],
+    ['entries', f.entriesLabel, 'right'],
   ] as const
   return (
-    <section
-      ref={ref}
-      className="case__section case__flows"
-      data-section="flows"
-      data-layout="flows"
-      style={{ '--stagger': `${f.stagger}px`, '--parallax': `${f.parallax}px` } as CSSProperties}
-      aria-labelledby="case-flows"
-    >
+    <section ref={ref} className="case__section case__flows" data-section="flows" data-layout="flows" aria-labelledby="case-flows">
       <div className="case__flows-head">
         <EditableText className="case__eyebrow eyebrow" label="flows eyebrow" value={f.eyebrow} onChange={edit('flows.eyebrow')} />
         <EditableText as="h2" id="case-flows" className="case__title" label="flows title" value={f.title} onChange={edit('flows.title')} />
       </div>
       <ol className="case__flows-row">
-        {phones.map(([name, label], i) => (
-          <li key={name} style={{ '--i': i, '--k': i - 1 } as CSSProperties}>
-            {name === 'notification' ? <LockNotification /> : <PhoneVideo name={name} />}
+        {phones.map(([name, label, position], i) => (
+          <li key={name} className="case__flow-card" data-position={position} style={{ '--i': i } as CSSProperties}>
+            <div className="case__flow-device">{name === 'notification' ? <LockNotification /> : <PhoneVideo name={name} />}</div>
             <EditableText as="p" className="case__phone-label" label={`${name} label`} value={label} onChange={edit(`flows.${name}Label`)} />
           </li>
         ))}

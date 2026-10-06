@@ -504,7 +504,7 @@ export function CaseStudyPage({ id }: Props) {
         </div>
         {isHero && id === 'unwind' ? (
           <div className="case__devices">
-            <MomoWelcome />
+            <MomoWelcome active={!intro} />
           </div>
         ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}

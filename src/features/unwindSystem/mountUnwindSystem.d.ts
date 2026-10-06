@@ -1,18 +1,19 @@
 export const SETTINGS_KEY: string
 
 export type UnwindSystemHandle = {
-  /** Starts the requested presentation; Full loop stays on its tuned final state. */
+  /** Starts the studio walkthrough sequence from its first step. */
   start(): void
-  /** Stops the frame loop and empties the root. */
+  /** Pauses automatic step changes while the figure is off-screen. */
+  pause(): void
   destroy(): void
 }
 
 export function mountUnwindSystem(
   root: HTMLElement,
   options?: {
-    /** 'studio': every tuning surface; 'embed': walkthrough; 'full-loop': tuned final state only. */
-    mode?: 'studio' | 'embed' | 'full-loop'
-    /** Embed/full-loop only: with layout 'auto', a narrow frame uses the diamond layout. */
+    /** 'studio': every tuning surface; 'embed': walkthrough with chrome; 'sequence': autoplay only. */
+    mode?: 'studio' | 'embed' | 'sequence'
+    /** Embed/sequence only: with layout 'auto', a narrow frame uses the diamond layout. */
     narrow?: boolean
   },
 ): Promise<UnwindSystemHandle>
