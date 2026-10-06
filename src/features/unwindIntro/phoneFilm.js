@@ -337,7 +337,9 @@ function film(V) {
       const ph = Math.min(S(t, T.phoneIn, T.phoneIn + 0.7), outA)
       // Extra phone transform about the phone centre: [dx, dy, scale], and blur px.
       const ht = [0, 0, 1]
-      const blur = HO === 'dissolve' ? 14 * S(t, T.calm - 0.1, T.calm + 0.9) : 0
+      // No canvas blur on the dissolve: a 14px Canvas2D blur cost up to 44ms per Retina frame
+      // and made the braid handoff stutter. The phone already fades out over the same span.
+      const blur = 0
       const pk = 500 / PHONE.h, pw = PHONE.w * pk
       const py = 280 + (1 - S(t, 0.05, 0.7)) * 50
       const handT = (c) => { c.translate(480 + ht[0], py + ht[1]); c.scale(ht[2], ht[2]); c.translate(-480, -py); if (blur > 0.3) c.filter = `blur(${blur}px)` }

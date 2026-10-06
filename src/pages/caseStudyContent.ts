@@ -213,6 +213,7 @@ export const UNWIND_CONFIG = {
       title: [0, -200, 200, 1] as Tuple,
       meta: [0, -200, 200, 1] as Tuple,
       logos: [0, -200, 200, 1] as Tuple,
+      phone: [0, -400, 400, 1] as Tuple,
       _collapsed: false,
     },
     _collapsed: false,

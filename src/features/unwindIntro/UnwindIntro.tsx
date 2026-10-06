@@ -201,20 +201,16 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
           const from = sequenceIndex ? SEQUENCES[sequenceIndex - 1].end : 0
           time = from + (sequence.end - from) * sequenceTime / sequenceDurations[sequence.key]
         }
-        // Start one browser-native smooth scroll. Calling scrollTo on every animation frame
-        // forced layout, every scroll listener and both canvas painters to compete in one task.
-        // Keyboard input without actual scrolling must not strand the viewer on the stage.
+        // Drive the scroll from the film clock, in this same frame, before drawing. The canvas
+        // then reads the exact scrollY the page will paint with: braid and page move as one.
+        // (Native smooth scroll ran on its own ~0.5s curve and the canvas trailed it a frame.)
         const userScrolledBeforeHandoff = interrupted && p <= .03
-        if (time >= PHONE_TIMELINE.calm && s.returnToHero && handoffY === null && !userScrolledBeforeHandoff) {
-          interrupted = false
-          handoffY = window.scrollY
-          window.scrollTo({ top: landingY, behavior: 'smooth' })
-        }
-        // Settle browser rounding once, in the same frame that the live phone begins rising.
-        // A wheel/touch/key interruption cancels this snap and preserves the user's position.
-        if (time >= PHONE_TIMELINE.hero && handoffY !== null && !handoffCancelled && !handoffSettled) {
-          handoffSettled = true
-          window.scrollTo({ top: landingY, behavior: 'instant' })
+        if (time >= PHONE_TIMELINE.calm && s.returnToHero && !handoffCancelled && !handoffSettled && (handoffY !== null || !userScrolledBeforeHandoff)) {
+          if (handoffY === null) { interrupted = false; handoffY = window.scrollY }
+          const k = clamp((time - PHONE_TIMELINE.calm) / (PHONE_TIMELINE.hero - PHONE_TIMELINE.calm))
+          const eased = 0.5 - 0.5 * Math.cos(Math.PI * k) // same curve as the braid's own move
+          window.scrollTo(0, Math.round(handoffY + (landingY - handoffY) * eased))
+          if (k >= 1) handoffSettled = true
           p = progress()
         }
         // The visual handoff is complete when the braid reaches its hero slot. Reveal the

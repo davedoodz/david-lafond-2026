@@ -335,7 +335,7 @@ export function CaseStudyPage({ id }: Props) {
   }, [orderSig])
   const heroSpacing = (
     all as unknown as {
-      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; y: { braid: number; title: number; meta: number; logos: number } }
+      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; y: { braid: number; title: number; meta: number; logos: number; phone: number } }
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
@@ -468,6 +468,7 @@ export function CaseStudyPage({ id }: Props) {
                   '--hero-braid-y': `${heroSpacing.y.braid}px`,
                   '--hero-title-y': `${heroSpacing.y.title}px`,
                   '--hero-meta-y': `${heroSpacing.y.meta}px`,
+                  '--hero-phone-y': `${heroSpacing.y.phone ?? 0}px`,
                   '--logo-y': `${heroSpacing.y.logos}px`,
                 }
               : {}),

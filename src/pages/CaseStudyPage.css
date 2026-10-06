@@ -1634,6 +1634,8 @@ html[data-case-snap] .case__group > * {
   justify-content: center;
   width: 100%;
   flex: none;
+  /* heroSpacing › y › phone: visual nudge; the hero keeps its layout. */
+  translate: 0 var(--hero-phone-y, 0px);
 }
 .case .case__section--hero:has(.case__devices) {
   height: auto;
