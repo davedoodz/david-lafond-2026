@@ -607,6 +607,8 @@
         },
         inout: {
           name: 'Data in, answers out',
+          // Each step's arrows are one move (all data in, all answers out), so they draw together.
+          together: true,
           waves: [1, 2],
           steps: [
             { title: 'You share', text: 'Your body signals reach the watch and your voice reaches the phone; the experts set the framework.', edges: [0, 2, 8], nodes: ['user', 'watch', 'phone', 'experts', 'ai'] },
@@ -627,9 +629,9 @@
       const ORDER_KEY = (() => {
         try {
           const k = JSON.parse(localStorage.getItem('unwind-system-design:settings'))?.order
-          return ORDERS[k] ? k : 'device'
+          return ORDERS[k] ? k : 'inout'
         } catch {
-          return 'device'
+          return 'inout'
         }
       })()
       const STORY = [...ORDERS[ORDER_KEY].steps, FULL]
@@ -891,7 +893,7 @@
             lines[e].parentNode.classList.add('is-blue')
             const fresh = !reduceMotion && !shown.has(e)
             const own = settings.edgeTime[e] ?? {}
-            const auto = fresh ? order++ * timing.gap : 0
+            const auto = fresh && !ORDERS[ORDER_KEY].together ? order++ * timing.gap : 0
             const delay = fresh ? (own.start ?? auto) : 0
             const draw = own.draw ?? timing.draw
             const d = lines[e].getAttribute('d')
