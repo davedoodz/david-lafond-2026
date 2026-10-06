@@ -842,6 +842,16 @@ html[data-case-snap] .case__moment {
   transform-origin: left;
   animation: story-wipe-x 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
 }
+/* The Problem phone pops up from below instead of scaling in. */
+[data-story-motion='draw'] .sa-after--rise {
+  animation-name: story-pop-up;
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes story-pop-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes story-appear {
   from { opacity: 0; transform: scale(0.6); }
   to { opacity: 1; transform: scale(1); }

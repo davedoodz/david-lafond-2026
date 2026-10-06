@@ -228,7 +228,7 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?
           strokeLinecap="round"
         />
       </Wipe>
-      <g className="sa-after" style={{ "--at": "2.2s" } as CSSProperties}>
+      <g className="sa-after sa-after--rise" style={{ "--at": "2.2s" } as CSSProperties}>
         <Phone x={200} y={38} s={0.8} />
       </g>
       {label(200, 154, text.problemOpened, INK)}
