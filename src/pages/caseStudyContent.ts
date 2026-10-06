@@ -34,7 +34,7 @@ type SectionDefaults = {
   video?: ProtoVideo | 'none' | 'placeholder'
   /** Label inside the placeholder block (Filo, until the prototype loops exist). */
   placeholder?: string
-  /** Re:Self diagram shown instead of a video. */
+  /** Diagram shown instead of a video ('system': the animated Unwind system walkthrough). */
   figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals'
   layout?: 'bottom' | 'top' | 'right' | 'left' | 'center' | 'rise'
   size?: number

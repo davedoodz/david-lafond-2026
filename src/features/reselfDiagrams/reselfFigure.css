@@ -43,24 +43,12 @@
   animation: rf-glow calc(var(--rf-t) * 3) calc(var(--i, 0) * var(--rf-stagger)) ease-in-out infinite;
 }
 
-/* --- System design --- */
-[data-kind='system'][data-anim='march'] .b-edge {
-  stroke-dasharray: var(--rf-dots);
-  animation: rf-march calc(var(--rf-t) * 1.4) linear infinite;
-}
-[data-kind='system'][data-anim='pulse'] .b-edge {
-  animation: rf-glow calc(var(--rf-t) * 2.4) calc(var(--i, 0) * var(--rf-stagger)) ease-in-out infinite;
-}
-
 @keyframes rf-trace {
   from { stroke-dashoffset: 1; }
   to { stroke-dashoffset: -1; }
 }
 @keyframes rf-march-loop {
   to { stroke-dashoffset: -20; }
-}
-@keyframes rf-march {
-  to { stroke-dashoffset: var(--rf-period); }
 }
 @keyframes rf-ping {
   0% { transform: scale(1); opacity: 1; }

@@ -7,6 +7,7 @@ import type { Work } from '../data/works'
 import { UnwindIntro } from '../features/unwindIntro/UnwindIntro'
 import { MomoWelcome } from '../features/unwindIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
+import { UnwindSystemFigure } from '../features/unwindSystem/UnwindSystemFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
 import type { DialConfig } from 'dialkit'
@@ -509,7 +510,7 @@ export function CaseStudyPage({ id }: Props) {
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
         {hasPlaceholder && <MediaPlaceholder label={s.media.placeholder ?? ''} size={s.media.size} x={s.media.x} y={s.media.y} radius={s.media.radius} />}
         {hasDemo && <NotificationDemo media={s.media} />}
-        {hasFigure && <ReselfFigure kind={s.media.figure as 'flow' | 'system' | 'vision' | 'signals'} />}
+        {hasFigure && (s.media.figure === 'system' ? <UnwindSystemFigure /> : <ReselfFigure kind={s.media.figure as 'flow' | 'vision' | 'signals'} />)}
       </section>
     )
   }
