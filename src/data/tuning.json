@@ -591,10 +591,34 @@
   },
   "Momo welcome": {
     "blackOverlay": 0.13,
-    "prototypeWidth": 310,
+    "prototypeWidth": 290,
+    "rise": {
+      "distance": 120,
+      "delay": 0
+    },
+    "timing": {
+      "shadeAt": 0.2,
+      "shadeIn": 0.4,
+      "shadeOut": 1.2,
+      "momoAt": 0.75,
+      "logoAt": 2.05,
+      "buttonsAt": 2.5,
+      "legalAt": 3.1,
+      "holdUntil": 9.85
+    },
     "momo": {
       "size": 60,
       "y": 4
+    },
+    "logo": {
+      "size": 18.2
+    },
+    "wordmark": {
+      "x": 0.3
     }
+  },
+  "Unwind system sequence": {
+    "sequenceSpeed": 1.3,
+    "motionSpeed": 1.3
   }
 }

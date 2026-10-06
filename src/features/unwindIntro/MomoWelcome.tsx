@@ -4,6 +4,7 @@ import { Momo, type MomoMode } from '../../components/MomoCard'
 import { releaseShader } from '../../lib/releaseShader'
 import { useTuningController } from '../../tuning/useTuning'
 import { toCssTiming } from '../pageTransition/cssTiming'
+import { MomoMark } from './MomoMark'
 import './momoWelcome.css'
 
 type Tuple = [number, number, number, number]
@@ -11,6 +12,14 @@ type Tuple = [number, number, number, number]
 const CONFIG = {
   blackOverlay: [0.34, 0, 0.85, 0.01] as Tuple,
   prototypeWidth: [380, 180, 600, 5] as Tuple,
+  /** Button look. flat: the original fills · glass: clear Liquid Glass · tinted: blue glass primary · frosted: heavier frost · prominent: white primary. */
+  buttons: {
+    style: { type: 'select' as const, options: ['flat', 'glass', 'tinted', 'frosted', 'prominent'], default: 'flat' },
+    /** White stroke inside the Get started button. */
+    primaryStroke: false,
+    strokeWidth: [1.5, 0.25, 6, 0.25] as Tuple,
+    _collapsed: false,
+  },
   /** After the intro hands off, the phone rises into place; the welcome loop starts once it lands. */
   rise: {
     distance: [160, 0, 600, 5] as Tuple,
@@ -49,6 +58,9 @@ const CONFIG = {
     size: [19.8, 5, 50, 0.1] as Tuple,
     x: [0, -50, 50, 0.1] as Tuple,
     y: [0, -80, 80, 0.1] as Tuple,
+    /** Stroke widths in logo units; they scale with size. */
+    outlineStroke: [4.5, 0.5, 12, 0.1] as Tuple,
+    smileStroke: [3.4, 0.5, 8, 0.1] as Tuple,
     _collapsed: false,
   },
   wordmark: {
@@ -175,7 +187,8 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
       shade.current!.animate(loopFrames(loop, s(T.shadeAt), s(T.shadeIn), loop - s(T.shadeOut), s(T.shadeOut), { opacity: 0 }, { opacity: t.blackOverlay }, 'ease-in-out'), { duration: loop, iterations: Infinity }),
       element(mascot.current!, T.momoAt),
       element(brand.current!, T.logoAt),
-      element(actions.current!, T.buttonsAt),
+      // Each button fades itself: an animating parent's opacity would cut the glass blur off from the shader behind it.
+      ...Array.from(actions.current!.children as HTMLCollectionOf<HTMLElement>, el => element(el, T.buttonsAt)),
       element(legal.current!, T.legalAt),
     ]
     const start = document.timeline.currentTime
@@ -198,6 +211,7 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
     '--welcome-type-size': `${t.wordmark.size}cqw`,
     '--welcome-type-x': `${t.wordmark.x}cqw`,
     '--welcome-type-y': `${t.wordmark.y}cqw`,
+    '--welcome-stroke': t.buttons.primaryStroke ? `${t.buttons.strokeWidth}px` : '0px',
   } as CSSProperties
 
   return <div className="momo-welcome" ref={host} role="img" aria-label="Animated Momo welcome screen" style={style}>
@@ -210,12 +224,12 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
             {reduced ? <img src="/work/unwind/intro/momo-open.webp" alt="" /> : <Momo mode={t.momo.mode as MomoMode} size={`${t.momo.size}%`} x={`${t.momo.x}%`} y={`${t.momo.y}%`} />}
           </div>
           <div className="momo-welcome__brand momo-welcome__enter" ref={brand}>
-            <img className="momo-welcome__mark" src="/work/unwind/hero/momo-mark.svg" alt="" width={77.28} height={66} />
+            <MomoMark className="momo-welcome__mark" outline={t.logo.outlineStroke} smile={t.logo.smileStroke} />
             <img className="momo-welcome__type" src="/work/unwind/hero/momo-type.png" alt="" />
           </div>
-          <div className="momo-welcome__actions momo-welcome__enter" ref={actions}>
-            <div className="momo-welcome__primary">Get started</div>
-            <div className="momo-welcome__secondary">I already have an account</div>
+          <div className="momo-welcome__actions" ref={actions} data-style={t.buttons.style}>
+            <div className="momo-welcome__primary momo-welcome__enter">Get started</div>
+            <div className="momo-welcome__secondary momo-welcome__enter">I already have an account</div>
           </div>
           <p className="momo-welcome__legal momo-welcome__enter" ref={legal}>
             By continuing, you agree to Momo’s<br /><u>Terms of Service</u> and <u>Privacy Policy</u>

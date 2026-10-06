@@ -73,7 +73,7 @@ function LogoRow({ l }: { l: Logos }) {
     </div>
   )
 }
-type Section = { eyebrow: string; title: string; body: string; media: Media }
+type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; media: Media }
 type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
 
 /**
@@ -441,6 +441,7 @@ export function CaseStudyPage({ id }: Props) {
         className={`case__section${isHero ? ' case__section--hero' : ''}`}
         data-section={key}
         data-layout={hasVideo || hasPlaceholder || hasFigure || hasDemo ? s.media.layout : 'text'}
+        data-copy-align={s.align}
         style={
           {
             '--media-gap': `${s.media.gap}px`,
@@ -459,7 +460,7 @@ export function CaseStudyPage({ id }: Props) {
         }
         aria-labelledby={`case-${key}`}
       >
-        <div className="case__text">
+        <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
           {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (

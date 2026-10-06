@@ -52,11 +52,13 @@ const toDataUrl = (url) => fetch(url).then((r) => {
 /**
  * Mounts the diagram into `root`. Embed mode shows the caption and step pills; sequence mode hides
  * that chrome and plays the same walkthrough once `start()` is called by the host.
- * Returns { start, destroy }.
+ * Returns { start, pause, destroy }.
  */
-export async function mountUnwindSystem(root, { mode = 'embed', narrow = false } = {}) {
+export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, sequenceSpeed: requestedSequenceSpeed = 1, motionSpeed: requestedMotionSpeed = 1 } = {}) {
   const studio = mode === 'studio'
   const sequence = mode === 'sequence'
+  const sequenceSpeed = Math.min(4, Math.max(0.1, Number(requestedSequenceSpeed) || 1))
+  const motionSpeed = Math.min(4, Math.max(0.1, Number(requestedMotionSpeed) || 1))
   const settings = studio ? loadStudioSettings() : normalize(structuredClone(baked))
   let saveTimer
   // Only user changes save: mounting applies the loaded settings without writing them back, so a
@@ -815,7 +817,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
     const stepDurInput = section.querySelector('[data-act="step-dur"]')
     const stepDuration = () => {
       const v = Number(settings.stepDur[stepKey(step)])
-      return Number.isFinite(v) && v > 0 ? Math.min(20000, Math.max(1000, v)) : timing.step
+      return Number.isFinite(v) && v > 0 ? Math.min(20000, Math.max(1000, v)) / sequenceSpeed : timing.step
     }
     const syncStepDur = () => {
       const custom = settings.stepDur[stepKey(step)] != null
@@ -869,7 +871,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
     const SVGNS = 'http://www.w3.org/2000/svg'
     svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>')
     // The embed waits for start() (its host calls it once the figure is in view).
-    let step = 0, playing = studio && !reduceMotion, presented = false, started = 0, flows = [], labels = [], feel = FEELS.breathe
+    let step = 0, playing = studio && !reduceMotion, started = 0, flows = [], labels = [], feel = FEELS.breathe
     const timing = {}
     const el = (tag, attrs) => {
       const n = document.createElementNS(SVGNS, tag)
@@ -908,8 +910,8 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
         const fresh = !reduceMotion && !shown.has(e)
         const own = settings.edgeTime[e] ?? {}
         const auto = fresh && !ORDERS[ORDER_KEY].together ? order++ * timing.gap : 0
-        const delay = fresh ? (own.start ?? auto) : 0
-        const draw = own.draw ?? timing.draw
+        const delay = fresh ? (own.start == null ? auto : own.start / motionSpeed) : 0
+        const draw = own.draw == null ? timing.draw : own.draw / motionSpeed
         const d = lines[e].getAttribute('d')
         const trace = el('path', { class: 'trace', d, pathLength: 1 })
         const len = trace.getTotalLength()
@@ -1071,9 +1073,11 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
     const defaults = () => ({ step: feel.step, draw: feel.draw, text: Math.round(feel.draw * 0.5), stagger: 180, spot: 900, gap: 700, bullet: 1420, speed: 1 })
     // Saved values are clamped to the slider ranges, so stale or edited storage can't break playback.
     const clampTiming = (saved = {}) => Object.fromEntries(TIMING_FIELDS.map(([k, , min, max]) => {
-      const scale = k === 'speed' ? 1 : 1000
+      const unit = k === 'speed' ? 1 : 1000
       const v = Number(saved[k])
-      return [k, Number.isFinite(v) ? Math.min(max * scale, Math.max(min * scale, v)) : defaults()[k]]
+      const clamped = Number.isFinite(v) ? Math.min(max * unit, Math.max(min * unit, v)) : defaults()[k]
+      if (k === 'speed') return [k, clamped * motionSpeed]
+      return [k, clamped / (k === 'step' ? sequenceSpeed : motionSpeed)]
     }))
     const loadTiming = () => {
       Object.assign(timing, clampTiming(settings.timings[feelKey] ?? defaults()))
@@ -1360,7 +1364,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
     })
     requestAnimationFrame(frame)
     return {
-      // The case study uses the same sequence and timings as the studio, minus its walkthrough chrome.
+      // The case study restarts the exact studio sequence whenever it re-enters the viewport.
       start() {
         if (reduceMotion) {
           setPlaying(false)
@@ -1368,13 +1372,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false }
           return
         }
         setPlaying(true)
-        if (!presented) {
-          presented = true
-          show(0)
-        } else {
-          // Resume by replaying the current step; this avoids skipping ahead after time off-screen.
-          show(step)
-        }
+        show(0)
       },
       pause() {
         setPlaying(false)

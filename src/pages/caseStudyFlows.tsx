@@ -115,7 +115,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
 }
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; notificationLabel: string; voiceLabel: string; entriesLabel: string }
+export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; notificationLabel: string; voiceLabel: string; entriesLabel: string }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -144,8 +144,8 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
     ['entries', f.entriesLabel, 'right'],
   ] as const
   return (
-    <section ref={ref} className="case__section case__flows" data-section="flows" data-layout="flows" aria-labelledby="case-flows">
-      <div className="case__flows-head">
+    <section ref={ref} className="case__section case__flows" data-section="flows" data-layout="flows" data-copy-align={f.align} aria-labelledby="case-flows">
+      <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="flows eyebrow" value={f.eyebrow} onChange={edit('flows.eyebrow')} />
         <EditableText as="h2" id="case-flows" className="case__title" label="flows title" value={f.title} onChange={edit('flows.title')} />
       </div>
@@ -189,11 +189,11 @@ function LockNotification() {
 }
 
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
-export type Guided = { eyebrow: string; title: string; body: string; woopLabel: string; modelsLabel: string }
+export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; woopLabel: string; modelsLabel: string }
 export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
   return (
-    <section className="case__section case__guided" data-section="guided" data-layout="guided" aria-labelledby="case-guided">
-      <div className="case__flows-head">
+    <section className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} aria-labelledby="case-guided">
+      <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="guided eyebrow" value={g.eyebrow} onChange={edit('guided.eyebrow')} />
         <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} />
         <EditableText className="case__body" label="guided body" value={g.body} onChange={edit('guided.body')} />

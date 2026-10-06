@@ -57,6 +57,24 @@
 }
 .momo-welcome__primary { background: #3cb7f3; }
 .momo-welcome__secondary { background: rgb(255 255 255 / .35); }
+.momo-welcome__primary { outline: var(--welcome-stroke, 0px) solid #fff; outline-offset: calc(-1 * var(--welcome-stroke, 0px)); }
+/* Liquid Glass presets: translucent fill, backdrop blur + saturation, a lit top rim, a soft lower rim, and a faint drop. */
+.momo-welcome__actions:not([data-style='flat']) > div {
+  -webkit-backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-sat, 180%));
+  backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-sat, 180%));
+  background: var(--glass-fill, rgb(255 255 255 / .16));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .55),
+    inset 0 -1px 0 rgb(255 255 255 / .18),
+    inset 0 0 0 1px rgb(255 255 255 / .22),
+    0 6px 18px rgb(10 50 90 / .14);
+  text-shadow: 0 1px 2px rgb(10 50 90 / .18);
+}
+.momo-welcome__actions[data-style='glass'] > .momo-welcome__primary { --glass-fill: rgb(255 255 255 / .24); }
+.momo-welcome__actions[data-style='tinted'] > .momo-welcome__primary { --glass-fill: rgb(40 160 240 / .55); --glass-sat: 200%; }
+.momo-welcome__actions[data-style='frosted'] > div { --glass-fill: rgb(255 255 255 / .32); --glass-blur: 28px; --glass-sat: 140%; }
+.momo-welcome__actions[data-style='frosted'] > .momo-welcome__primary { --glass-fill: rgb(255 255 255 / .42); }
+.momo-welcome__actions[data-style='prominent'] > .momo-welcome__primary { --glass-fill: rgb(255 255 255 / .92); color: #1e7fb8; text-shadow: none; }
 .momo-welcome__legal {
   position: absolute;
   top: 89%;

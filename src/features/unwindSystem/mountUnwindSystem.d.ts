@@ -15,5 +15,9 @@ export function mountUnwindSystem(
     mode?: 'studio' | 'embed' | 'sequence'
     /** Embed/sequence only: with layout 'auto', a narrow frame uses the diamond layout. */
     narrow?: boolean
+    /** Multiplier for each step's hold duration. */
+    sequenceSpeed?: number
+    /** Multiplier for line draws, text reveals, icon motion and moving-flow effects. */
+    motionSpeed?: number
   },
 ): Promise<UnwindSystemHandle>

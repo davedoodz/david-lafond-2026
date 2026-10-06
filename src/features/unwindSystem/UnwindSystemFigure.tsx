@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { mountUnwindSystem, type UnwindSystemHandle } from './mountUnwindSystem'
+import { useTuningController } from '../../tuning/useTuning'
+
+type Tuple = [number, number, number, number]
+type SequenceDials = { sequenceSpeed: number; motionSpeed: number }
+
+export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
+  /** Changes the hold between story beats. */
+  sequenceSpeed: [1, 0.25, 3, 0.05] as Tuple,
+  /** Changes line draws, text reveals and icon motion without changing their relative timing. */
+  motionSpeed: [1, 0.25, 3, 0.05] as Tuple,
+}
 
 /** Below this width the diagram switches to the diamond layout. */
 const NARROW = '(max-width: 720px)'
@@ -11,6 +22,8 @@ const NARROW = '(max-width: 720px)'
 export function UnwindSystemFigure() {
   const ref = useRef<HTMLDivElement>(null)
   const [narrow, setNarrow] = useState(() => matchMedia(NARROW).matches)
+  const { values } = useTuningController('Unwind system sequence', UNWIND_SYSTEM_SEQUENCE_CONFIG)
+  const speed = values as unknown as SequenceDials
 
   useEffect(() => {
     const query = matchMedia(NARROW)
@@ -28,7 +41,7 @@ export function UnwindSystemFigure() {
     let cancelled = false
     let handle: UnwindSystemHandle | undefined
     let observer: IntersectionObserver | undefined
-    mountUnwindSystem(root, { mode: 'sequence', narrow }).then((mounted) => {
+    mountUnwindSystem(root, { mode: 'sequence', narrow, sequenceSpeed: speed.sequenceSpeed, motionSpeed: speed.motionSpeed }).then((mounted) => {
       if (cancelled) return mounted.destroy()
       handle = mounted
       observer = new IntersectionObserver(([entry]) => {
@@ -43,7 +56,7 @@ export function UnwindSystemFigure() {
       handle?.destroy()
       root.remove()
     }
-  }, [narrow])
+  }, [narrow, speed.sequenceSpeed, speed.motionSpeed])
 
   return <div ref={ref} className="case__figure unwind-system" />
 }

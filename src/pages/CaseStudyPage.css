@@ -1608,3 +1608,37 @@ html[data-case-snap] .case__group > * {
 .persona__moments ol[hidden] {
   display: none;
 }
+
+/* Shared section-copy contract: one measure and one type scale across the case-study story.
+   Alignment remains a per-section DialKit choice. */
+.case__section-copy {
+  width: min(100%, var(--case-reading));
+  max-width: none;
+  margin-inline: auto;
+  justify-items: start;
+  text-align: left;
+}
+.case__section-copy :is(.case__eyebrow, .eyebrow) {
+  font-size: var(--text-small);
+  letter-spacing: 0.04em;
+}
+.case__section-copy :is(.case__title, .persona__title) {
+  font-size: calc(var(--text-display) * var(--case-heading-scale));
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--ink-950);
+  text-wrap: balance;
+}
+.case__section-copy :is(.case__body, .persona__body) {
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
+  line-height: 1.3;
+  color: var(--stone-600);
+  text-wrap: pretty;
+}
+.case__section[data-copy-align='center'] .case__section-copy {
+  justify-items: center;
+  text-align: center;
+}
+.case__section[data-copy-align='center'] .case__section-copy .persona__tags {
+  justify-content: center;
+}

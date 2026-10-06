@@ -9,7 +9,7 @@ const PERIODS = [
   { label: 'Month', range: 'October · 4 weeks', mood: 'Patterns, not just moments', stress: 'Lower', hr: '69', hrv: '52', entries: '38', emotions: ['Calm', 'Grateful', 'Anxious'], values: [32, 40, 35, 51, 46, 63, 73], ticks: ['Week 1', 'Week 2', 'Week 4'], note: 'Your reflections describe more calm, alongside steadier recovery signals.', source: 'This month’s voice entries', quote: '“I’m catching the loop a little earlier now.”' },
 ] as const
 
-type Props = { copy: { eyebrow: string; title: string; body: string }; edit: (path: string) => (value: string) => void }
+type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center' }; edit: (path: string) => (value: string) => void }
 
 /** Illustrative data: biometrics indicate activation; emotions come from voice reflections. */
 export function DeviceInsights({ copy, edit }: Props) {
@@ -42,8 +42,8 @@ export function DeviceInsights({ copy, edit }: Props) {
   const period = PERIODS[Math.max(0, step - 2)]
   const connected = step >= 2
   return (
-    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-connected={connected} data-playing={visible && playing && !reduced} aria-labelledby="case-insights">
-      <header className="insights__heading">
+    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-connected={connected} data-playing={visible && playing && !reduced} aria-labelledby="case-insights">
+      <header className="insights__heading case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="Insights eyebrow" value={copy.eyebrow} onChange={edit('dynamic.eyebrow')} />
         <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} />
         <EditableText className="case__body" label="Insights body" value={copy.body} onChange={edit('dynamic.body')} />

@@ -31,6 +31,7 @@ type SectionDefaults = {
   eyebrow: string
   title: string
   body?: string
+  align?: 'left' | 'center'
   video?: ProtoVideo | 'none' | 'placeholder'
   /** Label inside the placeholder block (Filo, until the prototype loops exist). */
   placeholder?: string
@@ -46,6 +47,7 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
     eyebrow: { type: 'text' as const, default: d.eyebrow },
     title: { type: 'text' as const, default: d.title },
     body: { type: 'text' as const, default: d.body ?? '', placeholder: 'Blank lines = paragraph breaks' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: d.align ?? 'left' },
     media: {
       video: { type: 'select' as const, options: videos, default: d.video ?? 'none' },
       ...(d.placeholder !== undefined ? { placeholder: { type: 'text' as const, default: d.placeholder } } : {}),
@@ -309,6 +311,7 @@ export const UNWIND_CONFIG = {
   flows: {
     eyebrow: { type: 'text' as const, default: 'Core flows' },
     title: { type: 'text' as const, default: 'Notice. Reflect. Look back.' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     notificationLabel: { type: 'text' as const, default: 'A gentle nudge' },
     voiceLabel: { type: 'text' as const, default: 'Say what happened' },
     entriesLabel: { type: 'text' as const, default: 'Your entries' },
@@ -319,6 +322,7 @@ export const UNWIND_CONFIG = {
     eyebrow: { type: 'text' as const, default: 'Guided reflection' },
     title: { type: 'text' as const, default: 'Evidence-based models, spoken out loud.' },
     body: { type: 'text' as const, default: 'Pick a framework and answer one question at a time.' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     woopLabel: { type: 'text' as const, default: 'WOOP · plan for next time' },
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
     _collapsed: true,
@@ -328,6 +332,7 @@ export const UNWIND_CONFIG = {
     eyebrow: { type: 'text' as const, default: 'Connected insights' },
     title: { type: 'text' as const, default: 'Your body signals. Your story. A clearer picture.' },
     body: { type: 'text' as const, default: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     _collapsed: true,
   },
   context: sectionDials({

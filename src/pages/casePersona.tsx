@@ -21,6 +21,7 @@ export const PERSONA_DIALS = {
   body: text(
     'Generally independent and capable, but prone to stress, rumination and replaying difficult moments. They want a private, low-friction outlet when no one is immediately available to talk to.',
   ),
+  align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
   /** Comma-separated. */
   tags: text('20s – 30s, Works or studies, Uses a smartwatch, Values mental fitness, Open to AI tools, Urban lifestyle'),
   /** Look presets set traits, contexts and motion; Image stays independently adjustable. */
@@ -122,6 +123,7 @@ export type Persona = {
   eyebrow: string
   title: string
   body: string
+  align: 'left' | 'center'
   tags: string
   preset: string
   image: string
@@ -261,6 +263,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
       className="case__section case__persona"
       data-section="persona"
       data-layout="persona"
+      data-copy-align={p.align}
       data-persona-image={look.image}
       data-persona-traits={look.traits}
       data-persona-contexts={look.contexts}
@@ -291,7 +294,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
       }
     >
       <div className="persona__intro">
-        <div className="persona__who">
+        <div className="persona__who case__section-copy">
           <EditableText as="p" className="eyebrow" label="Persona eyebrow" value={p.eyebrow} onChange={edit('persona.eyebrow')} />
           <EditableText as="h2" className="persona__title" label="Persona title" value={p.title} onChange={edit('persona.title')} />
           <EditableText className="persona__body" label="Persona body" value={p.body} onChange={edit('persona.body')} />
