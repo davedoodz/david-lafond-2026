@@ -35,6 +35,14 @@ const CONFIG = {
   speed: [1, 0.1, 1.5, 0.05] as Tuple,
   /** Seconds at speed 1. Applied on the next Replay intro, so edits never jump mid-scene. */
   timingSeconds: { ...TIMING, _collapsed: false },
+  /** Vertical offsets in the film's 960×540 coordinates. Positive moves down; updates live. */
+  phonePosition: {
+    lockScreenY: [24, -120, 120, 1] as Tuple,
+    signalCheckY: [0, -120, 120, 1] as Tuple,
+    reflectionChoiceY: [0, -120, 120, 1] as Tuple,
+    voiceReflectionY: [0, -120, 120, 1] as Tuple,
+    _collapsed: false,
+  },
   hero: {
     width: [360, 120, 900, 10] as Tuple,
     slot: [48, 16, 200, 1] as Tuple,
@@ -178,7 +186,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
           x: (slotX - vw / 2) / scale + 480,
           y: (slotY - window.scrollY - vh / 2) / scale + 270,
           width: Math.min(s.hero.width, vw * .72) / scale,
-        })
+        }, s.phonePosition)
         ctx.globalAlpha = filmAlpha; ctx.drawImage(filmCanvas, 0, 0); ctx.globalAlpha = 1
       }
       const ay = slotY - window.scrollY
