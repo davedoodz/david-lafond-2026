@@ -413,6 +413,7 @@
     "yMobile": 36
   },
   "Unwind Momo": {
+    "size": 36.5,
     "listening": {
       "scale": 1.12
     },
@@ -592,28 +593,42 @@
   "Momo welcome": {
     "blackOverlay": 0.13,
     "prototypeWidth": 290,
+    "buttons": {
+      "style": "tinted"
+    },
     "rise": {
       "distance": 120,
-      "delay": 0
+      "delay": 0,
+      "spring": {
+        "type": "spring",
+        "visualDuration": 0.4,
+        "bounce": 0.45
+      },
+      "fade": 0.25
     },
     "timing": {
-      "shadeAt": 0.2,
-      "shadeIn": 0.4,
-      "shadeOut": 1.2,
-      "momoAt": 0.75,
-      "logoAt": 2.05,
-      "buttonsAt": 2.5,
-      "legalAt": 3.1,
-      "holdUntil": 9.85
+      "fullLoopDuration": 8.5,
+      "shadeAt": 0,
+      "shadeIn": 1.5,
+      "shadeOut": 0.1,
+      "momoAt": 0,
+      "logoAt": 0.25,
+      "buttonsAt": 0.85,
+      "legalAt": 1.2,
+      "fadeIn": 1.6,
+      "holdUntil": 6.6,
+      "fadeOut": 1.65
     },
     "momo": {
-      "size": 60,
+      "size": 71,
       "y": 4
     },
     "logo": {
-      "size": 18.2
+      "size": 14.7,
+      "outlineStroke": 5.5
     },
     "wordmark": {
+      "size": 31.8,
       "x": 0.3
     }
   },
