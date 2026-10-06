@@ -167,6 +167,8 @@
       .story__timing button { font: inherit; font-size: 13px; background: none; border: 1px solid var(--stone-400); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
       .story .lbl-glyph { transform-box: fill-box; transform-origin: center; }
       .story :is(.mic-wave, .bulb-ray) { transform-box: fill-box; transform-origin: center bottom; }
+      /* The bell's ring lines show only while it wiggles (the motion animates their opacity). */
+      .story .lbl-glyph .ring-line { opacity: 0; }
       /* Bullet text keeps one colour; only the icon turns blue (once, then stays: .is-lit). */
       .story .lbl-item text { fill: var(--ink-900); }
       .story .lbl-icon { transition: stroke 0.35s ease; }
@@ -865,7 +867,7 @@
             // The bulb grows, then three rays flash out from its top and fade; rays are temporary paths.
             glyph.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)', offset: 0.5 }, { transform: 'scale(1)' }], { duration, delay, easing: 'ease-in-out' })
             const ns = 'http://www.w3.org/2000/svg'
-            for (const d of ['M12 -1.2 V-4', 'M6.2 0.8 L4.4 -1', 'M17.8 0.8 L19.6 -1']) {
+            for (const d of ['M12 -2.6 V-5.4', 'M5.6 -0.4 L3.8 -2.2', 'M18.4 -0.4 L20.2 -2.2']) {
               const ray = document.createElementNS(ns, 'path')
               ray.setAttribute('d', d)
               ray.setAttribute('class', 'bulb-ray')
@@ -877,7 +879,14 @@
             }
             return
           }
-          if (motion !== 'draw' && motion !== 'drawbeat') return glyph.animate(motion, { duration, delay, easing: 'ease-in-out' })
+          if (motion !== 'draw' && motion !== 'drawbeat') {
+            // Ring lines (the bell's side arcs) are visible only while the icon moves.
+            glyph.querySelectorAll('.ring-line').forEach((p) => p.animate(
+              [{ opacity: 0 }, { opacity: 1, offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }],
+              { duration, delay, easing: 'linear' },
+            ))
+            return glyph.animate(motion, { duration, delay, easing: 'ease-in-out' })
+          }
           const line = [...glyph.querySelectorAll('path, polyline')].pop()
           if (!line) return
           line.setAttribute('pathLength', '1')
@@ -894,6 +903,8 @@
           r.querySelector('.lbl-glyph').style.scale = v > 0 && v !== 1 ? String(v) : ''
         })
         applyIconScales()
+        // Mark the bell's two side arcs (lucide bell-ring) so they can stay hidden at rest.
+        svg.querySelectorAll('.lbl-glyph path[d^="M22 8c"], .lbl-glyph path[d^="M4 2C"]').forEach((p) => p.classList.add('ring-line'))
         const iconMotions = section.querySelector('[data-act="icon-motions"]')
         function renderIconMotions() {
           const items = [...new Set(STORY[step].edges.flatMap((e) =>
