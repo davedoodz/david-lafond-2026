@@ -26,6 +26,8 @@ import therapistPng from './assets/blue-therapist.png'
 import baked from './settings.json'
 
 export const SETTINGS_KEY = 'unwind-system-design:settings'
+/** Arrow-tip entrance presets for the case study (`fade` is the studio original). */
+export const TIP_ANIMATIONS = ['fade', 'pop', 'grow', 'slide', 'bounce', 'instant']
 const obj = (v) => (v && typeof v === 'object' ? v : {})
 const normalize = (s) => ({ feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime), iconMotion: obj(s.iconMotion), iconScale: obj(s.iconScale), spacing: obj(s.spacing) })
 
@@ -52,14 +54,19 @@ const toDataUrl = (url) => fetch(url).then((r) => {
 /**
  * Mounts the diagram into `root`. Embed mode shows the caption and step pills; sequence mode hides
  * that chrome and plays the same walkthrough once `start()` is called by the host.
- * Returns { start, pause, destroy }.
+ * Returns { start, pause, setTitleGap, setStepHolds, setTipAnimation, destroy }.
  */
-export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, sequenceSpeed: requestedSequenceSpeed = 1, motionSpeed: requestedMotionSpeed = 1 } = {}) {
+export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, sequenceSpeed: requestedSequenceSpeed = 1, motionSpeed: requestedMotionSpeed = 1, titleGap, stepHolds: requestedStepHolds, tipAnimation: requestedTipAnimation = 'fade' } = {}) {
   const studio = mode === 'studio'
   const sequence = mode === 'sequence'
   const sequenceSpeed = Math.min(4, Math.max(0.1, Number(requestedSequenceSpeed) || 1))
   const motionSpeed = Math.min(4, Math.max(0.1, Number(requestedMotionSpeed) || 1))
+  // Case study: per-step hold times in ms (index = step), overriding the baked step time; and how arrow tips enter.
+  let stepHolds = Array.isArray(requestedStepHolds) ? requestedStepHolds : null
+  let tipAnimation = requestedTipAnimation
   const settings = studio ? loadStudioSettings() : normalize(structuredClone(baked))
+  // The case study tunes the icon-to-title gap from DialKit; it overrides the baked studio value.
+  if (!studio && titleGap != null) settings.look = { ...settings.look, titleGap }
   let saveTimer
   // Only user changes save: mounting applies the loaded settings without writing them back, so a
   // studio tab opened on another origin (empty storage) can't overwrite ./settings.json.
@@ -823,6 +830,8 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
     // Each step can hold for its own time; otherwise it uses the Step slider.
     const stepDurInput = section.querySelector('[data-act="step-dur"]')
     const stepDuration = () => {
+      const hold = Number(stepHolds?.[step])
+      if (Number.isFinite(hold) && hold > 0) return Math.min(20000, Math.max(300, hold)) / sequenceSpeed
       const v = Number(settings.stepDur[stepKey(step)])
       return Number.isFinite(v) && v > 0 ? Math.min(20000, Math.max(1000, v)) / sequenceSpeed : timing.step
     }
@@ -887,6 +896,37 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
       return n
     }
 
+    /** Arrow-tip entrance, timed to the moment its line finishes drawing. `fade` is the studio original. */
+    function playTip(head, paint, op, pts, delay, draw) {
+      const blue = { [paint]: BLUE }
+      if (tipAnimation === 'fade' || !TIP_ANIMATIONS.includes(tipAnimation) || !pts) {
+        head.animate([{ opacity: 0, ...blue }, { opacity: 0, ...blue, offset: 0.85 }, { opacity: op, ...blue }], { duration: draw, delay, fill: 'backwards' })
+        return
+      }
+      if (tipAnimation === 'instant') {
+        head.animate([{ opacity: 0, ...blue }, { opacity: op, ...blue }], { duration: 1, delay: delay + draw, fill: 'backwards' })
+        return
+      }
+      // Scale and slide around the tip point, along the arrow's final run.
+      const [x, y] = pts[pts.length - 1], [px, py] = pts[pts.length - 2]
+      const m = Math.hypot(x - px, y - py) || 1, ux = (x - px) / m, uy = (y - py) / m
+      head.style.transformBox = 'view-box'
+      head.style.transformOrigin = `${x}px ${y}px`
+      const T = (s, back = 0) => `translate(${-ux * back}px, ${-uy * back}px) scale(${s})`
+      const frames = {
+        pop: [{ opacity: 0, transform: T(0) }, { opacity: op, transform: T(1.4), offset: 0.55 }, { opacity: op, transform: T(1) }],
+        grow: [{ opacity: 0, transform: T(0) }, { opacity: op, transform: T(1) }],
+        slide: [{ opacity: 0, transform: T(1, 16) }, { opacity: op, transform: T(1) }],
+        bounce: [{ opacity: 0, transform: T(0) }, { opacity: op, transform: T(1.35), offset: 0.4 }, { opacity: op, transform: T(0.85), offset: 0.65 }, { opacity: op, transform: T(1.08), offset: 0.85 }, { opacity: op, transform: T(1) }],
+      }[tipAnimation]
+      head.animate(frames.map((f) => ({ ...f, ...blue })), {
+        duration: (tipAnimation === 'bounce' ? 620 : 380) / motionSpeed,
+        delay: delay + draw * 0.9,
+        easing: 'cubic-bezier(.2,.8,.2,1)',
+        fill: 'backwards',
+      })
+    }
+
     function show(i) {
       step = (i + STORY.length) % STORY.length
       const s = STORY[step]
@@ -932,13 +972,11 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
             { duration: draw, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' },
           )
           // Line and head grow in blue and stay blue (CSS .is-blue) for the step and after it.
+          const tipPts = edgePts.get(lines[e].parentNode)
           lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
             const paint = head.getAttribute('fill') === 'none' ? 'stroke' : 'fill'
             const op = getComputedStyle(head).opacity
-            head.animate(
-              [{ opacity: 0, [paint]: BLUE }, { opacity: 0, [paint]: BLUE, offset: 0.85 }, { opacity: op, [paint]: BLUE }],
-              { duration: draw, delay, fill: 'backwards' },
-            )
+            playTip(head, paint, op, tipPts, delay, draw)
           })
         }
         if (feel === FEELS.pulse) f.dots = [0, 1, 2].map(() => el('circle', { r: 4.5, class: 'pulse' }))
@@ -1068,7 +1106,11 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
       const spotEnd = Math.max(0, ...labels.map((l) => l.cycleFrom))
       const dur = Math.max(stepDuration(), spotEnd)
       section.style.setProperty('--progress', String(Math.min(1, t / dur)))
-      if (playing && t > dur) show(step + 1)
+      // The case study plays the walkthrough once and rests on the full loop; its host restarts it on re-entry.
+      if (playing && t > dur) {
+        if (sequence && step === STORY.length - 1) setPlaying(false)
+        else show(step + 1)
+      }
       if (!destroyed) requestAnimationFrame(frame)
     }
 
@@ -1385,6 +1427,17 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
       pause() {
         setPlaying(false)
       },
+      // Live title gap: titles and the arrow ends that clear them move together.
+      setTitleGap(v) {
+        look.titleGap = setLook('titleGap', v)
+        retarget()
+      },
+      setStepHolds(holds) {
+        stepHolds = Array.isArray(holds) ? holds : null
+      },
+      setTipAnimation(name) {
+        tipAnimation = name
+      },
     }
   }
 
@@ -1432,6 +1485,9 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
   return {
     start: story.start,
     pause: story.pause,
+    setTitleGap: story.setTitleGap,
+    setStepHolds: story.setStepHolds,
+    setTipAnimation: story.setTipAnimation,
     destroy() {
       destroyed = true
       clearTimeout(saveTimer)

@@ -447,7 +447,6 @@ export function CaseStudyPage({ id }: Props) {
     if (id === 'filo' && key === 'principles') return <PrinciplesSection key={key} f={fields} edit={edit} />
     const hasDemo = s.media.figure === 'notification'
     const hasFigure = ['flow', 'system', 'vision', 'signals'].includes(s.media.figure)
-    const isSystem = s.media.figure === 'system'
     const hasPlaceholder = !hasFigure && !hasDemo && s.media.video === 'placeholder'
     const hasVideo = !hasFigure && !hasDemo && !hasPlaceholder && s.media.video !== 'none'
     return (
@@ -474,10 +473,8 @@ export function CaseStudyPage({ id }: Props) {
               : {}),
           } as CSSProperties
         }
-        aria-labelledby={isSystem ? undefined : `case-${key}`}
-        aria-label={isSystem ? 'Momo system design' : undefined}
+        aria-labelledby={`case-${key}`}
       >
-        {!isSystem && (
         <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
           {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
@@ -521,7 +518,6 @@ export function CaseStudyPage({ id }: Props) {
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
-        )}
         {isHero && id === 'unwind' ? (
           <div className="case__devices">
             <MomoWelcome active={!intro} />

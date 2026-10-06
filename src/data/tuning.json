@@ -455,7 +455,7 @@
       "logosToTitle": 54,
       "titleToMeta": 20,
       "y": {
-        "braid": -56,
+        "braid": -42,
         "title": -24,
         "meta": -23,
         "logos": -17
@@ -501,7 +501,13 @@
       }
     },
     "system": {
+      "eyebrow": "SYSTEM DESIGN",
+      "title": "\n",
+      "body": "",
       "align": "center"
+    },
+    "flows": {
+      "phoneScale": 1.04
     },
     "dynamic": {
       "align": "center"
@@ -528,8 +534,8 @@
     "frame": 2738590
   },
   "Unwind case study · order": {
-    "section": "flows",
-    "order": "story, persona, moment, overview, notification, flows, dynamic, howItWorks, guided, context, tracking, system, outcomes",
+    "section": "system",
+    "order": "story, persona, moment, overview, notification, system, flows, dynamic, howItWorks, guided, context, tracking, outcomes",
     "max": 13,
     "keep": {
       "Overview": "hide",
@@ -572,12 +578,12 @@
     "speed": 1.2,
     "timingSeconds": {
       "meetingNotice": 1.2,
-      "goodLuckNotice": 2.75,
+      "goodLuckNotice": 1.95,
       "threePm": 1.5,
       "fivePm": 0.8,
       "evening": 0.9,
       "bodySignals": 1.6,
-      "signalChecks": 3.5,
+      "signalChecks": 2.65,
       "momoNudge": 2.4,
       "reflectionChoice": 2,
       "momoEntrance": 1.75,
@@ -587,7 +593,8 @@
     },
     "hero": {
       "width": 280,
-      "energy": 0.28
+      "energy": 0.28,
+      "topGap": 33
     }
   },
   "Filo case study": {
@@ -643,15 +650,58 @@
     }
   },
   "Unwind system sequence": {
-    "sequenceSpeed": 1.3,
-    "motionSpeed": 1.3,
+    "sequenceSpeed": 2.7,
+    "motionSpeed": 0.95,
     "card": {
-      "radius": 27,
-      "fill": "#006d9e"
+      "radius": 35,
+      "fill": "#f5f5f5",
+      "scaleX": 0.84,
+      "scaleY": 0.91
     },
-    "momoLockup": {
-      "y": -21,
-      "scale": 0.76
+    "shadow": {
+      "show": true,
+      "opacity": 0.32,
+      "x": 3
+    },
+    "momoLogo": {
+      "x": 57,
+      "y": 8,
+      "scale": 0.46,
+      "outline": 5.2,
+      "color": "#62abdc"
+    },
+    "momoText": {
+      "x": -17,
+      "y": 7,
+      "scale": 0.67,
+      "color": "#62abdc"
+    },
+    "icons": {
+      "circleColor": "#5dd6fa",
+      "titleGap": 17
+    },
+    "system": {
+      "scale": 1.05
+    },
+    "userIcon": {
+      "y": -4,
+      "scale": 0.89
+    },
+    "watchIcon": {
+      "x": -1,
+      "y": -1,
+      "scale": 0.93
+    },
+    "phoneIcon": {
+      "x": -1,
+      "scale": 1.03
+    },
+    "momoIcon": {
+      "scale": 0.94
+    },
+    "expertsIcon": {
+      "y": -4,
+      "scale": 0.89
     }
   }
 }

@@ -1,6 +1,15 @@
 /* Unwind system diagram (mountUnwindSystem.js). Shared by the studio and the case study embed. */
 /* The whole figure always fits the screen: width is capped so its height never exceeds the viewport. */
 .story > svg { display: block; width: min(100%, calc((100svh - 24px) * var(--ar, 1.5))); height: auto; margin-inline: auto; }
+/* Case-study sections are one fixed screen that clips. The System section holds its text block and the
+   card, which together outgrow a short screen, so it grows like the persona/story sections, and the
+   card's drop shadow may spill past its edge. */
+.case__section:has(> .unwind-system) {
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+  padding-block: clamp(96px, 12svh, 140px);
+}
 /* Case-study sequence card: the Momo lockup and diagram share one tunable filled surface. */
 .unwind-system {
   position: relative;
@@ -19,14 +28,13 @@
 .unwind-system::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: var(--system-card-inset-y, 0) var(--system-card-inset-x, 0);
   z-index: 0;
   pointer-events: none;
   background: var(--system-card-fill, #53bffe);
   border-radius: var(--system-card-radius, 48px);
+  box-shadow: var(--system-card-shadow, none);
   opacity: var(--system-card-opacity, 1);
-  scale: var(--system-card-scale-x, 1) var(--system-card-scale-y, 1);
-  transform-origin: center;
 }
 .unwind-system__brand {
   position: relative;
@@ -51,14 +59,19 @@
   width: 62%;
   aspect-ratio: 509 / 154;
   flex: none;
-  background: var(--system-card-accent, #fff);
+  background: var(--system-text-color, var(--system-card-accent, #fff));
   translate: var(--system-text-x, 0) var(--system-text-y, 0);
   scale: var(--system-text-scale, 1);
   transform-origin: center;
   -webkit-mask: url('/work/unwind/hero/momo-type.png') center / contain no-repeat;
   mask: url('/work/unwind/hero/momo-type.png') center / contain no-repeat;
 }
-.unwind-system__diagram { position: relative; z-index: 1; }
+.unwind-system__diagram {
+  position: relative;
+  z-index: 1;
+  scale: var(--system-diagram-scale, 1);
+  transform-origin: center;
+}
 .unwind-system__diagram, .unwind-system .story { width: 100%; }
 .unwind-system .story text { fill: var(--system-card-ink); }
 .unwind-system .story .edge__line { stroke: var(--system-card-ink); }
@@ -85,6 +98,15 @@
 .story .node__halo { opacity: 0; transition: opacity 0.6s ease; transform-box: fill-box; transform-origin: center; transform: scale(var(--halo-scale, 1)); }
 .story .node image { transform-box: fill-box; transform-origin: center; transform: scale(var(--icon-scale, 1)); }
 .story .node .momo-still { transform: translate(calc(var(--momo-x, 0) * 1px), calc(var(--momo-y, 0) * 1px)) scale(calc(var(--icon-scale, 1) * var(--momo-scale, 1))); }
+/* Case study: each node's blue illustration takes its own DialKit offset and scale, on top of the
+   baked studio icon size (and Momo's baked position). Offsets are in diagram units. */
+.unwind-system .story .node image { transform: translate(var(--n-x, 0px), var(--n-y, 0px)) scale(calc(var(--icon-scale, 1) * var(--n-scale, 1))); }
+.unwind-system .story .node .momo-still { transform: translate(calc(var(--momo-x, 0) * 1px + var(--n-x, 0px)), calc(var(--momo-y, 0) * 1px + var(--n-y, 0px))) scale(calc(var(--icon-scale, 1) * var(--momo-scale, 1) * var(--n-scale, 1))); }
+.unwind-system .story .node[data-node='user'] { --n-x: var(--system-user-x); --n-y: var(--system-user-y); --n-scale: var(--system-user-scale); }
+.unwind-system .story .node[data-node='watch'] { --n-x: var(--system-watch-x); --n-y: var(--system-watch-y); --n-scale: var(--system-watch-scale); }
+.unwind-system .story .node[data-node='phone'] { --n-x: var(--system-phone-x); --n-y: var(--system-phone-y); --n-scale: var(--system-phone-scale); }
+.unwind-system .story .node[data-node='ai'] { --n-x: var(--system-momo-x); --n-y: var(--system-momo-y); --n-scale: var(--system-momo-scale); }
+.unwind-system .story .node[data-node='experts'] { --n-x: var(--system-experts-x); --n-y: var(--system-experts-y); --n-scale: var(--system-experts-scale); }
 .story .node.is-on .node__halo { opacity: var(--halo-op, 0.1); }
 .story[data-halo='off'] .node__halo { display: none; }
 .story .lbl-row { transform-box: fill-box; transform-origin: left center; }

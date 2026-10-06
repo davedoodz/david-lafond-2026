@@ -275,8 +275,9 @@ export const UNWIND_CONFIG = {
   /** Persona sheet, reorganised to read top to bottom (rendered as `persona`); key contexts float around the portrait. */
   persona: { ...PERSONA_DIALS, float: FLOAT_DIALS },
   system: sectionDials({
-    eyebrow: 'System',
-    title: 'Watch, phone and AI, with therapists shaping the model.',
+    eyebrow: 'System design',
+    title: 'Watch, phone and Momo, with clinical experts shaping the model.',
+    body: 'The watch notices physiological changes; the phone holds voice reflections and journal context. Momo turns both into timely nudges and personal insights, on an evidence-based framework from clinical experts.',
     figure: 'system',
     layout: 'bottom',
     gap: 24,

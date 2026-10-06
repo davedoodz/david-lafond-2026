@@ -1683,6 +1683,14 @@ html[data-case-snap] .case__group > * {
   color: var(--stone-600);
   text-wrap: pretty;
 }
+/* A cleared title or body takes no space, so the section's Media Gap alone sets the distance from
+   the text to the media below. A field being cleared on the page stays until it loses focus. */
+.case__section-copy > :is(.case__title, .case__body):empty:not(:focus) {
+  display: none;
+}
+.case__section-copy > .case__eyebrow:not(:has(~ :is(.case__title, .case__body):not(:empty))) {
+  margin-bottom: 0;
+}
 .case__section[data-copy-align='center'] .case__section-copy {
   justify-items: center;
   text-align: center;
