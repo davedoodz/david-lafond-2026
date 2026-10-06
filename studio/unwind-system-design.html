@@ -663,7 +663,7 @@
         ['draw', 'Line draw', 0.2, 4, 0.05],
         ['text', 'Text start', 0, 3, 0.05],
         ['stagger', 'Text stagger', 0.04, 0.8, 0.01],
-        ['spot', 'Bullet spotlight', 0.3, 2.5, 0.05],
+        ['spot', 'Icon motion', 0.3, 2.5, 0.05],
         ['gap', 'Next arrow', 0, 3, 0.05],
         ['bullet', 'Next bullet', 0, 3, 0.05],
         ['speed', 'Flow speed', 0.25, 2, 0.05],
@@ -682,6 +682,19 @@
         'key moments': [{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(0.95)' }, { transform: 'scale(1)' }],
         'nudge timing': [{ transform: 'rotate(0)' }, { transform: 'rotate(20deg)' }, { transform: 'rotate(-8deg)' }, { transform: 'rotate(0)' }],
         'personal insights': [{ transform: 'translateY(0)' }, { transform: 'translateY(-3px)' }, { transform: 'scale(1.12)' }, { transform: 'translateY(0)' }],
+      }
+      // Motion presets any bullet icon can use instead of its own (chosen in the Icon motion row).
+      const MOTIONS = {
+        original: { name: 'Original' },
+        pulse: { name: 'Pulse', frames: [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }] },
+        pop: { name: 'Pop in', frames: [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.25)', opacity: 1, offset: 0.6 }, { transform: 'scale(1)', opacity: 1 }] },
+        wiggle: { name: 'Wiggle', frames: [{ transform: 'rotate(0)' }, { transform: 'rotate(-14deg)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(0)' }] },
+        bounce: { name: 'Bounce', frames: [{ transform: 'translateY(0)' }, { transform: 'translateY(-5px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-2px)' }, { transform: 'translateY(0)' }] },
+        shake: { name: 'Shake', frames: [{ transform: 'translateX(0)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(3px)' }, { transform: 'translateX(-2px)' }, { transform: 'translateX(0)' }] },
+        spin: { name: 'Spin', frames: [{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }] },
+        flip: { name: 'Flip', frames: [{ transform: 'scaleX(1)' }, { transform: 'scaleX(-1)' }, { transform: 'scaleX(1)' }] },
+        heartbeat: { name: 'Heartbeat', frames: [{ transform: 'scale(1)' }, { transform: 'scale(1.25)', offset: 0.15 }, { transform: 'scale(1)', offset: 0.3 }, { transform: 'scale(1.18)', offset: 0.45 }, { transform: 'scale(1)' }] },
+        none: { name: 'None', frames: null },
       }
 
       // [key, name, min, max, step, default, css var]; line spacing has no var, it shifts label rows.
@@ -754,6 +767,7 @@
             <button type="button" data-act="reset-text">Reset text</button>
           </div>
           <div class="story__timing" aria-label="Arrows" data-act="arrow-times"></div>
+          <div class="story__timing" aria-label="Icon motion" data-act="icon-motions"></div>
           ${render(o)}
           <nav class="story__steps">${STORY.map((s, i) => `<button type="button" data-step="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${s.title}</button>`).join('')}</nav>`
         root.append(section)
@@ -799,6 +813,39 @@
           saveSettings()
           show(step)
         })
+        // Icon motion row: one menu per bullet icon in this step. Saved per bullet (settings.iconMotion),
+        // so a choice applies wherever that bullet appears. 'Original' keeps the icon's own motion.
+        const motionFor = (item) => {
+          const k = settings.iconMotion[item]
+          return MOTIONS[k] && k !== 'original' ? MOTIONS[k].frames : ICON_MOTION[item]
+        }
+        const iconMotions = section.querySelector('[data-act="icon-motions"]')
+        function renderIconMotions() {
+          const items = [...new Set(STORY[step].edges.flatMap((e) =>
+            [...svg.querySelectorAll(`.edge[data-edge="${e}"] .lbl-item:not(.is-gone)`)].map((r) => r.dataset.item)))]
+          iconMotions.innerHTML = `<span>Icon motion</span>${items.map((item) => {
+            const cur = MOTIONS[settings.iconMotion[item]] ? settings.iconMotion[item] : 'original'
+            return `<label>${item} <select data-item="${item}">${Object.entries(MOTIONS).map(([k, m]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${m.name}</option>`).join('')}</select></label>`
+          }).join('')}<button type="button" data-act="preview-icons">Preview</button>`
+        }
+        // Play every icon in this step once, so a choice can be judged without replaying the step.
+        const previewIcons = () => STORY[step].edges.forEach((e) =>
+          svg.querySelectorAll(`.edge[data-edge="${e}"] .lbl-item:not(.is-gone)`).forEach((r) => {
+            const glyph = r.querySelector('.lbl-glyph')
+            const motion = motionFor(r.dataset.item)
+            if (!glyph || !motion || reduceMotion) return
+            glyph.getAnimations().forEach((a) => a.cancel())
+            glyph.animate(motion, { duration: timing.spot * 0.85, easing: 'ease-in-out' })
+          }))
+        iconMotions.addEventListener('change', (ev) => {
+          const sel = ev.target.closest('select[data-item]')
+          if (!sel) return
+          if (sel.value === 'original') delete settings.iconMotion[sel.dataset.item]
+          else settings.iconMotion[sel.dataset.item] = sel.value
+          saveSettings()
+          previewIcons()
+        })
+        iconMotions.addEventListener('click', (ev) => { if (ev.target.closest('[data-act="preview-icons"]')) previewIcons() })
         // Each step can hold for its own time; otherwise it uses the Step slider.
         const stepDurInput = section.querySelector('[data-act="step-dur"]')
         const stepDuration = () => {
@@ -955,6 +1002,7 @@
           layer.style.display = waveOn ? '' : 'none'
           syncStepDur()
           renderArrowTimes()
+          renderIconMotions()
           labels = s.edges.map((e, k) => {
             const delay = flows[k].delay
             const g = svg.querySelector(`.edge[data-edge="${e}"]`)
@@ -974,11 +1022,9 @@
               r.classList.remove('is-lit')
               r.animate(REVEALS[reveal].frames, { duration: revealDur, delay: cursor, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' })
               const glyph = r.querySelector('.lbl-glyph')
-              const motion = ICON_MOTION[r.dataset.item]
-              if (glyph && motion) {
-                glyph.getAnimations().forEach((a) => a.cancel())
-                glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), delay: cursor, easing: 'ease-in-out' })
-              }
+              const motion = motionFor(r.dataset.item)
+              glyph?.getAnimations().forEach((a) => a.cancel())
+              if (glyph && motion) glyph.animate(motion, { duration: timing.spot * 0.85, delay: cursor, easing: 'ease-in-out' })
               if (items.includes(r)) {
                 sched.push(cursor)
                 cursor += timing.bullet
@@ -1349,9 +1395,9 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime) }
+          return { feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime), iconMotion: obj(s.iconMotion) }
         } catch {
-          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {} }
+          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {}, iconMotion: {} }
         }
       })()
       const saveSettings = () => {
