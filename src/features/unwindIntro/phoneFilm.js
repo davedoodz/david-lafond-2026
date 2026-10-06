@@ -470,8 +470,8 @@ function film(V) {
         c.save(); c.translate(mx, my); c.scale(1, squint); c.translate(-mx, -my)
         const soft = OPT.eyes === 'dissolve' ? 3 * Math.sin(Math.PI * shut) : 0
         if (soft > 0.2) c.filter = `blur(${soft}px)`
-        c.globalAlpha = mA * (1 - shut); momo(c, mx, my, ms, t, 0, IMG.momoOpen)
-        c.globalAlpha = mA * shut; momo(c, mx, my, ms, t, talking)
+        c.globalAlpha = mA * (1 - shut); momo(c, mx, my, ms, t, 0, a.momoFrames.awake ?? IMG.momoOpen)
+        c.globalAlpha = mA * shut; momo(c, mx, my, ms, t, talking, a.momoFrames.asleep ?? IMG.momo)
         c.restore()
         c.globalAlpha = ph * voiceIn
         transcript(c, tokens, t, 1 - S(t, T.proc - 0.1, T.proc + 0.3))
@@ -505,9 +505,9 @@ function film(V) {
 const V = {m0:884,m1:887,base:[64,78],stillSince:879,day:true,checks:true,style:'pending',hr:m=>79+24*S(m,885,886)+noise(m),hrv:m=>lerp(52,28,S(m,885.3,886.5)),move:()=>3}
 export const PHONE_TIMELINE = timeline()
 const cut = film(V)
-export function drawPhoneFilm(ctx,t,m,braidTarget,phonePosition) {
+export function drawPhoneFilm(ctx,t,m,braidTarget,phonePosition,momoFrames) {
   const under=[], ink=[]
-  cut.draw({t,braidTarget,phonePosition,under:fn=>under.push(fn),draw:fn=>ink.push(fn)})
+  cut.draw({t,braidTarget,phonePosition,momoFrames,under:fn=>under.push(fn),draw:fn=>ink.push(fn)})
   ctx.save();ctx.setTransform(m[0],0,0,m[0],m[1],m[2])
   for (const fn of under) {ctx.save();fn(ctx);ctx.restore()}
   for (const fn of ink) {ctx.save();fn(ctx);ctx.restore()}

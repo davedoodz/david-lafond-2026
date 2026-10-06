@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useTuningController } from '../../tuning/useTuning'
 import { drawBraid, setRT } from './braid'
 import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE } from './phoneFilm'
+import { stackedAlpha } from '../../lib/stackedAlpha'
 import './unwindIntro.css'
 
 type Tuple = [number, number, number, number]
+const MOMO_CLIPS = ['listening', 'floating'] as const
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 const smooth = (v: number) => v * v * (3 - 2 * v)
 // Ordered authored boundaries. Each dial retimes one whole sequence without changing its poses.
@@ -58,6 +60,8 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const replayRef = useRef<() => void>(() => {})
+  const momoVideos = useRef<Record<string, HTMLVideoElement | null>>({})
+  const momoCanvases = useRef<Record<string, HTMLCanvasElement | null>>({})
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const { values: t } = useTuningController('Unwind intro', CONFIG, {
     onAction: (action) => { if (action === 'replay') replayRef.current() },
@@ -96,6 +100,19 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     let interrupted = false, enteredStage = false
     let sequenceIndex = 0, sequenceTime = 0
     let sequenceDurations = tRef.current.timingSeconds
+    const videos = MOMO_CLIPS.map(clip => momoVideos.current[clip]!)
+    const canvases = MOMO_CLIPS.map(clip => momoCanvases.current[clip]!)
+    const stopDecoders = videos.map((video, i) => stackedAlpha(video, canvases[i]))
+    const momoFrames: { awake?: CanvasImageSource; asleep?: CanvasImageSource } = {}
+    let momoPlaying = false
+    const syncMomo = (on: boolean) => {
+      if (on === momoPlaying) return
+      momoPlaying = on
+      for (const video of videos) {
+        if (on) void video.play().catch(error => console.error('Intro Momo playback failed', error))
+        else video.pause()
+      }
+    }
     // Hover to replay: the band in the hero is a button. Hovering eases `swell` 0 → 1 (band grows and
     // speaks a little louder, the "Replay intro" pill drops under it); clicking replays the film.
     // Delegated listeners + a fresh lookup, so a re-rendered hero keeps working.
@@ -133,6 +150,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       if (!ready) return
       playing = true; armed = false; time = 0; handoffY = null; interrupted = false
       sequenceIndex = 0; sequenceTime = 0
+      for (const video of videos) video.currentTime = 0
       sequenceDurations = { ...tRef.current.timingSeconds }
       enteredStage = progress() > .03
       setReplayable(false)
@@ -179,6 +197,9 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const ending = playing ? smooth(clamp((time - PHONE_TIMELINE.hero + .35) / .35)) : 1
       const filmAlpha = playing ? (handoffY !== null && !interrupted ? 1 : smooth(p)) : 0
+      syncMomo(playing && !document.hidden && filmAlpha > .001 && time >= PHONE_TIMELINE.ask && time < PHONE_TIMELINE.calm + 1)
+      momoFrames.awake = videos[0].readyState >= 2 && canvases[0].width > 1 ? canvases[0] : undefined
+      momoFrames.asleep = videos[1].readyState >= 2 && canvases[1].width > 1 ? canvases[1] : undefined
       if (filmAlpha > .001) {
         const scale = Math.min(vw / (vw < 700 ? 480 : 960), vh / 540)
         filmCtx.setTransform(1, 0, 0, 1, 0, 0); filmCtx.clearRect(0, 0, filmCanvas.width, filmCanvas.height)
@@ -186,7 +207,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
           x: (slotX - vw / 2) / scale + 480,
           y: (slotY - window.scrollY - vh / 2) / scale + 270,
           width: Math.min(s.hero.width, vw * .72) / scale,
-        }, s.phonePosition)
+        }, s.phonePosition, momoFrames)
         ctx.globalAlpha = filmAlpha; ctx.drawImage(filmCanvas, 0, 0); ctx.globalAlpha = 1
       }
       const ay = slotY - window.scrollY
@@ -220,7 +241,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       cbRef.current.onDone()
       window.scrollTo({ top: stageH, behavior: 'instant' })
     })
-    const visibility = () => { last = 0; wake() }
+    const visibility = () => { last = 0; if (document.hidden) syncMomo(false); wake() }
     document.addEventListener('pointerover', onOver)
     document.addEventListener('pointerout', onOut)
     document.addEventListener('focusin', onOver)
@@ -238,6 +259,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     void document.fonts.ready.then(measure)
     return () => {
       disposed = true; cancelAnimationFrame(raf); ro.disconnect()
+      syncMomo(false); stopDecoders.forEach(stop => stop())
       window.removeEventListener('scroll', wake); window.removeEventListener('resize', measure)
       window.removeEventListener('wheel', interrupt); window.removeEventListener('touchstart', interrupt)
       window.removeEventListener('keydown', interrupt); document.removeEventListener('visibilitychange', visibility)
@@ -252,5 +274,11 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
   return <>
     <div ref={stageRef} className="unwind-stage" aria-hidden="true" />
     <canvas ref={canvasRef} className="unwind-intro" aria-hidden="true" />
+    <div className="unwind-intro__decoders" aria-hidden="true">
+      {MOMO_CLIPS.map(clip => <div key={clip}>
+        <video ref={node => { momoVideos.current[clip] = node }} src={`/work/unwind/momo-${clip}.mp4`} muted playsInline loop preload="auto" />
+        <canvas ref={node => { momoCanvases.current[clip] = node }} width={1} height={1} />
+      </div>)}
+    </div>
   </>
 }
