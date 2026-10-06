@@ -220,8 +220,8 @@ export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
       <ol className="case__guided-row">
         {(
           [
-            ['guided-woop', g.woopLabel, 'woopLabel'],
             ['guided-models', g.modelsLabel, 'modelsLabel'],
+            ['guided-woop', g.woopLabel, 'woopLabel'],
           ] as const
         ).map(([name, label, field]) => (
           <li key={name}>
