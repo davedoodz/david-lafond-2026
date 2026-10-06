@@ -665,6 +665,7 @@
         ['stagger', 'Text stagger', 0.04, 0.8, 0.01],
         ['spot', 'Bullet spotlight', 0.3, 2.5, 0.05],
         ['gap', 'Next arrow', 0, 3, 0.05],
+        ['bullet', 'Next bullet', 0, 3, 0.05],
         ['speed', 'Flow speed', 0.25, 2, 0.05],
       ]
       // Small motion per bullet icon, played when the bullet takes the spotlight (icon units, 24-grid).
@@ -978,11 +979,11 @@
               }
               if (items.includes(r)) {
                 sched.push(cursor + revealDur)
-                cursor += revealDur + timing.spot
+                cursor += timing.bullet
               } else cursor += timing.stagger
             })
-            // After the intro round, the spotlight cycles through the bullets as before.
-            return { items, sched, cycleFrom: intro && sched.length ? cursor : 0, last: -1 }
+            // The intro ends once the last bullet has lit, even if the next-bullet gap is shorter than a reveal.
+            return { items, sched, cycleFrom: intro && sched.length ? Math.max(cursor, sched[sched.length - 1] + 1) : 0, last: -1 }
           })
           svg.querySelectorAll('.edge:not(.is-on) .lbl-row.is-spot').forEach((r) => r.classList.remove('is-spot'))
           started = performance.now()
@@ -1063,7 +1064,7 @@
           inp.value = k === 'speed' ? timing[k] : timing[k] / 1000
           inp.nextElementSibling.textContent = k === 'speed' ? `${(+timing[k]).toFixed(2)}×` : `${(timing[k] / 1000).toFixed(2)}s`
         })
-        const defaults = () => ({ step: feel.step, draw: feel.draw, text: Math.round(feel.draw * 0.5), stagger: 180, spot: 900, gap: 700, speed: 1 })
+        const defaults = () => ({ step: feel.step, draw: feel.draw, text: Math.round(feel.draw * 0.5), stagger: 180, spot: 900, gap: 700, bullet: 1420, speed: 1 })
         // Saved values are clamped to the slider ranges, so stale or edited storage can't break playback.
         const clampTiming = (saved = {}) => Object.fromEntries(TIMING_FIELDS.map(([k, , min, max]) => {
           const scale = k === 'speed' ? 1 : 1000
