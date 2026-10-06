@@ -105,9 +105,9 @@ export const FLOAT_DIALS = {
   /** Extra distance after the profile chips before the portrait (px). */
   tagsGap: [10, 0, 100, 1] as Tuple,
   /**
-   * Entrance, replayed each time the section comes into view: text block, then the profile pills,
-   * then the portrait; the floating cards start only after the portrait has landed.
-   * Seconds; distance in px.
+   * Entrance, replayed each time the section comes into view. Scrolling down: text block, profile
+   * pills, portrait, then the floating cards. Scrolling up the order reverses: portrait, floating
+   * cards, pills, text block. Seconds; distance in px.
    */
   entrance: {
     text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
@@ -157,19 +157,32 @@ export type Float = {
   entrance?: Entrance
 }
 
-/**
- * Entrance timeline (seconds): text rows, then pills, then the portrait, then the floating cards.
- * Each step waits for the previous one to finish; returns per-element delays and the float start.
- */
 /** Preset name → keyframes name in CaseStudyPage.css (`pe-*`). */
 const kf = (preset: string) => (preset === 'none' ? 'none' : `pe-${preset}`)
 
-function entranceTimeline(e: Entrance, pills: number) {
-  const text = [0, 1, 2].map((i) => i * e.textStagger)
-  const pillsStart = text[2] + e.duration + e.pillsGap
-  const pill = Array.from({ length: pills }, (_, i) => pillsStart + i * e.pillStagger)
-  const image = (pills ? pill[pills - 1] + e.duration : pillsStart) + e.imageGap
-  return { text, pill, image, floats: image + e.duration + e.floatsGap }
+/**
+ * Entrance timeline (seconds). Scrolling down: text rows, pills, portrait, floating cards.
+ * Scrolling up (`reverse`): the section arrives bottom first, so portrait, floating cards,
+ * pills (last first), then text (body, title, eyebrow). `floatsIn` is how long the cards take
+ * to start arriving before the pills follow. Returns per-element delays (text in
+ * eyebrow/title/body order, pills in DOM order).
+ */
+function entranceTimeline(e: Entrance, pills: number, reverse: boolean, floatsIn: number) {
+  const step = (start: number, n: number, stagger: number) => Array.from({ length: n }, (_, i) => start + i * stagger)
+  if (!reverse) {
+    const text = step(0, 3, e.textStagger)
+    const pillsStart = text[2] + e.duration + e.pillsGap
+    const pill = step(pillsStart, pills, e.pillStagger)
+    const image = (pills ? pill[pills - 1] + e.duration : pillsStart) + e.imageGap
+    return { text, pill, image, floats: image + e.duration + e.floatsGap }
+  }
+  const image = 0
+  const floats = image + e.duration + e.floatsGap
+  const pillsStart = floats + floatsIn + e.pillsGap
+  const pill = step(pillsStart, pills, e.pillStagger).reverse()
+  const textStart = (pills ? pill[0] + e.duration : pillsStart) + e.pillsGap
+  const text = step(textStart, 3, e.textStagger).reverse()
+  return { text, pill, image, floats }
 }
 export type Persona = {
   eyebrow: string
@@ -277,20 +290,36 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
   const wasLive = useRef(false)
   const [live, setLive] = useState(false)
   const [floatCycle, setFloatCycle] = useState(0)
+  // True when the section was last entered while scrolling up (it arrives bottom first).
+  const [fromAbove, setFromAbove] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    let lastY = window.scrollY
+    let scrollingUp = false
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y !== lastY) scrollingUp = y < lastY
+      lastY = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
     const observer = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !wasLive.current) setFloatCycle((cycle) => cycle + 1)
-      // Replay the intro entrance (text, pills, portrait) from its first frame on every entry.
-      if (e.isIntersecting && !wasLive.current) el.getAnimations({ subtree: true }).forEach((a) => {
-        if (a instanceof CSSAnimation && a.animationName.startsWith('pe-')) { a.cancel(); a.play() }
-      })
+      if (e.isIntersecting && !wasLive.current) {
+        setFloatCycle((cycle) => cycle + 1)
+        setFromAbove(scrollingUp)
+        // Replay the intro entrance (text, pills, portrait) from its first frame on every entry.
+        el.getAnimations({ subtree: true }).forEach((a) => {
+          if (a instanceof CSSAnimation && a.animationName.startsWith('pe-')) { a.cancel(); a.play() }
+        })
+      }
       wasLive.current = e.isIntersecting
       setLive(e.isIntersecting)
     }, { threshold: 0.1 })
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [])
   const tags = p.tags
     .split(',')
@@ -298,9 +327,11 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
     .filter(Boolean)
   const m = p.moments
   const float = p.float
-  // Entrance: text → pills → portrait → floating cards (see entranceTimeline).
+  // Entrance order follows scroll direction (see entranceTimeline).
   const ent = float?.entrance
-  const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0) : null
+  // Drift starts each card at 0.2s + i × 0.35s (CSS); the looping presets show one card per beat.
+  const floatsIn = float?.preset === 'drift' ? 0.2 + 0.35 * (SCENES.length - 1) : (ent?.duration ?? 0)
+  const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0, fromAbove, floatsIn) : null
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const traitList = (group: 'driven' | 'challenges', items: [string, string][]) => (
     <div className="persona__traits-group">
@@ -339,9 +370,9 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
                 '--pe-image-kf': kf(ent.image),
                 '--pe-dur': `${ent.duration}s`,
                 '--pe-dist': `${ent.distance}px`,
-                '--pe-text-stagger': `${ent.textStagger}s`,
-                '--pe-pills-start': `${timeline.pill[0] ?? 0}s`,
-                '--pe-pill-stagger': `${ent.pillStagger}s`,
+                '--pe-text-0': `${timeline.text[0]}s`,
+                '--pe-text-1': `${timeline.text[1]}s`,
+                '--pe-text-2': `${timeline.text[2]}s`,
                 '--pe-image': `${timeline.image}s`,
                 '--pe-floats': `${timeline.floats}s`,
               }
@@ -376,7 +407,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
               {tags.map((t, i) => {
                 const TagIcon = PROFILE_TAG_ICONS[i]
                 return (
-                  <li key={t} style={{ '--pe-i': i } as CSSProperties}>
+                  <li key={t} style={{ '--pe-delay': `${timeline?.pill[i] ?? 0}s` } as CSSProperties}>
                     {TagIcon && <TagIcon className="persona__tag-icon" size={14} strokeWidth={1.8} aria-hidden="true" />}
                     {t}
                   </li>

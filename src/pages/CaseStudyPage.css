@@ -1629,19 +1629,19 @@ html[data-case-snap] .case__group > * {
 [data-float='still'] .persona__float {
   animation: none;
 }
-/* Persona entrance (float → entrance dials): text rows, then pills, then the portrait.
-   Keyframes and delays come from casePersona's entranceTimeline as --pe-* vars. */
+/* Persona entrance (float → entrance dials): text rows, pills, portrait, floating cards; reversed
+   when scrolled into from below. Keyframes and delays come from casePersona's entranceTimeline as --pe-* vars. */
 .case__persona .persona__who > :is(.eyebrow, .persona__title, .persona__body) {
-  animation: var(--pe-text-kf, none) var(--pe-dur, 0.7s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: var(--pe-text-kf, none) var(--pe-dur, 0.7s) var(--pe-text-0, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .case__persona .persona__who > .persona__title {
-  animation-delay: var(--pe-text-stagger, 0s);
+  animation-delay: var(--pe-text-1, 0s);
 }
 .case__persona .persona__who > .persona__body {
-  animation-delay: calc(var(--pe-text-stagger, 0s) * 2);
+  animation-delay: var(--pe-text-2, 0s);
 }
 .case__persona .persona__tags > li {
-  animation: var(--pe-pills-kf, none) var(--pe-dur, 0.7s) calc(var(--pe-pills-start, 0s) + var(--pe-i, 0) * var(--pe-pill-stagger, 0s)) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: var(--pe-pills-kf, none) var(--pe-dur, 0.7s) var(--pe-delay, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .case__persona .persona__photo {
   animation: var(--pe-image-kf, none) var(--pe-dur, 0.7s) var(--pe-image, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
