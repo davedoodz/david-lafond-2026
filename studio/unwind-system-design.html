@@ -980,7 +980,7 @@
                 glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), delay: cursor, easing: 'ease-in-out' })
               }
               if (items.includes(r)) {
-                sched.push(cursor + revealDur)
+                sched.push(cursor)
                 cursor += timing.bullet
               } else cursor += timing.stagger
             })
@@ -1038,21 +1038,11 @@
             // Arrowheads turn blue only once the flow reaches them.
             f.base.parentNode.classList.toggle('is-live', feel.braid ? !!f.arrived : live)
           }
-          // Spotlight: one bullet at a time turns ink, its icon turns blue and does its small motion.
+          // Each bullet's icon turns blue the moment the bullet starts to appear (its motion is scheduled
+          // with the reveal), and stays blue. Every due bullet is lit, so none is skipped if two start together.
           for (const l of labels) {
-            if (!l.items.length) continue
-            // Each bullet lights up once, as soon as its text is in; there is no repeating cycle.
             if (t >= l.cycleFrom) continue
-            const idx = l.sched.filter((at) => t >= at).length - 1
-            if (idx < 0) continue
-            if (idx === l.last) continue
-            l.items.forEach((r, i) => r.classList.toggle('is-spot', i === idx))
-            l.items[idx].classList.add('is-lit')
-            l.last = idx
-            const glyph = l.items[idx].querySelector('.lbl-glyph')
-            const motion = ICON_MOTION[l.items[idx].dataset.item]
-            // If the icon is still moving from its text reveal, let that motion finish instead of restarting it.
-            if (glyph && motion && !reduceMotion && !glyph.getAnimations().some((a) => a.playState === 'running')) glyph.animate(motion, { duration: Math.min(900, timing.spot * 0.85), easing: 'ease-in-out' })
+            l.items.forEach((r, i) => { if (t >= l.sched[i]) r.classList.add('is-lit') })
           }
           // A step never ends mid-spotlight: the intro round, or one full round for labels already shown.
           const spotEnd = Math.max(0, ...labels.map((l) => l.cycleFrom))
