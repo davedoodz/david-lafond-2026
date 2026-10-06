@@ -12,6 +12,22 @@
   height: 100svh;
   pointer-events: none;
 }
+/* Keep video decoders in the DOM for Safari; only their composited pixels appear in the film. */
+.unwind-intro__decoders {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.unwind-intro__decoders video,
+.unwind-intro__decoders canvas {
+  width: 1px;
+  height: 1px;
+}
 /* While the stage fills the screen, the nav, sidebar and Davebot step back. */
 html[data-unwind-stage] .case__sidebar,
 html[data-unwind-stage] .case .nav {
