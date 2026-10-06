@@ -285,12 +285,12 @@ export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
       <ol className="case__guided-row">
         {(
           [
-            ['guided-cards', g.modelsLabel, 'modelsLabel'],
+            ['guided-select', g.modelsLabel, 'modelsLabel'],
             ['guided-woop', g.woopLabel, 'woopLabel'],
           ] as const
         ).map(([name, label, field], i) => (
           <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
-            <PhoneVideo name={name} className={name === 'guided-cards' ? 'case__phone--bare' : ''} />
+            <PhoneVideo name={name} className={name === 'guided-select' ? 'case__phone--bare' : ''} />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}
