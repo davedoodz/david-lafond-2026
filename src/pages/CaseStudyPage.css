@@ -788,10 +788,9 @@ html[data-case-snap] .case__moment {
   animation: story-sparkle 2.4s ease-in-out infinite;
 }
 @keyframes story-sparkle {
-  0%, 25% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.15); opacity: 1; }
+  0%, 25%, 100% { transform: scale(0.85); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 1; }
   65% { transform: scale(1); opacity: 1; }
-  85%, 100% { transform: scale(0); opacity: 0; }
 }
 /* Stress at the peak: still, then a short tense jolt. */
 [data-story-motion]:not([data-story-motion='off']) .sa-stress {
