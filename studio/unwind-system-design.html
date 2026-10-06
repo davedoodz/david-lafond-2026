@@ -166,6 +166,7 @@
       .story__timing output { font-variant-numeric: tabular-nums; color: var(--ink-900); min-width: 40px; }
       .story__timing button { font: inherit; font-size: 13px; background: none; border: 1px solid var(--stone-400); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
       .story .lbl-glyph { transform-box: fill-box; transform-origin: center; }
+      .story .mic-wave { transform-box: fill-box; transform-origin: center bottom; }
       /* Bullet text keeps one colour; only the icon turns blue (once, then stays: .is-lit). */
       .story .lbl-item text { fill: var(--ink-900); }
       .story .lbl-icon { transition: stroke 0.35s ease; }
@@ -675,7 +676,8 @@
         'movement + activity': [{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }],
         'evidence-based framework': [{ transform: 'scale(1)' }, { transform: 'scale(1.22)' }, { transform: 'scale(1)' }],
         'gentle nudge': [{ transform: 'rotate(0)' }, { transform: 'rotate(-14deg)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(-6deg)' }, { transform: 'rotate(0)' }],
-        'voice reflection': [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }, { transform: 'translateY(-2px)' }, { transform: 'translateY(0)' }],
+        // 'voice': waves are captured at the top of the mic (handled by playIcon).
+        'voice reflection': 'voice',
         // 'stack': the layers drop in one after another, bottom to top (handled by playIcon).
         'user context': 'stack',
         'voice journal': [{ transform: 'rotate(0)' }, { transform: 'rotate(-10deg)' }, { transform: 'rotate(6deg)' }, { transform: 'rotate(0)' }],
@@ -700,6 +702,7 @@
         draw: { name: 'Draw line', frames: 'draw' },
         drawbeat: { name: 'Draw + heartbeat', frames: 'drawbeat' },
         stack: { name: 'Stack up', frames: 'stack' },
+        voice: { name: 'Voice waves', frames: 'voice' },
         none: { name: 'None', frames: null },
       }
 
@@ -839,6 +842,21 @@
               [{ transform: 'translateY(-5px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
               { duration: each * 1.4, delay: delay + i * each, easing: 'cubic-bezier(.2,.8,.3,1.2)', fill: 'backwards' },
             ))
+            return
+          }
+          if (motion === 'voice') {
+            // Sound waves above the mic travel down into it one after another, then are removed.
+            const ns = 'http://www.w3.org/2000/svg'
+            for (let i = 0; i < 3; i++) {
+              const w = document.createElementNS(ns, 'path')
+              w.setAttribute('d', 'M7 -1.5 Q12 -5.5 17 -1.5')
+              w.setAttribute('class', 'mic-wave')
+              glyph.append(w)
+              w.animate(
+                [{ transform: 'translateY(-7px) scale(1.3)', opacity: 0 }, { opacity: 1, offset: 0.35 }, { transform: 'translateY(1px) scale(0.6)', opacity: 0 }],
+                { duration: duration * 0.9, delay: delay + i * duration * 0.3, easing: 'ease-in', fill: 'both' },
+              ).finished.then(() => w.remove(), () => w.remove())
+            }
             return
           }
           if (motion !== 'draw' && motion !== 'drawbeat') return glyph.animate(motion, { duration, delay, easing: 'ease-in-out' })
