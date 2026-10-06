@@ -801,7 +801,8 @@ html[data-case-snap] .case__moment {
   flex: none;
   transform-style: preserve-3d;
 }
-/* Shared rise-on-view (core flows + guided): see useRiseOnView. */
+/* Shared rise-on-view (core flows + guided): see useRiseOnView. Cards slide in from below
+   when the section is reached scrolling down, and from above when reached scrolling up. */
 .case__rise {
   opacity: 0;
   transform: translate3d(0, 60svh, 0);
@@ -829,6 +830,9 @@ html[data-case-snap] .case__moment {
 [data-seen] .case__rise {
   opacity: 1;
   transform: translate3d(0, 0, 0);
+}
+[data-from='above']:not([data-seen], [data-exiting]) .case__rise {
+  transform: translate3d(0, -60svh, 0);
 }
 [data-exiting] .case__rise {
   opacity: 0;

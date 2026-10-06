@@ -117,9 +117,11 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
 }
 
 /**
- * Phones rise into a section once most of it is visible. On the way out they
- * hold in place and fade; the hidden rise position is restored only when the
- * section starts entering again, so every return replays the rise.
+ * Phones slide into a section once most of it is visible: from below when it is
+ * reached scrolling down, from above when reached scrolling up. On the way out they
+ * hold in place and fade. Every entry first snaps the cards (already invisible) to
+ * the start position on the entry side, so a return always slides, never just fades,
+ * even if a fast scroll skips the observer's 0% crossing.
  * Cards opt in with `.case__rise` and a `--i` stagger index.
  */
 function useRiseOnView() {
@@ -131,25 +133,38 @@ function useRiseOnView() {
       el.dataset.seen = ''
       return
     }
+    // Latest scroll direction; the observer reads it when the section enters.
+    let lastY = window.scrollY
+    let scrollingUp = false
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y !== lastY) scrollingUp = y < lastY
+      lastY = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.intersectionRatio >= 0.6) {
-          delete el.dataset.exiting
-          el.dataset.seen = ''
-        } else if ('seen' in el.dataset) {
-          delete el.dataset.seen
-          el.dataset.exiting = ''
-        } else if (entry.isIntersecting && 'exiting' in el.dataset) {
+          if ('seen' in el.dataset) return
+          // Scrolling down means the section arrived from below; up means from above.
+          el.dataset.from = scrollingUp ? 'above' : 'below'
           el.dataset.resetting = ''
           delete el.dataset.exiting
           void el.offsetWidth
           delete el.dataset.resetting
+          el.dataset.seen = ''
+        } else if ('seen' in el.dataset) {
+          delete el.dataset.seen
+          el.dataset.exiting = ''
         }
       },
       { threshold: [0, 0.6] },
     )
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [])
   return ref
 }
