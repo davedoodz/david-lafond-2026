@@ -52,6 +52,8 @@ export type Story = {
   artText?: StoryArtText
   /** Unwind glass art cards (art: 'glass'). */
   glass?: StoryGlass
+  /** Unwind: art and text share a left edge, are centred, or the art spans the text width. */
+  align?: 'left' | 'center' | 'stretch'
 }
 
 type StoryGlass = Required<GlassDials> & { glowBlur: number; radius: number; padding: number }
@@ -117,6 +119,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
       data-section="story"
       data-layout="story"
       data-story-layout={look.layout}
+      data-story-align={s.align}
       data-story-art={look.art}
       data-story-motion={look.motion}
       data-story-reveal={look.reveal}

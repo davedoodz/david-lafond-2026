@@ -257,6 +257,8 @@ export const UNWIND_CONFIG = {
     /** Look presets set art and motion; Layout stays independently adjustable. */
     preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'converge', 'outline', 'minimal', 'columns', 'custom'], default: 'calm cards' },
     layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
+    /** left: art and text share a left edge · center: centred · stretch: art spans the text width, edges aligned both sides. */
+    align: { type: 'select' as const, options: ['left', 'center', 'stretch'], default: 'left' },
     /** glass: the system card's fill + gradient with the glass dials below (story → glass). */
     art: { type: 'select' as const, options: ['glass', 'card', 'line', 'outline', 'none'], default: 'glass' },
     /**

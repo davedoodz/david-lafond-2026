@@ -576,6 +576,28 @@ html[data-case-snap] .case__moment {
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
 }
+/* Alignment (story → align). left: art and text share one left edge; center: everything centred. */
+[data-story-layout='top'][data-story-align='left'] .case__story-cols > li,
+[data-story-layout='bottom'][data-story-align='left'] .case__story-cols > li {
+  grid-template-columns: minmax(0, max(var(--story-art-w, 300px), var(--story-text-w, 460px)));
+  justify-items: start;
+}
+[data-story-align='center'] .case__story-text {
+  justify-items: center;
+  text-align: center;
+}
+/* stretch: the card spans the text column, so both share left and right edges. */
+[data-story-layout='top'][data-story-align='stretch'] .case__story-cols > li,
+[data-story-layout='bottom'][data-story-align='stretch'] .case__story-cols > li {
+  grid-template-columns: minmax(0, var(--story-text-w, 460px));
+  justify-items: stretch;
+}
+[data-story-layout='top'][data-story-align='stretch'] .story-art,
+[data-story-layout='bottom'][data-story-align='stretch'] .story-art,
+[data-story-layout='top'][data-story-align='stretch'] .case__story-text,
+[data-story-layout='bottom'][data-story-align='stretch'] .case__story-text {
+  width: 100%;
+}
 [data-story-layout='left'] .case__story-cols > li,
 [data-story-layout='right'] .case__story-cols > li {
   grid-template-columns: minmax(0, var(--story-art-w, 300px)) minmax(0, var(--story-text-w, 460px));
