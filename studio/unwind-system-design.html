@@ -325,11 +325,38 @@
       const LAYOUT_KEY = LAYOUT_CHOICE === 'auto' ? (portrait.matches ? 'diamond' : 'userTop') : LAYOUT_CHOICE
       if (LAYOUT_CHOICE === 'auto') portrait.addEventListener('change', () => location.reload())
       const LAYOUT = LAYOUTS[LAYOUT_KEY]
-      const { W, H } = LAYOUT
-      const NODES = Object.fromEntries(Object.entries(NODE_INFO).map(([k, n]) => [k, { ...n, x: LAYOUT.nodes[k][0], y: LAYOUT.nodes[k][1] }]))
+      // Spacing: shrink the gap between the devices row and Momo, and between Momo and the experts
+      // (settings.spacing, px in viewBox units). Only the open space between rows compresses; a band
+      // around each row (its node, title and nearby labels) moves rigidly, so nothing distorts.
+      const SPACING = (() => {
+        try {
+          const s = JSON.parse(localStorage.getItem('unwind-system-design:settings'))?.spacing ?? {}
+          return { devices: Math.max(0, +s.devices || 0), experts: Math.max(0, +s.experts || 0) }
+        } catch {
+          return { devices: 0, experts: 0 }
+        }
+      })()
+      const mapY = (() => {
+        // Rigid bands: below a row its node and title (115), above a row its halo (80). Momo → experts
+        // keeps 80 more below Momo, so the framework arrow stays at least ~50 long (shorter, it flips).
+        const BELOW = 115, ABOVE = 80
+        const aiY = LAYOUT.nodes.ai[1], exY = LAYOUT.nodes.experts[1]
+        // The device row next to Momo, on the side away from the experts.
+        const devY = LAYOUT.nodes[['watch', 'phone', 'user'].find((k) => (LAYOUT.nodes[k][1] - aiY) * (exY - aiY) < 0) ?? 'watch'][1]
+        const gaps = [[devY, aiY, SPACING.devices, 0], [aiY, exY, SPACING.experts, 80]]
+          .map(([a, b, d, extra]) => [Math.min(a, b) + BELOW + extra, Math.max(a, b) - ABOVE, d])
+          .map(([lo, hi, d]) => [lo, hi, Math.min(d, Math.max(0, hi - lo - 5))])
+        SPACING.room = gaps.map(([lo, hi]) => Math.max(0, Math.floor((hi - lo - 5) / 5) * 5))
+        SPACING.devices = gaps[0][2]
+        SPACING.experts = gaps[1][2]
+        return (y) => y - gaps.reduce((s, [lo, hi, d]) => s + (y <= lo ? 0 : y >= hi ? d : ((y - lo) / (hi - lo)) * d), 0)
+      })()
+      const W = LAYOUT.W
+      const H = Math.round(mapY(LAYOUT.H))
+      const NODES = Object.fromEntries(Object.entries(NODE_INFO).map(([k, n]) => [k, { ...n, x: LAYOUT.nodes[k][0], y: mapY(LAYOUT.nodes[k][1]) }]))
       const EDGES = EDGE_INFO.map((e, i) => {
         const l = LAYOUT.edges[i]
-        return { ...e, points: l.points, label: { ...l.label, items: e.items } }
+        return { ...e, points: l.points.map(([x, y]) => [x, mapY(y)]), label: { ...l.label, y: mapY(l.label.y), items: e.items } }
       })
 
       // ---------- Options ----------
@@ -750,6 +777,8 @@
             <p class="story__feelnote"></p>
             <label>Layout <select data-act="layout" aria-label="Composition">${[['auto', `Auto (now ${LAYOUTS[LAYOUT_KEY].name})`], ...Object.entries(LAYOUTS).map(([k, l]) => [k, l.name])].map(([k, name]) => `<option value="${k}"${k === LAYOUT_CHOICE ? ' selected' : ''}>${name}</option>`).join('')}</select></label>
             <label>Order <select data-act="order" aria-label="Story order">${Object.entries(ORDERS).map(([k, r]) => `<option value="${k}"${k === ORDER_KEY ? ' selected' : ''}>${r.name}</option>`).join('')}</select></label>
+            <label>Devices ↔ Momo <input type="range" data-spacing="devices" min="0" max="${SPACING.room[0]}" step="5" value="${SPACING.devices}" /><output>−${SPACING.devices}px</output></label>
+            <label>Momo ↔ experts <input type="range" data-spacing="experts" min="0" max="${SPACING.room[1]}" step="5" value="${SPACING.experts}" /><output>−${SPACING.experts}px</output></label>
             <label>Feel <select data-act="feel" aria-label="Flow feel">${Object.entries(FEELS).map(([k, f]) => `<option value="${k}">${f.name}</option>`).join('')}</select></label>
             <button type="button" data-act="play">Pause</button>
           </div>
@@ -1467,6 +1496,15 @@
         setFeel(settings.feel)
         // Layout swaps the node/edge geometry every option is built from, so it applies on reload.
         // Order changes the step list (buttons, per-step settings), so it also applies on reload.
+        // Spacing sliders rebuild the geometry, so they apply on reload once the slider is released.
+        section.querySelectorAll('[data-spacing]').forEach((inp) => {
+          inp.addEventListener('input', () => { inp.nextElementSibling.textContent = `−${inp.value}px` })
+          inp.addEventListener('change', () => {
+            settings.spacing = { ...settings.spacing, [inp.dataset.spacing]: +inp.value }
+            saveSettings()
+            location.reload()
+          })
+        })
         section.querySelector('[data-act="order"]').addEventListener('change', (e) => {
           settings.order = e.target.value
           saveSettings()
@@ -1487,9 +1525,9 @@
         try {
           const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}
           const obj = (v) => (v && typeof v === 'object' ? v : {})
-          return { feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime), iconMotion: obj(s.iconMotion), iconScale: obj(s.iconScale) }
+          return { feel: s.feel, layout: s.layout, order: s.order, arrowOpacity: s.arrowOpacity, timings: obj(s.timings), arrows: obj(s.arrows), look: obj(s.look), labels: obj(s.labels), reveal: obj(s.reveal), waves: obj(s.waves), stepDur: obj(s.stepDur), edgeTime: obj(s.edgeTime), iconMotion: obj(s.iconMotion), iconScale: obj(s.iconScale), spacing: obj(s.spacing) }
         } catch {
-          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {}, iconMotion: {}, iconScale: {} }
+          return { timings: {}, arrows: {}, look: {}, labels: {}, reveal: {}, waves: {}, stepDur: {}, edgeTime: {}, iconMotion: {}, iconScale: {}, spacing: {} }
         }
       })()
       const saveSettings = () => {
