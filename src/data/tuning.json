@@ -452,18 +452,18 @@
       "team": "2 developers, 2 designers, 2 therapists"
     },
     "heroSpacing": {
-      "logosToTitle": 63,
-      "titleToMeta": 23,
+      "logosToTitle": 54,
+      "titleToMeta": 20,
       "y": {
-        "braid": -74,
-        "title": -25,
+        "braid": -86,
+        "title": -24,
         "meta": -23,
-        "logos": -7
+        "logos": -17
       }
     },
     "logos": {
       "placement": "below meta",
-      "height": 41,
+      "height": 39,
       "gap": 27,
       "offset": 28
     },
@@ -591,10 +591,10 @@
     }
   },
   "Momo welcome": {
-    "blackOverlay": 0.13,
+    "blackOverlay": 0.09,
     "prototypeWidth": 290,
     "buttons": {
-      "style": "tinted"
+      "style": "frosted"
     },
     "rise": {
       "distance": 120,
@@ -609,15 +609,15 @@
     "timing": {
       "fullLoopDuration": 8.5,
       "shadeAt": 0,
-      "shadeIn": 1.5,
-      "shadeOut": 0.1,
+      "shadeIn": 2.5,
+      "shadeOut": 2.5,
       "momoAt": 0,
       "logoAt": 0.25,
       "buttonsAt": 0.85,
       "legalAt": 1.2,
-      "fadeIn": 1.6,
-      "holdUntil": 6.6,
-      "fadeOut": 1.65
+      "fadeIn": 1.95,
+      "holdUntil": 7.7,
+      "fadeOut": 2
     },
     "momo": {
       "size": 71,
