@@ -98,7 +98,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     let vw = 0, vh = 0, dpr = 1, filmDpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
     let ready = false, disposed = false, playing = false, armed = true
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
-    let interrupted = false, enteredStage = false, handedOff = false
+    let interrupted = false, enteredStage = false, handedOff = false, handoffCancelled = false, handoffSettled = false
     let sequenceIndex = 0, sequenceTime = 0
     let sequenceDurations = tRef.current.timingSeconds
     const completeHandoff = () => {
@@ -158,7 +158,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     }
     const start = () => {
       if (!ready) return
-      playing = true; armed = false; time = 0; handoffY = null; interrupted = false; handedOff = false
+      playing = true; armed = false; time = 0; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
       sequenceIndex = 0; sequenceTime = 0
       for (const video of videos) video.currentTime = 0
       sequenceDurations = { ...tRef.current.timingSeconds }
@@ -166,7 +166,12 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       setReplayable(false)
       cbRef.current.onStart?.()
     }
-    const interrupt = () => { interrupted = true }
+    const interrupt = (event: Event) => {
+      interrupted = true
+      // Wheel/touch is an explicit takeover. A key event may come from DialKit or another
+      // control without moving the page, so it must not cancel the automatic handoff.
+      if (event.type !== 'keydown' && handoffY !== null && !handoffSettled) handoffCancelled = true
+    }
     const frame = (now: number) => {
       raf = 0
       if (disposed) return
@@ -196,13 +201,20 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
           const from = sequenceIndex ? SEQUENCES[sequenceIndex - 1].end : 0
           time = from + (sequence.end - from) * sequenceTime / sequenceDurations[sequence.key]
         }
-        // An input event alone must not strand the viewer on the empty stage.
-        // Only honor interruption when they have actually scrolled into the case study.
-        if (time >= PHONE_TIMELINE.calm && s.returnToHero && (!interrupted || p > 0)) {
+        // Start one browser-native smooth scroll. Calling scrollTo on every animation frame
+        // forced layout, every scroll listener and both canvas painters to compete in one task.
+        // Keyboard input without actual scrolling must not strand the viewer on the stage.
+        const userScrolledBeforeHandoff = interrupted && p <= .03
+        if (time >= PHONE_TIMELINE.calm && s.returnToHero && handoffY === null && !userScrolledBeforeHandoff) {
           interrupted = false
-          handoffY ??= window.scrollY
-          const k = smooth(clamp((time - PHONE_TIMELINE.calm) / (PHONE_TIMELINE.hero - PHONE_TIMELINE.calm)))
-          window.scrollTo({ top: handoffY + (landingY - handoffY) * k, behavior: 'instant' })
+          handoffY = window.scrollY
+          window.scrollTo({ top: landingY, behavior: 'smooth' })
+        }
+        // Settle browser rounding once, in the same frame that the live phone begins rising.
+        // A wheel/touch/key interruption cancels this snap and preserves the user's position.
+        if (time >= PHONE_TIMELINE.hero && handoffY !== null && !handoffCancelled && !handoffSettled) {
+          handoffSettled = true
+          window.scrollTo({ top: landingY, behavior: 'instant' })
           p = progress()
         }
         // The visual handoff is complete when the braid reaches its hero slot. Reveal the
@@ -212,7 +224,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const ending = playing ? smooth(clamp((time - PHONE_TIMELINE.hero + .35) / .35)) : 1
-      const filmAlpha = playing ? (handoffY !== null && !interrupted ? 1 : smooth(p)) : 0
+      const filmAlpha = playing ? (handoffY !== null && !handoffCancelled ? 1 : smooth(p)) : 0
       syncMomo(playing && !document.hidden && filmAlpha > .001 && time >= PHONE_TIMELINE.ask && time < PHONE_TIMELINE.calm + 1)
       momoFrames.awake = videos[0].readyState >= 2 && canvases[0].width > 1 ? canvases[0] : undefined
       momoFrames.asleep = videos[1].readyState >= 2 && canvases[1].width > 1 ? canvases[1] : undefined
