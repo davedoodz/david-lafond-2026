@@ -715,10 +715,13 @@ html[data-case-snap] .case__moment {
   justify-content: flex-start;
   gap: 0;
   padding: clamp(74px, 7.5svh, 90px) var(--case-frame-edge) clamp(34px, 4svh, 48px);
+  /* The section clips so the phones rise out of its bottom edge, but the phone
+     shadows must pass that edge or they end in a hard line on short screens. */
+  overflow-clip-margin: 96px;
 }
 .case__flows .case__phone {
   height: 522px;
-  filter: drop-shadow(0 30px 40px rgb(23 23 23 / 0.24));
+  filter: drop-shadow(0 22px 30px rgb(23 23 23 / 0.2));
 }
 .case__flows-head {
   display: grid;
@@ -794,7 +797,7 @@ html[data-case-snap] .case__moment {
   transform: translateX(-33.6px) rotateY(-22deg);
 }
 .case__flows .lock {
-  filter: drop-shadow(0 30px 40px rgb(23 23 23 / 0.26));
+  filter: drop-shadow(0 22px 30px rgb(23 23 23 / 0.22));
 }
 
 /* Lock screen with a live notification. */
