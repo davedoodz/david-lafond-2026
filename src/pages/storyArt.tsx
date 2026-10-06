@@ -55,15 +55,18 @@ function Watch({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M-9 -15 l2 -8 h14 l2 8 M-9 15 l2 8 h14 l2 -8" />
-      <rect x={-14} y={-15} width={28} height={30} rx={8} />
-      <path
-        className="sa-b sa-draw"
-        pathLength={1}
-        d="M-9 1 h5 l2 -5 l3 9 l3 -10 l2 5 h4"
-        stroke={BLUE}
-        strokeWidth={1.8}
-      />
+      {/* Inner group carries the motion; the outer group's transform attribute places it. */}
+      <g className="sa-icon sa-watch">
+        <path d="M-9 -15 l2 -8 h14 l2 8 M-9 15 l2 8 h14 l2 -8" />
+        <rect x={-14} y={-15} width={28} height={30} rx={8} />
+        <path
+          className="sa-b sa-draw sa-beat"
+          pathLength={1}
+          d="M-9 1 h5 l2 -5 l3 9 l3 -10 l2 5 h4"
+          stroke={BLUE}
+          strokeWidth={1.8}
+        />
+      </g>
     </g>
   );
 }
@@ -76,8 +79,10 @@ function Phone({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
       strokeWidth={2.2}
       strokeLinecap="round"
     >
-      <rect x={-12} y={-21} width={24} height={42} rx={6} />
-      <path d="M-4 -16 h8" />
+      <g className="sa-icon sa-phone">
+        <rect x={-12} y={-21} width={24} height={42} rx={6} />
+        <path d="M-4 -16 h8" />
+      </g>
     </g>
   );
 }

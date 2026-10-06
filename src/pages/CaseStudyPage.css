@@ -744,11 +744,48 @@ html[data-case-snap] .case__moment {
 [data-story-motion='off'] .sa-ping {
   animation: none;
 }
-[data-story-motion='pulse'] :is(.sa-spark, .sa-bars line) {
-  animation: story-breathe 2.4s calc(var(--i, 0) * 0.15s) ease-in-out infinite;
+[data-story-motion='pulse'] .sa-spark {
+  animation: story-breathe 2.4s ease-in-out infinite;
 }
-[data-story-motion='draw'] .sa-bars line {
-  animation: story-breathe 1.8s calc(var(--i, 0) * 0.12s) ease-in-out infinite;
+/* Icons loop whenever motion is on (transform and opacity only):
+   watch beats like a pulse, phone buzzes, voice bars speak, spark twinkles. */
+.case__story :is(.sa-icon, .sa-bars line, .sa-spark) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+[data-story-motion]:not([data-story-motion='off']) .sa-watch {
+  animation: story-heartbeat 1.6s ease-in-out infinite;
+}
+[data-story-motion]:not([data-story-motion='off']) .sa-phone {
+  animation: story-buzz 3.2s ease-in-out infinite;
+}
+[data-story-motion]:not([data-story-motion='off']) .sa-bars line {
+  animation: story-speak 1.1s calc(var(--i, 0) * -0.17s) ease-in-out infinite;
+}
+[data-story-motion='draw'] .sa-spark {
+  animation: story-twinkle 3s ease-in-out infinite;
+}
+@keyframes story-heartbeat {
+  0%, 40%, 100% { transform: scale(1); }
+  10% { transform: scale(1.08); }
+  20% { transform: scale(1); }
+  30% { transform: scale(1.05); }
+}
+@keyframes story-buzz {
+  0%, 62%, 100% { transform: rotate(0); }
+  66% { transform: rotate(-7deg); }
+  70% { transform: rotate(7deg); }
+  74% { transform: rotate(-5deg); }
+  78% { transform: rotate(5deg); }
+  82% { transform: rotate(0); }
+}
+@keyframes story-speak {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.45); }
+}
+@keyframes story-twinkle {
+  0%, 100% { transform: scale(1) rotate(0); opacity: 1; }
+  50% { transform: scale(1.18) rotate(45deg); opacity: 0.75; }
 }
 @keyframes story-draw {
   from { stroke-dashoffset: 1; }
