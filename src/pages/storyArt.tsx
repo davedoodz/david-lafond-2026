@@ -217,9 +217,11 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?
         strokeLinecap="round"
       />
       {label(88, 20, text.problemMoment, STONE, "end")}
-      <Stress x={104} y={16} icon={peakIcon} />
-      {/* After the curve: the dotted line draws up from the curve, then the phone appears. */}
-      <Wipe box={[194, 58, 12, 74]} from="up" at={1.6}>
+      <g className="sa-after" style={{ "--at": "1.6s" } as CSSProperties}>
+        <Stress x={104} y={16} icon={peakIcon} />
+      </g>
+      {/* After the curve: the peak icon pops, then the dotted line draws up, then the phone appears. */}
+      <Wipe box={[194, 58, 12, 74]} from="up" at={2.1}>
         <path
           d="M200 128 V62"
           stroke={INK}
@@ -228,7 +230,7 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?
           strokeLinecap="round"
         />
       </Wipe>
-      <g className="sa-after sa-after--rise" style={{ "--at": "2.2s" } as CSSProperties}>
+      <g className="sa-after sa-after--rise" style={{ "--at": "2.7s" } as CSSProperties}>
         <Phone x={200} y={38} s={0.8} />
       </g>
       {label(200, 154, text.problemOpened, INK)}
