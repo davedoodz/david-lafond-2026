@@ -659,6 +659,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
     root.append(section)
 
     const svg = section.querySelector('svg')
+    if (sequence) svg.querySelector(':scope > rect')?.setAttribute('fill', 'transparent')
     const layer = svg.querySelector('.story-flow')
     const revealSelect = section.querySelector('[data-act="reveal"]')
     const waveToggle = section.querySelector('[data-act="wave"]')
@@ -709,17 +710,18 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
     }
     function playIcon(glyph, motion, delay = 0) {
       glyph.getAnimations({ subtree: true }).forEach((a) => a.cancel())
-      if (!motion || reduceMotion) return
+      if (!motion || reduceMotion) return delay
       const duration = timing.spot * 0.85
+      const repeats = 2
       if (motion === 'stack') {
         // Lowest layer first: each drops a little and fades in, then the next lands on top.
         const layers = [...glyph.querySelectorAll('path, polyline, rect, circle')].sort((a, b) => b.getBBox().y - a.getBBox().y)
         const each = duration / Math.max(1, layers.length) * 1.2
         layers.forEach((p, i) => p.animate(
           [{ transform: 'translateY(-5px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
-          { duration: each * 1.4, delay: delay + i * each, easing: 'cubic-bezier(.2,.8,.3,1.2)', fill: 'backwards' },
+          { duration: each * 1.4, delay: delay + i * each, iterations: repeats, easing: 'cubic-bezier(.2,.8,.3,1.2)', fill: 'backwards' },
         ))
-        return
+        return delay + (layers.length - 1) * each + each * 1.4 * repeats
       }
       if (motion === 'voice') {
         // Sound waves above the mic travel down into it one after another, then are removed.
@@ -731,14 +733,14 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
           glyph.append(w)
           w.animate(
             [{ transform: 'translateY(-7px) scale(1.3)', opacity: 0 }, { opacity: 1, offset: 0.35 }, { transform: 'translateY(1px) scale(0.6)', opacity: 0 }],
-            { duration: duration * 0.9, delay: delay + i * duration * 0.3, easing: 'ease-in', fill: 'both' },
+            { duration: duration * 0.9, delay: delay + i * duration * 0.3, iterations: repeats, easing: 'ease-in', fill: 'both' },
           ).finished.then(() => w.remove(), () => w.remove())
         }
-        return
+        return delay + duration * 0.6 + duration * 0.9 * repeats
       }
       if (motion === 'shine') {
         // The bulb grows, then three rays flash out from its top and fade; rays are temporary paths.
-        glyph.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)', offset: 0.5 }, { transform: 'scale(1)' }], { duration, delay, easing: 'ease-in-out' })
+        glyph.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)', offset: 0.5 }, { transform: 'scale(1)' }], { duration, delay, iterations: repeats, easing: 'ease-in-out' })
         const ns = 'http://www.w3.org/2000/svg'
         for (const d of ['M12 -2.6 V-5.4', 'M5.6 -0.4 L3.8 -2.2', 'M18.4 -0.4 L20.2 -2.2']) {
           const ray = document.createElementNS(ns, 'path')
@@ -747,28 +749,33 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
           glyph.append(ray)
           ray.animate(
             [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: 0.3 }, { transform: 'scale(1)', opacity: 1, offset: 0.75 }, { transform: 'scale(1)', opacity: 0 }],
-            { duration: duration * 1.4, delay: delay + duration * 0.45, easing: 'ease-out', fill: 'both' },
+            { duration: duration * 1.4, delay: delay + duration * 0.45, iterations: repeats, easing: 'ease-out', fill: 'both' },
           ).finished.then(() => ray.remove(), () => ray.remove())
         }
-        return
+        return delay + duration * 0.45 + duration * 1.4 * repeats
       }
       if (motion !== 'draw' && motion !== 'drawbeat') {
         // Ring lines (the bell's side arcs) are visible only while the icon moves.
         glyph.querySelectorAll('.ring-line').forEach((p) => p.animate(
           [{ opacity: 0 }, { opacity: 1, offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }],
-          { duration, delay, easing: 'linear' },
+          { duration, delay, iterations: repeats, easing: 'linear' },
         ))
-        return glyph.animate(motion, { duration, delay, easing: 'ease-in-out' })
+        glyph.animate(motion, { duration, delay, iterations: repeats, easing: 'ease-in-out' })
+        return delay + duration * repeats
       }
       const line = [...glyph.querySelectorAll('path, polyline')].pop()
-      if (!line) return
+      if (!line) return delay
       line.setAttribute('pathLength', '1')
       // Draw left to right whatever direction the path was authored in (a negative offset reveals from its end).
       const total = line.getTotalLength()
       const from = line.getPointAtLength(0).x > line.getPointAtLength(total).x ? -1 : 1
-      line.animate([{ strokeDasharray: 1, strokeDashoffset: from }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: duration * 1.3, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' })
-      // Then a heartbeat: two quick pulses once the line is drawn.
-      if (motion === 'drawbeat') glyph.animate(MOTIONS.heartbeat.frames, { duration: duration * 1.1, delay: delay + duration * 1.3, easing: 'ease-in-out' })
+      line.animate([{ strokeDasharray: 1, strokeDashoffset: from }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: duration * 1.3, delay, iterations: repeats, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' })
+      // Then a heartbeat: two quick pulses after each line draw.
+      if (motion === 'drawbeat') {
+        glyph.animate(MOTIONS.heartbeat.frames, { duration: duration * 1.1, delay: delay + duration * 1.3, iterations: repeats, easing: 'ease-in-out' })
+        return delay + duration * 1.3 + duration * 1.1 * repeats
+      }
+      return delay + duration * 1.3 * repeats
     }
     // Size uses the CSS `scale` property, so it stacks with the motion's `transform` keyframes.
     const applyIconScales = () => svg.querySelectorAll('.lbl-item').forEach((r) => {
@@ -981,6 +988,7 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
         // One bullet at a time: its text and icon appear, its icon gets the blue spotlight,
         // and only after that spotlight does the next bullet appear.
         const sched = []
+        const motionEnds = []
         let cursor = delay + timing.text
         rows.forEach((r) => {
           r.getAnimations().forEach((a) => a.cancel())
@@ -990,14 +998,14 @@ export async function mountUnwindSystem(root, { mode = 'embed', narrow = false, 
           r.classList.remove('is-lit')
           r.animate(REVEALS[reveal].frames, { duration: revealDur, delay: cursor, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' })
           const glyph = r.querySelector('.lbl-glyph')
-          if (glyph) playIcon(glyph, motionFor(r.dataset.item), cursor)
+          if (glyph) motionEnds.push(playIcon(glyph, motionFor(r.dataset.item), cursor))
           if (items.includes(r)) {
             sched.push(cursor)
             cursor += timing.bullet
           } else cursor += timing.stagger
         })
-        // The intro ends once the last bullet has lit, even if the next-bullet gap is shorter than a reveal.
-        return { items, sched, cycleFrom: intro && sched.length ? Math.max(cursor, sched[sched.length - 1] + 1) : 0, last: -1 }
+        // The step ends only after every newly shown icon has completed both motion passes.
+        return { items, sched, cycleFrom: intro && sched.length ? Math.max(cursor, sched[sched.length - 1] + 1, ...motionEnds) : 0, last: -1 }
       })
       svg.querySelectorAll('.edge:not(.is-on) .lbl-row.is-spot').forEach((r) => r.classList.remove('is-spot'))
       // Earlier steps' bullets count as done, even if a step was skipped to get here.

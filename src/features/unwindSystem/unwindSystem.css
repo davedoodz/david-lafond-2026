@@ -1,16 +1,69 @@
 /* Unwind system diagram (mountUnwindSystem.js). Shared by the studio and the case study embed. */
 /* The whole figure always fits the screen: width is capped so its height never exceeds the viewport. */
 .story > svg { display: block; width: min(100%, calc((100svh - 24px) * var(--ar, 1.5))); height: auto; margin-inline: auto; }
-/* Case-study Full loop: fill the media column while retaining the studio's exact story geometry. */
+/* Case-study sequence card: the Momo lockup and diagram share one tunable filled surface. */
 .unwind-system {
+  position: relative;
+  isolation: isolate;
   width: min(100%, 1200px);
+  padding: clamp(28px, 4vw, 56px);
+  box-sizing: border-box;
+  display: grid;
+  gap: clamp(12px, 2vw, 28px);
   justify-self: center;
-  --ink-900: #171717;
-  --stone-600: #6f6b68;
-  --stone-400: #a6a09c;
-  --unwind: #53bffe;
+  --ink-900: var(--system-card-ink, #fff);
+  --stone-600: var(--system-card-muted, rgb(255 255 255 / 0.68));
+  --stone-400: var(--system-card-muted, rgb(255 255 255 / 0.68));
+  --unwind: var(--system-card-accent, #fff);
 }
-.unwind-system > div, .unwind-system .story { width: 100%; }
+.unwind-system::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--system-card-fill, #53bffe);
+  border-radius: var(--system-card-radius, 48px);
+  opacity: var(--system-card-opacity, 1);
+  scale: var(--system-card-scale-x, 1) var(--system-card-scale-y, 1);
+  transform-origin: center;
+}
+.unwind-system__brand {
+  position: relative;
+  z-index: 1;
+  width: min(38%, 300px);
+  min-width: 170px;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.unwind-system__mark {
+  width: 31%;
+  height: auto;
+  flex: none;
+  translate: var(--system-logo-x, 0) var(--system-logo-y, 0);
+  scale: var(--system-logo-scale, 1);
+  transform-origin: center;
+}
+.unwind-system__type {
+  width: 62%;
+  aspect-ratio: 509 / 154;
+  flex: none;
+  background: var(--system-card-accent, #fff);
+  translate: var(--system-text-x, 0) var(--system-text-y, 0);
+  scale: var(--system-text-scale, 1);
+  transform-origin: center;
+  -webkit-mask: url('/work/unwind/hero/momo-type.png') center / contain no-repeat;
+  mask: url('/work/unwind/hero/momo-type.png') center / contain no-repeat;
+}
+.unwind-system__diagram { position: relative; z-index: 1; }
+.unwind-system__diagram, .unwind-system .story { width: 100%; }
+.unwind-system .story text { fill: var(--system-card-ink); }
+.unwind-system .story .edge__line { stroke: var(--system-card-ink); }
+.unwind-system .story .edge > path:not(.edge__line):not([fill='none']) { fill: var(--system-card-ink); }
+.unwind-system .story .node__halo { fill: var(--system-icon-circle, #fff); }
 /* The embed keeps the studio controls in the DOM, hidden; their display rules must not show them. */
 .story [hidden] { display: none !important; }
 /* Step focus: current arrows full, earlier steps dimmed (--past-op), later hidden. Idle actors use --idle-op. */

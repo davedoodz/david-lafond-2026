@@ -228,9 +228,11 @@ export const UNWIND_CONFIG = {
     offset: [24, 0, 160, 1] as Tuple,
     x: [0, -400, 400, 1] as Tuple,
     opacity: [0.85, 0.2, 1, 0.05] as Tuple,
+    hoverColor: { type: 'color' as const, default: '#53bffe' },
+    hoverOpacity: [0.85, 0, 1, 0.05] as Tuple,
     /** Harvard's shield reads smaller; scale it against the others. */
     harvardScale: [1, 0.5, 2, 0.05] as Tuple,
-    _collapsed: true,
+    _collapsed: false,
   },
   overview: sectionDials({
     eyebrow: 'Overview',

@@ -417,6 +417,7 @@ html[data-case-snap] .case__moment {
   translate: var(--logo-x) var(--logo-y, 0px);
 }
 .case__logos a {
+  position: relative;
   display: block;
   border-radius: 8px;
   transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
@@ -424,24 +425,35 @@ html[data-case-snap] .case__moment {
 .case__logos img {
   display: block;
   width: auto;
-  transition: filter 220ms ease, opacity 220ms ease;
+}
+.case__logos a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--logo-hover-color, #53bffe);
+  -webkit-mask: var(--logo-mask) center / contain no-repeat;
+  mask: var(--logo-mask) center / contain no-repeat;
+  opacity: 0;
+  filter: drop-shadow(0 0 9px var(--logo-hover-color, #53bffe));
+  mix-blend-mode: screen;
+  transition: opacity 220ms ease;
 }
 @media (hover: hover) and (pointer: fine) {
   .case__logos a:hover { transform: translateY(-2px) scale(1.025); }
-  .case__logos a:hover img {
-    filter: brightness(0) saturate(100%) invert(70%) sepia(85%) saturate(1300%) hue-rotate(168deg) brightness(103%) contrast(101%) drop-shadow(0 0 9px rgb(83 191 254 / .7));
-  }
+  .case__logos a:hover img { opacity: 1; }
+  .case__logos a:hover::after { opacity: var(--logo-hover-opacity, .85); }
 }
 .case__logos a:focus-visible {
-  outline: 2px solid #53bffe;
+  outline: 2px solid var(--logo-hover-color, #53bffe);
   outline-offset: 6px;
 }
-.case__logos a:focus-visible img {
-  filter: brightness(0) saturate(100%) invert(70%) sepia(85%) saturate(1300%) hue-rotate(168deg) brightness(103%) contrast(101%) drop-shadow(0 0 9px rgb(83 191 254 / .7));
-}
+.case__logos a:focus-visible img { opacity: 1; }
+.case__logos a:focus-visible::after { opacity: var(--logo-hover-opacity, .85); }
 @media (prefers-reduced-motion: reduce) {
   .case__logos a,
-  .case__logos img { transition: none; }
+  .case__logos img,
+  .case__logos a::after { transition: none; }
   .case__logos a:hover { transform: none; }
 }
 .case__logos[data-placement='below meta'] {

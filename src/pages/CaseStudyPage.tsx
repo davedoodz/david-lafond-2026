@@ -4,7 +4,7 @@ import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
 import { BackLink, Nav } from '../components/Nav'
 import type { Work } from '../data/works'
-import { UnwindIntro } from '../features/unwindIntro/UnwindIntro'
+import { UNWIND_BRAID_LAYOUT_EVENT, UnwindIntro } from '../features/unwindIntro/UnwindIntro'
 import { MomoWelcome } from '../features/unwindIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { UnwindSystemFigure } from '../features/unwindSystem/UnwindSystemFigure'
@@ -28,7 +28,7 @@ const PANELS = {
 } as const
 
 type Media = { video: string; placeholder?: string; figure: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
-type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; harvardScale: number }
+type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; hoverColor: string; hoverOpacity: number; harvardScale: number }
 
 const LOGOS = [
   { src: '/work/unwind/logos/media-lab.svg', alt: 'MIT Media Lab', href: 'https://www.media.mit.edu/', harvard: false },
@@ -65,10 +65,17 @@ function LogoRow({ l }: { l: Logos }) {
     <div
       className="case__logos"
       data-placement={l.placement}
-      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, opacity: l.opacity } as CSSProperties}
+      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, '--logo-hover-color': l.hoverColor, '--logo-hover-opacity': l.hoverOpacity, opacity: l.opacity } as CSSProperties}
     >
       {LOGOS.map((logo) => (
-        <a key={logo.src} href={logo.href} target="_blank" rel="noreferrer" aria-label={`Visit ${logo.alt} website (opens in a new tab)`}>
+        <a
+          key={logo.src}
+          href={logo.href}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Visit ${logo.alt} website (opens in a new tab)`}
+          style={{ '--logo-mask': `url("${logo.src}")` } as CSSProperties}
+        >
           <img src={logo.src} alt="" style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
         </a>
       ))}
@@ -332,6 +339,11 @@ export function CaseStudyPage({ id }: Props) {
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
+  // The intro draws the braid on a fixed canvas and caches the slot coordinates.
+  // A translated slot does not trigger ResizeObserver, so tell it to remeasure after this dial moves.
+  useLayoutEffect(() => {
+    if (id === 'unwind') window.dispatchEvent(new Event(UNWIND_BRAID_LAYOUT_EVENT))
+  }, [id, heroSpacing?.y.braid])
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
   useLayoutEffect(() => {
@@ -435,6 +447,7 @@ export function CaseStudyPage({ id }: Props) {
     if (id === 'filo' && key === 'principles') return <PrinciplesSection key={key} f={fields} edit={edit} />
     const hasDemo = s.media.figure === 'notification'
     const hasFigure = ['flow', 'system', 'vision', 'signals'].includes(s.media.figure)
+    const isSystem = s.media.figure === 'system'
     const hasPlaceholder = !hasFigure && !hasDemo && s.media.video === 'placeholder'
     const hasVideo = !hasFigure && !hasDemo && !hasPlaceholder && s.media.video !== 'none'
     return (
@@ -460,8 +473,10 @@ export function CaseStudyPage({ id }: Props) {
               : {}),
           } as CSSProperties
         }
-        aria-labelledby={`case-${key}`}
+        aria-labelledby={isSystem ? undefined : `case-${key}`}
+        aria-label={isSystem ? 'Momo system design' : undefined}
       >
+        {!isSystem && (
         <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
           {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
@@ -505,6 +520,7 @@ export function CaseStudyPage({ id }: Props) {
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
+        )}
         {isHero && id === 'unwind' ? (
           <div className="case__devices">
             <MomoWelcome active={!intro} />

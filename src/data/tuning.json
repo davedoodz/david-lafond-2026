@@ -455,7 +455,7 @@
       "logosToTitle": 54,
       "titleToMeta": 20,
       "y": {
-        "braid": -86,
+        "braid": -56,
         "title": -24,
         "meta": -23,
         "logos": -17
@@ -481,6 +481,7 @@
     },
     "persona": {
       "body": "Generally independent and capable, but prone to stress, rumination and replaying difficult moments. They want a private, low-friction emotional outlet.",
+      "align": "center",
       "image": "bottom",
       "blockGap": 100,
       "moments": {
@@ -498,6 +499,15 @@
         "bodyGap": 22,
         "tagsGap": 40
       }
+    },
+    "system": {
+      "align": "center"
+    },
+    "dynamic": {
+      "align": "center"
+    },
+    "outcomes": {
+      "align": "center"
     }
   },
   "Nav Momo": {
@@ -634,6 +644,14 @@
   },
   "Unwind system sequence": {
     "sequenceSpeed": 1.3,
-    "motionSpeed": 1.3
+    "motionSpeed": 1.3,
+    "card": {
+      "radius": 27,
+      "fill": "#006d9e"
+    },
+    "momoLockup": {
+      "y": -21,
+      "scale": 0.76
+    }
   }
 }

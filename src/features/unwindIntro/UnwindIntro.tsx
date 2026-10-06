@@ -6,6 +6,7 @@ import { stackedAlpha } from '../../lib/stackedAlpha'
 import './unwindIntro.css'
 
 type Tuple = [number, number, number, number]
+export const UNWIND_BRAID_LAYOUT_EVENT = 'unwind-braid-layout'
 const MOMO_CLIPS = ['listening', 'floating'] as const
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 const smooth = (v: number) => v * v * (3 - 2 * v)
@@ -266,6 +267,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     document.addEventListener('click', onClick)
     window.addEventListener('scroll', wake, { passive: true })
     window.addEventListener('resize', measure)
+    window.addEventListener(UNWIND_BRAID_LAYOUT_EVENT, measure)
     window.addEventListener('wheel', interrupt, { passive: true })
     window.addEventListener('touchstart', interrupt, { passive: true })
     window.addEventListener('keydown', interrupt)
@@ -278,6 +280,7 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
       disposed = true; cancelAnimationFrame(raf); ro.disconnect()
       syncMomo(false); stopDecoders.forEach(stop => stop())
       window.removeEventListener('scroll', wake); window.removeEventListener('resize', measure)
+      window.removeEventListener(UNWIND_BRAID_LAYOUT_EVENT, measure)
       window.removeEventListener('wheel', interrupt); window.removeEventListener('touchstart', interrupt)
       window.removeEventListener('keydown', interrupt); document.removeEventListener('visibilitychange', visibility)
       root.removeAttribute('data-unwind-stage'); replayRef.current = () => {}
