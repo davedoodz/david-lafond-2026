@@ -352,8 +352,12 @@ function film(V) {
       const z = 1 + lerp(0.6, 0.6 + D.island.zoom * Math.min(1, 196 / IH), atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards + 0.4 * inAsk
       const wsum = inLock + inTalk + inCards + inAsk, focus = (scr.y + lockY * u) * inLock + (scr.y + 560 * u) * inTalk + (scr.y + 330 * u) * inCards + (scr.y + 400 * u) * inAsk
       const fx = 480, fy = lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
-      const view = (c) => { c.translate(480, 270); c.scale(z, z); c.translate(-fx, -fy) }
-      const cx = (x) => (x - fx) * z + 480, cy = (y) => (y - fy) * z + 270
+      // One camera offset moves bezel, screen, voice band and taps together. Blend by the
+      // existing camera weights, so repeated lock-screen sequences share one framing dial.
+      const pos = a.phonePosition
+      const offsetY = lerp(pos.lockScreenY, pos.signalCheckY, atIsland) * inLock + pos.reflectionChoiceY * inAsk + pos.voiceReflectionY * inTalk
+      const view = (c) => { c.translate(480, 270 + offsetY); c.scale(z, z); c.translate(-fx, -fy) }
+      const cx = (x) => (x - fx) * z + 480, cy = (y) => (y - fy) * z + 270 + offsetY
 
       // The braid is their voice: it appears only once they talk, then opens into the calm line.
       const rt = voiceClock(t)
@@ -362,7 +366,7 @@ function film(V) {
       let p = { x: 480 + B.x * u, y: scr.y + scr.h * 0.9 + B.y * u, len: scr.w * 0.8 * B.len * B.scale, sc: 0.3 * B.scale }
       if (HO === 'fade' || HO === 'dissolve') p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
       const target = a.braidTarget ?? { x: 480, y: 45.3, width: 187 }
-      p = mix(p, { x: (target.x - 480) / z + fx, y: (target.y - 270) / z + fy, len: target.width / z, sc: .336 }, S(t, T.calm + 0.6, T.hero))
+      p = mix(p, { x: (target.x - 480) / z + fx, y: (target.y - 270 - offsetY) / z + fy, len: target.width / z, sc: .336 }, S(t, T.calm + 0.6, T.hero))
       const speech = 0.45 + 0.4 * Math.abs(Math.sin(t * 7.3) * Math.sin(t * 2.9 + 1))
       const bAlpha = S(t, T.voice - 0.1, T.voice + 0.5) * (1-S(t,T.hero-.35,T.hero)), flat = lerp(0.1, 1, live(t)), env = lerp(0, lerp(lerp(0.85 + 0.15 * hb, 0.12, calm), speech, talking * 0.8), live(t))
       a.draw((c) => {
@@ -501,9 +505,9 @@ function film(V) {
 const V = {m0:884,m1:887,base:[64,78],stillSince:879,day:true,checks:true,style:'pending',hr:m=>79+24*S(m,885,886)+noise(m),hrv:m=>lerp(52,28,S(m,885.3,886.5)),move:()=>3}
 export const PHONE_TIMELINE = timeline()
 const cut = film(V)
-export function drawPhoneFilm(ctx,t,m,braidTarget) {
+export function drawPhoneFilm(ctx,t,m,braidTarget,phonePosition) {
   const under=[], ink=[]
-  cut.draw({t,braidTarget,under:fn=>under.push(fn),draw:fn=>ink.push(fn)})
+  cut.draw({t,braidTarget,phonePosition,under:fn=>under.push(fn),draw:fn=>ink.push(fn)})
   ctx.save();ctx.setTransform(m[0],0,0,m[0],m[1],m[2])
   for (const fn of under) {ctx.save();fn(ctx);ctx.restore()}
   for (const fn of ink) {ctx.save();fn(ctx);ctx.restore()}
