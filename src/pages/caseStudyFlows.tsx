@@ -278,7 +278,7 @@ export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
           ] as const
         ).map(([name, label, field], i) => (
           <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
-            <PhoneVideo name={name} />
+            <PhoneVideo name={name} className={name === 'guided-models' ? 'case__phone--bare' : ''} />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}

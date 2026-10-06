@@ -850,6 +850,20 @@ html[data-case-snap] .case__moment {
 .case__guided {
   overflow-clip-margin: 96px;
 }
+/* The models loop is the info card alone (468×704, card shadow baked in): no phone
+   outline to mask, no drop-shadow, as tall as the WOOP phone beside it. */
+.case__phone--bare {
+  aspect-ratio: 468 / 704;
+  filter: none;
+}
+/* The crop cuts the card's baked-in shadow; feather all four edges so it fades into the page. */
+.case__phone--bare .case__phone-video {
+  --feather: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent), linear-gradient(transparent, #000 5%, #000 93%, transparent);
+  mask: var(--feather);
+  mask-composite: intersect;
+  -webkit-mask: var(--feather);
+  -webkit-mask-composite: source-in;
+}
 .case__flows .case__phone {
   height: 522px;
   filter: drop-shadow(0 22px 30px rgb(23 23 23 / 0.2));
@@ -1128,9 +1142,17 @@ html[data-case-snap] .case__moment {
   .case__flow-card[data-position='right'] .case__flow-device {
     transform: translateX(-15.12px) rotateY(-22deg);
   }
+  .case__guided {
+    --guided-w: calc((100vw - 2 * var(--edge) - 8px) / 2.2);
+  }
   .case__guided .case__phone {
-    width: calc((100vw - 2 * var(--edge) - 8px) / 2.2);
+    width: var(--guided-w);
     height: auto;
+  }
+  /* Narrower than desktop so the pair still fits; centred on the phone height (2.038 × width). */
+  .case__guided .case__phone--bare {
+    width: calc(var(--guided-w) * 1.15);
+    margin-top: calc(var(--guided-w) * 0.154);
   }
   .case__phone-label {
     margin-top: 10px;
