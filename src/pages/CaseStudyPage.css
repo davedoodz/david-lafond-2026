@@ -928,10 +928,10 @@ html[data-case-snap] .case__moment {
 .case__guided {
   overflow-clip-margin: 96px;
 }
-/* The models loop is the picker and info card alone (460×740, card shadow baked in): no phone
+/* The models loop is the mode pill, picker and info card alone (460×810, card shadow baked in): no phone
    outline to mask, no drop-shadow, as tall as the WOOP phone beside it. */
 .case__phone--bare {
-  aspect-ratio: 460 / 740;
+  aspect-ratio: 460 / 810;
   filter: none;
 }
 /* The crop cuts the card's baked-in shadow; feather all four edges so it fades into the page. */
@@ -1227,10 +1227,9 @@ html[data-case-snap] .case__moment {
     width: var(--guided-w);
     height: auto;
   }
-  /* Narrower than desktop so the pair still fits; centred on the phone height (2.038 × width). */
+  /* Narrower than desktop so the pair still fits; 1.15 × width at 460/810 matches the phone height. */
   .case__guided .case__phone--bare {
     width: calc(var(--guided-w) * 1.15);
-    margin-top: calc(var(--guided-w) * 0.094);
   }
   .case__phone-label {
     margin-top: 10px;
