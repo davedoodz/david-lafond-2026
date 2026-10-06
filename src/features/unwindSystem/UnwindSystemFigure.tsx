@@ -9,6 +9,7 @@ type SequenceDials = {
   motionSpeed: number
   card: { show: boolean; radius: number; fill: string; scaleX: number; scaleY: number }
   gradient: { show: boolean; opacity: number; palette: GradientPalette; deep: string; mid: string; glow: string; light: string; spread: number; x: number; y: number }
+  glass: { show: boolean; tint: number; blur: number; saturate: number; edge: number; sheen: number; sheenAngle: number; glow: number }
   shadow: { show: boolean; color: string; opacity: number; x: number; y: number; blur: number; spread: number }
   momoLogo: { x: number; y: number; scale: number; outline: number; smile: number; color: string }
   momoText: { x: number; y: number; scale: number; color: string }
@@ -55,11 +56,13 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
     // Surface first, then the Momo lockup, then the diagram.
     case 'cascade': return [
       card.animate(from({ opacity: 0, transform: `translateY(${d}px)` }), timing(0, { pseudoElement: '::before' })),
+      card.animate(from({ opacity: 0 }), timing(0, { pseudoElement: '::after' })),
       ...content(),
     ]
     // The surface opens from its top edge; the content fades up inside it.
     case 'unfold': return [
       card.animate([{ offset: 0, opacity: 0, transform: 'scaleY(0.4)', transformOrigin: 'top center' }, { offset: 1, transformOrigin: 'top center' }], timing(0, { pseudoElement: '::before' })),
+      card.animate(from({ opacity: 0 }), timing(0, { pseudoElement: '::after' })),
       ...content(),
     ]
     default: return []
@@ -79,7 +82,7 @@ type GradientPalette = keyof typeof GRADIENT_PALETTES | 'custom'
 /** Layered radial gradients over a light field; `opacity` fades the whole gradient over the solid card fill. */
 function cardGradient(g: SequenceDials['gradient']) {
   if (!g.show || g.opacity <= 0) return 'none'
-  const c = g.palette === 'custom' ? g : GRADIENT_PALETTES[g.palette] ?? GRADIENT_PALETTES.prism
+  const c = paletteColors(g)
   const a = (color: string, strength = 1) => `color-mix(in srgb, ${color} ${Math.round(g.opacity * strength * 100)}%, transparent)`
   const s = g.spread
   const at = (x: number, y: number) => `${x + g.x}% ${y + g.y}%`
@@ -88,6 +91,21 @@ function cardGradient(g: SequenceDials['gradient']) {
     `radial-gradient(${85 * s}% ${95 * s}% at ${at(0, 55)}, ${a(c.mid)} 0%, ${a(c.mid, 0.6)} 40%, ${a(c.mid, 0)} 100%)`,
     `radial-gradient(${75 * s}% ${65 * s}% at ${at(0, 0)}, ${a(c.glow)} 0%, ${a(c.glow, 0)} 100%)`,
     `linear-gradient(${a(c.light)}, ${a(c.light)})`,
+  ].join(', ')
+}
+
+function paletteColors(g: SequenceDials['gradient']) {
+  return g.palette === 'custom' ? g : GRADIENT_PALETTES[g.palette] ?? GRADIENT_PALETTES.prism
+}
+
+/** Soft palette blooms behind a glass card, so the backdrop blur has colour to refract. */
+function glassGlow(g: SequenceDials['gradient'], strength: number) {
+  const c = paletteColors(g)
+  const a = (color: string, k = 1) => `color-mix(in srgb, ${color} ${Math.round(Math.min(1, strength * k) * 100)}%, transparent)`
+  return [
+    `radial-gradient(30% 28% at 24% 74%, ${a(c.mid)} 0%, ${a(c.mid, 0)} 100%)`,
+    `radial-gradient(26% 26% at 76% 24%, ${a(c.glow)} 0%, ${a(c.glow, 0)} 100%)`,
+    `radial-gradient(22% 20% at 60% 78%, ${a(c.deep, 0.5)} 0%, ${a(c.deep, 0)} 100%)`,
   ].join(', ')
 }
 
@@ -117,6 +135,19 @@ export const UNWIND_SYSTEM_SEQUENCE_CONFIG = {
     /** Moves the blooms, % of the card. */
     x: [0, -50, 100, 1] as Tuple,
     y: [0, -50, 50, 1] as Tuple,
+  },
+  /** Frosted glass: see-through fill and gradient, blurred backdrop, white edge and sheen. Glow adds colour behind it. */
+  glass: {
+    show: false,
+    /** How solid the fill and gradient stay (1 = opaque, lower = clearer glass). */
+    tint: [0.55, 0.05, 1, 0.01] as Tuple,
+    blur: [28, 0, 80, 1] as Tuple,
+    saturate: [1.6, 1, 3, 0.05] as Tuple,
+    /** White rim light (opacity). */
+    edge: [0.6, 0, 1, 0.01] as Tuple,
+    sheen: [0.35, 0, 1, 0.01] as Tuple,
+    sheenAngle: [135, 0, 360, 1] as Tuple,
+    glow: [0.7, 0, 1, 0.01] as Tuple,
   },
   shadow: {
     show: false,
@@ -216,10 +247,21 @@ export function UnwindSystemFigure() {
     onAction: (action) => { if (action === 'entrance.replay') setEntranceKey((k) => k + 1) },
   })
   const speed = values as unknown as SequenceDials
+  const glass = speed.card.show && speed.glass.show ? speed.glass : null
   const colors = cardColors(speed.card.show ? speed.card.fill : '#F5F5F5')
   const style = {
-    '--system-card-fill': speed.card.fill,
-    '--system-card-gradient': cardGradient(speed.gradient),
+    // Glass: the fill and gradient turn see-through (tint), the backdrop blurs, and a white edge and
+    // sheen sit on top. The glow paints soft palette blooms behind the card for the glass to blur.
+    '--system-card-fill': glass ? `color-mix(in srgb, ${speed.card.fill} ${Math.round(glass.tint * 100)}%, transparent)` : speed.card.fill,
+    '--system-card-gradient': [
+      ...(glass && glass.sheen > 0 ? [`linear-gradient(${glass.sheenAngle}deg, rgb(255 255 255 / ${glass.sheen}) 0%, rgb(255 255 255 / 0) 42%, rgb(255 255 255 / 0) 68%, rgb(255 255 255 / ${glass.sheen * 0.5}) 100%)`] : []),
+      cardGradient({ ...speed.gradient, opacity: speed.gradient.opacity * (glass ? glass.tint : 1) }),
+    ].join(', '),
+    '--system-card-backdrop': glass ? `blur(${glass.blur}px) saturate(${glass.saturate})` : 'none',
+    '--system-card-edge': glass && glass.edge > 0
+      ? `inset 0 0 0 1px rgb(255 255 255 / ${glass.edge}), inset 0 1.5px 0 rgb(255 255 255 / ${Math.min(1, glass.edge * 1.5)})`
+      : '0 0 #0000',
+    '--system-card-glow': glass && glass.glow > 0 ? glassGlow(speed.gradient, glass.glow) : 'none',
     '--system-card-opacity': speed.card.show ? 1 : 0,
     // Card size comes from insets (not a transform), so radius and shadow stay undistorted.
     '--system-card-radius': `${speed.card.radius}px`,
@@ -227,7 +269,7 @@ export function UnwindSystemFigure() {
     '--system-card-inset-y': `${((1 - speed.card.scaleY) * 50).toFixed(3)}%`,
     '--system-card-shadow': speed.card.show && speed.shadow.show
       ? `${speed.shadow.x}px ${speed.shadow.y}px ${speed.shadow.blur}px ${speed.shadow.spread}px color-mix(in srgb, ${speed.shadow.color} ${Math.round(speed.shadow.opacity * 100)}%, transparent)`
-      : 'none',
+      : '0 0 #0000',
     '--system-logo-x': `${speed.momoLogo.x}px`,
     '--system-logo-y': `${speed.momoLogo.y}px`,
     '--system-logo-scale': speed.momoLogo.scale,

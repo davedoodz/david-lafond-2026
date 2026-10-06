@@ -33,8 +33,21 @@
   pointer-events: none;
   background: var(--system-card-gradient, none), var(--system-card-fill, #53bffe);
   border-radius: var(--system-card-radius, 48px);
-  box-shadow: var(--system-card-shadow, none);
+  box-shadow: var(--system-card-edge, 0 0 #0000), var(--system-card-shadow, 0 0 #0000);
+  -webkit-backdrop-filter: var(--system-card-backdrop, none);
+  backdrop-filter: var(--system-card-backdrop, none);
   opacity: var(--system-card-opacity, 1);
+}
+/* Glass glow: palette blooms just outside and under the card, blurred by the glass above them. */
+.unwind-system::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--system-card-inset-y, 0px) - 4%) calc(var(--system-card-inset-x, 0px) - 4%);
+  z-index: -1;
+  pointer-events: none;
+  background: var(--system-card-glow, none);
+  /* Static blur (never animated) so the blooms have no visible box edge outside the card. */
+  filter: blur(48px);
 }
 .unwind-system__brand {
   position: relative;
