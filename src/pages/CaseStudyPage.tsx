@@ -31,10 +31,10 @@ type Media = { video: string; placeholder?: string; figure: string; layout: stri
 type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; harvardScale: number }
 
 const LOGOS = [
-  { src: '/work/unwind/logos/media-lab.svg', alt: 'MIT Media Lab', harvard: false },
-  { src: '/work/unwind/logos/fluid-interfaces.svg', alt: 'Fluid Interfaces', harvard: false },
-  { src: '/work/unwind/logos/multisensory-intelligence.svg', alt: 'Multisensory Intelligence', harvard: false },
-  { src: '/work/unwind/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', harvard: true },
+  { src: '/work/unwind/logos/media-lab.svg', alt: 'MIT Media Lab', href: 'https://www.media.mit.edu/', harvard: false },
+  { src: '/work/unwind/logos/fluid-interfaces.svg', alt: 'Fluid Interfaces', href: 'https://www.media.mit.edu/groups/fluid-interfaces/overview/', harvard: false },
+  { src: '/work/unwind/logos/multisensory-intelligence.svg', alt: 'Multisensory Intelligence', href: 'https://www.media.mit.edu/groups/multisensory-intelligence/overview/', harvard: false },
+  { src: '/work/unwind/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', href: 'https://hms.harvard.edu/', harvard: true },
 ]
 
 /** Live watch-notification prototype (built from reself-voice-prototypes into public/work/unwind/notification). */
@@ -68,7 +68,9 @@ function LogoRow({ l }: { l: Logos }) {
       style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, opacity: l.opacity } as CSSProperties}
     >
       {LOGOS.map((logo) => (
-        <img key={logo.src} src={logo.src} alt={logo.alt} style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
+        <a key={logo.src} href={logo.href} target="_blank" rel="noreferrer" aria-label={`Visit ${logo.alt} website (opens in a new tab)`}>
+          <img src={logo.src} alt="" style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
+        </a>
       ))}
     </div>
   )

@@ -138,11 +138,11 @@ export function UnwindIntro({ onDone, onStart }: { onDone: () => void; onStart?:
     const progress = () => 1 - clamp(window.scrollY / stageH)
     const measure = () => {
       if (disposed) return
-      vw = window.innerWidth; vh = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1)
-      // The film is already soft and its source phone is 500px tall. Rendering that full-screen
-      // offscreen canvas at Retina 2× doubles each dimension for no visible gain and stalls the
-      // scroll handoff. Keep the hero braid crisp on the main canvas; cap only the film buffer.
-      filmDpr = Math.min(1.5, dpr)
+      vw = window.innerWidth; vh = window.innerHeight; dpr = Math.min(1.5, window.devicePixelRatio || 1)
+      // Both layers are dominated by soft gradients and source art near CSS-pixel resolution.
+      // Capping the display canvas at 1.5× keeps edges crisp while avoiding a 2× buffer's 78%
+      // extra pixels during the scroll handoff; the heavier offscreen film stays at 1×.
+      filmDpr = 1
       canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr)
       filmCanvas.width = Math.round(vw * filmDpr); filmCanvas.height = Math.round(vh * filmDpr)
       stageH = stage.offsetHeight || vh
