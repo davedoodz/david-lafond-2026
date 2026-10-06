@@ -1187,7 +1187,16 @@
             lbl.removeAttribute('transform')
             const b = lbl.getBBox()
             if (!b.width) return
-            const cx = b.x + b.width / 2, cy = b.y + b.height / 2
+            // Vertical centre is optical: from the first line's cap height to the last line's baseline,
+            // not the font's ascender/descender box (which sits the text visibly high).
+            const rows = [...lbl.querySelectorAll('.lbl-row')].filter((r) => getComputedStyle(r).display !== 'none')
+            const baselines = rows.map((r) => {
+              const t = [...r.querySelectorAll('text')].pop()
+              const dy = Number(/translate\(\s*[-\d.]+[ ,]+([-\d.]+)/.exec(r.querySelector('.lbl-shift')?.getAttribute('transform') ?? '')?.[1] ?? 0)
+              return { base: +t.getAttribute('y') + dy, cap: CAP * +t.getAttribute('font-size') }
+            })
+            const cx = b.x + b.width / 2
+            const cy = baselines.length ? (Math.min(...baselines.map((r) => r.base - r.cap)) + Math.max(...baselines.map((r) => r.base))) / 2 : b.y + b.height / 2
             let best = null
             for (let i = 1; i < pts.length; i++) {
               const [x1, y1] = pts[i - 1], [x2, y2] = pts[i]
