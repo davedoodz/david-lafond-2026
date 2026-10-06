@@ -6,7 +6,7 @@
  */
 import { FLOAT_DIALS, PERSONA_DIALS } from './casePersona'
 import { EVIDENCE_DIALS, PRINCIPLES_DIALS, REFRAME_DIALS } from './filoSections'
-import { STORY_ART_TEXT, type StoryArtText } from './storyArt'
+import { PEAK_ICONS, STORY_ART_TEXT, type StoryArtText } from './storyArt'
 
 type Tuple = [number, number, number, number]
 
@@ -261,6 +261,8 @@ export const UNWIND_CONFIG = {
     align: { type: 'select' as const, options: ['left', 'center', 'stretch'], default: 'left' },
     /** glass: the system card's fill + gradient with the glass dials below (story → glass). */
     art: { type: 'select' as const, options: ['glass', 'card', 'line', 'outline', 'none'], default: 'glass' },
+    /** Icon on the Problem curve's peak: the custom bolt, a Lucide icon, or none. */
+    peakIcon: { type: 'select' as const, options: Object.keys(PEAK_ICONS), default: 'bolt' },
     /**
      * Glass for the three art cards. Colours come from the system card (Unwind system sequence →
      * card fill / gradient); these dials start from the system card's glass, scaled to the cards'

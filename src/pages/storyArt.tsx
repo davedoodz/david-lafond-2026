@@ -1,4 +1,24 @@
-import type { CSSProperties } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
+import { AlarmClock, Annoyed, BatteryWarning, BellRing, Bomb, CloudHail, CloudRainWind, Gauge, HeartCrack, Megaphone, OctagonAlert, ThermometerSun, Wind, type LucideIcon } from "lucide-react";
+
+/** Icon at the Problem curve's peak (DialKit story → peakIcon). `bolt` is the custom bolt with tension marks. */
+export const PEAK_ICONS: Record<string, LucideIcon | null> = {
+  bolt: null,
+  "heart-crack": HeartCrack,
+  bomb: Bomb,
+  "cloud-hail": CloudHail,
+  "cloud-rain-wind": CloudRainWind,
+  "thermometer-sun": ThermometerSun,
+  gauge: Gauge,
+  "battery-warning": BatteryWarning,
+  annoyed: Annoyed,
+  "octagon-alert": OctagonAlert,
+  "alarm-clock": AlarmClock,
+  "bell-ring": BellRing,
+  megaphone: Megaphone,
+  wind: Wind,
+  none: null,
+};
 /**
  * Graphics for the Problem · Opportunity · Solution rows on the Unwind case study.
  * Same language as the Re:Self diagrams: ink line icons, Unwind blue for the live signal.
@@ -121,12 +141,65 @@ function Spark({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
         strokeWidth={2.2}
         strokeLinejoin="round"
       />
+      {/* Small companion star, top right: sparkles in as the main star grows. */}
+      <g transform="translate(17 -17) scale(0.38)">
+        <path
+          className="sa-b sa-spark-mini"
+          d="M0 -20C0.6 -7 2 -1.4 20 0C2 1.4 0.6 7 0 20C-0.6 7 -2 1.4 -20 0C-2 -1.4 -0.6 -7 0 -20Z"
+          fill="none"
+          stroke={BLUE}
+          strokeWidth={4}
+          strokeLinejoin="round"
+        />
+      </g>
+    </g>
+  );
+}
+/** Stress spike on the curve's peak: the custom bolt with tension marks, or a Lucide icon (24px grid). */
+function Stress({ x, y, s = 1, icon = "bolt" }: { x: number; y: number; s?: number; icon?: string }) {
+  if (icon === "none") return null;
+  const Lucide = PEAK_ICONS[icon];
+  return (
+    <g
+      transform={`translate(${x} ${y}) scale(${s})`}
+      fill="none"
+      stroke={INK}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <g className="sa-icon sa-stress">
+        {Lucide ? (
+          <Lucide x={-11} y={-11} width={22} height={22} color={INK} strokeWidth={1.8} />
+        ) : (
+          <>
+            <path d="M2 -10 L-5 1 H1 L-2 10 L6 -2 H0 Z" />
+            <path d="M-10 -7 l-4 -3 M10 -7 l4 -3 M-12 1 h-5 M12 1 h5" />
+          </>
+        )}
+      </g>
     </g>
   );
 }
 
+/**
+ * Reveals its children by growing a mask rect (transform only): `up` from the box's bottom edge,
+ * `right` from its left edge. Starts `at` seconds after the row's curve starts (motion: draw).
+ */
+function Wipe({ box: [x, y, w, h], from, at, children }: { box: [number, number, number, number]; from: "up" | "right"; at: number; children: ReactNode }) {
+  const id = `sa-wipe-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  return (
+    <>
+      <mask id={id} maskUnits="userSpaceOnUse" x={x} y={y} width={w} height={h}>
+        <rect className={`sa-wipe sa-wipe--${from}`} x={x} y={y} width={w} height={h} fill="#fff" style={{ "--at": `${at}s` } as CSSProperties} />
+      </mask>
+      <g mask={`url(#${id})`}>{children}</g>
+    </>
+  );
+}
+
 /** Problem: the feeling peaks, and the app only opens after it has faded. */
-export function ProblemArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) {
+export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?: StoryArtText; peakIcon?: string }) {
   return (
     <svg
       viewBox="0 0 240 160"
@@ -143,15 +216,21 @@ export function ProblemArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) {
         strokeWidth={2.4}
         strokeLinecap="round"
       />
-      {label(104, 22, text.problemMoment)}
-      <path
-        d="M200 128 V62"
-        stroke={INK}
-        strokeWidth={1.4}
-        strokeDasharray="2 4"
-        strokeLinecap="round"
-      />
-      <Phone x={200} y={38} s={0.8} />
+      {label(88, 20, text.problemMoment, STONE, "end")}
+      <Stress x={104} y={16} icon={peakIcon} />
+      {/* After the curve: the dotted line draws up from the curve, then the phone appears. */}
+      <Wipe box={[194, 58, 12, 74]} from="up" at={1.6}>
+        <path
+          d="M200 128 V62"
+          stroke={INK}
+          strokeWidth={1.4}
+          strokeDasharray="2 4"
+          strokeLinecap="round"
+        />
+      </Wipe>
+      <g className="sa-after" style={{ "--at": "2.2s" } as CSSProperties}>
+        <Phone x={200} y={38} s={0.8} />
+      </g>
       {label(200, 154, text.problemOpened, INK)}
     </svg>
   );
@@ -175,24 +254,31 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
         strokeWidth={2.4}
         strokeLinecap="round"
       />
-      <circle
-        className="sa-b sa-ping"
-        cx={104}
-        cy={34}
-        r={12}
-        fill={BLUE}
-        opacity={0.18}
-      />
-      <circle className="sa-b" cx={104} cy={34} r={5} fill={BLUE} />
-      <Watch x={164} y={64} s={1} />
-      <path
-        d="M150 58 Q128 44 114 38"
-        fill="none"
-        stroke={INK}
-        strokeWidth={1.4}
-        strokeDasharray="2 4"
-        strokeLinecap="round"
-      />
+      {/* After the curve: the peak dot, then the dotted line draws left to right, then the watch. */}
+      <g className="sa-after" style={{ "--at": "1.6s" } as CSSProperties}>
+        <circle
+          className="sa-b sa-ping"
+          cx={104}
+          cy={34}
+          r={12}
+          fill={BLUE}
+          opacity={0.18}
+        />
+        <circle className="sa-b" cx={104} cy={34} r={5} fill={BLUE} />
+      </g>
+      <Wipe box={[110, 32, 44, 30]} from="right" at={2}>
+        <path
+          d="M150 58 Q128 44 114 38"
+          fill="none"
+          stroke={INK}
+          strokeWidth={1.4}
+          strokeDasharray="2 4"
+          strokeLinecap="round"
+        />
+      </Wipe>
+      <g className="sa-after" style={{ "--at": "2.5s" } as CSSProperties}>
+        <Watch x={164} y={64} s={1} />
+      </g>
       {label(104, 154, text.solutionCheckIn, INK)}
     </svg>
   );
@@ -223,15 +309,19 @@ export function OpportunityArt({ variant, text = STORY_ART_TEXT }: { variant: st
             strokeLinecap="round"
           />
         ))}
-        <circle
-          className="sa-b sa-ping"
-          cx={206}
-          cy={80}
-          r={14}
-          fill={BLUE}
-          opacity={0.18}
-        />
-        <circle className="sa-b" cx={206} cy={80} r={6} fill={BLUE} />
+        {/* The moment appears once all three lines have converged. Lines end at 0.7s + 1.6s;
+            this row's --i (1) already adds 0.35s, so --at is the remainder. */}
+        <g className="sa-after" style={{ "--at": "1.95s" } as CSSProperties}>
+          <circle
+            className="sa-b sa-ping"
+            cx={206}
+            cy={80}
+            r={14}
+            fill={BLUE}
+            opacity={0.18}
+          />
+          <circle className="sa-b" cx={206} cy={80} r={6} fill={BLUE} />
+        </g>
         {label(206, 110, text.opportunityMoment, INK)}
       </svg>
     );

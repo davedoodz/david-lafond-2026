@@ -54,6 +54,8 @@ export type Story = {
   glass?: StoryGlass
   /** Unwind: art and text share a left edge, are centred, or the art spans the text width. */
   align?: 'left' | 'center' | 'stretch'
+  /** Unwind: icon on the Problem curve's peak (see PEAK_ICONS). */
+  peakIcon?: string
 }
 
 type StoryGlass = Required<GlassDials> & { glowBlur: number; radius: number; padding: number }
@@ -108,7 +110,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
     return () => observer.disconnect()
   }, [])
   const rows = [
-    ['problem', s.problemLabel, s.problemTitle, s.problemBody, arts?.[0] ?? <ProblemArt key="p" text={s.artText} />],
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody, arts?.[0] ?? <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} />],
     ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, arts?.[1] ?? <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} />],
     ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, arts?.[2] ?? <SolutionArt key="s" text={s.artText} />],
   ] as const

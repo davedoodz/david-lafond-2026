@@ -765,6 +765,45 @@ html[data-case-snap] .case__moment {
 [data-story-motion='draw'] .sa-spark {
   animation: story-twinkle 3s ease-in-out infinite;
 }
+/* The watch's heart line redraws left to right on each beat, while the watch grows. */
+[data-story-motion]:not([data-story-motion='off']) li .sa-beat {
+  stroke-dasharray: 1 1;
+  animation: story-beat-draw 1.6s ease-out infinite;
+}
+@keyframes story-beat-draw {
+  0% { stroke-dashoffset: 1; opacity: 1; }
+  30% { stroke-dashoffset: 0; }
+  85% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+/* A small star sparkles at the main star's top right as it grows. */
+.case__story .sa-spark-mini {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+[data-story-motion='draw'] .sa-spark-mini {
+  animation: story-sparkle 3s ease-in-out infinite;
+}
+[data-story-motion='pulse'] .sa-spark-mini {
+  animation: story-sparkle 2.4s ease-in-out infinite;
+}
+@keyframes story-sparkle {
+  0%, 25% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); opacity: 1; }
+  65% { transform: scale(1); opacity: 1; }
+  85%, 100% { transform: scale(0); opacity: 0; }
+}
+/* Stress at the peak: still, then a short tense jolt. */
+[data-story-motion]:not([data-story-motion='off']) .sa-stress {
+  animation: story-jolt 2.4s ease-in-out infinite;
+}
+@keyframes story-jolt {
+  0%, 50%, 100% { transform: scale(1) rotate(0); }
+  56% { transform: scale(1.15) rotate(-6deg); }
+  62% { transform: scale(1.1) rotate(6deg); }
+  68% { transform: scale(1.12) rotate(-4deg); }
+  76% { transform: scale(1) rotate(0); }
+}
 @keyframes story-heartbeat {
   0%, 40%, 100% { transform: scale(1); }
   10% { transform: scale(1.08); }
@@ -784,8 +823,37 @@ html[data-case-snap] .case__moment {
   50% { transform: scaleY(0.45); }
 }
 @keyframes story-twinkle {
-  0%, 100% { transform: scale(1) rotate(0); opacity: 1; }
-  50% { transform: scale(1.18) rotate(45deg); opacity: 0.75; }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.18); opacity: 0.85; }
+}
+/* Draw motion sequencing: dots, dotted lines and devices wait for the curve (see storyArt Wipe).
+   --at is seconds after the row's curve starts; the row's --i stagger is added the same way as .sa-draw. */
+.case__story :is(.sa-after, .sa-wipe) {
+  transform-box: fill-box;
+}
+[data-story-motion='draw'] .sa-after {
+  transform-origin: center;
+  animation: story-appear 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-story-motion='draw'] .sa-wipe--up {
+  transform-origin: bottom;
+  animation: story-wipe-y 0.6s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+[data-story-motion='draw'] .sa-wipe--right {
+  transform-origin: left;
+  animation: story-wipe-x 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes story-appear {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes story-wipe-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes story-wipe-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 @keyframes story-draw {
   from { stroke-dashoffset: 1; }
