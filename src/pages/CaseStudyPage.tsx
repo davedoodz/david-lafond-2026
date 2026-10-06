@@ -7,6 +7,7 @@ import type { Work } from '../data/works'
 import { UNWIND_BRAID_LAYOUT_EVENT, UnwindIntro } from '../features/unwindIntro/UnwindIntro'
 import { MomoWelcome } from '../features/unwindIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
+import { ArxivPaper } from '../features/arxivPaper/ArxivPaper'
 import { UnwindSystemFigure } from '../features/unwindSystem/UnwindSystemFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
@@ -446,7 +447,7 @@ export function CaseStudyPage({ id }: Props) {
     if (id === 'filo' && key === 'reframe') return <ReframeSection key={key} f={fields} edit={edit} />
     if (id === 'filo' && key === 'principles') return <PrinciplesSection key={key} f={fields} edit={edit} />
     const hasDemo = s.media.figure === 'notification'
-    const hasFigure = ['flow', 'system', 'vision', 'signals'].includes(s.media.figure)
+    const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper'].includes(s.media.figure)
     const hasPlaceholder = !hasFigure && !hasDemo && s.media.video === 'placeholder'
     const hasVideo = !hasFigure && !hasDemo && !hasPlaceholder && s.media.video !== 'none'
     return (
@@ -526,7 +527,14 @@ export function CaseStudyPage({ id }: Props) {
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
         {hasPlaceholder && <MediaPlaceholder label={s.media.placeholder ?? ''} size={s.media.size} x={s.media.x} y={s.media.y} radius={s.media.radius} />}
         {hasDemo && <NotificationDemo media={s.media} />}
-        {hasFigure && (s.media.figure === 'system' ? <UnwindSystemFigure /> : <ReselfFigure kind={s.media.figure as 'flow' | 'vision' | 'signals'} />)}
+        {hasFigure &&
+          (s.media.figure === 'system' ? (
+            <UnwindSystemFigure />
+          ) : s.media.figure === 'paper' ? (
+            <ArxivPaper />
+          ) : (
+            <ReselfFigure kind={s.media.figure as 'flow' | 'vision' | 'signals'} />
+          ))}
       </section>
     )
   }

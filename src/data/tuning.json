@@ -504,10 +504,18 @@
       "eyebrow": "SYSTEM DESIGN",
       "title": "\n",
       "body": "",
-      "align": "center"
+      "align": "center",
+      "media": {
+        "size": 75,
+        "gap": 0
+      }
     },
     "flows": {
       "phoneScale": 1.04
+    },
+    "guided": {
+      "woopLabel": "",
+      "modelsLabel": ""
     },
     "dynamic": {
       "align": "center"
@@ -650,38 +658,44 @@
     }
   },
   "Unwind system sequence": {
-    "sequenceSpeed": 2.7,
-    "motionSpeed": 0.95,
+    "sequenceSpeed": 3,
+    "motionSpeed": 1.25,
     "card": {
       "radius": 35,
       "fill": "#f5f5f5",
-      "scaleX": 0.84,
-      "scaleY": 0.91
+      "scaleX": 0.78,
+      "scaleY": 0.87
     },
     "shadow": {
       "show": true,
-      "opacity": 0.32,
+      "opacity": 0.17,
       "x": 3
     },
     "momoLogo": {
       "x": 57,
-      "y": 8,
-      "scale": 0.46,
+      "y": 32,
+      "scale": 0.4,
       "outline": 5.2,
       "color": "#62abdc"
     },
     "momoText": {
-      "x": -17,
-      "y": 7,
-      "scale": 0.67,
+      "x": -25,
+      "y": 30,
+      "scale": 0.61,
       "color": "#62abdc"
     },
     "icons": {
       "circleColor": "#5dd6fa",
-      "titleGap": 17
+      "titleGap": 13
     },
-    "system": {
-      "scale": 1.05
+    "stepHold": {
+      "youShare": 0.5,
+      "dataIn": 0.5,
+      "answersOut": 0.5,
+      "backToYou": 0.5
+    },
+    "arrowTips": {
+      "animation": "slide"
     },
     "userIcon": {
       "y": -4,
@@ -703,5 +717,13 @@
       "y": -4,
       "scale": 0.89
     }
+  },
+  "Unwind paper": {
+    "arrow": {
+      "x": -4,
+      "y": 1.5,
+      "scale": 1.09
+    },
+    "width": 585
   }
 }

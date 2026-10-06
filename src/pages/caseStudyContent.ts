@@ -35,8 +35,8 @@ type SectionDefaults = {
   video?: ProtoVideo | 'none' | 'placeholder'
   /** Label inside the placeholder block (Filo, until the prototype loops exist). */
   placeholder?: string
-  /** Diagram shown instead of a video ('system': the animated Unwind system walkthrough). */
-  figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals'
+  /** Diagram shown instead of a video ('system': the animated Unwind system walkthrough; 'paper': the arXiv paper tucked under the footer). */
+  figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals' | 'paper'
   layout?: 'bottom' | 'top' | 'right' | 'left' | 'center' | 'rise'
   size?: number
   gap?: number
@@ -51,7 +51,7 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
     media: {
       video: { type: 'select' as const, options: videos, default: d.video ?? 'none' },
       ...(d.placeholder !== undefined ? { placeholder: { type: 'text' as const, default: d.placeholder } } : {}),
-      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification'], default: d.figure ?? 'none' },
+      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification', 'paper'], default: d.figure ?? 'none' },
       layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'bottom' },
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
@@ -359,6 +359,8 @@ export const UNWIND_CONFIG = {
     title: 'Coping flexibility improved significantly across a 15-day pilot with 20 participants.',
     body: 'Guided reflection produced nearly twice as many action plans, and participants put more of them into practice in daily life.',
     layout: 'bottom',
+    figure: 'paper',
+    gap: 48,
   }),
   /** Copy for the 8-part recruiter structure (order panel › structure). */
   recruiter: RECRUITER_COPY,
