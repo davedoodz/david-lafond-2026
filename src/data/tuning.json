@@ -470,7 +470,8 @@
       "placement": "below meta",
       "height": 39,
       "gap": 27,
-      "offset": 28
+      "offset": 28,
+      "hoverColor": "#71c4f8"
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
@@ -499,7 +500,7 @@
       }
     },
     "persona": {
-      "body": "Generally independent and capable, but prone to stress, rumination and replaying difficult moments. They want a private, low-friction emotional outlet.",
+      "body": "Generally independent and capable, but prone to stress and rumination. \nThey want a private, low-friction emotional outlet.",
       "align": "center",
       "image": "bottom",
       "blockGap": 100,
@@ -569,6 +570,12 @@
       "title": "Catch it on your wrist. \nUnpack it on your phone.",
       "body": "A timely nudge becomes a deeper reflection when you're ready to talk.",
       "align": "center",
+      "watch": {
+        "strapColor": "#96b6d4"
+      },
+      "spacing": {
+        "contentGap": 46
+      },
       "reveal": {
         "preset": "split sides"
       }
@@ -721,14 +728,15 @@
       "scaleY": 0.87
     },
     "gradient": {
+      "show": false,
       "opacity": 0,
       "palette": "unwind",
-      "deep": "#8f9bf9",
-      "mid": "#e0e2e4",
-      "glow": "#ffffff",
+      "deep": "#09235e",
+      "mid": "#477fb2",
+      "glow": "#86a5e2",
       "light": "#d3d4d9",
-      "spread": 1.55,
-      "x": -17,
+      "spread": 2,
+      "x": 100,
       "y": 50
     },
     "glass": {
@@ -782,7 +790,7 @@
       "size": 1.1
     },
     "entrance": {
-      "preset": "tilt",
+      "preset": "cascade",
       "duration": 2.05,
       "distance": 132
     },
