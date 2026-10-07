@@ -13,14 +13,17 @@ import './Playground.css'
 
 const titleFields: Record<string, { type: 'text'; default: string; placeholder: string }> = {}
 const videoLoopSpeedFields: Record<string, [number, number, number, number]> = {}
+const mediaScaleFields: Record<string, [number, number, number, number]> = {}
 const tuningKeyById: Record<string, string> = {}
-const videoSpeedKeyById: Record<string, string> = {
+const controlKeyById: Record<string, string> = {
   p01: 'paper shaders',
   p02: 'future fabric',
   p03: 'nintendogs for macos',
   p04: 'renovation contractor agent',
   p05: 'architectural sketchbooks',
   p06: 'david’s journal',
+  p07: 'decode: a critical action',
+  p08: 'my room in 3d',
 }
 const itemById = new Map(playgroundItems.map((item) => [item.id, item]))
 const defaultOrder = playgroundItems.map((item) => item.id).join(',')
@@ -29,7 +32,8 @@ for (const [i, item] of playgroundItems.entries()) {
   const key = `card${i + 1}`
   tuningKeyById[item.id] = key
   titleFields[key] = { type: 'text', default: item.title, placeholder: item.title }
-  if (item.video) videoLoopSpeedFields[videoSpeedKeyById[item.id]] = [1, 0.25, 12, 0.05]
+  if (item.video) videoLoopSpeedFields[controlKeyById[item.id]] = [1, 0.25, 12, 0.05]
+  if (item.video || item.presentation) mediaScaleFields[controlKeyById[item.id]] = [1, 0.25, 3, 0.01]
 }
 
 function orderItems(rawOrder: string) {
@@ -63,6 +67,8 @@ const PLAYGROUND_CONFIG = {
   titles: { _collapsed: true, ...titleFields },
   /** Per-card playback rate for muted looping videos. */
   videoLoopSpeed: { _collapsed: true, ...videoLoopSpeedFields },
+  /** Scale the central composition independently for each populated card. */
+  mediaScale: { _collapsed: true, ...mediaScaleFields },
   order: { type: 'text', default: defaultOrder },
   journal: {
     /** Crop the desktop loop by zooming and repositioning it within the card. */
@@ -79,7 +85,7 @@ const PLAYGROUND_CONFIG = {
     phoneY: [4, -100, 100, 1] as [number, number, number, number],
   },
   criticalAction: {
-    bookScale: [1, 0.1, 3, 0.01] as [number, number, number, number],
+    /** Book position as percentage points from the card centre. */
     bookX: [0, -100, 100, 1] as [number, number, number, number],
     bookY: [0, -100, 100, 1] as [number, number, number, number],
   },
@@ -336,6 +342,7 @@ export function Playground({ className }: { className?: string }) {
   // dialkit's ResolvedValues type doesn't drop `_collapsed` from folder types; the runtime value does.
   const titles = values.titles as unknown as Record<string, string>
   const videoLoopSpeeds = values.videoLoopSpeed as unknown as Record<string, number>
+  const mediaScales = values.mediaScale as unknown as Record<string, number>
   const activeTitle = activeItem ? titles[tuningKeyById[activeItem.id]] : ''
   const zoomTransition = toMotionTransition(values.zoom.spring)
 
@@ -368,12 +375,13 @@ export function Playground({ className }: { className?: string }) {
         const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
         if (!target) return null
         const shouldPlay = item.id === activeId || visibleIds.has(item.id)
-        const playbackRate = videoLoopSpeeds[videoSpeedKeyById[item.id]] ?? 1
+        const playbackRate = videoLoopSpeeds[controlKeyById[item.id]] ?? 1
+        const mediaScale = mediaScales[controlKeyById[item.id]] ?? 1
         const media =
           item.presentation === 'critical-action' ? (
             <CriticalActionMedia
               shouldPlay={shouldPlay}
-              bookScale={values.criticalAction.bookScale}
+              bookScale={mediaScale}
               bookX={values.criticalAction.bookX}
               bookY={values.criticalAction.bookY}
             />
@@ -383,6 +391,7 @@ export function Playground({ className }: { className?: string }) {
               poster={item.poster}
               playbackRate={playbackRate}
               shouldPlay={shouldPlay}
+              mediaScale={mediaScale}
               desktopZoom={values.journal.desktopZoom}
               desktopX={values.journal.desktopX}
               desktopY={values.journal.desktopY}
@@ -395,7 +404,9 @@ export function Playground({ className }: { className?: string }) {
               phoneY={values.journal.phoneY}
             />
           ) : item.video ? (
-            <CardVideo src={item.video} poster={item.poster} playbackRate={playbackRate} shouldPlay={shouldPlay} />
+            <div className="pg-video-frame" style={{ '--pg-media-scale': mediaScale } as CSSProperties}>
+              <CardVideo src={item.video} poster={item.poster} playbackRate={playbackRate} shouldPlay={shouldPlay} />
+            </div>
           ) : null
         return media ? createPortal(media, target, item.id) : null
       })}

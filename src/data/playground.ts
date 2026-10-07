@@ -57,7 +57,12 @@ export const playgroundItems: PlaygroundItem[] = [
     title: 'Decode: A Critical Action',
     presentation: 'critical-action',
   },
-  { id: 'p08', title: 'Prototype 08' },
+  {
+    id: 'p08',
+    title: 'My room in 3D',
+    video: '/about/playground/bedroom-world.mp4',
+    poster: '/about/playground/bedroom-world.webp',
+  },
   { id: 'p09', title: 'Prototype 09' },
   { id: 'p10', title: 'Prototype 10' },
   { id: 'p11', title: 'Prototype 11' },

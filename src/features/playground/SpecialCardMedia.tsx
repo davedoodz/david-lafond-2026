@@ -13,6 +13,7 @@ type JournalMediaProps = {
   poster?: string
   playbackRate: number
   shouldPlay: boolean
+  mediaScale: number
   desktopZoom: number
   desktopX: number
   desktopY: number
@@ -30,6 +31,7 @@ export function JournalMedia({
   poster,
   playbackRate,
   shouldPlay,
+  mediaScale,
   desktopZoom,
   desktopX,
   desktopY,
@@ -42,6 +44,7 @@ export function JournalMedia({
   phoneY,
 }: JournalMediaProps) {
   const style = {
+    '--pg-media-scale': mediaScale,
     '--pg-journal-desktop-zoom': desktopZoom,
     '--pg-journal-desktop-x': `${desktopX}%`,
     '--pg-journal-desktop-y': `${desktopY}%`,
@@ -56,22 +59,24 @@ export function JournalMedia({
 
   return (
     <div className="pg-journal-media" style={style}>
-      <div className="pg-journal-desktop-frame">
-        <CardVideo
-          src={src}
-          poster={poster}
-          playbackRate={playbackRate}
-          shouldPlay={shouldPlay}
-          className="pg-journal-desktop"
+      <div className="pg-journal-content">
+        <div className="pg-journal-desktop-frame">
+          <CardVideo
+            src={src}
+            poster={poster}
+            playbackRate={playbackRate}
+            shouldPlay={shouldPlay}
+            className="pg-journal-desktop"
+          />
+        </div>
+        <img
+          className="pg-journal-phone"
+          src="/about/playground/davids-journal-phone.webp"
+          alt=""
+          draggable={false}
+          aria-hidden="true"
         />
       </div>
-      <img
-        className="pg-journal-phone"
-        src="/about/playground/davids-journal-phone.webp"
-        alt=""
-        draggable={false}
-        aria-hidden="true"
-      />
     </div>
   )
 }

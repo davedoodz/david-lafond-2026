@@ -83,6 +83,18 @@
   background: #fff;
 }
 
+.pg-video-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pg-video-frame > .pg-video {
+  transform: scale(var(--pg-media-scale));
+  transform-origin: center;
+}
+
 .pg-journal-media,
 .pg-critical-action-media {
   position: absolute;
@@ -96,6 +108,13 @@
 
 .pg-critical-action-media {
   background: #0d3937;
+}
+
+.pg-journal-content {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--pg-media-scale));
+  transform-origin: center;
 }
 
 .pg-journal-desktop-frame {
