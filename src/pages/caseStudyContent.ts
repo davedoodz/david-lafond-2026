@@ -351,6 +351,7 @@ export const UNWIND_CONFIG = {
   flows: {
     eyebrow: { type: 'text' as const, default: 'Core flows' },
     title: { type: 'text' as const, default: 'Notice. Reflect. Look back.' },
+    body: { type: 'text' as const, default: 'Your reflections become a record of your experiences and a way to turn insight into action.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     phoneScale: [1, 0.6, 1.25, 0.01] as Tuple,
     entriesLabel: { type: 'text' as const, default: 'Your entries' },

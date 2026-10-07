@@ -222,7 +222,7 @@ function useRiseOnView() {
 }
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string }
+export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRiseOnView()
   useEffect(() => {
@@ -269,6 +269,7 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="flows eyebrow" value={f.eyebrow} onChange={edit('flows.eyebrow')} />
         <EditableText as="h2" id="case-flows" className="case__title" label="flows title" value={f.title} onChange={edit('flows.title')} />
+        <EditableText className="case__body" label="flows body" value={f.body} onChange={edit('flows.body')} />
       </div>
       <ol className="case__flows-row">
         {phones.map(([name, label, position], i) => (
