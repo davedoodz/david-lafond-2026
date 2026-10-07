@@ -1,56 +1,118 @@
+/* Momo check-in: port of studio/unwind-insights-sequence.html (Watch "companion", link "trace").
+   Names carry an mc- prefix so they never meet the case study's own .lock__* rules. */
+@font-face { font-family: 'Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+
 .case .insights { height: auto; min-height: 100svh; overflow: visible; display: flex; flex-direction: column; align-items: center; gap: 36px; padding-block: 110px 72px; }
 .insights__heading { width: min(100%, var(--case-reading, 680px)); }
-.insights__devices { display: flex; align-items: center; justify-content: center; width: min(100%, 920px); gap: 24px; padding: 20px 0; }
-.insights__watch, .insights__phone { position: relative; flex-shrink: 0; filter: drop-shadow(0 22px 28px #17171718); }
-.insights__watch { width: 240px; aspect-ratio: 540 / 860; }
-.insights__phone { width: 330px; aspect-ratio: 874 / 1780; }
-.insights__frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-.insights__watch-screen { position: absolute; left: 13.333%; top: 22.442%; width: 73.333%; height: 55.698%; background: #05080c; color: white; border-radius: 22% / 18%; overflow: hidden; display: flex; align-items: center; flex-direction: column; padding: 17px 12px 10px; gap: 7px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -.02em; }
-.insights__watch-screen > img { width: 30px; height: 30px; object-fit: contain; }
-.insights__watch-time { position: absolute; top: 15px; right: 16px; font-size: 9px; color: #bbc5ce; }
-.insights__watch-screen > svg { color: #71c8f7; width: 19px; height: 19px; }
-.insights__watch-screen strong { font-size: 15px; }
-.insights__watch-screen p { margin: 0; font-size: 10px; line-height: 1.35; text-align: center; color: #b8c6d7; }
-.insights__watch-metrics { display: flex; gap: 28px; font-size: 22px; }
-.insights__watch-metrics small { display: block; font-size: 8px; color: #aab4c2; }
-.insights__watch-status { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #87cef0; }
-.insights__bridge { display: flex; align-items: center; gap: 8px; color: #58afe2; }
-.insights__bridge span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.insights[data-playing='true'] .insights__bridge span { animation: insight-transfer 1.8s ease-in-out infinite; }
-.insights__bridge span:nth-child(2) { animation-delay: .3s; }.insights__bridge span:nth-child(3) { animation-delay: .6s; }
-.insights__phone-screen { position: absolute; left: 5.263%; top: 2.191%; width: 89.702%; height: 95.618%; border-radius: 13% / 6%; overflow: hidden; background: #fafcfd; color: #192c38; font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -.02em; }
-.insights__status { display: flex; justify-content: space-between; padding: 13px 23px 22px; font-size: 11px; font-weight: 600; }
-.insights__sync { position: absolute; inset: 23% 22px auto; text-align: center; }
-.insights__sync img { width: 80px; margin: auto; }.insights__sync h3 { font-size: 23px; line-height: 1.2; margin: 24px 0 16px; font-weight: 500; }.insights__sync p { font-size: 13px; line-height: 1.5; color: #6b7a85; }.insights__sync-sources { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 35px; color: #58afe2; }
-.insights__dashboard { padding: 0 20px; animation: insight-arrive .7s cubic-bezier(.2,.8,.2,1) both; }
-.insights__app-title { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 600; }.insights__app-title img { width: 32px; }
-.insights__periods { display: flex; background: #edf1f4; padding: 3px; border-radius: 10px; margin: 17px 0; }.insights__periods button { flex: 1; border: 0; background: transparent; border-radius: 8px; padding: 8px 0; font: inherit; font-size: 11px; cursor: pointer; color: #647681; }.insights__periods button[aria-pressed='true'] { background: white; color: #172c39; box-shadow: 0 1px 3px #172c3910; }
-.insights__range { font-size: 9px; color: #788994; }.insights__dashboard h3 { margin: 7px 0 16px; font-size: 21px; line-height: 1.15; font-weight: 500; }
-.insights__chart > span { font-size: 9px; color: #748691; }.insights__chart svg { display: block; width: 100%; height: 92px; margin-top: 10px; overflow: visible; }.insights__ticks { display: flex; justify-content: space-between; font-size: 8px; color: #8a98a1; }
-.insights__metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; border-block: 1px solid #e5ebef; padding: 16px 0; margin: 17px 0; }.insights__metrics small { display: block; font-size: 8px; color: #788994; }.insights__metrics strong { display: block; font-size: 15px; font-weight: 500; margin-top: 5px; }.insights__metrics em { font-style: normal; font-size: 9px; }
-.insights__emotions > small { font-size: 9px; color: #788994; }.insights__emotions > div { display: flex; gap: 5px; margin-top: 8px; }.insights__emotions span { padding: 5px 8px; border-radius: 20px; background: #eaf4fa; font-size: 9px; color: #467d9a; }
-.insights__reflection { margin-top: 16px; padding: 12px; border-radius: 12px; background: #f0f4f5; font-size: 9px; color: #687e8a; }.insights__reflection svg { display: inline; vertical-align: middle; margin-right: 5px; }.insights__reflection p { margin: 8px 0 0; font-size: 12px; line-height: 1.4; color: #344e5d; }.insights__note { font-size: 10px; line-height: 1.45; margin: 14px 0 0; color: #75858e; }
-.insights__home { position: absolute; width: 32%; height: 4px; border-radius: 10px; background: #172c39; bottom: 9px; left: 34%; }
-.insights button:focus-visible { outline: 2px solid #4f9cf9; outline-offset: 3px; }
-@keyframes insight-transfer { 0%,100% { opacity: .25; transform: translateX(-3px); } 50% { opacity: 1; transform: translateX(3px); } }
-@keyframes insight-arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 800px) { .case .insights { padding-inline: 24px; gap: 24px; }.insights__devices { gap: 8px; }.insights__watch { width: 180px; }.insights__phone { width: 300px; }.insights__bridge { gap: 4px; }.insights__watch-screen { padding: 9px; gap: 4px; }.insights__watch-screen > img { width: 22px; height: 22px; }.insights__watch-screen strong { font-size: 11px; }.insights__watch-screen p { font-size: 8px; }.insights__watch-metrics { font-size: 16px; gap: 15px; }.insights__watch-time { display: none; }.insights__watch-status { font-size: 7px; } }
-@media (max-width: 560px) { .insights__devices { flex-wrap: wrap; }.insights__watch { width: 180px; }.insights__bridge { transform: rotate(60deg); }.insights__phone { width: 300px; max-width: 100%; }.insights__devices { padding-top: 0; } }
-@media (prefers-reduced-motion: reduce) { .insights__dashboard, .insights[data-playing='true'] .insights__bridge span { animation: none; } }
 
-/* Keep every range inside the device cut-out, including two-line headings on mobile. */
-.insights__dashboard h3 { font-size: 19px; margin-bottom: 12px; }
-.insights__chart svg { height: 72px; }
-.insights__metrics { margin: 12px 0; padding: 12px 0; }
-.insights__reflection { margin-top: 12px; padding: 10px; }
-.insights__note { margin-top: 10px; font-size: 9px; }
-@media (max-width: 560px) {
-  .insights__status { padding-bottom: 14px; }
-  .insights__dashboard { padding-inline: 16px; }
-  .insights__periods { margin-block: 10px; }
-  .insights__dashboard h3 { font-size: 17px; margin-bottom: 9px; }
-  .insights__chart svg { height: 58px; margin-top: 6px; }
-  .insights__metrics { margin-block: 9px; padding-block: 9px; }
-  .insights__reflection { margin-top: 9px; padding: 8px; }
-  .insights__reflection p { font-size: 11px; }
+.mc-stage {
+  --accent: #4f9cf9;
+  --tt: 700ms;
+  --momo-x: 68%;
+  --momo-y: 258%;
+  --momo-size: 97%;
+  --screen-font: Inter, -apple-system, system-ui, sans-serif;
+  width: 100%;
+  max-width: calc(750px * 1.1);
+  height: calc(611px * var(--mc-scale, 1.1));
+  display: flex;
+  justify-content: center;
+}
+/* The studio's 750 × 611 device row, scaled as one piece like its "Device size" setting. */
+.mc-devices { flex-shrink: 0; display: flex; align-items: center; width: 750px; height: 611px; transform: scale(var(--mc-scale, 1.1)); transform-origin: top center; }
+.mc-watch__screen, .mc-phone__screen { font-family: var(--screen-font); letter-spacing: -0.01em; }
+
+/* Watch: Starlight mockup (540×860, screen x72 y193, 396×479) */
+.mc-watch { --k: calc(260 / 540); position: relative; z-index: 2; width: 260px; height: calc(860px * var(--k)); filter: drop-shadow(0 18px 30px rgba(0,0,0,.14)); flex-shrink: 0; }
+.mc-watch__img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.mc-watch__screen { position: absolute; z-index: 1; left: calc(72px * var(--k)); top: calc(193px * var(--k)); width: calc(396px * var(--k)); height: calc(479px * var(--k)); border-radius: 22% / 18%; background: #000; overflow: hidden; color: #fff; font-size: 11px; line-height: 1.3; }
+
+/* Phone: iPhone Silver mockup (874×1780, screen x46 y39, 784×1702) */
+.mc-phone { --k: calc(300 / 874); position: relative; z-index: 2; width: 300px; height: calc(1780px * var(--k)); filter: drop-shadow(0 24px 40px rgba(0,0,0,.16)); flex-shrink: 0; }
+.mc-phone__img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+.mc-phone__screen { position: absolute; z-index: 1; left: calc(46px * var(--k)); top: calc(39px * var(--k)); width: calc(784px * var(--k)); height: calc(1702px * var(--k)); border-radius: calc(113px * var(--k)); overflow: hidden; background: #000; font-size: 11px; isolation: isolate; color: #1f2a2e; }
+/* The mockup's screen hole has tighter corners than the screen's radius; a black backing under the frame fills the slivers. */
+.mc-phone::before { content: ''; position: absolute; z-index: 0; left: calc(40px * var(--k)); top: calc(33px * var(--k)); width: calc(794px * var(--k)); height: calc(1714px * var(--k)); border-radius: calc(120px * var(--k)); background: #000; }
+
+/* Heartbeat trace between the devices. At mid height the Watch PNG has 16px of transparent margin right of the case,
+   the phone 2.4px left of its frame: the trace runs under both devices so its ends meet the hardware. */
+.mc-link { position: relative; z-index: 1; width: 190px; height: 120px; flex-shrink: 0; }
+.mc-trace { position: absolute; top: 0; left: -20px; width: calc(100% + 26px); max-width: none; height: 100%; overflow: visible; }
+.mc-trace path { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mc-trace__base { stroke: #d4d1ce; }
+.mc-trace__live { stroke: var(--accent); stroke-width: 2.4; stroke-dasharray: 30 130; stroke-dashoffset: 30; opacity: 0; }
+.mc-link[data-state='send'] .mc-trace__live { opacity: 1; animation: mc-trace 1.15s linear infinite; }
+.mc-link[data-state='nudge'] .mc-trace__live { opacity: 1; stroke-dasharray: 100 0; stroke-dashoffset: 0; }
+@keyframes mc-trace { from { stroke-dashoffset: 30; } to { stroke-dashoffset: -100; } }
+
+/* Screens + transitions */
+.mc-screen { position: absolute; inset: 0; }
+.mc-screen--entering { z-index: 1; animation: mc-screen-in var(--tt) cubic-bezier(.2,.8,.2,1) both; }
+.mc-screen--leaving { z-index: 0; pointer-events: none; animation: mc-screen-out var(--tt) ease both; }
+@keyframes mc-screen-in { from { opacity: 0; filter: blur(8px); transform: translateY(10px) scale(.985); } }
+@keyframes mc-screen-out { to { opacity: 0; filter: blur(6px); } }
+@keyframes mc-fade-in { from { opacity: 0; } }
+@keyframes mc-rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes mc-beat { 50% { scale: 1.35; } }
+
+/* Watch parts: Momo companion */
+.mc-w { position: relative; padding: 30px 14px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; height: 100%; }
+.mc-w--center { justify-content: center; padding-top: 22px; }
+.mc-time { position: absolute; top: 13px; right: 20px; font-size: 11px; font-weight: 600; color: #fff; }
+.mc-time--left { right: auto; left: 22px; color: var(--accent); }
+.mc-title { font-weight: 600; font-size: 14px; line-height: 1.15; margin-top: 6px; text-wrap: balance; }
+.mc-body { color: #b0b0b5; font-size: 10.5px; margin-top: 3px; line-height: 1.3; text-wrap: balance; }
+.mc-momo { position: relative; width: 64px; height: 64px; }
+.mc-momo img { width: 100%; height: 100%; object-fit: contain; animation: mc-bob 2.4s ease-in-out infinite; }
+@keyframes mc-bob { 50% { translate: 0 -4px; } }
+.mc-heart { position: absolute; right: -4px; top: 2px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #ff6b81; color: #fff; animation: mc-beat .55s ease-in-out infinite; }
+.mc-momo--sm { width: 46px; height: 46px; margin-top: 4px; }
+.mc-momo--sm .mc-heart { width: 16px; height: 16px; right: -5px; top: 0; }
+.mc-signals { display: grid; gap: 4px; margin-top: 8px; text-align: left; }
+.mc-signals div { display: flex; gap: 6px; align-items: center; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; animation: mc-fade-in .5s both; animation-delay: calc(var(--i) * 450ms + 400ms); }
+.mc-signals svg { color: var(--accent); flex-shrink: 0; }
+.mc-signals div:first-child svg { color: #ff6b81; }
+.mc-fly img { animation: mc-fly 2.8s .3s cubic-bezier(.6,0,.3,1) both; }
+@keyframes mc-fly { 45% { translate: 0 -6px; scale: 1.05; } 100% { translate: 160% -30%; scale: .5; opacity: 0; } }
+.mc-trail { display: flex; gap: 5px; margin: -8px 0 4px; }
+.mc-trail i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); animation: mc-fade-in .5s both alternate infinite; }
+.mc-trail i:nth-child(2) { animation-delay: .25s; } .mc-trail i:nth-child(3) { animation-delay: .5s; }
+.mc-bubble { position: relative; background: #1c1c1e; border-radius: 16px; padding: 9px 11px; font-size: 12px; line-height: 1.25; color: #fff; text-align: left; text-wrap: pretty; animation: mc-rise .6s .2s both; }
+.mc-bubble::after { content: ''; position: absolute; left: 22px; bottom: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #1c1c1e; }
+.mc-small { width: 40px; height: 40px; object-fit: contain; align-self: flex-start; margin: 8px 0 0 8px; animation: mc-bob 3s ease-in-out infinite; }
+
+/* Lock screen = flows/lockscreen.webp (same 874×1780 mockup as the phone), laid over the whole device so the
+   screen clips it to the exact pixels. The notification matches the case study's .lock__note; cqw are of the full mockup. */
+.mc-lock { position: absolute; left: calc(-46px * var(--k)); top: calc(-39px * var(--k)); width: calc(874px * var(--k)); height: calc(1780px * var(--k)); container-type: inline-size; }
+.mc-lock__bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mc-lock::after { content: ''; position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+.mc-lock[data-dim]::after { opacity: .62; }
+.mc-note { position: absolute; left: 8.15%; right: 8.15%; top: 36%; display: grid; grid-template-columns: 7.8cqw 1fr; column-gap: 2.7cqw; padding: 3.3cqw 3.5cqw 3.4cqw 2.7cqw; border-radius: 5cqw; background: rgb(245 245 247 / .62); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); color: #111; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; font-size: 3.6cqw; line-height: 1.25; letter-spacing: -0.01em; animation: mc-note-in .7s .3s cubic-bezier(.22,1,.36,1) both; }
+@keyframes mc-note-in { from { opacity: 0; translate: 0 -24px; scale: .96; } }
+.mc-note__icon { grid-row: 1 / 3; width: 7.8cqw; height: 7.8cqw; border-radius: 1.75cqw; background: #eaf5ff url('/work/unwind/intro/momo-open.webp') var(--momo-x) var(--momo-y) / var(--momo-size) no-repeat; }
+.mc-note__row { display: flex; align-items: baseline; gap: 1.5cqw; }
+.mc-note__app { font-weight: 600; color: rgb(17 17 17 / .55); }
+.mc-note__time { margin-left: auto; color: rgb(17 17 17 / .45); }
+.mc-note__copy { grid-column: 2; }
+.mc-note__title { margin: .15cqw 0 0; font-size: 4.05cqw; font-weight: 600; }
+.mc-note__text { margin: .2cqw 0 0; }
+/* Nudge timeline: note in .3s → buttons open 1.4s → touch arrives 2.4s → press ≈2.95s → fades by 3.6s, when the sequence restarts. */
+.mc-note__actions { grid-column: 1 / -1; display: grid; gap: 1.6cqw; max-height: 0; margin-top: 0; overflow: hidden; animation: mc-note-open .6s 1.4s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes mc-note-open { to { max-height: 30cqw; margin-top: 3cqw; } }
+.mc-note__actions span { position: relative; padding: 2.4cqw; border-radius: 3.6cqw; background: rgb(255 255 255 / .7); text-align: center; font-weight: 500; }
+.mc-note__actions span:first-child { color: #0a7bd6; animation: mc-note-tap .5s 2.7s ease both; }
+@keyframes mc-note-tap { 50% { background: #fff; scale: .97; } }
+/* Simulator-style touch: a translucent circle glides onto "Yes", presses with the button, then lifts away. */
+.mc-cursor { position: absolute; left: 50%; top: 50%; width: 8cqw; height: 8cqw; margin: -4cqw 0 0 -4cqw; border-radius: 50%; background: rgb(30 34 44 / .22); box-shadow: inset 0 0 0 .3cqw rgb(255 255 255 / .55), 0 1cqw 3cqw rgb(0 0 0 / .12); pointer-events: none; opacity: 0; animation: mc-cursor-tap 1.2s 2.4s cubic-bezier(.3,.7,.3,1) both; }
+@keyframes mc-cursor-tap {
+  0% { opacity: 0; translate: 10cqw 6cqw; scale: 1; }
+  35% { opacity: 1; translate: 0 0; scale: 1; }
+  45% { scale: .78; background: rgb(30 34 44 / .32); }
+  58% { opacity: 1; scale: 1; }
+  100% { opacity: 0; translate: 0 0; scale: 1.15; }
+}
+
+@media (max-width: 800px) { .case .insights { padding-inline: 24px; gap: 24px; } }
+@media (prefers-reduced-motion: reduce) {
+  .mc-stage *, .mc-stage *::before, .mc-stage *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }
