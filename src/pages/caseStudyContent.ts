@@ -44,6 +44,18 @@ type SectionDefaults = {
 }
 export type SectionSpacing = { top: number; bottom: number; contentGap: number }
 
+export type TextReveal = {
+  preset: 'cascade' | 'rise together' | 'from sides' | 'focus' | 'wipe' | 'fade' | 'still'
+  duration: number
+  stagger: number
+}
+
+const textRevealDials = (preset: TextReveal['preset'] = 'cascade') => ({
+  preset: { type: 'select' as const, options: ['cascade', 'rise together', 'from sides', 'focus', 'wipe', 'fade', 'still'], default: preset },
+  duration: [0.7, 0.25, 1.8, 0.05] as Tuple,
+  stagger: [0.1, 0, 0.5, 0.02] as Tuple,
+  _collapsed: true,
+})
 /** Shared section rhythm: viewport edges plus the gap from copy to the main visual. */
 const sectionSpacingDials = (top = 96, bottom = 64, contentGap = 72) => ({
   top: [top, 0, 240, 1] as Tuple,
@@ -366,6 +378,7 @@ export const UNWIND_CONFIG = {
     voiceLabel: { type: 'text' as const, default: 'Say what happened' },
     trackerLabel: { type: 'text' as const, default: 'Keep yourself on track' },
     spacing: sectionSpacingDials(82, 42, 110),
+    textReveal: textRevealDials(),
     _collapsed: true,
   },
   /** Guided WOOP and Gross models side by side (rendered as `guided`). */
@@ -379,6 +392,7 @@ export const UNWIND_CONFIG = {
     woopLabel: { type: 'text' as const, default: 'WOOP · plan for next time' },
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
     spacing: sectionSpacingDials(96, 64, 72),
+    textReveal: textRevealDials('focus'),
     _collapsed: true,
   },
   /** Keep the section key to preserve its saved position; the device demo replaces Dynamic Mode. */
@@ -394,6 +408,7 @@ export const UNWIND_CONFIG = {
       stagger: [0.18, 0, 0.6, 0.02] as Tuple,
       _collapsed: true,
     },
+    textReveal: textRevealDials(),
     _collapsed: true,
   },
   context: sectionDials({
@@ -409,14 +424,17 @@ export const UNWIND_CONFIG = {
     body: 'A daily calendar tracks shifts, obstacles and habit formation over time.\n\nWeekly, user-driven goals turn into “if-then” plans.',
     video: 'entries',
   }),
-  outcomes: sectionDials({
-    eyebrow: 'Outcomes',
-    title: 'Coping flexibility improved significantly across a 15-day pilot with 20 participants.',
-    body: 'Guided reflection produced nearly twice as many action plans, and participants put more of them into practice in daily life.',
-    layout: 'bottom',
-    figure: 'paper',
-    gap: 48,
-  }),
+  outcomes: {
+    ...sectionDials({
+      eyebrow: 'Outcomes',
+      title: 'Coping flexibility improved significantly across a 15-day pilot with 20 participants.',
+      body: 'Guided reflection produced nearly twice as many action plans, and participants put more of them into practice in daily life.',
+      layout: 'bottom',
+      figure: 'paper',
+      gap: 48,
+    }),
+    textReveal: textRevealDials(),
+  },
   /** Copy for the 8-part recruiter structure (order panel › structure). */
   recruiter: RECRUITER_COPY,
 }

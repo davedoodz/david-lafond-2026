@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { Activity, Footprints, Heart } from 'lucide-react'
 import { EditableText } from '../components/EditableText'
 import './DeviceInsights.css'
-import type { SectionSpacing } from './caseStudyContent'
+import type { SectionSpacing, TextReveal } from './caseStudyContent'
 
 /* Port of studio/unwind-insights-sequence (settings: Watch "companion", link "trace").
    Momo only speaks up when the signals agree: heart rate up, no movement or workout to explain it,
@@ -86,7 +86,7 @@ function Screens({ step, render }: { step: StepId; render: (id: StepId) => React
 }
 
 type DeviceReveal = { preset: 'handoff' | 'rise together' | 'split sides' | 'scale in' | 'focus' | 'still'; duration: number; stagger: number }
-type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; reveal?: DeviceReveal }; edit: (path: string) => (value: string) => void }
+type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; reveal?: DeviceReveal; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void }
 
 export function DeviceInsights({ copy, edit }: Props) {
   const ref = useRef<HTMLElement>(null)
@@ -96,6 +96,7 @@ export function DeviceInsights({ copy, edit }: Props) {
   const [step, setStep] = useState(0)
   const [scale, setScale] = useState(SCALE)
   const reveal = copy.reveal ?? { preset: 'still', duration: 0.8, stagger: 0.18 }
+  const textReveal = copy.textReveal ?? { preset: 'still', duration: 0.7, stagger: 0.1 }
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -161,7 +162,7 @@ export function DeviceInsights({ copy, edit }: Props) {
   }, [visible, reduced, step])
   const id = STEPS[step].id
   return (
-    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={reveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-reveal-duration': `${reveal.duration}s`, '--mc-reveal-stagger': `${reveal.stagger}s` } as CSSProperties}>
+    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={reveal.preset} data-text-reveal={textReveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-reveal-duration': `${reveal.duration}s`, '--mc-reveal-stagger': `${reveal.stagger}s`, '--text-reveal-duration': `${textReveal.duration}s`, '--text-reveal-stagger': `${textReveal.stagger}s` } as CSSProperties}>
       <header className="insights__heading case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="Insights eyebrow" value={copy.eyebrow} onChange={edit('dynamic.eyebrow')} />
         <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} />

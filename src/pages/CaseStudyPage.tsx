@@ -12,7 +12,7 @@ import { UnwindSystemFigure } from '../features/unwindSystem/UnwindSystemFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
 import type { DialConfig } from 'dialkit'
-import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, UNWIND_CONFIG, type ProtoVideo, type SectionSpacing } from './caseStudyContent'
+import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, UNWIND_CONFIG, type ProtoVideo, type SectionSpacing, type TextReveal } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import { PersonaSection, type Persona } from './casePersona'
 import { EvidenceSection, MediaPlaceholder, PrinciplesSection, ReframeSection } from './filoSections'
@@ -83,7 +83,7 @@ function LogoRow({ l }: { l: Logos }) {
     </div>
   )
 }
-type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; media: Media }
+type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; media: Media; textReveal?: TextReveal }
 type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
 
 /**
@@ -457,11 +457,18 @@ export function CaseStudyPage({ id }: Props) {
         data-section={key}
         data-layout={hasVideo || hasPlaceholder || hasFigure || hasDemo ? s.media.layout : 'text'}
         data-copy-align={s.align}
+        data-text-reveal={s.textReveal?.preset}
         style={
           {
             '--section-pad-top': `${s.spacing.top}px`,
             '--section-pad-bottom': `${s.spacing.bottom}px`,
             '--section-content-gap': `${s.spacing.contentGap}px`,
+            ...(s.textReveal
+              ? {
+                  '--text-reveal-duration': `${s.textReveal.duration}s`,
+                  '--text-reveal-stagger': `${s.textReveal.stagger}s`,
+                }
+              : {}),
             ...(isHero && heroSpacing
               ? {
                   '--hero-logos-gap': `${heroSpacing.logosToTitle}px`,

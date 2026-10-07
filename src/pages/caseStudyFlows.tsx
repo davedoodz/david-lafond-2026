@@ -1,7 +1,7 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText } from './storyArt'
-import type { SectionSpacing } from './caseStudyContent'
+import type { SectionSpacing, TextReveal } from './caseStudyContent'
 import { cardSurface, useSystemBase, type GlassDials } from '../features/unwindSystem/systemSurface'
 
 /** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
@@ -223,7 +223,7 @@ function useRiseOnView() {
 }
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string; spacing: SectionSpacing }
+export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRiseOnView()
   useEffect(() => {
@@ -264,8 +264,9 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
       data-section="flows"
       data-layout="flows"
       data-copy-align={f.align}
+      data-text-reveal={f.textReveal.preset}
       aria-labelledby="case-flows"
-      style={{ '--flows-scale': f.phoneScale, '--section-pad-top': `${f.spacing.top}px`, '--section-pad-bottom': `${f.spacing.bottom}px`, '--section-content-gap': `${f.spacing.contentGap}px` } as CSSProperties}
+      style={{ '--flows-scale': f.phoneScale, '--section-pad-top': `${f.spacing.top}px`, '--section-pad-bottom': `${f.spacing.bottom}px`, '--section-content-gap': `${f.spacing.contentGap}px`, '--text-reveal-duration': `${f.textReveal.duration}s`, '--text-reveal-stagger': `${f.textReveal.stagger}s` } as CSSProperties}
     >
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="flows eyebrow" value={f.eyebrow} onChange={edit('flows.eyebrow')} />
@@ -286,11 +287,11 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
 
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type GuidedReveal = 'rise' | 'cascade' | 'focus' | 'from sides' | 'wipe' | 'still'
-export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; spacing: SectionSpacing }
+export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
 export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
   const ref = useRiseOnView()
   return (
-    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} aria-labelledby="case-guided" style={{ '--section-pad-top': `${g.spacing.top}px`, '--section-pad-bottom': `${g.spacing.bottom}px`, '--section-content-gap': `${g.spacing.contentGap}px` } as CSSProperties}>
+    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} data-text-reveal={g.textReveal.preset} aria-labelledby="case-guided" style={{ '--section-pad-top': `${g.spacing.top}px`, '--section-pad-bottom': `${g.spacing.bottom}px`, '--section-content-gap': `${g.spacing.contentGap}px`, '--text-reveal-duration': `${g.textReveal.duration}s`, '--text-reveal-stagger': `${g.textReveal.stagger}s` } as CSSProperties}>
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="guided eyebrow" value={g.eyebrow} onChange={edit('guided.eyebrow')} />
         <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} />
