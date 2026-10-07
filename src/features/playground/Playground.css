@@ -62,6 +62,11 @@
   display: block;
 }
 
+.pg-video[data-fit='contain'] {
+  object-fit: contain;
+  background: #f5f5f5;
+}
+
 .pg-card .card-shade,
 .pg-card .card-title {
   opacity: 0;

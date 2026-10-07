@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 type Props = {
   src: string
   poster?: string
+  fit?: 'cover' | 'contain'
   /** Play only while the card is on screen (grid) or zoomed. */
   shouldPlay: boolean
 }
@@ -13,7 +14,7 @@ type Props = {
  * Playground.tsx), so it is never unmounted/recreated when a card zooms —
  * playback continues from the same element, no reload.
  */
-export function CardVideo({ src, poster, shouldPlay }: Props) {
+export function CardVideo({ src, poster, fit = 'cover', shouldPlay }: Props) {
   const ref = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function CardVideo({ src, poster, shouldPlay }: Props) {
       className="pg-video"
       src={src}
       poster={poster}
+      data-fit={fit}
       muted
       loop
       playsInline

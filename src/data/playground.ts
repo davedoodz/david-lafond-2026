@@ -2,8 +2,8 @@
  * Playground grid content. 16 slots, 4x4 desktop / 2x8 mobile.
  * Titles here are the baseline defaults — the DialKit "Playground" panel's
  * `titles` folder exposes one text field per card that overrides these live.
- * Videos aren't produced yet: leave `video`/`poster` unset and the card
- * renders the #D9D9D9 placeholder fill until David wires a source in.
+ * Items without media render the #D9D9D9 placeholder fill until David wires
+ * in a source.
  */
 export type PlaygroundItem = {
   id: string
@@ -11,15 +11,38 @@ export type PlaygroundItem = {
   /** Muted/looped source, played only while the card is on screen or zoomed. */
   video?: string
   poster?: string
+  /** Preserve portrait media inside the landscape card instead of cropping it. */
+  fit?: 'cover' | 'contain'
 }
 
 export const playgroundItems: PlaygroundItem[] = [
-  { id: 'p01', title: 'Prototype 01' },
-  { id: 'p02', title: 'Prototype 02' },
-  { id: 'p03', title: 'Prototype 03' },
-  { id: 'p04', title: 'Prototype 04' },
+  {
+    id: 'p01',
+    title: 'Paper shaders',
+    video: '/about/playground/paper-shaders.mp4',
+    poster: '/about/playground/paper-shaders.webp',
+  },
+  {
+    id: 'p02',
+    title: 'FutureFabric',
+    video: '/about/playground/futurefabric.mp4',
+    poster: '/about/playground/futurefabric.webp',
+  },
+  {
+    id: 'p03',
+    title: 'Nintendogs for macOS',
+    video: '/about/playground/nintendogs.mp4',
+    poster: '/about/playground/nintendogs.webp',
+  },
+  {
+    id: 'p04',
+    title: 'Renovation contractor agent',
+    video: '/about/playground/contractor-agent.mp4',
+    poster: '/about/playground/contractor-agent.webp',
+    fit: 'contain',
+  },
   { id: 'p05', title: 'Prototype 05' },
-  { id: 'p06', title: 'Nintendogs for MacOS' },
+  { id: 'p06', title: 'Prototype 06' },
   { id: 'p07', title: 'Prototype 07' },
   { id: 'p08', title: 'Prototype 08' },
   { id: 'p09', title: 'Prototype 09' },

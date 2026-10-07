@@ -247,7 +247,7 @@ export function Playground({ className }: { className?: string }) {
           const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
           if (!target) return null
           return createPortal(
-            <CardVideo src={item.video!} poster={item.poster} shouldPlay={item.id === activeId || visibleIds.has(item.id)} />,
+            <CardVideo src={item.video!} poster={item.poster} fit={item.fit} shouldPlay={item.id === activeId || visibleIds.has(item.id)} />,
             target,
             item.id,
           )
