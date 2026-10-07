@@ -648,6 +648,11 @@ html[data-case-snap] .case__moment {
   line-height: 1.4;
   text-wrap: pretty;
 }
+/* The Opportunity body is a numbered list stored as three text lines. Keep its block centred
+   with the rest of the section, but align only those lines to a shared left edge. */
+.case__story-cols > [data-row='opportunity'] .case__story-body {
+  text-align: left;
+}
 
 /* Graphic panel looks. */
 .story-art {
