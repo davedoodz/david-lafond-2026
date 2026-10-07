@@ -1,8 +1,8 @@
 /**
- * Momo in the nav, standing in for the Davebot ghost on the Unwind page. Clicking it flies
+ * Momo in the nav, standing in for the Davebot ghost on the Momo page. Clicking it flies
  * Momo to the centre of the page over a veil, the way the ghost opens Davebot, but with no
  * chat box. Click anywhere or press Escape to send it back. Clip alignment and blend follow
- * the Unwind card.
+ * the Momo card.
  */
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
@@ -16,7 +16,7 @@ type Tuple = [number, number, number, number]
 const SLOT = 36
 
 const CONFIG = {
-  /** awake, asleep, or animating between the two like the Unwind card. */
+  /** awake, asleep, or animating between the two like the Momo card. */
   state: { type: 'select' as const, options: [...MOMO_MODES], default: 'both' },
   /** Clip height (px); the clip has empty margin around Momo, so this runs larger than the ghost. */
   size: [52, 20, 120, 1] as Tuple,

@@ -5,7 +5,7 @@
   --filo-line: rgb(11 10 9 / 0.1);
 }
 
-/* Shared persona sheet: swap Unwind blue for Filo lime. */
+/* Shared persona sheet: swap Momo blue for Filo lime. */
 .case[data-work='filo'] .persona__icon {
   background: var(--filo-accent-soft);
 }
@@ -19,7 +19,7 @@
   color: var(--filo-accent);
 }
 
-/* Problem · Opportunity · Solution cards: lime instead of Unwind blue. */
+/* Problem · Opportunity · Solution cards: lime instead of Momo blue. */
 .case[data-work='filo'] [data-story-art='card'] .story-art {
   background: var(--filo-accent-soft);
 }

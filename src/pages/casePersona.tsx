@@ -1,7 +1,7 @@
 /**
  * Shared case-study persona: identity, traits, then the key contexts. With `float` dials
- * (Unwind) the contexts become cards that appear around the portrait; otherwise they render
- * as a list (Filo). Icons follow the Re:Self language: ink line work, Unwind blue accents.
+ * (Momo) the contexts become cards that appear around the portrait; otherwise they render
+ * as a list (Filo). Icons follow the Re:Self language: ink line work, Momo blue accents.
  * Only `.pa-b` moves.
  */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
@@ -427,7 +427,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
           <div className="persona__stage">
             <img
               className="persona__photo"
-              src="/work/unwind/persona/overthinker.jpg"
+              src="/work/momo/persona/overthinker.jpg"
               alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
               width={1374}
               height={1145}

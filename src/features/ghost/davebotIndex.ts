@@ -24,7 +24,7 @@ export const DAVEBOT_ENTRIES: DavebotEntry[] = [
     keys: ['work', 'projects', 'portfolio', 'case studies', 'what did david build', 'what work is here'],
     answer: [
       { text: 'Three projects lead the portfolio: ' },
-      { text: 'Unwind', emphasis: true },
+      { text: 'Momo', emphasis: true },
       { text: ', a multimodal AI reflection system for behavioral change; ' },
       { text: 'Filo', emphasis: true },
       { text: ', an AI agent that gets new biomaterials from swatch to production; and the ' },
@@ -33,12 +33,12 @@ export const DAVEBOT_ENTRIES: DavebotEntry[] = [
     ],
   },
   {
-    id: 'unwind',
-    title: 'Unwind',
+    id: 'momo',
+    title: 'Momo',
     route: 'work',
-    keys: ['unwind', 'reflection', 'behavioral change', 'multimodal', 'journaling', 'wellbeing'],
+    keys: ['momo', 'reflection', 'behavioral change', 'multimodal', 'journaling', 'wellbeing'],
     answer: [
-      { text: 'Unwind is a ' },
+      { text: 'Momo is a ' },
       { text: 'novel multimodal AI reflection system for behavioral change', emphasis: true },
       { text: ' — David designed it to help people notice and shift patterns through more than one input mode, not just text.' },
     ],

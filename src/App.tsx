@@ -27,7 +27,7 @@ const HEADER_BAND_CONFIG = {
   work: true,
   about: true,
   'harvard-mit': true,
-  unwind: true,
+  momo: true,
   filo: true,
 }
 
@@ -54,7 +54,7 @@ const TITLES = {
   work: 'David Lafond — Architect × Product Designer',
   about: 'About — David Lafond',
   'harvard-mit': 'The Design Portfolio that Got Me Into Harvard & MIT — David Lafond',
-  unwind: 'Unwind — David Lafond',
+  momo: 'Momo — David Lafond',
   filo: 'Filo — David Lafond',
 }
 
@@ -82,7 +82,7 @@ export function App() {
 
   return (
     <>
-      <div className="site" data-surface={route === 'about' || route === 'unwind' || route === 'filo' ? 'light' : 'dark'}>
+      <div className="site" data-surface={route === 'about' || route === 'momo' || route === 'filo' ? 'light' : 'dark'}>
         {headerBand[route as keyof typeof headerBand] !== false && <DitherBand position="header" />}
         {route === 'about' ? (
           // Render the loaded module directly so page transitions never capture a fallback.
@@ -93,7 +93,7 @@ export function App() {
               <LazyAboutPage />
             </Suspense>
           )
-        ) : route === 'unwind' || route === 'filo' ? (
+        ) : route === 'momo' || route === 'filo' ? (
           caseStudyChunk.module ? (
             <caseStudyChunk.module.CaseStudyPage id={route} />
           ) : (

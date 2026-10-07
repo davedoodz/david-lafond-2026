@@ -1,10 +1,10 @@
-/* Back: same spot as the Unwind/Filo sidebar Back (top-left, 140px down), scrolling with the page. */
+/* Back: same spot as the Momo/Filo sidebar Back (top-left, 140px down), scrolling with the page. */
 .project__back {
   position: absolute;
   z-index: 3;
   top: 140px;
   left: var(--edge);
-  /* Unwind's .case__back resets the nav's -4px nudge; match it. */
+  /* Momo's .case__back resets the nav's -4px nudge; match it. */
   margin-left: 0;
 }
 

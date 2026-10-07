@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Unwind — Core flows section editor</title>
+<title>Momo — Core flows section editor</title>
 <style>
   @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
   @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
@@ -46,7 +46,7 @@
 
   .phone { display: block; height: var(--phone-h); aspect-ratio: 530 / 1080; object-fit: contain; filter: drop-shadow(0 30px 40px rgb(23 23 23 / var(--shadow))); pointer-events: none; user-select: none; }
   /* Same frame mask as the site: hides the page-coloured corners baked into the recordings. */
-  .phone video { display: block; width: 100%; height: 100%; object-fit: contain; mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat; -webkit-mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat; }
+  .phone video { display: block; width: 100%; height: 100%; object-fit: contain; mask: url('/work/momo/flows/phone-mask.png') center / contain no-repeat; -webkit-mask: url('/work/momo/flows/phone-mask.png') center / contain no-repeat; }
   .label { margin: var(--label-gap) 0 0; font-size: var(--label-size); text-align: center; color: var(--label-color); letter-spacing: -0.03em; white-space: nowrap; }
   .sec[data-labels='off'] .label { display: none; }
 
@@ -55,7 +55,7 @@
   .lock > img { position: absolute; inset: 0; width: 100%; height: 100%; }
   /* Same as the site: iPhone proportions (15 pt gaps, 38 pt icon, ~20/17.5 pt type), Apple system font, Momo icon. */
   .note { position: absolute; left: 8.15%; right: 8.15%; top: var(--note-top); display: grid; grid-template-columns: 7.8cqw 1fr; column-gap: 2.7cqw; padding: 3.3cqw 3.5cqw 3.4cqw 2.7cqw; border-radius: 5cqw; background: rgb(245 245 247 / 0.62); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); color: #111; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; font-size: 3.6cqw; line-height: 1.25; letter-spacing: -0.01em; animation: lock-note 7s cubic-bezier(0.22, 1, 0.36, 1) infinite; }
-  .note__icon { grid-row: 1 / 3; width: 7.8cqw; height: 7.8cqw; border-radius: 1.75cqw; background: #eaf5ff url('/work/unwind/intro/momo-open.webp') 50% 72% / 96% no-repeat; }
+  .note__icon { grid-row: 1 / 3; width: 7.8cqw; height: 7.8cqw; border-radius: 1.75cqw; background: #eaf5ff url('/work/momo/intro/momo-open.webp') 50% 72% / 96% no-repeat; }
   .note__copy { grid-column: 2; }
   .note__row { display: flex; align-items: baseline; gap: 1.5cqw; }
   .note__app { font-weight: 600; color: rgb(17 17 17 / 0.55); }
@@ -99,7 +99,7 @@
       <button data-view="mobile">Mobile 390</button>
       <button id="replay">Replay entrance</button>
       <button id="still">Pause notification</button>
-      <a href="/work/unwind" target="_blank" rel="noreferrer">Live section ↗</a>
+      <a href="/work/momo" target="_blank" rel="noreferrer">Live section ↗</a>
     </div>
     <div class="viewport" id="viewport">
       <div class="page" id="page">
@@ -197,7 +197,7 @@ function phoneEl(p) {
     const n = S.note
     const el = document.createElement('div')
     el.className = 'lock'
-    el.innerHTML = `<img src="/work/unwind/flows/lockscreen.webp" alt="" draggable="false" />
+    el.innerHTML = `<img src="/work/momo/flows/lockscreen.webp" alt="" draggable="false" />
       <div class="note"><span class="note__icon"></span><div class="note__copy"><div class="note__row"><span class="note__app"></span><span class="note__time"></span></div>
       <p class="note__title"></p><p class="note__text"></p></div><div class="note__actions"><span></span><span></span></div></div>`
     el.querySelector('.note__app').textContent = n.app
@@ -209,7 +209,7 @@ function phoneEl(p) {
   }
   const wrap = document.createElement('div'); wrap.className = 'phone'
   const v = document.createElement('video')
-  Object.assign(v, { src: `/work/unwind/flows/${p.src}.mp4`, poster: `/work/unwind/flows/${p.src}.webp`, muted: true, loop: true, playsInline: true, autoplay: true })
+  Object.assign(v, { src: `/work/momo/flows/${p.src}.mp4`, poster: `/work/momo/flows/${p.src}.webp`, muted: true, loop: true, playsInline: true, autoplay: true })
   wrap.append(v)
   return wrap
 }

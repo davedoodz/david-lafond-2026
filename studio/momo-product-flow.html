@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Re:Self product flow — story strip</title>
+    <style>
+      @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+      @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+      :root { --ink: #171717; --stone: #6f6b68; --paper: #f5f5f5; --font: 'Beatrice', system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); letter-spacing: -0.02em; }
+      main { max-width: 1400px; margin: 0 auto; padding: 56px 44px; }
+      .head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px; }
+      h1 { margin: 0; font-size: 40px; font-weight: 400; letter-spacing: -0.04em; flex: 1; }
+      button { font: inherit; font-size: 13px; border: 1px solid var(--ink); background: none; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+      .frame { background: #fff; border-radius: 24px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 32px rgba(0,0,0,.05); overflow: hidden; }
+      svg { display: block; width: 100%; height: auto; }
+      .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 20px; font-size: 14px; color: var(--stone); }
+      #presets { display: flex; gap: 6px; flex-wrap: wrap; }
+      #presets button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+      label { display: flex; align-items: center; gap: 8px; }
+      output { min-width: 40px; color: var(--ink); }
+      /* Timing vars: --t step duration, --st stagger, --n steps. */
+      .frame { --t: calc(0.7s / var(--speed, 1)); --st: calc(var(--stagger, 0.35s) / var(--speed, 1)); --n: 5; }
+      .step, .art, .arrow, .loop, .card { transform-box: fill-box; transform-origin: center; }
+      .frame.play .step, .frame.play .arrow, .frame.play .loop, .frame.play .art, .frame.play .card, .frame.play .loop__line { animation-fill-mode: both; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
+      /* cascade: cards rise in order, arrows grow, loop draws last */
+      [data-preset='cascade'].play .step { animation: rise var(--t) calc(var(--i) * var(--st)) both cubic-bezier(.2, .8, .2, 1); }
+      [data-preset='cascade'].play .arrow { animation: grow var(--t) calc((var(--i) + .6) * var(--st)) both; transform-origin: left center; }
+      [data-preset='cascade'].play .loop { animation: rise var(--t) calc(var(--n) * var(--st) + var(--t) * .5) both; }
+      /* pop: cards appear, then each illustration springs in */
+      [data-preset='pop'].play .card { animation: fade var(--t) calc(var(--i) * var(--st) * .5) both; }
+      [data-preset='pop'].play .art { animation: pop calc(var(--t) * 1.2) calc(var(--i) * var(--st) + var(--t) * .4) both cubic-bezier(.34, 1.56, .64, 1); }
+      [data-preset='pop'].play .copy { animation: rise var(--t) calc(var(--i) * var(--st) + var(--t) * .7) both; }
+      [data-preset='pop'].play .arrow, [data-preset='pop'].play .loop { animation: fade var(--t) calc(var(--n) * var(--st) + var(--t)) both; }
+      /* focus: steps sharpen out of a blur, left to right */
+      [data-preset='focus'].play .step { animation: focus calc(var(--t) * 1.4) calc(var(--i) * var(--st)) both ease-out; }
+      [data-preset='focus'].play .arrow, [data-preset='focus'].play .loop { animation: fade var(--t) calc(var(--n) * var(--st) + var(--t)) both; }
+      /* spotlight: loops forever, one step lit at a time */
+      .frame[data-preset='spotlight'] { --dwell: calc(var(--st) * 4 + .6s / var(--speed, 1)); }
+      [data-preset='spotlight'].play .step { animation: spot calc(var(--n) * var(--dwell)) calc((var(--i) - var(--n)) * var(--dwell)) infinite ease-in-out; }
+      [data-preset='spotlight'].play .loop__line { animation: march-loop calc(1.2s / var(--speed, 1)) linear infinite; }
+      /* flow: loops forever, data moves along arrows, art breathes in a wave */
+      [data-preset='flow'].play .arrow { stroke-dasharray: 3 5; animation: march calc(0.8s / var(--speed, 1)) linear infinite; }
+      [data-preset='flow'].play .art { animation: breathe calc(var(--t) * 4) calc(var(--i) * var(--st)) infinite ease-in-out; }
+      [data-preset='flow'].play .loop__line { animation: march-loop calc(1.2s / var(--speed, 1)) linear infinite; }
+      @keyframes rise { from { opacity: 0; transform: translateY(28px); } }
+      @keyframes fade { from { opacity: 0; } }
+      @keyframes grow { from { opacity: 0; transform: scaleX(0); } }
+      @keyframes pop { from { opacity: 0; transform: scale(.4); } }
+      @keyframes focus { from { opacity: 0; filter: blur(12px); transform: scale(.96); } }
+      @keyframes spot { 0%, 18% { opacity: 1; transform: translateY(-8px); } 26%, 92% { opacity: .35; transform: none; } 100% { opacity: 1; transform: translateY(-8px); } }
+      @keyframes march { to { stroke-dashoffset: -16; } }
+      @keyframes march-loop { to { stroke-dashoffset: -20; } }
+      @keyframes breathe { 0%, 100% { transform: none; } 50% { transform: scale(1.06); } }
+      @media (prefers-reduced-motion: reduce) { .frame.play * { animation: none !important; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="head"><h1>How Re:Self works</h1><button id="dl">Download SVG</button></div>
+      <div class="controls">
+        <span>Animation</span>
+        <div id="presets"></div>
+        <label>Speed <input id="speed" type="range" min="0.4" max="2.5" step="0.1" value="1" /><output id="speedv">1×</output></label>
+        <label>Stagger <input id="stagger" type="range" min="0.05" max="1" step="0.05" value="0.35" /><output id="staggerv">0.35s</output></label>
+        <button id="replay">Replay</button>
+      </div>
+      <div class="frame" id="frame"></div>
+    </main>
+    <script>
+      const INK = '#171717', STONE = '#6f6b68', BLUE = '#53bffe', CARD = '#f5f5f5', CARD_AI = '#eef8ff'
+      const F = 'font-family="Beatrice, system-ui, sans-serif"'
+
+      // Illustrations from the Re:Self onboarding (Paper file "Inventive jungle", screens 4–6), recoloured to ink + Momo blue.
+      const HEAD = `<path fill="${INK}" d="M0 52C0 50.2 0 48.3 0 46.4C.1 46.1.2 45.8.2 45.5C1.2 34.3 5.7 24.7 13.5 16.7C21.9 8 32.5 3.2 44.4 1.1C46.9.6 49.5.4 52 0C54.7 0 57.4 0 60.1 0C63 .4 66 .7 68.9 1.4C81.4 4.1 92.3 9.5 100.6 19.4C108.2 28.4 111 38.9 109.1 50.5C108.7 53.3 107.5 55.9 106.7 58.6C106.1 60.4 106.2 62.1 107.2 63.7C108.8 66.2 110.4 68.8 112 71.2C114.3 74.7 116.9 78.1 118 82.2V84.3C117.1 87.4 114.7 88.7 111.8 89.6C110.5 90 109.1 90.5 107.8 90.9C106.5 91.4 105.9 92.2 106 93.6C106.2 95.8 106.2 97.9 106.3 100.1C106.5 104.2 106.9 108.3 106.9 112.5C107 117.3 104.6 120.7 100.5 122.1C99.2 122.6 97.7 122.9 96.2 123C89.6 123.5 83.2 122.4 76.7 121C75.7 120.8 75.1 121 74.4 121.7C71.5 125.1 69.1 128.8 67 132.8C66.6 133.6 66 134.3 65.4 135H13.4C11.8 133.8 11.7 133.2 12.5 131.2C12.9 130.1 13.4 128.9 13.8 127.8C16.7 119.5 18 111.1 16.9 102.4C16.1 95.3 13.6 88.9 10.1 82.7C6.1 75.6 2.9 68.1 1.2 60C.7 57.4.4 54.7 0 52ZM17.7 130.7C17.8 130.7 18 130.7 18.3 130.7C33 130.7 47.6 130.7 62.3 130.8C63.1 130.8 63.5 130.5 63.8 129.8C66.2 125.2 69.1 121.1 72.7 117.3C73.6 116.4 74.5 116.1 75.7 116.4C79.1 117 82.5 117.8 85.9 118.3C89.8 118.9 93.8 119.2 97.7 118.5C101 117.9 102.5 116.2 102.7 112.8C102.7 111.5 102.6 110.2 102.6 108.8C102.3 103.8 101.9 98.7 101.8 93.6C101.6 90.2 103 88.3 106.2 87C108 86.2 109.9 85.8 111.8 85.1C113.7 84.3 114.1 83.6 113.3 81.7C112.5 80 111.6 78.4 110.6 76.8C108.1 72.9 105.6 69.1 103.2 65.2C101.8 63 101.6 60.6 102.4 58.2C102.7 56.9 103.1 55.7 103.5 54.5C106.2 47.4 106 40.3 103.6 33.3C100.5 23.9 93.9 17.2 85.5 12.3C72.6 4.8 58.8 2.7 44.2 5.4C34.7 7.2 25.9 10.9 18.7 17.6C5.7 29.8 1.7 44.7 6.1 61.8C8 69.3 11.4 76.2 15.1 83C21.2 94.1 23 105.9 20.7 118.3C19.9 122.4 18.7 126.5 17.7 130.7Z"/>`
+      const BRAIN = `<path fill="${BLUE}" fill-rule="evenodd" d="M0 23.2C.5 14.9 3.3 8.1 10 3.2C17 -1.9 27.5 -.9 33.1 6.2C33.4 6.7 33.7 6.6 34.1 6.6C39.4 6.4 43.1 8.6 45.3 13.4C45.9 14.7 46.3 16.1 46.6 17.5C47.6 23.2 46.7 28.5 42.8 33C38.3 38.2 32.5 40.2 25.6 39.2C25.1 39.1 24.7 39.1 24.2 39.5C19.2 42.8 14 42.7 8.9 39.8C4.3 37.1 1.8 32.8.6 27.8C.3 26.2.2 24.5 0 23.2ZM30.6 7C29.7 6.2 28.7 5.3 27.7 4.7C21.9 1.1 14.4 2 9.4 6.8C5.4 10.7 3.2 15.5 2.7 21C2.2 25.7 3.2 30.1 6.1 33.9C8.9 37.7 12.7 39.8 17.5 39.4C19 39.3 20.4 38.9 21.8 38.1C21.2 37.8 20.7 37.6 20.3 37.3C16.8 35.3 14.5 32.6 14.9 28.3C14.9 28 14.7 27.7 14.5 27.5C13.6 26.6 12.6 25.8 11.7 24.8C9.4 22.2 8 19.3 8 15.8C8 11.3 10.6 7.9 14.6 6.9C16.5 6.4 18.6 6.4 20.5 7.2C22.1 7.9 23.7 8.8 25.3 9.6C26.9 8.8 28.7 7.9 30.6 7ZM27.1 36.9C27.2 36.9 27.3 37 27.4 37C34.4 37.7 41.5 33.3 43.7 26.6C44.5 24.1 44.7 21.5 44.4 18.9C44 16.3 43.2 13.8 41.4 11.8C39.8 9.9 37.6 9.1 35.1 9.1C35.7 10.5 36.3 11.8 36.8 13.2C37.6 15.8 38.1 18.3 37.4 21C37.3 21.6 37.4 22.1 37.7 22.7C40.4 27.1 38.4 32.3 33.4 33.7C32.2 34.1 30.8 34 29.4 34.1C29.1 34.1 28.8 34.2 28.6 34.4C28.1 35.2 27.6 36 27.1 36.9ZM15.8 25.3C16.7 23.4 17.9 21.8 19.5 20.5C19.7 20.4 19.7 20.1 19.7 19.9C19.7 17 20.7 14.5 22.6 12.3C22.8 12 23 11.8 23.3 11.5C22 10.4 20.7 9.7 19.1 9.3C14.1 8 10.1 11.2 10.4 16.4C10.7 20.2 13 22.9 15.8 25.3ZM35.2 19.8C35.2 19.2 35.3 18.9 35.3 18.5C35.2 15.3 34.1 12.4 32.5 9.7C32.4 9.5 32 9.4 31.8 9.4C30.1 9.9 28.5 10.6 27 11.6C28.3 13.3 29.3 15.2 30.1 17.2C30.1 17.3 30.3 17.5 30.4 17.5C32.1 17.9 33.7 18.6 35.2 19.8ZM20.5 23C19.3 24 18.5 25.2 17.9 26.7C17.9 26.8 18.1 27.1 18.3 27.2C19.4 27.9 20.5 28.6 21.6 29.2C23.4 30.2 25.3 30.9 27.4 31.3C27.7 30 28 28.8 28.4 27.5C25 27.2 22.3 26 20.5 23ZM35.8 24.4C34.5 25.9 33 26.8 31.2 27.2C31.1 27.3 30.8 27.4 30.8 27.6C30.5 28.9 30.2 30.2 29.9 31.7C32.1 31.8 34.1 31.3 35.5 29.5C36.7 28 36.7 26.2 35.8 24.4ZM26.4 33.6C23 32.8 20.2 31.4 17.4 29.8C17.5 30.5 17.6 31.2 18 31.8C19.2 34.2 21.4 35.4 23.9 36.2C24.1 36.3 24.4 36.2 24.5 36C25.1 35.3 25.7 34.5 26.4 33.6ZM22.6 21.4C23.3 23.5 26.3 25.3 28.6 25C28.7 23.2 28.6 21.4 28.2 19.7C26.1 19.7 24.3 20.4 22.6 21.4ZM25.1 13.1C23.6 14.8 22.5 16.5 22.3 18.5C24 18.1 25.7 17.6 27.5 17C26.7 15.8 25.9 14.5 25.1 13.1ZM31.2 24.7C32.5 24.2 33.5 23.5 34.3 22.3C33.3 21.3 32.2 20.6 30.9 20.2C31 21.7 31.1 23.2 31.2 24.7Z"/>`
+      const WAVES = `<g fill="${INK}"><path transform="translate(11.774 0)" d="M10.1 16.5C9.9 17.6 9.7 18.7 9.5 19.7C8.5 23.6 6.4 26.8 3.4 29.5C2.4 30.3 1.3 30.3.5 29.4C-.3 28.6-.1 27.4.8 26.5C4.4 23.3 6.3 19.4 6.1 14.6C6 10.2 4.2 6.6 1 3.7C.5 3.3.1 2.8 0 2.1C0 1.3.3.6 1 .3C1.8-.2 2.6-.1 3.3.5C5.2 2.1 6.7 4 7.9 6.2C9 8.4 9.7 10.7 10 13.2C10 13.3 10 13.5 10.1 13.6V16.5Z"/><path transform="translate(6.471 5.246)" d="M7.6 10C7.5 13.5 6.2 16.5 3.4 19C2.4 19.8 1.2 19.8.5 18.9C-.3 18.1-.1 16.9.8 16.1C4.6 12.6 4.6 7 .8 3.6C-.1 2.7-.3 1.5.5.7C1.2-.2 2.4-.2 3.4.6C6.1 2.9 7.6 6.3 7.6 10Z"/><path transform="translate(0 9.169)" d="M5.8 5.9C5.7 8 4.9 9.8 3.3 11.2C2.5 12 1.3 11.9.5 11.1C-.2 10.3-.2 9.2.7 8.3C2.2 6.8 2.2 5 .7 3.5C-.2 2.6-.2 1.4.5.6C1.3-.2 2.5-.2 3.4.6C4.9 2 5.7 3.8 5.8 5.9Z"/></g>`
+      const PULSE = `<polyline fill="none" stroke="${BLUE}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="0 9 4.3 9 6.5 3.5 9.5 19 16.5 1.5 18 14 22 6.5 24 9 28.2 9"/>`
+      const PHONE = `<g fill="none" stroke="${INK}" stroke-width="2.2"><rect x="1.2" y="1.2" width="37.6" height="67.6" rx="4.5"/><circle cx="20" cy="61.2" r="2.6"/><path d="M16.5 6.2h7" stroke-linecap="round"/></g><g transform="translate(5.8 24) scale(1)">${PULSE}</g>`
+      // Watch traced from the onboarding PNG so it stays vector.
+      const WATCH = `<g fill="${INK}"><path d="M21 1.5Q21 0 22.5 0H41.5Q43 0 43 1.5L44.6 11H19.4Z"/><path d="M19.4 53H44.6L43 62.5Q43 64 41.5 64H22.5Q21 64 21 62.5Z"/><rect x="48.5" y="22" width="3.2" height="8" rx="1"/><rect x="48.5" y="34" width="3.2" height="8" rx="1"/></g><rect x="14.5" y="14" width="34" height="36" rx="8" fill="#fff" stroke="${INK}" stroke-width="4"/>`
+
+      const use = (body, x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})">${body}</g>`
+      const text = (x, y, t, o = {}) =>
+        `<text x="${x}" y="${y}" ${F} font-size="${o.size || 20}" font-weight="${o.weight || 400}" fill="${o.fill || INK}" text-anchor="${o.anchor || 'middle'}" letter-spacing="-0.02em">${t}</text>`
+      const dot = (x, y, r = 7) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${BLUE}"/>`
+      const SPARK = `<path fill="none" stroke="${BLUE}" stroke-width="3" stroke-linejoin="round" d="M32 2C33 22 35 30 62 32C35 34 33 42 32 62C31 42 29 34 2 32C29 30 31 22 32 2Z"/>`
+
+      // Each frame: illustration drawn in a 200×150 box whose top-left is (ix, iy).
+      const frames = [
+        { title: 'Your watch', line: 'notices your body change', art: (x, y) => use(WATCH, x + 52, y + 20, 1.5) + use(PULSE, x + 80, y + 58, 1.15) },
+        { title: 'A gentle tap', line: 'asks how you feel', art: (x, y) =>
+            use(WATCH, x + 52, y + 20, 1.5) + dot(x + 150, y + 22) +
+            `<g fill="none" stroke="${BLUE}" stroke-width="2" stroke-linecap="round"><path d="M${x + 36} ${y + 50}q-10 20 0 40M${x + 24} ${y + 42}q-16 28 0 56M${x + 164} ${y + 50}q10 20 0 40M${x + 176} ${y + 42}q16 28 0 56"/></g>` },
+        { title: 'You speak', line: 'a short voice note', art: (x, y) => use(HEAD, x + 44, y + 12, 0.95) + use(BRAIN, x + 70, y + 36, 0.9) + use(WAVES, x + 160, y + 92, 0.95) },
+        { ai: true, title: 'Re:Self AI', line: 'reads it with your body data', art: (x, y) => use(SPARK, x + 68, y + 38, 1) + use(PULSE, x + 14, y + 60, 1.4) + use(PULSE, x + 146, y + 60, 1.4) },
+        { title: 'Your phone', line: 'name it, review your day', art: (x, y) => use(PHONE, x + 76, y + 14, 1.75) + dot(x + 164, y + 22) },
+      ]
+
+      const W = 1400, H = 560, CW = 236, GAP = 30, X0 = (W - (frames.length * CW + (frames.length - 1) * GAP)) / 2, TOP = 64, CH = 360
+      let b = `<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L8 5L1 9" fill="none" stroke="${STONE}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs><rect width="${W}" height="${H}" fill="#fff"/>`
+      frames.forEach((f, i) => {
+        const x = X0 + i * (CW + GAP), cx = x + CW / 2
+        b += `<g class="step" style="--i:${i}"><rect class="card" x="${x}" y="${TOP}" width="${CW}" height="${CH}" rx="24" fill="${f.ai ? CARD_AI : CARD}"/>`
+        b += text(x + 24, TOP + 42, `0${i + 1}`, { size: 14, fill: STONE, anchor: 'start' })
+        b += `<g class="art">${f.art(cx - 100, TOP + 70)}</g>`
+        b += `<g class="copy">${text(cx, TOP + 278, f.title, { size: 21, weight: 500 }) + text(cx, TOP + 306, f.line, { size: 16, fill: STONE })}</g></g>`
+        if (i < frames.length - 1) b += `<path class="arrow" style="--i:${i}" d="M${x + CW + 6} ${TOP + CH / 2}H${x + CW + GAP - 6}" stroke="${STONE}" stroke-width="1.5" marker-end="url(#a)"/>`
+      })
+      // Loop back: every named moment trains the model on this person.
+      const last = X0 + (frames.length - 1) * (CW + GAP) + CW / 2, first = X0 + CW / 2, ly = TOP + CH + 56
+      b += `<g class="loop"><path class="loop__line" d="M${last} ${TOP + CH + 12}V${ly - 12}Q${last} ${ly} ${last - 12} ${ly}H${first + 12}Q${first} ${ly} ${first} ${ly - 12}V${TOP + CH + 14}" fill="none" stroke="${BLUE}" stroke-width="1.8" stroke-dasharray="3 7" stroke-linecap="round" marker-end="url(#b)"/>`
+      b = b.replace('</defs>', `<marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L8 5L1 9" fill="none" stroke="${BLUE}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>`)
+      b += `<rect x="${W / 2 - 128}" y="${ly - 16}" width="256" height="32" fill="#fff"/>` + text(W / 2, ly + 6, 'and learns you over time', { size: 16, fill: BLUE }) + '</g>'
+
+      const markup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">${b}</svg>`
+      document.getElementById('frame').innerHTML = markup
+
+      // Animation presets. Entrance presets play once (Replay reruns them); spotlight and flow loop.
+      const PRESETS = ['cascade', 'pop', 'focus', 'spotlight', 'flow', 'off']
+      const frameEl = document.getElementById('frame')
+      const play = () => { frameEl.classList.remove('play'); void frameEl.offsetWidth; if (frameEl.dataset.preset !== 'off') frameEl.classList.add('play') }
+      const setPreset = (p) => {
+        frameEl.dataset.preset = p
+        document.querySelectorAll('#presets button').forEach((x) => x.setAttribute('aria-pressed', x.textContent === p))
+        history.replaceState(null, '', '#' + p)
+        play()
+      }
+      PRESETS.forEach((p) => { const btn = document.createElement('button'); btn.textContent = p; btn.onclick = () => setPreset(p); document.getElementById('presets').append(btn) })
+      const bind = (id, cssVar, unit, label) => {
+        const input = document.getElementById(id), out = document.getElementById(id + 'v')
+        const apply = () => { frameEl.style.setProperty(cssVar, input.value + unit); out.textContent = input.value + label }
+        input.oninput = apply; input.onchange = play; apply()
+      }
+      bind('speed', '--speed', '', '×')
+      bind('stagger', '--stagger', 's', 's')
+      document.getElementById('replay').onclick = play
+      setPreset(PRESETS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'cascade')
+      document.getElementById('dl').onclick = () => {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(new Blob([markup], { type: 'image/svg+xml' }))
+        a.download = 'reself-product-flow.svg'
+        a.click()
+      }
+    </script>
+  </body>
+</html>

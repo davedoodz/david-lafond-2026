@@ -53,7 +53,7 @@ export type OpenSpec = {
   /** Share of the run, at its end, over which the artwork fades out (0 = stays). */
   contentFade: number
   effect: OpenEffect
-  /** Cards with Momo (Unwind): Momo flies from the card into the nav's Momo on the page. */
+  /** Cards with Momo (Momo): Momo flies from the card into the nav's Momo on the page. */
   momoFlight: boolean
   /** Seconds Momo keeps animating after the click before it flies into the nav (0 = fly as soon as the page is ready). */
   momoHoldSeconds: number
@@ -160,7 +160,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   surface.style.backgroundColor = cardStyle.backgroundColor
   overlay.append(dim, surface)
 
-  // A layer that tracks the growing rect. Cards with a live shader (Unwind): the shader grows
+  // A layer that tracks the growing rect. Cards with a live shader (Momo): the shader grows
   // in it, continuing from the card's current frame, so it reflows like the card.
   const frameLayer = document.createElement('div')
   frameLayer.className = 'project-open__frame'

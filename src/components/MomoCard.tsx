@@ -1,5 +1,5 @@
 /**
- * Momo (the Unwind cloud) floating in the middle of the Unwind card.
+ * Momo (the Momo cloud) floating in the middle of the Momo card.
  *
  * Transparency: each clip is a plain H.264 MP4 with the colour (premultiplied)
  * in the top half and the alpha mask in the bottom half. A tiny WebGL shader
@@ -28,7 +28,7 @@ export const MOMO_MODES = ['awake', 'asleep', 'both'] as const
 export type MomoMode = (typeof MOMO_MODES)[number]
 const CLIP_BY_MODE: Record<Exclude<MomoMode, 'both'>, Clip> = { awake: 'listening', asleep: 'floating' }
 
-const clipUrl = (clip: Clip) => `/work/unwind/momo-${clip}.mp4`
+const clipUrl = (clip: Clip) => `/work/momo/momo-${clip}.mp4`
 
 const CONFIG = {
   /** awake = the listening clip, asleep = the floating clip, both = one hands over to the other. */
@@ -82,7 +82,7 @@ const PRESETS: Record<string, Blend> = {
 }
 
 export function MomoCard() {
-  const t = useTuning('Unwind Momo', CONFIG)
+  const t = useTuning('Momo mascot', CONFIG)
   return <Momo mode={t.clip as MomoMode} size={`${t.size}%`} x={`${t.x}%`} y={`${t.y}%`} />
 }
 
@@ -96,10 +96,10 @@ type MomoProps = {
 
 /**
  * Momo filling its positioned parent. Clip alignment and the hand-over blend always come
- * from the 'Unwind Momo' dials, so every Momo on the site lines up and blends the same way.
+ * from the 'Momo mascot' dials, so every Momo on the site lines up and blends the same way.
  */
 export function Momo({ mode, size, x, y }: MomoProps) {
-  const { values: t, setValue } = useTuningController('Unwind Momo', CONFIG)
+  const { values: t, setValue } = useTuningController('Momo mascot', CONFIG)
   const hostRef = useRef<HTMLDivElement>(null)
   const videos = useRef<Record<Clip, HTMLVideoElement | null>>({ listening: null, floating: null })
   const canvases = useRef<Record<Clip, HTMLCanvasElement | null>>({ listening: null, floating: null })

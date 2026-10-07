@@ -5,7 +5,7 @@ import './reselfFigure.css'
 
 type Tuple = [number, number, number, number]
 
-/** Only Unwind-blue elements animate; ink stays still. */
+/** Only Momo-blue elements animate; ink stays still. */
 export const RESELF_DIAGRAM_CONFIG = {
   flow: {
     /** trace: pulses draw across the screens · flow: loop line moves, dots ping · pulse: blue marks breathe · glow: blue fades in a wave */
@@ -21,7 +21,7 @@ export const RESELF_DIAGRAM_CONFIG = {
 
 type FlowDials = { preset: string; speed: number; stagger: number; width: number }
 
-/** Re:Self diagram for the Unwind case study. Animates only while on screen. */
+/** Re:Self diagram for the Momo case study. Animates only while on screen. */
 export function ReselfFigure({ kind }: { kind: 'flow' | 'vision' | 'signals' }) {
   const [run, setRun] = useState(0)
   const { values } = useTuningController('Re:Self diagrams', RESELF_DIAGRAM_CONFIG, {

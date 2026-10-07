@@ -1,4 +1,4 @@
-/* Unwind paper (ArxivPaper.tsx): first page tucked under the case study's dark footer sheet. */
+/* Momo paper (ArxivPaper.tsx): first page tucked under the case study's dark footer sheet. */
 
 /* The section ends where the paper meets the dark sheet; the sheet comes later in the page, so it
    paints over the paper's tucked-in bottom. Its height follows the content, so the tuck is the same
@@ -21,6 +21,13 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   outline: none;
+  /* Scroll-in entrance (ArxivPaper.tsx): sunk under the footer until the section is in view. */
+  translate: 0 var(--paper-rise-depth, 360px);
+  transition: translate 0s;
+}
+.arxiv-paper[data-risen] {
+  translate: none;
+  transition: translate var(--paper-rise-time, 0.9s) cubic-bezier(0.3, 1.35, 0.5, 1);
 }
 
 .arxiv-paper__sheet {
@@ -189,6 +196,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .arxiv-paper {
+    translate: none !important;
+    transition: none !important;
+  }
   .arxiv-paper__sheet,
   .arxiv-paper__pill {
     transition: opacity 120ms ease;

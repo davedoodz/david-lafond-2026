@@ -1,8 +1,8 @@
 /**
  * Re:Self diagrams as SVG markup: the five-step product flow (story strip), the
- * vision line and the signals baseline. Ink is static; every Unwind-blue element
+ * vision line and the signals baseline. Ink is static; every Momo-blue element
  * carries a `b-*` class so ReselfFigure.css can animate the blue layer only.
- * Studio twin: studio/unwind-product-flow.html.
+ * Studio twin: studio/momo-product-flow.html.
  */
 const INK = '#171717'
 const STONE = '#6f6b68'

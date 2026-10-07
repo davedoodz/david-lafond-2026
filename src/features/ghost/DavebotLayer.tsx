@@ -52,7 +52,7 @@ function toParts(segments: AnswerSegment[]): Part[] {
 function buildSuggestionRows(tuning: Tuning): Row[] {
   const slots: Array<{ id: string; visible: boolean; label: string }> = [
     { id: 'work', visible: tuning.visible.suggestion1, label: tuning.text.suggestion1 },
-    { id: 'unwind', visible: tuning.visible.suggestion2, label: tuning.text.suggestion2 },
+    { id: 'momo', visible: tuning.visible.suggestion2, label: tuning.text.suggestion2 },
     { id: 'contact', visible: tuning.visible.suggestion3, label: tuning.text.suggestion3 },
   ]
   return slots

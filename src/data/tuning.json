@@ -58,7 +58,7 @@
         "radius": 250
       }
     },
-    "unwindPage": {
+    "momoPage": {
       "preset": "custom",
       "headerOpacity": 0.25
     },
@@ -412,7 +412,7 @@
     "cellMobile": 6,
     "yMobile": 36
   },
-  "Unwind Momo": {
+  "Momo mascot": {
     "size": 36.5,
     "listening": {
       "scale": 1.12
@@ -439,7 +439,7 @@
       "overshoot": 0.48
     }
   },
-  "Unwind case study": {
+  "Momo case study": {
     "page": {
       "snap": "off",
       "sectionReveal": "still"
@@ -600,10 +600,10 @@
       "cornerZone": 11
     }
   },
-  "Unwind shader": {
+  "Momo shader": {
     "frame": 2738590
   },
-  "Unwind case study · order": {
+  "Momo case study · order": {
     "section": "system",
     "order": "story, persona, moment, overview, notification, system, flows, dynamic, howItWorks, guided, context, tracking, outcomes",
     "max": 13,
@@ -629,7 +629,7 @@
   "Header band": {
     "about": false,
     "harvard-mit": false,
-    "unwind": false,
+    "momo": false,
     "filo": false
   },
   "Footer links": {
@@ -644,7 +644,7 @@
   "Footer": {
     "desktopHeight": 200
   },
-  "Unwind intro": {
+  "Momo intro": {
     "speed": 1.2,
     "timingSeconds": {
       "meetingNotice": 1.2,
@@ -719,7 +719,7 @@
       "x": 0.3
     }
   },
-  "Unwind system sequence": {
+  "Momo system sequence": {
     "sequenceSpeed": 3,
     "motionSpeed": 1.25,
     "card": {
@@ -731,7 +731,7 @@
     "gradient": {
       "show": false,
       "opacity": 0,
-      "palette": "unwind",
+      "palette": "momo",
       "deep": "#09235e",
       "mid": "#477fb2",
       "glow": "#86a5e2",
@@ -816,7 +816,7 @@
       "scale": 0.89
     }
   },
-  "Unwind paper": {
+  "Momo paper": {
     "arrow": {
       "x": -4,
       "y": 1.5,

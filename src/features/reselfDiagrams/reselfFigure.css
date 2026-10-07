@@ -1,4 +1,4 @@
-/* Re:Self diagrams on the Unwind case study. Only Unwind-blue marks (b-*) animate; ink never moves. */
+/* Re:Self diagrams on the Momo case study. Only Momo-blue marks (b-*) animate; ink never moves. */
 .reself-figure {
   justify-self: center;
   width: min(var(--rf-width, 100%), 100vw - 2 * var(--edge, 24px));

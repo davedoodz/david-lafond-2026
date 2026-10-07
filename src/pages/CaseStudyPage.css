@@ -407,7 +407,7 @@ html[data-case-snap] .case__moment {
   scroll-snap-align: start;
 }
 
-/* Partner logos in the hero (Unwind). */
+/* Partner logos in the hero (Momo). */
 .case__logos {
   display: flex;
   flex-wrap: wrap;
@@ -936,8 +936,8 @@ html[data-case-snap] .case__moment {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat;
-  -webkit-mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat;
+  mask: url('/work/momo/flows/phone-mask.png') center / contain no-repeat;
+  -webkit-mask: url('/work/momo/flows/phone-mask.png') center / contain no-repeat;
 }
 .case__phone-label {
   margin: 18px 0 0;

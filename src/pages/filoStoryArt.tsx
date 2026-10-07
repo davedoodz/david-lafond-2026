@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 /**
  * Graphics for the Problem · Opportunity · Solution rows on the Filo case study.
- * Same language as the Unwind story art: ink line work, one accent for what moves.
+ * Same language as the Momo story art: ink line work, one accent for what moves.
  * Accent marks carry `sa-b` (and `sa-draw` for strokes that draw in), so only they animate.
  * Problem and Solution share one track: swatch → spec → tests → scale → line review.
  */

@@ -79,7 +79,7 @@ export const DAVEBOT_CONFIG = {
     placeholder: textField('Ask Davebot anything…'),
     suggestedLabel: textField('Suggested'),
     suggestion1: textField('What work is here?'),
-    suggestion2: textField('Tell me about Unwind'),
+    suggestion2: textField('Tell me about Momo'),
     suggestion3: textField('Can I hire David?'),
     askRowLabel: textField('ask'),
     footerLeft: textField("Davebot · don't share secrets"),

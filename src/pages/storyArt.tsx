@@ -20,8 +20,8 @@ export const PEAK_ICONS: Record<string, LucideIcon | null> = {
   none: null,
 };
 /**
- * Graphics for the Problem · Opportunity · Solution rows on the Unwind case study.
- * Same language as the Re:Self diagrams: ink line icons, Unwind blue for the live signal.
+ * Graphics for the Problem · Opportunity · Solution rows on the Momo case study.
+ * Same language as the Re:Self diagrams: ink line icons, Momo blue for the live signal.
  * Blue marks carry `sa-b` (and `sa-draw` for strokes that draw in), so only blue moves.
  */
 const INK = "#171717";

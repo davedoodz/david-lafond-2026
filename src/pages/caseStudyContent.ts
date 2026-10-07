@@ -10,7 +10,7 @@ import { PEAK_ICONS, STORY_ART_TEXT, type StoryArtText } from './storyArt'
 
 type Tuple = [number, number, number, number]
 
-/** Prototype recordings in public/work/unwind/proto: the phone only, cropped to its frame (1080 px tall H.264 + first-frame poster). */
+/** Prototype recordings in public/work/momo/proto: the phone only, cropped to its frame (1080 px tall H.264 + first-frame poster). */
 export const PROTO_VIDEOS = {
   'welcome-park': { w: 522, h: 1080, dir: 'proto' },
   'freeform-evening': { w: 522, h: 1080, dir: 'proto' },
@@ -36,7 +36,7 @@ type SectionDefaults = {
   video?: ProtoVideo | 'none' | 'placeholder'
   /** Label inside the placeholder block (Filo, until the prototype loops exist). */
   placeholder?: string
-  /** Diagram shown instead of a video ('system': the animated Unwind system walkthrough; 'paper': the arXiv paper tucked under the footer). */
+  /** Diagram shown instead of a video ('system': the animated Momo system walkthrough; 'paper': the arXiv paper tucked under the footer). */
   figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals' | 'paper'
   layout?: 'bottom' | 'top' | 'right' | 'left' | 'center' | 'rise'
   size?: number
@@ -141,7 +141,7 @@ export const RECRUITER_COPY = {
   overview: copy({
     eyebrow: 'Product overview',
     title: 'A journal that notices before you do.',
-    body: 'Unwind pairs Apple Watch sensing with voice reflection to surface moments worth checking in on. It combines body signals, situational context and what you say to turn a stressful moment into understanding, and a plan for next time.',
+    body: 'Momo pairs Apple Watch sensing with voice reflection to surface moments worth checking in on. It combines body signals, situational context and what you say to turn a stressful moment into understanding, and a plan for next time.',
   }),
   /** 03 · Who is this actually for? */
   persona: {
@@ -211,11 +211,11 @@ export const RECRUITER_COPY = {
   _collapsed: true,
 }
 
-export const UNWIND_CONFIG = {
+export const MOMO_CONFIG = {
   page: pageDials,
   hero: heroDials({
-    eyebrow: 'Unwind · RE:SELF · 2025',
-    title: 'Unwind – Novel Multimodal AI Reflection System for Behavioral Change',
+    eyebrow: 'Momo · RE:SELF · 2025',
+    title: 'Momo – Novel Multimodal AI Reflection System for Behavioral Change',
     video: 'dynamic',
     layout: 'rise',
     size: 78,
@@ -240,7 +240,7 @@ export const UNWIND_CONFIG = {
     },
     _collapsed: false,
   },
-  /** Partner logos in the hero (public/work/unwind/logos). Rendered by the hero, not as a section. */
+  /** Partner logos in the hero (public/work/momo/logos). Rendered by the hero, not as a section. */
   logos: {
     show: true,
     placement: { type: 'select' as const, options: ['eyebrow', 'below meta', 'above title', 'top right', 'bottom'], default: 'eyebrow' },
@@ -260,7 +260,7 @@ export const UNWIND_CONFIG = {
   overview: sectionDials({
     eyebrow: 'Overview',
     title: 'A journal that notices before you do.',
-    body: 'Unwind pairs an Apple Watch that senses when your body shifts for no physical reason with a 30-second voice reflection. Over time it learns what stress looks like for you, and turns each moment into a plan for next time.',
+    body: 'Momo pairs an Apple Watch that senses when your body shifts for no physical reason with a 30-second voice reflection. Over time it learns what stress looks like for you, and turns each moment into a plan for next time.',
     figure: 'vision',
     layout: 'bottom',
   }),
@@ -287,7 +287,7 @@ export const UNWIND_CONFIG = {
     /** Icon on the Problem curve's peak: the custom bolt, a Lucide icon, or none. */
     peakIcon: { type: 'select' as const, options: Object.keys(PEAK_ICONS), default: 'bolt' },
     /**
-     * Glass for the three art cards. Colours come from the system card (Unwind system sequence →
+     * Glass for the three art cards. Colours come from the system card (Momo system sequence →
      * card fill / gradient); these dials start from the system card's glass, scaled to the cards'
      * size (≈⅓ of the system card): blur, radius and glow blur shrink, the 1px rim stays crisp.
      */
@@ -521,7 +521,7 @@ export const FILO_CONFIG = {
   }),
   /** Before → after table (rendered as `reframe`). */
   reframe: REFRAME_DIALS,
-  /** Persona sheet (shared with Unwind), no portrait, one scenario card. */
+  /** Persona sheet (shared with Momo), no portrait, one scenario card. */
   persona: {
     ...PERSONA_DIALS,
     spacing: sectionSpacingDials(110, 110, 32),

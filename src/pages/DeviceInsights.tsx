@@ -4,10 +4,10 @@ import { EditableText } from '../components/EditableText'
 import './DeviceInsights.css'
 import type { SectionSpacing, TextReveal } from './caseStudyContent'
 
-/* Port of studio/unwind-insights-sequence (settings: Watch "companion", link "trace").
+/* Port of studio/momo-insights-sequence (settings: Watch "companion", link "trace").
    Momo only speaks up when the signals agree: heart rate up, no movement or workout to explain it,
    and HRV below this person's usual. The phone is the case study's "gentle nudge" lock screen. */
-const MOMO = '/work/unwind/devices/momo-open.webp'
+const MOMO = '/work/momo/devices/momo-open.webp'
 const STEPS = [
   { id: 'sense', label: 'The Watch senses', ms: 2800 },
   { id: 'send', label: 'Watch to iPhone', ms: 2800 },
@@ -56,7 +56,7 @@ function watchScreen(id: StepId) {
 
 const phoneScreen = (id: StepId) => (
   <div className="mc-lock" data-dim={id !== 'nudge' || undefined}>
-    <img className="mc-lock__bg" src="/work/unwind/flows/lockscreen.webp" alt="" />
+    <img className="mc-lock__bg" src="/work/momo/flows/lockscreen.webp" alt="" />
     {id === 'nudge' && (
       <div className="mc-note">
         <span className="mc-note__icon" />
@@ -173,14 +173,14 @@ export function DeviceInsights({ copy, edit }: Props) {
         <div className="mc-devices" aria-hidden="true">
           <div className="mc-watch">
             <div className="mc-watch__screen"><Screens step={id} render={watchScreen} /></div>
-            <img className="mc-watch__img" src="/work/unwind/devices/watch-starlight.png" alt="" />
+            <img className="mc-watch__img" src="/work/momo/devices/watch-starlight.png" alt="" />
           </div>
           <div className="mc-link" data-state={id}>
             <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
           </div>
           <div className="mc-phone">
             <div className="mc-phone__screen"><Screens step={id} render={phoneScreen} /></div>
-            <img className="mc-phone__img" src="/work/unwind/devices/iphone-silver.png" alt="" />
+            <img className="mc-phone__img" src="/work/momo/devices/iphone-silver.png" alt="" />
           </div>
         </div>
       </div>

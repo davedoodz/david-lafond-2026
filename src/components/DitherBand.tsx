@@ -119,8 +119,8 @@ type PageLook = { color: string; opacity: number }
 
 /** Project-page header bands: colour and opacity presets per page. `site` = the global header band above. */
 const PAGE_PRESETS = {
-  unwind: {
-    'unwind blue': { color: '#53BFFE', opacity: 0.35 },
+  momo: {
+    'momo blue': { color: '#53BFFE', opacity: 0.35 },
     sky: { color: '#9ED8FF', opacity: 0.45 },
     'deep sea': { color: '#1E7FB8', opacity: 0.3 },
     lilac: { color: '#B9A7F5', opacity: 0.35 },
@@ -140,8 +140,8 @@ const PAGE_PRESETS = {
 } satisfies Record<string, Record<string, PageLook>>
 type ProjectPage = keyof typeof PAGE_PRESETS
 /** Dial group per project page (key in CONFIG). */
-const PAGE_GROUP: Record<ProjectPage, 'unwindPage' | 'filoPage' | 'harvardMitPage'> = {
-  unwind: 'unwindPage',
+const PAGE_GROUP: Record<ProjectPage, 'momoPage' | 'filoPage' | 'harvardMitPage'> = {
+  momo: 'momoPage',
   filo: 'filoPage',
   'harvard-mit': 'harvardMitPage',
 }
@@ -165,7 +165,7 @@ const CONFIG = {
   },
   footer: { ...band(false, 440992, { color: '#706B68', pixelSize: 4.2, scale: 1.14 }), _collapsed: true },
   /** Header band on each project page only (footer and every other page keep the site bands). */
-  unwindPage: pageBand('unwind', PAGE_PRESETS.unwind['unwind blue']),
+  momoPage: pageBand('momo', PAGE_PRESETS.momo['momo blue']),
   filoPage: pageBand('filo', PAGE_PRESETS.filo.blush),
   harvardMitPage: pageBand('harvard-mit', PAGE_PRESETS['harvard-mit'].crimson),
 }

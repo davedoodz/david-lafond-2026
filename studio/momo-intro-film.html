@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Momo intro — reflection film (6.9 s)</title>
+    <style>
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+      :root { --ink: #0b0a09; --s6: #6f6b68; --s4: #a6a09c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #ebeae8; color: var(--ink); font-family: Beatrice, system-ui, sans-serif; letter-spacing: -0.01em; }
+      main { display: grid; gap: 18px; width: min(1280px, 100% - 64px); margin: 0 auto; padding: 36px 0 64px; }
+      h1 { margin: 0; font-size: 28px; font-weight: 400; }
+      .sub { margin: 6px 0 0; color: var(--s6); font-size: 15px; line-height: 1.4; max-width: 900px; }
+      canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; background: #f4f2ef; box-shadow: 0 0 40px rgb(23 23 23 / 0.08); cursor: pointer; }
+      .bar { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; font-size: 13px; color: var(--s6); font-variant-numeric: tabular-nums; }
+      .bar button, .opts button { padding: 7px 13px; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+      .track { position: relative; }
+      .track input { width: 100%; accent-color: #0b0a09; }
+      .chapters { position: relative; height: 18px; font-size: 11px; color: var(--s4); }
+      .chapters button { position: absolute; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; translate: -2px 0; }
+      .chapters button[aria-current] { color: var(--ink); }
+      .opts { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; font-size: 13px; color: var(--s6); }
+      .opts span { display: inline-flex; gap: 6px; align-items: center; }
+      .opts button[aria-pressed='true'] { background: var(--ink); color: #fff; border-color: var(--ink); }
+      .hint { color: var(--s4); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>Momo intro — the reflection film</h1>
+        <p class="sub">
+          A 6.9-second intro. The record button is tapped and slides down; the aurora listens (words plus [exhales], [sniffs], [gasp]); the words link to past entries, fall into the pattern (trigger → state → reaction) and become an if-then plan, then hand off to the hero. Soft aurora glow whose edge ripples with the voice; pick the wave style below.
+        </p>
+      </div>
+      <canvas id="c" width="1920" height="1080"></canvas>
+      <div class="bar">
+        <button id="play" type="button">❚❚</button>
+        <div class="track"><input id="range" type="range" min="0" step="0.01" /><div class="chapters" id="chapters"></div></div>
+        <output id="time">0.00s</output>
+      </div>
+      <div class="opts">
+        <span>Glow <button data-opt="wave" data-v="liquid">liquid</button><button data-opt="wave" data-v="ripple">ripple</button><button data-opt="wave" data-v="petal">petal</button><button data-opt="wave" data-v="tide">tide</button><button data-opt="wave" data-v="ribbon">voice bands</button><button data-opt="wave" data-v="round">round (before)</button></span>
+        <span>Speed <button data-speed="0.5">0.5×</button><button data-speed="1">1×</button></span>
+      </div>
+      <div class="hint">Space play/pause · , . step 0.1s · click a chapter to jump · click the film to restart</div>
+    </main>
+    <script type="module">
+      const W = 960, H = 540, DUR = 6.9, HOLD = 1.2
+      const C = { paper: '#f5f5f5', ink: '#0b0a09', ink9: '#171717', s6: '#6f6b68', s4: '#a6a09c', s2: '#dcd9d6', blue: '#53BFFE', sky: '#CBEFFE', mist: '#E9EEF8', cyan: '#00D0FF', deep: '#1E7FB8' }
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+      const lerp = (a, b, t) => a + (b - a) * t
+      const seg = (t, a, b) => clamp((t - a) / (b - a))
+      const ease = {
+        out: (t) => 1 - (1 - t) ** 3,
+        in: (t) => t ** 3,
+        inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
+        expo: (t) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t)),
+        back: (t) => { const c = 1.70158; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2 },
+      }
+      const hash = (i, j, k) => { const x = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453; return x - Math.floor(x) }
+      const rng = (seed) => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296) }
+      const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})` }
+      const font = (size, weight = 400, style = '') => `${style} ${weight} ${size}px Beatrice, system-ui, sans-serif`
+
+      function text(ctx, str, x, y, { size = 16, weight = 400, color = C.ink, align = 'left', base = 'alphabetic', alpha = 1, style = '', track = 0 } = {}) {
+        if (alpha <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= alpha
+        ctx.font = font(size, weight, style)
+        ctx.fillStyle = color
+        ctx.textAlign = align
+        ctx.textBaseline = base
+        ctx.letterSpacing = `${track}px`
+        ctx.fillText(str, x, y)
+        ctx.restore()
+      }
+      const rrect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r) }
+
+      // --- The hero every direction hands off to (rough mock of /work/momo).
+      const MEDIA = { x: 560, y: 110, w: 330, h: 330 }
+      function drawMedia(ctx, a = 1, m = MEDIA) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        rrect(ctx, m.x, m.y, m.w, m.h, 14)
+        const g = ctx.createLinearGradient(m.x, m.y, m.x, m.y + m.h)
+        g.addColorStop(0, '#c6e6f6'); g.addColorStop(0.55, '#96bd9f'); g.addColorStop(1, '#5d8c58')
+        ctx.fillStyle = g
+        ctx.fill()
+        const pw = m.w * 0.4, ph = pw * 2.05, px = m.x + m.w / 2 - pw / 2, py = m.y + m.h / 2 - ph / 2
+        rrect(ctx, px, py, pw, ph, pw * 0.17); ctx.fillStyle = '#121212'; ctx.fill()
+        rrect(ctx, px + 4, py + 4, pw - 8, ph - 8, pw * 0.14)
+        const s = ctx.createLinearGradient(0, py, 0, py + ph)
+        s.addColorStop(0, '#fbfbfb'); s.addColorStop(0.6, '#f1f6fa'); s.addColorStop(1, '#a6d7fb')
+        ctx.fillStyle = s
+        ctx.fill()
+        ctx.restore()
+      }
+      function drawPage(ctx, a = 1, dy = 0, { media = true } = {}) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        ctx.translate(0, dy)
+        text(ctx, '‹  BACK', 40, 120, { size: 10, weight: 500, color: C.s6 })
+        ;['Overview', 'Problem', 'Opportunity', 'Solution', 'Context', 'Tracking change', 'Outcomes'].forEach((s, i) => text(ctx, s, 40, 150 + i * 20, { size: 10, color: C.s4 }))
+        text(ctx, 'MOMO · RE:SELF · 2025', 200, 176, { size: 10, color: C.s4, track: 1 })
+        ;['Momo – Novel Multimodal', 'AI Reflection System', 'for Behavioral Change'].forEach((s, i) => text(ctx, s, 200, 218 + i * 38, { size: 31 }))
+        ;[['ROLE', 'Lead Product Designer'], ['TIMELINE', 'March – Sept 2025'], ['TEAM', '2 dev · 2 design · 2 therapists']].forEach(([k, v], i) => {
+          text(ctx, k, 200 + i * 112, 356, { size: 9, color: C.s4 })
+          text(ctx, v, 200 + i * 112, 372, { size: 9, color: C.s6 })
+        })
+        ctx.restore()
+        if (media) drawMedia(ctx, a, { ...MEDIA, y: MEDIA.y + dy })
+      }
+      /** Block wipe: `p` 0→1 covers the frame block by block. */
+      function blocks(ctx, p, color, { cols = 16, rows = 9, seed = 7, diag = false } = {}) {
+        if (p <= 0) return
+        const r = rng(seed), cw = W / cols, ch = H / rows
+        ctx.fillStyle = color
+        for (let j = 0; j < rows; j++)
+          for (let i = 0; i < cols; i++) {
+            let th = r()
+            if (diag) th = ((i / cols + j / rows) / 2) * 0.75 + th * 0.25
+            if (th < p) ctx.fillRect(Math.floor(i * cw), Math.floor(j * ch), Math.ceil(cw) + 1, Math.ceil(ch) + 1)
+          }
+      }
+      const bez = (p, u) => {
+        const v = 1 - u
+        return [0, 1].map((k) => v ** 3 * p[0][k] + 3 * v * v * u * p[1][k] + 3 * v * u * u * p[2][k] + u ** 3 * p[3][k])
+      }
+      function strokeBez(ctx, p, upto) {
+        if (upto <= 0) return
+        ctx.beginPath()
+        for (let s = 0; s <= 60; s++) {
+          const [x, y] = bez(p, (s / 60) * upto)
+          s ? ctx.lineTo(x, y) : ctx.moveTo(x, y)
+        }
+        ctx.stroke()
+      }
+
+      // ---------------------------------------------------------------- directions
+      const TAU = Math.PI * 2
+      const PALETTES = {
+        aurora: [C.blue, C.cyan, '#B9A7F5', '#FFB3C7'],
+        eleven: ['#E8604C', '#2F6B45', '#F2A48A', '#9CC7A4'],
+        ice: [C.blue, '#9ED8FF', C.cyan, '#E9EEF8'],
+      }
+      const S = { glow: 'soft', palette: 'aurora', grain: false, wave: 'liquid' }
+      /**
+       * Voice-reactive glow shapes. Each colour is a soft blob whose edge ripples:
+       * `f1/f2` wave counts around the edge, `s1/s2` their speeds, `base` the idle
+       * wobble, `react` how far the voice pushes it, `blur` edge softness.
+       * `ribbon` draws horizontal voice bands instead of blobs.
+       */
+      const WAVES = {
+        round: { kind: 'round' },
+        liquid: { f1: 2, f2: 3, s1: 1.2, s2: 0.9, base: 0.07, react: 0.2, blur: 5 },
+        ripple: { f1: 6, f2: 9, s1: 3.2, s2: 4.1, base: 0.03, react: 0.16, blur: 3 },
+        petal: { f1: 4, f2: 5, s1: 1.8, s2: 2.4, base: 0.06, react: 0.3, blur: 3.5 },
+        tide: { f1: 1, f2: 2, s1: 0.7, s2: 1.1, base: 0.12, react: 0.26, blur: 6 },
+        ribbon: { kind: 'ribbon' },
+      }
+      const measure = (ctx, s, size) => { ctx.save(); ctx.font = font(size); ctx.letterSpacing = '0px'; const w = ctx.measureText(s).width; ctx.restore(); return w }
+      const isTag = (w) => w.startsWith('[')
+      const norm = (w) => w.toLowerCase().replace(/[^a-z\[\]]/g, '')
+
+      // ---- Script -----------------------------------------------------------
+      const LINES = [
+        { start: 2.5, end: 4.3, toks: ['[exhales]', 'I', 'snapped', 'again.'] },
+        { start: 4.3, end: 6.1, toks: ['[sniffs]', 'At', 'dinner.', 'So', 'tired.'] },
+        { start: 6.1, end: 7.6, toks: ['[gasp]', 'Why', 'do', 'I', 'do', 'this?'] },
+      ]
+      LINES.forEach((l) => {
+        const wts = l.toks.map((w) => (isTag(w) ? 2.4 : 1)), sum = wts.reduce((a, b) => a + b, 0)
+        let acc = l.start
+        l.at = wts.map((w) => { const s = acc; acc += ((l.end - l.start - 0.25) * w) / sum; return s })
+      })
+      const TOKENS = LINES.flatMap((l) => l.toks.map((w, i) => ({ w, at: l.at[i] })))
+      const tokenAt = (w) => TOKENS.find((k) => k.w === w).at
+
+      // Voice envelope: murmur while words are spoken, plus the non-verbal cues.
+      function voiceEnv(t) {
+        let e = 0
+        for (const l of LINES) if (t > l.start && t < l.end - 0.2) e = 0.35 + 0.4 * Math.abs(Math.sin(RT * 9)) * Math.abs(Math.sin(RT * 5.3 + 1))
+        const g = (c, w) => Math.exp(-(((t - c) / w) ** 2))
+        const ex = tokenAt('[exhales]'), sn = tokenAt('[sniffs]'), gp = tokenAt('[gasp]')
+        e += 0.7 * g(ex + 0.35, 0.35) // long, soft swell
+        e += 0.45 * g(sn + 0.12, 0.05) + 0.45 * g(sn + 0.38, 0.05) // two small catches
+        e += 1.1 * g(gp + 0.1, 0.08) // sharp intake
+        return e
+      }
+
+      // Words lifted out of the caption, and where they float.
+      const FLOATS = [
+        { from: '[exhales]', w: '[exhales]', home: [250, 110], shuf: [392, 172] },
+        { from: 'snapped', w: 'snapped', home: [700, 104], shuf: [560, 150] },
+        { from: 'again.', w: 'again', home: [770, 212], shuf: [612, 238] },
+        { from: '[sniffs]', w: '[sniffs]', home: [196, 250], shuf: [366, 272] },
+        { from: 'dinner.', w: 'dinner', home: [500, 70], shuf: [478, 112] },
+        { from: 'tired.', w: 'so tired', home: [292, 334], shuf: [430, 222] },
+        { from: '[gasp]', w: '[gasp]', home: [708, 318], shuf: [562, 300] },
+        { from: 'this?', w: 'why do I do this', home: [530, 362], shuf: [480, 336] },
+      ]
+      // Past entries with the same cues.
+      const CARDS = [
+        { x: 36, y: 56, date: 'SEP 12 · 9:14 PM', text: 'Snapped at the kids at dinner. Too exhausted to stay patient.' },
+        { x: 36, y: 318, date: 'SEP 19 · 8:52 PM', text: '[sighs] So drained by dinner. I snapped over nothing.' },
+        { x: 734, y: 150, date: 'SEP 26 · 9:03 PM', text: 'Dinner again. [exhales] Tired, and I snapped before I noticed.' },
+      ]
+      const LINKS = { dinner: ['dinner'], 'so tired': ['exhausted', 'drained', 'tired'], '[exhales]': ['[sighs]', '[exhales]'], snapped: ['snapped'] }
+      // Restructured view: where each floating word lands.
+      const COLS = [
+        { x: 292, label: 'TRIGGER', words: ['dinner'], extra: '~9 pm' },
+        { x: 480, label: 'STATE', words: ['so tired', '[exhales]'] },
+        { x: 668, label: 'REACTION', words: ['snapped', 'again'] },
+      ]
+      const CHAPTERS = [['Tap', 0], ['Listen', 0.7], ['Connect', 2.9], ['Restructure', 4.0], ['Plan', 4.8], ['Hand off', 5.8]]
+
+      /** Real time → story time. Each chapter keeps its beats, just compressed. */
+      const WARP = [[0, 0], [0.7, 1.5], [2.9, 7.6], [4.0, 10.6], [4.8, 13.2], [5.8, 15.3], [6.9, 17.0]]
+      const warp = (rt) => { for (let i = 1; i < WARP.length; i++) if (rt <= WARP[i][0]) { const [a0, b0] = WARP[i - 1], [a1, b1] = WARP[i]; return b0 + ((rt - a0) / (a1 - a0)) * (b1 - b0) } return WARP[WARP.length - 1][1] }
+      let RT = 0
+
+      let layout = null
+      function doLayout(ctx) {
+        const caption = LINES.map((l) => {
+          const size = 15, sp = measure(ctx, ' ', size)
+          const ws = l.toks.map((w) => measure(ctx, w, size))
+          const total = ws.reduce((a, b) => a + b, 0) + sp * (ws.length - 1)
+          let x = 480 - total / 2
+          return l.toks.map((w, i) => { const p = { w, x, cx: x + ws[i] / 2, at: l.at[i] }; x += ws[i] + sp; return p })
+        })
+        const cards = CARDS.map((c) => {
+          const size = 11, maxW = 176, sp = measure(ctx, ' ', size), words = []
+          let x = 0, y = 0
+          c.text.split(' ').forEach((w) => { const ww = measure(ctx, w, size); if (x && x + ww > maxW) { x = 0; y += 16 } words.push({ w, x: c.x + 14 + x, y: c.y + 44 + y, cw: ww }); x += ww + sp })
+          return { ...c, words, h: 58 + y }
+        })
+        const plan1 = ['If', 'I’m', 'tired', 'at', 'dinner,'], p1s = 30
+        const p1sp = measure(ctx, ' ', p1s), p1w = plan1.map((w) => measure(ctx, w, p1s)), p1t = p1w.reduce((a, b) => a + b, 0) + p1sp * 4
+        let px = 480 - p1t / 2
+        const plan = plan1.map((w, i) => { const p = { w, x: px, cx: px + p1w[i] / 2 }; px += p1w[i] + p1sp; return p })
+        layout = { caption, cards, plan }
+      }
+
+      // ---- Glow (offscreen, quarter resolution) ----------------------------
+      const GW = 240, GH = 135
+      const glowCanvas = document.createElement('canvas'); glowCanvas.width = GW; glowCanvas.height = GH
+      const gctx = glowCanvas.getContext('2d', { willReadFrequently: true })
+      function paintGlow(t) {
+        const g = gctx
+        g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, GW, GH); g.setTransform(GW / W, 0, 0, GH / H, 0, 0)
+        const on = ease.out(seg(t, 1.9, 3.0)), env = voiceEnv(t)
+        const calm = ease.inOut(seg(t, 13.0, 14.2)), wide = ease.inOut(seg(t, 10.6, 11.6)) * (1 - ease.inOut(seg(t, 13.2, 14.2)))
+        const bloom = ease.inOut(seg(t, 15.4, 16.6)), connect = seg(t, 7.6, 8.4) * (1 - seg(t, 10.6, 11.2))
+        const cols = PALETTES[S.palette], cx = 480, cy = 232
+        cols.forEach((col, k) => {
+          const speed = lerp(0.8, 0.35, Math.max(connect, calm))
+          const a = (k / cols.length) * TAU + RT * 2.2 * speed * (1 + k * 0.15)
+          const orbit = lerp(lerp(48, 30, connect), 0, calm) * on
+          const x = cx + Math.cos(a) * orbit * lerp(1, 2.6, wide), y = cy + Math.sin(a) * orbit * 0.7
+          const loud = env * (0.6 + 0.4 * Math.abs(Math.sin(a * 5.9 + RT * 9)))
+          const r = (lerp(92 + 58 * loud, 122 + 6 * Math.sin(RT * 1.6), calm) * lerp(1, 1.5, wide) + bloom * 900) * on
+          const alpha = (k === 0 ? 0.78 : 0.62 * (1 - calm)) * (1 - bloom)
+          if (alpha <= 0.01 || r <= 0) return
+          const P = WAVES[S.wave] ?? WAVES.liquid, c0 = k === 0 && calm > 0 ? C.blue : col
+          if (P.kind === 'ribbon') {
+            // Horizontal voice bands: thickness and swing follow the voice, then flatten when calm.
+            const half = lerp(280, 360, wide) * on, th = (10 + 26 * loud) * (1 - calm * 0.6) + 6
+            const amp = (8 + 38 * env * (1 - calm)) * (1 - bloom), yo = (k - 1.5) * 7 * (1 - calm)
+            const lg = g.createLinearGradient(cx - half, 0, cx + half, 0)
+            lg.addColorStop(0, hexA(c0, 0)); lg.addColorStop(0.5, hexA(c0, alpha)); lg.addColorStop(1, hexA(c0, 0))
+            const yAt = (xx, o) => cy + yo + o + amp * Math.exp(-(((xx - cx) / (half * 0.55)) ** 2)) * Math.sin(xx * 0.022 * (1 + k * 0.25) + RT * (2 + k * 0.7) + k)
+            g.save(); g.filter = 'blur(3px)'; g.fillStyle = lg; g.beginPath()
+            for (let xx = cx - half; xx <= cx + half; xx += 6) xx === cx - half ? g.moveTo(xx, yAt(xx, -th / 2)) : g.lineTo(xx, yAt(xx, -th / 2))
+            for (let xx = cx + half; xx >= cx - half; xx -= 6) g.lineTo(xx, yAt(xx, th / 2) + th * 0.3 * Math.sin(xx * 0.05 - RT * 3))
+            g.closePath(); g.fill(); g.restore()
+            return
+          }
+          g.save(); g.translate(x, y); g.scale(lerp(1, 2.2, wide), 1)
+          const grd = g.createRadialGradient(0, 0, 0, 0, 0, r)
+          grd.addColorStop(0, hexA(c0, alpha)); grd.addColorStop(0.6, hexA(col, alpha * 0.35)); grd.addColorStop(1, hexA(col, 0))
+          g.fillStyle = grd
+          if (P.kind === 'round') g.fillRect(-W, -H, W * 2, H * 2)
+          else {
+            // Wavy edge: idle wobble + voice push, settling as it calms.
+            const w = (P.base + P.react * env * (1 - calm)) * (1 - bloom)
+            g.filter = `blur(${P.blur}px)`; g.beginPath()
+            for (let q = 0; q <= 120; q++) {
+              const an = (q / 120) * TAU
+              const rr = r * 0.78 * (1 + w * (0.6 * Math.sin(P.f1 * an + RT * P.s1 + k * 1.3) + 0.4 * Math.sin(P.f2 * an - RT * P.s2 + k * 2.1)))
+              q ? g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr) : g.moveTo(Math.cos(an) * rr, Math.sin(an) * rr)
+            }
+            g.closePath(); g.fill()
+          }
+          g.restore()
+        })
+        return { on, bloom }
+      }
+      function drawGlow(ctx, t) {
+        paintGlow(t)
+        // Recede behind the structured view so the words stay readable.
+        const recede = 1 - 0.65 * seg(t, 10.8, 11.6) * (1 - seg(t, 13.2, 14.0))
+        ctx.save(); ctx.globalAlpha = recede
+        if (S.glow !== 'dots') { ctx.save(); ctx.globalAlpha *= S.glow === 'both' ? 0.5 : 1; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(glowCanvas, 0, 0, W, H); ctx.restore() }
+        if (S.glow !== 'soft') {
+          const d = gctx.getImageData(0, 0, GW, GH).data, step = 6.5
+          for (let j = 0, y = 3; y < H; j++, y += step * 0.87) {
+            for (let x = (j % 2) * step * 0.5 + 2; x < W; x += step) {
+              const gx = Math.min(GW - 1, (x / W) * GW) | 0, gy = Math.min(GH - 1, (y / H) * GH) | 0, o = (gy * GW + gx) * 4
+              const a = d[o + 3] / 255
+              if (a < 0.05) continue
+              const shimmer = 0.85 + 0.15 * Math.sin(x * 0.13 + y * 0.07 + RT * 3)
+              ctx.fillStyle = `rgba(${d[o]},${d[o + 1]},${d[o + 2]},${Math.min(1, a * 1.5)})`
+              ctx.beginPath(); ctx.arc(x, y, (0.35 + 2.3 * a ** 0.8) * shimmer, 0, TAU); ctx.fill()
+            }
+          }
+        }
+        ctx.restore()
+      }
+
+      // ---- Grain ----------------------------------------------------------
+      const grainTile = document.createElement('canvas'); grainTile.width = grainTile.height = 160
+      { const g = grainTile.getContext('2d'), im = g.createImageData(160, 160); for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() < 0.5 ? 0 : 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = Math.random() * 22 } g.putImageData(im, 0, 0) }
+      function grain(ctx, t) {
+        if (!S.grain) return
+        const p = ctx.createPattern(grainTile, 'repeat'), f = Math.floor(RT * 12)
+        ctx.save(); ctx.translate((hash(f, 1, 1) * 160) | 0, (hash(f, 2, 2) * 160) | 0); ctx.fillStyle = p; ctx.fillRect(-160, -160, W + 320, H + 320); ctx.restore()
+      }
+
+      // ---- Prototype controls ---------------------------------------------
+      function glass(ctx, x, y, r, a) {
+        ctx.save(); ctx.globalAlpha *= a; ctx.shadowColor = 'rgba(40,90,140,0.12)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3
+        ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,0.66)'; ctx.fill()
+        ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 1; ctx.stroke(); ctx.restore()
+      }
+      const blueFill = (ctx, x0, y0, x1, y1) => { const g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, '#2F7BF5'); g.addColorStop(0.55, '#8EC9FF'); g.addColorStop(1, '#F2F8FF'); return g }
+      function controls(ctx, t) {
+        const down = ease.inOut(seg(t, 1.45, 2.1)), spread = ease.inOut(seg(t, 2.05, 2.55)), side = seg(t, 2.2, 2.6)
+        const out = 1 - seg(t, 15.1, 15.6)
+        if (out <= 0) return
+        ctx.save(); ctx.globalAlpha *= out
+        const y = lerp(270, 492, down), mx = lerp(480, 604, spread)
+        if (side > 0) {
+          ctx.save(); ctx.globalAlpha *= side; ctx.shadowColor = 'rgba(40,90,140,0.12)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3
+          rrect(ctx, 318 + (1 - side) * 10, y - 16, 96, 32, 16); ctx.fillStyle = 'rgba(255,255,255,0.66)'; ctx.fill()
+          ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.stroke(); ctx.restore()
+          text(ctx, 'Freeform', 336 + (1 - side) * 10, y + 4.5, { size: 12, alpha: side })
+          ctx.save(); ctx.globalAlpha *= side; ctx.strokeStyle = C.s6; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(397, y - 1.5); ctx.lineTo(400, y + 1.5); ctx.lineTo(403, y - 1.5); ctx.stroke(); ctx.restore()
+          glass(ctx, 514, y, 16, side); glass(ctx, 556, y, 16, side)
+          ctx.save(); ctx.globalAlpha *= side; ctx.strokeStyle = C.ink; ctx.fillStyle = C.ink; ctx.lineWidth = 1.4
+          ctx.beginPath(); ctx.arc(514, y, 6, -Math.PI * 0.35, Math.PI * 1.35); ctx.stroke()
+          ctx.beginPath(); ctx.moveTo(508.5, y - 7.5); ctx.lineTo(511.8, y - 4.2); ctx.lineTo(507.6, y - 2.4); ctx.stroke()
+          ctx.fillRect(552.5, y - 5.5, 2, 11); ctx.fillRect(557.5, y - 5.5, 2, 11); ctx.restore()
+        }
+        const dip = (a) => 0.12 * Math.sin(Math.PI * seg(t, a, a + 0.2))
+        const R = lerp(24, 19, down) * (1 - dip(1.15) - dip(13.45))
+        if (t < 1.5) { const br = seg(t, 0.2, 1.1); ctx.strokeStyle = hexA(C.blue, 0.25 * (1 - ((t * 0.8) % 1)) * br); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(mx, y, R + 4 + ((t * 0.8) % 1) * 14, 0, TAU); ctx.stroke() }
+        ctx.save(); ctx.shadowColor = 'rgba(20,40,80,0.25)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 5
+        ctx.beginPath(); ctx.arc(mx, y, R, 0, TAU); ctx.fillStyle = '#232428'; ctx.fill(); ctx.restore()
+        const listening = seg(t, 2.4, 2.6) * (1 - seg(t, 7.5, 7.8))
+        if (listening > 0) { ctx.strokeStyle = hexA(C.blue, (0.35 + 0.3 * voiceEnv(t)) * listening); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(mx, y, R + 3 + voiceEnv(t) * 3, 0, TAU); ctx.stroke() }
+        const rec = 1 - seg(t, 1.3, 1.45), stop = seg(t, 1.35, 1.55) * (1 - seg(t, 13.5, 13.65)), arrow = seg(t, 13.6, 13.8)
+        const k = R / 19
+        if (rec > 0) { const g = ctx.createRadialGradient(mx - 3 * k, y - 4 * k, 1, mx, y, 11 * k); g.addColorStop(0, '#fff'); g.addColorStop(0.5, '#BFE3FF'); g.addColorStop(1, '#3E8EF7'); ctx.save(); ctx.globalAlpha *= rec; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(mx, y, 10.5 * k, 0, TAU); ctx.fill(); ctx.restore() }
+        if (stop > 0) { ctx.save(); ctx.globalAlpha *= stop; rrect(ctx, mx - 6.5, y - 6.5, 13, 13, 3); ctx.fillStyle = blueFill(ctx, mx - 6, y + 6, mx + 6, y - 6); ctx.fill(); ctx.restore() }
+        if (arrow > 0) { ctx.save(); ctx.globalAlpha *= arrow; ctx.fillStyle = blueFill(ctx, mx - 8, y, mx + 9, y); ctx.beginPath(); ctx.moveTo(mx - 8, y - 2.6); ctx.lineTo(mx + 1, y - 2.6); ctx.lineTo(mx + 1, y - 7); ctx.lineTo(mx + 9, y); ctx.lineTo(mx + 1, y + 7); ctx.lineTo(mx + 1, y + 2.6); ctx.lineTo(mx - 8, y + 2.6); ctx.closePath(); ctx.fill(); ctx.restore() }
+        text(ctx, 'Tap to reflect', 480, 318, { size: 11, color: C.s4, align: 'center', track: 0.5, alpha: seg(t, 0.3, 0.8) * (1 - seg(t, 1.2, 1.5)) })
+        ctx.restore()
+        // The site's dot cursor comes in and taps.
+        const cin = ease.inOut(seg(t, 0.45, 1.1)), cout = seg(t, 1.45, 1.8)
+        if (t > 0.4 && cout < 1) {
+          const press = 1 - 0.45 * Math.sin(Math.PI * seg(t, 1.12, 1.32))
+          ctx.fillStyle = hexA(C.ink, 1 - cout); ctx.beginPath(); ctx.arc(lerp(700, 488, cin), lerp(420, 276, cin), 5 * press, 0, TAU); ctx.fill()
+        }
+      }
+
+      // ---- Caption (ElevenLabs-style) -------------------------------------
+      function caption(ctx, t) {
+        const li = LINES.findIndex((l) => t >= l.start - 0.15 && t < l.end + 0.1)
+        if (li < 0) return
+        const l = LINES[li], fadeIn = seg(t, l.start - 0.15, l.start + 0.1), fadeOut = li === LINES.length - 1 ? 1 - seg(t, l.end, l.end + 0.4) : 1
+        layout.caption[li].forEach((p, i) => {
+          const spoken = t >= p.at, current = spoken && (i === l.toks.length - 1 ? t < l.end : t < l.at[i + 1])
+          let color = C.s6, alpha = 0.2
+          if (spoken) { alpha = isTag(p.w) ? 0.55 : 0.75; color = isTag(p.w) ? C.s4 : C.s6 }
+          if (current) { color = C.blue; alpha = 1 }
+          text(ctx, p.w, p.x, 438, { size: 15, color, alpha: alpha * fadeIn * fadeOut })
+        })
+      }
+
+      // ---- Floating words → connections → structure → plan -----------------
+      function words(ctx, t) {
+        const shuffle = ease.inOut(seg(t, 7.8, 8.8)), struct = ease.inOut(seg(t, 10.8, 11.8)), toPlan = ease.inOut(seg(t, 13.3, 14.1))
+        const handOut = 1 - seg(t, 15.2, 15.8)
+        const pos = {}
+        FLOATS.forEach((f, k) => {
+          const at = tokenAt(f.from), lift = ease.out(seg(t, at + 0.15, at + 1.0))
+          if (lift <= 0) return
+          const li = LINES.findIndex((l) => l.toks.includes(f.from)), cp = layout.caption[li].find((p) => p.w === f.from)
+          const drift = [Math.sin(RT * 1.2 + k * 1.7) * 8, Math.cos(RT * 1 + k) * 6]
+          let x = lerp(cp.cx, f.home[0], lift) + drift[0] * lift, y = lerp(438, f.home[1], lift) + drift[1] * lift
+          x = lerp(x, f.shuf[0] + drift[0] * 0.5, shuffle); y = lerp(y, f.shuf[1] + drift[1] * 0.5, shuffle)
+          const col = COLS.find((c) => c.words.includes(f.w))
+          let size = 16, alpha = lerp(0.35, 1, lift), color = isTag(f.w) ? C.s4 : C.ink
+          if (col) { const row = col.words.indexOf(f.w); x = lerp(x, col.x, struct); y = lerp(y, 238 + row * 28, struct); size = lerp(size, 18, struct) }
+          else alpha *= 1 - seg(t, 10.8, 11.4)
+          // Connect: only the cues that recur in past entries stay bright.
+          if (!LINKS[f.w]) alpha *= 1 - 0.75 * seg(t, 7.7, 8.3) * (1 - seg(t, 10.6, 11.0))
+          if (LINKS[f.w] && t > 8.9 && t < 10.9) color = C.blue
+          // Plan: trigger/state words fly into the sentence; reaction is struck out.
+          if (f.w === 'dinner' || f.w === 'so tired') {
+            const target = layout.plan.find((p) => p.w.startsWith(f.w === 'dinner' ? 'dinner' : 'tired'))
+            x = lerp(x, target.cx, toPlan); y = lerp(y, 232, toPlan); size = lerp(size, 30, toPlan)
+            if (toPlan > 0.5) { color = C.ink; alpha = 1 }
+          } else if (col) alpha *= 1 - seg(t, 13.5, 13.9)
+          alpha *= handOut
+          pos[f.w] = { x, y }
+          const label = f.w === 'so tired' && toPlan > 0.5 ? 'tired' : f.w === 'dinner' && toPlan > 0.5 ? 'dinner,' : f.w
+          text(ctx, label, x, y + size * 0.33, { size, color, align: 'center', alpha })
+          if (col && col.label === 'REACTION') {
+            const strike = ease.inOut(seg(t, 13.2 + (f.w === 'again' ? 0.1 : 0), 13.5 + (f.w === 'again' ? 0.1 : 0)))
+            if (strike > 0) { const w = measure(ctx, f.w, size); ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x - w / 2, y - 1); ctx.lineTo(x - w / 2 + w * strike, y - 1); ctx.stroke(); ctx.restore() }
+          }
+        })
+        return pos
+      }
+
+      function connections(ctx, t, pos) {
+        const cardIn = seg(t, 7.7, 8.3), cardOut = 1 - seg(t, 10.6, 11.2)
+        if (cardIn <= 0 || cardOut <= 0) return
+        text(ctx, '3 SIMILAR MOMENTS · LAST 3 WEEKS', 480, 34, { size: 10, color: C.blue, align: 'center', track: 1.5, alpha: seg(t, 8.0, 8.5) * cardOut })
+        layout.cards.forEach((c, ci) => {
+          const a = seg(t, 7.7 + ci * 0.18, 8.2 + ci * 0.18) * cardOut
+          if (a <= 0) return
+          ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = 'rgba(20,30,50,0.08)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4
+          rrect(ctx, c.x, c.y + (1 - ease.out(a)) * 10, 204, c.h, 12); ctx.fillStyle = 'rgba(255,255,255,0.78)'; ctx.fill(); ctx.restore()
+          text(ctx, c.date, c.x + 14, c.y + 24, { size: 9, color: C.s4, track: 1, alpha: a })
+          c.words.forEach((w) => {
+            const hit = Object.entries(LINKS).find(([, cues]) => cues.includes(norm(w.w)))
+            const lit = hit ? seg(t, 8.6 + ci * 0.25, 9.0 + ci * 0.25) : 0
+            text(ctx, w.w, w.x, w.y, { size: 11, color: lit > 0.5 ? C.blue : isTag(w.w) ? C.s4 : C.s6, alpha: a })
+            if (hit && pos[hit[0]]) {
+              const p = pos[hit[0]], draw = ease.inOut(seg(t, 8.4 + ci * 0.25, 9.1 + ci * 0.25))
+              if (draw <= 0) return
+              const x1 = w.x + w.cw / 2, y1 = w.y - 4, mx = (p.x + x1) / 2, my = Math.min(p.y, y1) - 30
+              ctx.save(); ctx.globalAlpha = 0.45 * a; ctx.strokeStyle = C.blue; ctx.lineWidth = 0.8
+              ctx.beginPath()
+              for (let s = 0; s <= 24 * draw; s++) { const u = s / 24, xx = (1 - u) ** 2 * p.x + 2 * (1 - u) * u * mx + u * u * x1, yy = (1 - u) ** 2 * p.y + 2 * (1 - u) * u * my + u * u * y1; s ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy) }
+              ctx.stroke(); ctx.restore()
+            }
+          })
+        })
+      }
+
+      function structure(ctx, t) {
+        const a = seg(t, 11.2, 11.8) * (1 - seg(t, 13.3, 13.7))
+        if (a <= 0) return
+        text(ctx, 'PATTERN · 3× IN 3 WEEKS', 480, 150, { size: 10, color: C.blue, align: 'center', track: 1.5, alpha: a })
+        COLS.forEach((c) => {
+          text(ctx, c.label, c.x, 206, { size: 10, color: C.s4, align: 'center', track: 1.5, alpha: a })
+          if (c.extra) text(ctx, c.extra, c.x, 238 + 28 + 6, { size: 18, color: C.s6, align: 'center', alpha: a })
+        })
+        ;[386, 574].forEach((x) => text(ctx, '→', x, 244, { size: 18, color: C.blue, align: 'center', alpha: a * 0.7 }))
+      }
+
+      function plan(ctx, t) {
+        const out = 1 - seg(t, 15.2, 15.8)
+        text(ctx, 'NEXT TIME', 480, 180, { size: 10, color: C.blue, align: 'center', track: 1.5, alpha: seg(t, 13.6, 14.0) * out })
+        layout.plan.forEach((p) => {
+          if (p.w === 'tired' || p.w === 'dinner,') return
+          text(ctx, p.w, p.cx, 242, { size: 30, color: p.w === 'If' ? C.blue : C.ink, align: 'center', alpha: seg(t, 13.8, 14.2) * out })
+        })
+        const l2 = 'then I pause and breathe.', n = Math.floor(l2.length * seg(t, 14.1, 14.9))
+        if (n > 0) {
+          const full = measure(ctx, l2, 30), x0 = 480 - full / 2
+          text(ctx, 'then', x0, 284, { size: 30, color: C.blue, alpha: out })
+          if (n > 5) text(ctx, l2.slice(5, n), x0 + measure(ctx, 'then ', 30), 284, { size: 30, alpha: out })
+        }
+      }
+
+      function film(ctx, rt) {
+        RT = rt
+        const t = warp(rt)
+        if (!layout) doLayout(ctx)
+        drawGlow(ctx, t)
+        const pos = words(ctx, t)
+        connections(ctx, t, pos)
+        structure(ctx, t)
+        plan(ctx, t)
+        caption(ctx, t)
+        controls(ctx, t)
+        const h = ease.inOut(seg(t, 15.9, 17.0))
+        ctx.globalAlpha = 1; drawPage(ctx, h, lerp(24, 0, h))
+        grain(ctx, t)
+      }
+
+      // ---- Player -----------------------------------------------------------
+      const canvas = document.getElementById('c'), ctx = canvas.getContext('2d')
+      const range = document.getElementById('range'), timeOut = document.getElementById('time'), playBtn = document.getElementById('play')
+      range.max = String(DUR)
+      let speed = 1, paused = null, start = performance.now()
+      const now = () => (paused !== null ? paused : Math.min(DUR, (((performance.now() - start) / 1000) * speed) % (DUR + HOLD)))
+      const setPaused = (at) => { if (at === null) start = performance.now() - ((paused ?? 0) / speed) * 1000; paused = at; playBtn.textContent = at === null ? '❚❚' : '▶' }
+      playBtn.onclick = () => setPaused(paused === null ? now() : null)
+      range.oninput = () => setPaused(Number(range.value))
+      canvas.onclick = () => { paused = null; setPaused(null); start = performance.now() }
+      addEventListener('keydown', (e) => {
+        if (e.key === ' ') { e.preventDefault(); playBtn.click() }
+        if (e.key === ',' || e.key === '.') setPaused(clamp(now() + (e.key === '.' ? 0.1 : -0.1), 0, DUR))
+      })
+      const chapters = document.getElementById('chapters')
+      CHAPTERS.forEach(([name, at]) => { const b = document.createElement('button'); b.textContent = name; b.style.left = `${(at / DUR) * 100}%`; b.dataset.at = at; b.onclick = () => setPaused(at); chapters.append(b) })
+      const syncOpts = () => document.querySelectorAll('[data-opt]').forEach((b) => b.setAttribute('aria-pressed', String(String(S[b.dataset.opt] === true ? 'on' : S[b.dataset.opt] === false ? 'off' : S[b.dataset.opt]) === b.dataset.v)))
+      document.querySelectorAll('[data-opt]').forEach((b) => (b.onclick = () => { S[b.dataset.opt] = b.dataset.opt === 'grain' ? b.dataset.v === 'on' : b.dataset.v; syncOpts() }))
+      document.querySelectorAll('[data-speed]').forEach((b) => (b.onclick = () => { const t = now(); speed = Number(b.dataset.speed); if (paused === null) start = performance.now() - (t / speed) * 1000; document.querySelectorAll('[data-speed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))) }))
+      syncOpts(); document.querySelector('[data-speed="1"]').setAttribute('aria-pressed', 'true')
+
+      const render = (c, t, scale) => { c.setTransform(scale, 0, 0, scale, 0, 0); c.globalAlpha = 1; c.fillStyle = '#f4f2ef'; c.fillRect(0, 0, W, H); c.save(); film(c, t); c.restore() }
+      addEventListener('studio:render', (e) => { const o = document.createElement('canvas'); o.width = W * 2; o.height = H * 2; if (e.detail.opts) Object.assign(S, e.detail.opts); render(o.getContext('2d'), e.detail.t, 2); document.body.dataset.render = o.toDataURL('image/png') })
+      await document.fonts.load(font(20))
+      const frame = () => {
+        const t = now()
+        render(ctx, t, 2)
+        if (document.activeElement !== range) range.value = String(t)
+        timeOut.textContent = `${t.toFixed(2)}s`
+        const cur = [...chapters.children].filter((b) => Number(b.dataset.at) <= t).pop()
+        ;[...chapters.children].forEach((b) => (b === cur ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')))
+        requestAnimationFrame(frame)
+      }
+      requestAnimationFrame(frame)
+      document.body.dataset.ready = ''
+    </script>
+  </body>
+</html>

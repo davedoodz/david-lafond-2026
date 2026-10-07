@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties, type PointerEvent } from 'react'
+import { useEffect, useRef, type CSSProperties, type PointerEvent } from 'react'
 import { useTuningController } from '../../tuning/useTuning'
 import { ArrowUpRightIcon } from '../../components/icons'
 import { ARROW_HEAD, ARROW_SHAFT, LOOP } from './markerPaths'
@@ -15,11 +15,12 @@ type PaperDials = {
   arrow: { x: number; y: number; scale: number }
   pillSize: { padX: number; padY: number; text: number }
   marker: { show: boolean; color: string; note: string }
+  entrance: { show: boolean; depth: number; duration: number; trigger: number }
 }
 
 export const ARXIV_PAPER_URL = 'https://arxiv.org/abs/2604.06477'
 
-export const UNWIND_PAPER_CONFIG = {
+export const MOMO_PAPER_CONFIG = {
   pill: { type: 'text' as const, default: 'read our 2026 HCI paper on ArXiv' },
   /** The footer links' up-right arrow after the pill text: offset (px) and scale. */
   arrow: {
@@ -51,16 +52,47 @@ export const UNWIND_PAPER_CONFIG = {
     blur: [80, 0, 200, 1] as Tuple,
     y: [24, 0, 120, 1] as Tuple,
   },
+  /** Scroll-in: the paper starts sunk under the footer and pops up each time the section comes into view.
+   *  Depth (px) is how far it starts below its rest place; Trigger is how much of the section must show. */
+  entrance: {
+    show: true,
+    depth: [360, 60, 900, 10] as Tuple,
+    duration: [0.9, 0.2, 2.5, 0.05] as Tuple,
+    trigger: [0.3, 0.05, 0.9, 0.05] as Tuple,
+  },
 }
 
 /**
- * The Unwind paper's first page, tucked under the case study's dark footer sheet. The whole sheet is one
+ * The Momo paper's first page, tucked under the case study's dark footer sheet. The whole sheet is one
  * link to arXiv (new tab); hovering lifts it out and a pill follows the pointer.
  */
 export function ArxivPaper() {
-  const { values } = useTuningController('Unwind paper', UNWIND_PAPER_CONFIG)
+  const { values } = useTuningController('Momo paper', MOMO_PAPER_CONFIG)
   const d = values as unknown as PaperDials
   const ref = useRef<HTMLAnchorElement>(null)
+  const { show: entrance, trigger } = d.entrance
+
+  // Pop up from under the footer whenever the section scrolls into view; sink again once it's fully out
+  // so the next visit replays. Watches the section, not the paper, because the paper itself moves.
+  useEffect(() => {
+    const el = ref.current
+    const section = el?.parentElement
+    if (!el || !section) return
+    if (!entrance) {
+      el.dataset.risen = ''
+      return
+    }
+    delete el.dataset.risen
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio >= trigger) el.dataset.risen = ''
+        else if (!entry.isIntersecting) delete el.dataset.risen
+      },
+      { threshold: [0, trigger] },
+    )
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [entrance, trigger])
 
   // The pill follows the pointer; written straight to CSS vars so moving never re-renders.
   const follow = (event: PointerEvent<HTMLAnchorElement>) => {
@@ -97,15 +129,17 @@ export function ArxivPaper() {
           '--pill-pad-y': `${d.pillSize.padY}px`,
           '--pill-text': `${d.pillSize.text}px`,
           '--marker': d.marker.color,
+          '--paper-rise-depth': `${d.entrance.depth}px`,
+          '--paper-rise-time': `${d.entrance.duration}s`,
         } as CSSProperties
       }
     >
       <span className="arxiv-paper__sheet">
         <img
           className="arxiv-paper__page"
-          srcSet="/work/unwind/paper/arxiv-paper-900.webp 900w, /work/unwind/paper/arxiv-paper-1600.webp 1600w"
+          srcSet="/work/momo/paper/arxiv-paper-900.webp 900w, /work/momo/paper/arxiv-paper-1600.webp 1600w"
           sizes={`min(${d.width}px, 100vw - 48px)`}
-          src="/work/unwind/paper/arxiv-paper-1600.webp"
+          src="/work/momo/paper/arxiv-paper-1600.webp"
           width={1600}
           height={2071}
           loading="lazy"

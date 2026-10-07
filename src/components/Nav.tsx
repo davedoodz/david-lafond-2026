@@ -36,7 +36,7 @@ function internalLink(route: Route) {
   }
 }
 
-const PROJECT_ROUTES: Route[] = ['unwind', 'filo', 'harvard-mit']
+const PROJECT_ROUTES: Route[] = ['momo', 'filo', 'harvard-mit']
 
 /** Back to the work list: history when we came from it (restores the scroll), else the Work page. */
 function goBack(event: MouseEvent<HTMLAnchorElement>) {
@@ -46,7 +46,7 @@ function goBack(event: MouseEvent<HTMLAnchorElement>) {
   else navigate('work')
 }
 
-/** "< Back" link. Project pages place it top-left, above the section list (Unwind, Filo) or alone (Harvard & MIT). */
+/** "< Back" link. Project pages place it top-left, above the section list (Momo, Filo) or alone (Harvard & MIT). */
 export function BackLink({ className = '' }: { className?: string }) {
   return (
     <a className={`nav__back ${className}`.trim()} href="/" onClick={goBack}>

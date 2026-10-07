@@ -2,10 +2,10 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText } from './storyArt'
 import type { SectionSpacing, TextReveal } from './caseStudyContent'
-import { cardSurface, useSystemBase, type GlassDials } from '../features/unwindSystem/systemSurface'
+import { cardSurface, useSystemBase, type GlassDials } from '../features/momoSystem/systemSurface'
 
-/** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
-const flow = (name: string) => ({ src: `/work/unwind/flows/${name}.mp4`, poster: `/work/unwind/flows/${name}.webp` })
+/** Phone-only recordings (public/work/momo/flows): 530×1080, the phone cropped to its own frame. */
+const flow = (name: string) => ({ src: `/work/momo/flows/${name}.mp4`, poster: `/work/momo/flows/${name}.webp` })
 
 /** A phone recording that plays only while on screen (and not for reduced motion); each return starts it from the beginning. */
 export function PhoneVideo({ name, className = '' }: { name: string; className?: string }) {
@@ -58,15 +58,15 @@ export type Story = {
   titleScale: number
   textWidth: number
   spacing: SectionSpacing
-  /** Unwind art captions; other case studies pass their own `arts`. */
+  /** Momo art captions; other case studies pass their own `arts`. */
   artText?: StoryArtText
-  /** Unwind glass art cards (art: 'glass'). */
+  /** Momo glass art cards (art: 'glass'). */
   glass?: StoryGlass
-  /** Unwind: art and text share a left edge, are centred, or the art spans the text width. */
+  /** Momo: art and text share a left edge, are centred, or the art spans the text width. */
   align?: 'left' | 'center' | 'stretch'
   /** Text alignment independent of the art/column alignment. */
   textAlign?: 'left' | 'center'
-  /** Unwind: icon on the Problem curve's peak (see PEAK_ICONS). */
+  /** Momo: icon on the Problem curve's peak (see PEAK_ICONS). */
   peakIcon?: string
 }
 
@@ -102,7 +102,7 @@ const STORY_PRESETS: Record<string, Look> = {
   columns: { art: 'card', opportunityArt: 'three', motion: 'draw', reveal: 'soft rise' },
 }
 
-/** `arts` replaces the Unwind graphics (problem, opportunity, solution) for another case study. */
+/** `arts` replaces the Momo graphics (problem, opportunity, solution) for another case study. */
 export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode] }) {
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const glassVars = useStoryGlass(s.glass)

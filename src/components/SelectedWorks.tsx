@@ -31,13 +31,13 @@ type Tuple = [number, number, number, number]
 
 const CONFIG = {
   cards: {
-    unwind: { type: 'color' as const, default: '#57BFFF' },
+    momo: { type: 'color' as const, default: '#57BFFF' },
     filo: { type: 'color' as const, default: '#FFE1E2' },
     'harvard-mit': { type: 'color' as const, default: '#171717' },
   },
   titles: {
-    unwindDesktop: { type: 'text' as const, default: WORKS[0].title },
-    unwindMobile: { type: 'text' as const, default: WORKS[0].shortTitle },
+    momoDesktop: { type: 'text' as const, default: WORKS[0].title },
+    momoMobile: { type: 'text' as const, default: WORKS[0].shortTitle },
     filoDesktop: { type: 'text' as const, default: WORKS[1].title },
     filoMobile: { type: 'text' as const, default: WORKS[1].shortTitle },
     harvardMitDesktop: { type: 'text' as const, default: WORKS[2].title },
@@ -154,7 +154,7 @@ const CONFIG = {
 }
 
 const TITLE_KEYS = {
-  unwind: ['unwindDesktop', 'unwindMobile'],
+  momo: ['momoDesktop', 'momoMobile'],
   filo: ['filoDesktop', 'filoMobile'],
   'harvard-mit': ['harvardMitDesktop', 'harvardMitMobile'],
 } as const
@@ -397,8 +397,8 @@ export function SelectedWorks() {
                       }}
                     />
                   )}
-                  {work.id === 'unwind' && <MeshCard />}
-                  {work.id === 'unwind' && <MomoCard />}
+                  {work.id === 'momo' && <MeshCard />}
+                  {work.id === 'momo' && <MomoCard />}
                   {work.id === 'filo' && <FiloCard />}
                   {work.id === 'harvard-mit' && <HarvardMitCard />}
                   <div className="card-shade" />

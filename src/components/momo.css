@@ -1,6 +1,6 @@
-/* Momo (the Unwind cloud): shared by the Unwind card and the nav on the Unwind page. */
+/* Momo (the Momo cloud): shared by the Momo card and the nav on the Momo page. */
 
-/* Momo in the nav on the Unwind page: sits in the ghost's 36px slot and overflows it. */
+/* Momo in the nav on the Momo page: sits in the ghost's 36px slot and overflows it. */
 .nav-momo {
   position: relative;
   width: 36px;
@@ -31,7 +31,7 @@
   position: relative;
 }
 
-/* Momo on the Unwind card: centred, sized by card height, nudged by the dials. */
+/* Momo on the Momo card: centred, sized by card height, nudged by the dials. */
 .momo {
   position: absolute;
   inset: 0;
