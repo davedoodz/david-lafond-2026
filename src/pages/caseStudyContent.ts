@@ -42,6 +42,15 @@ type SectionDefaults = {
   size?: number
   gap?: number
 }
+export type SectionSpacing = { top: number; bottom: number; contentGap: number }
+
+/** Shared section rhythm: viewport edges plus the gap from copy to the main visual. */
+const sectionSpacingDials = (top = 96, bottom = 64, contentGap = 72) => ({
+  top: [top, 0, 240, 1] as Tuple,
+  bottom: [bottom, 0, 240, 1] as Tuple,
+  contentGap: [contentGap, 0, 600, 1] as Tuple,
+  _collapsed: true,
+})
 
 export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTIONS) {
   return {
@@ -49,6 +58,7 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
     title: { type: 'text' as const, default: d.title },
     body: { type: 'text' as const, default: d.body ?? '', placeholder: 'Blank lines = paragraph breaks' },
     align: { type: 'select' as const, options: ['left', 'center'], default: d.align ?? 'left' },
+    spacing: sectionSpacingDials(96, 64, d.gap ?? 72),
     media: {
       video: { type: 'select' as const, options: videos, default: d.video ?? 'none' },
       ...(d.placeholder !== undefined ? { placeholder: { type: 'text' as const, default: d.placeholder } } : {}),
@@ -56,8 +66,6 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
       layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'bottom' },
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
-      /** Space between the text and the video (px). */
-      gap: [d.gap ?? 72, 0, 240, 1] as Tuple,
       /** Nudge from its slot, % of the video's own width / height. */
       x: [0, -60, 60, 0.5] as Tuple,
       y: [0, -60, 60, 0.5] as Tuple,
@@ -89,6 +97,7 @@ const pageDials = {
 
 const heroDials = (d: SectionDefaults & { role: string; timeline: string; team: string }, videos?: string[]) => ({
   ...sectionDials(d, videos),
+  spacing: sectionSpacingDials(118, 0, d.gap ?? 44),
   role: { type: 'text' as const, default: d.role },
   timeline: { type: 'text' as const, default: d.timeline },
   team: { type: 'text' as const, default: d.team },
@@ -296,8 +305,7 @@ export const UNWIND_CONFIG = {
       default: 'soft rise',
     },
     artWidth: [300, 160, 480, 5] as Tuple,
-    /** Vertical space between Problem, Opportunity and Solution (px). */
-    rowGap: [44, 8, 600, 1] as Tuple,
+    spacing: sectionSpacingDials(96, 96, 44),
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     /** Captions inside the art cards; clear a field to remove that caption. */
@@ -308,7 +316,7 @@ export const UNWIND_CONFIG = {
     _collapsed: true,
   },
   /** Persona sheet, reorganised to read top to bottom (rendered as `persona`); key contexts float around the portrait. */
-  persona: { ...PERSONA_DIALS, float: FLOAT_DIALS },
+  persona: { ...PERSONA_DIALS, spacing: sectionSpacingDials(110, 110, 32), float: FLOAT_DIALS },
   system: sectionDials({
     eyebrow: 'System design',
     title: 'Watch, phone and Momo, with clinical experts shaping the model.',
@@ -357,6 +365,7 @@ export const UNWIND_CONFIG = {
     entriesLabel: { type: 'text' as const, default: 'Your entries' },
     voiceLabel: { type: 'text' as const, default: 'Say what happened' },
     trackerLabel: { type: 'text' as const, default: 'Keep yourself on track' },
+    spacing: sectionSpacingDials(82, 42, 110),
     _collapsed: true,
   },
   /** Guided WOOP and Gross models side by side (rendered as `guided`). */
@@ -369,6 +378,7 @@ export const UNWIND_CONFIG = {
     reveal: { type: 'select' as const, options: ['rise', 'cascade', 'focus', 'from sides', 'wipe', 'still'], default: 'rise' },
     woopLabel: { type: 'text' as const, default: 'WOOP · plan for next time' },
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
+    spacing: sectionSpacingDials(96, 64, 72),
     _collapsed: true,
   },
   /** Keep the section key to preserve its saved position; the device demo replaces Dynamic Mode. */
@@ -377,6 +387,7 @@ export const UNWIND_CONFIG = {
     title: { type: 'text' as const, default: 'Your body signals. Your story. A clearer picture.' },
     body: { type: 'text' as const, default: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    spacing: sectionSpacingDials(110, 72, 36),
     _collapsed: true,
   },
   context: sectionDials({
@@ -457,8 +468,7 @@ export const FILO_CONFIG = {
     opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
     artWidth: [300, 160, 480, 5] as Tuple,
-    /** Vertical space between Problem, Opportunity and Solution (px). */
-    rowGap: [44, 8, 600, 1] as Tuple,
+    spacing: sectionSpacingDials(96, 96, 44),
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     _collapsed: true,
@@ -486,6 +496,7 @@ export const FILO_CONFIG = {
   /** Persona sheet (shared with Unwind), no portrait, one scenario card. */
   persona: {
     ...PERSONA_DIALS,
+    spacing: sectionSpacingDials(110, 110, 32),
     eyebrow: txt('User persona'),
     title: txt('The technical designer handed a new material.'),
     body: txt(

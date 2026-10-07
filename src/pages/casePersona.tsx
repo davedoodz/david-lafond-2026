@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Brain, Briefcase, Building2, CalendarDays, CalendarCheck, MessageCircle, RefreshCw, RotateCcw, Sparkles, Watch, type LucideIcon } from 'lucide-react'
 import { EditableText } from '../components/EditableText'
+import type { SectionSpacing } from './caseStudyContent'
 
 type Tuple = [number, number, number, number]
 type Edit = (path: string) => (next: string) => void
@@ -94,8 +95,6 @@ export const FLOAT_DIALS = {
   bob: [6, 0, 20, 1] as Tuple,
   /** Profile chip arrangement. */
   profileLayout: { type: 'select' as const, options: ['wrapped', '3 top / 3 bottom'], default: 'wrapped' },
-  /** Vertical distance between the text block and portrait (px). */
-  introGap: [32, 0, 160, 1] as Tuple,
   /** Vertical distance between the eyebrow and title (px). */
   eyebrowGap: [14, 0, 80, 1] as Tuple,
   /** Vertical distance between the title and body (px). */
@@ -152,7 +151,6 @@ export type Float = {
   spread: number
   bob: number
   profileLayout: string
-  introGap: number
   eyebrowGap: number
   titleGap: number
   bodyGap: number
@@ -204,6 +202,7 @@ export type Persona = {
   imageRadius: number
   titleScale: number
   blockGap: number
+  spacing: SectionSpacing
   driven: Record<'title' | 'd1' | 'd2' | 'd3', string>
   challenges: Record<'title' | 'c1' | 'c2' | 'c3', string>
   moments: Record<string, string>
@@ -366,6 +365,9 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
       data-live={live || undefined}
       style={
         {
+          '--section-pad-top': `${p.spacing.top}px`,
+          '--section-pad-bottom': `${p.spacing.bottom}px`,
+          '--section-content-gap': `${p.spacing.contentGap}px`,
           ...(ent && timeline
             ? {
                 '--pe-text-kf': kf(ent.text),
@@ -388,7 +390,6 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
           '--persona-gap': `${p.blockGap}px`,
           ...(float
             ? {
-                '--persona-intro-gap': `${float.introGap}px`,
                 '--persona-eyebrow-gap': `${float.eyebrowGap}px`,
                 '--persona-title-gap': `${float.titleGap}px`,
                 '--persona-body-gap': `${float.bodyGap}px`,

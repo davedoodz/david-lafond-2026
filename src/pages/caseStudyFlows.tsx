@@ -1,6 +1,7 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText } from './storyArt'
+import type { SectionSpacing } from './caseStudyContent'
 import { cardSurface, useSystemBase, type GlassDials } from '../features/unwindSystem/systemSurface'
 
 /** Phone-only recordings (public/work/unwind/flows): 530×1080, the phone cropped to its own frame. */
@@ -54,9 +55,9 @@ export type Story = {
   motion: string
   reveal: string
   artWidth: number
-  rowGap: number
   titleScale: number
   textWidth: number
+  spacing: SectionSpacing
   /** Unwind art captions; other case studies pass their own `arts`. */
   artText?: StoryArtText
   /** Unwind glass art cards (art: 'glass'). */
@@ -122,7 +123,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
       data-story-motion={look.motion}
       data-story-reveal={look.reveal}
       aria-label="Problem, opportunity and solution"
-      style={{ ...glassVars, '--story-art-w': `${s.artWidth}px`, '--story-gap': `${s.rowGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
+      style={{ ...glassVars, '--story-art-w': `${s.artWidth}px`, '--section-pad-top': `${s.spacing.top}px`, '--section-pad-bottom': `${s.spacing.bottom}px`, '--section-content-gap': `${s.spacing.contentGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
     >
       <ol className="case__story-cols">
         {rows.map(([k, label, title, body, art], i) => (
@@ -222,7 +223,7 @@ function useRiseOnView() {
 }
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string }
+export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string; spacing: SectionSpacing }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRiseOnView()
   useEffect(() => {
@@ -264,7 +265,7 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
       data-layout="flows"
       data-copy-align={f.align}
       aria-labelledby="case-flows"
-      style={{ '--flows-scale': f.phoneScale } as CSSProperties}
+      style={{ '--flows-scale': f.phoneScale, '--section-pad-top': `${f.spacing.top}px`, '--section-pad-bottom': `${f.spacing.bottom}px`, '--section-content-gap': `${f.spacing.contentGap}px` } as CSSProperties}
     >
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="flows eyebrow" value={f.eyebrow} onChange={edit('flows.eyebrow')} />
@@ -285,11 +286,11 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
 
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type GuidedReveal = 'rise' | 'cascade' | 'focus' | 'from sides' | 'wipe' | 'still'
-export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string }
+export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; spacing: SectionSpacing }
 export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
   const ref = useRiseOnView()
   return (
-    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} aria-labelledby="case-guided">
+    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} aria-labelledby="case-guided" style={{ '--section-pad-top': `${g.spacing.top}px`, '--section-pad-bottom': `${g.spacing.bottom}px`, '--section-content-gap': `${g.spacing.contentGap}px` } as CSSProperties}>
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="guided eyebrow" value={g.eyebrow} onChange={edit('guided.eyebrow')} />
         <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} />

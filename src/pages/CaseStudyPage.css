@@ -109,8 +109,8 @@
   display: grid;
   align-content: center;
   justify-content: center;
-  gap: var(--media-gap, 72px);
-  padding: 96px var(--case-frame-edge) 64px;
+  gap: var(--section-content-gap, 72px);
+  padding: var(--section-pad-top, 96px) var(--case-frame-edge) var(--section-pad-bottom, 64px);
 }
 
 /* Every case-study section enters with a light, floating motion. The page observer removes
@@ -253,7 +253,7 @@
 .case__section[data-layout='center'] {
   grid-template-columns: min(var(--case-content), 100%);
   justify-items: center;
-  gap: var(--media-gap, 28px);
+  gap: var(--section-content-gap, 28px);
   padding-inline: var(--case-frame-edge);
 }
 .case__section[data-layout='center'] .case__media {
@@ -489,9 +489,8 @@ html[data-case-snap] .case__moment {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--media-gap, 44px);
-  padding: 118px var(--edge) 0;
-  padding-inline: var(--case-frame-edge);
+  gap: var(--section-content-gap, 44px);
+  padding: var(--section-pad-top, 118px) var(--case-frame-edge) var(--section-pad-bottom, 0px);
   overflow: clip;
 }
 .case__section[data-layout='rise'] .case__text {
@@ -514,11 +513,11 @@ html[data-case-snap] .case__moment {
   align-content: center;
   height: auto;
   min-height: 100svh;
-  padding-block: clamp(72px, 10svh, 120px);
+  padding-block: var(--section-pad-top, clamp(72px, 10svh, 120px)) var(--section-pad-bottom, clamp(72px, 10svh, 120px));
 }
 .case__story-cols {
   display: grid;
-  gap: var(--story-gap, 44px);
+  gap: var(--section-content-gap, 44px);
   width: min(1040px, 100%);
   margin: 0 auto;
   padding: 0;
@@ -938,7 +937,7 @@ html[data-case-snap] .case__moment {
   align-items: center;
   justify-content: flex-start;
   gap: 0;
-  padding: clamp(74px, 7.5svh, 90px) var(--case-frame-edge) clamp(34px, 4svh, 48px);
+  padding: var(--section-pad-top, clamp(74px, 7.5svh, 90px)) var(--case-frame-edge) var(--section-pad-bottom, clamp(34px, 4svh, 48px));
   /* The section clips so the phones rise out of its bottom edge, but the phone
      shadows must pass that edge or they end in a hard line on short screens. */
   overflow-clip-margin: 96px;
@@ -993,7 +992,7 @@ html[data-case-snap] .case__moment {
 }
 .case__flows-row {
   width: min(1160px, calc(100vw - 2 * var(--case-frame-edge)));
-  margin-top: clamp(100px, 11.25svh, 133px);
+  margin-top: var(--section-content-gap, clamp(100px, 11.25svh, 133px));
   --flows-gap: 50px;
   scale: var(--flows-scale, 1);
   transform-origin: 50% 0;
@@ -1156,7 +1155,7 @@ html[data-case-snap] .case__moment {
   .case__section.case__flows[data-layout='flows'] {
     justify-content: flex-start;
     gap: 0;
-    padding: 84px var(--edge) 32px;
+    padding: var(--section-pad-top, 84px) var(--edge) var(--section-pad-bottom, 32px);
   }
   .case__flows-head .case__eyebrow {
     margin-bottom: 14px;
@@ -1326,7 +1325,7 @@ html[data-case-snap] .case__group > * {
   gap: var(--persona-gap, 96px);
   height: auto;
   min-height: 100svh;
-  padding-block: clamp(96px, 12svh, 140px);
+  padding-block: var(--section-pad-top, clamp(96px, 12svh, 140px)) var(--section-pad-bottom, clamp(96px, 12svh, 140px));
 }
 .case__persona > * {
   width: min(1040px, 100%);
@@ -1343,7 +1342,7 @@ html[data-case-snap] .case__group > * {
   grid-template-columns: minmax(0, var(--case-reading));
   justify-content: center;
   align-items: center;
-  gap: var(--persona-intro-gap, 32px);
+  gap: var(--section-content-gap, 32px);
 }
 [data-persona-image='left'] .persona__intro,
 [data-persona-image='right'] .persona__intro {
@@ -1351,7 +1350,7 @@ html[data-case-snap] .case__group > * {
   grid-template-columns: repeat(2, minmax(0, 420px));
   justify-content: center;
   align-items: center;
-  gap: var(--persona-intro-gap, clamp(32px, 5vw, 64px));
+  gap: var(--section-content-gap, clamp(32px, 5vw, 64px));
 }
 .persona__stage {
   position: relative;
