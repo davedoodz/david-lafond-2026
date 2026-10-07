@@ -12,6 +12,12 @@
     "videoLoopSpeed": {
       "card2": 2
     },
+    "journal": {
+      "desktopZoom": 1.02,
+      "desktopX": 1,
+      "phoneX": -29,
+      "phoneY": 18
+    },
     "grid": {
       "count": 12,
       "radius": 14,
@@ -200,6 +206,7 @@
     "ease": "linear-ish"
   },
   "Contact CTA": {
+    "title": "What if we designed cool stuff together?",
     "spacing": {
       "topDesktop": 202,
       "topMobile": 120,

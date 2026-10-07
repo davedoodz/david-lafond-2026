@@ -68,7 +68,27 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+}
+
+.pg-journal-media {
   background: #fff;
+}
+
+.pg-critical-action-media {
+  background: #0d3937;
+}
+
+.pg-journal-desktop-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: inset(
+    var(--pg-journal-desktop-crop-top)
+    var(--pg-journal-desktop-crop-right)
+    var(--pg-journal-desktop-crop-bottom)
+    var(--pg-journal-desktop-crop-left)
+    round var(--pg-journal-desktop-radius)
+  );
 }
 
 .pg-journal-desktop {
@@ -91,17 +111,22 @@
 
 .pg-critical-action-shader {
   position: absolute;
-  inset: 0;
+  inset: -3px;
+}
+
+.pg-critical-action-shader canvas {
+  display: block;
 }
 
 .pg-critical-action-book {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: calc(50% + var(--pg-critical-book-y));
+  left: calc(50% + var(--pg-critical-book-x));
   width: min(56%, 364px);
   max-height: calc(100% - 16px);
   object-fit: contain;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--pg-critical-book-scale));
+  transform-origin: center;
 }
 
 .pg-card .card-shade,

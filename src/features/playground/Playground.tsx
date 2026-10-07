@@ -44,9 +44,19 @@ const PLAYGROUND_CONFIG = {
     desktopZoom: [1, 1, 3, 0.01] as [number, number, number, number],
     desktopX: [0, -100, 100, 1] as [number, number, number, number],
     desktopY: [0, -100, 100, 1] as [number, number, number, number],
+    desktopCropLeft: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopCropRight: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopCropTop: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopCropBottom: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopRadius: [0, 0, 120, 1] as [number, number, number, number],
     /** Phone position as percentage points from the card centre. */
     phoneX: [-26, -100, 100, 1] as [number, number, number, number],
     phoneY: [4, -100, 100, 1] as [number, number, number, number],
+  },
+  criticalAction: {
+    bookScale: [1, 0.1, 3, 0.01] as [number, number, number, number],
+    bookX: [0, -100, 100, 1] as [number, number, number, number],
+    bookY: [0, -100, 100, 1] as [number, number, number, number],
   },
   grid: {
     /** How many cards show, in data order (first N). */
@@ -265,7 +275,12 @@ export function Playground({ className }: { className?: string }) {
         const playbackRate = videoLoopSpeeds[`card${i + 1}`] ?? 1
         const media =
           item.presentation === 'critical-action' ? (
-            <CriticalActionMedia shouldPlay={shouldPlay} />
+            <CriticalActionMedia
+              shouldPlay={shouldPlay}
+              bookScale={values.criticalAction.bookScale}
+              bookX={values.criticalAction.bookX}
+              bookY={values.criticalAction.bookY}
+            />
           ) : item.presentation === 'journal' && item.video ? (
             <JournalMedia
               src={item.video}
@@ -275,6 +290,11 @@ export function Playground({ className }: { className?: string }) {
               desktopZoom={values.journal.desktopZoom}
               desktopX={values.journal.desktopX}
               desktopY={values.journal.desktopY}
+              desktopCropLeft={values.journal.desktopCropLeft}
+              desktopCropRight={values.journal.desktopCropRight}
+              desktopCropTop={values.journal.desktopCropTop}
+              desktopCropBottom={values.journal.desktopCropBottom}
+              desktopRadius={values.journal.desktopRadius}
               phoneX={values.journal.phoneX}
               phoneY={values.journal.phoneY}
             />

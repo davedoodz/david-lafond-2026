@@ -16,6 +16,11 @@ type JournalMediaProps = {
   desktopZoom: number
   desktopX: number
   desktopY: number
+  desktopCropLeft: number
+  desktopCropRight: number
+  desktopCropTop: number
+  desktopCropBottom: number
+  desktopRadius: number
   phoneX: number
   phoneY: number
 }
@@ -28,6 +33,11 @@ export function JournalMedia({
   desktopZoom,
   desktopX,
   desktopY,
+  desktopCropLeft,
+  desktopCropRight,
+  desktopCropTop,
+  desktopCropBottom,
+  desktopRadius,
   phoneX,
   phoneY,
 }: JournalMediaProps) {
@@ -35,19 +45,26 @@ export function JournalMedia({
     '--pg-journal-desktop-zoom': desktopZoom,
     '--pg-journal-desktop-x': `${desktopX}%`,
     '--pg-journal-desktop-y': `${desktopY}%`,
+    '--pg-journal-desktop-crop-left': `${desktopCropLeft}%`,
+    '--pg-journal-desktop-crop-right': `${desktopCropRight}%`,
+    '--pg-journal-desktop-crop-top': `${desktopCropTop}%`,
+    '--pg-journal-desktop-crop-bottom': `${desktopCropBottom}%`,
+    '--pg-journal-desktop-radius': `${desktopRadius}px`,
     '--pg-journal-phone-x': `${phoneX}%`,
     '--pg-journal-phone-y': `${phoneY}%`,
   } as CSSProperties
 
   return (
     <div className="pg-journal-media" style={style}>
-      <CardVideo
-        src={src}
-        poster={poster}
-        playbackRate={playbackRate}
-        shouldPlay={shouldPlay}
-        className="pg-journal-desktop"
-      />
+      <div className="pg-journal-desktop-frame">
+        <CardVideo
+          src={src}
+          poster={poster}
+          playbackRate={playbackRate}
+          shouldPlay={shouldPlay}
+          className="pg-journal-desktop"
+        />
+      </div>
       <img
         className="pg-journal-phone"
         src="/about/playground/davids-journal-phone.webp"
@@ -80,7 +97,14 @@ const CRITICAL_ACTION_UNIFORMS = {
   u_worldHeight: 0,
 }
 
-export function CriticalActionMedia({ shouldPlay }: { shouldPlay: boolean }) {
+type CriticalActionMediaProps = {
+  shouldPlay: boolean
+  bookScale: number
+  bookX: number
+  bookY: number
+}
+
+export function CriticalActionMedia({ shouldPlay, bookScale, bookX, bookY }: CriticalActionMediaProps) {
   const shaderRef = useRef<HTMLDivElement>(null)
   const mountRef = useRef<ShaderMount | null>(null)
 
@@ -109,8 +133,14 @@ export function CriticalActionMedia({ shouldPlay }: { shouldPlay: boolean }) {
     mountRef.current?.setSpeed(reducedMotion || !shouldPlay ? 0 : 0.77)
   }, [shouldPlay])
 
+  const style = {
+    '--pg-critical-book-scale': bookScale,
+    '--pg-critical-book-x': `${bookX}%`,
+    '--pg-critical-book-y': `${bookY}%`,
+  } as CSSProperties
+
   return (
-    <div className="pg-critical-action-media">
+    <div className="pg-critical-action-media" style={style}>
       <div ref={shaderRef} className="pg-critical-action-shader" aria-hidden="true" />
       <img
         className="pg-critical-action-book"
