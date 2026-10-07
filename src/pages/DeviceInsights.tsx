@@ -123,17 +123,20 @@ export function DeviceInsights({ copy, edit }: Props) {
       if (entry.isIntersecting) {
         if ('seen' in el.dataset) return
         el.dataset.from = scrollingUp ? 'above' : 'below'
+        el.dataset.revealReady = ''
         el.dataset.resetting = ''
         delete el.dataset.exiting
+        delete el.dataset.seen
         void el.offsetWidth
         delete el.dataset.resetting
         el.dataset.seen = ''
       } else {
         setStep(0)
-        if ('seen' in el.dataset) {
-          delete el.dataset.seen
-          el.dataset.exiting = ''
-        }
+        // Fail open while off-screen. A missed observer callback can never strand the devices hidden.
+        delete el.dataset.seen
+        delete el.dataset.revealReady
+        delete el.dataset.resetting
+        delete el.dataset.exiting
       }
     }, { threshold: [0, 0.15] })
     observer.observe(el)
