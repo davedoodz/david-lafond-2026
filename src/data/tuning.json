@@ -9,6 +9,9 @@
       "end": 100,
       "opacity": 0.27
     },
+    "videoLoopSpeed": {
+      "card2": 2
+    },
     "grid": {
       "count": 12,
       "radius": 14,

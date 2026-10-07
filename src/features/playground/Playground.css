@@ -58,13 +58,50 @@
 .pg-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: #fff;
 }
 
-.pg-video[data-fit='contain'] {
+.pg-journal-media,
+.pg-critical-action-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pg-journal-desktop {
+  transform:
+    translate(var(--pg-journal-desktop-x), var(--pg-journal-desktop-y))
+    scale(var(--pg-journal-desktop-zoom));
+  transform-origin: center;
+}
+
+.pg-journal-phone {
+  position: absolute;
+  z-index: 1;
+  left: calc(50% + var(--pg-journal-phone-x));
+  top: calc(50% + var(--pg-journal-phone-y));
+  width: 40%;
+  max-height: 92%;
   object-fit: contain;
-  background: #f5f5f5;
+  transform: translate(-50%, -50%);
+}
+
+.pg-critical-action-shader {
+  position: absolute;
+  inset: 0;
+}
+
+.pg-critical-action-book {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(56%, 364px);
+  max-height: calc(100% - 16px);
+  object-fit: contain;
+  transform: translate(-50%, -50%);
 }
 
 .pg-card .card-shade,

@@ -11,8 +11,7 @@ export type PlaygroundItem = {
   /** Muted/looped source, played only while the card is on screen or zoomed. */
   video?: string
   poster?: string
-  /** Preserve portrait media inside the landscape card instead of cropping it. */
-  fit?: 'cover' | 'contain'
+  presentation?: 'journal' | 'critical-action'
 }
 
 export const playgroundItems: PlaygroundItem[] = [
@@ -39,11 +38,25 @@ export const playgroundItems: PlaygroundItem[] = [
     title: 'Renovation contractor agent',
     video: '/about/playground/contractor-agent.mp4',
     poster: '/about/playground/contractor-agent.webp',
-    fit: 'contain',
   },
-  { id: 'p05', title: 'Prototype 05' },
-  { id: 'p06', title: 'Prototype 06' },
-  { id: 'p07', title: 'Prototype 07' },
+  {
+    id: 'p05',
+    title: 'Architectural sketchbooks',
+    video: '/about/playground/architectural-sketchbooks.mp4',
+    poster: '/about/playground/architectural-sketchbooks.webp',
+  },
+  {
+    id: 'p06',
+    title: 'David’s Journal',
+    video: '/about/playground/davids-journal.mp4',
+    poster: '/about/playground/davids-journal.webp',
+    presentation: 'journal',
+  },
+  {
+    id: 'p07',
+    title: 'Decode: A Critical Action',
+    presentation: 'critical-action',
+  },
   { id: 'p08', title: 'Prototype 08' },
   { id: 'p09', title: 'Prototype 09' },
   { id: 'p10', title: 'Prototype 10' },

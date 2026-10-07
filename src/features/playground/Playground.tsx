@@ -5,14 +5,18 @@ import type { DialConfig } from 'dialkit'
 import { useTuning } from '../../tuning/useTuning'
 import { playgroundItems } from '../../data/playground'
 import { CardVideo } from './CardVideo'
+import { CriticalActionMedia, JournalMedia } from './SpecialCardMedia'
 import { PlaygroundCard } from './PlaygroundCard'
 import { PlaygroundZoom } from './PlaygroundZoom'
 import { toMotionTransition } from './motionTransition'
 import './Playground.css'
 
 const titleFields: Record<string, { type: 'text'; default: string; placeholder: string }> = {}
+const videoLoopSpeedFields: Record<string, [number, number, number, number]> = {}
 for (const [i, item] of playgroundItems.entries()) {
-  titleFields[`card${i + 1}`] = { type: 'text', default: item.title, placeholder: item.title }
+  const key = `card${i + 1}`
+  titleFields[key] = { type: 'text', default: item.title, placeholder: item.title }
+  if (item.video) videoLoopSpeedFields[key] = [1, 0.25, 12, 0.05]
 }
 
 const PLAYGROUND_CONFIG = {
@@ -33,6 +37,17 @@ const PLAYGROUND_CONFIG = {
     durationMs: [350, 0, 1000, 10] as [number, number, number, number],
   },
   titles: { _collapsed: true, ...titleFields },
+  /** Per-card playback rate for muted looping videos. */
+  videoLoopSpeed: { _collapsed: true, ...videoLoopSpeedFields },
+  journal: {
+    /** Crop the desktop loop by zooming and repositioning it within the card. */
+    desktopZoom: [1, 1, 3, 0.01] as [number, number, number, number],
+    desktopX: [0, -100, 100, 1] as [number, number, number, number],
+    desktopY: [0, -100, 100, 1] as [number, number, number, number],
+    /** Phone position as percentage points from the card centre. */
+    phoneX: [-26, -100, 100, 1] as [number, number, number, number],
+    phoneY: [4, -100, 100, 1] as [number, number, number, number],
+  },
   grid: {
     /** How many cards show, in data order (first N). */
     count: [playgroundItems.length, 1, playgroundItems.length, 1] as [number, number, number, number],
@@ -92,10 +107,10 @@ export function Playground({ className }: { className?: string }) {
     forceHostUpdate()
   }, [])
 
-  // Play/pause each grid video only while its card is on screen (or zoomed, handled below).
+  // Play/pause each animated card only while it is on screen or zoomed.
   useEffect(() => {
-    const withVideo = items.filter((item) => item.video)
-    if (withVideo.length === 0) return
+    const withMedia = items.filter((item) => item.video || item.presentation)
+    if (withMedia.length === 0) return
     const observer = new IntersectionObserver(
       (entries) => {
         setVisibleIds((prev) => {
@@ -119,7 +134,7 @@ export function Playground({ className }: { className?: string }) {
       { rootMargin: '200px 0px' },
     )
     const raf = requestAnimationFrame(() => {
-      for (const item of withVideo) {
+      for (const item of withMedia) {
         const el = cardElRefs.current.get(item.id)
         if (el) observer.observe(el)
       }
@@ -221,6 +236,7 @@ export function Playground({ className }: { className?: string }) {
   const activeIndex = activeId ? items.findIndex((i) => i.id === activeId) : -1
   // dialkit's ResolvedValues type doesn't drop `_collapsed` from folder types; the runtime value does.
   const titles = values.titles as unknown as Record<string, string>
+  const videoLoopSpeeds = values.videoLoopSpeed as unknown as Record<string, number>
   const activeTitle = activeIndex >= 0 ? titles[`card${activeIndex + 1}`] : ''
   const zoomTransition = toMotionTransition(values.zoom.spring)
 
@@ -240,18 +256,33 @@ export function Playground({ className }: { className?: string }) {
         ))}
       </div>
 
-      {items
-        .filter((item) => item.video)
-        .map((item) => {
-          const entry = hostRefs.current.get(item.id)
-          const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
-          if (!target) return null
-          return createPortal(
-            <CardVideo src={item.video!} poster={item.poster} fit={item.fit} shouldPlay={item.id === activeId || visibleIds.has(item.id)} />,
-            target,
-            item.id,
-          )
-        })}
+      {items.map((item, i) => {
+        if (!item.video && !item.presentation) return null
+        const entry = hostRefs.current.get(item.id)
+        const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
+        if (!target) return null
+        const shouldPlay = item.id === activeId || visibleIds.has(item.id)
+        const playbackRate = videoLoopSpeeds[`card${i + 1}`] ?? 1
+        const media =
+          item.presentation === 'critical-action' ? (
+            <CriticalActionMedia shouldPlay={shouldPlay} />
+          ) : item.presentation === 'journal' && item.video ? (
+            <JournalMedia
+              src={item.video}
+              poster={item.poster}
+              playbackRate={playbackRate}
+              shouldPlay={shouldPlay}
+              desktopZoom={values.journal.desktopZoom}
+              desktopX={values.journal.desktopX}
+              desktopY={values.journal.desktopY}
+              phoneX={values.journal.phoneX}
+              phoneY={values.journal.phoneY}
+            />
+          ) : item.video ? (
+            <CardVideo src={item.video} poster={item.poster} playbackRate={playbackRate} shouldPlay={shouldPlay} />
+          ) : null
+        return media ? createPortal(media, target, item.id) : null
+      })}
 
       {createPortal(
         // Portaled to <body>, outside .pg-root — re-supply the dial vars (shade, title) to the zoom card.
