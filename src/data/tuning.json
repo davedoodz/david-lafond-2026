@@ -447,8 +447,9 @@
     "hero": {
       "title": "A Novel Multimodal AI Reflection System for Behavioral Change",
       "spacing": {
-        "top": 96,
-        "bottom": 64
+        "top": 106,
+        "bottom": 62,
+        "contentGap": 99
       },
       "media": {
         "radius": 21
@@ -485,6 +486,11 @@
       "peakIcon": "octagon-alert",
       "opportunityArt": "converge",
       "reveal": "cascade",
+      "spacing": {
+        "top": 233,
+        "bottom": 210,
+        "contentGap": 383
+      },
       "artText": {
         "problemMoment": "",
         "problemOpened": "",
@@ -501,6 +507,9 @@
         "m2Quote": "“Argh, why did I say that?”",
         "m3Quote": "“There's always so much to do…”",
         "m4Quote": "“It's happening tomorrow again...”"
+      },
+      "spacing": {
+        "bottom": 0
       },
       "float": {
         "preset": "drift",
@@ -524,30 +533,45 @@
       }
     },
     "system": {
-      "eyebrow": "THE SYSTEM",
-      "title": "\n",
+      "eyebrow": "",
+      "title": "",
       "body": "",
       "align": "center",
+      "spacing": {
+        "top": 0,
+        "bottom": 75,
+        "contentGap": 0
+      },
       "media": {
-        "size": 75
+        "size": 74
       }
     },
     "flows": {
       "title": "Look back. Talk it out. Move forward.",
       "body": "Your reflections become a record of your experiences \nand a way to turn insight into action.",
-      "phoneScale": 1.04
+      "phoneScale": 1.04,
+      "spacing": {
+        "top": 85,
+        "contentGap": 75
+      }
     },
     "guided": {
       "title": "A framework for when your thoughts need more structure",
       "body": "Choose from evidence-based reflection mental models. \nMomo guides you through it, one question at a time.",
       "woopLabel": "",
-      "modelsLabel": ""
+      "modelsLabel": "",
+      "spacing": {
+        "contentGap": 56
+      }
     },
     "dynamic": {
       "eyebrow": "CROSS-DEVICE",
       "title": "Catch it on your wrist. \nUnpack it on your phone.",
       "body": "A timely nudge becomes a deeper reflection when you're ready to talk.",
-      "align": "center"
+      "align": "center",
+      "reveal": {
+        "preset": "split sides"
+      }
     },
     "outcomes": {
       "eyebrow": "USER OUTCOMES",
