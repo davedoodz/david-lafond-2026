@@ -137,6 +137,7 @@ export function PlaygroundCard({
       data-pg-id={item.id}
       className="pg-card"
       data-reorderable={canReorder || undefined}
+      data-presentation={item.presentation}
       data-dragging={isDragging || undefined}
       data-drop-target={isDropTarget || undefined}
       data-active={isActive || undefined}

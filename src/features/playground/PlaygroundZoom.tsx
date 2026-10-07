@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { motion, AnimatePresence, type Transition } from 'motion/react'
 import type { PlaygroundItem } from '../../data/playground'
 import { cardRatioForViewport } from './constants'
@@ -78,6 +78,13 @@ export function PlaygroundZoom({
 
   const setMediaEl = useCallback((el: HTMLDivElement | null) => mediaHostRef(item.id, el), [item.id, mediaHostRef])
 
+  const closeFromStage = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (event.target === event.currentTarget) onClose()
+    },
+    [onClose],
+  )
+
   const backdropStyle = {
     '--pg-dim-opacity': dimOpacity,
     '--pg-zoom-blur': `${blurPx}px`,
@@ -92,10 +99,9 @@ export function PlaygroundZoom({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={reducedMotion ? { duration: 0.01 } : transition}
-        onClick={onClose}
         aria-hidden="true"
       />
-      <div className="pg-zoom-stage">
+      <div className="pg-zoom-stage" onClick={closeFromStage}>
         <motion.div
           ref={dialogRef}
           role="dialog"
@@ -103,6 +109,7 @@ export function PlaygroundZoom({
           aria-label={title}
           tabIndex={-1}
           className="pg-zoom-card"
+          data-presentation={item.presentation}
           style={{ width: target.width, height: target.height, left: target.x, top: target.y, borderRadius: radiusPx }}
           initial={reducedMotion ? false : flip}
           animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1 }}
@@ -139,11 +146,6 @@ export function PlaygroundZoom({
             </button>
           </>
         )}
-        <button type="button" className="pg-zoom-close" onClick={onClose} aria-label="Close">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          </svg>
-        </button>
       </div>
     </div>
   )

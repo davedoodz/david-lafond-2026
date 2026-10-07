@@ -14,13 +14,22 @@ import './Playground.css'
 const titleFields: Record<string, { type: 'text'; default: string; placeholder: string }> = {}
 const videoLoopSpeedFields: Record<string, [number, number, number, number]> = {}
 const tuningKeyById: Record<string, string> = {}
+const videoSpeedKeyById: Record<string, string> = {
+  p01: 'paper shaders',
+  p02: 'future fabric',
+  p03: 'nintendogs for macos',
+  p04: 'renovation contractor agent',
+  p05: 'architectural sketchbooks',
+  p06: 'david’s journal',
+}
 const itemById = new Map(playgroundItems.map((item) => [item.id, item]))
 const defaultOrder = playgroundItems.map((item) => item.id).join(',')
+
 for (const [i, item] of playgroundItems.entries()) {
   const key = `card${i + 1}`
   tuningKeyById[item.id] = key
   titleFields[key] = { type: 'text', default: item.title, placeholder: item.title }
-  if (item.video) videoLoopSpeedFields[key] = [1, 0.25, 12, 0.05]
+  if (item.video) videoLoopSpeedFields[videoSpeedKeyById[item.id]] = [1, 0.25, 12, 0.05]
 }
 
 function orderItems(rawOrder: string) {
@@ -222,10 +231,30 @@ export function Playground({ className }: { className?: string }) {
 
   useEffect(() => {
     if (!activeId) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const root = document.documentElement
+    const body = document.body
+    const previous = {
+      rootOverflow: root.style.overflow,
+      rootOverscroll: root.style.overscrollBehavior,
+      bodyOverflow: body.style.overflow,
+      bodyOverscroll: body.style.overscrollBehavior,
+    }
+    const preventScroll = (event: Event) => event.preventDefault()
+    root.dataset.playgroundZoomOpen = 'true'
+    root.style.overflow = 'hidden'
+    root.style.overscrollBehavior = 'none'
+    body.style.overflow = 'hidden'
+    body.style.overscrollBehavior = 'none'
+    window.addEventListener('wheel', preventScroll, { passive: false, capture: true })
+    window.addEventListener('touchmove', preventScroll, { passive: false, capture: true })
     return () => {
-      document.body.style.overflow = prevOverflow
+      delete root.dataset.playgroundZoomOpen
+      root.style.overflow = previous.rootOverflow
+      root.style.overscrollBehavior = previous.rootOverscroll
+      body.style.overflow = previous.bodyOverflow
+      body.style.overscrollBehavior = previous.bodyOverscroll
+      window.removeEventListener('wheel', preventScroll, { capture: true })
+      window.removeEventListener('touchmove', preventScroll, { capture: true })
     }
   }, [activeId])
 
@@ -325,7 +354,7 @@ export function Playground({ className }: { className?: string }) {
         const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
         if (!target) return null
         const shouldPlay = item.id === activeId || visibleIds.has(item.id)
-        const playbackRate = videoLoopSpeeds[tuningKeyById[item.id]] ?? 1
+        const playbackRate = videoLoopSpeeds[videoSpeedKeyById[item.id]] ?? 1
         const media =
           item.presentation === 'critical-action' ? (
             <CriticalActionMedia
