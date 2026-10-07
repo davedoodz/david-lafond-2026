@@ -85,8 +85,8 @@ function Screens({ step, render }: { step: StepId; render: (id: StepId) => React
   return <>{layers.map(l => <div key={l.n} className={`mc-screen${l.phase ? ` mc-screen--${l.phase}` : ''}`}>{render(l.id)}</div>)}</>
 }
 
-type DeviceReveal = { preset: 'handoff' | 'rise together' | 'split sides' | 'scale in' | 'focus' | 'still'; duration: number; stagger: number }
-type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; watch?: { strapColor: string }; reveal?: DeviceReveal; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void }
+type DeviceEntrance = { preset: 'handoff' | 'rise together' | 'split sides' | 'scale in' | 'focus' | 'still'; duration: number; stagger: number }
+type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; watch?: { strapColor: string }; deviceEntrance?: DeviceEntrance; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void }
 
 export function DeviceInsights({ copy, edit }: Props) {
   const ref = useRef<HTMLElement>(null)
@@ -95,7 +95,7 @@ export function DeviceInsights({ copy, edit }: Props) {
   const [reduced, setReduced] = useState(false)
   const [step, setStep] = useState(0)
   const [scale, setScale] = useState(SCALE)
-  const reveal = copy.reveal ?? { preset: 'still', duration: 0.8, stagger: 0.18 }
+  const entrance = copy.deviceEntrance ?? { preset: 'still', duration: 0.8, stagger: 0.18 }
   const textReveal = copy.textReveal ?? { preset: 'still', duration: 0.7, stagger: 0.1 }
   const strapColor = copy.watch?.strapColor ?? '#d6ccc4'
   useEffect(() => {
@@ -163,7 +163,7 @@ export function DeviceInsights({ copy, edit }: Props) {
   }, [visible, reduced, step])
   const id = STEPS[step].id
   return (
-    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={reveal.preset} data-text-reveal={textReveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-watch-strap': strapColor, '--mc-reveal-duration': `${reveal.duration}s`, '--mc-reveal-stagger': `${reveal.stagger}s`, '--text-reveal-duration': `${textReveal.duration}s`, '--text-reveal-stagger': `${textReveal.stagger}s` } as CSSProperties}>
+    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={entrance.preset} data-text-reveal={textReveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-watch-strap': strapColor, '--mc-reveal-duration': `${entrance.duration}s`, '--mc-reveal-stagger': `${entrance.stagger}s`, '--text-reveal-duration': `${textReveal.duration}s`, '--text-reveal-stagger': `${textReveal.stagger}s` } as CSSProperties}>
       <header className="insights__heading case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="Insights eyebrow" value={copy.eyebrow} onChange={edit('dynamic.eyebrow')} />
         <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} />

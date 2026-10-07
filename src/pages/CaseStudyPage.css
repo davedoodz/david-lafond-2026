@@ -894,6 +894,26 @@ html[data-case-snap] .case__moment {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.25); }
 }
+/* Solution handoff: wrist signal, then spoken reflection near the peak.
+   Still/reduced-motion shows the final phone state. */
+.sa-solution-watch { opacity: 0; }
+.sa-solution-phone { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  [data-story-motion]:not([data-story-motion='off']) .sa-solution-watch {
+    animation: story-solution-watch 5.2s calc(var(--i, 0) * 0.35s) linear both;
+  }
+  [data-story-motion]:not([data-story-motion='off']) .sa-solution-phone {
+    animation: story-solution-phone 5.2s calc(var(--i, 0) * 0.35s) linear both;
+  }
+}
+@keyframes story-solution-watch {
+  0%, 92% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes story-solution-phone {
+  0%, 99.9% { opacity: 0; }
+  100% { opacity: 1; }
+}
 @media (prefers-reduced-motion: reduce) {
   .case__story * {
     animation: none !important;

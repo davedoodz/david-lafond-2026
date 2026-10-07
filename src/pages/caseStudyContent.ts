@@ -406,7 +406,7 @@ export const UNWIND_CONFIG = {
       _collapsed: true,
     },
     spacing: sectionSpacingDials(110, 72, 36),
-    reveal: {
+    deviceEntrance: {
       preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'handoff' },
       duration: [0.8, 0.25, 1.8, 0.05] as Tuple,
       stagger: [0.18, 0, 0.6, 0.02] as Tuple,

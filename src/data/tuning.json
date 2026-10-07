@@ -475,11 +475,11 @@
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
-      "problemBody": "Most wellness tools wait for us to reach for them—after the moment has already passed.",
+      "problemBody": "Most wellness tools wait for us to reach for them after the emotional peak has passed.",
       "opportunityTitle": "Three technologies just converged ",
       "opportunityBody": "1. Wearables can sense physiological changes.  \n2. Voice can reveal subtle emotional cues.  \n3. Agentic AI can understand personal context.\n",
-      "solutionTitle": "A private check-in, right when it matters.",
-      "solutionBody": "The watch catches the moment, you talk it out, and AI helps you make sense of it.\n",
+      "solutionTitle": "Meet Momo",
+      "solutionBody": "A voice-first companion that uses wearable signals and personal context to prompt reflection when it matters most.\n",
       "preset": "custom",
       "align": "stretch",
       "textAlign": "center",
@@ -576,8 +576,9 @@
       "spacing": {
         "contentGap": 46
       },
-      "reveal": {
-        "preset": "split sides"
+      "deviceEntrance": {
+        "preset": "split sides",
+        "duration": 1.25
       }
     },
     "outcomes": {

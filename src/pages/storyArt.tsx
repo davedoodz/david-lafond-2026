@@ -90,7 +90,7 @@ function Watch({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
     </g>
   );
 }
-function Phone({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+function Phone({ x, y, s = 1, children }: { x: number; y: number; s?: number; children?: ReactNode }) {
   return (
     <g
       transform={`translate(${x} ${y}) scale(${s})`}
@@ -102,6 +102,7 @@ function Phone({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
       <g className="sa-icon sa-phone">
         <rect x={-12} y={-21} width={24} height={42} rx={6} />
         <path d="M-4 -16 h8" />
+        {children}
       </g>
     </g>
   );
@@ -244,7 +245,7 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
     <svg
       viewBox="0 0 240 160"
       role="img"
-      aria-label="A check-in arrives at the peak of the moment"
+      aria-label="A watch check-in at the peak leads to voice reflection on the phone just after the peak"
     >
       <path d="M14 136 H226" stroke={STONE} strokeWidth={1} opacity={0.5} />
       <path
@@ -268,6 +269,7 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
         />
         <circle className="sa-b" cx={104} cy={34} r={5} fill={BLUE} />
       </g>
+      <g className="sa-solution-watch">
       <Wipe box={[110, 32, 44, 30]} from="right" at={2}>
         <path
           d="M150 58 Q128 44 114 38"
@@ -279,7 +281,18 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
         />
       </Wipe>
       <g className="sa-after" style={{ "--at": "2.5s" } as CSSProperties}>
-        <Watch x={164} y={64} s={1} />
+        <Watch x={164} y={64} s={0.75} />
+      </g>
+      </g>
+      <g className="sa-solution-phone">
+        <Wipe box={[136, 43, 12, 47]} from="up" at={5.2}>
+          <path d="M142 88 V46" stroke={INK} strokeWidth={1.4} strokeDasharray="2 4" strokeLinecap="round" />
+        </Wipe>
+        <g className="sa-after sa-after--rise" style={{ "--at": "5.8s" } as CSSProperties}>
+          <Phone x={142} y={24} s={0.8}>
+            <Voice x={0} y={2} s={0.42} />
+          </Phone>
+        </g>
       </g>
       {label(104, 154, text.solutionCheckIn, INK)}
     </svg>
