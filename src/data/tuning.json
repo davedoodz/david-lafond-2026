@@ -15,7 +15,8 @@
       "card4": "Reno Contractor Agent",
       "card5": "MIT Sketchbooks",
       "card7": "Decode no 1",
-      "card8": "Winter 2026 Room"
+      "card8": "Winter 2026 Room",
+      "card9": "Harvard + MIT acceptance portfolio"
     },
     "videoLoopSpeed": {
       "future fabric": 2,
@@ -24,7 +25,10 @@
     "mediaScale": {
       "decode: a critical action": 1.53
     },
-    "order": "p06,p01,p04,p03,p05,p02,p07,p08,p09,p10,p11,p12,p13,p14,p15,p16",
+    "room": {
+      "video": "light"
+    },
+    "order": "p06,p01,p09,p04,p03,p05,p02,p08,p07,p10,p11,p12,p13,p14,p15,p16",
     "journal": {
       "desktopZoom": 2.39,
       "desktopX": 1,
@@ -37,8 +41,9 @@
     },
     "grid": {
       "count": 12,
+      "cardWidthDesktop": 246,
       "radius": 14,
-      "topGapDesktop": 144
+      "topGapDesktop": 119
     }
   },
   "Davebot": {

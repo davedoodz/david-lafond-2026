@@ -65,7 +65,12 @@ export const playgroundItems: PlaygroundItem[] = [
     poster: '/about/playground/bedroom-world.webp',
     videoFit: 'cover',
   },
-  { id: 'p09', title: 'Prototype 09' },
+  {
+    id: 'p09',
+    title: 'Harvard + MIT acceptance portfolio',
+    video: '/about/playground/harvard-mit-portfolio.mp4',
+    poster: '/about/playground/harvard-mit-portfolio.webp',
+  },
   { id: 'p10', title: 'Prototype 10' },
   { id: 'p11', title: 'Prototype 11' },
   { id: 'p12', title: 'Prototype 12' },
