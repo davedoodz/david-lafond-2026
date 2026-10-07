@@ -259,6 +259,8 @@ export const UNWIND_CONFIG = {
     layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
     /** left: art and text share a left edge · center: centred · stretch: art spans the text width, edges aligned both sides. */
     align: { type: 'select' as const, options: ['left', 'center', 'stretch'], default: 'left' },
+    /** Align only the number, label, title and body; the art keeps the `align` layout above. */
+    textAlign: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     /** glass: the system card's fill + gradient with the glass dials below (story → glass). */
     art: { type: 'select' as const, options: ['glass', 'card', 'line', 'outline', 'none'], default: 'glass' },
     /** Icon on the Problem curve's peak: the custom bolt, a Lucide icon, or none. */

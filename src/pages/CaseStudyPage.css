@@ -598,6 +598,19 @@ html[data-case-snap] .case__moment {
 [data-story-layout='bottom'][data-story-align='stretch'] .case__story-text {
   width: 100%;
 }
+/* Text alignment is independent from the art/column alignment. This lets `align: stretch`
+   keep the artwork full-width while centring only the number, label, title and body. */
+[data-story-text-align='left'] .case__story-text {
+  justify-items: start;
+  text-align: left;
+}
+[data-story-text-align='center'] .case__story-text {
+  justify-items: center;
+  text-align: center;
+}
+[data-story-text-align='center'] .case__story-body {
+  margin-inline: auto;
+}
 [data-story-layout='left'] .case__story-cols > li,
 [data-story-layout='right'] .case__story-cols > li {
   grid-template-columns: minmax(0, var(--story-art-w, 300px)) minmax(0, var(--story-text-w, 460px));

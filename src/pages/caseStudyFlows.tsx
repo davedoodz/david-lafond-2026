@@ -12,6 +12,8 @@ export function PhoneVideo({ name, className = '' }: { name: string; className?:
   useEffect(() => {
     const video = ref.current
     if (!video || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // Core flows owns one shared replay clock for its three recordings.
+    if (video.closest('.case__flows')) return
     const observer = new IntersectionObserver(
       ([e]) => {
         if (!e.isIntersecting) return video.pause()
@@ -61,6 +63,8 @@ export type Story = {
   glass?: StoryGlass
   /** Unwind: art and text share a left edge, are centred, or the art spans the text width. */
   align?: 'left' | 'center' | 'stretch'
+  /** Text alignment independent of the art/column alignment. */
+  textAlign?: 'left' | 'center'
   /** Unwind: icon on the Problem curve's peak (see PEAK_ICONS). */
   peakIcon?: string
 }
@@ -113,6 +117,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
       data-layout="story"
       data-story-layout={look.layout}
       data-story-align={s.align}
+      data-story-text-align={s.textAlign}
       data-story-art={look.art}
       data-story-motion={look.motion}
       data-story-reveal={look.reveal}
@@ -220,6 +225,32 @@ function useRiseOnView() {
 export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRiseOnView()
+  useEffect(() => {
+    const section = ref.current
+    if (!section || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const videos = Array.from(section.querySelectorAll('video'))
+    let armed = true
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) {
+        armed = true
+        videos.forEach(video => {
+          video.pause()
+          video.currentTime = 0
+        })
+      } else if (armed && entry.intersectionRatio >= 0.3) {
+        armed = false
+        videos.forEach(video => {
+          video.currentTime = 0
+          void video.play().catch(() => {})
+        })
+      }
+    }, { threshold: [0, 0.3] })
+    observer.observe(section)
+    return () => {
+      observer.disconnect()
+      videos.forEach(video => video.pause())
+    }
+  }, [ref])
   const phones = [
     ['entries', f.entriesLabel, 'left'],
     ['voice', f.voiceLabel, 'center'],
