@@ -25,6 +25,16 @@ const controlKeyById: Record<string, string> = {
   p07: 'decode: a critical action',
   p08: 'my room in 3d',
 }
+const ROOM_VIDEO_VARIANTS = {
+  dark: {
+    src: '/about/playground/bedroom-world.mp4',
+    poster: '/about/playground/bedroom-world.webp',
+  },
+  light: {
+    src: '/about/playground/bedroom-world-light.mp4',
+    poster: '/about/playground/bedroom-world-light.webp',
+  },
+} as const
 const itemById = new Map(playgroundItems.map((item) => [item.id, item]))
 const defaultOrder = playgroundItems.map((item) => item.id).join(',')
 
@@ -69,6 +79,16 @@ const PLAYGROUND_CONFIG = {
   videoLoopSpeed: { _collapsed: true, ...videoLoopSpeedFields },
   /** Scale the central composition independently for each populated card. */
   mediaScale: { _collapsed: true, ...mediaScaleFields },
+  room: {
+    video: {
+      type: 'select',
+      options: [
+        { value: 'dark', label: 'Dark canvas (current)' },
+        { value: 'light', label: 'Light canvas' },
+      ],
+      default: 'dark',
+    },
+  },
   order: { type: 'text', default: defaultOrder },
   journal: {
     /** Crop the desktop loop by zooming and repositioning it within the card. */
@@ -343,6 +363,8 @@ export function Playground({ className }: { className?: string }) {
   const titles = values.titles as unknown as Record<string, string>
   const videoLoopSpeeds = values.videoLoopSpeed as unknown as Record<string, number>
   const mediaScales = values.mediaScale as unknown as Record<string, number>
+  const selectedRoomVideo =
+    ROOM_VIDEO_VARIANTS[values.room.video as keyof typeof ROOM_VIDEO_VARIANTS] ?? ROOM_VIDEO_VARIANTS.dark
   const activeTitle = activeItem ? titles[tuningKeyById[activeItem.id]] : ''
   const zoomTransition = toMotionTransition(values.zoom.spring)
 
@@ -377,6 +399,8 @@ export function Playground({ className }: { className?: string }) {
         const shouldPlay = item.id === activeId || visibleIds.has(item.id)
         const playbackRate = videoLoopSpeeds[controlKeyById[item.id]] ?? 1
         const mediaScale = mediaScales[controlKeyById[item.id]] ?? 1
+        const videoSrc = item.id === 'p08' ? selectedRoomVideo.src : item.video
+        const videoPoster = item.id === 'p08' ? selectedRoomVideo.poster : item.poster
         const media =
           item.presentation === 'critical-action' ? (
             <CriticalActionMedia
@@ -387,8 +411,8 @@ export function Playground({ className }: { className?: string }) {
             />
           ) : item.presentation === 'journal' && item.video ? (
             <JournalMedia
-              src={item.video}
-              poster={item.poster}
+              src={videoSrc!}
+              poster={videoPoster}
               playbackRate={playbackRate}
               shouldPlay={shouldPlay}
               mediaScale={mediaScale}
@@ -406,8 +430,8 @@ export function Playground({ className }: { className?: string }) {
           ) : item.video ? (
             <div className="pg-video-frame" style={{ '--pg-media-scale': mediaScale } as CSSProperties}>
               <CardVideo
-                src={item.video}
-                poster={item.poster}
+                src={videoSrc!}
+                poster={videoPoster}
                 playbackRate={playbackRate}
                 shouldPlay={shouldPlay}
                 className={item.videoFit === 'cover' ? 'pg-video--cover' : undefined}

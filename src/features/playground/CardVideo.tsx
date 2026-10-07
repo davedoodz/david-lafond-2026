@@ -20,7 +20,7 @@ export function CardVideo({ src, poster, playbackRate, shouldPlay, className }: 
 
   useEffect(() => {
     if (ref.current) ref.current.playbackRate = playbackRate
-  }, [playbackRate])
+  }, [playbackRate, src])
 
   useEffect(() => {
     const el = ref.current
@@ -31,7 +31,7 @@ export function CardVideo({ src, poster, playbackRate, shouldPlay, className }: 
     } else {
       el.pause()
     }
-  }, [shouldPlay])
+  }, [shouldPlay, src])
 
   return (
     <video
