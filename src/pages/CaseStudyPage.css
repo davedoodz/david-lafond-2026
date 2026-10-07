@@ -1542,6 +1542,24 @@ html[data-case-snap] .case__group > * {
   100% { transform: scale(1); }
 }
 @keyframes pe-slide { from { opacity: 0; transform: translateX(calc(-1 * var(--pe-dist, 24px))); } }
+@keyframes pe-focus {
+  from { opacity: 0; transform: scale(0.96); filter: blur(12px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes pe-wipe {
+  from { opacity: 0; transform: translateY(var(--pe-dist, 24px)); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(-10%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .case__persona :is(.persona__who > *, .persona__tags > li, .persona__photo, .persona__floats, .persona__float) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: none;
+  }
+}
 
 .case__persona:not([data-live]) .persona__float {
   animation-play-state: paused;

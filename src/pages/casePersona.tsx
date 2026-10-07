@@ -81,8 +81,10 @@ export const PERSONA_DIALS = {
 }
 /** Key-context cards floating around the portrait. Text stays in `moments`. */
 /** Persona entrance presets: transform and opacity only. */
-const ENTRANCES = ['rise', 'fade', 'scale', 'pop', 'slide', 'none'] as const
+const ENTRANCES = ['rise', 'fade', 'scale', 'pop', 'slide', 'focus', 'wipe', 'none'] as const
 export const FLOAT_DIALS = {
+  /** Portrait entrance, replayed whenever the Persona section re-enters the viewport. */
+  imageReveal: { type: 'select' as const, options: [...ENTRANCES], default: 'scale' },
   /** one/two at a time: cards fade in and out in turn · pop: springy entrance · drift: all stay up · still: no motion (easiest to edit). */
   preset: { type: 'select' as const, options: ['one at a time', 'two at a time', 'pop', 'drift', 'still'], default: 'one at a time' },
   content: { type: 'select' as const, options: ['quote + tag', 'quote', 'title + quote', 'full'], default: 'quote + tag' },
@@ -111,7 +113,6 @@ export const FLOAT_DIALS = {
   entrance: {
     text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
     pills: { type: 'select' as const, options: [...ENTRANCES], default: 'pop' },
-    image: { type: 'select' as const, options: [...ENTRANCES], default: 'scale' },
     duration: [0.5, 0.2, 2, 0.05] as Tuple,
     distance: [24, 0, 120, 1] as Tuple,
     /** Between eyebrow, title and body. */
@@ -133,7 +134,6 @@ export const FLOAT_DIALS = {
 type Entrance = {
   text: string
   pills: string
-  image: string
   duration: number
   distance: number
   textStagger: number
@@ -144,6 +144,7 @@ type Entrance = {
   floatStagger: number
 }
 export type Float = {
+  imageReveal: (typeof ENTRANCES)[number]
   preset: string
   content: string
   pace: number
@@ -372,7 +373,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
             ? {
                 '--pe-text-kf': kf(ent.text),
                 '--pe-pills-kf': kf(ent.pills),
-                '--pe-image-kf': kf(ent.image),
+                '--pe-image-kf': kf(float.imageReveal),
                 '--pe-dur': `${ent.duration}s`,
                 '--pe-dist': `${ent.distance}px`,
                 '--pe-text-0': `${timeline.text[0]}s`,

@@ -388,6 +388,12 @@ export const UNWIND_CONFIG = {
     body: { type: 'text' as const, default: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     spacing: sectionSpacingDials(110, 72, 36),
+    reveal: {
+      preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'handoff' },
+      duration: [0.8, 0.25, 1.8, 0.05] as Tuple,
+      stagger: [0.18, 0, 0.6, 0.02] as Tuple,
+      _collapsed: true,
+    },
     _collapsed: true,
   },
   context: sectionDials({

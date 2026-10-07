@@ -23,16 +23,72 @@
 .mc-watch__screen, .mc-phone__screen { font-family: var(--screen-font); letter-spacing: -0.01em; }
 
 /* Watch: Starlight mockup (540×860, screen x72 y193, 396×479) */
-.mc-watch { --k: calc(260 / 540); position: relative; z-index: 2; width: 260px; height: calc(860px * var(--k)); filter: drop-shadow(0 18px 30px rgba(0,0,0,.14)); flex-shrink: 0; }
+.mc-watch { --mc-device-shadow: drop-shadow(0 18px 30px rgba(0,0,0,.14)); --mc-reveal-i: 0; position: relative; z-index: 2; width: 260px; height: calc(860px * var(--k)); filter: var(--mc-device-shadow); flex-shrink: 0; }
 .mc-watch__img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
 .mc-watch__screen { position: absolute; z-index: 1; left: calc(72px * var(--k)); top: calc(193px * var(--k)); width: calc(396px * var(--k)); height: calc(479px * var(--k)); border-radius: 22% / 18%; background: #000; overflow: hidden; color: #fff; font-size: 11px; line-height: 1.3; }
 
 /* Phone: iPhone Silver mockup (874×1780, screen x46 y39, 784×1702) */
-.mc-phone { --k: calc(300 / 874); position: relative; z-index: 2; width: 300px; height: calc(1780px * var(--k)); filter: drop-shadow(0 24px 40px rgba(0,0,0,.16)); flex-shrink: 0; }
+.mc-phone { --mc-device-shadow: drop-shadow(0 24px 40px rgba(0,0,0,.16)); --mc-reveal-i: 2; position: relative; z-index: 2; width: 300px; height: calc(1780px * var(--k)); filter: var(--mc-device-shadow); flex-shrink: 0; }
 .mc-phone__img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
 .mc-phone__screen { position: absolute; z-index: 1; left: calc(46px * var(--k)); top: calc(39px * var(--k)); width: calc(784px * var(--k)); height: calc(1702px * var(--k)); border-radius: calc(113px * var(--k)); overflow: hidden; background: #000; font-size: 11px; isolation: isolate; color: #1f2a2e; }
 /* The mockup's screen hole has tighter corners than the screen's radius; a black backing under the frame fills the slivers. */
 .mc-phone::before { content: ''; position: absolute; z-index: 0; left: calc(40px * var(--k)); top: calc(33px * var(--k)); width: calc(794px * var(--k)); height: calc(1714px * var(--k)); border-radius: calc(120px * var(--k)); background: #000; }
+
+/* Device entrance presets. The Watch, connector and phone form one semantic handoff, so every
+   option uses the same ease-out duration; only the spatial metaphor and optional stagger change. */
+.mc-link { --mc-reveal-i: 1; }
+.insights :is(.mc-watch, .mc-link, .mc-phone) {
+  opacity: 0;
+  transition:
+    opacity var(--mc-reveal-duration, 0.8s) cubic-bezier(0.16, 1, 0.3, 1),
+    transform var(--mc-reveal-duration, 0.8s) cubic-bezier(0.16, 1, 0.3, 1),
+    filter var(--mc-reveal-duration, 0.8s) cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--mc-reveal-i) * var(--mc-reveal-stagger, 0.18s));
+  will-change: transform, opacity;
+}
+.insights[data-from='below'] { --mc-reveal-y: 56px; }
+.insights[data-from='above'] { --mc-reveal-y: -56px; }
+.insights[data-device-reveal='rise together'] :is(.mc-watch, .mc-link, .mc-phone) {
+  --mc-reveal-i: 0;
+  transform: translate3d(0, var(--mc-reveal-y, 56px), 0);
+}
+.insights[data-device-reveal='split sides'] .mc-watch { --mc-reveal-i: 0; transform: translate3d(-90px, 0, 0) rotate(-3deg); }
+.insights[data-device-reveal='split sides'] .mc-link { --mc-reveal-i: 0; transform: scaleX(0); transform-origin: center; }
+.insights[data-device-reveal='split sides'] .mc-phone { --mc-reveal-i: 0; transform: translate3d(90px, 0, 0) rotate(3deg); }
+.insights[data-device-reveal='scale in'] :is(.mc-watch, .mc-phone) { --mc-reveal-i: 0; transform: scale(0.9); }
+.insights[data-device-reveal='scale in'] .mc-link { --mc-reveal-i: 0; transform: scaleX(0.55); }
+.insights[data-device-reveal='focus'] :is(.mc-watch, .mc-phone) {
+  --mc-reveal-i: 0;
+  transform: scale(0.96);
+  filter: blur(12px) var(--mc-device-shadow);
+}
+.insights[data-device-reveal='focus'] .mc-link { --mc-reveal-i: 0; transform: scaleX(0.7); filter: blur(8px); }
+.insights[data-device-reveal='handoff'] .mc-watch { transform: translate3d(-52px, 18px, 0) scale(0.96); }
+.insights[data-device-reveal='handoff'] .mc-link { transform: scaleX(0); transform-origin: left center; }
+.insights[data-device-reveal='handoff'] .mc-phone { transform: translate3d(70px, 24px, 0) scale(0.96); }
+.insights[data-seen] :is(.mc-watch, .mc-link, .mc-phone),
+.insights[data-device-reveal='still'] :is(.mc-watch, .mc-link, .mc-phone) {
+  opacity: 1;
+  transform: none;
+  filter: var(--mc-device-shadow, none);
+}
+.insights[data-exiting] :is(.mc-watch, .mc-link, .mc-phone) {
+  opacity: 0;
+  transform: none;
+  filter: var(--mc-device-shadow, none);
+  transition: opacity 300ms cubic-bezier(0.215, 0.61, 0.355, 1);
+  transition-delay: 0s;
+}
+.insights[data-resetting] :is(.mc-watch, .mc-link, .mc-phone) { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .insights :is(.mc-watch, .mc-link, .mc-phone) {
+    opacity: 1;
+    transform: none;
+    filter: var(--mc-device-shadow, none);
+    transition: none;
+  }
+}
 
 /* Heartbeat trace between the devices. At mid height the Watch PNG has 16px of transparent margin right of the case,
    the phone 2.4px left of its frame: the trace runs under both devices so its ends meet the hardware. */

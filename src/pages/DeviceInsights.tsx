@@ -85,7 +85,8 @@ function Screens({ step, render }: { step: StepId; render: (id: StepId) => React
   return <>{layers.map(l => <div key={l.n} className={`mc-screen${l.phase ? ` mc-screen--${l.phase}` : ''}`}>{render(l.id)}</div>)}</>
 }
 
-type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing }; edit: (path: string) => (value: string) => void }
+type DeviceReveal = { preset: 'handoff' | 'rise together' | 'split sides' | 'scale in' | 'focus' | 'still'; duration: number; stagger: number }
+type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; reveal?: DeviceReveal }; edit: (path: string) => (value: string) => void }
 
 export function DeviceInsights({ copy, edit }: Props) {
   const ref = useRef<HTMLElement>(null)
@@ -94,17 +95,53 @@ export function DeviceInsights({ copy, edit }: Props) {
   const [reduced, setReduced] = useState(false)
   const [step, setStep] = useState(0)
   const [scale, setScale] = useState(SCALE)
+  const reveal = copy.reveal ?? { preset: 'still', duration: 0.8, stagger: 0.18 }
   useEffect(() => {
+    const el = ref.current
+    if (!el) return
     const media = matchMedia('(prefers-reduced-motion: reduce)')
-    const update = () => { setReduced(media.matches); if (media.matches) setStep(2) }
+    let lastY = window.scrollY
+    let scrollingUp = false
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y !== lastY) scrollingUp = y < lastY
+      lastY = y
+    }
+    const update = () => {
+      setReduced(media.matches)
+      if (media.matches) {
+        setStep(2)
+        el.dataset.seen = ''
+      }
+    }
     update()
+    window.addEventListener('scroll', onScroll, { passive: true })
     media.addEventListener('change', update)
     const observer = new IntersectionObserver(([entry]) => {
       setVisible(entry.isIntersecting)
-      if (!entry.isIntersecting && !media.matches) setStep(0)
-    }, { threshold: 0.15 })
-    if (ref.current) observer.observe(ref.current)
-    return () => { observer.disconnect(); media.removeEventListener('change', update) }
+      if (media.matches) return
+      if (entry.isIntersecting) {
+        if ('seen' in el.dataset) return
+        el.dataset.from = scrollingUp ? 'above' : 'below'
+        el.dataset.resetting = ''
+        delete el.dataset.exiting
+        void el.offsetWidth
+        delete el.dataset.resetting
+        el.dataset.seen = ''
+      } else {
+        setStep(0)
+        if ('seen' in el.dataset) {
+          delete el.dataset.seen
+          el.dataset.exiting = ''
+        }
+      }
+    }, { threshold: [0, 0.15] })
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', onScroll)
+      media.removeEventListener('change', update)
+    }
   }, [])
   useLayoutEffect(() => {
     const el = stage.current
@@ -121,7 +158,7 @@ export function DeviceInsights({ copy, edit }: Props) {
   }, [visible, reduced, step])
   const id = STEPS[step].id
   return (
-    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px` } as CSSProperties}>
+    <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={reveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-reveal-duration': `${reveal.duration}s`, '--mc-reveal-stagger': `${reveal.stagger}s` } as CSSProperties}>
       <header className="insights__heading case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="Insights eyebrow" value={copy.eyebrow} onChange={edit('dynamic.eyebrow')} />
         <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} />
