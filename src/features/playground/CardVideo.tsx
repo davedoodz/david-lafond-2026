@@ -39,6 +39,7 @@ export function CardVideo({ src, poster, playbackRate, shouldPlay, className }: 
       className={['pg-video', className].filter(Boolean).join(' ')}
       src={src}
       poster={poster}
+      draggable={false}
       muted
       loop
       playsInline

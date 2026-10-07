@@ -69,6 +69,7 @@ export function JournalMedia({
         className="pg-journal-phone"
         src="/about/playground/davids-journal-phone.webp"
         alt=""
+        draggable={false}
         aria-hidden="true"
       />
     </div>
@@ -146,6 +147,7 @@ export function CriticalActionMedia({ shouldPlay, bookScale, bookX, bookY }: Cri
         className="pg-critical-action-book"
         src="/about/playground/critical-action-book.webp"
         alt=""
+        draggable={false}
         aria-hidden="true"
       />
     </div>

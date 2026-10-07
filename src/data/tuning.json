@@ -13,10 +13,15 @@
       "card2": 2
     },
     "journal": {
-      "desktopZoom": 1.02,
+      "desktopZoom": 2.39,
       "desktopX": 1,
+      "desktopRadius": 5,
       "phoneX": -29,
       "phoneY": 18
+    },
+    "criticalAction": {
+      "bookScale": 1.53,
+      "bookY": 2
     },
     "grid": {
       "count": 12,

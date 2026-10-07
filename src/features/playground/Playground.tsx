@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, useReducedMotion } from 'motion/react'
 import type { DialConfig } from 'dialkit'
-import { useTuning } from '../../tuning/useTuning'
+import { useTuningController } from '../../tuning/useTuning'
 import { playgroundItems } from '../../data/playground'
 import { CardVideo } from './CardVideo'
 import { CriticalActionMedia, JournalMedia } from './SpecialCardMedia'
@@ -13,10 +13,25 @@ import './Playground.css'
 
 const titleFields: Record<string, { type: 'text'; default: string; placeholder: string }> = {}
 const videoLoopSpeedFields: Record<string, [number, number, number, number]> = {}
+const tuningKeyById: Record<string, string> = {}
+const itemById = new Map(playgroundItems.map((item) => [item.id, item]))
+const defaultOrder = playgroundItems.map((item) => item.id).join(',')
 for (const [i, item] of playgroundItems.entries()) {
   const key = `card${i + 1}`
+  tuningKeyById[item.id] = key
   titleFields[key] = { type: 'text', default: item.title, placeholder: item.title }
   if (item.video) videoLoopSpeedFields[key] = [1, 0.25, 12, 0.05]
+}
+
+function orderItems(rawOrder: string) {
+  const seen = new Set<string>()
+  const ordered = rawOrder
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => id in tuningKeyById && !seen.has(id) && Boolean(seen.add(id)))
+    .map((id) => itemById.get(id)!)
+  for (const item of playgroundItems) if (!seen.has(item.id)) ordered.push(item)
+  return ordered
 }
 
 const PLAYGROUND_CONFIG = {
@@ -39,6 +54,7 @@ const PLAYGROUND_CONFIG = {
   titles: { _collapsed: true, ...titleFields },
   /** Per-card playback rate for muted looping videos. */
   videoLoopSpeed: { _collapsed: true, ...videoLoopSpeedFields },
+  order: { type: 'text', default: defaultOrder },
   journal: {
     /** Crop the desktop loop by zooming and repositioning it within the card. */
     desktopZoom: [1, 1, 3, 0.01] as [number, number, number, number],
@@ -84,14 +100,17 @@ const PLAYGROUND_CONFIG = {
 type HostRefs = { grid: HTMLDivElement | null; zoom: HTMLDivElement | null }
 
 export function Playground({ className }: { className?: string }) {
-  const values = useTuning('Playground', PLAYGROUND_CONFIG)
+  const { values, setValue } = useTuningController('Playground', PLAYGROUND_CONFIG)
   const count = values.grid.count
-  const items = useMemo(() => playgroundItems.slice(0, count), [count])
+  const orderedItems = useMemo(() => orderItems(values.order), [values.order])
+  const items = useMemo(() => orderedItems.slice(0, count), [count, orderedItems])
   const reducedMotion = Boolean(useReducedMotion())
 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [originRect, setOriginRect] = useState<DOMRect | null>(null)
   const [visibleIds, setVisibleIds] = useState<Set<string>>(() => new Set())
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
 
   const cardElRefs = useRef(new Map<string, HTMLButtonElement>())
   const hostRefs = useRef(new Map<string, HostRefs>())
@@ -214,6 +233,34 @@ export function Playground({ className }: { className?: string }) {
     lastFocusedRef.current?.focus()
   }, [])
 
+  const startReorder = useCallback((id: string) => {
+    setDraggingId(id)
+    setDropTargetId(null)
+  }, [])
+
+  const previewReorder = useCallback((id: string) => {
+    setDropTargetId(id)
+  }, [])
+
+  const finishReorder = useCallback(
+    (sourceId: string, targetId: string) => {
+      if (sourceId === targetId) return
+      const next = [...orderedItems]
+      const from = next.findIndex((item) => item.id === sourceId)
+      const to = next.findIndex((item) => item.id === targetId)
+      if (from < 0 || to < 0) return
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      setValue('order', next.map((item) => item.id).join(','))
+    },
+    [orderedItems, setValue],
+  )
+
+  const cancelReorder = useCallback(() => {
+    setDraggingId(null)
+    setDropTargetId(null)
+  }, [])
+
   const style = useMemo(
     () =>
       ({
@@ -242,37 +289,43 @@ export function Playground({ className }: { className?: string }) {
     [values, items],
   )
 
-  const activeItem = activeId ? items.find((i) => i.id === activeId) : undefined
-  const activeIndex = activeId ? items.findIndex((i) => i.id === activeId) : -1
+  const activeItem = activeId ? items.find((item) => item.id === activeId) : undefined
   // dialkit's ResolvedValues type doesn't drop `_collapsed` from folder types; the runtime value does.
   const titles = values.titles as unknown as Record<string, string>
   const videoLoopSpeeds = values.videoLoopSpeed as unknown as Record<string, number>
-  const activeTitle = activeIndex >= 0 ? titles[`card${activeIndex + 1}`] : ''
+  const activeTitle = activeItem ? titles[tuningKeyById[activeItem.id]] : ''
   const zoomTransition = toMotionTransition(values.zoom.spring)
 
   return (
     <div className={['pg-root', className].filter(Boolean).join(' ')} style={style}>
       <div className="pg-grid">
-        {items.map((item, i) => (
+        {items.map((item) => (
           <PlaygroundCard
             key={item.id}
             item={item}
-            title={titles[`card${i + 1}`]}
+            title={titles[tuningKeyById[item.id]]}
             isActive={item.id === activeId}
+            canReorder={import.meta.env.DEV}
+            isDragging={item.id === draggingId}
+            isDropTarget={item.id === dropTargetId && item.id !== draggingId}
             onOpen={openCard}
+            onReorderStart={startReorder}
+            onReorderOver={previewReorder}
+            onReorderDrop={finishReorder}
+            onReorderEnd={cancelReorder}
             cardRef={setCardEl}
             mediaHostRef={setGridHost}
           />
         ))}
       </div>
 
-      {items.map((item, i) => {
+      {items.map((item) => {
         if (!item.video && !item.presentation) return null
         const entry = hostRefs.current.get(item.id)
         const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
         if (!target) return null
         const shouldPlay = item.id === activeId || visibleIds.has(item.id)
-        const playbackRate = videoLoopSpeeds[`card${i + 1}`] ?? 1
+        const playbackRate = videoLoopSpeeds[tuningKeyById[item.id]] ?? 1
         const media =
           item.presentation === 'critical-action' ? (
             <CriticalActionMedia
