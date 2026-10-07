@@ -30,7 +30,7 @@ const head = (time: string) => <><span className="mc-time mc-time--left">Momo</s
 function watchScreen(id: StepId) {
   if (id === 'sense')
     return (
-      <div className="mc-w mc-w--center">{head('9:40')}
+      <div className="mc-w mc-w--center">{head('9:41')}
         <div className="mc-momo mc-momo--sm"><img src={MOMO} alt="" /><span className="mc-heart"><Heart size={9} strokeWidth={2.4} /></span></div>
         <div className="mc-title">Momo noticed</div>
         <div className="mc-signals">{SIGNALS.map(([Icon, text], i) => <div key={text} style={{ '--i': i } as CSSProperties}><Icon size={10} strokeWidth={2.2} />{text}</div>)}</div>

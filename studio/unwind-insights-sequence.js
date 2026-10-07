@@ -41,7 +41,7 @@ const WATCH = {
   pulse: {
     name: 'A · Pulse line',
     blurb: 'Clinical calm: the live heart line leads, slides off toward the phone when sent, then a quiet confirmation.',
-    sense: () => `<div class="w">${head('9:40')}<div class="w-title" style="margin-top:18px">A tense stretch</div><div class="w-body">Heart rate up while you sit still. No workout.</div>${hrLine()}${stats}</div>`,
+    sense: () => `<div class="w">${head('9:41')}<div class="w-title" style="margin-top:18px">A tense stretch</div><div class="w-body">Heart rate up while you sit still. No workout.</div>${hrLine()}${stats}</div>`,
     send: () => `<div class="w">${head('9:41')}<div class="w-title" style="margin-top:18px">Sending to iPhone</div><div class="w-body">Heart rate · HRV · 40 min</div><div class="wa-slip">${hrLine()}</div><div class="wa-bar"><i></i></div></div>`,
     nudge: () => `<div class="w w-center">${head('9:41')}<span class="wa-done">${icon('smartphone', 22)}<i>${icon('check', 11, 3)}</i></span><div class="w-title">Sent to iPhone</div><div class="w-body">Momo will ask how you’re doing.</div></div>`,
   },
@@ -50,7 +50,7 @@ const WATCH = {
     blurb: 'Momo is the messenger: notices with you, floats over to the phone, and waits there for you.',
     /* A fast heart alone could be a run or a presentation. Momo only speaks up when the signals agree:
        heart rate up, no movement or workout to explain it, and HRV below this person's usual. */
-    sense: () => `<div class="w w-center">${head('9:40')}<div class="wb-momo wb-momo--sm"><img src="${MOMO}" alt=""><span class="wb-heart">${icon('heart', 9, 2.4)}</span></div><div class="w-title">Momo noticed</div>
+    sense: () => `<div class="w w-center">${head('9:41')}<div class="wb-momo wb-momo--sm"><img src="${MOMO}" alt=""><span class="wb-heart">${icon('heart', 9, 2.4)}</span></div><div class="w-title">Momo noticed</div>
       <div class="wb-signals">${[['heart', 'Heart rate up · 40 min'], ['footprints', 'Sitting still, no workout'], ['activity', 'HRV below your usual']].map(([ic, t], i) => `<div style="--i:${i}">${icon(ic, 10, 2.2)}${t}</div>`).join('')}</div></div>`,
     send: () => `<div class="w w-center">${head('9:41')}<div class="wb-momo wb-fly"><img src="${MOMO}" alt=""></div><div class="wb-trail"><i></i><i></i><i></i></div><div class="w-title">Off to your iPhone</div><div class="w-body">Taking this moment with me.</div></div>`,
     nudge: () => `<div class="w w-center">${head('9:41')}<div class="wb-bubble">I’m on your iPhone when you want to talk.</div><img class="wb-small" src="${MOMO}" alt=""></div>`,
@@ -58,21 +58,21 @@ const WATCH = {
   rings: {
     name: 'C · Breath rings',
     blurb: 'Rings beat at your heart rate, ripple out toward the phone, then slow to a breath.',
-    sense: () => `<div class="w w-center">${head('9:40')}${rings('beat', '96<small>BPM</small>')}<div class="w-body">Fast while you’re still · 40 min</div></div>`,
+    sense: () => `<div class="w w-center">${head('9:41')}${rings('beat', '96<small>BPM</small>')}<div class="w-body">Fast while you’re still · 40 min</div></div>`,
     send: () => `<div class="w w-center">${head('9:41')}${rings('out', icon('smartphone', 24))}<div class="w-title">Sending to iPhone</div></div>`,
     nudge: () => `<div class="w w-center">${head('9:41')}${rings('breathe', `<img src="${MOMO}" alt="">`)}<div class="w-title">Ready on iPhone</div><div class="w-body">Talk when you want.</div></div>`,
   },
   braid: {
     name: 'D · Braided wave',
     blurb: 'The intro’s braided wave reads your body: tangled when tense, flowing out when sent, settled after.',
-    sense: () => `<div class="w w-center">${head('9:40')}<div class="wd-braid">${braid(1)}</div>${stats}<div class="w-body">Still, but tense · 40 min</div></div>`,
+    sense: () => `<div class="w w-center">${head('9:41')}<div class="wd-braid">${braid(1)}</div>${stats}<div class="w-body">Still, but tense · 40 min</div></div>`,
     send: () => `<div class="w w-center">${head('9:41')}<div class="wd-braid">${braid(0.55)}</div><div class="w-title">Sending to iPhone</div><div class="w-body">Heart rate · HRV · 40 min</div></div>`,
     nudge: () => `<div class="w w-center">${head('9:41')}<div class="wd-braid">${braid(0.06)}</div><div class="w-title">Momo is ready</div><div class="w-body">Pick it up on your iPhone.</div></div>`,
   },
   note: {
     name: 'E · Serif note',
     blurb: 'Editorial and quiet: Momo speaks in the journal serif, ending on the same words as the phone notification.',
-    sense: () => `<div class="w we">${head('9:40')}<p>Your heart’s been busy, but you haven’t moved.</p><div class="we-meta">${icon('heart', 10, 2.4)}96 BPM · HRV 38 · no workout</div></div>`,
+    sense: () => `<div class="w we">${head('9:41')}<p>Your heart’s been busy, but you haven’t moved.</p><div class="we-meta">${icon('heart', 10, 2.4)}96 BPM · HRV 38 · no workout</div></div>`,
     send: () => `<div class="w we">${head('9:41')}<p>I’ll check in on your iPhone.</p><div class="we-dots"><i></i><i></i><i></i></div></div>`,
     nudge: () => `<div class="w we">${head('9:41')}<p>Something on your mind?</p><div class="w-chip">${icon('smartphone', 11)}Answer on iPhone</div></div>`,
   },
