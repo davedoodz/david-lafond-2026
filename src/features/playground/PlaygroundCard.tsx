@@ -8,7 +8,7 @@ type Props = {
   canReorder: boolean
   isDragging: boolean
   isDropTarget: boolean
-  onOpen: (id: string, el: HTMLButtonElement) => void
+  onOpen: (id: string, el: HTMLButtonElement, scrollY: number) => void
   onReorderStart: (id: string) => void
   onReorderOver: (id: string) => void
   onReorderDrop: (sourceId: string, targetId: string) => void
@@ -43,6 +43,7 @@ export function PlaygroundCard({
   const [pressed, setPressed] = useState(false)
   const btnRef = useRef<HTMLButtonElement | null>(null)
   const ignoreClickUntilRef = useRef(0)
+  const pointerDownScrollRef = useRef<number | null>(null)
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; dragging: boolean; targetId: string } | null>(null)
 
   const setButtonEl = useCallback(
@@ -58,11 +59,14 @@ export function PlaygroundCard({
     const el = btnRef.current
     if (!el) return
     const handleClick = () => {
+      const scrollY = pointerDownScrollRef.current ?? window.scrollY
+      pointerDownScrollRef.current = null
       if (performance.now() < ignoreClickUntilRef.current) return
-      onOpen(item.id, el)
+      onOpen(item.id, el, scrollY)
     }
     const handleDown = (event: PointerEvent) => {
       if (event.pointerType === 'touch') setPressed(true)
+      pointerDownScrollRef.current = window.scrollY
       if (!canReorder || event.button !== 0) return
       dragRef.current = {
         pointerId: event.pointerId,

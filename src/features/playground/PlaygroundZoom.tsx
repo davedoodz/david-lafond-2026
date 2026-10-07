@@ -73,7 +73,7 @@ export function PlaygroundZoom({
   }, [originRect, target])
 
   useEffect(() => {
-    dialogRef.current?.focus()
+    dialogRef.current?.focus({ preventScroll: true })
   }, [])
 
   const setMediaEl = useCallback((el: HTMLDivElement | null) => mediaHostRef(item.id, el), [item.id, mediaHostRef])
