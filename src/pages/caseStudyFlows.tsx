@@ -217,13 +217,13 @@ function useRiseOnView() {
 }
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; phoneScale: number; notificationLabel: string; voiceLabel: string; entriesLabel: string }
+export type Flows = { eyebrow: string; title: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string }
 export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
   const ref = useRiseOnView()
   const phones = [
-    ['notification', f.notificationLabel, 'left'],
+    ['entries', f.entriesLabel, 'left'],
     ['voice', f.voiceLabel, 'center'],
-    ['entries', f.entriesLabel, 'right'],
+    ['tracker', f.trackerLabel, 'right'],
   ] as const
   return (
     <section
@@ -242,39 +242,12 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
       <ol className="case__flows-row">
         {phones.map(([name, label, position], i) => (
           <li key={name} className="case__flow-card case__rise" data-position={position} style={{ '--i': i } as CSSProperties}>
-            <div className="case__flow-device">{name === 'notification' ? <LockNotification /> : <PhoneVideo name={name} />}</div>
+            <div className="case__flow-device"><PhoneVideo name={name} /></div>
             <EditableText as="p" className="case__phone-label" label={`${name} label`} value={label} onChange={edit(`flows.${name}Label`)} />
           </li>
         ))}
       </ol>
     </section>
-  )
-}
-
-/**
- * The notification flow on the Paper lock screen: the banner slides in, then
- * expands into its two actions. Loops while on screen (CSS only).
- */
-function LockNotification() {
-  return (
-    <div className="case__phone lock" aria-hidden="true">
-      <img className="lock__bg" src="/work/unwind/flows/lockscreen.webp" alt="" draggable={false} />
-      <div className="lock__note">
-        <span className="lock__icon" />
-        <div className="lock__copy">
-          <div className="lock__row">
-            <span className="lock__app">Momo</span>
-            <span className="lock__time">now</span>
-          </div>
-          <p className="lock__title">Something changed.</p>
-          <p className="lock__text">Your heart rate rose while you were still. How are you feeling?</p>
-        </div>
-        <div className="lock__actions">
-          <span>Talk for 30 seconds</span>
-          <span>Not now</span>
-        </div>
-      </div>
-    </div>
   )
 }
 

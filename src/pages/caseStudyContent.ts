@@ -351,9 +351,9 @@ export const UNWIND_CONFIG = {
     title: { type: 'text' as const, default: 'Notice. Reflect. Look back.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     phoneScale: [1, 0.6, 1.25, 0.01] as Tuple,
-    notificationLabel: { type: 'text' as const, default: 'A gentle nudge' },
-    voiceLabel: { type: 'text' as const, default: 'Say what happened' },
     entriesLabel: { type: 'text' as const, default: 'Your entries' },
+    voiceLabel: { type: 'text' as const, default: 'Say what happened' },
+    trackerLabel: { type: 'text' as const, default: 'Keep yourself on track' },
     _collapsed: true,
   },
   /** Guided WOOP and Gross models side by side (rendered as `guided`). */
