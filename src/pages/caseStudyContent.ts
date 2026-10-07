@@ -401,6 +401,10 @@ export const UNWIND_CONFIG = {
     title: { type: 'text' as const, default: 'Your body signals. Your story. A clearer picture.' },
     body: { type: 'text' as const, default: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    watch: {
+      strapColor: { type: 'color' as const, default: '#d6ccc4' },
+      _collapsed: true,
+    },
     spacing: sectionSpacingDials(110, 72, 36),
     reveal: {
       preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'handoff' },
