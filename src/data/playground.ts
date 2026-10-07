@@ -71,7 +71,12 @@ export const playgroundItems: PlaygroundItem[] = [
     video: '/about/playground/harvard-mit-portfolio.mp4',
     poster: '/about/playground/harvard-mit-portfolio.webp',
   },
-  { id: 'p10', title: 'Prototype 10' },
+  {
+    id: 'p10',
+    title: 'Interactive signature',
+    video: '/about/playground/interactive-signature.mp4',
+    poster: '/about/playground/interactive-signature.webp',
+  },
   { id: 'p11', title: 'Prototype 11' },
   { id: 'p12', title: 'Prototype 12' },
   { id: 'p13', title: 'Prototype 13' },
