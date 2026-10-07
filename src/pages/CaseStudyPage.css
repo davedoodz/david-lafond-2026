@@ -1542,10 +1542,7 @@ html[data-case-snap] .case__group > * {
 .case__persona:not([data-live]) .persona__float {
   animation-play-state: paused;
 }
-/* Hover holds the cards in place; a card being edited stays up. */
-.persona__stage:hover .persona__float {
-  animation-play-state: paused;
-}
+/* Editing pins only the active card; ordinary pointer hover never pauses the sequence. */
 .persona__float:focus-within {
   animation: none;
   opacity: 1;

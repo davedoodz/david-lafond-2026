@@ -106,27 +106,27 @@ export const FLOAT_DIALS = {
   tagsGap: [10, 0, 100, 1] as Tuple,
   /**
    * Entrance, replayed each time the section comes into view. Scrolling down: text block, profile
-   * pills, portrait, then the floating cards. Scrolling up the order reverses: portrait, floating
-   * cards, pills, text block. Seconds; distance in px.
+   * pills, portrait, then floating cards. Scrolling up: portrait, floating cards, text block,
+   * then profile pills. Seconds; distance in px.
    */
   entrance: {
     text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
     pills: { type: 'select' as const, options: [...ENTRANCES], default: 'pop' },
     image: { type: 'select' as const, options: [...ENTRANCES], default: 'scale' },
-    duration: [0.7, 0.2, 2, 0.05] as Tuple,
+    duration: [0.5, 0.2, 2, 0.05] as Tuple,
     distance: [24, 0, 120, 1] as Tuple,
     /** Between eyebrow, title and body. */
-    textStagger: [0.12, 0, 0.6, 0.01] as Tuple,
+    textStagger: [0.05, 0, 0.6, 0.01] as Tuple,
     /** Between one pill and the next. */
-    pillStagger: [0.07, 0, 0.4, 0.01] as Tuple,
+    pillStagger: [0.02, 0, 0.4, 0.01] as Tuple,
     /** Pause after the text block before the first pill. */
-    pillsGap: [0.1, 0, 1.5, 0.05] as Tuple,
+    pillsGap: [0.02, 0, 1.5, 0.01] as Tuple,
     /** Pause after the last pill before the portrait. */
-    imageGap: [0.1, 0, 1.5, 0.05] as Tuple,
+    imageGap: [0.02, 0, 1.5, 0.01] as Tuple,
     /** From the portrait starting to appear to the first floating bubble (either scroll direction). */
-    floatsDelay: [1.2, 0, 4, 0.05] as Tuple,
+    floatsDelay: [0.35, 0, 4, 0.05] as Tuple,
     /** Between one floating bubble and the next (drift). */
-    floatStagger: [0.35, 0, 1.5, 0.05] as Tuple,
+    floatStagger: [0.18, 0, 1.5, 0.01] as Tuple,
     _collapsed: false,
   },
   _collapsed: false,
@@ -162,7 +162,7 @@ export type Float = {
 
 /** Preset name → keyframes name in CaseStudyPage.css (`pe-*`). */
 const kf = (preset: string) => (preset === 'none' ? 'none' : `pe-${preset}`)
-const DRIFT_IN_DURATION = 0.9
+const DRIFT_IN_DURATION = 0.65
 
 /**
  * Entrance timeline (seconds). Scrolling down: text rows, pills, portrait, floating cards.
