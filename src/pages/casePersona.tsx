@@ -162,13 +162,13 @@ export type Float = {
 
 /** Preset name → keyframes name in CaseStudyPage.css (`pe-*`). */
 const kf = (preset: string) => (preset === 'none' ? 'none' : `pe-${preset}`)
+const DRIFT_IN_DURATION = 0.9
 
 /**
  * Entrance timeline (seconds). Scrolling down: text rows, pills, portrait, floating cards.
- * Scrolling up (`reverse`): the section arrives bottom first, so portrait, floating cards,
- * pills (last first), then text (body, title, eyebrow). `floatsIn` is how long the cards take
- * to start arriving before the pills follow. Returns per-element delays (text in
- * eyebrow/title/body order, pills in DOM order).
+ * Scrolling up (`reverse`): portrait, all floating cards, text from eyebrow to body, then pills.
+ * `floatsIn` is how long the cards take to finish arriving before the text follows.
+ * Returns per-element delays (text in eyebrow/title/body order, pills in DOM order).
  */
 function entranceTimeline(e: Entrance, pills: number, reverse: boolean, floatsIn: number) {
   const step = (start: number, n: number, stagger: number) => Array.from({ length: n }, (_, i) => start + i * stagger)
@@ -181,10 +181,10 @@ function entranceTimeline(e: Entrance, pills: number, reverse: boolean, floatsIn
   }
   const image = 0
   const floats = image + e.floatsDelay
-  const pillsStart = floats + floatsIn + e.pillsGap
-  const pill = step(pillsStart, pills, e.pillStagger).reverse()
-  const textStart = (pills ? pill[0] + e.duration : pillsStart) + e.pillsGap
-  const text = step(textStart, 3, e.textStagger).reverse()
+  const textStart = floats + floatsIn + e.pillsGap
+  const text = step(textStart, 3, e.textStagger)
+  const pillsStart = text[2] + e.duration + e.pillsGap
+  const pill = step(pillsStart, pills, e.pillStagger)
   return { text, pill, image, floats }
 }
 export type Persona = {
@@ -332,8 +332,8 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
   const float = p.float
   // Entrance order follows scroll direction (see entranceTimeline).
   const ent = float?.entrance
-  // Drift starts card i at floatStagger × i (CSS); the looping presets show one card per beat.
-  const floatsIn = float?.preset === 'drift' && ent ? ent.floatStagger * (SCENES.length - 1) : (ent?.duration ?? 0)
+  // Wait for the last drift card to finish arriving; the looping presets show one card per beat.
+  const floatsIn = float?.preset === 'drift' && ent ? ent.floatStagger * (SCENES.length - 1) + DRIFT_IN_DURATION : (ent?.duration ?? 0)
   const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0, fromAbove, floatsIn) : null
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const traitList = (group: 'driven' | 'challenges', items: [string, string][]) => (
@@ -379,6 +379,7 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
                 '--pe-image': `${timeline.image}s`,
                 '--pe-floats': `${timeline.floats}s`,
                 '--pe-float-stagger': `${ent.floatStagger}s`,
+                '--pe-float-duration': `${DRIFT_IN_DURATION}s`,
               }
             : {}),
           '--persona-img-w': `${p.imageWidth}px`,
