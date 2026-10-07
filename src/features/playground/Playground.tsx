@@ -5,9 +5,9 @@ import type { DialConfig } from 'dialkit'
 import { useTuningController } from '../../tuning/useTuning'
 import { playgroundItems } from '../../data/playground'
 import { CardVideo } from './CardVideo'
-import { CriticalActionMedia, JournalMedia } from './SpecialCardMedia'
+import { CriticalActionMedia, JournalMedia, PortfolioMedia } from './SpecialCardMedia'
 import { PlaygroundCard } from './PlaygroundCard'
-import { PlaygroundZoom } from './PlaygroundZoom'
+import { PlaygroundZoom, type NavPreset } from './PlaygroundZoom'
 import { toMotionTransition } from './motionTransition'
 import './Playground.css'
 
@@ -44,6 +44,8 @@ for (const [i, item] of playgroundItems.entries()) {
   const key = `card${i + 1}`
   tuningKeyById[item.id] = key
   titleFields[key] = { type: 'text', default: item.title, placeholder: item.title }
+  // Portfolio cards get their own dial folder (page speed, floatiness, shadow, scale).
+  if (item.presentation === 'portfolio') continue
   if (item.video) videoLoopSpeedFields[controlKeyById[item.id]] = [1, 0.25, 12, 0.05]
   if (item.video || item.presentation) mediaScaleFields[controlKeyById[item.id]] = [1, 0.25, 3, 0.01]
 }
@@ -111,6 +113,19 @@ const PLAYGROUND_CONFIG = {
     bookX: [0, -100, 100, 1] as [number, number, number, number],
     bookY: [0, -100, 100, 1] as [number, number, number, number],
   },
+  portfolio: {
+    /** Video playback rate: how fast the spreads turn. */
+    pageSpeed: [1, 0.25, 4, 0.05] as [number, number, number, number],
+    /** Drift and sway of the floating spread; 0 holds it still at its tilt. */
+    floatiness: [1, 0, 3, 0.05] as [number, number, number, number],
+    /** Drop-shadow strength behind the spread. */
+    shadow: [1, 0, 2, 0.05] as [number, number, number, number],
+    scale: [1, 0.5, 1.5, 0.01] as [number, number, number, number],
+    /** Book orientation (deg): tip top away (+) / toward (−), turn, and roll. */
+    tiltX: [22, -60, 60, 0.5] as [number, number, number, number],
+    tiltY: [-18, -60, 60, 0.5] as [number, number, number, number],
+    tiltZ: [-4, -45, 45, 0.5] as [number, number, number, number],
+  },
   grid: {
     /** How many cards show, in data order (first N). */
     count: [playgroundItems.length, 1, playgroundItems.length, 1] as [number, number, number, number],
@@ -132,6 +147,23 @@ const PLAYGROUND_CONFIG = {
     dimOpacity: [0.6, 0, 1, 0.01] as [number, number, number, number],
     spring: { type: 'spring', visualDuration: 0.5, bounce: 0.2 } as const,
   },
+  /** Card-to-card change when using the arrows (or ← / →) in the open view. */
+  nav: {
+    preset: {
+      type: 'select',
+      options: [
+        { value: 'fade', label: 'Fade' },
+        { value: 'slide', label: 'Slide' },
+        { value: 'push', label: 'Push (slide + fade)' },
+        { value: 'scale', label: 'Scale' },
+        { value: 'blur', label: 'Blur' },
+        { value: 'flip', label: 'Flip (3D)' },
+        { value: 'none', label: 'None (cut)' },
+      ],
+      default: 'fade',
+    },
+    transition: { type: 'spring', visualDuration: 0.35, bounce: 0 } as const,
+  },
 } satisfies DialConfig
 
 type HostRefs = { grid: HTMLDivElement | null; zoom: HTMLDivElement | null }
@@ -144,6 +176,8 @@ export function Playground({ className }: { className?: string }) {
   const reducedMotion = Boolean(useReducedMotion())
 
   const [activeId, setActiveId] = useState<string | null>(null)
+  /** −1 = previous, 1 = next: which side the arrow transition enters from. */
+  const [navDirection, setNavDirection] = useState<1 | -1>(1)
   const [originRect, setOriginRect] = useState<DOMRect | null>(null)
   const [visibleIds, setVisibleIds] = useState<Set<string>>(() => new Set())
   const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -221,16 +255,14 @@ export function Playground({ className }: { className?: string }) {
   }, [])
 
   const closeZoom = useCallback(() => {
-    setActiveId((currentId) => {
-      if (currentId) {
-        const el = cardElRefs.current.get(currentId)
-        if (el) setOriginRect(el.getBoundingClientRect())
-      }
-      return null
-    })
-  }, [])
+    if (!activeId) return
+    const el = cardElRefs.current.get(activeId)
+    if (el) setOriginRect(el.getBoundingClientRect())
+    setActiveId(null)
+  }, [activeId])
 
-  const goTo = useCallback((delta: number) => {
+  const goTo = useCallback((delta: 1 | -1) => {
+    setNavDirection(delta)
     setActiveId((current) => {
       if (!current) return current
       const idx = items.findIndex((i) => i.id === current)
@@ -303,6 +335,11 @@ export function Playground({ className }: { className?: string }) {
   const handleExitComplete = useCallback(() => {
     lastFocusedRef.current?.focus()
   }, [])
+
+  // A card is "in the zoom view" while it is active or its zoom content is still mounted
+  // (exiting after close or after an arrow change). Its media stays in that zoom content and
+  // its grid slot stays hidden until the exit finishes, so no card ever animates out empty.
+  const isInZoom = (id: string) => id === activeId || Boolean(hostRefs.current.get(id)?.zoom)
 
   const startReorder = useCallback((id: string) => {
     setDraggingId(id)
@@ -378,7 +415,7 @@ export function Playground({ className }: { className?: string }) {
             key={item.id}
             item={item}
             title={titles[tuningKeyById[item.id]]}
-            isActive={item.id === activeId}
+            isActive={isInZoom(item.id)}
             canReorder={import.meta.env.DEV}
             isDragging={item.id === draggingId}
             isDropTarget={item.id === dropTargetId && item.id !== draggingId}
@@ -396,9 +433,10 @@ export function Playground({ className }: { className?: string }) {
       {items.map((item) => {
         if (!item.video && !item.presentation) return null
         const entry = hostRefs.current.get(item.id)
-        const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
+        const inZoom = isInZoom(item.id)
+        const target = (inZoom ? entry?.zoom : null) ?? entry?.grid ?? null
         if (!target) return null
-        const shouldPlay = item.id === activeId || visibleIds.has(item.id)
+        const shouldPlay = inZoom || visibleIds.has(item.id)
         const playbackRate = videoLoopSpeeds[controlKeyById[item.id]] ?? 1
         const mediaScale = mediaScales[controlKeyById[item.id]] ?? 1
         const videoSrc = item.id === 'p08' ? selectedRoomVideo.src : item.video
@@ -410,6 +448,19 @@ export function Playground({ className }: { className?: string }) {
               bookScale={mediaScale}
               bookX={values.criticalAction.bookX}
               bookY={values.criticalAction.bookY}
+            />
+          ) : item.presentation === 'portfolio' && item.video ? (
+            <PortfolioMedia
+              src={videoSrc!}
+              poster={videoPoster}
+              shouldPlay={shouldPlay}
+              pageSpeed={values.portfolio.pageSpeed}
+              floatiness={values.portfolio.floatiness}
+              shadow={values.portfolio.shadow}
+              scale={values.portfolio.scale}
+              tiltX={values.portfolio.tiltX}
+              tiltY={values.portfolio.tiltY}
+              tiltZ={values.portfolio.tiltZ}
             />
           ) : item.presentation === 'journal' && item.video ? (
             <JournalMedia
@@ -465,6 +516,9 @@ export function Playground({ className }: { className?: string }) {
                 onNext={onNext}
                 mediaHostRef={setZoomHost}
                 reducedMotion={reducedMotion}
+                navPreset={values.nav.preset as NavPreset}
+                navDirection={navDirection}
+                navTransition={toMotionTransition(values.nav.transition)}
               />
             )}
           </AnimatePresence>

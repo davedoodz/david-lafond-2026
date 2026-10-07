@@ -81,6 +81,63 @@ export function JournalMedia({
   )
 }
 
+type PortfolioMediaProps = {
+  src: string
+  poster?: string
+  shouldPlay: boolean
+  /** Video playback rate: how fast the spreads turn. */
+  pageSpeed: number
+  /** 0 = still; 1 = default drift and sway; higher = bigger, looser motion. */
+  floatiness: number
+  /** 0 = no drop shadow; 1 = default; up to 2 = heavier. */
+  shadow: number
+  scale: number
+  /** Book orientation (deg): tip toward/away, turn left/right, roll. */
+  tiltX: number
+  tiltY: number
+  tiltZ: number
+}
+
+/** Leaves in the page block behind the printed spread; each steps back toward the cover. */
+const PORTFOLIO_LEAVES = [5, 4, 3, 2, 1]
+
+/** Portfolio spread printed in an open hardcover book, tilted in 3D and floating over a soft grey stage. */
+export function PortfolioMedia({
+  src,
+  poster,
+  shouldPlay,
+  pageSpeed,
+  floatiness,
+  shadow,
+  scale,
+  tiltX,
+  tiltY,
+  tiltZ,
+}: PortfolioMediaProps) {
+  const style = {
+    '--pg-pf-float': floatiness,
+    '--pg-pf-shadow': shadow,
+    '--pg-pf-scale': scale,
+    '--pg-pf-rx': `${tiltX}deg`,
+    '--pg-pf-ry': `${tiltY}deg`,
+    '--pg-pf-rz': `${tiltZ}deg`,
+  } as CSSProperties
+
+  return (
+    <div className="pg-portfolio-media" style={style} data-playing={shouldPlay || undefined}>
+      <div className="pg-portfolio-book">
+        <div className="pg-portfolio-cover" />
+        {PORTFOLIO_LEAVES.map((leaf) => (
+          <div key={leaf} className="pg-portfolio-leaf" style={{ '--leaf': leaf } as CSSProperties} />
+        ))}
+        <div className="pg-portfolio-spread">
+          <CardVideo src={src} poster={poster} playbackRate={pageSpeed} shouldPlay={shouldPlay} className="pg-video--cover" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const CRITICAL_ACTION_COLORS = ['#0D3937', '#0D504D', '#D33C36', '#DB6546'].map((color) =>
   getShaderColorFromString(color),
 )

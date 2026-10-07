@@ -172,6 +172,122 @@
   transform-origin: center;
 }
 
+/* Harvard + MIT portfolio: an open hardcover book, tilted in 3D, drifting over a soft grey stage.
+   Sized in container units so the grid card and the zoomed card frame it identically.
+   Layers, back to front: cover board → page block (stacked leaves) → printed spread with gutter shading. */
+.pg-portfolio-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: radial-gradient(120% 90% at 50% 35%, #f4f4f6 0%, #e4e4e9 55%, #d3d4da 100%);
+  perspective: 160cqw;
+}
+
+.pg-portfolio-book {
+  --pg-pf-pose: rotateX(var(--pg-pf-rx)) rotateY(var(--pg-pf-ry)) rotateZ(var(--pg-pf-rz));
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72cqw;
+  aspect-ratio: 800 / 566;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) scale(var(--pg-pf-scale)) var(--pg-pf-pose);
+  animation: pg-portfolio-float 7s ease-in-out infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.pg-portfolio-media[data-playing='true'] .pg-portfolio-book {
+  animation-play-state: running;
+}
+
+.pg-portfolio-cover {
+  position: absolute;
+  inset: -1.1cqw -1.4cqw;
+  border-radius: 1.1cqw;
+  background: linear-gradient(90deg, #26282d 0%, #33363c 47%, #1b1c20 50%, #33363c 53%, #26282d 100%);
+  transform: translateZ(-2.4cqw);
+  box-shadow:
+    0 calc(1cqw * var(--pg-pf-shadow)) calc(2cqw * var(--pg-pf-shadow)) rgb(24 26 36 / calc(0.14 * var(--pg-pf-shadow))),
+    0 calc(7cqw * var(--pg-pf-shadow)) calc(12cqw * var(--pg-pf-shadow)) calc(-2cqw * var(--pg-pf-shadow)) rgb(24 26 36 / calc(0.34 * var(--pg-pf-shadow)));
+}
+
+/* Page block: leaves stepping back toward the cover so the tilt reveals the paper edges. */
+.pg-portfolio-leaf {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5cqw;
+  background: #eeede8;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.07);
+  transform: translateZ(calc(var(--leaf) * -0.4cqw));
+}
+
+.pg-portfolio-spread {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5cqw;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pg-portfolio-spread > .pg-video {
+  background: transparent;
+}
+
+/* Gutter: pages dip into the spine (dark fold, soft highlight on each side) and curve off at the fore-edges. */
+.pg-portfolio-spread::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(0 0 0 / 0.1) 0%,
+      transparent 3%,
+      transparent 41%,
+      rgb(0 0 0 / 0.05) 46%,
+      rgb(0 0 0 / 0.24) 49.4%,
+      rgb(0 0 0 / 0.32) 50%,
+      rgb(0 0 0 / 0.2) 50.6%,
+      rgb(0 0 0 / 0.04) 54%,
+      transparent 59%,
+      transparent 97%,
+      rgb(0 0 0 / 0.1) 100%
+    ),
+    linear-gradient(90deg, transparent 44%, rgb(255 255 255 / 0.22) 47.5%, transparent 49%, transparent 51%, rgb(255 255 255 / 0.16) 52.5%, transparent 56%);
+}
+
+/* Base pose plus a slow bob and sway; --pg-pf-float scales every offset (0 = still at the pose). */
+@keyframes pg-portfolio-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(var(--pg-pf-scale)) var(--pg-pf-pose);
+  }
+  25% {
+    transform: translate(-50%, calc(-50% - 2.5% * var(--pg-pf-float))) scale(var(--pg-pf-scale))
+      rotateX(calc(var(--pg-pf-rx) - 3deg * var(--pg-pf-float))) rotateY(calc(var(--pg-pf-ry) + 4deg * var(--pg-pf-float)))
+      rotateZ(calc(var(--pg-pf-rz) + 1deg * var(--pg-pf-float)));
+  }
+  50% {
+    transform: translate(-50%, calc(-50% - 4% * var(--pg-pf-float))) scale(var(--pg-pf-scale))
+      rotateX(calc(var(--pg-pf-rx) + 1deg * var(--pg-pf-float))) rotateY(calc(var(--pg-pf-ry) + 7deg * var(--pg-pf-float)))
+      rotateZ(calc(var(--pg-pf-rz) + 1.5deg * var(--pg-pf-float)));
+  }
+  75% {
+    transform: translate(-50%, calc(-50% - 1.5% * var(--pg-pf-float))) scale(var(--pg-pf-scale))
+      rotateX(calc(var(--pg-pf-rx) + 3deg * var(--pg-pf-float))) rotateY(calc(var(--pg-pf-ry) + 2deg * var(--pg-pf-float)))
+      rotateZ(calc(var(--pg-pf-rz) - 0.5deg * var(--pg-pf-float)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-portfolio-book {
+    animation: none;
+  }
+}
+
 .pg-card .card-shade,
 .pg-zoom-card .card-shade {
   z-index: 2;

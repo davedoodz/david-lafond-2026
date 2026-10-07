@@ -16,7 +16,7 @@
       "card5": "MIT Sketchbooks",
       "card7": "Decode no 1",
       "card8": "Winter 2026 Room",
-      "card9": "Harvard + MIT acceptance portfolio"
+      "card10": "Prototype 10"
     },
     "videoLoopSpeed": {
       "future fabric": 2,
@@ -28,7 +28,7 @@
     "room": {
       "video": "light"
     },
-    "order": "p06,p01,p09,p04,p03,p05,p02,p08,p07,p10,p11,p12,p13,p14,p15,p16",
+    "order": "p06,p01,p09,p10,p03,p05,p02,p04,p07,p08,p11,p12,p13,p14,p15,p16",
     "journal": {
       "desktopZoom": 2.39,
       "desktopX": 1,
@@ -376,7 +376,7 @@
     }
   },
   "About": {
-    "story": "My path to product design has been a rocky one.\n\nMy academic path began as a pre-med, only to realize that following strict protocols wasn’t meant for me.\n\nI believe the best designers are rebellious by nature.\n\nI’ve never truly felt like I belonged anywhere.\n\ndadwdawd\n\nMy whole life has been a series of pivots.\n\nI have quite the unconventional background.\n\nI started my studies\n\nHere are a few snippets that shed a bit of light into my too-many-too-count interests.\n\ndadwdawd\n\nWork hard. Play hard. \n\nNever stop learning.",
+    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never very good at accepting “that’s just how it is.”\n\nThat curiosity took me from pre-med to architecture, designing across continents, and eventually in research labs at MIT.\n\nI’ve changed directions more than once, usually because I found something new I couldn’t stop thinking about.\n\nNow, that something is product design.\n\nI’m still learning, still experimenting, and definitely still figuring things out.\n\nBut I’m excited to put my head down, do the work, and see where this next chapter takes me.\n\nA la vida,\n\n- David",
     "sheet": {
       "travel": 1.5,
       "depth": 2

@@ -12,7 +12,7 @@ export type PlaygroundItem = {
   video?: string
   poster?: string
   videoFit?: 'cover'
-  presentation?: 'journal' | 'critical-action'
+  presentation?: 'journal' | 'critical-action' | 'portfolio'
 }
 
 export const playgroundItems: PlaygroundItem[] = [
@@ -70,6 +70,7 @@ export const playgroundItems: PlaygroundItem[] = [
     title: 'Harvard + MIT acceptance portfolio',
     video: '/about/playground/harvard-mit-portfolio.mp4',
     poster: '/about/playground/harvard-mit-portfolio.webp',
+    presentation: 'portfolio',
   },
   {
     id: 'p10',
