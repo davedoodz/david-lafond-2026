@@ -83,6 +83,10 @@
   background: #fff;
 }
 
+.pg-video--cover {
+  object-fit: cover;
+}
+
 .pg-video-frame {
   position: absolute;
   inset: 0;

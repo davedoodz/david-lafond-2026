@@ -405,7 +405,13 @@ export function Playground({ className }: { className?: string }) {
             />
           ) : item.video ? (
             <div className="pg-video-frame" style={{ '--pg-media-scale': mediaScale } as CSSProperties}>
-              <CardVideo src={item.video} poster={item.poster} playbackRate={playbackRate} shouldPlay={shouldPlay} />
+              <CardVideo
+                src={item.video}
+                poster={item.poster}
+                playbackRate={playbackRate}
+                shouldPlay={shouldPlay}
+                className={item.videoFit === 'cover' ? 'pg-video--cover' : undefined}
+              />
             </div>
           ) : null
         return media ? createPortal(media, target, item.id) : null

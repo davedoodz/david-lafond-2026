@@ -11,6 +11,7 @@ export type PlaygroundItem = {
   /** Muted/looped source, played only while the card is on screen or zoomed. */
   video?: string
   poster?: string
+  videoFit?: 'cover'
   presentation?: 'journal' | 'critical-action'
 }
 
@@ -62,6 +63,7 @@ export const playgroundItems: PlaygroundItem[] = [
     title: 'My room in 3D',
     video: '/about/playground/bedroom-world.mp4',
     poster: '/about/playground/bedroom-world.webp',
+    videoFit: 'cover',
   },
   { id: 'p09', title: 'Prototype 09' },
   { id: 'p10', title: 'Prototype 10' },
