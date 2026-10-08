@@ -108,6 +108,7 @@
 
 .pg-journal-media {
   background: #fff;
+  container-type: size;
 }
 
 .pg-critical-action-media {
@@ -141,15 +142,56 @@
   transform-origin: center;
 }
 
+/* Journal phone: the Momo prototype iPhone frame (1312×2672, screen hole x68–1246 y58–2613)
+   over the recorded player screen. Width keeps the screen the same size as the old baked-in mockup. */
 .pg-journal-phone {
   position: absolute;
   z-index: 1;
   left: calc(50% + var(--pg-journal-phone-x));
   top: calc(50% + var(--pg-journal-phone-y));
-  width: 40%;
-  max-height: 92%;
-  object-fit: contain;
+  width: 35.5%;
+  aspect-ratio: 1312 / 2672;
   transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1.2cqw 2.4cqw rgb(0 0 0 / 0.22));
+}
+
+/* Screen sits a hair outside the hole so the frame's bezel overlaps every edge (no corner gaps). */
+.pg-journal-phone__screen {
+  position: absolute;
+  inset: 1.9% 4.7% 1.9% 4.9%;
+  border-radius: 14% / 6.5%;
+  overflow: hidden;
+  background: linear-gradient(#1f1f21, #131313 30%);
+}
+
+/* The recording's screen spans x77–378 of its 375 px width (it carries its own left bezel),
+   so it is widened and shifted to put that screen edge-to-edge in the frame. */
+.pg-journal-phone__content {
+  position: absolute;
+  top: 0;
+  left: -25.6%;
+  width: 124.6%;
+  max-width: none;
+  height: auto;
+}
+
+/* The recording's own Dynamic Island is wider than the frame's; hide it under status-bar grey. */
+.pg-journal-phone__island-mask {
+  position: absolute;
+  top: 1.1%;
+  left: 30.6%;
+  width: 37.7%;
+  height: 4.6%;
+  border-radius: 999px;
+  background: rgb(30 30 32);
+}
+
+.pg-journal-phone__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .pg-critical-action-shader {

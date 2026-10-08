@@ -69,13 +69,25 @@ export function JournalMedia({
             className="pg-journal-desktop"
           />
         </div>
-        <img
-          className="pg-journal-phone"
-          src="/about/playground/davids-journal-phone.webp"
-          alt=""
-          draggable={false}
-          aria-hidden="true"
-        />
+        <div className="pg-journal-phone" aria-hidden="true">
+          <div className="pg-journal-phone__screen">
+            <img
+              className="pg-journal-phone__content"
+              src="/about/playground/davids-journal-phone.webp"
+              alt=""
+              draggable={false}
+            />
+            <span className="pg-journal-phone__island-mask" />
+          </div>
+          <img
+            className="pg-journal-phone__frame"
+            src="/work/momo/hero/phone-frame.png"
+            width={1312}
+            height={2672}
+            alt=""
+            draggable={false}
+          />
+        </div>
       </div>
     </div>
   )
