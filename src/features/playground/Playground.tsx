@@ -26,6 +26,7 @@ const controlKeyById: Record<string, string> = {
   p08: 'my room in 3d',
   p09: 'harvard + mit acceptance portfolio',
   p10: 'interactive signature',
+  p11: 'globalization research explorer',
 }
 const ROOM_VIDEO_VARIANTS = {
   dark: {

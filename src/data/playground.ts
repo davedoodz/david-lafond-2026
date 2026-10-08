@@ -78,7 +78,12 @@ export const playgroundItems: PlaygroundItem[] = [
     video: '/about/playground/interactive-signature.mp4',
     poster: '/about/playground/interactive-signature.webp',
   },
-  { id: 'p11', title: 'Prototype 11' },
+  {
+    id: 'p11',
+    title: 'Globalization research explorer',
+    video: '/about/playground/globalization-research.mp4',
+    poster: '/about/playground/globalization-research.webp',
+  },
   { id: 'p12', title: 'Prototype 12' },
   { id: 'p13', title: 'Prototype 13' },
   { id: 'p14', title: 'Prototype 14' },
