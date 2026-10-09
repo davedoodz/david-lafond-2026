@@ -28,6 +28,124 @@
   width: 1px;
   height: 1px;
 }
+/* "Skip intro": above the film canvas while it plays on the stage. data-style / data-hover-feel /
+   data-click-feel / data-placement come from the Momo intro › skip dials; x/y nudge from the placement. */
+.momo-skip {
+  --momo-skip-ink: var(--ink-950, #141210);
+  --momo-skip-tx: 0px;
+  position: fixed;
+  z-index: 51;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 13px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: var(--momo-skip-ink);
+  background: none;
+  cursor: pointer;
+  translate: calc(var(--momo-skip-tx) + var(--momo-skip-x)) var(--momo-skip-y);
+  opacity: 0;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity 320ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    scale 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms ease,
+    color 220ms ease,
+    box-shadow 260ms ease;
+}
+.momo-skip[data-shown] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.momo-skip:focus-visible {
+  outline: 1px solid var(--stone-400, #a6a09c);
+  outline-offset: 4px;
+}
+.momo-skip__arrow,
+.momo-skip__ring {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.momo-skip__arrow {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Placement */
+.momo-skip[data-placement^='top'] { top: var(--momo-skip-inset); }
+.momo-skip[data-placement^='bottom'] { bottom: var(--momo-skip-inset); }
+.momo-skip[data-placement$='left'] { left: var(--momo-skip-inset); }
+.momo-skip[data-placement$='right'] { right: var(--momo-skip-inset); }
+.momo-skip[data-placement$='center'] { left: 50%; --momo-skip-tx: -50%; }
+
+/* Button UI */
+.momo-skip[data-style='glass'],
+.momo-skip[data-style='progress'] {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 18px rgb(0 0 0 / 0.07);
+}
+.momo-skip[data-style='progress'] { padding-left: 11px; }
+.momo-skip[data-style='solid'] {
+  color: #fff;
+  background: var(--momo-skip-ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 8px 20px rgb(0 0 0 / 0.12);
+}
+.momo-skip[data-style='outline'] {
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.18);
+}
+.momo-skip[data-style='text'] {
+  padding-inline: 4px;
+  color: color-mix(in oklab, var(--momo-skip-ink) 70%, transparent);
+}
+.momo-skip__ring circle {
+  fill: none;
+  stroke: currentColor;
+  opacity: 0.18;
+}
+.momo-skip__ring .momo-skip__ring-fill {
+  opacity: 1;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--momo-skip-p, 0));
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+/* Hover feel (pointer devices only, so touch never sticks in the hover state) */
+@media (hover: hover) and (pointer: fine) {
+  .momo-skip[data-hover-feel='nudge']:hover .momo-skip__arrow { transform: translateX(3px); }
+  .momo-skip[data-hover-feel='lift']:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 2px 4px rgb(0 0 0 / 0.06), 0 14px 30px rgb(0 0 0 / 0.12);
+  }
+  .momo-skip[data-hover-feel='grow']:hover { transform: scale(1.06); }
+  .momo-skip[data-hover-feel='fill']:hover { color: #fff; background-color: var(--momo-skip-ink); }
+  .momo-skip[data-style='solid'][data-hover-feel='fill']:hover { color: var(--momo-skip-ink); background-color: #fff; }
+  .momo-skip[data-style='text']:hover { color: var(--momo-skip-ink); }
+}
+
+/* Click feel */
+.momo-skip[data-click-feel='press']:active { scale: 0.95; }
+.momo-skip[data-click-feel='squish'] { transition-property: opacity, transform, scale, background-color, color, box-shadow; }
+.momo-skip[data-click-feel='squish']:active { scale: 0.88 1.04; transition-duration: 320ms, 260ms, 90ms, 220ms, 220ms, 260ms; }
+.momo-skip[data-click-feel='squish']:not(:active) { transition-timing-function: ease, cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.34, 1.8, 0.5, 1), ease, ease, ease; transition-duration: 320ms, 260ms, 420ms, 220ms, 220ms, 260ms; }
+.momo-skip[data-click-feel='sink']:active {
+  scale: 0.985;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 0 0 rgb(0 0 0 / 0);
+  filter: brightness(0.94);
+}
+
 /* While the stage fills the screen, the nav, sidebar and Davebot step back. */
 html[data-momo-stage] .case__sidebar,
 html[data-momo-stage] .case .nav {

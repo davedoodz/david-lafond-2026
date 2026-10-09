@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useTuningController } from '../../tuning/useTuning'
 import { drawBraid, setRT } from './braid'
 import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE } from './phoneFilm'
@@ -28,6 +28,8 @@ const SEQUENCES = [
   { key: 'heroHandoff', end: PHONE_TIMELINE.hero },
   { key: 'heroHold', end: PHONE_TIMELINE.dur },
 ] as const
+const HANDOFF_INDEX = SEQUENCES.findIndex(sequence => sequence.key === 'heroHandoff')
+const option = <T extends string>(...pairs: [T, string][]) => pairs.map(([value, label]) => ({ value, label }))
 type SequenceKey = (typeof SEQUENCES)[number]['key']
 const TIMING = Object.fromEntries(SEQUENCES.map((sequence, i) => [
   sequence.key, [sequence.end - (i ? SEQUENCES[i - 1].end : 0), 0.05, 30, 0.05],
@@ -55,6 +57,46 @@ const CONFIG = {
   },
   startAt: [0.35, 0.05, 0.95, 0.01] as Tuple,
   returnToHero: true,
+  /** "Skip intro" button shown while the film plays on the stage. */
+  skip: {
+    enabled: true,
+    label: { type: 'text' as const, default: 'Skip intro' },
+    style: {
+      type: 'select' as const,
+      options: option(['glass', 'Frosted glass pill'], ['solid', 'Solid ink pill'], ['outline', 'Hairline outline'], ['text', 'Text only'], ['progress', 'Glass + progress ring']),
+      default: 'glass',
+    },
+    hover: {
+      type: 'select' as const,
+      options: option(['nudge', 'Arrow nudges'], ['lift', 'Lift + shadow'], ['grow', 'Grow'], ['fill', 'Fill with ink'], ['none', 'None']),
+      default: 'nudge',
+    },
+    click: {
+      type: 'select' as const,
+      options: option(['press', 'Press (scale down)'], ['squish', 'Squish + spring back'], ['sink', 'Sink (flatten shadow)'], ['none', 'None']),
+      default: 'press',
+    },
+    placement: {
+      type: 'select' as const,
+      options: option(['top-right', 'Top right'], ['top-center', 'Top center'], ['top-left', 'Top left'], ['bottom-right', 'Bottom right'], ['bottom-center', 'Bottom center'], ['bottom-left', 'Bottom left']),
+      default: 'top-right',
+    },
+    /** Distance from the screen edges for the chosen placement (px). */
+    inset: [28, 0, 160, 1] as Tuple,
+    /** Progress ring (Glass + progress ring style): stroke width (the 14px ring is drawn on a 16-unit grid); its outer edge stays put. */
+    ringThickness: [1.6, 0.5, 4, 0.1] as Tuple,
+    /** Thickness of the unfilled track, as a share of the ring thickness. */
+    ringTrack: [1, 0.25, 1, 0.05] as Tuple,
+    /** Nudge from the placement (px): + right / + down. */
+    x: [0, -600, 600, 1] as Tuple,
+    y: [0, -600, 600, 1] as Tuple,
+    /** What skipping does: jump to the film's ending (band glides into the hero) or cut straight to the hero. */
+    ending: {
+      type: 'select' as const,
+      options: option(['handoff', 'Glide into hero'], ['cut', 'Cut to hero']),
+      default: 'handoff',
+    },
+  },
   _collapsed: false,
 }
 
@@ -63,6 +105,8 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const replayRef = useRef<() => void>(() => {})
+  const skipRef = useRef<() => void>(() => {})
+  const skipBtnRef = useRef<HTMLButtonElement>(null)
   const momoVideos = useRef<Record<string, HTMLVideoElement | null>>({})
   const momoCanvases = useRef<Record<string, HTMLCanvasElement | null>>({})
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -109,6 +153,15 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       if (handedOff) return
       handedOff = true
       cbRef.current.onDone()
+    }
+    // Skip button: shown only while the film plays on the stage and before its own handoff starts.
+    // Toggled straight on the element from the frame loop, so the film never re-renders React.
+    let skipShown = false
+    const showSkip = (on: boolean) => {
+      const b = skipBtnRef.current
+      skipShown = on && !!b
+      if (!b || on === b.hasAttribute('data-shown')) return
+      b.toggleAttribute('data-shown', on); b.inert = !on
     }
     const videos = MOMO_CLIPS.map(clip => momoVideos.current[clip]!)
     const canvases = MOMO_CLIPS.map(clip => momoCanvases.current[clip]!)
@@ -248,6 +301,8 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         drawBraid(ctx, [scale * dpr, (slotX - 480 * scale) * dpr, (ay - 245 * scale) * dpr], { env: s.hero.energy + .3 * swell, alpha: Math.max(ending, 1 - filmAlpha) })
       }
       root.toggleAttribute('data-momo-stage', p > .5)
+      showSkip(playing && handoffY === null && time < PHONE_TIMELINE.calm && p > .5)
+      if (skipShown) skipBtnRef.current?.style.setProperty('--momo-skip-p', String(clamp(time / PHONE_TIMELINE.calm)))
       if (!document.hidden && (playing || (ay > -200 && ay < vh + 200))) raf = requestAnimationFrame(frame)
       else last = 0
     }
@@ -257,6 +312,22 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       if (!ready) return
       start(); wake()
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    // Skip: either jump the film clock to its ending, so the band glides into the hero exactly as it
+    // does at the end of the film, or stop the film and cut straight to the hero.
+    skipRef.current = () => {
+      if (!playing || handoffY !== null) return
+      const s = tRef.current
+      if (s.skip.ending === 'handoff' && s.returnToHero) {
+        sequenceIndex = HANDOFF_INDEX; sequenceTime = 0; time = PHONE_TIMELINE.calm
+        enteredStage = true; interrupted = false; handoffCancelled = false; handoffSettled = false
+      } else {
+        playing = false; handoffSettled = true
+        setReplayable(true); completeHandoff()
+        window.scrollTo({ top: landingY, behavior: 'instant' })
+      }
+      showSkip(false)
+      wake()
     }
     measure()
     void loadPhoneFilm().then(() => {
@@ -295,7 +366,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       window.removeEventListener(MOMO_BRAID_LAYOUT_EVENT, measure)
       window.removeEventListener('wheel', interrupt); window.removeEventListener('touchstart', interrupt)
       window.removeEventListener('keydown', interrupt); document.removeEventListener('visibilitychange', visibility)
-      root.removeAttribute('data-momo-stage'); replayRef.current = () => {}
+      root.removeAttribute('data-momo-stage'); replayRef.current = () => {}; skipRef.current = () => {}; showSkip(false)
       document.removeEventListener('pointerover', onOver); document.removeEventListener('pointerout', onOut)
       document.removeEventListener('focusin', onOver); document.removeEventListener('focusout', onOut)
       document.removeEventListener('click', onClick); setReplayable(false)
@@ -306,6 +377,27 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   return <>
     <div ref={stageRef} className="momo-stage" aria-hidden="true" />
     <canvas ref={canvasRef} className="momo-intro" aria-hidden="true" />
+    {t.skip.enabled && <button
+      ref={skipBtnRef}
+      type="button"
+      className="momo-skip"
+      inert
+      data-style={t.skip.style}
+      data-hover-feel={t.skip.hover}
+      data-click-feel={t.skip.click}
+      data-placement={t.skip.placement}
+      style={{ '--momo-skip-inset': `${t.skip.inset}px`, '--momo-skip-x': `${t.skip.x}px`, '--momo-skip-y': `${t.skip.y}px` } as CSSProperties}
+      onClick={() => skipRef.current()}
+    >
+      {t.skip.style === 'progress' && <svg className="momo-skip__ring" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r={7.4 - t.skip.ringThickness / 2} pathLength={1} strokeWidth={t.skip.ringThickness * t.skip.ringTrack} />
+        <circle className="momo-skip__ring-fill" cx="8" cy="8" r={7.4 - t.skip.ringThickness / 2} pathLength={1} strokeWidth={t.skip.ringThickness} />
+      </svg>}
+      <span>{t.skip.label}</span>
+      <svg className="momo-skip__arrow" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M3.5 3.5 8 8l-4.5 4.5M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>}
     <div className="momo-intro__decoders" aria-hidden="true">
       {MOMO_CLIPS.map(clip => <div key={clip}>
         <video ref={node => { momoVideos.current[clip] = node }} src={`/work/momo/momo-${clip}.mp4`} muted playsInline loop preload="auto" />
