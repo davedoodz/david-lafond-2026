@@ -108,6 +108,8 @@ type PortfolioMediaProps = {
   tiltX: number
   tiltY: number
   tiltZ: number
+  /** Central binding shadow: darkness, spread, page highlights, fold position (%). */
+  binding: { darkness: number; width: number; highlight: number; offset: number }
 }
 
 /** Leaves in the page block behind the printed spread; each steps back toward the cover. */
@@ -125,6 +127,7 @@ export function PortfolioMedia({
   tiltX,
   tiltY,
   tiltZ,
+  binding,
 }: PortfolioMediaProps) {
   const style = {
     '--pg-pf-float': floatiness,
@@ -133,6 +136,10 @@ export function PortfolioMedia({
     '--pg-pf-rx': `${tiltX}deg`,
     '--pg-pf-ry': `${tiltY}deg`,
     '--pg-pf-rz': `${tiltZ}deg`,
+    '--pg-pf-gutter-dark': binding.darkness,
+    '--pg-pf-gutter-width': binding.width,
+    '--pg-pf-gutter-light': binding.highlight,
+    '--pg-pf-gutter-x': `${50 + binding.offset}%`,
   } as CSSProperties
 
   return (

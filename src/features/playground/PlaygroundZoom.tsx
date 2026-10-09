@@ -8,8 +8,10 @@ import {
   type Transition,
   type Variants,
 } from 'motion/react'
+import { RotateCcw } from 'lucide-react'
 import type { PlaygroundItem } from '../../data/playground'
 import { cardRatioForViewport } from './constants'
+import { restartCardVideos } from './CardVideo'
 
 export type NavPreset = 'fade' | 'slide' | 'push' | 'scale' | 'blur' | 'flip' | 'none'
 
@@ -153,6 +155,10 @@ export function PlaygroundZoom({
     [onClose],
   )
 
+  const restart = useCallback(() => {
+    if (dialogRef.current) restartCardVideos(dialogRef.current)
+  }, [])
+
   const backdropStyle = {
     '--pg-dim-opacity': dimOpacity,
     '--pg-zoom-blur': `${blurPx}px`,
@@ -202,6 +208,11 @@ export function PlaygroundZoom({
               <p className="card-title">{title}</p>
             </motion.div>
           </AnimatePresence>
+          {item.video && isPresent && (
+            <button type="button" className="pg-zoom-nav pg-zoom-restart" onClick={restart} aria-label="Restart video">
+              <RotateCcw aria-hidden="true" strokeWidth={1.6} />
+            </button>
+          )}
         </motion.div>
         {hasSiblings && isPresent && (
           <>

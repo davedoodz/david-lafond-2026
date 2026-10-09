@@ -277,28 +277,38 @@
   background: transparent;
 }
 
-/* Gutter: pages dip into the spine (dark fold, soft highlight on each side) and curve off at the fore-edges. */
+/* Gutter: pages dip into the spine (dark fold, soft highlight on each side) and curve off at the fore-edges.
+   The fold is tuned by --pg-pf-gutter-dark / -width / -light / -x (Playground › Portfolio › Binding). */
 .pg-portfolio-spread::after {
+  --g: var(--pg-pf-gutter-x, 50%);
+  --gw: var(--pg-pf-gutter-width, 1);
+  --gd: var(--pg-pf-gutter-dark, 1);
+  --gl: var(--pg-pf-gutter-light, 1);
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.1) 0%, transparent 3%, transparent 97%, rgb(0 0 0 / 0.1) 100%),
     linear-gradient(
       90deg,
-      rgb(0 0 0 / 0.1) 0%,
-      transparent 3%,
-      transparent 41%,
-      rgb(0 0 0 / 0.05) 46%,
-      rgb(0 0 0 / 0.24) 49.4%,
-      rgb(0 0 0 / 0.32) 50%,
-      rgb(0 0 0 / 0.2) 50.6%,
-      rgb(0 0 0 / 0.04) 54%,
-      transparent 59%,
-      transparent 97%,
-      rgb(0 0 0 / 0.1) 100%
+      transparent calc(var(--g) - 9% * var(--gw)),
+      rgb(0 0 0 / calc(0.05 * var(--gd))) calc(var(--g) - 4% * var(--gw)),
+      rgb(0 0 0 / calc(0.24 * var(--gd))) calc(var(--g) - 0.6% * var(--gw)),
+      rgb(0 0 0 / calc(0.32 * var(--gd))) var(--g),
+      rgb(0 0 0 / calc(0.2 * var(--gd))) calc(var(--g) + 0.6% * var(--gw)),
+      rgb(0 0 0 / calc(0.04 * var(--gd))) calc(var(--g) + 4% * var(--gw)),
+      transparent calc(var(--g) + 9% * var(--gw))
     ),
-    linear-gradient(90deg, transparent 44%, rgb(255 255 255 / 0.22) 47.5%, transparent 49%, transparent 51%, rgb(255 255 255 / 0.16) 52.5%, transparent 56%);
+    linear-gradient(
+      90deg,
+      transparent calc(var(--g) - 6% * var(--gw)),
+      rgb(255 255 255 / calc(0.22 * var(--gl))) calc(var(--g) - 2.5% * var(--gw)),
+      transparent calc(var(--g) - 1% * var(--gw)),
+      transparent calc(var(--g) + 1% * var(--gw)),
+      rgb(255 255 255 / calc(0.16 * var(--gl))) calc(var(--g) + 2.5% * var(--gw)),
+      transparent calc(var(--g) + 6% * var(--gw))
+    );
 }
 
 /* Base pose plus a slow bob and sway; --pg-pf-float scales every offset (0 = still at the pose). */
@@ -485,6 +495,20 @@
   right: max(24px, calc(50% - min(80vw, 100vh) / 2 - 68px));
   top: 50%;
   transform: translateY(-50%);
+}
+
+.pg-zoom-restart {
+  top: 16px;
+  right: 16px;
+  z-index: 4;
+  background: rgb(38 36 34 / 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.pg-zoom-restart:hover,
+.pg-zoom-restart:focus-visible {
+  background: rgb(38 36 34 / 0.76);
 }
 
 

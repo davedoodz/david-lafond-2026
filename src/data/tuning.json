@@ -21,7 +21,7 @@
     "videoLoopSpeed": {
       "future fabric": 2,
       "architectural sketchbooks": 12,
-      "globalization research explorer": 5.5
+      "globalization research explorer": 1.5
     },
     "mediaScale": {
       "decode: a critical action": 1.53
@@ -29,7 +29,7 @@
     "room": {
       "video": "light"
     },
-    "order": "p06,p01,p09,p10,p03,p05,p02,p04,p07,p08,p11,p12,p13,p14,p15,p16",
+    "order": "p01,p11,p09,p10,p03,p05,p02,p04,p06,p07,p08,p12,p13,p14,p15,p16",
     "journal": {
       "desktopZoom": 2.39,
       "desktopX": 1,
@@ -39,6 +39,14 @@
     },
     "criticalAction": {
       "bookY": 2
+    },
+    "portfolio": {
+      "pageSpeed": 1.75,
+      "floatiness": 1.9,
+      "shadow": 0.75,
+      "scale": 1.07,
+      "tiltX": 2,
+      "tiltY": -2
     },
     "grid": {
       "count": 12,
@@ -698,6 +706,10 @@
       "width": 280,
       "energy": 0.28,
       "topGap": 33
+    },
+    "skip": {
+      "style": "progress",
+      "placement": "bottom-right"
     }
   },
   "Filo case study": {

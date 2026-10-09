@@ -126,6 +126,17 @@ const PLAYGROUND_CONFIG = {
     tiltX: [22, -60, 60, 0.5] as [number, number, number, number],
     tiltY: [-18, -60, 60, 0.5] as [number, number, number, number],
     tiltZ: [-4, -45, 45, 0.5] as [number, number, number, number],
+    /** Central binding (gutter) shadow where the pages dip into the spine. */
+    binding: {
+      /** Darkness of the fold; 0 removes it. */
+      darkness: [1, 0, 3, 0.05] as [number, number, number, number],
+      /** Spread of the shadow either side of the spine. */
+      width: [1, 0.2, 4, 0.05] as [number, number, number, number],
+      /** Soft highlight on each page beside the fold. */
+      highlight: [1, 0, 3, 0.05] as [number, number, number, number],
+      /** Fold position: % of the spread from centre (− left, + right). */
+      offset: [0, -10, 10, 0.1] as [number, number, number, number],
+    },
   },
   grid: {
     /** How many cards show, in data order (first N). */
@@ -462,6 +473,7 @@ export function Playground({ className }: { className?: string }) {
               tiltX={values.portfolio.tiltX}
               tiltY={values.portfolio.tiltY}
               tiltZ={values.portfolio.tiltZ}
+              binding={values.portfolio.binding}
             />
           ) : item.presentation === 'journal' && item.video ? (
             <JournalMedia
