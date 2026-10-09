@@ -200,16 +200,25 @@ html[data-momo-stage] .case .nav {
   pointer-events: none;
   opacity: 0;
   translate: -50% -6px;
-  transition: opacity 220ms ease, translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 220ms ease,
+    translate 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    scale 320ms cubic-bezier(0.34, 1.6, 0.5, 1);
 }
 .case__braid-hint svg {
   width: 13px;
   height: 13px;
 }
-.case__braid-slot[data-hover]:not(:disabled) .case__braid-hint {
+/* Shown on hover, and during the idle hint (replayHint › pill picks the entrance; "none" = band only). */
+.case__braid-slot[data-hover]:not(:disabled) .case__braid-hint,
+.case__braid-slot[data-hint]:not(:disabled):not([data-hint-pill='none']) .case__braid-hint {
   opacity: 1;
   translate: -50% 4px;
+  scale: 1;
 }
+.case__braid-slot[data-hint-pill='rise'] .case__braid-hint { translate: -50% 14px; }
+.case__braid-slot[data-hint-pill='fade'] .case__braid-hint { translate: -50% 4px; }
+.case__braid-slot[data-hint-pill='pop'] .case__braid-hint { translate: -50% 4px; scale: 0.8; }
 @media (prefers-reduced-motion: reduce) {
   .case__braid-hint {
     transition: none;

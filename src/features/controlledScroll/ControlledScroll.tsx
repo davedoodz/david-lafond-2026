@@ -163,7 +163,8 @@ export function ControlledScroll() {
       if (origin === null) origin = window.scrollY
       target += dy
       const vh = window.innerHeight
-      target = Math.max(0, origin - upDistance * vh, Math.min(max(), origin + downDistance * vh, target))
+      // A page can raise the top of the scroll range (Momo locks out its played intro stage).
+      target = Math.max(Number(root.dataset.scrollMin) || 0, origin - upDistance * vh, Math.min(max(), origin + downDistance * vh, target))
       holdSnap()
       clearTimeout(gestureEnd)
       gestureEnd = window.setTimeout(() => {

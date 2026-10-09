@@ -97,6 +97,28 @@ const CONFIG = {
       default: 'handoff',
     },
   },
+  /** On the hero, the band periodically hints that it replays the intro: the band animates and the
+   * "Replay intro" pill shows for showFor seconds, then both rest for hideFor seconds, looping. */
+  replayHint: {
+    enabled: true,
+    /** Seconds on the hero before the first hint. */
+    firstDelay: [5, 0, 30, 0.5] as Tuple,
+    /** Seconds each hint lasts. */
+    showFor: [2.5, 0.5, 15, 0.1] as Tuple,
+    /** Seconds of rest between hints (also the wait after the visitor hovers the band). */
+    hideFor: [5, 0.5, 30, 0.5] as Tuple,
+    braid: {
+      type: 'select' as const,
+      options: option(['swell', 'Swell (grow + brighten)'], ['pulse', 'Pulse twice'], ['breathe', 'Slow breathe'], ['shimmer', 'Shimmer (energy only)'], ['bob', 'Bob up and down'], ['none', 'None']),
+      default: 'pulse',
+    },
+    intensity: [1, 0, 2, 0.05] as Tuple,
+    pill: {
+      type: 'select' as const,
+      options: option(['drop', 'Drop in'], ['rise', 'Rise in'], ['fade', 'Fade'], ['pop', 'Pop'], ['none', 'No pill (band only)']),
+      default: 'drop',
+    },
+  },
   _collapsed: false,
 }
 
@@ -144,14 +166,44 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const filmCanvas = document.createElement('canvas'), filmCtx = filmCanvas.getContext('2d')!
     const root = document.documentElement
     let vw = 0, vh = 0, dpr = 1, filmDpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
-    let ready = false, disposed = false, playing = false, armed = true
+    let ready = false, disposed = false, playing = false
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
     let interrupted = false, enteredStage = false, handedOff = false, handoffCancelled = false, handoffSettled = false
     let sequenceIndex = 0, sequenceTime = 0
     let sequenceDurations = tRef.current.timingSeconds
+    // Once the film has handed off to the hero, the stage above is closed: the page can't scroll back
+    // up into it (only clicking the band replays). The floor ratchets up to the landing position, so a
+    // visitor who scrolled past the stage short of the landing isn't yanked; they just can't go back up.
+    let locked = false, floor = 0
+    const setFloor = (y: number) => {
+      floor = y
+      if (locked) root.dataset.scrollMin = String(Math.round(floor))
+      else delete root.dataset.scrollMin
+    }
+    const lock = (on: boolean) => {
+      locked = on
+      setFloor(on ? Math.min(window.scrollY, landingY) : 0)
+    }
+    const holdFloor = () => {
+      if (!locked) return
+      const y = window.scrollY
+      if (y > floor && floor < landingY) setFloor(Math.min(y, landingY))
+      else if (y < floor - 1) window.scrollTo({ top: floor, behavior: 'instant' })
+    }
+    // Stop upward wheel/touch at the floor before anything scrolls (capture phase, so the site's
+    // ControlledScroll sees defaultPrevented and doesn't glide).
+    const blockWheelUp = (e: WheelEvent) => {
+      if (locked && e.deltaY < 0 && window.scrollY <= floor + 1) e.preventDefault()
+    }
+    let touchY = 0
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0 }
+    const blockTouchUp = (e: TouchEvent) => {
+      if (locked && (e.touches[0]?.clientY ?? 0) > touchY && window.scrollY <= floor + 1) e.preventDefault()
+    }
     const completeHandoff = () => {
       if (handedOff) return
       handedOff = true
+      lock(true)
       cbRef.current.onDone()
     }
     // Skip button: shown only while the film plays on the stage and before its own handoff starts.
@@ -179,12 +231,22 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     // Hover to replay: the band in the hero is a button. Hovering eases `swell` 0 → 1 (band grows and
     // speaks a little louder, the "Replay intro" pill drops under it); clicking replays the film.
     // Delegated listeners + a fresh lookup, so a re-rendered hero keeps working.
+    // Idle hint (replayHint dials): while replayable and not hovered, the band animates and the pill
+    // shows for showFor seconds every showFor + hideFor, starting firstDelay after landing.
     const SLOT = '.case__section--hero .case__braid-slot'
     const slotBtn = () => document.querySelector<HTMLButtonElement>(SLOT)
-    let hovering = false, swell = 0, replayable = false
-    const setHover = (on: boolean) => { hovering = on && replayable; slotBtn()?.toggleAttribute('data-hover', hovering); wake() }
+    let hovering = false, swell = 0, replayable = false, hintFrom = 0, hint = 0
+    const setHover = (on: boolean) => {
+      const next = on && replayable
+      // Leaving the band restarts the hint cycle with a rest, so the hint never fires right after a hover.
+      if (hovering && !next) hintFrom = performance.now() + (tRef.current.replayHint.hideFor - tRef.current.replayHint.firstDelay) * 1000
+      hovering = next
+      slotBtn()?.toggleAttribute('data-hover', hovering)
+      wake()
+    }
     const setReplayable = (on: boolean) => {
       replayable = on
+      if (on) hintFrom = performance.now()
       const b = slotBtn()
       if (b) { b.disabled = !on; b.toggleAttribute('aria-hidden', !on) }
       if (!on) setHover(false)
@@ -210,12 +272,14 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       // Desktop landing matches the hero composition: band level with the navigation,
       // centered phone continuing below the fold. Keep the narrow-screen band below the nav.
       const nav = document.querySelector('.case .nav')?.getBoundingClientRect()
+      const previousLanding = landingY
       landingY = vw > 800 && box && nav ? Math.max(stageH, slotY - (nav.top + nav.height / 2) - tRef.current.hero.topGap) : stageH
+      if (locked) setFloor(floor >= previousLanding ? landingY : Math.min(floor, landingY))
       wake()
     }
     const start = () => {
       if (!ready) return
-      playing = true; armed = false; time = 0; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
+      playing = true; time = 0; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
       sequenceIndex = 0; sequenceTime = 0
       for (const video of videos) video.currentTime = 0
       sequenceDurations = { ...tRef.current.timingSeconds }
@@ -233,7 +297,8 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       raf = 0
       if (disposed) return
       const s = tRef.current
-      const dt = last && !document.hidden ? Math.min(0.1, (now - last) / 1000) * s.speed : 0
+      const realDt = last && !document.hidden ? Math.min(0.1, (now - last) / 1000) : 0
+      const dt = realDt * s.speed
       last = now; rt += dt
       let p = progress()
       if (playing && p > .03) enteredStage = true
@@ -244,8 +309,6 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         setReplayable(true)
         completeHandoff()
       }
-      if (!playing && p < .03) armed = true
-      if (ready && !playing && armed && p > s.startAt) start()
       if (playing) {
         sequenceTime += dt
         while (sequenceIndex < SEQUENCES.length && sequenceTime >= sequenceDurations[SEQUENCES[sequenceIndex].key]) {
@@ -295,10 +358,29 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       }
       const ay = slotY - window.scrollY
       swell += ((hovering ? 1 : 0) - swell) * (1 - Math.exp(-dt / s.speed * 10))
+      const h = s.replayHint
+      const hintAt = (now - hintFrom) / 1000 - h.firstDelay // seconds into the hint loop
+      const hintPhase = hintAt >= 0 ? hintAt % (h.showFor + h.hideFor) : 0
+      const hinting = h.enabled && replayable && !hovering && hintAt >= 0 && hintPhase < h.showFor
+      hint += ((hinting ? 1 : 0) - hint) * (1 - Math.exp(-realDt * 6))
+      const slot = slotBtn()
+      if (slot) {
+        if (slot.hasAttribute('data-hint') !== hinting) slot.toggleAttribute('data-hint', hinting)
+        if (slot.dataset.hintPill !== h.pill) slot.dataset.hintPill = h.pill
+      }
+      // Idle hint on the band itself: extra scale, energy and vertical offset, faded in/out by `hint`.
+      const a = hint * h.intensity
+      const wave = h.braid === 'pulse' ? Math.sin(Math.PI * 2 * clamp(hintPhase / h.showFor)) ** 2
+        : h.braid === 'breathe' ? 0.5 - 0.5 * Math.cos(Math.PI * 2 * hintPhase / 1.6)
+        : h.braid === 'bob' ? Math.sin(Math.PI * 2 * hintPhase / 1.2)
+        : 1
+      const hintScale = h.braid === 'swell' || h.braid === 'pulse' ? .14 * a * wave : h.braid === 'breathe' ? .08 * a * wave : 0
+      const hintEnv = h.braid === 'swell' || h.braid === 'pulse' ? .3 * a * wave : h.braid === 'breathe' ? .15 * a * wave : h.braid === 'shimmer' ? .6 * a : 0
+      const hintY = h.braid === 'bob' ? -6 * a * wave : 0
       if (ay > -200 && ay < vh + 200) {
-        const scale = Math.min(s.hero.width, vw * .72) / (2 * 320 * .87) * (1 + .14 * swell)
+        const scale = Math.min(s.hero.width, vw * .72) / (2 * 320 * .87) * (1 + .14 * swell + hintScale)
         setRT(rt)
-        drawBraid(ctx, [scale * dpr, (slotX - 480 * scale) * dpr, (ay - 245 * scale) * dpr], { env: s.hero.energy + .3 * swell, alpha: Math.max(ending, 1 - filmAlpha) })
+        drawBraid(ctx, [scale * dpr, (slotX - 480 * scale) * dpr, (ay + hintY - 245 * scale) * dpr], { env: s.hero.energy + .3 * swell + hintEnv, alpha: Math.max(ending, 1 - filmAlpha) })
       }
       root.toggleAttribute('data-momo-stage', p > .5)
       showSkip(playing && handoffY === null && time < PHONE_TIMELINE.calm && p > .5)
@@ -307,9 +389,10 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       else last = 0
     }
     function wake() { if (!raf && !disposed) raf = requestAnimationFrame(frame) }
-    // Replay from the hero: glide back up to the stage, then the film plays from its first frame.
+    // Replay (clicking the band is the only way back): reopen the stage, glide up, play from frame one.
     replayRef.current = () => {
       if (!ready) return
+      lock(false)
       start(); wake()
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -334,13 +417,13 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       if (disposed) return
       ready = true
       if (progress() > tRef.current.startAt) start()
-      else { setReplayable(true); cbRef.current.onDone() }
+      else { setReplayable(true); completeHandoff() }
       wake()
     }).catch((error) => {
       if (disposed) return
       console.error('Momo intro assets could not load', error)
-      cbRef.current.onDone()
       window.scrollTo({ top: stageH, behavior: 'instant' })
+      completeHandoff()
     })
     const visibility = () => { last = 0; if (document.hidden) syncMomo(false); wake() }
     document.addEventListener('pointerover', onOver)
@@ -349,6 +432,10 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     document.addEventListener('focusout', onOut)
     document.addEventListener('click', onClick)
     window.addEventListener('scroll', wake, { passive: true })
+    window.addEventListener('scroll', holdFloor, { passive: true })
+    window.addEventListener('wheel', blockWheelUp, { passive: false, capture: true })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', blockTouchUp, { passive: false })
     window.addEventListener('resize', measure)
     window.addEventListener(MOMO_BRAID_LAYOUT_EVENT, measure)
     window.addEventListener('wheel', interrupt, { passive: true })
@@ -363,6 +450,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       disposed = true; cancelAnimationFrame(raf); ro.disconnect()
       syncMomo(false); stopDecoders.forEach(stop => stop())
       window.removeEventListener('scroll', wake); window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', holdFloor); window.removeEventListener('wheel', blockWheelUp, { capture: true })
+      window.removeEventListener('touchstart', onTouchStart); window.removeEventListener('touchmove', blockTouchUp)
+      lock(false); slotBtn()?.removeAttribute('data-hint')
       window.removeEventListener(MOMO_BRAID_LAYOUT_EVENT, measure)
       window.removeEventListener('wheel', interrupt); window.removeEventListener('touchstart', interrupt)
       window.removeEventListener('keydown', interrupt); document.removeEventListener('visibilitychange', visibility)
