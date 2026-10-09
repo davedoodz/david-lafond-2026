@@ -71,7 +71,7 @@ export function CardVideo({ src, poster, playbackRate, shouldPlay, className }: 
       muted
       loop
       playsInline
-      preload="metadata"
+      preload="none"
       aria-hidden="true"
       tabIndex={-1}
     />
