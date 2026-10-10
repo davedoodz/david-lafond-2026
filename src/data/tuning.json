@@ -530,6 +530,11 @@
       "peakIcon": "octagon-alert",
       "opportunityArt": "converge",
       "reveal": "cascade",
+      "speed": {
+        "problem": 1.5,
+        "opportunity": 1.5,
+        "solution": 1.5
+      },
       "spacing": {
         "top": 233,
         "bottom": 210,
@@ -715,6 +720,13 @@
       "click": "squish",
       "placement": "bottom-right",
       "ringThickness": 3.4
+    },
+    "replayHint": {
+      "firstDelay": 3,
+      "showFor": 5,
+      "hideFor": 3,
+      "intensity": 1.5,
+      "pillPosition": "center"
     }
   },
   "Filo case study": {
@@ -771,7 +783,7 @@
   },
   "Momo system sequence": {
     "sequenceSpeed": 3,
-    "motionSpeed": 1.25,
+    "motionSpeed": 1.5,
     "card": {
       "radius": 35,
       "fill": "#f5f5f5",
