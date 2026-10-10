@@ -113,6 +113,8 @@ const PLAYGROUND_CONFIG = {
     /** Book position as percentage points from the card centre. */
     bookX: [0, -100, 100, 1] as [number, number, number, number],
     bookY: [0, -100, 100, 1] as [number, number, number, number],
+    /** How fast the background gradient flows; 0 holds it still. */
+    speed: [0.77, 0, 4, 0.01] as [number, number, number, number],
   },
   portfolio: {
     /** Video playback rate: how fast the spreads turn. */
@@ -460,6 +462,7 @@ export function Playground({ className }: { className?: string }) {
               bookScale={mediaScale}
               bookX={values.criticalAction.bookX}
               bookY={values.criticalAction.bookY}
+              speed={values.criticalAction.speed}
             />
           ) : item.presentation === 'portfolio' && item.video ? (
             <PortfolioMedia

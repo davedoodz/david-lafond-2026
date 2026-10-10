@@ -184,9 +184,11 @@ type CriticalActionMediaProps = {
   bookScale: number
   bookX: number
   bookY: number
+  /** Gradient flow speed (0 holds it still). */
+  speed: number
 }
 
-export function CriticalActionMedia({ shouldPlay, bookScale, bookX, bookY }: CriticalActionMediaProps) {
+export function CriticalActionMedia({ shouldPlay, bookScale, bookX, bookY, speed }: CriticalActionMediaProps) {
   const shaderRef = useRef<HTMLDivElement>(null)
   const mountRef = useRef<ShaderMount | null>(null)
 
@@ -199,7 +201,7 @@ export function CriticalActionMedia({ shouldPlay, bookScale, bookX, bookY }: Cri
       meshGradientFragmentShader,
       CRITICAL_ACTION_UNIFORMS as never,
       undefined,
-      reducedMotion || !shouldPlay ? 0 : 0.77,
+      reducedMotion || !shouldPlay ? 0 : speed,
       0,
       1,
     )
@@ -212,8 +214,8 @@ export function CriticalActionMedia({ shouldPlay, bookScale, bookX, bookY }: Cri
 
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    mountRef.current?.setSpeed(reducedMotion || !shouldPlay ? 0 : 0.77)
-  }, [shouldPlay])
+    mountRef.current?.setSpeed(reducedMotion || !shouldPlay ? 0 : speed)
+  }, [shouldPlay, speed])
 
   const style = {
     '--pg-critical-book-scale': bookScale,
