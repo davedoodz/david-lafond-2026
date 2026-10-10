@@ -529,9 +529,9 @@
       "opportunityArt": "converge",
       "reveal": "cascade",
       "speed": {
-        "problem": 1.5,
-        "opportunity": 1.5,
-        "solution": 1.5
+        "problem": 1.75,
+        "opportunity": 1.75,
+        "solution": 1.75
       },
       "spacing": {
         "top": 233,

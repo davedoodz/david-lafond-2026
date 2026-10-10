@@ -54,7 +54,7 @@ const toDataUrl = (url) => fetch(url).then((r) => {
 /**
  * Mounts the diagram into `root`. Embed mode shows the caption and step pills; sequence mode hides
  * that chrome and plays the same walkthrough once `start()` is called by the host.
- * Returns { start, pause, setTitleGap, setStepHolds, setTipAnimation, destroy }.
+ * Returns { start, pause, rewind, setTitleGap, setStepHolds, setTipAnimation, destroy }.
  */
 export async function mountMomoSystem(root, { mode = 'embed', narrow = false, sequenceSpeed: requestedSequenceSpeed = 1, motionSpeed: requestedMotionSpeed = 1, titleGap, stepHolds: requestedStepHolds, tipAnimation: requestedTipAnimation = 'fade', labelScale: requestedLabelScale = 1 } = {}) {
   const studio = mode === 'studio'
@@ -891,6 +891,8 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>')
     // The embed waits for start() (its host calls it once the figure is in view).
     let step = 0, playing = studio && !reduceMotion, started = 0, flows = [], labels = [], feel = FEELS.breathe
+    // rewind() holds step 1 at its first instant (clock at -1, reveals paused) until start().
+    let rewound = false, held = []
     const timing = {}
     const el = (tag, attrs) => {
       const n = document.createElementNS(SVGNS, tag)
@@ -1055,7 +1057,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     }
 
     function frame(now) {
-      const t = now - started
+      const t = rewound ? -1 : now - started
       for (const f of flows) {
         // Each flow runs on its own clock, starting when its arrow starts drawing.
         const tf = t - f.delay
@@ -1108,7 +1110,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       // A step never ends mid-spotlight: the intro round, or one full round for labels already shown.
       const spotEnd = Math.max(0, ...labels.map((l) => l.cycleFrom))
       const dur = Math.max(stepDuration(), spotEnd)
-      section.style.setProperty('--progress', String(Math.min(1, t / dur)))
+      section.style.setProperty('--progress', String(Math.max(0, Math.min(1, t / dur))))
       // The case study plays the walkthrough once and rests on the full loop; its host restarts it on re-entry.
       if (playing && t > dur) {
         if (sequence && step === STORY.length - 1) setPlaying(false)
@@ -1419,6 +1421,9 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     return {
       // The case study restarts the exact studio sequence whenever it re-enters the viewport.
       start() {
+        held.forEach((a) => a.cancel())
+        held = []
+        rewound = false
         if (reduceMotion) {
           setPlaying(false)
           show(STORY.length - 1)
@@ -1429,6 +1434,17 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       },
       pause() {
         setPlaying(false)
+      },
+      // Off-screen reset: step 1 held on its first frame, so a return shows the start, never the end.
+      // Only script animations are held; CSS ones keep following their stylesheet.
+      rewind() {
+        if (reduceMotion) return
+        setPlaying(false)
+        held.forEach((a) => a.cancel())
+        rewound = true
+        show(0)
+        held = section.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition))
+        held.forEach((a) => a.pause())
       },
       // Live title gap: titles and the arrow ends that clear them move together.
       setTitleGap(v) {
@@ -1488,6 +1504,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
   return {
     start: story.start,
     pause: story.pause,
+    rewind: story.rewind,
     setTitleGap: story.setTitleGap,
     setStepHolds: story.setStepHolds,
     setTipAnimation: story.setTipAnimation,

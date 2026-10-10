@@ -9,6 +9,8 @@ export type MomoSystemHandle = {
   start(): void
   /** Pauses automatic step changes while the figure is off-screen. */
   pause(): void
+  /** Stops and holds step 1 on its first frame (nothing drawn yet), ready for the next start(). */
+  rewind(): void
   /** Embed/sequence only: px between each blue node icon and its title; arrows that clear titles follow. */
   setTitleGap(px: number): void
   /** Embed/sequence only: hold time in ms for each step (index = step); overrides the baked step time. */

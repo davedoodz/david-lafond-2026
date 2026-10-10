@@ -7,7 +7,7 @@ import { cardSurface, useSystemBase, type GlassDials } from '../features/momoSys
 /** Phone-only recordings (public/work/momo/flows): 530×1080, the phone cropped to its own frame. */
 const flow = (name: string) => ({ src: `/work/momo/flows/${name}.mp4`, poster: `/work/momo/flows/${name}.webp` })
 
-/** A phone recording that plays only while on screen (and not for reduced motion); each return starts it from the beginning. */
+/** A phone recording that plays only while on screen (and not for reduced motion). It rewinds once fully off screen, so each return starts from the beginning without a visible jump. */
 export function PhoneVideo({ name, className = '' }: { name: string; className?: string }) {
   const ref = useRef<HTMLVideoElement>(null)
   useEffect(() => {
@@ -17,11 +17,13 @@ export function PhoneVideo({ name, className = '' }: { name: string; className?:
     if (video.closest('.case__flows')) return
     const observer = new IntersectionObserver(
       ([e]) => {
-        if (!e.isIntersecting) return video.pause()
-        video.currentTime = 0
-        void video.play().catch(() => {})
+        if (e.intersectionRatio >= 0.3) void video.play().catch(() => {})
+        else if (!e.isIntersecting) {
+          video.pause()
+          video.currentTime = 0
+        }
       },
-      { threshold: 0.3 },
+      { threshold: [0, 0.3] },
     )
     observer.observe(video)
     return () => observer.disconnect()
@@ -179,11 +181,9 @@ function StoryItem({ row, speed, children }: { row: string; speed: number; child
 }
 
 /**
- * Phones slide into a section once most of it is visible: from below when it is
- * reached scrolling down, from above when reached scrolling up. On the way out they
- * hold in place and fade. Every entry first snaps the cards (already invisible) to
- * the start position on the entry side, so a return always slides, never just fades,
- * even if a fast scroll skips the observer's 0% crossing.
+ * Phones slide into a section once most of it is visible. Once the section has fully left the
+ * screen, the cards snap (unseen) to the start position on the side it will come back from, so a
+ * return never shows them in place first and never fades them out while they are still in view.
  * Cards opt in with `.case__rise` and a `--i` stagger index.
  */
 function useRiseOnView() {
@@ -195,38 +195,23 @@ function useRiseOnView() {
       el.dataset.seen = ''
       return
     }
-    // Latest scroll direction; the observer reads it when the section enters.
-    let lastY = window.scrollY
-    let scrollingUp = false
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y !== lastY) scrollingUp = y < lastY
-      lastY = y
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.intersectionRatio >= 0.6) {
-          if ('seen' in el.dataset) return
-          // Scrolling down means the section arrived from below; up means from above.
-          el.dataset.from = scrollingUp ? 'above' : 'below'
+          el.dataset.seen = ''
+        } else if (!entry.isIntersecting) {
+          // Above the viewport now means the return comes scrolling up, from above.
+          el.dataset.from = entry.boundingClientRect.top < 0 ? 'above' : 'below'
           el.dataset.resetting = ''
-          delete el.dataset.exiting
+          delete el.dataset.seen
           void el.offsetWidth
           delete el.dataset.resetting
-          el.dataset.seen = ''
-        } else if ('seen' in el.dataset) {
-          delete el.dataset.seen
-          el.dataset.exiting = ''
         }
       },
       { threshold: [0, 0.6] },
     )
     observer.observe(el)
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('scroll', onScroll)
-    }
+    return () => observer.disconnect()
   }, [])
   return ref
 }

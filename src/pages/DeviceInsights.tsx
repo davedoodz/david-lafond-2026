@@ -102,13 +102,6 @@ export function DeviceInsights({ copy, edit }: Props) {
     const el = ref.current
     if (!el) return
     const media = matchMedia('(prefers-reduced-motion: reduce)')
-    let lastY = window.scrollY
-    let scrollingUp = false
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y !== lastY) scrollingUp = y < lastY
-      lastY = y
-    }
     const update = () => {
       setReduced(media.matches)
       if (media.matches) {
@@ -116,35 +109,35 @@ export function DeviceInsights({ copy, edit }: Props) {
         el.dataset.seen = ''
       }
     }
+    // Hidden at the start position on the side the section will return from, with no transition.
+    const arm = (fromAbove: boolean) => {
+      el.dataset.from = fromAbove ? 'above' : 'below'
+      el.dataset.revealReady = ''
+      el.dataset.resetting = ''
+      delete el.dataset.seen
+      void el.offsetWidth
+      delete el.dataset.resetting
+    }
     update()
-    window.addEventListener('scroll', onScroll, { passive: true })
     media.addEventListener('change', update)
+    // Devices reveal once 15% of the section is in view. They are re-armed only once it is fully off
+    // screen, so a return never shows them settled first and never snaps them away on screen.
     const observer = new IntersectionObserver(([entry]) => {
       setVisible(entry.isIntersecting)
       if (media.matches) return
-      if (entry.isIntersecting) {
+      if (entry.intersectionRatio >= 0.15) {
         if ('seen' in el.dataset) return
-        el.dataset.from = scrollingUp ? 'above' : 'below'
-        el.dataset.revealReady = ''
-        el.dataset.resetting = ''
-        delete el.dataset.exiting
-        delete el.dataset.seen
-        void el.offsetWidth
-        delete el.dataset.resetting
+        // First reveal of a section that loaded partly on screen: arm on the spot, then play.
+        if (!('revealReady' in el.dataset)) arm(false)
         el.dataset.seen = ''
-      } else {
+      } else if (!entry.isIntersecting) {
         setStep(0)
-        // Fail open while off-screen. A missed observer callback can never strand the devices hidden.
-        delete el.dataset.seen
-        delete el.dataset.revealReady
-        delete el.dataset.resetting
-        delete el.dataset.exiting
+        arm(entry.boundingClientRect.top < 0)
       }
     }, { threshold: [0, 0.15] })
     observer.observe(el)
     return () => {
       observer.disconnect()
-      window.removeEventListener('scroll', onScroll)
       media.removeEventListener('change', update)
     }
   }, [])

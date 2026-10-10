@@ -113,22 +113,28 @@
   padding: var(--section-pad-top, 96px) var(--case-frame-edge) var(--section-pad-bottom, 64px);
 }
 
-/* Every case-study section enters with a light, floating motion. The page observer removes
-   data-reveal-live on exit and adds it again on re-entry, replaying the selected preset. */
-.case[data-section-reveal='float up'] .case__light > .case__section[data-reveal-live='true'] {
+/* Every case-study section enters with a light, floating motion. The page observer sets
+   data-reveal-live='true' to play it. Once the section is fully off screen it rebuilds the
+   animation as 'armed': paused on its first frame, so scrolling back never shows the settled
+   section before the replay starts. */
+.case[data-section-reveal='float up'] .case__light > .case__section[data-reveal-live] {
   animation: case-reveal-float-up 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.case[data-section-reveal='drift in'] .case__light > .case__section[data-reveal-live='true'] {
+.case[data-section-reveal='drift in'] .case__light > .case__section[data-reveal-live] {
   animation: case-reveal-drift-in 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live='true'] {
+.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live] {
   animation: case-reveal-float-left 950ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live='true']:nth-of-type(even) {
+.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live]:nth-of-type(even) {
   animation-name: case-reveal-float-right;
 }
-.case[data-section-reveal='soft bloom'] .case__light > .case__section[data-reveal-live='true'] {
+.case[data-section-reveal='soft bloom'] .case__light > .case__section[data-reveal-live] {
   animation: case-reveal-soft-bloom 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case__section[data-reveal-live='armed'],
+[data-reveal-live='armed'][data-text-reveal] .case__section-copy > * {
+  animation-play-state: paused !important;
 }
 @keyframes case-reveal-float-up {
   from { opacity: 0.5; translate: 0 28px; rotate: 0.3deg; }
@@ -1062,45 +1068,40 @@ html[data-case-snap] .case__moment {
   opacity: 1;
   transform: translate3d(0, 0, 0);
 }
-[data-from='above']:not([data-seen], [data-exiting]) .case__rise {
+[data-from='above']:not([data-seen]) .case__rise {
   transform: translate3d(0, -60svh, 0);
-}
-[data-exiting] .case__rise {
-  opacity: 0;
-  transform: translate3d(0, 0, 0);
-  transition: opacity 400ms cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 [data-resetting] .case__rise {
   transition: none;
 }
-/* Text-block entrances. Elements remain visible by default and animate only while the page's
-   section observer marks the section live, so a missed observer callback always fails open. */
+/* Text-block entrances. Elements stay visible until the page's section observer first marks the
+   section (see the section reveal above): played on entry, armed on frame one once fully off screen. */
 [data-text-reveal] .case__section-copy > * { --tr-i: 0; }
 [data-text-reveal] .case__section-copy > :nth-child(2) { --tr-i: 1; }
 [data-text-reveal] .case__section-copy > :nth-child(3) { --tr-i: 2; }
-[data-reveal-live='true'][data-text-reveal='cascade'] .case__section-copy > * {
+[data-reveal-live][data-text-reveal='cascade'] .case__section-copy > * {
   animation: text-reveal-rise var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
 }
-[data-reveal-live='true'][data-text-reveal='rise together'] .case__section-copy > * {
+[data-reveal-live][data-text-reveal='rise together'] .case__section-copy > * {
   animation: text-reveal-rise var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-[data-reveal-live='true'][data-text-reveal='from sides'] .case__section-copy > * {
+[data-reveal-live][data-text-reveal='from sides'] .case__section-copy > * {
   animation: text-reveal-left var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
 }
-[data-reveal-live='true'][data-text-reveal='from sides'] .case__section-copy > :nth-child(even) {
+[data-reveal-live][data-text-reveal='from sides'] .case__section-copy > :nth-child(even) {
   animation-name: text-reveal-right;
 }
-[data-reveal-live='true'][data-text-reveal='focus'] .case__section-copy > * {
+[data-reveal-live][data-text-reveal='focus'] .case__section-copy > * {
   animation: text-reveal-focus var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
 }
-[data-reveal-live='true'][data-text-reveal='wipe'] .case__section-copy > * {
+[data-reveal-live][data-text-reveal='wipe'] .case__section-copy > * {
   animation: text-reveal-wipe var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
 }
-[data-reveal-live='true'][data-text-reveal='fade'] .case__section-copy > * {
+[data-reveal-live][data-text-reveal='fade'] .case__section-copy > * {
   animation: text-reveal-fade var(--text-reveal-duration, 0.7s) ease-out both;
   animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
 }
@@ -1161,7 +1162,7 @@ html[data-case-snap] .case__moment {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal-live='true'][data-text-reveal] .case__section-copy > * {
+  [data-reveal-live][data-text-reveal] .case__section-copy > * {
     animation: none;
     opacity: 1;
     transform: none;

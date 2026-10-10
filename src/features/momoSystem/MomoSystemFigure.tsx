@@ -321,12 +321,18 @@ export function MomoSystemFigure() {
     }).then((mounted) => {
       if (cancelled) return mounted.destroy()
       handle = handleRef.current = mounted
-      // Entering restarts from step 01; the run then rests on the full loop until the next re-entry.
+      inViewRef.current = false
+      // Entering restarts from step 01; the run then rests on the full loop. Once fully off screen it is
+      // rewound to step 01's first frame, so scrolling back shows the start, never the old end state.
       observer = new IntersectionObserver(([entry]) => {
-        inViewRef.current = entry.isIntersecting
-        if (entry.isIntersecting) mounted.start()
-        else mounted.pause()
-      }, { threshold: 0.35 })
+        if (entry.intersectionRatio >= 0.35 && !inViewRef.current) {
+          inViewRef.current = true
+          mounted.start()
+        } else if (!entry.isIntersecting) {
+          inViewRef.current = false
+          mounted.rewind()
+        }
+      }, { threshold: [0, 0.35] })
       observer.observe(root)
     })
     return () => {

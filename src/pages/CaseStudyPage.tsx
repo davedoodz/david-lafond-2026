@@ -374,15 +374,26 @@ export function CaseStudyPage({ id }: Props) {
       },
       { rootMargin: '-50% 0px -50% 0px' },
     )
+    // Reveal: play once 18% of a section (or half the screen, for very tall ones) is in view. Once a
+    // section is fully off screen, rebuild its reveal paused on frame one ('armed'), so a return
+    // never shows the settled section before it replays. Reduced motion never arms (CSS shows it still).
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const revealObserver = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           const el = entry.target as HTMLElement
-          if (entry.isIntersecting) el.dataset.revealLive = 'true'
-          else delete el.dataset.revealLive
+          const state = el.dataset.revealLive
+          const shown = entry.intersectionRatio >= 0.18 || entry.intersectionRect.height >= (entry.rootBounds?.height ?? Infinity) / 2
+          // First report for a section already partly on screen: play now rather than hide it.
+          if (state !== 'true' && (shown || (state === undefined && entry.isIntersecting))) el.dataset.revealLive = 'true'
+          else if (!entry.isIntersecting && !reduce && state !== 'armed') {
+            delete el.dataset.revealLive
+            void el.offsetWidth
+            el.dataset.revealLive = 'armed'
+          }
         }
       },
-      { threshold: 0.18 },
+      { threshold: [0, 0.05, 0.1, 0.18] },
     )
     sections.forEach((s) => {
       observer.observe(s)

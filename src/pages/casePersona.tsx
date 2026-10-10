@@ -293,36 +293,32 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
   const wasLive = useRef(false)
   const [live, setLive] = useState(false)
   const [floatCycle, setFloatCycle] = useState(0)
-  // True when the section was last entered while scrolling up (it arrives bottom first).
+  // True when the section will be entered scrolling up (it arrives bottom first).
   const [fromAbove, setFromAbove] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    let lastY = window.scrollY
-    let scrollingUp = false
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y !== lastY) scrollingUp = y < lastY
-      lastY = y
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
+    // The intro entrance (text, pills, portrait) is played from script, so the CSS pause no longer
+    // holds it; pause it here. It is rewound to frame one only once the section is fully off screen,
+    // so a return shows the start of the entrance, never the settled section snapping back.
+    const entrance = () =>
+      el.getAnimations({ subtree: true }).filter((a) => a instanceof CSSAnimation && a.animationName.startsWith('pe-'))
     const observer = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !wasLive.current) {
+      if (e.intersectionRatio >= 0.1 && !wasLive.current) {
+        wasLive.current = true
+        entrance().forEach((a) => { a.currentTime = 0; a.play() })
+        setLive(true)
+      } else if (!e.isIntersecting) {
+        setFromAbove(e.boundingClientRect.top < 0)
+        if (!wasLive.current) return
+        wasLive.current = false
+        entrance().forEach((a) => { a.pause(); a.currentTime = 0 })
         setFloatCycle((cycle) => cycle + 1)
-        setFromAbove(scrollingUp)
-        // Replay the intro entrance (text, pills, portrait) from its first frame on every entry.
-        el.getAnimations({ subtree: true }).forEach((a) => {
-          if (a instanceof CSSAnimation && a.animationName.startsWith('pe-')) { a.cancel(); a.play() }
-        })
+        setLive(false)
       }
-      wasLive.current = e.isIntersecting
-      setLive(e.isIntersecting)
-    }, { threshold: 0.1 })
+    }, { threshold: [0, 0.1] })
     observer.observe(el)
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('scroll', onScroll)
-    }
+    return () => observer.disconnect()
   }, [])
   const tags = p.tags
     .split(',')
