@@ -928,5 +928,13 @@
       "depth": 420,
       "duration": 1.85
     }
+  },
+  "Momo welcome": {
+    "blackOverlay": 0.16,
+    "prototypeWidth": 305,
+    "momo": {
+      "size": 60,
+      "y": 4
+    }
   }
 }
