@@ -12,12 +12,12 @@
     "titles": {
       "card1": "Liquid Diamond",
       "card2": "Future Fabric",
-      "card4": "Reno Contractor Agent",
+      "card4": "Bob the Builder",
       "card5": "MIT Sketchbooks",
       "card7": "Decode no 1",
-      "card8": "Winter 2026 Room",
+      "card8": "The Dojo",
       "card9": "Harvard + MIT Portfolio",
-      "card10": "Blob Signature",
+      "card10": "3D Ink",
       "card11": "Global Interiors",
       "card12": "Testimonials"
     },
@@ -62,6 +62,10 @@
       "cardWidthDesktop": 267,
       "radius": 14,
       "topGapDesktop": 119
+    },
+    "restart": {
+      "opacity": 0.3,
+      "hoverOpacity": 0.6
     },
     "phone": {
       "frame": "recorded"
@@ -199,16 +203,27 @@
       "delay": 0
     },
     "topHover": {
-      "preset": "custom"
+      "preset": "custom",
+      "x": -11,
+      "rotate": -4.4
     },
     "backHover": {
       "second": {
-        "pullX": 136,
+        "pullX": 131,
         "pullY": -9
       },
       "third": {
-        "pullX": 136,
-        "pullY": -7
+        "pullX": 126,
+        "pullY": -7,
+        "rotate": 5.3
+      },
+      "fourth": {
+        "pullX": 122,
+        "rotate": 4.5
+      },
+      "back": {
+        "pullX": 112,
+        "rotate": 3.8
       }
     },
     "caption": {
