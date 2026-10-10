@@ -1,13 +1,32 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 
-/** Last playhead per source, so grid ↔ zoom remounts resume instead of restarting. */
-const playheads = new Map<string, number>()
+/**
+ * One <video> element per source for the life of the page. Grid and zoom hosts are different
+ * portal containers, so React remounts CardVideo when a card opens or closes; the element itself
+ * is moved between them instead of recreated, so the clip never reloads, seeks, or restarts.
+ */
+const videos = new Map<string, HTMLVideoElement>()
 
-/** Restart every playground video inside `root` and clear each saved playhead. */
+function videoFor(src: string) {
+  let video = videos.get(src)
+  if (!video) {
+    video = document.createElement('video')
+    video.src = src
+    video.muted = true
+    video.loop = true
+    video.playsInline = true
+    video.preload = 'none'
+    video.draggable = false
+    video.tabIndex = -1
+    video.setAttribute('aria-hidden', 'true')
+    videos.set(src, video)
+  }
+  return video
+}
+
+/** Restart every playground video inside `root`. */
 export function restartCardVideos(root: ParentNode) {
   for (const video of root.querySelectorAll<HTMLVideoElement>('video.pg-video')) {
-    const src = video.getAttribute('src')
-    if (src) playheads.set(src, 0)
     video.currentTime = 0
     void video.play().catch(() => {})
   }
@@ -23,57 +42,39 @@ type Props = {
 }
 
 /**
- * One playground video. Grid and zoom hosts are different portal containers, so React may
- * remount this element when a card opens or closes; the saved playhead resumes it.
+ * One playground video. Renders a box-less slot and moves the source's shared <video> into it.
+ * React unmounts the old slot before mounting the new one in the same commit, so the element is
+ * re-inserted synchronously and keeps playing from where it was.
  */
 export function CardVideo({ src, poster, playbackRate, shouldPlay, className }: Props) {
-  const ref = useRef<HTMLVideoElement>(null)
+  const slotRef = useRef<HTMLSpanElement>(null)
 
   useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const restore = () => {
-      const time = playheads.get(src)
-      if (time && Number.isFinite(el.duration)) el.currentTime = time % el.duration
-    }
-    const save = () => playheads.set(src, el.currentTime)
-    if (el.readyState >= HTMLMediaElement.HAVE_METADATA) restore()
-    else el.addEventListener('loadedmetadata', restore, { once: true })
-    el.addEventListener('timeupdate', save)
+    const slot = slotRef.current
+    if (!slot) return
+    const video = videoFor(src)
+    slot.append(video)
     return () => {
-      save()
-      el.removeEventListener('loadedmetadata', restore)
-      el.removeEventListener('timeupdate', save)
+      if (video.parentNode === slot) video.remove()
     }
   }, [src])
+
+  useLayoutEffect(() => {
+    const video = videoFor(src)
+    video.className = ['pg-video', className].filter(Boolean).join(' ')
+    if (poster) video.poster = poster
+    else video.removeAttribute('poster')
+  }, [src, className, poster])
+
   useEffect(() => {
-    if (ref.current) ref.current.playbackRate = playbackRate
+    videoFor(src).playbackRate = playbackRate
   }, [playbackRate, src])
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    if (shouldPlay) {
-      const playPromise = el.play()
-      if (playPromise) playPromise.catch(() => {})
-    } else {
-      el.pause()
-    }
+    const video = videoFor(src)
+    if (shouldPlay) void video.play().catch(() => {})
+    else video.pause()
   }, [shouldPlay, src])
 
-  return (
-    <video
-      ref={ref}
-      className={['pg-video', className].filter(Boolean).join(' ')}
-      src={src}
-      poster={poster}
-      draggable={false}
-      muted
-      loop
-      playsInline
-      preload="none"
-      aria-hidden="true"
-      tabIndex={-1}
-    />
-  )
+  return <span ref={slotRef} className="pg-video-slot" />
 }

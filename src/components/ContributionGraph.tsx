@@ -1,24 +1,26 @@
 /**
- * GitHub contribution graph for the last N months, from the build-time snapshot in
+ * GitHub contribution graph for the last N calendar months, from the build-time snapshot in
  * src/data/contributions.json (`npm run contributions`, also run before every build).
- * Columns are weeks (Sunday first), rows are weekdays, like GitHub's own calendar.
+ * Columns are weeks (Sunday first), rows are weekdays, like GitHub's own calendar. Every day from
+ * the 1st of the earliest month through the snapshot day has exactly one tile; future days have none.
  *
  * Each day is a 3D patch of grass (grassField.ts): the more contributions, the taller it
- * grows. It sways in the wind, parts around the pointer, and names the hovered day.
+ * grows. It sways in the wind and parts around the pointer.
  * Without WebGL2 it falls back to GitHub's flat tiles.
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
-import { SOCIAL } from '../data/contact'
 import contributions from '../data/contributions.json'
 import { useTuning } from '../tuning/useTuning'
+import { SOCIAL } from '../data/contact'
 import { buildBlades, buildTiles, fitView, GrassRenderer, project, toGround, type GrassDay, type Palette } from './grassField'
+import { GitHubIcon } from './icons'
 import './ContributionGraph.css'
 
 type Tuple = [number, number, number, number]
 
 const CONFIG = {
   show: true,
-  /** How far back the graph reaches, ending at the latest snapshot day. */
+  /** How many calendar months show, ending with the snapshot's month; each month is shown whole. */
   months: [4, 1, 12, 1] as Tuple,
   /** Graph width (px); it shrinks to fit narrower screens. */
   widthDesktop: [560, 200, 1200, 1] as Tuple,
@@ -46,6 +48,17 @@ const CONFIG = {
     /** How far (tiles) and how hard the grass parts around the pointer. */
     pointerRadius: [1.6, 0.3, 5, 0.1] as Tuple,
     pointerPush: [1, 0, 3, 0.05] as Tuple,
+    /** Short grass parts as if it were at least this share of the tallest grass, so every patch reacts. */
+    pointerReach: [0.6, 0, 1, 0.05] as Tuple,
+    _collapsed: false,
+  },
+  /** GitHub mark under the graph, centred on the page; links to the profile. Never moves the layout. */
+  logo: {
+    show: true,
+    size: [28, 12, 96, 1] as Tuple,
+    opacity: [0.5, 0, 1, 0.01] as Tuple,
+    /** Distance below the graph (px; negative moves it up). */
+    y: [24, -200, 400, 1] as Tuple,
     _collapsed: false,
   },
 }
@@ -57,8 +70,6 @@ const parse = (iso: string) => new Date(`${iso}T00:00:00Z`)
 const NO_HOVER: [number, number] = [-99, -99]
 const MOBILE = '(max-width: 640px)'
 
-type Hover = { day: Day; x: number; y: number }
-
 export function ContributionGraph() {
   const t = useTuning('Contributions', CONFIG)
   const { months } = t
@@ -66,14 +77,18 @@ export function ContributionGraph() {
 
   const { weeks, total } = useMemo(() => {
     const days = contributions.days as Day[]
+    const byDate = new Map(days.map((d) => [d.date, d]))
     const last = parse(days[days.length - 1].date)
-    const from = new Date(last)
-    from.setUTCMonth(from.getUTCMonth() - months)
-    from.setUTCDate(from.getUTCDate() + 1)
-    const start = from.toISOString().slice(0, 10)
-    const shown = days.filter((d) => d.date >= start)
+    // First of the earliest month through the snapshot day; days after it get no tile.
+    const from = new Date(Date.UTC(last.getUTCFullYear(), last.getUTCMonth() - months + 1, 1))
+    const to = last
+    const shown: Day[] = []
+    for (const d = from; d <= to; d.setUTCDate(d.getUTCDate() + 1)) {
+      const date = d.toISOString().slice(0, 10)
+      shown.push(byDate.get(date) ?? { date, level: 0, count: 0 })
+    }
 
-    // Days before the start in the first week stay as blank slots.
+    // Slots before the 1st in the first week and after the last day in the final week have no tile.
     const weeks: (Day | null)[][] = []
     for (const day of shown) {
       const dow = parse(day.date).getUTCDay()
@@ -83,20 +98,11 @@ export function ContributionGraph() {
     return { weeks, total: shown.reduce((n, d) => n + d.count, 0) }
   }, [months])
 
-  // Month label on the first week that starts in a new month.
-  const labels = useMemo(() => {
-    const labels = weeks.map((week, i) => {
-      const first = week.find(Boolean)
-      if (!first) return ''
-      const m = parse(first.date).getUTCMonth()
-      const prev = i > 0 ? weeks[i - 1].find(Boolean) : null
-      return !prev || parse(prev.date).getUTCMonth() !== m ? MONTHS[m] : ''
-    })
-    // A partial first month would crowd the next label (GitHub drops it too).
-    const second = labels.findIndex((label, i) => i > 0 && label)
-    if (second > 0 && second < 3) labels[0] = ''
-    return labels
-  }, [weeks])
+  // Month label on the week holding each month's 1st.
+  const labels = useMemo(
+    () => weeks.map((week) => week.find((d) => d?.date.endsWith('-01')) ?? null).map((first) => (first ? MONTHS[parse(first.date).getUTCMonth()] : '')),
+    [weeks],
+  )
 
   const view = useMemo(() => fitView(weeks.length, g.tilt, g.height), [weeks.length, g.tilt, g.height])
 
@@ -158,6 +164,7 @@ export function ContributionGraph() {
         wind: g.wind,
         radius: g.pointerRadius,
         push: g.pointerPush,
+        reach: g.pointerReach,
         pointer: [pointer.x, pointer.z, pointer.strength],
         hover,
       })
@@ -222,14 +229,11 @@ export function ContributionGraph() {
   }, [width, height])
 
   // Redraw in reduced motion when a dial changes the picture.
-  useEffect(() => drawRef.current(), [view, g.bladeWidth, g.wind, g.pointerRadius, g.pointerPush])
+  useEffect(() => drawRef.current(), [view, g.bladeWidth, g.wind, g.pointerRadius, g.pointerPush, g.pointerReach])
 
-  const [hover, setHover] = useState<Hover | null>(null)
   const onPointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect()
-    const px = event.clientX - rect.left
-    const py = event.clientY - rect.top
-    const ground = toGround(view, rect.width, rect.height, px, py)
+    const ground = toGround(view, rect.width, rect.height, event.clientX - rect.left, event.clientY - rect.top)
     const { pointer } = live.current
     if (!ground) return
     pointer.tx = ground.x
@@ -238,19 +242,12 @@ export function ContributionGraph() {
     pointer.target = 1
     const week = Math.round(ground.x)
     const row = Math.round(ground.z)
-    const day = weeks[week]?.[row] ?? null
-    live.current.hover = day ? [week, row] : NO_HOVER
-    if (!day) setHover(null)
-    else if (hover?.day !== day) {
-      const top = project(view, rect.width, rect.height, week, g.height * 0.8, row)
-      setHover({ day, x: top.x, y: top.y })
-    }
+    live.current.hover = weeks[week]?.[row] ? [week, row] : NO_HOVER
     drawRef.current()
   }
   const onPointerLeave = () => {
     live.current.pointer.target = 0
     live.current.hover = NO_HOVER
-    setHover(null)
     drawRef.current()
   }
 
@@ -265,16 +262,15 @@ export function ContributionGraph() {
     '--cg-y-d': `${t.yDesktop}px`,
     '--cg-x-m': `${t.xMobile}px`,
     '--cg-y-m': `${t.yMobile}px`,
+    '--cg-logo-size': `${t.logo.size}px`,
+    '--cg-logo-opacity': t.logo.opacity,
+    '--cg-logo-y': `${t.logo.y}px`,
   } as CSSProperties
 
   const span = months === 1 ? 'month' : `${months} months`
-  const describe = (d: Day) => `${d.count || 'No'} contribution${d.count === 1 ? '' : 's'} on ${parse(d.date).toLocaleString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}`
 
   return (
-    <section className="cg" data-palette={t.palette} style={style} aria-labelledby="cg-title">
-      <a id="cg-title" className="cg__title eyebrow" href={SOCIAL.github} target="_blank" rel="noopener">
-        {total} contributions in the last {span}
-      </a>
+    <section className="cg" data-palette={t.palette} style={style} aria-label="GitHub contributions">
       <div ref={stageRef} className="cg__graph" role="img" aria-label={`${total} GitHub contributions in the last ${span}`}>
         {flat ? (
           <>
@@ -286,7 +282,7 @@ export function ContributionGraph() {
             <div className="cg__weeks">
               {weeks.map((week, i) => (
                 <div key={i} className="cg__week">
-                  {week.map((day, d) => (day ? <span key={d} className="cg__day" data-level={day.level} title={describe(day)} /> : <span key={d} className="cg__day" data-empty />))}
+                  {week.map((day, d) => (day ? <span key={d} className="cg__day" data-level={day.level} /> : <span key={d} className="cg__day" data-empty />))}
                 </div>
               ))}
             </div>
@@ -304,15 +300,15 @@ export function ContributionGraph() {
             </div>
             <div className="cg__stage" style={{ width, height }}>
               <canvas ref={canvasRef} className="cg__grass" onPointerMove={onPointerMove} onPointerLeave={onPointerLeave} />
-              {hover && (
-                <span className="cg__tip" style={{ left: hover.x, top: hover.y }}>
-                  {describe(hover.day)}
-                </span>
-              )}
             </div>
           </>
         )}
       </div>
+      {t.logo.show && (
+        <a className="cg__logo" href={SOCIAL.github} target="_blank" rel="noreferrer" aria-label="GitHub profile">
+          <GitHubIcon />
+        </a>
+      )}
     </section>
   )
 }

@@ -108,18 +108,25 @@ export function PlaygroundZoom({
     return { width, height, x: (vw - width) / 2, y: (vh - height) / 2 }
   }, [vw, vh, widthVw, maxHeightVh])
 
-  const flip = useMemo(() => {
-    const originCx = originRect.left + originRect.width / 2
-    const originCy = originRect.top + originRect.height / 2
-    const targetCx = target.x + target.width / 2
-    const targetCy = target.y + target.height / 2
-    return {
-      x: originCx - targetCx,
-      y: originCy - targetCy,
-      scaleX: originRect.width / target.width,
-      scaleY: originRect.height / target.height,
-    }
-  }, [originRect, target])
+  const flipTo = useCallback(
+    (rect: DOMRect) => ({
+      x: rect.left + rect.width / 2 - (target.x + target.width / 2),
+      y: rect.top + rect.height / 2 - (target.y + target.height / 2),
+      scaleX: rect.width / target.width,
+      scaleY: rect.height / target.height,
+    }),
+    [target],
+  )
+  const flip = useMemo(() => flipTo(originRect), [flipTo, originRect])
+
+  // An exiting child keeps the props of its last render, so the landing rect measured at close time
+  // arrives through AnimatePresence's `custom` and is read here, when the exit starts.
+  const cardVariants = useMemo<Variants>(
+    () => ({
+      exit: (landing: DOMRect | undefined) => (reducedMotion ? { opacity: 0 } : flipTo(landing ?? originRect)),
+    }),
+    [flipTo, originRect, reducedMotion],
+  )
 
   // The card FLIPs with a scale transform, which would shrink its corners along with it.
   // Divide the radius by the live scale each frame so the corners stay radiusPx on screen
@@ -184,10 +191,12 @@ export function PlaygroundZoom({
           tabIndex={-1}
           className="pg-zoom-card"
           data-presentation={item.presentation}
+          data-closing={isPresent ? undefined : ''}
           style={{ width: target.width, height: target.height, left: target.x, top: target.y, scaleX, scaleY, borderRadius }}
           initial={reducedMotion ? false : flip}
           animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1 }}
-          exit={reducedMotion ? { opacity: 0 } : flip}
+          variants={cardVariants}
+          exit="exit"
           transition={transition}
           onClick={(e) => e.stopPropagation()}
         >

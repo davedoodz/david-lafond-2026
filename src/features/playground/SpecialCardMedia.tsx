@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import {
   ShaderFitOptions,
   ShaderMount,
@@ -7,6 +7,41 @@ import {
 } from '@paper-design/shaders'
 import { releaseShader } from '../../lib/releaseShader'
 import { CardVideo } from './CardVideo'
+
+export type PhoneFrame = 'momo' | 'bezel' | 'hairline' | 'glass' | 'floating' | 'none'
+
+/**
+ * Phone around the screen content. 'momo' is the Momo prototype frame (1312×2672); the others
+ * are CSS-only minimalist frames at the same size, so switching never moves the layout.
+ */
+function MomoPhone({ className, frame = 'momo', children }: { className: string; frame?: PhoneFrame; children: ReactNode }) {
+  return (
+    <div className={`pg-phone ${className}`} data-frame={frame} aria-hidden="true">
+      <div className="pg-phone__screen">{children}</div>
+      {frame === 'momo' && <img className="pg-phone__frame" src="/work/momo/hero/phone-frame.png" width={1312} height={2672} alt="" draggable={false} />}
+    </div>
+  )
+}
+
+type PhoneMediaProps = {
+  src: string
+  poster?: string
+  playbackRate: number
+  shouldPlay: boolean
+  mediaScale: number
+  frame: PhoneFrame
+}
+
+/** A phone screen recording shown in the Momo phone frame, centred on a light stage. */
+export function PhoneMedia({ src, poster, playbackRate, shouldPlay, mediaScale, frame }: PhoneMediaProps) {
+  return (
+    <div className="pg-phone-media" style={{ '--pg-media-scale': mediaScale } as CSSProperties}>
+      <MomoPhone className="pg-phone-media__phone" frame={frame}>
+        <CardVideo src={src} poster={poster} playbackRate={playbackRate} shouldPlay={shouldPlay} className="pg-video--cover" />
+      </MomoPhone>
+    </div>
+  )
+}
 
 type JournalMediaProps = {
   src: string
@@ -69,25 +104,15 @@ export function JournalMedia({
             className="pg-journal-desktop"
           />
         </div>
-        <div className="pg-journal-phone" aria-hidden="true">
-          <div className="pg-journal-phone__screen">
-            <img
-              className="pg-journal-phone__content"
-              src="/about/playground/davids-journal-phone.webp"
-              alt=""
-              draggable={false}
-            />
-            <span className="pg-journal-phone__island-mask" />
-          </div>
+        <MomoPhone className="pg-journal-phone">
           <img
-            className="pg-journal-phone__frame"
-            src="/work/momo/hero/phone-frame.png"
-            width={1312}
-            height={2672}
+            className="pg-journal-phone__content"
+            src="/about/playground/davids-journal-phone.webp"
             alt=""
             draggable={false}
           />
-        </div>
+          <span className="pg-journal-phone__island-mask" />
+        </MomoPhone>
       </div>
     </div>
   )
@@ -114,6 +139,18 @@ type PortfolioMediaProps = {
 
 /** Leaves in the page block behind the printed spread; each steps back toward the cover. */
 const PORTFOLIO_LEAVES = [5, 4, 3, 2, 1]
+
+// The book remounts when its card moves between the grid and the zoom view. Carry the float's
+// playhead across, so the book keeps its pose instead of jumping back to the start of the bob.
+// Its old host can leave the page before cleanup runs (which cancels the CSS animation), so the
+// phase is projected from the last reading and whether it was playing then.
+let portfolioFloat: { time: number; at: number; playing: boolean } | null = null
+
+function recordPortfolioFloat(float: Animation, playing: boolean) {
+  if (typeof float.currentTime === 'number') {
+    portfolioFloat = { time: float.currentTime, at: performance.now(), playing }
+  }
+}
 
 /** Portfolio spread printed in an open hardcover book, tilted in 3D and floating over a soft grey stage. */
 export function PortfolioMedia({
@@ -142,9 +179,21 @@ export function PortfolioMedia({
     '--pg-pf-gutter-x': `${50 + binding.offset}%`,
   } as CSSProperties
 
+  const bookRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const float = bookRef.current?.getAnimations()[0]
+    if (!float) return
+    if (portfolioFloat) {
+      const { time, at, playing } = portfolioFloat
+      float.currentTime = time + (playing ? performance.now() - at : 0)
+    }
+    recordPortfolioFloat(float, shouldPlay)
+    return () => recordPortfolioFloat(float, shouldPlay)
+  }, [shouldPlay])
+
   return (
     <div className="pg-portfolio-media" style={style} data-playing={shouldPlay || undefined}>
-      <div className="pg-portfolio-book">
+      <div ref={bookRef} className="pg-portfolio-book">
         <div className="pg-portfolio-cover" />
         {PORTFOLIO_LEAVES.map((leaf) => (
           <div key={leaf} className="pg-portfolio-leaf" style={{ '--leaf': leaf } as CSSProperties} />

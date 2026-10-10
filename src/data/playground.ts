@@ -12,7 +12,9 @@ export type PlaygroundItem = {
   video?: string
   poster?: string
   videoFit?: 'cover'
-  presentation?: 'journal' | 'critical-action' | 'portfolio'
+  presentation?: 'journal' | 'phone' | 'critical-action' | 'portfolio'
+  /** Phone cards: the original recording with its own baked-in device frame, offered by the frame toggle. */
+  recordedFrame?: { video: string; poster: string }
 }
 
 export const playgroundItems: PlaygroundItem[] = [
@@ -37,8 +39,10 @@ export const playgroundItems: PlaygroundItem[] = [
   {
     id: 'p04',
     title: 'Renovation contractor agent',
-    video: '/about/playground/contractor-agent.mp4',
-    poster: '/about/playground/contractor-agent.webp',
+    video: '/about/playground/contractor-agent-screen.mp4',
+    poster: '/about/playground/contractor-agent-screen.webp',
+    presentation: 'phone',
+    recordedFrame: { video: '/about/playground/contractor-agent.mp4', poster: '/about/playground/contractor-agent.webp' },
   },
   {
     id: 'p05',
@@ -84,7 +88,14 @@ export const playgroundItems: PlaygroundItem[] = [
     video: '/about/playground/globalization-research.mp4',
     poster: '/about/playground/globalization-research.webp',
   },
-  { id: 'p12', title: 'Prototype 12' },
+  {
+    id: 'p12',
+    title: 'Testimonials carousel',
+    video: '/about/playground/testimonials.mp4',
+    poster: '/about/playground/testimonials.webp',
+    // A dark square recording: fill the card so no light bars show beside it.
+    videoFit: 'cover',
+  },
   { id: 'p13', title: 'Prototype 13' },
   { id: 'p14', title: 'Prototype 14' },
   { id: 'p15', title: 'Prototype 15' },

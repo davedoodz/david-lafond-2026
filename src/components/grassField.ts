@@ -239,7 +239,7 @@ const BLADE_VS = `#version 300 es
 in vec4 aBlade;
 in vec4 aMeta;
 uniform mat4 uMVP;
-uniform float uTime, uHeight, uWidth, uWind, uRadius, uPush;
+uniform float uTime, uHeight, uWidth, uWind, uRadius, uPush, uReach;
 uniform vec3 uPointer;
 uniform vec2 uHover;
 uniform vec3 uRoot[5];
@@ -258,15 +258,18 @@ void main() {
              + sin(uTime * 2.9 - base.x * 1.1 + base.y * 0.7 + phase * 2.0) * 0.2;
   vec2 bend = vec2(0.55, 0.2) * uWind * (0.45 + gust) + vec2(cos(phase * 3.0), sin(phase * 3.0)) * 0.12;
 
-  // Pointer: blades within uRadius part away from it, strongest at the centre.
+  // Pointer: blades within uRadius part away from it, strongest at the centre. The part uses at
+  // least uReach of the tallest grass, so short patches visibly lie down instead of barely moving.
   vec2 away = base - uPointer.xy;
   float dist = length(away);
   float push = uPointer.z * uPush * (1.0 - smoothstep(0.0, uRadius, dist));
-  bend += (dist > 1e-4 ? away / dist : vec2(0.0, 1.0)) * push * 1.3;
+  vec2 part = (dist > 1e-4 ? away / dist : vec2(0.0, 1.0)) * push * 1.3;
 
   float k = t * t;
-  vec2 offset = bend * k * h;
-  float droop = 1.0 - 0.35 * min(dot(bend, bend), 1.0) * t;
+  vec2 lean = bend * h + part * max(h, uReach * uHeight);
+  vec2 offset = lean * k;
+  float tilt = length(lean) / max(h, 1e-3);
+  float droop = 1.0 - 0.35 * min(tilt * tilt, 1.6) * t;
   vec2 facing = vec2(cos(aBlade.w), sin(aBlade.w));
   float w = aMeta.z * uWidth * 0.07 * (1.0 - t * 0.92);
   vec3 pos = vec3(base.x + offset.x + facing.x * w * side, t * h * droop, base.y + offset.y + facing.y * w * side);
@@ -338,6 +341,8 @@ export type FrameParams = {
   wind: number
   radius: number
   push: number
+  /** Pointer parting acts as if every blade were at least this share of the tallest grass (0-1). */
+  reach: number
   /** Pointer on the ground (x, z) and its strength 0-1. */
   pointer: [number, number, number]
   /** Hovered tile (week, row), or far away for none. */
@@ -439,6 +444,7 @@ export class GrassRenderer {
     gl.uniform1f(u('uWind'), frame.wind)
     gl.uniform1f(u('uRadius'), frame.radius)
     gl.uniform1f(u('uPush'), frame.push)
+    gl.uniform1f(u('uReach'), frame.reach)
     gl.uniform3fv(u('uPointer'), frame.pointer)
     gl.uniform2fv(u('uHover'), frame.hover)
     gl.uniform3fv(u('uRoot'), root)
