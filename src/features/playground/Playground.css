@@ -55,6 +55,15 @@
   outline-color: #0d3937;
 }
 
+/* No white hairline at the card contour: the rounded clip is applied to each media layer on
+   its own, so any light fill under a video leaks through the video's anti-aliased edge.
+   Cards whose media covers them drop the grey placeholder (it stays on empty cards and on
+   the portfolio, where it is the visible stage). */
+.pg-card:has(.pg-video-frame, .pg-journal-media),
+.pg-zoom-card:has(.pg-video-frame, .pg-journal-media) {
+  background: transparent;
+}
+
 @media (max-width: 640px) {
   .pg-card {
     aspect-ratio: 142 / 129;
@@ -85,13 +94,15 @@
 
 .pg-video--cover {
   object-fit: cover;
+  background: transparent;
 }
 
 .pg-video-frame {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #fff;
+  /* White behind a scaled-down video, kept 1px clear of the edge so it can't fringe the contour. */
+  background: linear-gradient(#fff 0 0) center / calc(100% - 2px) calc(100% - 2px) no-repeat;
 }
 
 .pg-video-frame > .pg-video {
@@ -107,7 +118,7 @@
 }
 
 .pg-journal-media {
-  background: #fff;
+  background: linear-gradient(#fff 0 0) center / calc(100% - 2px) calc(100% - 2px) no-repeat;
   container-type: size;
 }
 
