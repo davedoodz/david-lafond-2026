@@ -219,6 +219,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
       inset[edge] = from[edge] * (1 - ease.fn(Math.min(1, Math.max(0, local))))
     }
     const overall = ease.fn(Math.min(1, elapsed / ease.duration))
+    momo?.follow(overall)
     // Each corner follows its own two edges: full card radius while they are far from the
     // screen, easing to square as they arrive, so the card turns full-bleed as it lands.
     const corner = (a: number, b: number) => {
@@ -371,19 +372,22 @@ function momoCanvas(root: ParentNode): HTMLCanvasElement | null {
 /**
  * Lifts the card's Momo above the expansion as a live mirror of the card's own clip, so
  * it keeps animating (no restart, no second clip) for `holdSeconds`, then flies into
- * the nav's Momo once the page is committed.
+ * the nav's Momo once the page is committed. It starts exactly where the card shows it
+ * and `follow(p)` carries it to the screen centre as the card grows (p = card progress).
  */
 function liftMomo(card: HTMLElement, holdSeconds: number) {
   const source = momoCanvas(card)
   if (!source || !source.width) return null
   const sourceRect = source.getBoundingClientRect()
+  const fromX = sourceRect.left + sourceRect.width / 2
+  const fromY = sourceRect.top + sourceRect.height / 2
   const mirror = document.createElement('canvas')
   mirror.className = 'project-open__momo'
   mirror.width = source.width
   mirror.height = source.height
   Object.assign(mirror.style, {
-    left: '50%',
-    top: '50%',
+    left: `${fromX}px`,
+    top: `${fromY}px`,
     width: `${sourceRect.width}px`,
     height: `${sourceRect.height}px`,
     transform: 'translate(-50%, -50%)',
@@ -403,6 +407,11 @@ function liftMomo(card: HTMLElement, holdSeconds: number) {
   const stop = () => cancelAnimationFrame(frame)
 
   return {
+    /** Places Momo `p` (0–1, eased) of the way from its card position to the screen centre. */
+    follow(p: number) {
+      mirror.style.left = `${(fromX + (document.documentElement.clientWidth / 2 - fromX) * p).toFixed(2)}px`
+      mirror.style.top = `${(fromY + (window.innerHeight / 2 - fromY) * p).toFixed(2)}px`
+    },
     /** Resolves once Momo has animated for `holdSeconds` since the click. A tap or key skips it. */
     hold(): Promise<void> {
       const left = holdSeconds * 1000 - (performance.now() - started)

@@ -55,6 +55,8 @@ export type Story = {
   motion: string
   reveal: string
   artWidth: number
+  /** Playback speed per row (1 = as designed). */
+  speed: Record<'problem' | 'opportunity' | 'solution', number>
   titleScale: number
   textWidth: number
   spacing: SectionSpacing
@@ -127,7 +129,7 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
     >
       <ol className="case__story-cols">
         {rows.map(([k, label, title, body, art], i) => (
-          <StoryItem key={k} row={k}>
+          <StoryItem key={k} row={k} speed={s.speed[k]}>
             {look.art !== 'none' && <div className="story-art">{art}</div>}
             <div className="case__story-text">
               <span className="case__story-step">{String(i + 1).padStart(2, '0')}</span>
@@ -145,24 +147,31 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
 /**
  * One story row, triggered on its own: its entrance and art sequence replay from the start
  * each time the row comes back into view, and its loops pause while it is off screen.
+ * The rewind happens once the row is fully off screen, so it scrolls back in already on its
+ * first frame (blank) instead of showing the finished art and then snapping back to replay.
+ * `speed` sets every animation's playbackRate, so durations, delays and loops scale together.
  * `data-live` is set directly (not React state) so the restart lands in the same frame.
  */
-function StoryItem({ row, children }: { row: string; children: ReactNode }) {
+function StoryItem({ row, speed, children }: { row: string; speed: number; children: ReactNode }) {
   const ref = useRef<HTMLLIElement>(null)
+  const speedRef = useRef(speed)
+  useEffect(() => {
+    speedRef.current = speed
+    ref.current?.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = speed })
+  }, [speed])
   useEffect(() => {
     const el = ref.current
     if (!el) return
     const observer = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !('live' in el.dataset)) {
+      if (e.intersectionRatio >= 0.35 && !('live' in el.dataset)) {
         el.dataset.live = ''
-        // Restart the row's CSS animations (entrance, draws, reveals) from their first frame.
-        el.getAnimations({ subtree: true }).forEach((a) => { a.cancel(); a.play() })
+        el.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = speedRef.current; a.currentTime = 0; a.play() })
       } else if (!e.isIntersecting && 'live' in el.dataset) {
-        // Animations restarted from script no longer follow the CSS pause, so pause them here too.
+        // Animations played from script no longer follow the CSS pause, so hold them on frame one here.
         delete el.dataset.live
-        el.getAnimations({ subtree: true }).forEach((a) => a.pause())
+        el.getAnimations({ subtree: true }).forEach((a) => { a.pause(); a.currentTime = 0 })
       }
-    }, { threshold: 0.35 })
+    }, { threshold: [0, 0.35] })
     observer.observe(el)
     return () => observer.disconnect()
   }, [])

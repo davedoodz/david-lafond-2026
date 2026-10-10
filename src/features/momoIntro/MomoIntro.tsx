@@ -118,6 +118,14 @@ const CONFIG = {
       options: option(['drop', 'Drop in'], ['rise', 'Rise in'], ['fade', 'Fade'], ['pop', 'Pop'], ['none', 'No pill (band only)']),
       default: 'drop',
     },
+    /** Where the "Replay intro" pill sits (hover and hint): under the band, or centred on it. */
+    pillPosition: {
+      type: 'select' as const,
+      options: option(['below', 'Below the band'], ['center', 'Centred on the band']),
+      default: 'below',
+    },
+    /** Pill nudge up (−) / down (+), px. */
+    pillY: [0, -80, 80, 1] as Tuple,
   },
   _collapsed: false,
 }
@@ -367,6 +375,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       if (slot) {
         if (slot.hasAttribute('data-hint') !== hinting) slot.toggleAttribute('data-hint', hinting)
         if (slot.dataset.hintPill !== h.pill) slot.dataset.hintPill = h.pill
+        if (slot.dataset.pillPosition !== h.pillPosition) slot.dataset.pillPosition = h.pillPosition
+        const pillY = `${h.pillY}px`
+        if (slot.style.getPropertyValue('--pill-y') !== pillY) slot.style.setProperty('--pill-y', pillY)
       }
       // Idle hint on the band itself: extra scale, energy and vertical offset, faded in/out by `hint`.
       const a = hint * h.intensity

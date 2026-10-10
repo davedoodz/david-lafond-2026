@@ -317,6 +317,13 @@ export const MOMO_CONFIG = {
       default: 'soft rise',
     },
     artWidth: [300, 160, 480, 5] as Tuple,
+    /** Playback speed of each row's art and text animation (1 = as designed, 2 = twice as fast). */
+    speed: {
+      problem: [1, 0.25, 3, 0.05] as Tuple,
+      opportunity: [1, 0.25, 3, 0.05] as Tuple,
+      solution: [1, 0.25, 3, 0.05] as Tuple,
+      _collapsed: false,
+    },
     spacing: sectionSpacingDials(96, 96, 44),
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
@@ -496,6 +503,13 @@ export const FILO_CONFIG = {
     opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
     artWidth: [300, 160, 480, 5] as Tuple,
+    /** Playback speed of each row's art and text animation (1 = as designed, 2 = twice as fast). */
+    speed: {
+      problem: [1, 0.25, 3, 0.05] as Tuple,
+      opportunity: [1, 0.25, 3, 0.05] as Tuple,
+      solution: [1, 0.25, 3, 0.05] as Tuple,
+      _collapsed: false,
+    },
     spacing: sectionSpacingDials(96, 96, 44),
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,

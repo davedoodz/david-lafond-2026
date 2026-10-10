@@ -161,6 +161,9 @@ html[data-momo-stage] .case .nav {
    swells it and drops a small pill under it, clicking glides back up and plays the film again. */
 .case__braid-slot {
   position: relative;
+  /* Its translate makes the slot a stacking context, so it must sit above the intro canvas (z 50)
+     itself for the pill to stay legible when centred on the band. The button is otherwise empty. */
+  z-index: 51;
   display: block;
   width: min(100%, var(--braid-w, 280px));
   height: var(--braid-slot-h, 48px);
@@ -182,7 +185,12 @@ html[data-momo-stage] .case .nav {
   outline: 1px solid var(--stone-400, #a6a09c);
   outline-offset: 6px;
 }
+/* Pill offsets: --pill-anchor puts it under (below) or on (center) the band, --pill-y is the dial
+   nudge, --pill-from is the hidden entrance offset and --pill-rest the shown offset. */
 .case__braid-hint {
+  --pill-anchor: 0%;
+  --pill-rest: 4px;
+  --pill-from: -6px;
   position: absolute;
   left: 50%;
   top: 100%;
@@ -199,7 +207,7 @@ html[data-momo-stage] .case .nav {
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  translate: -50% -6px;
+  translate: -50% calc(var(--pill-anchor) + var(--pill-y, 0px) + var(--pill-from));
   transition:
     opacity 220ms ease,
     translate 260ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -213,12 +221,13 @@ html[data-momo-stage] .case .nav {
 .case__braid-slot[data-hover]:not(:disabled) .case__braid-hint,
 .case__braid-slot[data-hint]:not(:disabled):not([data-hint-pill='none']) .case__braid-hint {
   opacity: 1;
-  translate: -50% 4px;
+  --pill-from: var(--pill-rest);
   scale: 1;
 }
-.case__braid-slot[data-hint-pill='rise'] .case__braid-hint { translate: -50% 14px; }
-.case__braid-slot[data-hint-pill='fade'] .case__braid-hint { translate: -50% 4px; }
-.case__braid-slot[data-hint-pill='pop'] .case__braid-hint { translate: -50% 4px; scale: 0.8; }
+.case__braid-slot[data-pill-position='center'] .case__braid-hint { top: 50%; --pill-anchor: -50%; --pill-rest: 0px; }
+.case__braid-slot[data-hint-pill='rise'] .case__braid-hint { --pill-from: calc(var(--pill-rest) + 10px); }
+.case__braid-slot[data-hint-pill='fade'] .case__braid-hint { --pill-from: var(--pill-rest); }
+.case__braid-slot[data-hint-pill='pop'] .case__braid-hint { --pill-from: var(--pill-rest); scale: 0.8; }
 @media (prefers-reduced-motion: reduce) {
   .case__braid-hint {
     transition: none;
