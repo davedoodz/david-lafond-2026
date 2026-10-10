@@ -29,7 +29,7 @@ export const revealDials = () => ({
    *   offscreen items stay; they re-arm unseen once the block is fully below the screen
    *   instant   items snap hidden at once
    */
-  exit: { type: 'select' as const, options: ['reverse', 'fade', 'offscreen', 'instant'], default: 'reverse' },
+  exit: { type: 'select' as const, options: ['reverse', 'fade', 'offscreen', 'instant'], default: 'offscreen' },
   exitSpeed: [1.8, 0.25, 4, 0.05] as Tuple,
   exitMs: [350, 80, 1500, 10] as Tuple,
   /** How far up the viewport (0 = bottom edge, 1 = top) the block's top must come before it starts. */
