@@ -35,6 +35,9 @@
     "room": {
       "video": "light"
     },
+    "testimonials": {
+      "video": "lightCanvas"
+    },
     "order": "p01,p11,p09,p10,p03,p05,p02,p07,p04,p06,p08,p12,p13,p14,p15,p16",
     "journal": {
       "desktopZoom": 2.39,
