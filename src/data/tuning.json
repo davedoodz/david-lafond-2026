@@ -432,8 +432,7 @@
     },
     "reveal": {
       "preset": "deal",
-      "repeat": "always",
-      "exit": "offscreen"
+      "repeat": "always"
     },
     "storyEntrance": {
       "heading": {
@@ -455,7 +454,8 @@
       "playSpaceBelow": -93
     },
     "grid": {
-      "sizeDesktop": 1.46
+      "sizeDesktop": 1.46,
+      "yDesktop": 42
     }
   },
   "Header intro": {
