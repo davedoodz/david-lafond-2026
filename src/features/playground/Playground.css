@@ -351,9 +351,12 @@
   }
 }
 
+/* The shade overhangs the card by 1px (the card's own clip trims it), so its anti-aliased rim
+   never leaves the white video under it unshaded as a bright hairline at the card edge on hover. */
 .pg-card .card-shade,
 .pg-zoom-card .card-shade {
   z-index: 2;
+  inset: -1px;
 }
 
 .pg-card .card-title,
