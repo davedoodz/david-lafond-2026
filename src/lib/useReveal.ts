@@ -158,11 +158,19 @@ export function useReveal(ref: RefObject<HTMLElement | null>, selector: string, 
       fades.forEach((f) => f.cancel())
       fades = []
     }
-    const reverse = () =>
+    const reverse = () => {
       animations.forEach((a) => {
         a.playbackRate = -v.exitSpeed
         a.play()
       })
+      // A finished reverse can drop its backwards fill for one paint in some browsers.
+      // Pause every card on the hidden keyframe so the exit has a stable endpoint.
+      void Promise.all(animations.map((a) => a.finished))
+        .then(() => {
+          if (!played) reset()
+        })
+        .catch(() => {})
+    }
     const fadeOut = () => {
       stopFades()
       fades = items.map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: v.exitMs, easing: 'ease-out', fill: 'forwards' }))
