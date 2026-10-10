@@ -432,7 +432,8 @@
     },
     "reveal": {
       "preset": "deal",
-      "repeat": "always"
+      "repeat": "always",
+      "exit": "offscreen"
     },
     "storyEntrance": {
       "heading": {
