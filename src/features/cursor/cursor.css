@@ -76,6 +76,104 @@
   background: var(--cur-color-light, #171717);
 }
 
+/*
+ * Text caret (Cursor → text). Over readable text the dot hands off to a vertical line
+ * sized to the text's font. Only transform/scale and opacity animate; the presets
+ * differ in how the dot leaves and where the line grows from. Ratios (--cur-tx/ty:
+ * dot → caret box, --cur-ix/iy: caret → dot box) come from CursorLayer.
+ */
+.cur-dot {
+  --cur-text-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --cur-line-from: scale(var(--cur-ix, 6), var(--cur-iy, 0.5));
+  --cur-dot-to: var(--cur-tx, 0.16) var(--cur-ty, 2);
+  --cur-dot-to-opacity: 0;
+}
+
+.cur-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--cur-line-w, 2px);
+  height: var(--cur-line-h, 24px);
+  margin: calc(var(--cur-line-h, 24px) / -2) 0 0 calc(var(--cur-line-w, 2px) / -2);
+  border-radius: 999px;
+  background: var(--cur-color-dark, #f5f5f5);
+  opacity: 0;
+  transform: var(--cur-line-from);
+  transition:
+    transform var(--cur-text-ms, 260ms) var(--cur-text-ease),
+    opacity calc(var(--cur-text-ms, 260ms) * 0.6) ease,
+    background-color 140ms ease;
+}
+
+.cur-dot.is-light::after {
+  background: var(--cur-color-light, #171717);
+}
+
+.cur-dot.is-instant::after {
+  transition: none;
+}
+
+.cur-dot.is-text::after {
+  opacity: var(--cur-text-opacity, 1);
+  transform: none;
+}
+
+.cur-dot.is-text::before {
+  scale: var(--cur-dot-to);
+  opacity: var(--cur-dot-to-opacity);
+}
+
+/* Entering and leaving text both run on the preset's clock, not the hover clock. */
+.cur-dot:is(.is-text, .is-text-exit)::before {
+  transition:
+    scale var(--cur-text-ms, 260ms) var(--cur-text-ease),
+    opacity calc(var(--cur-text-ms, 260ms) * 0.6) ease,
+    background-color 140ms ease;
+}
+
+/* morph (default): the dot stretches into the caret's box while the caret
+   resolves out of the dot's box, crossfading in the middle. */
+
+/* stretch: the dot shrinks away; the caret grows out from its centre. */
+.cur-dot[data-text-preset='stretch'] {
+  --cur-line-from: scale(1, 0);
+  --cur-dot-to: 0.2;
+}
+
+/* drop: the caret slides down into place from above, the dot sinks into it. */
+.cur-dot[data-text-preset='drop'] {
+  --cur-text-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --cur-line-from: translateY(-45%) scale(1, 0.15);
+  --cur-dot-to: 0.35;
+}
+
+/* fade: a plain crossfade, nothing moves. */
+.cur-dot[data-text-preset='fade'] {
+  --cur-text-ease: ease;
+  --cur-line-from: none;
+  --cur-dot-to: 1;
+}
+
+/* elastic: the morph on a spring, overshooting the caret height before settling. */
+.cur-dot[data-text-preset='elastic'] {
+  --cur-text-ease: linear(0, 0.34 8%, 0.77 18%, 1.05 29%, 1.12 37%, 1.08 46%, 1 58%, 0.98 72%, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cur-dot::after,
+  .cur-dot:is(.is-text, .is-text-exit)::before {
+    transition: opacity 140ms ease;
+  }
+  .cur-dot::after {
+    transform: none;
+  }
+  .cur-dot.is-text::before {
+    scale: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cur-dot::before {
     transition:

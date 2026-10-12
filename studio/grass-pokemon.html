@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contribution grass — creature encounter</title>
+<style>
+  body { min-height: 100svh; margin: 0; display: grid; place-items: center; }
+  main { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 48px 24px 96px; }
+
+  /* Same pieces as ContributionGraph.css. */
+  .cg__graph { position: relative; display: grid; gap: 6px; }
+  .cg__labels { position: relative; height: 10px; }
+  .cg__labels span { position: absolute; top: 0; white-space: nowrap; font-size: 10px; line-height: 1; color: var(--stone-600); }
+  .cg__stage { position: relative; }
+  .cg__grass { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  .cg__logo { display: block; width: 28px; height: 28px; margin-top: 24px; color: #fff; opacity: 0.5; }
+
+  /* "!" over the creature. The lab sets --gc-x/--gc-y/--gc-scale, data-style and .is-on. */
+  .gc-exclaim {
+    position: absolute; top: 0; left: 0; pointer-events: none; opacity: 0;
+    transform: translate(var(--gc-x, 0), var(--gc-y, 0)) translate(-50%, -100%) scale(var(--gc-scale, 1));
+    transform-origin: 50% 100%; transition: opacity 0.16s ease-out;
+  }
+  .gc-exclaim.is-on { opacity: 1; transition-duration: 0.05s; }
+  .gc-exclaim[data-style='none'] { display: none; }
+  .gc-exclaim__mark { position: relative; display: grid; place-items: center; transform-origin: 50% 100%; }
+
+  /* Speech bubble: white rounded tag with a tail, springy pop. */
+  [data-style='bubble'] .gc-exclaim__mark {
+    width: 22px; height: 26px; border-radius: 7px; background: #fff; color: #111;
+    font: 700 17px/1 var(--font); box-shadow: 0 4px 14px rgb(0 0 0 / 0.35);
+  }
+  [data-style='bubble'] .gc-exclaim__mark::after {
+    content: ''; position: absolute; bottom: -5px; left: 50%; translate: -50% 0;
+    border: 5px solid transparent; border-top-color: #fff; border-bottom: 0;
+  }
+  [data-style='bubble'].is-on .gc-exclaim__mark { animation: gc-pop 0.42s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+
+  /* Game box: hard pixel border, appears in two snapped steps like an overworld sprite. */
+  [data-style='classic'] .gc-exclaim__mark {
+    width: 20px; height: 24px; background: #fff; color: #1a1a1a; border: 3px solid #1a1a1a;
+    box-shadow: 3px 3px 0 rgb(0 0 0 / 0.45); font: 900 18px/1 ui-monospace, monospace;
+  }
+  [data-style='classic'].is-on .gc-exclaim__mark { animation: gc-hop 0.3s steps(3, end) both; }
+
+  /* Comic: big outlined yellow "!" that lands and shakes. */
+  [data-style='comic'] .gc-exclaim__mark {
+    font: italic 900 40px/0.9 var(--font); color: #ffd84a;
+    -webkit-text-stroke: 3px #1a1714; paint-order: stroke fill; text-shadow: 3px 3px 0 #e2432e;
+  }
+  [data-style='comic'].is-on .gc-exclaim__mark { animation: gc-slam 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both, gc-shake 0.36s 0.18s ease-out; }
+
+  /* Starburst: red spiky badge that spins in. */
+  [data-style='burst'] .gc-exclaim__mark {
+    width: 40px; height: 40px; background: #e2432e; color: #fff; font: 900 22px/1 var(--font);
+    clip-path: polygon(50% 0, 61% 26%, 90% 15%, 77% 43%, 100% 58%, 72% 66%, 79% 97%, 55% 79%, 32% 100%, 30% 70%, 0 72%, 20% 48%, 4% 22%, 34% 28%);
+    filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.4)); transform-origin: 50% 50%;
+  }
+  [data-style='burst'].is-on .gc-exclaim__mark { animation: gc-spin 0.45s cubic-bezier(0.25, 1.5, 0.5, 1) both; }
+
+  /* Emoji: the system ❗, dropping in with a squash. */
+  [data-style='emoji'] .gc-exclaim__mark { font-size: 30px; line-height: 1; filter: drop-shadow(0 3px 6px rgb(0 0 0 / 0.4)); }
+  [data-style='emoji'].is-on .gc-exclaim__mark { animation: gc-drop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+
+  @keyframes gc-pop { from { transform: scale(0.3); } to { transform: scale(1); } }
+  @keyframes gc-hop { 0% { transform: translateY(8px) scale(0.6); } 100% { transform: none; } }
+  @keyframes gc-slam { from { transform: scale(2.2) rotate(-14deg); opacity: 0; } to { transform: rotate(-6deg); opacity: 1; } }
+  @keyframes gc-shake { 0%, 100% { translate: 0; } 25% { translate: -3px 0; } 50% { translate: 3px 0; } 75% { translate: -2px 0; } }
+  @keyframes gc-spin { from { transform: scale(0) rotate(-120deg); } to { transform: scale(1) rotate(0); } }
+  @keyframes gc-drop { 0% { transform: translateY(-18px) scale(0.6); } 70% { transform: translateY(0) scale(1.15, 0.85); } 100% { transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) { .gc-exclaim.is-on .gc-exclaim__mark { animation: none; } }
+  .gc-hint { font: 12px/1.3 var(--font); color: var(--stone-600); }
+</style>
+</head>
+<body>
+<main>
+  <section class="cg__graph" aria-label="GitHub contributions">
+    <div class="cg__labels" aria-hidden="true"></div>
+    <div class="cg__stage">
+      <canvas class="cg__grass"></canvas>
+      <div class="gc-exclaim" data-style="bubble" aria-hidden="true"><span class="gc-exclaim__mark">!</span></div>
+    </div>
+  </section>
+  <svg class="cg__logo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.1 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
+  <p class="gc-hint">Hover the tallest patch to startle it.</p>
+</main>
+<div id="gc-dials"></div>
+<script type="module" src="/src/features/grassCreature/grassCreatureLab.ts"></script>
+</body>
+</html>

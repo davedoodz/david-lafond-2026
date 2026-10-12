@@ -71,9 +71,101 @@ export const DAVEBOT_ENTRIES: DavebotEntry[] = [
     route: 'about',
     keys: ['about', 'who is david', 'background', 'architect', 'researcher', 'bio', 'career path'],
     answer: [
+      { text: 'David is a ' },
+      { text: 'product designer with architecture, research, and technical-prototyping experience', emphasis: true },
+      { text: '. He is most credible on ambiguous products where the system, interaction model, and story still need to be defined.' },
+    ],
+  },
+  {
+    id: 'recruiter-fit',
+    title: 'Why interview David',
+    route: 'about',
+    keys: [
+      'why david', 'why hire david', 'why interview david', 'candidate', 'fit', 'strengths',
+      'what makes david different', 'what sets him apart', 'good designer',
+    ],
+    answer: [
+      { text: 'David is strongest when a product is still an ' },
+      { text: 'untidy pile of assumptions', emphasis: true },
+      { text: '. He uses research to find the real problem, prototypes the system in enough detail to test it, and explains the result without hiding the tradeoffs. Filo is the neatest proof: 11 interviews showed the original marketplace solved the wrong step, so he reframed the product around adoption risk.' },
+    ],
+  },
+  {
+    id: 'recruiter-experience',
+    title: 'Experience',
+    route: 'about',
+    keys: [
+      'experience', 'work history', 'career', 'previous roles', 'companies', 'professional',
+      'tekuma', 'senseable', 'media lab', 'pumba',
+    ],
+    answer: [
+      { text: 'David has worked across ' },
+      { text: 'smart-city design, MIT research teams, and early-stage products', emphasis: true },
+      { text: '. His public record includes Tekuma Urban Innovation, MIT Media Lab Fluid Interfaces, MIT Senseable City Lab, and Pumba Parking. The common thread is turning complex systems into decisions people can use—occasionally with fewer spreadsheets than the system originally requested.' },
+    ],
+  },
+  {
+    id: 'recruiter-education',
+    title: 'Education',
+    route: 'about',
+    keys: ['education', 'school', 'degree', 'mit', 'mcgill', 'architecture', 'product management', 'sloan'],
+    answer: [
+      { text: 'David holds a ' },
+      { text: 'Master of Architecture from MIT', emphasis: true },
+      { text: ', a Product Management certificate from MIT Sloan, and a BSc in Architecture from McGill. At McGill he was a founding member of the Computational Design Lab and received 8+ scholarship grants and awards.' },
+    ],
+  },
+  {
+    id: 'recruiter-impact',
+    title: 'Measured impact',
+    route: 'about',
+    keys: ['impact', 'metrics', 'results', 'outcomes', 'numbers', 'evidence', 'measurable'],
+    answer: [
+      { text: 'A few useful numbers: Momo’s 20-person field study saw weekly action plans rise from ' },
+      { text: '3.33 to 6.53', emphasis: true },
+      { text: '; Global Interiors turned 640K+ images across 80 cities into an interactive data story; and an internal Tekuma design tool cut presentation production time by 60%. Davebot keeps the receipts. Tiny ghost, surprisingly organized filing cabinet.' },
+    ],
+  },
+  {
+    id: 'recruiter-process',
+    title: 'Design process',
+    route: 'work/momo',
+    keys: [
+      'process', 'research process', 'design process', 'user research', 'interviews',
+      'testing', 'prototype', 'how does david work',
+    ],
+    answer: [
+      { text: 'David’s process is evidence-led rather than ceremony-led: ' },
+      { text: 'frame the risk, talk to the people carrying it, prototype the uncertain part, and change direction when the evidence disagrees', emphasis: true },
+      { text: '. Momo used a 15-day field study; Filo changed shape after 11 supply-chain interviews; Pumba used 12 city-planner interviews to define a B2G dashboard.' },
+    ],
+  },
+  {
+    id: 'recruiter-technical',
+    title: 'Technical prototyping',
+    route: 'about',
+    keys: [
+      'technical', 'code', 'coding', 'prototype', 'prototyping', 'react', 'swift',
+      'three js', 'webgl', 'ai tools', 'implementation',
+    ],
+    answer: [
       { text: 'David is an ' },
-      { text: 'architect and ex-MIT UX researcher now focused on product design', emphasis: true },
-      { text: '. His path ran from pre-med, to architecture, to product design — three ways of asking the same question about how people actually use the things built for them.' },
+      { text: 'implementation-aware product designer and high-fidelity prototyper', emphasis: true },
+      { text: '. His published toolkit includes React, React Native, Swift, HTML/CSS, Three.js, WebGL, Git, Codex, and Claude Code alongside Figma and Framer. The honest label is designer who can build convincing product behavior—not production software engineer unless David says otherwise.' },
+    ],
+  },
+  {
+    id: 'recruiter-communication',
+    title: 'Communication and leadership',
+    route: 'about',
+    keys: [
+      'communication', 'leadership', 'presenting', 'storytelling', 'facilitation',
+      'content', 'youtube', 'community', 'collaboration',
+    ],
+    answer: [
+      { text: 'David has led design delivery across international urban projects, facilitated weekly design sprints, and translated technical research into public-facing stories. His independent design work reached ' },
+      { text: '340K+ views and 4.4M impressions', emphasis: true },
+      { text: ' from 38 videos, and he grew an online design community to 800+ members. Useful evidence for a role where design has to earn alignment, not merely arrive looking polished.' },
     ],
   },
   {
@@ -82,9 +174,9 @@ export const DAVEBOT_ENTRIES: DavebotEntry[] = [
     route: 'mailto:davidkhanhlafond@gmail.com',
     keys: ['contact', 'email', 'hire', 'hiring', 'available', 'work together', 'freelance', 'job', 'can i hire you'],
     answer: [
-      { text: 'Yes — start with ' },
+      { text: 'For availability, role details, or a conversation, contact ' },
       { text: 'davidkhanhlafond@gmail.com', emphasis: true },
-      { text: '. You can also find him on LinkedIn, X, and GitHub.' },
+      { text: '. Davebot is trusted with the portfolio, not the calendar. You can also find David on LinkedIn, X, and GitHub.' },
     ],
   },
   {

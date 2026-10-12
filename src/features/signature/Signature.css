@@ -4,7 +4,14 @@
   width: var(--sig-w);
   height: var(--sig-h);
   transform: translate(var(--sig-offset-x), var(--sig-offset-y));
-  pointer-events: none;
+  cursor: pointer;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sig-root:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 6px;
 }
 
 .sig-canvas {

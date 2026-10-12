@@ -306,17 +306,6 @@ function DavebotPanel() {
     setLiveMessage('Davebot is thinking')
 
     const localEntry = rankEntries(value)[0]
-    if (localEntry) {
-      conversationRef.current.push(
-        { role: 'user', content: value },
-        { role: 'assistant', content: localEntry.answer.map(segment => segment.text).join('') },
-      )
-      if (run !== answerRunRef.current) return
-      currentEntryIdRef.current = localEntry.id
-      setPhase('answer')
-      setAnswer({ parts: toParts(localEntry.answer) })
-      return
-    }
 
     try {
       const controller = new AbortController()
@@ -324,7 +313,11 @@ function DavebotPanel() {
       const response = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: value, history: conversationRef.current.slice(-6) }),
+        body: JSON.stringify({
+          query: value,
+          history: conversationRef.current.slice(-6),
+          contextId: localEntry?.id,
+        }),
         signal: controller.signal,
       })
       if (!response.ok) throw new Error(`Davebot API returned ${response.status}`)
@@ -333,11 +326,23 @@ function DavebotPanel() {
       if (run !== answerRunRef.current) return
       conversationRef.current.push({ role: 'user', content: value }, { role: 'assistant', content: payload.answer })
       const source = payload.source?.id ? DAVEBOT_ENTRY_BY_ID[payload.source.id] : undefined
-      currentEntryIdRef.current = source?.id ?? excludeId
+      currentEntryIdRef.current = source?.id ?? localEntry?.id ?? excludeId
       setPhase('answer')
       setAnswer({ parts: toParts([{ text: payload.answer.trim() }]) })
     } catch {
       if (run !== answerRunRef.current) return
+      if (localEntry) {
+        const localAnswer = localEntry.answer.map(segment => segment.text).join('')
+        conversationRef.current.push(
+          { role: 'user', content: value },
+          { role: 'assistant', content: localAnswer },
+        )
+        currentEntryIdRef.current = localEntry.id
+        setPhase('answer')
+        setAnswer({ parts: toParts(localEntry.answer) })
+        setLiveMessage('Davebot is using his pocket notes. The larger filing cabinet is temporarily offline.')
+        return
+      }
       currentEntryIdRef.current = excludeId
       setPhase('offline')
       setAnswer({ parts: toParts([{ text: OFFLINE_COPY }]) })
