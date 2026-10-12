@@ -100,6 +100,36 @@ body[data-page='about'] {
   background: var(--paper);
 }
 
+/* Project pages: the page is a card laid over a strip of the Work page (the rail, drawn by
+   Nav). The card's rounded corner shows the body, so the body takes the rail's colour. */
+.site[data-rail] {
+  --rail-w: var(--rail-w-d, 76px);
+  --rail-bg: var(--ink-900);
+  --rail-fg: var(--paper);
+  position: relative;
+  margin-left: var(--rail-w);
+  border-top-left-radius: var(--rail-radius, 16px);
+  overflow: clip;
+}
+
+/* Harvard & MIT is a dark page: light strip, dark card. The page itself is transparent
+   (it relied on the dark body), so the card paints its own fill. */
+.site[data-rail='light'] {
+  --rail-bg: var(--paper);
+  --rail-fg: var(--ink-900);
+  background: var(--ink-900);
+}
+
+body:has(.site[data-rail='light']) {
+  background: var(--paper);
+}
+
+@media (max-width: 640px) {
+  .site[data-rail] {
+    --rail-w: min(var(--rail-w-d, 76px), 56px);
+  }
+}
+
 img,
 video,
 canvas,

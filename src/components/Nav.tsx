@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
-import { ArrowUpRightIcon, ChevronLeftIcon } from './icons'
+import { ArrowLeftIcon, ArrowUpRightIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
 import { isLightUnder } from '../lib/surface'
 import { useTuning } from '../tuning/useTuning'
@@ -36,6 +36,13 @@ const NAV_CONFIG = {
     y: [0, -12, 12, 0.5] as Tuple,
     _collapsed: false,
   },
+  /** Project pages: the strip of the Work page beside the project card (Work + back arrow). */
+  rail: {
+    width: [76, 48, 160, 1] as Tuple,
+    /** Top-left corner of the project card where it meets the strip. */
+    radius: [16, 0, 48, 1] as Tuple,
+    _collapsed: false,
+  },
 }
 
 function internalLink(route: Route) {
@@ -56,13 +63,20 @@ function goBack(event: MouseEvent<HTMLAnchorElement>) {
   else navigate('work')
 }
 
-/** "< Back" link. Project pages place it top-left, above the section list (Momo, Filo) or alone (Harvard & MIT). */
-export function BackLink({ className = '' }: { className?: string }) {
+/**
+ * Project pages: the page is a card laid over a strip of the Work page. The strip holds
+ * "Work" (where you are in the site) and the back arrow; both return to the work list.
+ */
+function ProjectRail() {
   return (
-    <a className={`nav__back ${className}`.trim()} href="/" onClick={goBack}>
-      <ChevronLeftIcon className="nav__back-icon" />
-      Back
-    </a>
+    <div className="project-rail">
+      <a className="project-rail__work" href="/" aria-current="true" onClick={goBack}>
+        Work
+      </a>
+      <a className="project-rail__back" href="/" aria-label="Back to work" onClick={goBack}>
+        <ArrowLeftIcon className="project-rail__arrow" />
+      </a>
+    </div>
   )
 }
 
@@ -110,6 +124,19 @@ export function Nav({ route }: Props) {
     }
   }, [pin, route])
 
+  // The rail's size lives on <html>: the page card (App's .site) and fixed layers beside it
+  // both read it. Layout effect, so it is in place in the same commit (and transition snapshot).
+  useLayoutEffect(() => {
+    if (!isProject) return
+    const style = document.documentElement.style
+    style.setProperty('--rail-w-d', `${t.rail.width}px`)
+    style.setProperty('--rail-radius', `${t.rail.radius}px`)
+    return () => {
+      style.removeProperty('--rail-w-d')
+      style.removeProperty('--rail-radius')
+    }
+  }, [isProject, t.rail.width, t.rail.radius])
+
   const style = {
     '--resume-arrow-scale': t.resumeArrow.scale,
     '--resume-arrow-x': `${t.resumeArrow.x}px`,
@@ -125,14 +152,17 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
+      {isProject && <ProjectRail />}
       <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>
         <nav className="nav__links" aria-label="Primary">
-          <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
-            Work
-          </a>
+          {!isProject && (
+            <a href="/" aria-current={route === 'work' ? 'page' : undefined} onClick={internalLink('work')}>
+              Work
+            </a>
+          )}
           <a href="/about" aria-current={route === 'about' ? 'page' : undefined} onClick={internalLink('about')}>
             About
           </a>

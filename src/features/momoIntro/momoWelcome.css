@@ -1,5 +1,5 @@
 .momo-welcome {
-  width: min(var(--welcome-width, 380px), calc((100svh - 112px) * 1312 / 2672), calc(100vw - 64px));
+  width: min(var(--welcome-width, 380px), calc((100svh - 112px) * 1312 / 2672), calc(100vw - var(--rail-w, 0px) - 64px));
   flex: none;
   text-align: center;
   pointer-events: none;

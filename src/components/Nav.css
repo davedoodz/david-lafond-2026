@@ -135,32 +135,6 @@
   flex-shrink: 0;
 }
 
-/* Project pages: "< Back" under Davebot, styled like the nav links. */
-.nav__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: -4px;
-  font-size: var(--text-nav);
-  font-weight: 500;
-  line-height: 18px;
-  text-transform: uppercase;
-  color: var(--nav-idle, var(--text-muted));
-  transition: color 180ms ease;
-}
-.nav__back:hover,
-.nav__back:focus-visible {
-  color: var(--nav-active, var(--paper));
-}
-.nav__back-icon {
-  width: 16px;
-  height: 16px;
-  transition: translate 180ms ease;
-}
-.nav__back:hover .nav__back-icon {
-  translate: -3px 0;
-}
-
 @media (max-width: 640px) {
   .nav {
     padding: calc(34px + env(safe-area-inset-top)) var(--edge) 0 36px;
@@ -187,4 +161,69 @@
 .nav[data-ghost-side='end'] .nav__start {
   display: flex;
   flex-direction: row-reverse;
+}
+
+/* --- Project rail: the strip of the Work page beside a project card (colours from
+   .site[data-rail] in global.css). Its own transition layer, so page slides move the card
+   and the strip separately. Text sits on the nav's link row. */
+.project-rail {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  width: var(--rail-w);
+  padding-top: 41px;
+  background: var(--rail-bg);
+  color: var(--rail-fg);
+  font-size: var(--text-nav);
+  font-weight: 500;
+  line-height: 18px;
+  text-transform: uppercase;
+  view-transition-name: project-rail;
+}
+
+.project-rail a {
+  color: inherit;
+}
+
+.project-rail__back {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-top: -7px;
+}
+
+.project-rail__arrow {
+  width: 20px;
+  height: 20px;
+  transition: translate 180ms ease;
+}
+
+.project-rail__back:hover .project-rail__arrow,
+.project-rail__back:focus-visible .project-rail__arrow {
+  translate: -3px 0;
+}
+
+/* The nav (About, Resume, Davebot) runs along the card, right of the rail. */
+.site[data-rail] .nav {
+  padding-left: 25px;
+}
+.site[data-rail] .nav[data-pin='fixed'] {
+  left: var(--rail-w);
+}
+
+@media (max-width: 640px) {
+  .project-rail {
+    padding-top: calc(41px + env(safe-area-inset-top));
+    line-height: 16px;
+  }
+  .site[data-rail] .nav {
+    padding-left: 18px;
+  }
 }

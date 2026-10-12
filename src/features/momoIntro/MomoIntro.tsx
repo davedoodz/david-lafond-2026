@@ -266,7 +266,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const progress = () => 1 - clamp(window.scrollY / stageH)
     const measure = () => {
       if (disposed) return
-      vw = window.innerWidth; vh = window.innerHeight; dpr = Math.min(1.5, window.devicePixelRatio || 1)
+      // The canvas covers the project card (not the rail), so film and band use its box.
+      const frame = canvas.getBoundingClientRect()
+      vw = frame.width; vh = window.innerHeight; dpr = Math.min(1.5, window.devicePixelRatio || 1)
       // Both layers are dominated by soft gradients and source art near CSS-pixel resolution.
       // Capping the display canvas at 1.5× keeps edges crisp while avoiding a 2× buffer's 78%
       // extra pixels during the scroll handoff; the heavier offscreen film stays at 1×.
@@ -276,7 +278,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       stageH = stage.offsetHeight || vh
       const box = document.querySelector('.case__section--hero .case__braid-slot')?.getBoundingClientRect()
       slotY = box ? box.top + box.height / 2 + window.scrollY : stageH + 120
-      slotX = box ? box.left + box.width / 2 : vw / 2
+      slotX = box ? box.left - frame.left + box.width / 2 : vw / 2
       // Desktop landing matches the hero composition: band level with the navigation,
       // centered phone continuing below the fold. Keep the narrow-screen band below the nav.
       const nav = document.querySelector('.case .nav')?.getBoundingClientRect()

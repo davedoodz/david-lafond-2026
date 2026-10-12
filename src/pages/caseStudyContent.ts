@@ -90,8 +90,7 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
 
 const pageDials = {
   snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'mandatory' },
-  showSidebar: true,
-  /** Section list in the sidebar (Problem · Solution, Persona, …). Off: only Back shows. */
+  /** Section list in the left gutter (Problem · Solution, Persona, …). Back lives in the project rail. */
   showSections: false,
   textSize: { type: 'select' as const, options: ['compact', 'balanced', 'display'], default: 'compact' },
   /** How each case-study section enters and re-enters the viewport. */

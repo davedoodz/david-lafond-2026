@@ -392,23 +392,8 @@
     "look": {
       "wipeRadius": 32
     },
-    "projectBack": {
-      "feel": "custom",
-      "motion": {
-        "type": "easing",
-        "duration": 1.1,
-        "ease": [
-          0.65,
-          0,
-          0.35,
-          1
-        ]
-      },
-      "delay": -0.2,
-      "oldDuration": 1.1,
-      "oldDrift": 180,
-      "oldOpacity": 0.55,
-      "radius": 48
+    "projectSlide": {
+      "feel": "glide"
     }
   },
   "About": {

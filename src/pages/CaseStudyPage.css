@@ -47,28 +47,18 @@
   display: none;
 }
 
-/* --- Sticky sidebar: Back + section list, in the left gutter. */
+/* --- Sticky sidebar: section list, in the left gutter. Fixed, so it clears the project rail itself. */
 .case__sidebar {
   position: fixed;
   z-index: 3;
   top: 140px;
-  left: var(--edge);
+  left: calc(var(--rail-w, 0px) + var(--edge));
   width: var(--case-sidebar);
   transition: opacity 240ms ease;
 }
 .case__sidebar[data-hidden] {
   opacity: 0;
   pointer-events: none;
-}
-
-.case__back {
-  margin: 0 0 28px;
-}
-
-/* Back sits outside .nav here, so give it the nav's light-surface colours (hover was white on paper). */
-[data-surface='light'] .case__back {
-  --nav-idle: var(--stone-400);
-  --nav-active: var(--ink-900);
 }
 
 .case__toc {
@@ -94,11 +84,6 @@
 .case__toc button:focus-visible,
 .case__toc button[aria-current] {
   color: var(--ink-950);
-}
-
-/* The hero's inline Back only shows when the sidebar is gone (narrow screens). */
-.case__back--inline {
-  display: none;
 }
 
 /* --- Sections: one full screen each. */
@@ -311,10 +296,6 @@ html[data-case-snap] .case .footer {
   }
   .case__sidebar {
     display: none;
-  }
-  .case__back--inline {
-    display: inline-flex;
-    margin-bottom: 24px;
   }
 }
 
@@ -1027,7 +1008,7 @@ html[data-case-snap] .case__moment {
   list-style: none;
 }
 .case__flows-row {
-  width: min(1160px, calc(100vw - 2 * var(--case-frame-edge)));
+  width: min(1160px, calc(100vw - var(--rail-w, 0px) - 2 * var(--case-frame-edge)));
   margin-top: var(--section-content-gap, clamp(100px, 11.25svh, 133px));
   --flows-gap: 50px;
   scale: var(--flows-scale, 1);
@@ -1202,7 +1183,7 @@ html[data-case-snap] .case__moment {
     font-size: 13px;
   }
   .case__flows-row {
-    width: calc(100vw - 2 * var(--edge));
+    width: calc(100vw - var(--rail-w, 0px) - 2 * var(--edge));
     gap: 8px;
     --flows-gap: 8px;
     margin-top: clamp(42px, 7svh, 68px);
@@ -1212,7 +1193,7 @@ html[data-case-snap] .case__moment {
     gap: 8px;
   }
   .case__flow-card {
-    width: calc((100vw - 2 * var(--edge) - 16px) / 3);
+    width: calc((100vw - var(--rail-w, 0px) - 2 * var(--edge) - 16px) / 3);
     min-width: 0;
   }
   .case__flows .case__phone {
@@ -1226,7 +1207,7 @@ html[data-case-snap] .case__moment {
     transform: translateX(-15.12px) rotateY(-22deg);
   }
   .case__guided {
-    --guided-w: calc((100vw - 2 * var(--edge) - 8px) / 2.2);
+    --guided-w: calc((100vw - var(--rail-w, 0px) - 2 * var(--edge) - 8px) / 2.2);
   }
   .case__guided .case__phone {
     width: var(--guided-w);
@@ -1290,7 +1271,7 @@ html[data-case-snap] .case__moment {
 .case__notification {
   display: block;
   justify-self: center;
-  width: min(1200px, 100vw - 2 * var(--edge, 24px) - var(--case-sidebar, 0px));
+  width: min(1200px, 100vw - var(--rail-w, 0px) - 2 * var(--edge, 24px) - var(--case-sidebar, 0px));
   height: min(var(--media-h, 78svh), 72svh);
   border: 0;
   border-radius: var(--media-radius, 0);

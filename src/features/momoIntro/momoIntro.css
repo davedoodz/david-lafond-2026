@@ -3,12 +3,13 @@
 .momo-stage {
   height: 100svh;
 }
-/* The band is drawn on one fixed canvas above the page (pointer-transparent). */
+/* The band is drawn on one fixed canvas above the page (pointer-transparent), over the
+   project card only: the rail beside it stays clear. */
 .momo-intro {
   position: fixed;
-  inset: 0;
+  inset: 0 auto auto var(--rail-w, 0px);
   z-index: 50;
-  width: 100vw;
+  width: calc(100vw - var(--rail-w, 0px));
   height: 100svh;
   pointer-events: none;
 }

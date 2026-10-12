@@ -9,6 +9,14 @@ export function ArrowRightIcon({ className }: IconProps) {
   )
 }
 
+export function ArrowLeftIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M7.825 13l5.6 5.6L12 20l-8-8 8-8 1.425 1.4-5.6 5.6H20v2z" />
+    </svg>
+  )
+}
+
 export function ArrowUpRightIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
