@@ -3,6 +3,7 @@ import { useTuningController } from '../../tuning/useTuning'
 import { drawBraid, setRT } from './braid'
 import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE } from './phoneFilm'
 import { stackedAlpha } from '../../lib/stackedAlpha'
+import { ArrowDownIcon } from '../../components/icons'
 import './momoIntro.css'
 
 type Tuple = [number, number, number, number]
@@ -61,6 +62,18 @@ const CONFIG = {
   skip: {
     enabled: true,
     label: { type: 'text' as const, default: 'Skip intro' },
+    /** Independent label offsets; these do not move the pill, progress ring, or arrow. */
+    text: {
+      x: [0, -80, 80, 0.5] as Tuple,
+      y: [0, -40, 40, 0.5] as Tuple,
+    },
+    /** Independent icon geometry; offsets do not move the label or progress ring. */
+    arrow: {
+      style: { type: 'select' as const, options: ['arrow', 'chevrons'], default: 'arrow' },
+      scale: [1, 0.4, 3, 0.05] as Tuple,
+      x: [0, -40, 40, 0.5] as Tuple,
+      y: [0, -40, 40, 0.5] as Tuple,
+    },
     style: {
       type: 'select' as const,
       options: option(['glass', 'Frosted glass pill'], ['solid', 'Solid ink pill'], ['outline', 'Hairline outline'], ['text', 'Text only'], ['progress', 'Glass + progress ring']),
@@ -494,10 +507,14 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         <circle cx="8" cy="8" r={7.4 - t.skip.ringThickness / 2} pathLength={1} strokeWidth={t.skip.ringThickness * t.skip.ringTrack} />
         <circle className="momo-skip__ring-fill" cx="8" cy="8" r={7.4 - t.skip.ringThickness / 2} pathLength={1} strokeWidth={t.skip.ringThickness} />
       </svg>}
-      <span>{t.skip.label}</span>
-      <svg className="momo-skip__arrow" viewBox="0 0 16 16" aria-hidden="true">
-        <path d="M3.5 3.5 8 8l-4.5 4.5M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <span className="momo-skip__label" style={{ '--momo-skip-label-x': `${t.skip.text.x}px`, '--momo-skip-label-y': `${t.skip.text.y}px` } as CSSProperties}>{t.skip.label}</span>
+      <span className="momo-skip__arrow" style={{ display: 'inline-flex' }}>
+        <span style={{ display: 'inline-flex', width: '100%', height: '100%', transform: `translate(${t.skip.arrow.x}px, ${t.skip.arrow.y}px) scale(${t.skip.arrow.scale}) rotate(${t.skip.arrow.style === 'arrow' ? -90 : 0}deg)` }}>
+          {t.skip.arrow.style === 'arrow' ? <ArrowDownIcon /> : <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M3.5 3.5 8 8l-4.5 4.5M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>}
+        </span>
+      </span>
     </button>}
     <div className="momo-intro__decoders" aria-hidden="true">
       {MOMO_CLIPS.map(clip => <div key={clip}>

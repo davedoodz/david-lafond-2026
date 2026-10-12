@@ -287,7 +287,7 @@ function Icon({ name }: { name: string }) {
   )
 }
 
-export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
+export function PersonaSection({ p, edit, selectable = false }: { p: Persona; edit: Edit; selectable?: boolean }) {
   const look = { ...(PERSONA_PRESETS[p.preset] ?? p), image: p.image }
   const ref = useRef<HTMLElement>(null)
   const wasLive = useRef(false)
@@ -403,8 +403,8 @@ export function PersonaSection({ p, edit }: { p: Persona; edit: Edit }) {
       <div className="persona__intro">
         <div className="persona__who case__section-copy">
           <EditableText as="p" className="eyebrow" label="Persona eyebrow" value={p.eyebrow} onChange={edit('persona.eyebrow')} />
-          <EditableText as="h2" className="persona__title" label="Persona title" value={p.title} onChange={edit('persona.title')} />
-          <EditableText className="persona__body" label="Persona body" value={p.body} onChange={edit('persona.body')} />
+          <EditableText as="h2" className="persona__title" label="Persona title" value={p.title} onChange={edit('persona.title')} selectable={selectable} />
+          <EditableText className="persona__body" label="Persona body" value={p.body} onChange={edit('persona.body')} selectable={selectable} />
           {p.showTags && tags.length > 0 && (
             <ul className="persona__tags" aria-label="Profile">
               {tags.map((t, i) => {

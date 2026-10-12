@@ -116,7 +116,7 @@ export function ControlledScroll() {
     const max = () => root.scrollHeight - window.innerHeight
 
     const step = (now: number) => {
-      if (root.dataset.playgroundZoomOpen) {
+      if (root.dataset.playgroundZoomOpen || root.dataset.spreadZoomOpen) {
         frame = 0
         target = pos = window.scrollY
         origin = null
@@ -144,7 +144,7 @@ export function ControlledScroll() {
     }
 
     const onWheel = (e: WheelEvent) => {
-      if (root.dataset.playgroundZoomOpen) {
+      if (root.dataset.playgroundZoomOpen || root.dataset.spreadZoomOpen) {
         e.preventDefault()
         return
       }

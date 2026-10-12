@@ -16,7 +16,7 @@
  */
 import { useEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import { PageFlip, type Orientation } from 'page-flip'
-import { PAGE_COUNT, PAGE_ASPECT, pageUrl, type PageQuality } from './bookPages'
+import { PAGE_COUNT, PAGE_ASPECT, pageUrl, pageSurface, type PageQuality } from './bookPages'
 
 export type BookState = { index: number; orientation: Orientation; zoom: number }
 
@@ -35,20 +35,23 @@ export type BookLook = {
   /** Share of the largest size that fits the stage. */
   scale: number
   flipMs: number
+  coverMaterial: string
+  coverFlipMs: number
+  /** Covers and interior leaves round only their outside edge, never the binding. */
+  coverRadius: number
+  pageRadius: number
   tiltRestX: number
   tiltRestY: number
   tiltHover: number
   /** Hover: how much the book sinks away under the pointer (share of its size). */
   push: number
-  /** Cover turns: 0 swings stiff and flat, 1 curls like paper. */
-  coverFlex: number
-  shadowOpacity: number
   /** Page-block thickness at its thickest (px); splits between the sides as you read. */
   thickness: number
   /** Light sheen that slides across the pages with the tilt (0..1). */
   glare: number
   maxZoom: number
   detailAtZoom: number
+  hint: { preset: string; size: number; inset: number; speed: number }
 }
 
 type Props = {
@@ -88,6 +91,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
   activeRef.current = active
   const startIndexRef = useRef(startIndex)
   const flipRef = useRef<PageFlip | null>(null)
+  const updateMaterialRef = useRef<(() => void) | null>(null)
+  useEffect(() => { updateMaterialRef.current?.() }, [look.coverMaterial])
 
   // page-flip reads its settings object live, so the flip duration dial applies without a remount.
   useEffect(() => {
@@ -116,13 +121,21 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     const pages = Array.from({ length: PAGE_COUNT }, (_, i) => {
       const page = document.createElement('div')
       page.className = 'book-page'
-      // Covers turn soft too, on a gentler path (see turn); data-cover keeps their styling.
-      page.dataset.density = 'soft'
-      if (i === 0 || i === PAGE_COUNT - 1) page.dataset.cover = ''
+      // Covers are rigid boards; interior leaves remain paper.
+      page.dataset.density = i === 0 || i === PAGE_COUNT - 1 ? 'hard' : 'soft'
+      page.dataset.surface = pageSurface(i + 1)
+      if (i === 0 || i === PAGE_COUNT - 1) page.dataset.cover = i === 0 ? 'front' : 'back'
       const img = document.createElement('img')
       img.alt = i === 0 ? 'Portfolio front cover' : i === PAGE_COUNT - 1 ? 'Portfolio back cover' : `Portfolio page ${i + 1}`
       img.decoding = 'async'
       page.appendChild(img)
+      if (i === 0) {
+        const hint = document.createElement('span')
+        hint.className = 'book__cover-hint'
+        hint.setAttribute('aria-hidden', 'true')
+        hint.innerHTML = '<span></span><span></span>'
+        page.appendChild(hint)
+      }
       images.push(img)
       quality.push('none')
       return page
@@ -173,8 +186,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       autoSize: true,
       showCover: true,
       usePortrait: true,
-      drawShadow: true,
-      maxShadowOpacity: 0.35,
+      drawShadow: false,
+      maxShadowOpacity: 0,
       flippingTime: lookRef.current.flipMs,
       startPage: startIndex,
       mobileScrollSupport: true,
@@ -185,6 +198,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     })
     flipRef.current = flip
     hydrate(startIndex)
+    setQuality(0, 'medium')
+    setQuality(PAGE_COUNT - 1, 'medium')
 
     // --- Zoom + pan, eased in one rAF loop that sleeps when settled.
     const view = { zoom: 1, x: 0, y: 0 }
@@ -303,20 +318,38 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     }
 
     // --- Cover centering + shadow shape follow the open spread.
+    let coverHintTimer: number | undefined
+    const holdCoverHint = () => {
+      clearTimeout(coverHintTimer)
+      stage.setAttribute('data-cover-return-wait', '')
+    }
+    const releaseCoverHint = () => {
+      clearTimeout(coverHintTimer)
+      if (flip.getCurrentPageIndex() !== 0) return
+      coverHintTimer = window.setTimeout(() => stage.removeAttribute('data-cover-return-wait'), 3000)
+    }
     const syncSpread = (index: number) => {
+      stage.dataset.cover = String(index === 0)
+      stage.dataset.closedCover = index === 0 ? 'front' : index === PAGE_COUNT - 1 ? 'back' : ''
       const kind = orientation === 'portrait' ? 'single' : index === 0 ? 'front' : index === PAGE_COUNT - 1 ? 'back' : 'open'
       shift.dataset.spread = kind
       // Share of the book already read: the left page block grows, the right one thins.
       shift.style.setProperty('--read', String(PAGE_COUNT > 1 ? index / (PAGE_COUNT - 1) : 0))
-      // Only the cover board lies under the first and last spreads' outer pages: no page stack
-      // there, so nothing shows beside the cover while it turns.
-      shift.style.setProperty('--block-left', index > 1 ? '1' : '0')
-      shift.style.setProperty('--block-right', index < PAGE_COUNT - 3 ? '1' : '0')
       stage.dataset.orientation = orientation
+    }
+
+    // A lone cover has no underlying spread to conceal the lifted part of its
+    // inside face. Subtract the engine's exact revealed-area polygon instead of
+    // leaving that whole face painted flat (or approximating a diagonal cut).
+    const clearCoverMask = () => {
+      pages[1].removeAttribute('data-cover-fold')
+      pages[PAGE_COUNT - 2].removeAttribute('data-cover-fold')
     }
 
     flip.on('flip', ({ data }) => {
       hydrate(data)
+      holdCoverHint()
+      if (flip.getState() === 'read') releaseCoverHint()
       syncSpread(data)
       report()
     })
@@ -328,67 +361,21 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     // Load the destination while a drag is still deciding which way to go.
     // `libFlips` lets a click tell whether page-flip already turned it (corner hot zones).
     let libFlips = 0
-    // page-flip bug: turning onto a lone cover it uses the cover as both the turning leaf and
-    // the page revealed under it, so the page the leaf lifts off stays fully drawn beside it.
-    // While such a turn runs, clip that page to the part of the leaf still lying flat.
-    let flatFrame = 0
-    const flatPage = () => {
-      if (orientation !== 'landscape') return null
-      const index = flip.getCurrentPageIndex()
-      const calc = (flip.getFlipController() as unknown as FlipInternals).calc as FlipCalc | null
-      if (!calc) return null
-      const back = calc.getDirection() === 1
-      if (back && index === 1) return { page: pages[1], calc, back }
-      if (!back && index === PAGE_COUNT - 3) return { page: pages[PAGE_COUNT - 2], calc, back }
-      return null
-    }
-    const clipFlat = () => {
-      flatFrame = requestAnimationFrame(clipFlat)
-      const found = flatPage()
-      pages.forEach((page) => page !== found?.page && page.removeAttribute('data-flat'))
-      if (!found) return
-      const w = found.page.offsetWidth
-      const h = found.page.offsetHeight
-      const rect = (flip.getRender() as unknown as RenderInternals).getRect()
-      const pw = rect.pageWidth
-      const ph = rect.height
-      // Fold points: bottom-area points that are not the outer-edge corners (page-flip rounds
-      // its page size to whole pixels, hence the tolerance).
-      const fold = found.calc
-        .getBottomClipArea()
-        .filter((q): q is { x: number; y: number } => q !== null && !(Math.abs(q.x - pw) < 1.5 && (q.y < 1.5 || Math.abs(q.y - ph) < 1.5)))
-      if (fold.length < 2) return
-      // The area polygon closes on its first point, so take the fold point farthest from it.
-      const a = fold[0]
-      const b = fold.reduce((far, q) => (Math.hypot(q.x - a.x, q.y - a.y) > Math.hypot(far.x - a.x, far.y - a.y) ? q : far), a)
-      if (Math.hypot(b.x - a.x, b.y - a.y) < 1) return
-      // Keep the spine side (x = 0 in page-flip's page space) of the fold line.
-      const side = (q: { x: number; y: number }) => (b.x - a.x) * (q.y - a.y) - (b.y - a.y) * (q.x - a.x)
-      const keep = Math.sign(side({ x: 0, y: ph / 2 })) || 1
-      const corners = [{ x: 0, y: 0 }, { x: pw, y: 0 }, { x: pw, y: ph }, { x: 0, y: ph }]
-      const out: Array<{ x: number; y: number }> = []
-      corners.forEach((p, i) => {
-        const q = corners[(i + 1) % 4]
-        const sp = side(p) * keep
-        const sq = side(q) * keep
-        if (sp >= 0) out.push(p)
-        if (sp * sq < 0) {
-          const t = sp / (sp - sq)
-          out.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t })
-        }
-      })
-      const sx = w / pw
-      const sy = h / ph
-      const polygon = out.map((q) => `${((found.back ? pw - q.x : q.x) * sx).toFixed(1)}px ${(q.y * sy).toFixed(1)}px`).join(', ')
-      host.style.setProperty('--flat-clip', `polygon(${polygon || '0 0'})`)
-      found.page.setAttribute('data-flat', '')
-    }
     flip.on('changeState', ({ data }) => {
+      if (data !== 'read') delete stage.dataset.closedCover
+      else queueMicrotask(() => syncSpread(flip.getCurrentPageIndex()))
+      // The library emits before updating getState(); restore material afterward.
+      if (data === 'read') queueMicrotask(() => updateMaterialRef.current?.())
+      if (data === 'read') clearCoverMask()
       stage.dataset.flipState = data
+      if (data === 'read') releaseCoverHint()
+      else holdCoverHint()
+      if (data === 'user_fold') {
+        const index = flip.getCurrentPageIndex()
+        flip.getSettings().flippingTime = index <= 1 || index >= PAGE_COUNT - 2
+          ? lookRef.current.coverFlipMs : lookRef.current.flipMs
+      }
       if (data === 'flipping') libFlips++
-      cancelAnimationFrame(flatFrame)
-      if (data === 'read') pages.forEach((page) => page.removeAttribute('data-flat'))
-      else clipFlat()
       if (data === 'user_fold' || data === 'flipping') {
         const index = flip.getCurrentPageIndex()
         hydrate(clamp(index + 2, 0, PAGE_COUNT - 1))
@@ -402,8 +389,42 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       report()
     })
     flip.loadFromHTML(pages)
-    // showCover forces the covers hard (a rigid swing); make them paper so turn() can bend them.
-    for (const i of [0, PAGE_COUNT - 1]) (flip.getPage(i) as { setDensity: (d: 'soft') => void }).setDensity('soft')
+    const render = flip.getRender()
+    const setPageRect = render.setPageRect.bind(render)
+    render.setPageRect = (rect) => {
+      setPageRect(rect)
+      clearCoverMask()
+      const calc = flip.getFlipController().getCalculation()
+      if (!calc || orientation !== 'landscape') return
+      const back = calc.getDirection() === 1
+      const index = flip.getCurrentPageIndex()
+      if (!(back && index === 1) && !(!back && index === PAGE_COUNT - 3)) return
+      // The closing board lands on the entire page stack. Keep that stack
+      // under the destination half, never under the now-vacant lifted half.
+      shift.style.setProperty('--read', back ? '0' : '1')
+      if (flip.getPage(back ? 0 : PAGE_COUNT - 1).getDrawingDensity() !== 'soft') return
+      const { pageWidth: width, height } = render.getRect()
+      const points = calc.getBottomClipArea().filter((point) => point !== null)
+      if (points.length < 3) return
+      // The library rounds calculation dimensions down; snap its outer-edge
+      // vertices to the rendered box to avoid a subpixel paper sliver.
+      const percent = (value: number, size: number) => Math.abs(value) < 1 ? 0 : Math.abs(value - size) < 1 ? 100 : value / size * 100
+      const hole = points.map((point) => `${percent(back ? width - point.x : point.x, width)}% ${percent(point.y, height)}%`)
+      const face = pages[back ? 1 : PAGE_COUNT - 2]
+      images[back ? 1 : PAGE_COUNT - 2].style.setProperty('--cover-flat', `polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, ${hole.join(', ')}, ${hole[0]}, 0% 0%)`)
+      face.setAttribute('data-cover-fold', '')
+    }
+    // showCover forces hard density on load; apply the selected material afterwards.
+    const updateMaterial = () => {
+      if (flip.getState() !== 'read') return
+      const density = lookRef.current.coverMaterial === 'flexible' ? 'soft' : 'hard'
+      for (const index of [0, PAGE_COUNT - 1]) {
+        flip.getPage(index).setDensity(density)
+        flip.getPage(index).setDrawingDensity(density)
+      }
+    }
+    updateMaterialRef.current = updateMaterial
+    updateMaterial()
     orientation = flip.getOrientation()
     syncSpread(startIndex)
     tick()
@@ -464,40 +485,15 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     }
     // A click anywhere on the right page turns forward, on the left page back. Drags, pans,
     // pinches, and clicks page-flip already turned (its corner hot zones) are left alone.
-    // Turns a leaf. Paper pages use page-flip's own path; a leaf carrying a cover is driven
-    // along our path instead: its corner stays near the bottom edge (a nearly upright fold
-    // swings like board) and lifts by `coverFlex` mid-turn (a diagonal fold curls like paper).
+    let wholeBookFlip: Animation | null = null
+    let wholeBookTurning = false
     const turn = (forward: boolean) => {
+      if (wholeBookTurning) return
       const index = flip.getCurrentPageIndex()
-      const cover = forward ? index === 0 || index >= PAGE_COUNT - 3 : index <= 2 || index >= PAGE_COUNT - 1
-      if (!cover) return forward ? flip.flipNext() : flip.flipPrev()
-      // page-flip internals (public at runtime): the same steps as its Flip.flip(), other path.
-      const fc = flip.getFlipController() as unknown as FlipInternals
-      const render = flip.getRender() as unknown as RenderInternals
-      const rect = render.getRect()
-      if (fc.calc !== null) render.finishAnimation()
-      if (!fc.start({ x: forward ? rect.left + rect.pageWidth * 2 - 10 : 10, y: rect.height - 2 })) return
-      fc.setState('flipping')
-      const w = rect.pageWidth
-      const h = rect.height
-      const lift = h * 0.6 * lookRef.current.coverFlex
-      const steps = 60
-      const frames = Array.from({ length: steps + 1 }, (_, i) => {
-        const t = i / steps
-        const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2
-        const point = { x: w - 1 - (2 * w - 1) * e, y: h - 1 - lift * Math.sin(Math.PI * e) }
-        return () => fc.do(point)
-      })
-      render.startAnimation(frames, lookRef.current.flipMs, () => {
-        if (!fc.calc) return
-        if (forward) flip.turnToNextPage()
-        else flip.turnToPrevPage()
-        render.setBottomPage(null)
-        render.setFlippingPage(null)
-        render.clearShadow()
-        fc.setState('read')
-        fc.reset()
-      })
+      const coverTurn = forward ? index === 0 || index >= PAGE_COUNT - 3 : index <= 1 || index === PAGE_COUNT - 1
+      flip.getSettings().flippingTime = coverTurn ? lookRef.current.coverFlipMs : lookRef.current.flipMs
+      if (forward) flip.flipNext()
+      else flip.flipPrev()
     }
     const onClick = (event: MouseEvent) => {
       const start = press
@@ -585,10 +581,80 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     }
     window.addEventListener('keydown', onKey)
 
-    const flipTo = (index: number) => {
+    const flipTo = async (index: number) => {
+      if (wholeBookTurning) return
+      render.finishAnimation()
+      const current = flip.getCurrentPageIndex()
+      if (current === index) return
       if (target.zoom > 1) setZoom(1)
       hydrate(index)
-      flip.flip(index)
+      holdCoverHint()
+      clearCoverMask()
+      const fromCover = current === 0 || current === PAGE_COUNT - 1
+      if (!fromCover) {
+        shift.style.setProperty('--read', index === 0 ? '0' : '1')
+        // First/Last closes the current spread with a board, even when normal
+        // cover clicks use flexible paper. READ restores the selected material.
+        const cover = flip.getPage(index)
+        cover.setDensity('hard')
+        cover.setDrawingDensity('hard')
+        flip.getSettings().flippingTime = lookRef.current.coverFlipMs
+        flip.flip(index)
+        return
+      }
+      if (reducedMotion) {
+        flip.turnToPage(index)
+        return
+      }
+      // Use a solid six-face book for this turn, not the page engine's flat
+      // stack. Keep its center fixed and reveal the destination only at rest.
+      const solid = document.createElement('div')
+      solid.className = 'book__solid'
+      solid.setAttribute('aria-hidden', 'true')
+      const rect = render.getRect()
+      const depth = lookRef.current.thickness
+      solid.style.cssText = `width:${rect.pageWidth}px;height:${rect.height}px;--solid-depth:${depth}px`
+      for (const side of ['front', 'back', 'spine', 'edge', 'top', 'bottom']) {
+        const face = document.createElement('div')
+        face.className = `book__solid-${side}`
+        if (side === 'front' || side === 'back') {
+          const image = document.createElement('img')
+          image.src = pageUrl(side === 'front' ? 1 : PAGE_COUNT, 'medium')
+          image.alt = ''
+          face.appendChild(image)
+        }
+        solid.appendChild(face)
+      }
+      zoomLayer.appendChild(solid)
+      wholeBookTurning = true
+      stage.dataset.wholeBookTurning = 'true'
+      const previousTransition = shift.style.transition
+      shift.style.transition = 'none'
+      const startAngle = current === 0 ? 0 : -180
+      const endAngle = index === 0 ? 0 : -180
+      // Counter the cover-centering shift: the proxy rotates at the stage center.
+      solid.style.left = orientation === 'portrait' ? '50%' : current === 0 ? '75%' : '25%'
+      const pose = (degrees: number) => `perspective(1800px) translateZ(${-depth / 2}px) rotateY(${degrees}deg)`
+      try {
+        wholeBookFlip = solid.animate([
+          { transform: pose(startAngle) },
+          { transform: pose(endAngle) },
+        ], { duration: lookRef.current.coverFlipMs, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' })
+        await wholeBookFlip.finished
+        flip.turnToPage(index)
+        // Commit destination centering while transitions are disabled. Restoring
+        // the transition in the same unflushed style batch starts a second slide.
+        void getComputedStyle(shift).translate
+      } catch {
+        // Unmount cancels an in-flight flip before the page engine is destroyed.
+      } finally {
+        wholeBookFlip?.cancel()
+        wholeBookFlip = null
+        solid.remove()
+        wholeBookTurning = false
+        delete stage.dataset.wholeBookTurning
+        shift.style.transition = previousTransition
+      }
     }
     controllerRef.current = {
       next: () => {
@@ -613,7 +679,11 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     }
 
     return () => {
+      wholeBookFlip?.cancel()
       cancelAnimationFrame(frame)
+      clearTimeout(coverHintTimer)
+      stage.removeAttribute('data-cover-return-wait')
+      updateMaterialRef.current = null
       observer.disconnect()
       stage.removeEventListener('pointermove', onPointerMove)
       stage.removeEventListener('pointerdown', onPointerDown)
@@ -630,7 +700,6 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       detailToken++
       flipRef.current = null
       relayoutRef.current = null
-      cancelAnimationFrame(flatFrame)
       flip.destroy()
     }
     // One book per mount; live dials are read through lookRef.
@@ -640,11 +709,16 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     <div
       ref={stageRef}
       className="book"
+      data-hint={look.hint.preset}
       style={
         {
-          '--book-shadow': look.shadowOpacity,
           '--book-thickness': `${look.thickness}px`,
           '--book-glare': look.glare,
+          '--book-cover-radius': `${look.coverRadius}px`,
+          '--book-page-radius': `${look.pageRadius}px`,
+          '--hint-size': `${look.hint.size}px`,
+          '--hint-inset': `${look.hint.inset}px`,
+          '--hint-duration': `${1600 / look.hint.speed}ms`,
         } as CSSProperties
       }
     >
@@ -652,7 +726,6 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
         <div ref={shiftRef} className="book__shift" style={{ '--flip-ms': `${look.flipMs}ms` } as CSSProperties}>
           <div ref={zoomRef} className="book__zoom">
             <div ref={mountRef} className="book__mount">
-              <div className="book__shadow" aria-hidden="true" />
               <div className="book__block" aria-hidden="true">
                 <span className="book__block-left" />
                 <span className="book__block-right" />
@@ -664,25 +737,4 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       </div>
     </div>
   )
-}
-
-/** page-flip internals the cover turn drives (TypeScript-private, public at runtime). */
-type FlipInternals = {
-  calc: object | null
-  start: (globalPos: { x: number; y: number }) => boolean
-  do: (pagePos: { x: number; y: number }) => void
-  setState: (state: 'read' | 'flipping') => void
-  reset: () => void
-}
-type RenderInternals = {
-  getRect: () => { left: number; top: number; width: number; height: number; pageWidth: number }
-  finishAnimation: () => void
-  startAnimation: (frames: Array<() => void>, duration: number, onDone: () => void) => void
-  setBottomPage: (page: null) => void
-  setFlippingPage: (page: null) => void
-  clearShadow: () => void
-}
-type FlipCalc = {
-  getDirection: () => number
-  getBottomClipArea: () => Array<{ x: number; y: number } | null>
 }

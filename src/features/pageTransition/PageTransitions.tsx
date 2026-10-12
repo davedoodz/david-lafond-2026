@@ -48,8 +48,6 @@ const CONFIG = {
     oldDuration: [0.32, 0.1, 2.5, 0.01] as [number, number, number, number],
     oldDrift: [56, 0, 480, 1] as [number, number, number, number],
     oldOpacity: [0.35, 0, 1, 0.05] as [number, number, number, number],
-    /** Leading-corner radius of the incoming page (px). */
-    radius: [32, 0, 400, 1] as [number, number, number, number],
     _collapsed: false,
   },
   pin: {
@@ -62,18 +60,18 @@ const CONFIG = {
 const ORDER: Record<Route, number> = { work: 0, momo: 1, filo: 1, 'harvard-mit': 1, about: 2 }
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 
-type BackFeel = { duration: number; ease: [number, number, number, number]; delay: number; oldDuration: number; oldDrift: number; oldOpacity: number; radius: number }
+type BackFeel = { duration: number; ease: [number, number, number, number]; delay: number; oldDuration: number; oldDrift: number; oldOpacity: number }
 const BACK_FEELS: Record<string, BackFeel> = {
   /** The current wipe. */
-  smooth: { duration: 0.62, ease: [0.22, 1, 0.36, 1], delay: 0.06, oldDuration: 0.32, oldDrift: 56, oldOpacity: 0.35, radius: 32 },
+  smooth: { duration: 0.62, ease: [0.22, 1, 0.36, 1], delay: 0.06, oldDuration: 0.32, oldDrift: 56, oldOpacity: 0.35 },
   /** Both pages travel together on one long, even curve. */
-  glide: { duration: 1.1, ease: [0.65, 0, 0.35, 1], delay: 0, oldDuration: 1.1, oldDrift: 180, oldOpacity: 0.55, radius: 48 },
+  glide: { duration: 1.1, ease: [0.65, 0, 0.35, 1], delay: 0, oldDuration: 1.1, oldDrift: 180, oldOpacity: 0.55 },
   /** Quick and decisive. */
-  snappy: { duration: 0.42, ease: [0.2, 0.9, 0.1, 1], delay: 0, oldDuration: 0.28, oldDrift: 36, oldOpacity: 0.2, radius: 20 },
-  /** Gentle landing, big soft corners, the old page barely moves. */
-  soft: { duration: 0.95, ease: [0.16, 1, 0.3, 1], delay: 0.1, oldDuration: 0.7, oldDrift: 24, oldOpacity: 0.6, radius: 90 },
+  snappy: { duration: 0.42, ease: [0.2, 0.9, 0.1, 1], delay: 0, oldDuration: 0.28, oldDrift: 36, oldOpacity: 0.2 },
+  /** Gentle landing with a soft drift. */
+  soft: { duration: 0.95, ease: [0.16, 1, 0.3, 1], delay: 0.1, oldDuration: 0.7, oldDrift: 24, oldOpacity: 0.6 },
   /** Unhurried: a long ease-in-out with a wide drift. */
-  slow: { duration: 1.6, ease: [0.45, 0, 0.15, 1], delay: 0, oldDuration: 1.45, oldDrift: 140, oldOpacity: 0.4, radius: 60 },
+  slow: { duration: 1.6, ease: [0.45, 0, 0.15, 1], delay: 0, oldDuration: 1.45, oldDrift: 140, oldOpacity: 0.4 },
 }
 
 type Settings = { preset: Preset; mirror: boolean; projectBack: string; pinNav: boolean; pinShader: boolean }
@@ -106,9 +104,11 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
       : settings.mirror && back
         ? 'back'
         : 'forward'
-  // Sideways: each nav rides with its own page, so the wipe edge sweeps over it. Pinned,
-  // the old and new nav would crossfade and the dark/light "Work" would wash out mid-way.
+  // Sideways: the incoming WORK / ABOUT / RESUME cluster is isolated into one
+  // stationary layer, visible from frame one. Davebot and both pages keep their
+  // existing motion; using only the incoming nav avoids a dark/light crossfade.
   const sideways = root.dataset.vtDir === 'left' || root.dataset.vtDir === 'right'
+  if (sideways) pinIfVisible('.nav__links', 'data-vt-pin-links')
   if (settings.pinNav && !sideways) pinIfVisible('.nav', 'data-vt-pin-nav')
   if (settings.pinShader) pinIfVisible('.dither-band--header', 'data-vt-pin-shader')
 
@@ -123,6 +123,7 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
     delete root.dataset.vt
     delete root.dataset.vtDir
     root.removeAttribute('data-vt-pin-nav')
+    root.removeAttribute('data-vt-pin-links')
     root.removeAttribute('data-vt-pin-shader')
   })
 }
@@ -149,7 +150,7 @@ export function PageTransitions() {
 
   const { preset, timing, look, pin } = values
   const pb = values.projectBack
-  const custom: BackFeel = { duration: pb.motion.type === 'easing' ? pb.motion.duration : 0.62, ease: (pb.motion.type === 'easing' ? pb.motion.ease : [0.22, 1, 0.36, 1]) as BackFeel['ease'], delay: pb.delay, oldDuration: pb.oldDuration, oldDrift: pb.oldDrift, oldOpacity: pb.oldOpacity, radius: pb.radius }
+  const custom: BackFeel = { duration: pb.motion.type === 'easing' ? pb.motion.duration : 0.62, ease: (pb.motion.type === 'easing' ? pb.motion.ease : [0.22, 1, 0.36, 1]) as BackFeel['ease'], delay: pb.delay, oldDuration: pb.oldDuration, oldDrift: pb.oldDrift, oldOpacity: pb.oldOpacity }
   const back = pb.feel === 'custom' ? custom : (BACK_FEELS[pb.feel] ?? BACK_FEELS.smooth)
   backMsRef.current = back.duration * 1000
 
@@ -167,11 +168,10 @@ export function PageTransitions() {
     setValue('projectBack.oldDuration', preset.oldDuration)
     setValue('projectBack.oldDrift', preset.oldDrift)
     setValue('projectBack.oldOpacity', preset.oldOpacity)
-    setValue('projectBack.radius', preset.radius)
   }, [pb.feel, setValue])
 
   // Moving a back-wipe dial yourself means "use my numbers": flip the feel to 'custom'.
-  const backKey = JSON.stringify([pb.motion, pb.delay, pb.oldDuration, pb.oldDrift, pb.oldOpacity, pb.radius])
+  const backKey = JSON.stringify([pb.motion, pb.delay, pb.oldDuration, pb.oldDrift, pb.oldOpacity])
   const [backKeySeen] = useState(backKey)
   const backKeyRef = useRef(backKeySeen)
   useEffect(() => {
@@ -209,7 +209,6 @@ export function PageTransitions() {
     style.setProperty('--vt-back-out-dur', `${back.oldDuration}s`)
     style.setProperty('--vt-back-dist', `${back.oldDrift}px`)
     style.setProperty('--vt-back-out-opacity', String(back.oldOpacity))
-    style.setProperty('--vt-back-radius', `${back.radius}px`)
     // `back` is fully captured by backCss.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backCss])

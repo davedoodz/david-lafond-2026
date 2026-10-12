@@ -11,6 +11,7 @@ import { flushSync } from 'react-dom'
 import { navigate, type Route } from '../../lib/router'
 import { preloadRoute } from '../../lib/routeChunks'
 import { pageUrl } from '../book/bookPages'
+import { scheduleThumbnailPlacement } from '../book/bookEntrance'
 import { spawnMesh } from '../../components/MeshCard'
 import { sampleSpring, toCssTiming, type Easing, type Spring } from '../pageTransition/cssTiming'
 import { slideIn, type SlideFeel } from './slide'
@@ -134,6 +135,7 @@ let running = false
 export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   const commit = () => navigate(route, { transition: false })
   if (running) return
+  if (route === 'harvard-mit') scheduleThumbnailPlacement()
   const pageReady = preloadRoute(route)
   // The book opens on its cover; start that download while the card grows.
   if (route === 'harvard-mit') new Image().src = pageUrl(1, 'medium')

@@ -448,11 +448,12 @@ export function CaseStudyPage({ id }: Props) {
           s={s as unknown as Story}
           edit={edit}
           arts={id === 'filo' ? [<FiloProblemArt key="p" />, <FiloOpportunityArt key="o" />, <FiloSolutionArt key="s" />] : undefined}
+          selectable={id === 'momo'}
         />
       )
-    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} />
-    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} />
-    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} />
+    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={id === 'momo'} />
+    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable={id === 'momo'} />
+    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable={id === 'momo'} />
     const fields = s as unknown as Record<string, string>
     if (id === 'filo' && key === 'evidence') return <EvidenceSection key={key} f={fields} edit={edit} />
     if (id === 'filo' && key === 'reframe') return <ReframeSection key={key} f={fields} edit={edit} />
@@ -523,9 +524,10 @@ export function CaseStudyPage({ id }: Props) {
             label={`${key} title`}
             value={s.title}
             onChange={edit(`${key}.title`)}
+            selectable={id === 'momo' && key === 'outcomes'}
           />
           {(s.body || import.meta.env.DEV) && (
-            <EditableText className="case__body" label={`${key} body`} value={s.body} onChange={edit(`${key}.body`)} />
+            <EditableText className="case__body" label={`${key} body`} value={s.body} onChange={edit(`${key}.body`)} selectable={id === 'momo' && key === 'outcomes'} />
           )}
           {isHero && (
             <dl className="case__meta">

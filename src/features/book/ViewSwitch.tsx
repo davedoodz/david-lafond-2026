@@ -62,6 +62,7 @@ export function ViewSwitch({
   const pillRef = useRef<HTMLSpanElement>(null)
   const prevIndex = useRef<number | null>(null)
   const index = items.findIndex((item) => item.key === active)
+  const itemKeys = items.map((item) => item.key).join(',')
 
   useLayoutEffect(() => {
     const root = rootRef.current
@@ -105,7 +106,7 @@ export function ViewSwitch({
     const observer = new ResizeObserver(place)
     observer.observe(root)
     return () => observer.disconnect()
-  }, [index, look.preset, look.squash, look.durationMs, look.iconPop])
+  }, [index, itemKeys, look.preset, look.squash, look.durationMs, look.iconPop])
 
   const style = {
     '--sw-ms': `${look.durationMs}ms`,

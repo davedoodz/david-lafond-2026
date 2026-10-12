@@ -1,7 +1,7 @@
 /**
  * Entrance for the spread grid: every spread arrives as if it came out of the physical
- * book (cover first, back cover last). Web Animations only, no layout changes; spreads
- * below the fold are left alone so nothing pops in late while scrolling.
+ * book (cover first, back cover last). Web Animations only, no layout changes.
+ * Every row participates, including rows reached by scrolling during the entrance.
  */
 /** Hover looks for a grid spread; styled in book.css under `[data-hover]`. */
 export const GRID_HOVERS = ['none', 'lift', 'float', 'press', 'tilt', 'fold', 'peel'] as const
@@ -32,9 +32,7 @@ const jitter = (i: number, salt: number) => {
 
 export function playGridEntrance(root: HTMLElement, v: GridEntranceValues): Animation[] {
   if (v.preset === 'none' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return []
-  const cards = [...root.querySelectorAll<HTMLElement>('.spread-grid__pages')]
-  const fold = window.innerHeight * 1.1
-  const shown = cards.filter((card) => card.getBoundingClientRect().top < fold)
+  const shown = [...root.querySelectorAll<HTMLElement>('.spread-grid__pages')]
   if (!shown.length) return []
   const cover = shown[0].getBoundingClientRect()
   const d = v.distance
@@ -123,7 +121,7 @@ export function playGridEntrance(root: HTMLElement, v: GridEntranceValues): Anim
       }
     }
   })
-  // Hold every spread at its hidden first frame until the visible thumbnails have decoded,
+  // Hold every spread at its hidden first frame until its thumbnails have decoded,
   // so pages never open onto blank (still-loading) rectangles. Capped so it never stalls.
   animations.forEach((animation) => animation.pause())
   const images = shown.flatMap((card) => [...card.querySelectorAll('img')])

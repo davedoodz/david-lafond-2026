@@ -107,7 +107,7 @@ const STORY_PRESETS: Record<string, Look> = {
 }
 
 /** `arts` replaces the Momo graphics (problem, opportunity, solution) for another case study. */
-export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode] }) {
+export function StoryRow({ s, edit, arts, selectable = false }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode]; selectable?: boolean }) {
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const glassVars = useStoryGlass(s.glass)
   const rows = [
@@ -136,8 +136,8 @@ export function StoryRow({ s, edit, arts }: { s: Story; edit: Edit; arts?: [Reac
             <div className="case__story-text">
               <span className="case__story-step">{String(i + 1).padStart(2, '0')}</span>
               <p className="eyebrow">{label}</p>
-              <EditableText as="h2" className="case__story-title" label={`${label} title`} value={title} onChange={edit(`story.${k}Title`)} />
-              <EditableText className="case__story-body" label={`${label} body`} value={body} onChange={edit(`story.${k}Body`)} />
+              <EditableText as="h2" className="case__story-title" label={`${label} title`} value={title} onChange={edit(`story.${k}Title`)} selectable={selectable} />
+              <EditableText className="case__story-body" label={`${label} body`} value={body} onChange={edit(`story.${k}Body`)} selectable={selectable} />
             </div>
           </StoryItem>
         ))}
@@ -218,7 +218,7 @@ function useRiseOnView() {
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
 export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
-export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
+export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edit; selectable?: boolean }) {
   const ref = useRiseOnView()
   useEffect(() => {
     const section = ref.current
@@ -264,8 +264,8 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
     >
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="flows eyebrow" value={f.eyebrow} onChange={edit('flows.eyebrow')} />
-        <EditableText as="h2" id="case-flows" className="case__title" label="flows title" value={f.title} onChange={edit('flows.title')} />
-        <EditableText className="case__body" label="flows body" value={f.body} onChange={edit('flows.body')} />
+        <EditableText as="h2" id="case-flows" className="case__title" label="flows title" value={f.title} onChange={edit('flows.title')} selectable={selectable} />
+        <EditableText className="case__body" label="flows body" value={f.body} onChange={edit('flows.body')} selectable={selectable} />
       </div>
       <ol className="case__flows-row">
         {phones.map(([name, label, position], i) => (
@@ -282,14 +282,14 @@ export function CoreFlows({ f, edit }: { f: Flows; edit: Edit }) {
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type GuidedReveal = 'rise' | 'cascade' | 'focus' | 'from sides' | 'wipe' | 'still'
 export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
-export function GuidedPair({ g, edit }: { g: Guided; edit: Edit }) {
+export function GuidedPair({ g, edit, selectable = false }: { g: Guided; edit: Edit; selectable?: boolean }) {
   const ref = useRiseOnView()
   return (
     <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} data-text-reveal={g.textReveal.preset} aria-labelledby="case-guided" style={{ '--section-pad-top': `${g.spacing.top}px`, '--section-pad-bottom': `${g.spacing.bottom}px`, '--section-content-gap': `${g.spacing.contentGap}px`, '--text-reveal-duration': `${g.textReveal.duration}s`, '--text-reveal-stagger': `${g.textReveal.stagger}s` } as CSSProperties}>
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="guided eyebrow" value={g.eyebrow} onChange={edit('guided.eyebrow')} />
-        <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} />
-        <EditableText className="case__body" label="guided body" value={g.body} onChange={edit('guided.body')} />
+        <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} selectable={selectable} />
+        <EditableText className="case__body" label="guided body" value={g.body} onChange={edit('guided.body')} selectable={selectable} />
       </div>
       <ol className="case__guided-row">
         {(

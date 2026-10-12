@@ -76,6 +76,11 @@
   width: 14px;
   height: 14px;
 }
+
+.momo-skip__label {
+  display: inline-block;
+  translate: var(--momo-skip-label-x, 0) var(--momo-skip-label-y, 0);
+}
 .momo-skip__arrow {
   transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }

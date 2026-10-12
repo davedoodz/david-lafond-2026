@@ -75,14 +75,14 @@ export function WorkPage() {
           }
           aria-labelledby="hero-title"
         >
-          <h1 id="hero-title" className="hero__title" data-enter="0">
+          <h1 id="hero-title" className="hero__title" data-enter="0" data-selectable>
             {t.headlineLead} <em>{t.headlineName}</em>,
             <br />
             <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
-          <p className="hero__intro" data-enter="1">{t.intro}</p>
-          <p className="hero__intro" data-enter="1">{t.intro2}</p>
-          <p className="hero__role" data-enter="2">{t.role}</p>
+          <p className="hero__intro" data-enter="1" data-selectable>{t.intro}</p>
+          <p className="hero__intro" data-enter="1" data-selectable>{t.intro2}</p>
+          <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />
         </section>
       </div>

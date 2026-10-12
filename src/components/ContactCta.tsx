@@ -40,10 +40,10 @@ export function ContactCta() {
       }
       aria-labelledby="cta-title"
     >
-      <h2 id="cta-title" className="cta__title">
+      <h2 id="cta-title" className="cta__title" data-selectable>
         {t.title}
       </h2>
-      <p className="cta__subtitle">{t.subtitle}</p>
+      <p className="cta__subtitle" data-selectable>{t.subtitle}</p>
       <LetsChat />
     </section>
   )

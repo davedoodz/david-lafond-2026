@@ -15,12 +15,14 @@ type Props = {
   label: string
   /** Entrance order (`data-enter`, see src/lib/useEntrance.ts). */
   enter?: number
+  /** Visitor-facing copy that may be highlighted/copied. */
+  selectable?: boolean
 }
 
 /** Clearing a contentEditable leaves a stray newline; whitespace-only copy counts as empty, so CSS `:empty` can collapse it. */
 const clean = (text: string) => (text.trim() ? text : '')
 
-export function EditableText({ as = 'div', value, onChange, className, id, label, enter }: Props) {
+export function EditableText({ as = 'div', value, onChange, className, id, label, enter, selectable }: Props) {
   const ref = useRef<HTMLElement>(null)
   const text = clean(value)
 
@@ -34,12 +36,13 @@ export function EditableText({ as = 'div', value, onChange, className, id, label
     else if (el && !text && el.childNodes.length && document.activeElement !== el) el.replaceChildren()
   }, [text])
 
-  if (!import.meta.env.DEV) return createElement(as, { className, id, 'data-enter': enter }, text)
+  if (!import.meta.env.DEV) return createElement(as, { className, id, 'data-enter': enter, 'data-selectable': selectable || undefined }, text)
 
   return createElement(as, {
     ref,
     id,
     'data-enter': enter,
+    'data-selectable': selectable || undefined,
     className: `${className ?? ''} is-editable`,
     contentEditable: 'plaintext-only',
     suppressContentEditableWarning: true,

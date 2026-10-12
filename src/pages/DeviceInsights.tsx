@@ -159,8 +159,8 @@ export function DeviceInsights({ copy, edit }: Props) {
     <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={entrance.preset} data-text-reveal={textReveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-watch-strap': strapColor, '--mc-reveal-duration': `${entrance.duration}s`, '--mc-reveal-stagger': `${entrance.stagger}s`, '--text-reveal-duration': `${textReveal.duration}s`, '--text-reveal-stagger': `${textReveal.stagger}s` } as CSSProperties}>
       <header className="insights__heading case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="Insights eyebrow" value={copy.eyebrow} onChange={edit('dynamic.eyebrow')} />
-        <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} />
-        <EditableText className="case__body" label="Insights body" value={copy.body} onChange={edit('dynamic.body')} />
+        <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} selectable />
+        <EditableText className="case__body" label="Insights body" value={copy.body} onChange={edit('dynamic.body')} selectable />
       </header>
       <div ref={stage} className="mc-stage" style={{ '--mc-scale': scale } as CSSProperties} role="img" aria-label="Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?">
         <div className="mc-devices" aria-hidden="true">

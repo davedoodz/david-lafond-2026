@@ -4,6 +4,23 @@ declare module 'page-flip' {
   export type Orientation = 'portrait' | 'landscape'
   export type FlipState = 'user_fold' | 'fold_corner' | 'flipping' | 'read'
 
+  export interface PagePoint { x: number; y: number }
+  export interface PageRectangle {
+    topLeft: PagePoint
+    topRight: PagePoint
+    bottomLeft: PagePoint
+    bottomRight: PagePoint
+  }
+  export interface FlipCalculation {
+    getDirection(): 0 | 1
+    getBottomClipArea(): Array<PagePoint | null>
+  }
+  export interface PageRender {
+    setPageRect(rect: PageRectangle): void
+    getRect(): { left: number; top: number; width: number; height: number; pageWidth: number }
+    finishAnimation(): void
+  }
+
   export interface PageFlipSettings {
     startPage?: number
     size?: 'fixed' | 'stretch'
@@ -47,9 +64,13 @@ declare module 'page-flip' {
     turnToPage(page: number): void
     turnToNextPage(): void
     turnToPrevPage(): void
-    getFlipController(): unknown
-    getRender(): unknown
-    getPage(index: number): unknown
+    getFlipController(): { getCalculation(): FlipCalculation | null }
+    getRender(): PageRender
+    getPage(index: number): {
+      setDensity(density: 'hard' | 'soft'): void
+      setDrawingDensity(density: 'hard' | 'soft'): void
+      getDrawingDensity(): 'hard' | 'soft'
+    }
     getCurrentPageIndex(): number
     getPageCount(): number
     getOrientation(): Orientation
