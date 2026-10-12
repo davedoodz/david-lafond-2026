@@ -839,6 +839,19 @@
   "Momo welcome": {
     "blackOverlay": 0.16,
     "prototypeWidth": 305,
+    "timing": {
+      "fullLoopDuration": 10,
+      "shadeAt": 0,
+      "shadeIn": 1,
+      "shadeOut": 4,
+      "momoAt": 0.55,
+      "logoAt": 0.55,
+      "buttonsAt": 0.65,
+      "legalAt": 0.8,
+      "fadeIn": 2.3,
+      "holdUntil": 7.6,
+      "fadeOut": 1.65
+    },
     "momo": {
       "size": 60,
       "y": 4
