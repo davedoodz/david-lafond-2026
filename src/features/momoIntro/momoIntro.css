@@ -146,11 +146,11 @@
   filter: brightness(0.94);
 }
 
-/* While the stage fills the screen, the nav, sidebar and Davebot step back. */
+/* While the stage fills the screen, the nav and Back stay on top of the film (canvas z 50,
+   Skip z 51) and stay clickable, so you can leave or move on mid-intro. */
 html[data-momo-stage] .case__sidebar,
 html[data-momo-stage] .case .nav {
-  opacity: 0;
-  pointer-events: none;
+  z-index: 52;
 }
 .case__sidebar,
 .case .nav {
