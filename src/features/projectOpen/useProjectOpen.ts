@@ -33,8 +33,8 @@ export const OPEN_PRESETS: Record<string, { timing: Easing | Spring; delay: Edge
 }
 
 const CONFIG = {
-  /** How the card becomes the page (see OPEN_EFFECTS). slide uses the page transition's feel; the others use the preset below. */
-  effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'slide' },
+  /** How the card becomes the page (see OPEN_EFFECTS); the preset below sets its timing. */
+  effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'expand' },
   /** Momo: Momo flies from the card into the nav's Momo. */
   momoFlight: false,
   /** Momo: seconds Momo keeps animating after the click before it flies into the nav (a tap or key skips it). */

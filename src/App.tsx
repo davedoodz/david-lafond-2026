@@ -82,12 +82,7 @@ export function App() {
 
   return (
     <>
-      <div
-        className="site"
-        data-surface={route === 'about' || route === 'momo' || route === 'filo' ? 'light' : 'dark'}
-        // Project pages sit as a card beside a strip of the Work page; Harvard & MIT inverts it.
-        data-rail={route === 'harvard-mit' ? 'light' : route === 'momo' || route === 'filo' ? 'dark' : undefined}
-      >
+      <div className="site" data-surface={route === 'about' || route === 'momo' || route === 'filo' ? 'light' : 'dark'}>
         {headerBand[route as keyof typeof headerBand] !== false && <DitherBand position="header" />}
         {route === 'about' ? (
           // Render the loaded module directly so page transitions never capture a fallback.

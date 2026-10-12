@@ -19,15 +19,13 @@ export type Edges = { top: number; right: number; bottom: number; left: number }
 
 /**
  * How the card becomes the page.
- * - slide: the project page slides in from the right as a card over the Work page
- *   (the page transition: "Page transition → projectSlide" sets its feel).
  * - expand: the card's colour grows to fill the screen, then fades to the page.
  * - curtain: grows like expand, then lifts away upward to uncover the page.
  * - window: the card's frame grows to fill the screen, showing the real page inside it.
  * - iris: the page opens in a growing circle from the card's centre.
  * - zoom: the view zooms through the card while the page fades up.
  */
-export const OPEN_EFFECTS = ['slide', 'expand', 'curtain', 'window', 'iris', 'zoom'] as const
+export const OPEN_EFFECTS = ['expand', 'curtain', 'window', 'iris', 'zoom'] as const
 export type OpenEffect = (typeof OPEN_EFFECTS)[number]
 
 /**
@@ -135,10 +133,6 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   const pageReady = preloadRoute(route)
   // The book opens on its cover; start that download while the card grows.
   if (route === 'harvard-mit') new Image().src = pageUrl(1, 'medium')
-  if (spec.effect === 'slide') {
-    navigate(route)
-    return
-  }
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     void pageReady.then(commit)
     return

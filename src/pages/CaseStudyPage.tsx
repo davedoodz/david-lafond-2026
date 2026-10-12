@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { ContactCta } from '../components/ContactCta'
 import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
-import { Nav } from '../components/Nav'
+import { BackLink, Nav } from '../components/Nav'
 import type { Work } from '../data/works'
 import { MOMO_BRAID_LAYOUT_EVENT, MomoIntro } from '../features/momoIntro/MomoIntro'
 import { MomoWelcome } from '../features/momoIntro/MomoWelcome'
@@ -277,6 +277,7 @@ export function CaseStudyPage({ id }: Props) {
   const base = values as unknown as Record<string, Section> & {
     page: {
       snap: string
+      showSidebar: boolean
       showSections: boolean
       textSize: 'compact' | 'balanced' | 'display'
       sectionReveal: 'float up' | 'drift in' | 'float from sides' | 'soft bloom' | 'still'
@@ -496,6 +497,7 @@ export function CaseStudyPage({ id }: Props) {
         aria-labelledby={`case-${key}`}
       >
         <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
+          {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} />
@@ -570,17 +572,20 @@ export function CaseStudyPage({ id }: Props) {
       {id === 'momo' && <MomoIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}
       <div className="case__light" data-surface="light">
         <Nav route={id} />
-        {page.showSections && (
+        {page.showSidebar && (
           <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
-            <ol className="case__toc">
-              {keys.map((key) => (
-                <li key={key}>
-                  <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
-                    {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
-                  </button>
-                </li>
-              ))}
-            </ol>
+            <BackLink className="case__back" />
+            {page.showSections && (
+              <ol className="case__toc">
+                {keys.map((key) => (
+                  <li key={key}>
+                    <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
+                      {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
           </aside>
         )}
         {renderSection('hero', hero, true)}
