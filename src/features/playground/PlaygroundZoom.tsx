@@ -90,6 +90,7 @@ function PlaybackToggle({ host, reducedMotion }: { host: React.RefObject<HTMLDiv
   const t = useTuning('Playground playback', PLAYBACK_CONFIG)
   const [paused, setPaused] = useState(false)
   const [feedback, setFeedback] = useState<'pause' | 'play' | null>(null)
+  const pausedAnimations = useRef<Animation[]>([])
   useEffect(() => {
     const root = host.current
     if (!root) return
@@ -112,9 +113,19 @@ function PlaybackToggle({ host, reducedMotion }: { host: React.RefObject<HTMLDiv
     return () => window.clearTimeout(timer)
   }, [feedback, t.fadeInMs, t.holdMs, reducedMotion])
   return <button type="button" className="pg-playback-toggle" aria-label={paused ? 'Play video' : 'Pause video'} onClick={() => {
-    for (const video of host.current?.querySelectorAll<HTMLVideoElement>('video.pg-video') ?? []) {
-      if (paused) void video.play().catch(() => {})
-      else video.pause()
+    const root = host.current
+    if (!root) return
+    const willPause = !paused
+    setPaused(willPause)
+    setFeedback(willPause ? 'pause' : 'play')
+    if (willPause) {
+      pausedAnimations.current = root.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running')
+      pausedAnimations.current.forEach((animation) => animation.pause())
+      root.querySelectorAll<HTMLVideoElement>('video.pg-video').forEach((video) => video.pause())
+    } else {
+      pausedAnimations.current.forEach((animation) => animation.playState === 'paused' && animation.play())
+      pausedAnimations.current = []
+      root.querySelectorAll<HTMLVideoElement>('video.pg-video').forEach((video) => void video.play().catch(() => {}))
     }
   }}>
     <AnimatePresence>
@@ -152,6 +163,7 @@ export function PlaygroundZoom({
 }: Props) {
   const { w: vw, h: vh } = useViewportSize()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const mediaRef = useRef<HTMLDivElement>(null)
 
   const target = useMemo(() => {
     const ratio = cardRatioForViewport(vw)
@@ -205,7 +217,10 @@ export function PlaygroundZoom({
     dialogRef.current?.focus({ preventScroll: true })
   }, [])
 
-  const setMediaEl = useCallback((el: HTMLDivElement | null) => mediaHostRef(item.id, el), [item.id, mediaHostRef])
+  const setMediaEl = useCallback((el: HTMLDivElement | null) => {
+    mediaRef.current = el
+    mediaHostRef(item.id, el)
+  }, [item.id, mediaHostRef])
 
   const closeFromStage = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
@@ -215,7 +230,7 @@ export function PlaygroundZoom({
   )
 
   const restart = useCallback(() => {
-    if (dialogRef.current) restartCardVideos(dialogRef.current)
+    if (mediaRef.current) restartCardVideos(mediaRef.current)
   }, [])
 
   const backdropStyle = {
@@ -269,7 +284,7 @@ export function PlaygroundZoom({
               <p className="card-title">{title}</p>
             </motion.div>
           </AnimatePresence>
-          {item.video && isPresent && <PlaybackToggle key={item.id} host={dialogRef} reducedMotion={reducedMotion} />}
+          {item.video && isPresent && <PlaybackToggle key={item.id} host={mediaRef} reducedMotion={reducedMotion} />}
           {item.video && isPresent && (
             <button type="button" className="pg-zoom-nav pg-zoom-restart" onClick={restart} aria-label="Restart video">
               <RotateCcw aria-hidden="true" strokeWidth={1.6} />
