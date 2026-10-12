@@ -271,7 +271,11 @@ export function CursorLayer() {
     };
 
     const onHide = (): void => dot.classList.add("is-hidden");
-    const onShow = (): void => dot.classList.remove("is-hidden");
+    const onShow = (): void => {
+      dot.classList.remove("is-hidden");
+      // An overlay can relinquish its surface while the pointer remains still.
+      resyncRef.current?.();
+    };
 
     window.addEventListener("cursor:hide", onHide);
     window.addEventListener("cursor:show", onShow);
