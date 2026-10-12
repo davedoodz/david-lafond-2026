@@ -1,15 +1,15 @@
 /**
  * First-load entrance for the header: the dither shader, the Davebot ghost and
- * the four nav links, each with its own preset. Plays once per document load
- * (it is mounted in App, which never remounts, so page switches do not replay it);
- * "Replay" re-runs it.
+ * the four nav links, each with its own preset. Plays on document load;
+ * project slides replay the nav only, after the card has fully settled.
+ * "Replay" re-runs the whole header.
  *
  * Only opacity / transform / filter / clip-path animate (WAAPI), on the
  * wrappers, so the ghost's hover `scale` and the links' colour transitions
  * keep working. The nav belongs to the page, which may still be a lazy chunk on
  * first paint, so its part waits for `.nav` and keeps the shared start time.
  */
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { springEasing } from '../../lib/springEasing'
 import { useTuningController } from '../../tuning/useTuning'
 
@@ -37,6 +37,12 @@ const CONFIG = {
     durationMs: [800, 150, 2500, 10] as Tuple,
     staggerMs: [70, 0, 400, 5] as Tuple,
     distance: [12, 0, 80, 1] as Tuple,
+  },
+  /** Existing nav presets, timed from the card landing rather than document load. */
+  afterSlide: {
+    delayMs: [0, 0, 1000, 10] as Tuple,
+    durationMs: [450, 150, 2000, 10] as Tuple,
+    staggerMs: [55, 0, 400, 5] as Tuple,
   },
 }
 
@@ -93,11 +99,13 @@ export function useHeaderIntro() {
       if (action === 'replay') setRun((n) => n + 1)
     },
   })
+  const valuesRef = useRef(v)
+  valuesRef.current = v
 
   useLayoutEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const start = performance.now()
+    let start = performance.now()
     const animations: Animation[] = []
     // Delay is measured from the shared start, so a late-mounting nav still lines up.
     const play = (el: Element, frames: Keyframe[], delay: number, duration: number, easing = EXPO_OUT) => {
@@ -111,15 +119,17 @@ export function useHeaderIntro() {
       play(band, shaderFrames(v.shader.preset, getComputedStyle(band).opacity), v.shader.delayMs, v.shader.durationMs, v.shader.preset === 'fade' ? 'ease-out' : EXPO_OUT)
     }
 
-    const playNav = (nav: Element) => {
+    const playNav = (nav: Element, settled = false) => {
+      const v = valuesRef.current
       const ghost = nav.querySelector('.nav__ghost')
       if (ghost && v.ghost.preset !== 'none') {
         const easing = v.ghost.preset === 'pop' || v.ghost.preset === 'drop' ? springEasing(v.ghost.bounce) : EXPO_OUT
-        play(ghost, ghostFrames(v.ghost.preset), v.ghost.delayMs, v.ghost.durationMs, easing)
+        play(ghost, ghostFrames(v.ghost.preset), settled ? v.afterSlide.delayMs : v.ghost.delayMs, settled ? v.afterSlide.durationMs : v.ghost.durationMs, easing)
       }
       if (v.links.preset !== 'none') {
         nav.querySelectorAll('.nav__links a').forEach((link, i) => {
-          play(link, linkFrames(v.links.preset, v.links.distance), v.links.delayMs + i * v.links.staggerMs, v.links.durationMs)
+          const timing = settled ? v.afterSlide : v.links
+          play(link, linkFrames(v.links.preset, v.links.distance), timing.delayMs + i * timing.staggerMs, timing.durationMs)
         })
       }
     }
@@ -137,7 +147,17 @@ export function useHeaderIntro() {
       observer.observe(document.body, { childList: true, subtree: true })
     }
 
+    const replayNav = () => {
+      animations.forEach((a) => a.cancel())
+      animations.length = 0
+      start = performance.now()
+      const nav = document.querySelector('.nav')
+      if (nav) playNav(nav, true)
+    }
+    window.addEventListener('project-slide-settled', replayNav)
+
     return () => {
+      window.removeEventListener('project-slide-settled', replayNav)
       observer?.disconnect()
       animations.forEach((a) => a.cancel())
     }
