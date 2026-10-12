@@ -72,3 +72,23 @@
   animation-duration: var(--po-ms);
   height: 100%;
 }
+
+/* Same sheet keyframes as Back, mirrored, with independent opening controls. */
+:root[data-po='slide']::view-transition-new(root) {
+  clip-path: inset(0 round var(--po-slide-radius) 0 0 var(--po-slide-radius));
+  animation-name: vt-sheet-left, vt-square;
+  animation-duration: var(--po-slide-dur), calc(var(--po-slide-dur) * 0.2);
+  animation-delay: var(--po-slide-delay), calc(var(--po-slide-delay) + var(--po-slide-dur) * 0.8);
+  animation-timing-function: var(--po-slide-ease), ease-out;
+  animation-fill-mode: both;
+}
+
+:root[data-po='slide']::view-transition-old(root) {
+  --vt-back-dist: var(--po-slide-drift);
+  --vt-back-out-opacity: var(--po-slide-opacity);
+  animation: vt-drift-left var(--po-slide-out-dur) var(--po-slide-ease) var(--po-slide-out-delay) both;
+}
+
+:root[data-po-nav='held'] .nav {
+  visibility: hidden;
+}

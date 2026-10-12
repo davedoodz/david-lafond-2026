@@ -347,10 +347,10 @@
       "lag": 0.1
     },
     "video": {
-      "scaleDesktop": 0.63,
+      "scaleDesktop": 0.62,
       "scaleMobile": 0.8,
       "radius": 20,
-      "hoverLabel": "180k+ views on Youtube! 🚀",
+      "hoverLabel": "200k+ views on Youtube! 🚀",
       "pill": "dark",
       "cursor": "dark"
     },
@@ -682,6 +682,9 @@
   "Project open": {
     "momoFlight": true,
     "preset": "spring",
+    "slide": {
+      "feel": "snappy"
+    },
     "look": {
       "cornerZone": 11
     }
@@ -901,6 +904,45 @@
   "Cursor": {
     "text": {
       "durationMs": 480
+    }
+  },
+  "GrassCreature": {
+    "appear": {
+      "preset": "burst"
+    },
+    "exclaim": {
+      "style": "classic",
+      "boxMotion": "rattle",
+      "size": 1.5,
+      "lift": 15
+    },
+    "motion": {
+      "speed": 1.4,
+      "hops": 5
+    },
+    "body": {
+      "width": 1.29,
+      "height": 0.6,
+      "headSize": 1.07
+    },
+    "ears": {
+      "length": 1.03,
+      "width": 1.53,
+      "spread": 0.9
+    },
+    "face": {
+      "eyeSize": 1.12,
+      "eyeSpacing": 1.08,
+      "highlight": false,
+      "cheekSize": 0.84
+    },
+    "tail": {
+      "size": 1.25
+    },
+    "shading": {
+      "gloss": 0,
+      "rim": 0,
+      "groundShade": 0.25
     }
   }
 }

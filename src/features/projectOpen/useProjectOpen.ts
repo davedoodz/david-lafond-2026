@@ -3,14 +3,15 @@
  * drive every value from the dials below it. "Preview" plays the expansion on
  * the Harvard & MIT card.
  */
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { Route } from '../../lib/router'
-import { useTuning } from '../../tuning/useTuning'
+import { useTuningController } from '../../tuning/useTuning'
 import type { Easing, Spring } from '../pageTransition/cssTiming'
 import { CONTENT_FEELS, OPEN_EFFECTS, openProject, type ContentFeel, type Edges, type OpenEffect, type OpenSpec } from './projectOpen'
+import { SLIDE_FEELS, type SlideFeel } from './slide'
 
 type Tuple = [number, number, number, number]
-type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'momoHoldSeconds' | 'contentStrength' | 'contentFade'> & {
+type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'momoHoldSeconds' | 'contentStrength' | 'contentFade' | 'slide'> & {
   effect: OpenEffect
   contentFeel: ContentFeel
 }
@@ -33,8 +34,8 @@ export const OPEN_PRESETS: Record<string, { timing: Easing | Spring; delay: Edge
 }
 
 const CONFIG = {
-  /** How the card becomes the page (see OPEN_EFFECTS); the preset below sets its timing. */
-  effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'expand' },
+  /** How the card becomes the page (see OPEN_EFFECTS); slide uses `slide` below, the rest the preset. */
+  effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'slide' },
   /** Momo: Momo flies from the card into the nav's Momo. */
   momoFlight: false,
   /** Momo: seconds Momo keeps animating after the click before it flies into the nav (a tap or key skips it). */
@@ -43,6 +44,18 @@ const CONFIG = {
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
   previewMomo: { type: 'action' as const, label: 'Preview (open Momo)' },
   previewFilo: { type: 'action' as const, label: 'Preview (open Filo)' },
+  /** Presets seed these controls; editing any control selects custom. */
+  slide: {
+    feel: { type: 'select' as const, options: [...Object.keys(SLIDE_FEELS), 'custom'], default: 'snappy' },
+    motion: { type: 'easing' as const, duration: 0.5, ease: [0.65, 0, 0.35, 1] as [number, number, number, number] },
+    /** Negative delay skips the slow start, in step with the outgoing page. */
+    delay: [-0.09, -0.5, 0.8, 0.01] as Tuple,
+    oldDuration: [0.5, 0.1, 2.5, 0.01] as Tuple,
+    oldDrift: [180, 0, 600, 1] as Tuple,
+    oldOpacity: [0.55, 0, 1, 0.01] as Tuple,
+    radius: [48, 0, 400, 1] as Tuple,
+    _collapsed: false,
+  },
   /** Filo / Harvard & MIT: how the card's artwork moves while the card grows. */
   content: {
     feel: { type: 'select' as const, options: [...CONTENT_FEELS], default: 'grow' },
@@ -70,7 +83,7 @@ const CONFIG = {
 
 export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
   const specRef = useRef<OpenSpec | null>(null)
-  const t = useTuning('Project open', CONFIG, {
+  const { values: t, setValue } = useTuningController('Project open', CONFIG, {
     onAction: (action) => {
       const route =
         action === 'preview' ? 'harvard-mit' : action === 'previewMomo' ? 'momo' : action === 'previewFilo' ? 'filo' : null
@@ -82,6 +95,32 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
     },
   })
 
+  const slide: SlideFeel = {
+    motion: t.slide.motion, delay: t.slide.delay, oldDuration: t.slide.oldDuration,
+    oldDrift: t.slide.oldDrift, oldOpacity: t.slide.oldOpacity, radius: t.slide.radius,
+  }
+  const slideKey = JSON.stringify(slide)
+  const lastSlide = useRef({ feel: t.slide.feel, key: slideKey })
+  useEffect(() => {
+    const last = lastSlide.current
+    if (last.feel !== t.slide.feel) {
+      const preset = SLIDE_FEELS[t.slide.feel]
+      lastSlide.current = { feel: t.slide.feel, key: preset ? JSON.stringify(preset) : slideKey }
+      if (preset) {
+        const motion = preset.motion.type === 'easing' ? { ...preset.motion, ease: [...preset.motion.ease] as [number, number, number, number] } : preset.motion
+        setValue('slide.motion', motion)
+        setValue('slide.delay', preset.delay)
+        setValue('slide.oldDuration', preset.oldDuration)
+        setValue('slide.oldDrift', preset.oldDrift)
+        setValue('slide.oldOpacity', preset.oldOpacity)
+        setValue('slide.radius', preset.radius)
+      }
+    } else if (last.key !== slideKey) {
+      lastSlide.current = { feel: 'custom', key: slideKey }
+      setValue('slide.feel', 'custom')
+    }
+  }, [t.slide.feel, slideKey, setValue])
+
   const look: Look = {
     ...t.look,
     effect: t.effect as OpenEffect,
@@ -90,6 +129,7 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
     contentFeel: t.content.feel as ContentFeel,
     contentStrength: t.content.strength,
     contentFade: t.content.fade,
+    slide: SLIDE_FEELS[t.slide.feel] ?? slide,
   }
   const named = OPEN_PRESETS[t.preset]
   specRef.current = named

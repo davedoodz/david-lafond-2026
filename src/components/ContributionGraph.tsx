@@ -5,12 +5,15 @@
  * the 1st of the earliest month through the snapshot day has exactly one tile; future days have none.
  *
  * Each day is a 3D patch of grass (grassField.ts): the more contributions, the taller it
- * grows. It sways in the wind and parts around the pointer.
- * Without WebGL2 it falls back to GitHub's flat tiles.
+ * grows. It sways in the wind and parts around the pointer. A small creature hides in the busiest
+ * day's patch and startles out when the pointer reaches it (features/grassCreature/scene.ts).
+ * Without WebGL2 it falls back to GitHub's flat tiles; with reduced motion the creature stays hidden.
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import contributions from '../data/contributions.json'
-import { useTuning } from '../tuning/useTuning'
+import { useTuning, useTuningController } from '../tuning/useTuning'
+import { CREATURE_CONFIG } from '../features/grassCreature/config'
+import { CreatureScene } from '../features/grassCreature/scene'
 import { SOCIAL } from '../data/contact'
 import { buildBlades, buildTiles, fitView, GrassRenderer, project, toGround, type GrassDay, type Palette } from './grassField'
 import { GitHubIcon } from './icons'
@@ -74,6 +77,16 @@ export function ContributionGraph() {
   const t = useTuning('Contributions', CONFIG)
   const { months } = t
   const g = t.grass
+  // Pause / Play and Replay are dev-panel actions (the panel is dev-only).
+  const sceneRef = useRef<CreatureScene | null>(null)
+  const creature = useTuningController('GrassCreature', CREATURE_CONFIG, {
+    onAction: (action) => {
+      const scene = sceneRef.current
+      if (!scene) return
+      if (action === 'pause') scene.setPaused(!scene.paused)
+      else scene.replay(live.current.pointer)
+    },
+  }).values
 
   const { weeks, total } = useMemo(() => {
     const days = contributions.days as Day[]
@@ -130,11 +143,17 @@ export function ContributionGraph() {
   const rendererRef = useRef<GrassRenderer | null>(null)
   const [flat, setFlat] = useState(false)
   const drawRef = useRef<() => void>(() => {})
+  const exclaimRef = useRef<HTMLDivElement>(null)
+  const creatureRef = useRef(creature)
+  creatureRef.current = creature
 
   // Live values for the render loop, so dial moves never restart it.
-  const live = useRef({ view, g, pointer: { x: 0, z: 0, strength: 0, target: 0, tx: 0, tz: 0 }, hover: NO_HOVER })
+  const live = useRef({ view, g, width, height, weeks: weeks.length, pointer: { x: 0, z: 0, strength: 0, target: 0, tx: 0, tz: 0 }, hover: NO_HOVER })
   live.current.view = view
   live.current.g = g
+  live.current.width = width
+  live.current.height = height
+  live.current.weeks = weeks.length
 
   const grassDays = useMemo<GrassDay[][]>(() => weeks.map((week) => week.map((d) => (d ? { count: d.count, level: d.level } : null))), [weeks])
 
@@ -156,29 +175,36 @@ export function ContributionGraph() {
     let last = performance.now()
 
     const draw = () => {
-      const { view, g, pointer, hover } = live.current
+      const { view, g, pointer, hover, width, height, weeks } = live.current
+      const scene = sceneRef.current
       renderer.draw(view, {
         time: clock,
         height: g.height,
         width: g.bladeWidth,
         wind: g.wind,
-        radius: g.pointerRadius,
+        radius: g.pointerRadius * (scene?.radiusScale ?? 1),
         push: g.pointerPush,
         reach: g.pointerReach,
         pointer: [pointer.x, pointer.z, pointer.strength],
         hover,
       })
+      scene?.draw(view, g.tilt, weeks, width, height)
     }
     const tick = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000)
+      const scene = sceneRef.current
+      // Paused (dev panel): dt 0 freezes the creature, the wind and the grass on the current frame.
+      const dt = scene?.paused ? 0 : Math.min(0.05, (now - last) / 1000)
       last = now
       const { g, pointer } = live.current
       clock += dt * g.flow
-      // Ease the pointer so the grass parts and settles instead of snapping.
-      const ease = 1 - Math.exp(-dt * 10)
-      pointer.x += (pointer.tx - pointer.x) * ease
-      pointer.z += (pointer.tz - pointer.z) * ease
-      pointer.strength += (pointer.target - pointer.strength) * (1 - Math.exp(-dt * 6))
+      if (scene) scene.update(dt, pointer, now)
+      else {
+        // Ease the pointer so the grass parts and settles instead of snapping.
+        const ease = 1 - Math.exp(-dt * 10)
+        pointer.x += (pointer.tx - pointer.x) * ease
+        pointer.z += (pointer.tz - pointer.z) * ease
+        pointer.strength += (pointer.target - pointer.strength) * (1 - Math.exp(-dt * 6))
+      }
       draw()
       frame = visible ? requestAnimationFrame(tick) : 0
     }
@@ -203,6 +229,8 @@ export function ContributionGraph() {
     return () => {
       observer.disconnect()
       cancelAnimationFrame(frame)
+      sceneRef.current?.destroy()
+      sceneRef.current = null
       renderer.destroy()
       rendererRef.current = null
       drawRef.current = () => {}
@@ -215,8 +243,17 @@ export function ContributionGraph() {
     renderer.setPalette(t.palette as Palette)
     renderer.setTiles(buildTiles(grassDays))
     renderer.setBlades(buildBlades(grassDays, g.density))
+    // The creature hides in the busiest patch of the days shown, so it follows the calendar.
+    // Reduced motion: no creature (it only exists as an animation).
+    const canvas = canvasRef.current
+    if (canvas && exclaimRef.current && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      sceneRef.current?.destroy()
+      sceneRef.current = new CreatureScene(canvas.getContext('webgl2')!, grassDays, creatureRef.current, exclaimRef.current)
+    }
     drawRef.current()
   }, [grassDays, g.density, t.palette, flat, t.show])
+
+  useEffect(() => sceneRef.current?.setSettings(creature), [creature])
 
   // Backing store follows the CSS size at up to 2x pixel density.
   useEffect(() => {
@@ -236,18 +273,23 @@ export function ContributionGraph() {
     const ground = toGround(view, rect.width, rect.height, event.clientX - rect.left, event.clientY - rect.top)
     const { pointer } = live.current
     if (!ground) return
-    pointer.tx = ground.x
-    pointer.tz = ground.z
-    if (pointer.target === 0) Object.assign(pointer, { x: ground.x, z: ground.z })
-    pointer.target = 1
     const week = Math.round(ground.x)
     const row = Math.round(ground.z)
     live.current.hover = weeks[week]?.[row] ? [week, row] : NO_HOVER
+    const scene = sceneRef.current
+    if (scene) scene.pointerMoved(pointer, ground.x, ground.z)
+    else {
+      pointer.tx = ground.x
+      pointer.tz = ground.z
+      if (pointer.target === 0) Object.assign(pointer, { x: ground.x, z: ground.z })
+      pointer.target = 1
+    }
     drawRef.current()
   }
   const onPointerLeave = () => {
-    live.current.pointer.target = 0
     live.current.hover = NO_HOVER
+    if (sceneRef.current) sceneRef.current.pointerLeft(live.current.pointer)
+    else live.current.pointer.target = 0
     drawRef.current()
   }
 
@@ -300,6 +342,9 @@ export function ContributionGraph() {
             </div>
             <div className="cg__stage" style={{ width, height }}>
               <canvas ref={canvasRef} className="cg__grass" onPointerMove={onPointerMove} onPointerLeave={onPointerLeave} />
+              <div ref={exclaimRef} className="gc-exclaim" aria-hidden="true">
+                <span className="gc-exclaim__mark">!</span>
+              </div>
             </div>
           </>
         )}
