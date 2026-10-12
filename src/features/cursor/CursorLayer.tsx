@@ -36,7 +36,7 @@ function textElementAt(x: number, y: number): HTMLElement | null {
   }
   if (!(node instanceof Text) || !node.data.trim()) return null;
   const owner = node.parentElement;
-  if (!owner || owner.closest(`${CLICKABLE_SELECTOR}, [data-cursor="default"]`)) return null;
+  if (!owner || getComputedStyle(owner).userSelect === "none" || owner.closest(`${CLICKABLE_SELECTOR}, [data-cursor="default"]`)) return null;
   const range = document.createRange();
   range.selectNodeContents(node);
   for (const r of range.getClientRects()) {
