@@ -683,7 +683,14 @@
     "momoFlight": true,
     "preset": "spring",
     "slide": {
-      "feel": "snappy"
+      "feel": "match back",
+      "motion": {
+        "type": "easing",
+        "duration": 1.1,
+        "ease": [0.65, 0, 0.35, 1]
+      },
+      "delay": -0.2,
+      "oldDuration": 1.1
     },
     "look": {
       "cornerZone": 11
