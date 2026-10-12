@@ -251,19 +251,17 @@ body.davebot-open {
 .davebot-status {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 14px 16px;
+  gap: 12px;
+  min-height: 80px;
+  padding: 8px 16px;
   color: var(--davebot-ink-muted);
   font-size: 12px;
   line-height: 20px;
 }
 
-.davebot-status__line {
-  width: 18px;
-  height: 1px;
-  flex: 0 0 18px;
-  background: var(--davebot-highlight, #f2b544);
+.davebot-status__orb {
+  display: block;
+  flex: 0 0 64px;
 }
 
 .davebot-answer {
