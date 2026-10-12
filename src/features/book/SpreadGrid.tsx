@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { SPREADS, pageLabel, pageUrl, PAGE_COUNT } from './bookPages'
+import { SPREADS, pageLabel, pageUrl, pageSurface, PAGE_COUNT } from './bookPages'
 
 type Props = {
   current: number
@@ -29,9 +29,12 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
               aria-current={spread === current ? 'true' : undefined}
               aria-label={`Enlarge ${label.toLowerCase()}`}
               data-zoomed={spread === zoomed || undefined}
+              onPointerLeave={(event) => {
+                if (!event.currentTarget.hasAttribute('data-zoomed')) delete event.currentTarget.dataset.zoomReturn
+              }}
               onClick={(event) => onOpen(spread, event.currentTarget.querySelector<HTMLElement>('.spread-grid__pages')!)}
             >
-              <span className="spread-grid__pages">
+              <span className="spread-grid__pages" data-surface={pageSurface(pages[0])}>
                 {pages.map((page) => (
                   <img key={page} src={pageUrl(page, 'thumb')} alt="" loading="lazy" decoding="async" />
                 ))}

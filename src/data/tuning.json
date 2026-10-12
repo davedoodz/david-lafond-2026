@@ -25,7 +25,7 @@
       "future fabric": 2,
       "renovation contractor agent": 2.85,
       "architectural sketchbooks": 12,
-      "my room in 3d": 1.45,
+      "my room in 3d": 1.1,
       "interactive signature": 1.8,
       "globalization research explorer": 1.5
     },
@@ -38,7 +38,7 @@
     "testimonials": {
       "video": "lightCanvas"
     },
-    "order": "p01,p11,p09,p10,p03,p05,p02,p07,p04,p06,p08,p12,p13,p14,p15,p16",
+    "order": "p01,p11,p09,p10,p03,p07,p08,p04,p02,p05,p12,p06,p13,p14,p15,p16",
     "journal": {
       "desktopZoom": 2.39,
       "desktopX": 1,
@@ -60,6 +60,8 @@
     "grid": {
       "count": 12,
       "cardWidthDesktop": 267,
+      "gapX": 16,
+      "gapY": 16,
       "radius": 14,
       "topGapDesktop": 119
     },
@@ -344,47 +346,84 @@
   "Portfolio book": {
     "switch": {
       "bounce": 0.16,
-      "lag": 0.1
+      "lag": 0.1,
+      "squash": 0.06
     },
+    "bookGridOnly": true,
     "video": {
       "scaleDesktop": 0.62,
       "scaleMobile": 0.8,
       "radius": 20,
-      "hoverLabel": "200k+ views on Youtube! 🚀",
-      "pill": "dark",
-      "cursor": "dark"
+      "speed": 10,
+      "label": {
+        "pillScale": 1.45,
+        "duration": 930,
+        "idleIntensity": 2
+      },
+      "tilt": {
+        "glare": 0,
+        "shadow": 0.7
+      }
     },
     "book": {
-      "scale": 0.88,
-      "flipMs": 460,
+      "scale": 0.8,
+      "flipMs": 480,
+      "coverFlipMs": 690,
+      "coverRadius": 10,
+      "pageRadius": 10,
       "tiltRestX": 6.5,
       "tiltHover": 7,
       "push": 0,
-      "shadowOpacity": 0,
-      "thickness": 3,
-      "glare": 0
+      "thickness": 2.5,
+      "glare": 0,
+      "hint": {
+        "preset": "ring",
+        "size": 39,
+        "inset": 29,
+        "speed": 0.75,
+        "hoverMs": 800,
+        "attraction": 0.4
+      },
+      "entrance": {
+        "duration": 1600,
+        "thumbnailDelayMs": 700,
+        "strength": 2,
+        "bounceHeight": 0,
+        "bounceTilt": 0,
+        "settlePercent": 43
+      }
     },
     "placement": {
       "switchY": -40,
-      "videoY": -58
+      "videoY": -8
     },
     "layout": {
-      "gapAbove": 0,
-      "gapBelow": 13,
-      "controlsY": 91
+      "gapAbove": 7,
+      "gapBelow": 19,
+      "controlsY": 27
     },
     "grid": {
-      "scale": 0.88,
+      "scale": 0.72,
       "minCard": 346,
-      "gap": 12,
+      "gap": 21,
+      "sideMarginDesktop": 320,
+      "cornerRadius": 3,
       "showPageNumbers": false,
       "entrance": {
         "duration": 1120
       },
       "hover": {
         "preset": "float",
-        "strength": 1.35,
-        "duration": 900
+        "duration": 360,
+        "shadow": 0.3
+      },
+      "zoom": {
+        "radius": 12,
+        "spring": {
+          "type": "spring",
+          "visualDuration": 0.5,
+          "bounce": 0.15
+        }
       }
     }
   },
@@ -407,8 +446,7 @@
       "delay": -0.2,
       "oldDuration": 1.1,
       "oldDrift": 180,
-      "oldOpacity": 0.55,
-      "radius": 48
+      "oldOpacity": 0.55
     }
   },
   "About": {
@@ -683,7 +721,19 @@
     "momoFlight": true,
     "preset": "spring",
     "slide": {
-      "feel": "snappy"
+      "feel": "match back",
+      "motion": {
+        "type": "easing",
+        "duration": 1.1,
+        "ease": [
+          0.65,
+          0,
+          0.35,
+          1
+        ]
+      },
+      "delay": -0.2,
+      "oldDuration": 1.1
     },
     "look": {
       "cornerZone": 11
@@ -756,6 +806,12 @@
       "topGap": 33
     },
     "skip": {
+      "text": {
+        "y": 0.5
+      },
+      "arrow": {
+        "scale": 1.05
+      },
       "style": "progress",
       "hover": "fill",
       "click": "squish",
@@ -944,5 +1000,8 @@
       "rim": 0,
       "groundShade": 0.25
     }
+  },
+  "Back arrow": {
+    "y": -0.5
   }
 }

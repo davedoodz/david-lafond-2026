@@ -9,7 +9,8 @@
  *
  * Boxes are placed in document coordinates, so scrolling needs no redraw.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useRoute } from '../lib/router'
 import { useTuning } from '../tuning/useTuning'
 
 const FIELD_SELECTOR = 'input, textarea'
@@ -60,10 +61,19 @@ function collectRects(range: Range, out: DOMRect[]): void {
 
 export function SelectionHighlight() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const route = useRoute()
   const tuning = useTuning('Selection', SELECTION_CONFIG)
   const tuningRef = useRef(tuning)
   tuningRef.current = tuning
   const redrawRef = useRef<(() => void) | null>(null)
+
+  // The overlay is mounted above every route, so stale selection rectangles would
+  // otherwise survive into the incoming page (and its View Transition snapshot).
+  // A layout effect runs inside flushSync's route commit, before that snapshot.
+  useLayoutEffect(() => {
+    document.getSelection()?.removeAllRanges()
+    hostRef.current?.replaceChildren()
+  }, [route])
 
   useEffect(() => {
     const host = hostRef.current

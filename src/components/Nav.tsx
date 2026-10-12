@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
-import { ArrowUpRightIcon, ChevronLeftIcon } from './icons'
+import { ArrowDownIcon, ArrowUpRightIcon, ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
 import { isLightUnder } from '../lib/surface'
 import { useTuning } from '../tuning/useTuning'
@@ -56,11 +56,24 @@ function goBack(event: MouseEvent<HTMLAnchorElement>) {
   else navigate('work')
 }
 
+/** Arrow offsets are relative to the fixed icon slot, so the label never moves. */
+const BACK_ARROW = {
+  style: { type: 'select' as const, options: ['arrow', 'chevron'], default: 'arrow' },
+  scale: [1, 0.4, 3, 0.05] as Tuple,
+  x: [0, -40, 40, 0.5] as Tuple,
+  y: [0, -40, 40, 0.5] as Tuple,
+}
+
 /** "< Back" link. Project pages place it top-left, above the section list (Momo, Filo) or alone (Harvard & MIT). */
 export function BackLink({ className = '' }: { className?: string }) {
+  const arrow = useTuning('Back arrow', BACK_ARROW)
   return (
     <a className={`nav__back ${className}`.trim()} href="/" onClick={goBack}>
-      <ChevronLeftIcon className="nav__back-icon" />
+      <span className="nav__back-icon" style={{ display: 'inline-flex', flexShrink: 0 }}>
+        <span style={{ display: 'inline-flex', width: '100%', height: '100%', transform: `translate(${arrow.x}px, ${arrow.y}px) scale(${arrow.scale}) rotate(${arrow.style === 'arrow' ? 90 : 0}deg)` }}>
+          {arrow.style === 'arrow' ? <ArrowDownIcon /> : <ChevronLeftIcon />}
+        </span>
+      </span>
       Back
     </a>
   )
@@ -82,12 +95,12 @@ export function Nav({ route }: Props) {
     return () => observer.disconnect()
   }, [pin])
 
-  // Pinned over other sections, the links follow the page under them (light text on dark,
-  // dark on light), sampled behind the links on scroll.
+  // Follow the actual background, including pages that pin the nav through their own CSS.
+  // Expose the same sampled surface to both link styling and the custom cursor.
   const [under, setUnder] = useState<'light' | 'dark'>()
   useLayoutEffect(() => {
     const nav = navRef.current
-    if (!nav || !pin) return setUnder(undefined)
+    if (!nav) return
     let frame = 0
     const sample = () => {
       frame = 0
@@ -125,7 +138,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-surface={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

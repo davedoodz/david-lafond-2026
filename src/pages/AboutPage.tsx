@@ -335,6 +335,7 @@ export function AboutPage() {
             enter={headingSoft ? 0 : undefined}
             value={t.heading}
             onChange={(next) => setValue('heading', next)}
+            selectable
           />
           <EditableText
             className="about__text"
@@ -342,6 +343,7 @@ export function AboutPage() {
             enter={bodySoft ? 1 : undefined}
             value={t.story}
             onChange={(next) => setValue('story', next)}
+            selectable
           />
         </section>
         <div className="about__peek-stop" aria-hidden="true" />

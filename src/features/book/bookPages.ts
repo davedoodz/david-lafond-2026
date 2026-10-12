@@ -10,6 +10,12 @@ export const PAGE_COUNT = 60
 /** Page width / height (A4). */
 export const PAGE_ASPECT = 1600 / 2263
 
+/** 1-based page surface for cursor contrast, shared by book, grid and enlarged spreads. */
+export function pageSurface(page: number): 'dark' | 'light' {
+  return page === 1 || page === PAGE_COUNT || page === 18 || page === 19 || page === 44 || page === 45
+    ? 'dark' : 'light'
+}
+
 const BLOB_ROOT = 'https://iywe3spz629xaaix.public.blob.vercel-storage.com/mit-harvard-portfolio'
 const pad = (page: number) => String(page).padStart(2, '0')
 

@@ -6,10 +6,11 @@
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { getVercelOidcToken } from '@vercel/oidc'
 import { DAVEBOT_ENTRIES } from '../src/features/ghost/davebotIndex.js'
 
 const GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1/chat/completions'
-const DEFAULT_MODEL = 'minimax/minimax-m3-free'
+const DEFAULT_MODEL = 'inclusionai/ling-3.1-flash-free'
 const MAX_QUERY_LENGTH = 600
 const MAX_HISTORY_TURNS = 6
 const MAX_HISTORY_LENGTH = 500
@@ -138,15 +139,12 @@ function modelText(payload: unknown): string {
 }
 
 function concise(text: string): string {
-  const plain = text.replace(/\s+/g, ' ').trim()
-  const sentences = plain.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? []
-  let answer = ''
-  for (const sentence of sentences.slice(0, 4)) {
-    const next = `${answer} ${sentence.trim()}`.trim()
-    if (next.length > 520) break
-    answer = next
-  }
-  if (answer) return answer
+  const plain = text
+    .replace(/\s+/g, ' ')
+    .replace(/(\d)\.\s+(?=\d)/g, '$1.')
+    .replace(/([a-z0-9@-])\.\s+(?=(?:com|xyz|org|net|io)\b)/gi, '$1.')
+    .trim()
+  if (plain.length <= 520) return plain
   const clipped = plain.slice(0, 517)
   const boundary = clipped.lastIndexOf(' ')
   return `${clipped.slice(0, boundary > 0 ? boundary : 517).trim()}…`
@@ -187,7 +185,7 @@ export default async function ask(request: ApiRequest, response: ApiResponse): P
     return
   }
 
-  const token = process.env.VERCEL_OIDC_TOKEN
+  const token = process.env.VERCEL_OIDC_TOKEN || await getVercelOidcToken().catch(() => undefined)
   if (!token) {
     send(response, 503, { error: 'Davebot is unavailable' })
     return
@@ -210,10 +208,11 @@ export default async function ask(request: ApiRequest, response: ApiResponse): P
       body: JSON.stringify({
         model: process.env.DAVEBOT_MODEL || DEFAULT_MODEL,
         messages,
-        max_tokens: 160,
+        max_tokens: 512,
+        reasoning: { effort: 'none' },
         temperature: 0.55,
       }),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(30_000),
     })
     if (!upstream.ok) throw new Error(`AI Gateway returned ${upstream.status}`)
     const answer = concise(modelText(await upstream.json()))

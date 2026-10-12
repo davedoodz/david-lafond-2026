@@ -245,6 +245,22 @@ h3 {
   display: flex;
 }
 
+/* Visitors can copy only deliberate long-form copy blocks. Interactive form text and
+   development's inline copy editor remain selectable for editing. */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+[data-selectable],
+[data-selectable] *,
+input,
+textarea,
+.is-editable {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* Text selection. The fill is drawn by <SelectionHighlight> (one white layer in
    `difference` blend, sized to each run's full glyph box) because the native fill
    is only line-height tall — with this type's tight leading it clipped

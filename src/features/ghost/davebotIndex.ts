@@ -66,6 +66,20 @@ export const DAVEBOT_ENTRIES: DavebotEntry[] = [
     ],
   },
   {
+    id: 'greeting',
+    title: 'Meet Davebot',
+    route: 'about',
+    keys: [
+      'hello', 'hello davebot', 'hey davebot', 'whats up', 'how are you',
+      'good morning', 'good afternoon', 'good evening', 'what can you do', 'introduce yourself',
+    ],
+    answer: [
+      { text: "Hey — I'm " },
+      { text: "Davebot, David's tiny portfolio assistant and part-time ghost", emphasis: true },
+      { text: '. I can walk you through his work, research, experience, or the evidence for hiring him. The haunting is complimentary.' },
+    ],
+  },
+  {
     id: 'about',
     title: 'About David',
     route: 'about',
