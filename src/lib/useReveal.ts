@@ -22,6 +22,16 @@ export const revealDials = () => ({
   preset: { type: 'select' as const, options: [...REVEAL_PRESETS], default: 'rise' },
   /** once: plays the first time. always: replays whenever the block re-enters from below. */
   repeat: { type: 'select' as const, options: ['once', 'always'], default: 'once' },
+  /**
+   * With repeat 'always', how items leave when the block drops back below the trigger line:
+   *   reverse   the reveal plays backwards (exitSpeed × its speed)
+   *   fade      items fade out in place over exitMs
+   *   offscreen items stay; they re-arm unseen once the block is fully below the screen
+   *   instant   items snap hidden at once
+   */
+  exit: { type: 'select' as const, options: ['reverse', 'fade', 'offscreen', 'instant'], default: 'offscreen' },
+  exitSpeed: [1.8, 0.25, 4, 0.05] as Tuple,
+  exitMs: [350, 80, 1500, 10] as Tuple,
   /** How far up the viewport (0 = bottom edge, 1 = top) the block's top must come before it starts. */
   trigger: [0.15, 0, 0.8, 0.01] as Tuple,
   delayMs: [0, 0, 1500, 10] as Tuple,
@@ -37,6 +47,9 @@ export const revealDials = () => ({
 export type RevealValues = {
   preset: string
   repeat: string
+  exit: string
+  exitSpeed: number
+  exitMs: number
   trigger: number
   delayMs: number
   durationMs: number
@@ -127,34 +140,95 @@ export function useReveal(ref: RefObject<HTMLElement | null>, selector: string, 
       return animation
     })
 
-    const play = () => animations.forEach((a) => a.play())
+    const play = () =>
+      animations.forEach((a) => {
+        a.playbackRate = 1
+        a.play()
+      })
     const reset = () =>
       animations.forEach((a) => {
         a.pause()
+        a.playbackRate = 1
         a.currentTime = 0
       })
+
+    // Exits. Each leaves the reveal back on its first frame (hidden), ready to replay.
+    let fades: Animation[] = []
+    const stopFades = () => {
+      fades.forEach((f) => f.cancel())
+      fades = []
+    }
+    const reverse = () => {
+      animations.forEach((a) => {
+        a.playbackRate = -v.exitSpeed
+        a.play()
+      })
+      // A finished reverse can drop its backwards fill for one paint in some browsers.
+      // Pause every card on the hidden keyframe so the exit has a stable endpoint.
+      void Promise.all(animations.map((a) => a.finished))
+        .then(() => {
+          if (!played) reset()
+        })
+        .catch(() => {})
+    }
+    const fadeOut = () => {
+      stopFades()
+      fades = items.map((el) => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: v.exitMs, easing: 'ease-out', fill: 'forwards' }))
+      const done = fades
+      void Promise.all(done.map((f) => f.finished))
+        .then(() => {
+          if (fades !== done) return
+          reset()
+          stopFades()
+        })
+        .catch(() => {})
+    }
 
     let played = false
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          // Back above the line mid-fade: fade back in from where it is; the reveal itself is still done.
+          if (fades.length) {
+            const back = fades
+            fades = []
+            back.forEach((f) => f.reverse())
+            void Promise.all(back.map((f) => f.finished))
+              .then(() => back.forEach((f) => f.cancel()))
+              .catch(() => {})
+            played = true
+          }
           if (!played) play()
           played = true
           if (v.repeat === 'once') observer.disconnect()
-        } else if (v.repeat === 'always' && entry.boundingClientRect.top > 0) {
-          // Only re-arm once it is back below the fold, so scrolling up past it does not blink.
-          reset()
+        } else if (v.repeat === 'always' && played && entry.boundingClientRect.top > 0) {
+          // Back below the trigger line (scrolling up past it re-arms nothing).
+          if (v.exit === 'offscreen') return
           played = false
+          if (v.exit === 'reverse') reverse()
+          else if (v.exit === 'fade') fadeOut()
+          else reset()
         }
       },
       { rootMargin: `0px 0px -${v.trigger * 100}% 0px` },
     )
     observer.observe(root)
 
+    // 'offscreen': re-arm only once the block is entirely below the screen.
+    const below = new IntersectionObserver(([entry]) => {
+      if (v.exit !== 'offscreen' || v.repeat !== 'always' || entry.isIntersecting || entry.boundingClientRect.top <= 0) return
+      reset()
+      played = false
+    })
+    below.observe(root)
+
     return () => {
       observer.disconnect()
+      below.disconnect()
+      stopFades()
       animations.forEach((a) => a.cancel())
     }
+
     // `key` captures every dial.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, replayKey, selector])

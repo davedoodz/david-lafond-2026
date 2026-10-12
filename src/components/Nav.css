@@ -36,6 +36,45 @@
   color: var(--nav-active, var(--paper));
 }
 
+/* Resume: up-right arrow fades and slides in beside the word on hover (like the footer links).
+   Absolutely placed so it never moves the other links; the dials set size, gap and height. */
+.nav__resume {
+  position: relative;
+}
+
+.nav__resume-arrow {
+  position: absolute;
+  top: calc(50% - var(--resume-arrow-scale, 1) * 0.5em + var(--resume-arrow-y, 0px));
+  left: calc(100% + var(--resume-arrow-x, 6px));
+  width: calc(var(--resume-arrow-scale, 1) * 1em);
+  height: calc(var(--resume-arrow-scale, 1) * 1em);
+  opacity: 0;
+  translate: -3px 0;
+  pointer-events: none;
+  transition:
+    opacity 180ms ease,
+    translate 220ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .nav__resume:hover .nav__resume-arrow {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.nav__resume:focus-visible .nav__resume-arrow {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav__resume-arrow {
+    translate: 0 0;
+    transition: opacity 180ms ease;
+  }
+}
+
 [data-surface='light'] .nav {
   --nav-idle: var(--stone-400);
   --nav-active: var(--ink-900);

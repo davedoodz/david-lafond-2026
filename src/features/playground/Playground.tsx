@@ -2,17 +2,79 @@ import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, useReducedMotion } from 'motion/react'
 import type { DialConfig } from 'dialkit'
-import { useTuning } from '../../tuning/useTuning'
+import { useTuningController } from '../../tuning/useTuning'
 import { playgroundItems } from '../../data/playground'
 import { CardVideo } from './CardVideo'
+import { CriticalActionMedia, JournalMedia, PhoneMedia, PortfolioMedia, type PhoneFrame } from './SpecialCardMedia'
 import { PlaygroundCard } from './PlaygroundCard'
-import { PlaygroundZoom } from './PlaygroundZoom'
+import { PlaygroundZoom, type NavPreset } from './PlaygroundZoom'
 import { toMotionTransition } from './motionTransition'
 import './Playground.css'
 
 const titleFields: Record<string, { type: 'text'; default: string; placeholder: string }> = {}
+const videoLoopSpeedFields: Record<string, [number, number, number, number]> = {}
+const mediaScaleFields: Record<string, [number, number, number, number]> = {}
+const tuningKeyById: Record<string, string> = {}
+const controlKeyById: Record<string, string> = {
+  p01: 'paper shaders',
+  p02: 'future fabric',
+  p03: 'nintendogs for macos',
+  p04: 'renovation contractor agent',
+  p05: 'architectural sketchbooks',
+  p06: 'david’s journal',
+  p07: 'decode: a critical action',
+  p08: 'my room in 3d',
+  p09: 'harvard + mit acceptance portfolio',
+  p10: 'interactive signature',
+  p11: 'globalization research explorer',
+  p12: 'testimonials carousel',
+}
+const ROOM_VIDEO_VARIANTS = {
+  dark: {
+    src: '/about/playground/bedroom-world.mp4',
+    poster: '/about/playground/bedroom-world.webp',
+    fit: 'contain',
+  },
+  light: {
+    src: '/about/playground/bedroom-world-light.mp4',
+    poster: '/about/playground/bedroom-world-light.webp',
+    fit: 'contain',
+  },
+} as const
+const TESTIMONIAL_VIDEO_VARIANTS = {
+  fullBleed: {
+    src: '/about/playground/testimonials.mp4',
+    poster: '/about/playground/testimonials.webp',
+    fit: 'cover',
+  },
+  lightCanvas: {
+    src: '/about/playground/testimonials-light.mp4',
+    poster: '/about/playground/testimonials-light.webp',
+    fit: 'contain',
+  },
+} as const
+const itemById = new Map(playgroundItems.map((item) => [item.id, item]))
+const defaultOrder = playgroundItems.map((item) => item.id).join(',')
+
 for (const [i, item] of playgroundItems.entries()) {
-  titleFields[`card${i + 1}`] = { type: 'text', default: item.title, placeholder: item.title }
+  const key = `card${i + 1}`
+  tuningKeyById[item.id] = key
+  titleFields[key] = { type: 'text', default: item.title, placeholder: item.title }
+  // Portfolio cards get their own dial folder (page speed, floatiness, shadow, scale).
+  if (item.presentation === 'portfolio') continue
+  if (item.video) videoLoopSpeedFields[controlKeyById[item.id]] = [1, 0.25, 12, 0.05]
+  if (item.video || item.presentation) mediaScaleFields[controlKeyById[item.id]] = [1, 0.25, 3, 0.01]
+}
+
+function orderItems(rawOrder: string) {
+  const seen = new Set<string>()
+  const ordered = rawOrder
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => id in tuningKeyById && !seen.has(id) && Boolean(seen.add(id)))
+    .map((id) => itemById.get(id)!)
+  for (const item of playgroundItems) if (!seen.has(item.id)) ordered.push(item)
+  return ordered
 }
 
 const PLAYGROUND_CONFIG = {
@@ -33,6 +95,76 @@ const PLAYGROUND_CONFIG = {
     durationMs: [350, 0, 1000, 10] as [number, number, number, number],
   },
   titles: { _collapsed: true, ...titleFields },
+  /** Per-card playback rate for muted looping videos. */
+  videoLoopSpeed: { _collapsed: true, ...videoLoopSpeedFields },
+  /** Scale the central composition independently for each populated card. */
+  mediaScale: { _collapsed: true, ...mediaScaleFields },
+  room: {
+    video: {
+      type: 'select',
+      options: [
+        { value: 'dark', label: 'Dark canvas (current)' },
+        { value: 'light', label: 'Light canvas' },
+      ],
+      default: 'dark',
+    },
+  },
+  testimonials: {
+    video: {
+      type: 'select',
+      options: [
+        { value: 'fullBleed', label: 'Full bleed (current)' },
+        { value: 'lightCanvas', label: 'Light canvas' },
+      ],
+      default: 'fullBleed',
+    },
+  },
+  order: { type: 'text', default: defaultOrder },
+  journal: {
+    /** Crop the desktop loop by zooming and repositioning it within the card. */
+    desktopZoom: [1, 1, 3, 0.01] as [number, number, number, number],
+    desktopX: [0, -100, 100, 1] as [number, number, number, number],
+    desktopY: [0, -100, 100, 1] as [number, number, number, number],
+    desktopCropLeft: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopCropRight: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopCropTop: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopCropBottom: [0, 0, 49, 0.5] as [number, number, number, number],
+    desktopRadius: [0, 0, 120, 1] as [number, number, number, number],
+    /** Phone position as percentage points from the card centre. */
+    phoneX: [-26, -100, 100, 1] as [number, number, number, number],
+    phoneY: [4, -100, 100, 1] as [number, number, number, number],
+  },
+  criticalAction: {
+    /** Book position as percentage points from the card centre. */
+    bookX: [0, -100, 100, 1] as [number, number, number, number],
+    bookY: [0, -100, 100, 1] as [number, number, number, number],
+    /** How fast the background gradient flows; 0 holds it still. */
+    speed: [0.77, 0, 4, 0.01] as [number, number, number, number],
+  },
+  portfolio: {
+    /** Video playback rate: how fast the spreads turn. */
+    pageSpeed: [1, 0.25, 4, 0.05] as [number, number, number, number],
+    /** Drift and sway of the floating spread; 0 holds it still at its tilt. */
+    floatiness: [1, 0, 3, 0.05] as [number, number, number, number],
+    /** Drop-shadow strength behind the spread. */
+    shadow: [1, 0, 2, 0.05] as [number, number, number, number],
+    scale: [1, 0.5, 1.5, 0.01] as [number, number, number, number],
+    /** Book orientation (deg): tip top away (+) / toward (−), turn, and roll. */
+    tiltX: [22, -60, 60, 0.5] as [number, number, number, number],
+    tiltY: [-18, -60, 60, 0.5] as [number, number, number, number],
+    tiltZ: [-4, -45, 45, 0.5] as [number, number, number, number],
+    /** Central binding (gutter) shadow where the pages dip into the spine. */
+    binding: {
+      /** Darkness of the fold; 0 removes it. */
+      darkness: [1, 0, 3, 0.05] as [number, number, number, number],
+      /** Spread of the shadow either side of the spine. */
+      width: [1, 0.2, 4, 0.05] as [number, number, number, number],
+      /** Soft highlight on each page beside the fold. */
+      highlight: [1, 0, 3, 0.05] as [number, number, number, number],
+      /** Fold position: % of the spread from centre (− left, + right). */
+      offset: [0, -10, 10, 0.1] as [number, number, number, number],
+    },
+  },
   grid: {
     /** How many cards show, in data order (first N). */
     count: [playgroundItems.length, 1, playgroundItems.length, 1] as [number, number, number, number],
@@ -54,23 +186,70 @@ const PLAYGROUND_CONFIG = {
     dimOpacity: [0.6, 0, 1, 0.01] as [number, number, number, number],
     spring: { type: 'spring', visualDuration: 0.5, bounce: 0.2 } as const,
   },
+  /** Restart button over playing videos in the open view: opacity of its dark circle, at rest and on hover. */
+  restart: {
+    opacity: [0.62, 0, 1, 0.01] as [number, number, number, number],
+    hoverOpacity: [0.76, 0, 1, 0.01] as [number, number, number, number],
+  },
+  /** Phone cards (Reno): the recording in the Momo phone frame, with the device frame it was filmed in,
+   *  or in a CSS-only minimalist frame. */
+  phone: {
+    frame: {
+      type: 'select',
+      options: [
+        { value: 'momo', label: 'Momo frame' },
+        { value: 'recorded', label: 'Recorded frame' },
+        { value: 'bezel', label: 'Thin bezel' },
+        { value: 'hairline', label: 'Hairline' },
+        { value: 'glass', label: 'Glass' },
+        { value: 'floating', label: 'Floating screen' },
+        { value: 'none', label: 'Bare screen' },
+      ],
+      default: 'momo',
+    },
+  },
+  /** Card-to-card change when using the arrows (or ← / →) in the open view. */
+  nav: {
+    preset: {
+      type: 'select',
+      options: [
+        { value: 'fade', label: 'Fade' },
+        { value: 'slide', label: 'Slide' },
+        { value: 'push', label: 'Push (slide + fade)' },
+        { value: 'scale', label: 'Scale' },
+        { value: 'blur', label: 'Blur' },
+        { value: 'flip', label: 'Flip (3D)' },
+        { value: 'none', label: 'None (cut)' },
+      ],
+      default: 'fade',
+    },
+    transition: { type: 'spring', visualDuration: 0.35, bounce: 0 } as const,
+  },
 } satisfies DialConfig
 
 type HostRefs = { grid: HTMLDivElement | null; zoom: HTMLDivElement | null }
 
 export function Playground({ className }: { className?: string }) {
-  const values = useTuning('Playground', PLAYGROUND_CONFIG)
+  const { values, setValue } = useTuningController('Playground', PLAYGROUND_CONFIG)
   const count = values.grid.count
-  const items = useMemo(() => playgroundItems.slice(0, count), [count])
+  const orderedItems = useMemo(() => orderItems(values.order), [values.order])
+  const items = useMemo(() => orderedItems.slice(0, count), [count, orderedItems])
   const reducedMotion = Boolean(useReducedMotion())
 
   const [activeId, setActiveId] = useState<string | null>(null)
+  /** −1 = previous, 1 = next: which side the arrow transition enters from. */
+  const [navDirection, setNavDirection] = useState<1 | -1>(1)
   const [originRect, setOriginRect] = useState<DOMRect | null>(null)
   const [visibleIds, setVisibleIds] = useState<Set<string>>(() => new Set())
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
 
   const cardElRefs = useRef(new Map<string, HTMLButtonElement>())
+  const openScrollYRef = useRef(0)
   const hostRefs = useRef(new Map<string, HostRefs>())
   const lastFocusedRef = useRef<HTMLButtonElement | null>(null)
+  const pointerRef = useRef<{ x: number; y: number } | null>(null)
+  const landingTimerRef = useRef(0)
   const [, forceHostUpdate] = useReducer((n: number) => n + 1, 0)
 
   const setCardEl = useCallback((id: string, el: HTMLButtonElement | null) => {
@@ -92,10 +271,22 @@ export function Playground({ className }: { className?: string }) {
     forceHostUpdate()
   }, [])
 
-  // Play/pause each grid video only while its card is on screen (or zoomed, handled below).
   useEffect(() => {
-    const withVideo = items.filter((item) => item.video)
-    if (withVideo.length === 0) return
+    const track = (e: PointerEvent) => {
+      pointerRef.current = { x: e.clientX, y: e.clientY }
+    }
+    window.addEventListener('pointermove', track, { passive: true })
+    window.addEventListener('pointerdown', track, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', track)
+      window.removeEventListener('pointerdown', track)
+    }
+  }, [])
+
+  // Play/pause each animated card only while it is on screen or zoomed.
+  useEffect(() => {
+    const withMedia = items.filter((item) => item.video || item.presentation)
+    if (withMedia.length === 0) return
     const observer = new IntersectionObserver(
       (entries) => {
         setVisibleIds((prev) => {
@@ -119,7 +310,7 @@ export function Playground({ className }: { className?: string }) {
       { rootMargin: '200px 0px' },
     )
     const raf = requestAnimationFrame(() => {
-      for (const item of withVideo) {
+      for (const item of withMedia) {
         const el = cardElRefs.current.get(item.id)
         if (el) observer.observe(el)
       }
@@ -130,23 +321,48 @@ export function Playground({ className }: { className?: string }) {
     }
   }, [items])
 
-  const openCard = useCallback((id: string, el: HTMLButtonElement) => {
-    lastFocusedRef.current = el
+  const openCard = useCallback((id: string, el: HTMLButtonElement, scrollY: number) => {
+    openScrollYRef.current = scrollY
+    document.documentElement.dataset.playgroundZoomOpen = 'true'
+    window.scrollTo({ top: scrollY, behavior: 'instant' })
+    window.clearTimeout(landingTimerRef.current)
+    el.removeAttribute('data-landing')
     setOriginRect(el.getBoundingClientRect())
     setActiveId(id)
   }, [])
 
+  // The closing card must land exactly where, and at the size, the grid card will show the moment it
+  // reappears: its layout box, at hover scale only if the pointer is over it. The grid card's own
+  // transitions are off until it has taken that state, so the handoff never shrinks, grows or fades.
   const closeZoom = useCallback(() => {
-    setActiveId((currentId) => {
-      if (currentId) {
-        const el = cardElRefs.current.get(currentId)
-        if (el) setOriginRect(el.getBoundingClientRect())
-      }
-      return null
-    })
-  }, [])
+    if (!activeId) return
+    const el = cardElRefs.current.get(activeId)
+    if (el) {
+      const box = el.getBoundingClientRect()
+      const cx = box.left + box.width / 2
+      const cy = box.top + box.height / 2
+      const w = el.offsetWidth
+      const h = el.offsetHeight
+      const p = pointerRef.current
+      const hovered =
+        p !== null &&
+        window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+        Math.abs(p.x - cx) <= w / 2 &&
+        Math.abs(p.y - cy) <= h / 2
+      const s = hovered ? Number.parseFloat(getComputedStyle(el).getPropertyValue('--pg-hover-scale')) || 1.04 : 1
+      window.clearTimeout(landingTimerRef.current)
+      el.setAttribute('data-landing', '')
+      // Keep the title down after landing until the pointer leaves, so it never flashes in.
+      el.setAttribute('data-hush', '')
+      el.addEventListener('pointerleave', () => el.removeAttribute('data-hush'), { once: true })
+      if (!hovered) requestAnimationFrame(() => el.removeAttribute('data-hush'))
+      setOriginRect(new DOMRect(cx - (w * s) / 2, cy - (h * s) / 2, w * s, h * s))
+    }
+    setActiveId(null)
+  }, [activeId])
 
-  const goTo = useCallback((delta: number) => {
+  const goTo = useCallback((delta: 1 | -1) => {
+    setNavDirection(delta)
     setActiveId((current) => {
       if (!current) return current
       const idx = items.findIndex((i) => i.id === current)
@@ -178,15 +394,83 @@ export function Playground({ className }: { className?: string }) {
 
   useEffect(() => {
     if (!activeId) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const root = document.documentElement
+    const body = document.body
+    const lockedY = openScrollYRef.current
+    const previous = {
+      rootOverflow: root.style.overflow,
+      rootOverscroll: root.style.overscrollBehavior,
+      rootSnap: root.style.scrollSnapType,
+      bodyOverflow: body.style.overflow,
+      bodyOverscroll: body.style.overscrollBehavior,
+    }
+    const preventScroll = (event: Event) => event.preventDefault()
+    const holdScrollPosition = () => {
+      if (window.scrollY !== lockedY) window.scrollTo({ top: lockedY, behavior: 'instant' })
+    }
+    root.dataset.playgroundZoomOpen = 'true'
+    root.style.overflow = 'hidden'
+    root.style.overscrollBehavior = 'none'
+    root.style.scrollSnapType = 'none'
+    body.style.overflow = 'hidden'
+    body.style.overscrollBehavior = 'none'
+    window.scrollTo({ top: lockedY, behavior: 'instant' })
+    window.addEventListener('scroll', holdScrollPosition, { passive: true })
+    window.addEventListener('wheel', preventScroll, { passive: false, capture: true })
+    window.addEventListener('touchmove', preventScroll, { passive: false, capture: true })
     return () => {
-      document.body.style.overflow = prevOverflow
+      delete root.dataset.playgroundZoomOpen
+      window.removeEventListener('scroll', holdScrollPosition)
+      window.removeEventListener('wheel', preventScroll, { capture: true })
+      window.removeEventListener('touchmove', preventScroll, { capture: true })
+      root.style.overflow = previous.rootOverflow
+      root.style.overscrollBehavior = previous.rootOverscroll
+      body.style.overflow = previous.bodyOverflow
+      body.style.overscrollBehavior = previous.bodyOverscroll
+      root.style.scrollSnapType = previous.rootSnap
+      window.scrollTo({ top: lockedY, behavior: 'instant' })
     }
   }, [activeId])
 
   const handleExitComplete = useCallback(() => {
     lastFocusedRef.current?.focus()
+    // Give the grid card a few frames to pick up its hover state with transitions off.
+    landingTimerRef.current = window.setTimeout(() => {
+      for (const el of cardElRefs.current.values()) el.removeAttribute('data-landing')
+    }, 160)
+  }, [])
+
+  // A card is "in the zoom view" while it is active or its zoom content is still mounted
+  // (exiting after close or after an arrow change). Its media stays in that zoom content and
+  // its grid slot stays hidden until the exit finishes, so no card ever animates out empty.
+  const isInZoom = (id: string) => id === activeId || Boolean(hostRefs.current.get(id)?.zoom)
+
+  const startReorder = useCallback((id: string) => {
+    setDraggingId(id)
+    setDropTargetId(null)
+  }, [])
+
+  const previewReorder = useCallback((id: string) => {
+    setDropTargetId(id)
+  }, [])
+
+  const finishReorder = useCallback(
+    (sourceId: string, targetId: string) => {
+      if (sourceId === targetId) return
+      const next = [...orderedItems]
+      const from = next.findIndex((item) => item.id === sourceId)
+      const to = next.findIndex((item) => item.id === targetId)
+      if (from < 0 || to < 0) return
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      setValue('order', next.map((item) => item.id).join(','))
+    },
+    [orderedItems, setValue],
+  )
+
+  const cancelReorder = useCallback(() => {
+    setDraggingId(null)
+    setDropTargetId(null)
   }, [])
 
   const style = useMemo(
@@ -213,50 +497,130 @@ export function Playground({ className }: { className?: string }) {
         '--pg-shade-color': values.shade.color,
         '--pg-hover-scale': values.hover.scale,
         '--pg-hover-ms': `${values.hover.durationMs}ms`,
+        '--pg-restart-opacity': values.restart.opacity,
+        '--pg-restart-hover-opacity': values.restart.hoverOpacity,
       }) as CSSProperties,
     [values, items],
   )
 
-  const activeItem = activeId ? items.find((i) => i.id === activeId) : undefined
-  const activeIndex = activeId ? items.findIndex((i) => i.id === activeId) : -1
+  const activeItem = activeId ? items.find((item) => item.id === activeId) : undefined
   // dialkit's ResolvedValues type doesn't drop `_collapsed` from folder types; the runtime value does.
   const titles = values.titles as unknown as Record<string, string>
-  const activeTitle = activeIndex >= 0 ? titles[`card${activeIndex + 1}`] : ''
+  const videoLoopSpeeds = values.videoLoopSpeed as unknown as Record<string, number>
+  const mediaScales = values.mediaScale as unknown as Record<string, number>
+  const selectedRoomVideo =
+    ROOM_VIDEO_VARIANTS[values.room.video as keyof typeof ROOM_VIDEO_VARIANTS] ?? ROOM_VIDEO_VARIANTS.dark
+  const selectedTestimonialVideo =
+    TESTIMONIAL_VIDEO_VARIANTS[values.testimonials.video as keyof typeof TESTIMONIAL_VIDEO_VARIANTS] ??
+    TESTIMONIAL_VIDEO_VARIANTS.fullBleed
+  const activeTitle = activeItem ? titles[tuningKeyById[activeItem.id]] : ''
   const zoomTransition = toMotionTransition(values.zoom.spring)
 
   return (
     <div className={['pg-root', className].filter(Boolean).join(' ')} style={style}>
       <div className="pg-grid">
-        {items.map((item, i) => (
+        {items.map((item) => (
           <PlaygroundCard
             key={item.id}
             item={item}
-            title={titles[`card${i + 1}`]}
-            isActive={item.id === activeId}
+            title={titles[tuningKeyById[item.id]]}
+            isActive={isInZoom(item.id)}
+            canReorder={import.meta.env.DEV}
+            isDragging={item.id === draggingId}
+            isDropTarget={item.id === dropTargetId && item.id !== draggingId}
             onOpen={openCard}
+            onReorderStart={startReorder}
+            onReorderOver={previewReorder}
+            onReorderDrop={finishReorder}
+            onReorderEnd={cancelReorder}
             cardRef={setCardEl}
             mediaHostRef={setGridHost}
           />
         ))}
       </div>
 
-      {items
-        .filter((item) => item.video)
-        .map((item) => {
-          const entry = hostRefs.current.get(item.id)
-          const target = (item.id === activeId ? entry?.zoom : null) ?? entry?.grid ?? null
-          if (!target) return null
-          return createPortal(
-            <CardVideo src={item.video!} poster={item.poster} shouldPlay={item.id === activeId || visibleIds.has(item.id)} />,
-            target,
-            item.id,
-          )
-        })}
+      {items.map((item) => {
+        if (!item.video && !item.presentation) return null
+        const entry = hostRefs.current.get(item.id)
+        const inZoom = isInZoom(item.id)
+        const target = (inZoom ? entry?.zoom : null) ?? entry?.grid ?? null
+        if (!target) return null
+        const shouldPlay = inZoom || visibleIds.has(item.id)
+        const playbackRate = videoLoopSpeeds[controlKeyById[item.id]] ?? 1
+        const mediaScale = mediaScales[controlKeyById[item.id]] ?? 1
+        const recorded = values.phone.frame === 'recorded' ? item.recordedFrame : undefined
+        const selectedVideo =
+          item.id === 'p08' ? selectedRoomVideo : item.id === 'p12' ? selectedTestimonialVideo : undefined
+        const videoSrc = selectedVideo?.src ?? recorded?.video ?? item.video
+        const videoPoster = selectedVideo?.poster ?? recorded?.poster ?? item.poster
+        const media =
+          item.presentation === 'critical-action' ? (
+            <CriticalActionMedia
+              shouldPlay={shouldPlay}
+              bookScale={mediaScale}
+              bookX={values.criticalAction.bookX}
+              bookY={values.criticalAction.bookY}
+              speed={values.criticalAction.speed}
+            />
+          ) : item.presentation === 'portfolio' && item.video ? (
+            <PortfolioMedia
+              src={videoSrc!}
+              poster={videoPoster}
+              shouldPlay={shouldPlay}
+              pageSpeed={values.portfolio.pageSpeed}
+              floatiness={values.portfolio.floatiness}
+              shadow={values.portfolio.shadow}
+              scale={values.portfolio.scale}
+              tiltX={values.portfolio.tiltX}
+              tiltY={values.portfolio.tiltY}
+              tiltZ={values.portfolio.tiltZ}
+              binding={values.portfolio.binding}
+            />
+          ) : item.presentation === 'journal' && item.video ? (
+            <JournalMedia
+              src={videoSrc!}
+              poster={videoPoster}
+              playbackRate={playbackRate}
+              shouldPlay={shouldPlay}
+              mediaScale={mediaScale}
+              desktopZoom={values.journal.desktopZoom}
+              desktopX={values.journal.desktopX}
+              desktopY={values.journal.desktopY}
+              desktopCropLeft={values.journal.desktopCropLeft}
+              desktopCropRight={values.journal.desktopCropRight}
+              desktopCropTop={values.journal.desktopCropTop}
+              desktopCropBottom={values.journal.desktopCropBottom}
+              desktopRadius={values.journal.desktopRadius}
+              phoneX={values.journal.phoneX}
+              phoneY={values.journal.phoneY}
+            />
+          ) : item.presentation === 'phone' && item.video && !recorded ? (
+            <PhoneMedia
+              src={videoSrc!}
+              poster={videoPoster}
+              playbackRate={playbackRate}
+              shouldPlay={shouldPlay}
+              mediaScale={mediaScale}
+              frame={values.phone.frame as PhoneFrame}
+            />
+          ) : item.video ? (
+            <div className="pg-video-frame" style={{ '--pg-media-scale': mediaScale } as CSSProperties}>
+              <CardVideo
+                src={videoSrc!}
+                poster={videoPoster}
+                playbackRate={playbackRate}
+                shouldPlay={shouldPlay}
+                className={(selectedVideo?.fit ?? item.videoFit) === 'cover' ? 'pg-video--cover' : undefined}
+              />
+            </div>
+          ) : null
+        return media ? createPortal(media, target, item.id) : null
+      })}
 
       {createPortal(
         // Portaled to <body>, outside .pg-root — re-supply the dial vars (shade, title) to the zoom card.
         <div className="pg-zoom-vars" style={style}>
-          <AnimatePresence onExitComplete={handleExitComplete}>
+          <AnimatePresence onExitComplete={handleExitComplete} custom={originRect}>
             {activeItem && originRect && (
               <PlaygroundZoom
                 key="zoom"
@@ -275,6 +639,9 @@ export function Playground({ className }: { className?: string }) {
                 onNext={onNext}
                 mediaHostRef={setZoomHost}
                 reducedMotion={reducedMotion}
+                navPreset={values.nav.preset as NavPreset}
+                navDirection={navDirection}
+                navTransition={toMotionTransition(values.nav.transition)}
               />
             )}
           </AnimatePresence>

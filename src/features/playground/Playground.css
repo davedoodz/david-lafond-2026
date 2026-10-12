@@ -35,6 +35,35 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.pg-card[data-reorderable='true'] {
+  cursor: grab;
+}
+
+.pg-card[data-dragging='true'] {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+.pg-card[data-drop-target='true'] {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+.pg-card[data-presentation='critical-action'],
+.pg-zoom-card[data-presentation='critical-action'] {
+  background: #0d3937;
+  outline-color: #0d3937;
+}
+
+/* No white hairline at the card contour: the rounded clip is applied to each media layer on
+   its own, so any light fill under a video leaks through the video's anti-aliased edge.
+   Cards whose media covers them drop the grey placeholder (it stays on empty cards and on
+   the portfolio, where it is the visible stage). */
+.pg-card:has(.pg-video-frame, .pg-journal-media),
+.pg-zoom-card:has(.pg-video-frame, .pg-journal-media) {
+  background: transparent;
+}
+
 @media (max-width: 640px) {
   .pg-card {
     aspect-ratio: 142 / 129;
@@ -50,16 +79,391 @@
   visibility: hidden;
 }
 
+/* Just closed: the grid card snaps to the size the zoom card landed at with transitions off, so the
+   handoff never shrinks, grows or fades. No title or shade shows: the zoom card drops them as it
+   closes, and the grid card keeps them hidden (data-hush) until the pointer leaves it. */
+.pg-card[data-landing] {
+  transition: none !important;
+}
+
+.pg-card:is([data-landing], [data-hush]) :is(.card-shade, .card-title) {
+  opacity: 0 !important;
+  transition: none !important;
+}
+
+.pg-zoom-card[data-closing] :is(.card-shade, .card-title) {
+  opacity: 0 !important;
+  transition: none !important;
+}
+
 .pg-card-media {
   position: absolute;
   inset: 0;
 }
 
+/* Box-less slot that hosts the page-lifetime <video> (CardVideo), so the video lays out as
+   if it were the slot's parent's direct child. */
+.pg-video-slot {
+  display: contents;
+}
+
 .pg-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: #fff;
+}
+
+.pg-video--cover {
+  object-fit: cover;
+  background: transparent;
+}
+
+.pg-video-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* White behind a scaled-down video, kept 1px clear of the edge so it can't fringe the contour. */
+  background: linear-gradient(#fff 0 0) center / calc(100% - 2px) calc(100% - 2px) no-repeat;
+}
+
+.pg-video-frame > .pg-video-slot > .pg-video {
+  transform: scale(var(--pg-media-scale));
+  transform-origin: center;
+}
+
+.pg-journal-media,
+.pg-critical-action-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.pg-journal-media {
+  background: linear-gradient(#fff 0 0) center / calc(100% - 2px) calc(100% - 2px) no-repeat;
+  container-type: size;
+}
+
+.pg-critical-action-media {
+  background: #0d3937;
+}
+
+.pg-journal-content {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--pg-media-scale));
+  transform-origin: center;
+}
+
+.pg-journal-desktop-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: inset(
+    var(--pg-journal-desktop-crop-top)
+    var(--pg-journal-desktop-crop-right)
+    var(--pg-journal-desktop-crop-bottom)
+    var(--pg-journal-desktop-crop-left)
+    round var(--pg-journal-desktop-radius)
+  );
+}
+
+.pg-journal-desktop {
+  transform:
+    translate(var(--pg-journal-desktop-x), var(--pg-journal-desktop-y))
+    scale(var(--pg-journal-desktop-zoom));
+  transform-origin: center;
+}
+
+/* Momo prototype iPhone frame (1312×2672, screen hole x68–1246 y58–2613), shared by the Journal
+   and Reno cards. The screen sits a hair outside the hole so the bezel overlaps every edge. */
+.pg-phone {
+  position: absolute;
+  aspect-ratio: 1312 / 2672;
+  filter: drop-shadow(0 1.2cqw 2.4cqw rgb(0 0 0 / 0.22));
+}
+
+.pg-phone__screen {
+  position: absolute;
+  inset: 1.9% 4.7% 1.9% 4.9%;
+  border-radius: 14% / 6.5%;
+  overflow: hidden;
+  background: #fbfbfb;
+}
+
+/* Journal phone: over the recorded player screen. Width keeps the screen the same size as the
+   old baked-in mockup. */
+.pg-journal-phone {
+  z-index: 1;
+  left: calc(50% + var(--pg-journal-phone-x));
+  top: calc(50% + var(--pg-journal-phone-y));
+  width: 35.5%;
+  transform: translate(-50%, -50%);
+}
+
+.pg-journal-phone .pg-phone__screen {
+  background: linear-gradient(#1f1f21, #131313 30%);
+}
+
+/* Reno: the screen-only recording fills the phone, centred on the light stage it was filmed on. */
+.pg-phone-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #fbfbfb;
+  container-type: size;
+}
+
+.pg-phone-media__phone {
+  left: 50%;
+  top: 50%;
+  height: 88%;
+  transform: translate(-50%, -50%) scale(var(--pg-media-scale));
+}
+
+.pg-phone__screen > .pg-video-slot > .pg-video {
+  position: absolute;
+  inset: 0;
+}
+
+/* The recording's screen spans x77–378 of its 375 px width (it carries its own left bezel),
+   so it is widened and shifted to put that screen edge-to-edge in the frame. */
+.pg-journal-phone__content {
+  position: absolute;
+  top: 0;
+  left: -25.6%;
+  width: 124.6%;
+  max-width: none;
+  height: auto;
+}
+
+/* The recording's own Dynamic Island is wider than the frame's (its left end showed as a thin
+   black arc); hide all of it under status-bar grey. */
+.pg-journal-phone__island-mask {
+  position: absolute;
+  top: 1.1%;
+  left: 27.4%;
+  width: 40.9%;
+  height: 4.6%;
+  border-radius: 999px;
+  background: rgb(30 30 32);
+}
+
+.pg-phone__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Minimalist frames (Playground → phone → frame): CSS only, same box as the Momo frame so nothing moves.
+   bezel: a thin solid black band. hairline: the screen with a single fine edge, no band.
+   glass: a frosted translucent band with a soft rim. floating: bare screen, deep soft shadow.
+   none: bare screen. Radii scale with the box (% of width / height). */
+.pg-phone:not([data-frame='momo']) .pg-phone__screen {
+  inset: 0;
+  border-radius: 15% / 7.3%;
+}
+
+.pg-phone[data-frame='bezel'] {
+  border-radius: 15% / 7.3%;
+  background: #111;
+}
+
+.pg-phone[data-frame='bezel'] .pg-phone__screen {
+  inset: 2.6% 2.6%;
+  border-radius: 12.5% / 6.1%;
+}
+
+.pg-phone[data-frame='hairline'] {
+  filter: none;
+}
+
+.pg-phone[data-frame='hairline'] .pg-phone__screen {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.14);
+}
+
+.pg-phone[data-frame='glass'] {
+  border-radius: 15% / 7.3%;
+  background: rgb(255 255 255 / 0.35);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.7),
+    0 0 0 1px rgb(0 0 0 / 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.pg-phone[data-frame='glass'] .pg-phone__screen {
+  inset: 3.2% 3.2%;
+  border-radius: 12% / 5.9%;
+}
+
+.pg-phone[data-frame='floating'] {
+  filter: drop-shadow(0 2.4cqw 4.8cqw rgb(0 0 0 / 0.28));
+}
+
+.pg-phone[data-frame='none'] {
+  filter: none;
+}
+
+.pg-critical-action-shader {
+  position: absolute;
+  inset: -3px;
+}
+
+.pg-critical-action-shader canvas {
+  display: block;
+}
+
+.pg-critical-action-book {
+  position: absolute;
+  top: calc(50% + var(--pg-critical-book-y));
+  left: calc(50% + var(--pg-critical-book-x));
+  width: min(56%, 364px);
+  max-height: calc(100% - 16px);
+  object-fit: contain;
+  transform: translate(-50%, -50%) scale(var(--pg-critical-book-scale));
+  transform-origin: center;
+}
+
+/* Harvard + MIT portfolio: an open hardcover book, tilted in 3D, drifting over a soft grey stage.
+   Sized in container units so the grid card and the zoomed card frame it identically.
+   Layers, back to front: cover board → page block (stacked leaves) → printed spread with gutter shading. */
+.pg-portfolio-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: radial-gradient(120% 90% at 50% 35%, #f4f4f6 0%, #e4e4e9 55%, #d3d4da 100%);
+  perspective: 160cqw;
+}
+
+.pg-portfolio-book {
+  --pg-pf-pose: rotateX(var(--pg-pf-rx)) rotateY(var(--pg-pf-ry)) rotateZ(var(--pg-pf-rz));
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72cqw;
+  aspect-ratio: 800 / 566;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) scale(var(--pg-pf-scale)) var(--pg-pf-pose);
+  animation: pg-portfolio-float 7s ease-in-out infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.pg-portfolio-media[data-playing='true'] .pg-portfolio-book {
+  animation-play-state: running;
+}
+
+.pg-portfolio-cover {
+  position: absolute;
+  inset: -1.1cqw -1.4cqw;
+  border-radius: 1.1cqw;
+  background: linear-gradient(90deg, #26282d 0%, #33363c 47%, #1b1c20 50%, #33363c 53%, #26282d 100%);
+  transform: translateZ(-2.4cqw);
+  box-shadow:
+    0 calc(1cqw * var(--pg-pf-shadow)) calc(2cqw * var(--pg-pf-shadow)) rgb(24 26 36 / calc(0.14 * var(--pg-pf-shadow))),
+    0 calc(7cqw * var(--pg-pf-shadow)) calc(12cqw * var(--pg-pf-shadow)) calc(-2cqw * var(--pg-pf-shadow)) rgb(24 26 36 / calc(0.34 * var(--pg-pf-shadow)));
+}
+
+/* Page block: leaves stepping back toward the cover so the tilt reveals the paper edges. */
+.pg-portfolio-leaf {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5cqw;
+  background: #eeede8;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.07);
+  transform: translateZ(calc(var(--leaf) * -0.4cqw));
+}
+
+.pg-portfolio-spread {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5cqw;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pg-portfolio-spread > .pg-video-slot > .pg-video {
+  background: transparent;
+}
+
+/* Gutter: pages dip into the spine (dark fold, soft highlight on each side) and curve off at the fore-edges.
+   The fold is tuned by --pg-pf-gutter-dark / -width / -light / -x (Playground › Portfolio › Binding). */
+.pg-portfolio-spread::after {
+  --g: var(--pg-pf-gutter-x, 50%);
+  --gw: var(--pg-pf-gutter-width, 1);
+  --gd: var(--pg-pf-gutter-dark, 1);
+  --gl: var(--pg-pf-gutter-light, 1);
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.1) 0%, transparent 3%, transparent 97%, rgb(0 0 0 / 0.1) 100%),
+    linear-gradient(
+      90deg,
+      transparent calc(var(--g) - 9% * var(--gw)),
+      rgb(0 0 0 / calc(0.05 * var(--gd))) calc(var(--g) - 4% * var(--gw)),
+      rgb(0 0 0 / calc(0.24 * var(--gd))) calc(var(--g) - 0.6% * var(--gw)),
+      rgb(0 0 0 / calc(0.32 * var(--gd))) var(--g),
+      rgb(0 0 0 / calc(0.2 * var(--gd))) calc(var(--g) + 0.6% * var(--gw)),
+      rgb(0 0 0 / calc(0.04 * var(--gd))) calc(var(--g) + 4% * var(--gw)),
+      transparent calc(var(--g) + 9% * var(--gw))
+    ),
+    linear-gradient(
+      90deg,
+      transparent calc(var(--g) - 6% * var(--gw)),
+      rgb(255 255 255 / calc(0.22 * var(--gl))) calc(var(--g) - 2.5% * var(--gw)),
+      transparent calc(var(--g) - 1% * var(--gw)),
+      transparent calc(var(--g) + 1% * var(--gw)),
+      rgb(255 255 255 / calc(0.16 * var(--gl))) calc(var(--g) + 2.5% * var(--gw)),
+      transparent calc(var(--g) + 6% * var(--gw))
+    );
+}
+
+/* Base pose plus a slow bob and sway; --pg-pf-float scales every offset (0 = still at the pose). */
+@keyframes pg-portfolio-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(var(--pg-pf-scale)) var(--pg-pf-pose);
+  }
+  25% {
+    transform: translate(-50%, calc(-50% - 2.5% * var(--pg-pf-float))) scale(var(--pg-pf-scale))
+      rotateX(calc(var(--pg-pf-rx) - 3deg * var(--pg-pf-float))) rotateY(calc(var(--pg-pf-ry) + 4deg * var(--pg-pf-float)))
+      rotateZ(calc(var(--pg-pf-rz) + 1deg * var(--pg-pf-float)));
+  }
+  50% {
+    transform: translate(-50%, calc(-50% - 4% * var(--pg-pf-float))) scale(var(--pg-pf-scale))
+      rotateX(calc(var(--pg-pf-rx) + 1deg * var(--pg-pf-float))) rotateY(calc(var(--pg-pf-ry) + 7deg * var(--pg-pf-float)))
+      rotateZ(calc(var(--pg-pf-rz) + 1.5deg * var(--pg-pf-float)));
+  }
+  75% {
+    transform: translate(-50%, calc(-50% - 1.5% * var(--pg-pf-float))) scale(var(--pg-pf-scale))
+      rotateX(calc(var(--pg-pf-rx) + 3deg * var(--pg-pf-float))) rotateY(calc(var(--pg-pf-ry) + 2deg * var(--pg-pf-float)))
+      rotateZ(calc(var(--pg-pf-rz) - 0.5deg * var(--pg-pf-float)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-portfolio-book {
+    animation: none;
+  }
+}
+
+/* The shade overhangs the card by 1px (the card's own clip trims it), so its anti-aliased rim
+   never leaves the white video under it unshaded as a bright hairline at the card edge on hover. */
+.pg-card .card-shade,
+.pg-zoom-card .card-shade {
+  z-index: 2;
+  inset: -1px;
+}
+
+.pg-card .card-title,
+.pg-zoom-card .card-title {
+  z-index: 3;
 }
 
 .pg-card .card-shade,
@@ -172,8 +576,7 @@
   transform: none;
 }
 
-.pg-zoom-nav,
-.pg-zoom-close {
+.pg-zoom-nav {
   position: absolute;
   display: flex;
   align-items: center;
@@ -189,14 +592,11 @@
 }
 
 .pg-zoom-nav:hover,
-.pg-zoom-close:hover,
-.pg-zoom-nav:focus-visible,
-.pg-zoom-close:focus-visible {
+.pg-zoom-nav:focus-visible {
   background: rgb(245 245 245 / 0.22);
 }
 
-.pg-zoom-nav svg,
-.pg-zoom-close svg {
+.pg-zoom-nav svg {
   width: 20px;
   height: 20px;
 }
@@ -213,10 +613,20 @@
   transform: translateY(-50%);
 }
 
-.pg-zoom-close {
-  top: 24px;
-  right: 24px;
+.pg-zoom-restart {
+  top: 16px;
+  right: 16px;
+  z-index: 4;
+  background: rgb(38 36 34 / var(--pg-restart-opacity, 0.62));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
+
+.pg-zoom-restart:hover,
+.pg-zoom-restart:focus-visible {
+  background: rgb(38 36 34 / var(--pg-restart-hover-opacity, 0.76));
+}
+
 
 @media (max-width: 640px) {
   .pg-zoom-prev {
@@ -225,8 +635,7 @@
   .pg-zoom-next {
     right: 12px;
   }
-  .pg-zoom-nav,
-  .pg-zoom-close {
+  .pg-zoom-nav {
     width: 38px;
     height: 38px;
   }

@@ -135,8 +135,7 @@ body.davebot-open {
   font-size: 16px;
 }
 
-.davebot-close:focus-visible,
-.davebot-source:focus-visible {
+.davebot-close:focus-visible {
   outline: 1px solid var(--davebot-ink);
   outline-offset: 2px;
 }
@@ -197,10 +196,16 @@ body.davebot-open {
 }
 
 .davebot-row__icon {
+  display: grid;
+  place-items: center;
   width: 18px;
   color: var(--davebot-ink-dim);
-  font: 400 11px/1 var(--font-mono);
-  text-align: center;
+}
+
+/* Same up-right arrow as the nav's Resume link. */
+.davebot-row__icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 .davebot-row__label {
@@ -294,37 +299,6 @@ body.davebot-open {
   }
 }
 
-.davebot-answer__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.davebot-source {
-  min-height: 32px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 10px;
-  border: 1px solid var(--davebot-edge);
-  border-radius: 999px;
-  color: var(--davebot-ink-muted);
-  font-size: 11px;
-  line-height: 18px;
-  user-select: none;
-}
-
-.davebot-source__arrow {
-  color: var(--davebot-highlight, #f2b544);
-}
-
-@media (hover: hover) {
-  .davebot-source:hover {
-    border-color: var(--davebot-ink-dim);
-    color: var(--davebot-ink);
-  }
-}
 
 .davebot-recovery {
   padding: 6px;

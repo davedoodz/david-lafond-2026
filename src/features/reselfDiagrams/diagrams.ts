@@ -1,15 +1,14 @@
 /**
- * Re:Self diagrams as SVG markup: the five-step product flow (story strip) and
- * the system design (accent style). Ink is static; every Unwind-blue element
+ * Re:Self diagrams as SVG markup: the five-step product flow (story strip), the
+ * vision line and the signals baseline. Ink is static; every Momo-blue element
  * carries a `b-*` class so ReselfFigure.css can animate the blue layer only.
- * Studio twins: studio/unwind-product-flow.html, studio/unwind-system-design.html.
+ * Studio twin: studio/momo-product-flow.html.
  */
 const INK = '#171717'
 const STONE = '#6f6b68'
 const BLUE = '#53bffe'
 const FONT = 'Beatrice, system-ui, sans-serif'
 
-type Pt = [number, number]
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
 const text = (x: number, y: number, t: string, o: { size?: number; weight?: number; fill?: string; anchor?: string; cls?: string } = {}) =>
   `<text x="${x}" y="${y}" font-size="${o.size ?? 20}" font-weight="${o.weight ?? 400}" fill="${o.fill ?? INK}" text-anchor="${o.anchor ?? 'middle'}"${o.cls ? ` class="${o.cls}"` : ''}>${esc(t)}</text>`
@@ -60,121 +59,6 @@ export function productFlowSvg(): string {
   b += `<path class="b-loop" d="M${last} ${TOP + CH + 12}V${ly - 12}Q${last} ${ly} ${last - 12} ${ly}H${first + 12}Q${first} ${ly} ${first} ${ly - 12}V${TOP + CH + 14}" fill="none" stroke="${BLUE}" stroke-width="1.8" stroke-dasharray="3 7" stroke-linecap="round" marker-end="url(#rf-b)"/>`
   b += `<rect x="${W / 2 - 128}" y="${ly - 16}" width="256" height="32" fill="var(--paper, #f5f5f5)"/>` + text(W / 2, ly + 6, 'and learns you over time', { size: 16, fill: BLUE })
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="${FONT}" letter-spacing="-0.02em" role="img" aria-label="How Re:Self works: your watch notices your body change, a gentle tap asks how you feel, you speak a short voice note, Re:Self AI reads it with your body data, your phone lets you name it and review your day, and it learns you over time.">${b}</svg>`
-}
-
-// ---------- System design (accent style, icons after David's Canva diagram) ----------
-type Node = { x: number; y: number; title: string[]; icon: keyof typeof ICONS; titleBelow?: number }
-type Label = { x: number; y: number; anchor: 'start' | 'end'; lines?: string[]; head?: string; items?: string[] }
-type Edge = { kind: 'data' | 'ai' | 'training'; points: Pt[]; label: Label }
-
-const NODES: Node[] = [
-  { x: 112, y: 385, title: ['RE:SELF USER'], icon: 'person' },
-  { x: 512, y: 130, title: ['RE:SELF WATCH APP'], icon: 'watch', titleBelow: 82 },
-  { x: 907, y: 378, title: ['SECURE DATABASE', '+ NOVEL AI MODEL'], icon: 'cloud' },
-  { x: 1313, y: 385, title: ['REGISTERED THERAPISTS', 'COLLABORATING WITH RE:SELF'], icon: 'therapist' },
-  { x: 512, y: 618, title: ['RE:SELF PHONE APP'], icon: 'phone', titleBelow: 80 },
-]
-const EDGES: Edge[] = [
-  { kind: 'data', points: [[112, 292], [112, 128], [452, 128]], label: { x: 138, y: 164, anchor: 'start', head: 'Contextual user data:', items: ['biometrics', 'voice entries', 'movement', 'surrounding noise'] } },
-  { kind: 'ai', points: [[907, 302], [907, 128], [572, 128]], label: { x: 883, y: 164, anchor: 'end', lines: ['Micro-reflection', 'prompt generation'] } },
-  { kind: 'ai', points: [[502, 222], [502, 368], [192, 368]], label: { x: 476, y: 318, anchor: 'end', lines: ['Context-aware daily', 'micro-reflection prompts'] } },
-  { kind: 'data', points: [[522, 222], [522, 368], [818, 368]], label: { x: 548, y: 336, anchor: 'start', lines: ['Contextual user data'] } },
-  { kind: 'ai', points: [[502, 532], [502, 388], [192, 388]], label: { x: 476, y: 422, anchor: 'end', head: 'Interactive journal space:', items: ['daily entries', 'counterfactuals', 'behavior plans'] } },
-  { kind: 'data', points: [[522, 532], [522, 388], [818, 388]], label: { x: 548, y: 422, anchor: 'start', lines: ['Activity user data'] } },
-  { kind: 'data', points: [[112, 502], [112, 612], [448, 612]], label: { x: 138, y: 548, anchor: 'start', head: 'Activity user data:', items: ['touch & scroll interactions', 'content updates'] } },
-  { kind: 'ai', points: [[907, 520], [907, 612], [576, 612]], label: { x: 883, y: 556, anchor: 'end', lines: ['Daily entries +', 'counterfactual', 'generation'] } },
-  { kind: 'training', points: [[1232, 378], [998, 378]], label: { x: 1000, y: 314, anchor: 'start', head: 'Training data:', items: ['counterfactual generation', 'micro-reflection prompting'] } },
-]
-
-const ICONS = {
-  person: (x: number, y: number) =>
-    `<circle cx="${x}" cy="${y - 30}" r="26"/><path d="M${x - 50} ${y + 58} v-20 q0 -34 28 -40 q22 14 44 0 q28 6 28 40 v20 q0 8 -8 8 h-84 q-8 0 -8 -8 z"/>`,
-  therapist: (x: number, y: number) =>
-    `${ICONS.person(x, y)}<path d="M${x - 21} ${y - 1} l21 34 l21 -34 M${x} ${y + 33} v33"/><path d="M${x + 22} ${y + 44} h16 M${x + 30} ${y + 36} v16"/>`,
-  watch: (x: number, y: number, w: number) =>
-    `<path d="M${x - 24} ${y - 36} l5 -20 h38 l5 20 M${x - 24} ${y + 36} l5 20 h38 l5 -20"/><rect x="${x - 38}" y="${y - 36}" width="76" height="72" rx="20"/><path d="M${x + 38} ${y - 8} h6 v16 h-6"/><path d="M${x - 26} ${y + 2} h13 l4 -9 l6 18 l6 -22 l5 13 h18" stroke-width="${w * 0.8}"/>`,
-  cloud: (x: number, y: number) =>
-    `<path d="M${x - 42} ${y + 32} h86 a24 24 0 0 0 2 -48 a34 34 0 0 0 -63 -10 a27 27 0 0 0 -25 58 z"/><text x="${x + 2}" y="${y + 19}" text-anchor="middle" font-size="28" font-weight="500" stroke="none" fill="currentColor" letter-spacing="0">AI</text>`,
-  phone: (x: number, y: number, w: number) =>
-    `<rect x="${x - 32}" y="${y - 56}" width="64" height="112" rx="14"/><path d="M${x - 9} ${y - 46} h18"/><g stroke-width="${w * 0.55}" stroke-linecap="butt"><path d="M${x - 19} ${y - 30} h38 M${x - 19} ${y - 22} h38 M${x - 19} ${y - 14} h38 M${x - 19} ${y - 6} h38 M${x - 19} ${y + 2} h38" stroke-dasharray="3 2.5"/><circle cx="${x}" cy="${y + 26}" r="11" stroke-dasharray="0.1 5.6" stroke-linecap="round" stroke-width="${w * 0.9}"/><circle cx="${x}" cy="${y + 26}" r="2.5" fill="currentColor"/></g>`,
-}
-
-/** Orthogonal polyline with rounded corners. */
-function roundedPath(points: Pt[], r: number) {
-  let d = `M${points[0][0]} ${points[0][1]}`
-  for (let i = 1; i < points.length; i++) {
-    const [x, y] = points[i]
-    const next = points[i + 1]
-    if (!next) {
-      d += ` L${x} ${y}`
-      break
-    }
-    const [px, py] = points[i - 1]
-    const k = Math.min(r, Math.hypot(x - px, y - py) / 2, Math.hypot(next[0] - x, next[1] - y) / 2)
-    d += ` L${x - Math.sign(x - px) * k} ${y - Math.sign(y - py) * k} Q${x} ${y} ${x + Math.sign(next[0] - x) * k} ${y + Math.sign(next[1] - y) * k}`
-  }
-  return d
-}
-
-function arrowHead(points: Pt[], color: string, width: number) {
-  const [x, y] = points[points.length - 1]
-  const [px, py] = points[points.length - 2]
-  const a = Math.atan2(y - py, x - px)
-  const s = 7 + width * 2
-  return `<path d="M${x - s * Math.cos(a - 0.6)} ${y - s * Math.sin(a - 0.6)} L${x} ${y} L${x - s * Math.cos(a + 0.6)} ${y - s * Math.sin(a + 0.6)}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`
-}
-
-function label(l: Label, size: number) {
-  const lh = size * 1.3
-  const out: string[] = []
-  let y = l.y
-  const t = (content: string, x: number, anchor: string) => `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" fill="${INK}">${content}</text>`
-  for (const line of l.lines ?? []) (out.push(t(esc(line), l.x, l.anchor)), (y += lh))
-  if (l.head && l.items) {
-    out.push(t(esc(l.head), l.x, l.anchor))
-    y += lh
-    // Bullets hang from the head's left edge (right-aligned heads keep their bullets on its left too).
-    const width = Math.max(...[l.head, ...l.items].map((s) => s.length)) * size * 0.5
-    const left = l.anchor === 'end' ? l.x - width : l.x
-    for (const item of l.items) (out.push(t(`•&#160;&#160;${esc(item)}`, left + size * 1.1, 'start')), (y += lh))
-  }
-  return out.join('')
-}
-
-export type SystemLook = {
-  /** 'dotted' = live flow; 'solid' = accent. Blue always marks AI output. */
-  lines: 'dotted' | 'solid'
-  stroke: number
-  icon: number
-  label: number
-  legend: boolean
-}
-
-export function systemSvg(look: SystemLook): string {
-  const W = 1460, H = 720, STROKE = look.stroke, ICON = look.icon, LABEL = look.label, TITLE = 13
-  const parts: string[] = []
-  let ai = 0
-  for (const e of EDGES) {
-    const color = e.kind === 'ai' ? BLUE : e.kind === 'training' ? STONE : INK
-    const cls = e.kind === 'ai' ? ` class="b-edge" style="--i:${ai++}"` : ''
-    const pattern = look.lines === 'dotted' ? `0.1 ${STROKE * 5}` : e.kind === 'training' ? '6 7' : ''
-    const dash = pattern ? ` stroke-dasharray="${pattern}"` : ''
-    parts.push(`<path${cls} d="${roundedPath(e.points, 22)}" fill="none" stroke="${color}" stroke-width="${STROKE}" stroke-linecap="round" stroke-linejoin="round"${dash}/>`)
-    parts.push(arrowHead(e.points, color, STROKE))
-    parts.push(label(e.label, LABEL))
-  }
-  for (const n of NODES) {
-    parts.push(`<g color="${INK}" fill="none" stroke="${INK}" stroke-width="${ICON}" stroke-linecap="round" stroke-linejoin="round">${ICONS[n.icon](n.x, n.y, ICON)}</g>`)
-    n.title.forEach((line, i) =>
-      parts.push(`<text x="${n.x}" y="${n.y + (n.titleBelow ?? 104) + i * TITLE * 1.35}" text-anchor="middle" font-size="${TITLE}" font-weight="500" letter-spacing="0.04em" fill="${INK}">${esc(line)}</text>`),
-    )
-  }
-  if (look.legend) ([['User data', INK, ''], ['AI output', BLUE, ''], ['Training data', STONE, '6 7']] as const).forEach(([name, color, dash], i) => {
-    const x = 1000 + i * 140
-    parts.push(`<path d="M${x} 90 h28" stroke="${color}" stroke-width="${STROKE}" stroke-linecap="round"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`)
-    parts.push(`<text x="${x + 38}" y="95" font-size="13" fill="${STONE}">${name}</text>`)
-  })
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="${FONT}" letter-spacing="-0.01em" role="img" aria-label="Re:Self system design: the user, watch app, phone app, secure database with the AI model, and registered therapists, with the data each sends.">${parts.join('')}</svg>`
 }
 
 // ---------- Overview: the vision in one line (body → prompt → voice → plan) ----------

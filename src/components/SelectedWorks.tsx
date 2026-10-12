@@ -16,6 +16,7 @@ import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
 import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
+import saved from '../data/tuning.json'
 import { useTuningController } from '../tuning/useTuning'
 import { EditableText } from './EditableText'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
@@ -31,13 +32,13 @@ type Tuple = [number, number, number, number]
 
 const CONFIG = {
   cards: {
-    unwind: { type: 'color' as const, default: '#57BFFF' },
+    momo: { type: 'color' as const, default: '#57BFFF' },
     filo: { type: 'color' as const, default: '#FFE1E2' },
     'harvard-mit': { type: 'color' as const, default: '#171717' },
   },
   titles: {
-    unwindDesktop: { type: 'text' as const, default: WORKS[0].title },
-    unwindMobile: { type: 'text' as const, default: WORKS[0].shortTitle },
+    momoDesktop: { type: 'text' as const, default: WORKS[0].title },
+    momoMobile: { type: 'text' as const, default: WORKS[0].shortTitle },
     filoDesktop: { type: 'text' as const, default: WORKS[1].title },
     filoMobile: { type: 'text' as const, default: WORKS[1].shortTitle },
     harvardMitDesktop: { type: 'text' as const, default: WORKS[2].title },
@@ -153,8 +154,20 @@ const CONFIG = {
   },
 }
 
+/**
+ * The "Selected works" label's distance from the sheet top edge (px), as saved in tuning.json.
+ * Other sheets (About's playground) place their label with it so every sheet label sits alike.
+ */
+export const SHEET_LABEL_TOP = (() => {
+  const label = (saved as Record<string, { label?: { topDesktop?: number; topMobile?: number } }>)['Selected works']?.label
+  return {
+    desktop: label?.topDesktop ?? CONFIG.label.topDesktop[0],
+    mobile: label?.topMobile ?? CONFIG.label.topMobile[0],
+  }
+})()
+
 const TITLE_KEYS = {
-  unwind: ['unwindDesktop', 'unwindMobile'],
+  momo: ['momoDesktop', 'momoMobile'],
   filo: ['filoDesktop', 'filoMobile'],
   'harvard-mit': ['harvardMitDesktop', 'harvardMitMobile'],
 } as const
@@ -397,8 +410,8 @@ export function SelectedWorks() {
                       }}
                     />
                   )}
-                  {work.id === 'unwind' && <MeshCard />}
-                  {work.id === 'unwind' && <MomoCard />}
+                  {work.id === 'momo' && <MeshCard />}
+                  {work.id === 'momo' && <MomoCard />}
                   {work.id === 'filo' && <FiloCard />}
                   {work.id === 'harvard-mit' && <HarvardMitCard />}
                   <div className="card-shade" />

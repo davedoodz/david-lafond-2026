@@ -13,6 +13,8 @@ import type { Plugin } from 'vite'
 const FILES = {
   tuning: 'src/data/tuning.json',
   signature: 'src/data/signature.json',
+  deviceSequence: 'studio/momo-device-sequence.json',
+  momoSystem: 'src/features/momoSystem/settings.json',
 } as const
 
 type SaveBody = { file: keyof typeof FILES; key?: string; data: unknown }

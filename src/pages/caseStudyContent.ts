@@ -4,16 +4,17 @@
  * prototype video placed relative to the text. All copy is editable on the page
  * in dev and autosaves to tuning.json, like the About story.
  */
-import { PERSONA_DIALS } from './casePersona'
+import { FLOAT_DIALS, PERSONA_DIALS } from './casePersona'
 import { EVIDENCE_DIALS, PRINCIPLES_DIALS, REFRAME_DIALS } from './filoSections'
+import { PEAK_ICONS, STORY_ART_TEXT, type StoryArtText } from './storyArt'
 
 type Tuple = [number, number, number, number]
 
-/** Prototype recordings in public/work/unwind/proto: the phone only, cropped to its frame (1080 px tall H.264 + first-frame poster). */
+/** Prototype recordings in public/work/momo/proto: the phone only, cropped to its frame (1080 px tall H.264 + first-frame poster). */
 export const PROTO_VIDEOS = {
   'welcome-park': { w: 522, h: 1080, dir: 'proto' },
   'freeform-evening': { w: 522, h: 1080, dir: 'proto' },
-  'guided-models': { w: 530, h: 1080, dir: 'flows' },
+  'guided-woop-pick': { w: 460, h: 810, dir: 'flows' },
   'guided-woop': { w: 530, h: 1080, dir: 'flows' },
   voice: { w: 530, h: 1080, dir: 'flows' },
   dynamic: { w: 530, h: 1080, dir: 'flows' },
@@ -24,37 +25,59 @@ const VIDEO_OPTIONS = ['none', ...Object.keys(PROTO_VIDEOS)]
 /** Filo has no recordings yet: a labelled block marks where each prototype loop will go. */
 const PLACEHOLDER_OPTIONS = ['none', 'placeholder']
 
-/** Where the video sits relative to the text. */
-const LAYOUTS = ['right', 'left', 'below', 'above', 'center', 'rise']
+/** Media direction. `center` and `rise` remain available for project heroes. */
+const LAYOUTS = ['bottom', 'top', 'right', 'left', 'center', 'rise']
 
 type SectionDefaults = {
   eyebrow: string
   title: string
   body?: string
+  align?: 'left' | 'center'
   video?: ProtoVideo | 'none' | 'placeholder'
   /** Label inside the placeholder block (Filo, until the prototype loops exist). */
   placeholder?: string
-  /** Re:Self diagram shown instead of a video. */
-  figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals'
-  layout?: 'right' | 'left' | 'below' | 'above' | 'center' | 'rise'
+  /** Diagram shown instead of a video ('system': the animated Momo system walkthrough; 'paper': the arXiv paper tucked under the footer). */
+  figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals' | 'paper'
+  layout?: 'bottom' | 'top' | 'right' | 'left' | 'center' | 'rise'
   size?: number
   gap?: number
 }
+export type SectionSpacing = { top: number; bottom: number; contentGap: number }
+
+export type TextReveal = {
+  preset: 'cascade' | 'rise together' | 'from sides' | 'focus' | 'wipe' | 'fade' | 'still'
+  duration: number
+  stagger: number
+}
+
+const textRevealDials = (preset: TextReveal['preset'] = 'cascade') => ({
+  preset: { type: 'select' as const, options: ['cascade', 'rise together', 'from sides', 'focus', 'wipe', 'fade', 'still'], default: preset },
+  duration: [0.7, 0.25, 1.8, 0.05] as Tuple,
+  stagger: [0.1, 0, 0.5, 0.02] as Tuple,
+  _collapsed: true,
+})
+/** Shared section rhythm: viewport edges plus the gap from copy to the main visual. */
+const sectionSpacingDials = (top = 96, bottom = 64, contentGap = 72) => ({
+  top: [top, 0, 240, 1] as Tuple,
+  bottom: [bottom, 0, 240, 1] as Tuple,
+  contentGap: [contentGap, 0, 600, 1] as Tuple,
+  _collapsed: true,
+})
 
 export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTIONS) {
   return {
     eyebrow: { type: 'text' as const, default: d.eyebrow },
     title: { type: 'text' as const, default: d.title },
     body: { type: 'text' as const, default: d.body ?? '', placeholder: 'Blank lines = paragraph breaks' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: d.align ?? 'left' },
+    spacing: sectionSpacingDials(96, 64, d.gap ?? 72),
     media: {
       video: { type: 'select' as const, options: videos, default: d.video ?? 'none' },
       ...(d.placeholder !== undefined ? { placeholder: { type: 'text' as const, default: d.placeholder } } : {}),
-      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification'], default: d.figure ?? 'none' },
-      layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'right' },
+      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification', 'paper'], default: d.figure ?? 'none' },
+      layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'bottom' },
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
-      /** Space between the text and the video (px). */
-      gap: [d.gap ?? 72, 0, 240, 1] as Tuple,
       /** Nudge from its slot, % of the video's own width / height. */
       x: [0, -60, 60, 0.5] as Tuple,
       y: [0, -60, 60, 0.5] as Tuple,
@@ -68,6 +91,15 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
 const pageDials = {
   snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'mandatory' },
   showSidebar: true,
+  /** Section list in the sidebar (Problem · Solution, Persona, …). Off: only Back shows. */
+  showSections: false,
+  textSize: { type: 'select' as const, options: ['compact', 'balanced', 'display'], default: 'compact' },
+  /** How each case-study section enters and re-enters the viewport. */
+  sectionReveal: {
+    type: 'select' as const,
+    options: ['float up', 'drift in', 'float from sides', 'soft bloom', 'still'],
+    default: 'float up',
+  },
   /** Widest the content column gets (px). */
   contentWidth: [1040, 600, 1400, 10] as Tuple,
   /** Text column width when the video sits beside it (px). */
@@ -77,6 +109,7 @@ const pageDials = {
 
 const heroDials = (d: SectionDefaults & { role: string; timeline: string; team: string }, videos?: string[]) => ({
   ...sectionDials(d, videos),
+  spacing: sectionSpacingDials(118, 0, d.gap ?? 44),
   role: { type: 'text' as const, default: d.role },
   timeline: { type: 'text' as const, default: d.timeline },
   team: { type: 'text' as const, default: d.team },
@@ -108,7 +141,7 @@ export const RECRUITER_COPY = {
   overview: copy({
     eyebrow: 'Product overview',
     title: 'A journal that notices before you do.',
-    body: 'Unwind pairs Apple Watch sensing with voice reflection to surface moments worth checking in on. It combines body signals, situational context and what you say to turn a stressful moment into understanding, and a plan for next time.',
+    body: 'Momo pairs Apple Watch sensing with voice reflection to surface moments worth checking in on. It combines body signals, situational context and what you say to turn a stressful moment into understanding, and a plan for next time.',
   }),
   /** 03 · Who is this actually for? */
   persona: {
@@ -146,9 +179,9 @@ export const RECRUITER_COPY = {
   moment: copy({ eyebrow: 'Product UI' }),
   notification: copy({ eyebrow: 'Get me at the right moment', title: 'Useful without feeling invasive.' }),
   dynamic: copy({
-    eyebrow: 'Help me get it out',
-    title: 'Less distance between feeling something and saying it.',
-    body: 'Voice first, no blank page. As you talk, Unwind offers a follow-up at natural pauses. Tap to answer, or keep going.',
+    eyebrow: 'Connected insights',
+    title: 'Your body signals. Your story. A clearer picture.',
+    body: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.',
   }),
   flows: copy({ eyebrow: 'Product UI · core flows' }),
   guided: copy({ eyebrow: 'Product UI · guided' }),
@@ -178,11 +211,11 @@ export const RECRUITER_COPY = {
   _collapsed: true,
 }
 
-export const UNWIND_CONFIG = {
+export const MOMO_CONFIG = {
   page: pageDials,
   hero: heroDials({
-    eyebrow: 'Unwind · RE:SELF · 2025',
-    title: 'Unwind – Novel Multimodal AI Reflection System for Behavioral Change',
+    eyebrow: 'Momo · RE:SELF · 2025',
+    title: 'Momo – Novel Multimodal AI Reflection System for Behavioral Change',
     video: 'dynamic',
     layout: 'rise',
     size: 78,
@@ -202,10 +235,12 @@ export const UNWIND_CONFIG = {
       title: [0, -200, 200, 1] as Tuple,
       meta: [0, -200, 200, 1] as Tuple,
       logos: [0, -200, 200, 1] as Tuple,
+      phone: [0, -400, 400, 1] as Tuple,
+      _collapsed: false,
     },
     _collapsed: false,
   },
-  /** Partner logos in the hero (public/work/unwind/logos). Rendered by the hero, not as a section. */
+  /** Partner logos in the hero (public/work/momo/logos). Rendered by the hero, not as a section. */
   logos: {
     show: true,
     placement: { type: 'select' as const, options: ['eyebrow', 'below meta', 'above title', 'top right', 'bottom'], default: 'eyebrow' },
@@ -216,18 +251,20 @@ export const UNWIND_CONFIG = {
     offset: [24, 0, 160, 1] as Tuple,
     x: [0, -400, 400, 1] as Tuple,
     opacity: [0.85, 0.2, 1, 0.05] as Tuple,
+    hoverColor: { type: 'color' as const, default: '#53bffe' },
+    hoverOpacity: [0.85, 0, 1, 0.05] as Tuple,
     /** Harvard's shield reads smaller; scale it against the others. */
     harvardScale: [1, 0.5, 2, 0.05] as Tuple,
-    _collapsed: true,
+    _collapsed: false,
   },
   overview: sectionDials({
     eyebrow: 'Overview',
     title: 'A journal that notices before you do.',
-    body: 'Unwind pairs an Apple Watch that senses when your body shifts for no physical reason with a 30-second voice reflection. Over time it learns what stress looks like for you, and turns each moment into a plan for next time.',
+    body: 'Momo pairs an Apple Watch that senses when your body shifts for no physical reason with a 30-second voice reflection. Over time it learns what stress looks like for you, and turns each moment into a plan for next time.',
     figure: 'vision',
-    layout: 'right',
+    layout: 'bottom',
   }),
-  /** Problem, Opportunity and Solution side by side in one snap view (rendered as `story`). */
+  /** Problem, Opportunity and Solution; each row supports art above, below, left or right. */
   story: {
     problemLabel: { type: 'text' as const, default: 'Problem' },
     opportunityLabel: { type: 'text' as const, default: 'Opportunity' },
@@ -238,34 +275,80 @@ export const UNWIND_CONFIG = {
     opportunityBody: { type: 'text' as const, default: 'A wearable can notice physiological arousal in real time, and ask.' },
     solutionTitle: { type: 'text' as const, default: 'Reflect, then rehearse next time.' },
     solutionBody: { type: 'text' as const, default: 'A short voice reflection becomes a counterfactual and an if-then plan.' },
-    /** Look presets set layout + art + motion together; 'custom' uses the dials below. */
+    /** Look presets set art and motion; Layout stays independently adjustable. */
     preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'converge', 'outline', 'minimal', 'columns', 'custom'], default: 'calm cards' },
-    layout: { type: 'select' as const, options: ['art left', 'art right', 'alternate', 'columns'], default: 'art left' },
-    art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
+    layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
+    /** left: art and text share a left edge · center: centred · stretch: art spans the text width, edges aligned both sides. */
+    align: { type: 'select' as const, options: ['left', 'center', 'stretch'], default: 'left' },
+    /** Align only the number, label, title and body; the art keeps the `align` layout above. */
+    textAlign: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    /** glass: the system card's fill + gradient with the glass dials below (story → glass). */
+    art: { type: 'select' as const, options: ['glass', 'card', 'line', 'outline', 'none'], default: 'glass' },
+    /** Icon on the Problem curve's peak: the custom bolt, a Lucide icon, or none. */
+    peakIcon: { type: 'select' as const, options: Object.keys(PEAK_ICONS), default: 'bolt' },
+    /**
+     * Glass for the three art cards. Colours come from the system card (Momo system sequence →
+     * card fill / gradient); these dials start from the system card's glass, scaled to the cards'
+     * size (≈⅓ of the system card): blur, radius and glow blur shrink, the 1px rim stays crisp.
+     */
+    glass: {
+      tint: [1, 0.05, 1, 0.01] as Tuple,
+      blur: [5, 0, 40, 0.5] as Tuple,
+      saturate: [1.7, 1, 3, 0.05] as Tuple,
+      /** White rim: opacity, width and top highlight (px). */
+      edge: [1, 0, 1, 0.01] as Tuple,
+      edgeWidth: [1, 0, 4, 0.25] as Tuple,
+      highlight: [1.5, 0, 6, 0.25] as Tuple,
+      sheen: [1, 0, 1, 0.01] as Tuple,
+      sheenAngle: [232, 0, 360, 1] as Tuple,
+      glow: [0.21, 0, 1, 0.01] as Tuple,
+      glowBlur: [16, 0, 80, 1] as Tuple,
+      radius: [12, 0, 48, 1] as Tuple,
+      padding: [18, 0, 48, 1] as Tuple,
+      _collapsed: false,
+    },
     /** three: a tile per technology · converge: all three flow into the moment · single: one row of icons */
     opportunityArt: { type: 'select' as const, options: ['three', 'converge', 'single'], default: 'three' },
-    /** Only the blue marks move. */
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
+    /** Entrance animation replayed whenever the story re-enters the viewport. */
+    reveal: {
+      type: 'select' as const,
+      options: ['soft rise', 'cascade', 'from sides', 'scale in', 'still'],
+      default: 'soft rise',
+    },
     artWidth: [300, 160, 480, 5] as Tuple,
-    rowGap: [44, 8, 140, 1] as Tuple,
+    /** Playback speed of each row's art and text animation (1 = as designed, 2 = twice as fast). */
+    speed: {
+      problem: [1, 0.25, 3, 0.05] as Tuple,
+      opportunity: [1, 0.25, 3, 0.05] as Tuple,
+      solution: [1, 0.25, 3, 0.05] as Tuple,
+      _collapsed: false,
+    },
+    spacing: sectionSpacingDials(96, 96, 44),
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
+    /** Captions inside the art cards; clear a field to remove that caption. */
+    artText: {
+      ...Object.fromEntries(Object.entries(STORY_ART_TEXT).map(([k, v]) => [k, { type: 'text' as const, default: v }])) as Record<keyof StoryArtText, { type: 'text'; default: string }>,
+      _collapsed: false,
+    },
     _collapsed: true,
   },
-  /** Persona sheet, reorganised to read top to bottom (rendered as `persona`). */
-  persona: PERSONA_DIALS,
+  /** Persona sheet, reorganised to read top to bottom (rendered as `persona`); key contexts float around the portrait. */
+  persona: { ...PERSONA_DIALS, spacing: sectionSpacingDials(110, 110, 32), float: FLOAT_DIALS },
   system: sectionDials({
-    eyebrow: 'System',
-    title: 'Watch, phone and AI, with therapists shaping the model.',
+    eyebrow: 'System design',
+    title: 'Watch, phone and Momo, with clinical experts shaping the model.',
+    body: 'The watch notices physiological changes; the phone holds voice reflections and journal context. Momo turns both into timely nudges and personal insights, on an evidence-based framework from clinical experts.',
     figure: 'system',
-    layout: 'below',
+    layout: 'bottom',
     gap: 24,
   }),
   notification: sectionDials({
     eyebrow: 'The notification',
     title: 'A gentle tap, only when something changes.',
     figure: 'notification',
-    layout: 'below',
+    layout: 'bottom',
     size: 78,
     gap: 16,
   }),
@@ -273,7 +356,7 @@ export const UNWIND_CONFIG = {
     eyebrow: 'How it works',
     title: 'Your body notices first. You name what it was.',
     figure: 'flow',
-    layout: 'below',
+    layout: 'bottom',
     gap: 40,
   }),
   /** Pinned, scroll-driven wrist sequence (WristSequence); keyed `moment` so the page renders it specially. */
@@ -295,13 +378,14 @@ export const UNWIND_CONFIG = {
   flows: {
     eyebrow: { type: 'text' as const, default: 'Core flows' },
     title: { type: 'text' as const, default: 'Notice. Reflect. Look back.' },
-    notificationLabel: { type: 'text' as const, default: 'A gentle nudge' },
-    voiceLabel: { type: 'text' as const, default: 'Say what happened' },
+    body: { type: 'text' as const, default: 'Your reflections become a record of your experiences and a way to turn insight into action.' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
+    phoneScale: [1, 0.6, 1.25, 0.01] as Tuple,
     entriesLabel: { type: 'text' as const, default: 'Your entries' },
-    /** Vertical offset between neighbouring phones (px). */
-    stagger: [56, 0, 160, 1] as Tuple,
-    /** How far each phone slides with scroll (px). */
-    parallax: [70, 0, 200, 1] as Tuple,
+    voiceLabel: { type: 'text' as const, default: 'Say what happened' },
+    trackerLabel: { type: 'text' as const, default: 'Keep yourself on track' },
+    spacing: sectionSpacingDials(82, 42, 110),
+    textReveal: textRevealDials(),
     _collapsed: true,
   },
   /** Guided WOOP and Gross models side by side (rendered as `guided`). */
@@ -309,23 +393,41 @@ export const UNWIND_CONFIG = {
     eyebrow: { type: 'text' as const, default: 'Guided reflection' },
     title: { type: 'text' as const, default: 'Evidence-based models, spoken out loud.' },
     body: { type: 'text' as const, default: 'Pick a framework and answer one question at a time.' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
+    /** Entrance for the header copy and both videos: `rise` keeps the copy still and slides the videos up. */
+    reveal: { type: 'select' as const, options: ['rise', 'cascade', 'focus', 'from sides', 'wipe', 'still'], default: 'rise' },
     woopLabel: { type: 'text' as const, default: 'WOOP · plan for next time' },
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
+    spacing: sectionSpacingDials(96, 64, 72),
+    textReveal: textRevealDials('focus'),
     _collapsed: true,
   },
-  dynamic: sectionDials({
-    eyebrow: 'Dynamic mode',
-    title: 'It asks the right question at the right moment.',
-    body: 'As you talk, Unwind offers a follow-up at natural pauses. Tap to answer, or keep going.',
-    video: 'dynamic',
-    layout: 'right',
-  }),
+  /** Keep the section key to preserve its saved position; the device demo replaces Dynamic Mode. */
+  dynamic: {
+    eyebrow: { type: 'text' as const, default: 'Connected insights' },
+    title: { type: 'text' as const, default: 'Your body signals. Your story. A clearer picture.' },
+    body: { type: 'text' as const, default: 'The Watch captures shifts in your body. Voice reflections add what those moments meant. Together, they reveal mood, stress and emotional patterns across days, weeks and months.' },
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    watch: {
+      strapColor: { type: 'color' as const, default: '#d6ccc4' },
+      _collapsed: true,
+    },
+    spacing: sectionSpacingDials(110, 72, 36),
+    deviceEntrance: {
+      preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'handoff' },
+      duration: [0.8, 0.25, 1.8, 0.05] as Tuple,
+      stagger: [0.18, 0, 0.6, 0.02] as Tuple,
+      _collapsed: true,
+    },
+    textReveal: textRevealDials(),
+    _collapsed: true,
+  },
   context: sectionDials({
     eyebrow: 'Context',
     title: 'It learns what stress looks like for you.',
     body: 'It doesn’t guess emotions. It learns your baseline, flags unusual arousal, and lets you name what it was.\n\nheart rate · HRV · motion\nrespiratory rate · sleep · time of day\nyour voice, only when you choose to reflect',
     figure: 'signals',
-    layout: 'left',
+    layout: 'bottom',
   }),
   tracking: sectionDials({
     eyebrow: 'Tracking change',
@@ -333,19 +435,24 @@ export const UNWIND_CONFIG = {
     body: 'A daily calendar tracks shifts, obstacles and habit formation over time.\n\nWeekly, user-driven goals turn into “if-then” plans.',
     video: 'entries',
   }),
-  outcomes: sectionDials({
-    eyebrow: 'Outcomes',
-    title: 'Coping flexibility improved significantly across a 15-day pilot with 20 participants.',
-    body: 'Guided reflection produced nearly twice as many action plans, and participants put more of them into practice in daily life.',
-    layout: 'below',
-  }),
+  outcomes: {
+    ...sectionDials({
+      eyebrow: 'Outcomes',
+      title: 'Coping flexibility improved significantly across a 15-day pilot with 20 participants.',
+      body: 'Guided reflection produced nearly twice as many action plans, and participants put more of them into practice in daily life.',
+      layout: 'bottom',
+      figure: 'paper',
+      gap: 48,
+    }),
+    textReveal: textRevealDials(),
+  },
   /** Copy for the 8-part recruiter structure (order panel › structure). */
   recruiter: RECRUITER_COPY,
 }
 
 const txt = (d: string) => ({ type: 'text' as const, default: d })
 /** A Filo section with a placeholder block where its prototype loop will go. */
-const filoSection = (d: SectionDefaults) => sectionDials({ layout: 'below', gap: 40, size: 52, ...d }, PLACEHOLDER_OPTIONS)
+const filoSection = (d: SectionDefaults) => sectionDials({ layout: 'bottom', gap: 40, size: 52, ...d }, PLACEHOLDER_OPTIONS)
 const filoFlow = (eyebrow: string, title: string, body: string, placeholder: string) =>
   filoSection({ eyebrow, title, body, video: 'placeholder', placeholder })
 
@@ -363,7 +470,7 @@ export const FILO_CONFIG = {
       title: 'Filo – Agentic Commerce for Biomaterial Adoption in Fashion',
       video: 'placeholder',
       placeholder: 'Hero loop · the Filo workspace',
-      layout: 'below',
+      layout: 'bottom',
       size: 46,
       gap: 48,
       role: 'Product Designer\nUser research',
@@ -372,7 +479,7 @@ export const FILO_CONFIG = {
     },
     PLACEHOLDER_OPTIONS,
   ),
-  /** Problem, Opportunity and Solution in one snap view (rendered as `story`), text only. */
+  /** Problem, Opportunity and Solution; each row supports art above, below, left or right. */
   story: {
     problemLabel: txt('Problem'),
     opportunityLabel: txt('Opportunity'),
@@ -389,14 +496,22 @@ export const FILO_CONFIG = {
     solutionBody: txt(
       'Filo runs sampling, testing and the factory handoff, then returns a go/no-go with evidence. The designer still picks the material. Filo makes it safe to say yes.',
     ),
-    preset: { type: 'select' as const, options: ['custom'], default: 'custom' },
-    layout: { type: 'select' as const, options: ['columns', 'art left'], default: 'columns' },
-    art: { type: 'select' as const, options: ['none'], default: 'none' },
+    /** Look presets set art and motion; Layout stays independently adjustable. */
+    preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'outline', 'minimal', 'custom'], default: 'calm cards' },
+    layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
+    art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
     opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
-    motion: { type: 'select' as const, options: ['off'], default: 'off' },
+    motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
     artWidth: [300, 160, 480, 5] as Tuple,
-    rowGap: [56, 8, 140, 1] as Tuple,
-    titleScale: [0.66, 0.3, 0.9, 0.01] as Tuple,
+    /** Playback speed of each row's art and text animation (1 = as designed, 2 = twice as fast). */
+    speed: {
+      problem: [1, 0.25, 3, 0.05] as Tuple,
+      opportunity: [1, 0.25, 3, 0.05] as Tuple,
+      solution: [1, 0.25, 3, 0.05] as Tuple,
+      _collapsed: false,
+    },
+    spacing: sectionSpacingDials(96, 96, 44),
+    titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     _collapsed: true,
   },
@@ -406,7 +521,7 @@ export const FILO_CONFIG = {
     body: 'In late 2024, four of us built EcoFabriq at an MIT × Polimi hackathon. Biomaterial providers listed materials. Designers described their project to a chatbot and got matching materials, specs and locations to order from.\n\nIt demoed well. Then mentors asked who pays, why this beats a catalogue, and what happens if a mushroom coat sells 10,000 units. We had no answers.',
     video: 'placeholder',
     placeholder: '2024 demo · EcoFabriq chatbot',
-    layout: 'right',
+    layout: 'bottom',
     size: 40,
     gap: 64,
   }),
@@ -416,13 +531,14 @@ export const FILO_CONFIG = {
     eyebrow: 'Insight',
     title: 'Discovery wasn’t the bottleneck. Adoption was.',
     body: 'We had automated the one step designers enjoy. The pain sat after it: sampling with no spec sheet, lab tests, factory constraints, and a scale question that reaches the line review with no answer.\n\nThe material startups don’t fail because they can’t make the material. They fail because no brand will carry the risk of going first.',
-    layout: 'below',
+    layout: 'bottom',
   }),
   /** Before → after table (rendered as `reframe`). */
   reframe: REFRAME_DIALS,
-  /** Persona sheet (shared with Unwind), no portrait, one scenario card. */
+  /** Persona sheet (shared with Momo), no portrait, one scenario card. */
   persona: {
     ...PERSONA_DIALS,
+    spacing: sectionSpacingDials(110, 110, 32),
     eyebrow: txt('User persona'),
     title: txt('The technical designer handed a new material.'),
     body: txt(

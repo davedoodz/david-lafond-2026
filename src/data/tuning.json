@@ -7,12 +7,68 @@
     "shade": {
       "start": 0,
       "end": 100,
-      "opacity": 0.27
+      "opacity": 0.48
+    },
+    "titles": {
+      "card1": "Liquid Diamond",
+      "card2": "Future Fabric",
+      "card4": "Bob the Builder",
+      "card5": "MIT Sketchbooks",
+      "card7": "Decode no 1",
+      "card8": "The Dojo",
+      "card9": "Harvard + MIT Portfolio",
+      "card10": "3D Ink",
+      "card11": "Global Interiors",
+      "card12": "Testimonials"
+    },
+    "videoLoopSpeed": {
+      "future fabric": 2,
+      "renovation contractor agent": 2.85,
+      "architectural sketchbooks": 12,
+      "my room in 3d": 1.45,
+      "interactive signature": 1.8,
+      "globalization research explorer": 1.5
+    },
+    "mediaScale": {
+      "decode: a critical action": 1.3
+    },
+    "room": {
+      "video": "light"
+    },
+    "testimonials": {
+      "video": "lightCanvas"
+    },
+    "order": "p01,p11,p09,p10,p03,p05,p02,p07,p04,p06,p08,p12,p13,p14,p15,p16",
+    "journal": {
+      "desktopZoom": 2.39,
+      "desktopX": 1,
+      "desktopRadius": 5,
+      "phoneX": -29,
+      "phoneY": 18
+    },
+    "criticalAction": {
+      "bookY": 2
+    },
+    "portfolio": {
+      "pageSpeed": 1.75,
+      "floatiness": 1.9,
+      "shadow": 0.75,
+      "scale": 1.07,
+      "tiltX": 2,
+      "tiltY": -2
     },
     "grid": {
       "count": 12,
+      "cardWidthDesktop": 267,
       "radius": 14,
-      "topGapDesktop": 144
+      "topGapDesktop": 119
+    },
+    "restart": {
+      "opacity": 0.3,
+      "hoverOpacity": 0.6
+    },
+    "phone": {
+      "frame": "recorded"
     }
   },
   "Davebot": {
@@ -58,7 +114,7 @@
         "radius": 250
       }
     },
-    "unwindPage": {
+    "momoPage": {
       "preset": "custom",
       "headerOpacity": 0.25
     },
@@ -147,16 +203,27 @@
       "delay": 0
     },
     "topHover": {
-      "preset": "custom"
+      "preset": "custom",
+      "x": -11,
+      "rotate": -4.4
     },
     "backHover": {
       "second": {
-        "pullX": 136,
+        "pullX": 131,
         "pullY": -9
       },
       "third": {
-        "pullX": 136,
-        "pullY": -7
+        "pullX": 126,
+        "pullY": -7,
+        "rotate": 5.3
+      },
+      "fourth": {
+        "pullX": 122,
+        "rotate": 4.5
+      },
+      "back": {
+        "pullX": 112,
+        "rotate": 3.8
       }
     },
     "caption": {
@@ -197,6 +264,7 @@
     "ease": "linear-ish"
   },
   "Contact CTA": {
+    "title": "What if we designed cool stuff together?",
     "spacing": {
       "topDesktop": 202,
       "topMobile": 120,
@@ -344,7 +412,7 @@
     }
   },
   "About": {
-    "story": "My path to product design has been a rocky one.\n\nMy academic path began as a pre-med, only to realize that following strict protocols wasn’t meant for me.\n\nI believe the best designers are rebellious by nature.\n\nI’ve never truly felt like I belonged anywhere.\n\ndadwdawd\n\nMy whole life has been a series of pivots.\n\nI have quite the unconventional background.\n\nI started my studies\n\nHere are a few snippets that shed a bit of light into my too-many-too-count interests.\n\ndadwdawd\n\nWork hard. Play hard. \n\nNever stop learning.",
+    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never very good at accepting “that’s just how it is.”\n\nThat curiosity took me from pre-med to architecture, designing across continents, and eventually in world class research labs.\n\nI’ve changed directions more than once, usually because I found something new I couldn’t stop thinking about.\n\nNow, that something is product design.\n\nI’m still learning, still experimenting, and definitely still figuring things out.\n\nBut I’m excited to put my head down, do the work, and see where this next chapter takes me.\n\nA la vida,\n\n- David",
     "sheet": {
       "travel": 1.5,
       "depth": 2
@@ -382,12 +450,12 @@
       "stackToHeadingDesktop": 76,
       "labelTopDesktop": 99,
       "playFitGap": 0,
-      "labelY": -78,
       "playY": 40,
       "playSpaceBelow": -93
     },
     "grid": {
-      "sizeDesktop": 1.1
+      "sizeDesktop": 1.46,
+      "yDesktop": 42
     }
   },
   "Header intro": {
@@ -407,12 +475,22 @@
     }
   },
   "Contributions": {
-    "show": false,
-    "startMonth": 6,
-    "cellMobile": 6,
-    "yMobile": 36
+    "topGapDesktop": 165,
+    "yMobile": 36,
+    "grass": {
+      "height": 1.2,
+      "density": 46,
+      "bladeWidth": 2.15,
+      "wind": 0.9,
+      "flow": 1.7,
+      "tilt": 54,
+      "pointerRadius": 1.2,
+      "pointerPush": 0.9,
+      "pointerReach": 0.3
+    }
   },
-  "Unwind Momo": {
+  "Momo mascot": {
+    "size": 36.5,
     "listening": {
       "scale": 1.12
     },
@@ -438,54 +516,83 @@
       "overshoot": 0.48
     }
   },
-  "Unwind case study": {
+  "Momo case study": {
     "page": {
       "snap": "off",
       "sectionReveal": "still"
     },
     "hero": {
       "title": "A Novel Multimodal AI Reflection System for Behavioral Change",
+      "spacing": {
+        "top": 106,
+        "bottom": 62,
+        "contentGap": 99
+      },
       "media": {
         "radius": 21
       },
       "team": "2 developers, 2 designers, 2 therapists"
     },
     "heroSpacing": {
-      "logosToTitle": 63,
-      "titleToMeta": 23,
+      "logosToTitle": 54,
+      "titleToMeta": 20,
       "y": {
-        "braid": -74,
-        "title": -25,
+        "braid": -42,
+        "title": -24,
         "meta": -23,
-        "logos": -7
+        "logos": -17
       }
     },
     "logos": {
       "placement": "below meta",
-      "height": 41,
+      "height": 39,
       "gap": 27,
-      "offset": 28
+      "offset": 28,
+      "hoverColor": "#71c4f8"
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
-      "problemBody": "Most wellness tools wait for us to reach for them—after the moment has already passed.",
+      "problemBody": "Most wellness tools wait for us to reach for them after the emotional peak has passed.",
       "opportunityTitle": "Three technologies just converged ",
       "opportunityBody": "1. Wearables can sense physiological changes.  \n2. Voice can reveal subtle emotional cues.  \n3. Agentic AI can understand personal context.\n",
-      "solutionTitle": "A private check-in, right when it matters.",
-      "solutionBody": "The watch catches the moment, you talk it out, and AI helps you make sense of it.\n",
+      "solutionTitle": "Meet Momo",
+      "solutionBody": "A voice-first companion that uses wearable signals and personal context to prompt reflection when it matters most.\n",
       "preset": "custom",
-      "layout": "left",
+      "align": "stretch",
+      "textAlign": "center",
+      "art": "line",
+      "peakIcon": "octagon-alert",
       "opportunityArt": "converge",
-      "reveal": "cascade"
+      "reveal": "cascade",
+      "speed": {
+        "problem": 1.75,
+        "opportunity": 1.75,
+        "solution": 1.75
+      },
+      "spacing": {
+        "top": 233,
+        "bottom": 210,
+        "contentGap": 383
+      },
+      "artText": {
+        "problemMoment": "",
+        "problemOpened": "",
+        "opportunityMoment": "",
+        "solutionCheckIn": ""
+      }
     },
     "persona": {
-      "body": "Generally independent and capable, but prone to stress, rumination and replaying difficult moments. They want a private, low-friction emotional outlet.",
+      "body": "Generally independent and capable, but prone to stress and rumination. \nThey want a private, low-friction emotional outlet.",
+      "align": "center",
       "image": "bottom",
       "blockGap": 100,
       "moments": {
         "m2Quote": "“Argh, why did I say that?”",
         "m3Quote": "“There's always so much to do…”",
         "m4Quote": "“It's happening tomorrow again...”"
+      },
+      "spacing": {
+        "bottom": 0
       },
       "float": {
         "preset": "drift",
@@ -495,8 +602,70 @@
         "bob": 20,
         "eyebrowGap": 17,
         "bodyGap": 22,
-        "tagsGap": 40
+        "tagsGap": 40,
+        "entrance": {
+          "duration": 0.3,
+          "distance": 6,
+          "textStagger": 0.02,
+          "pillStagger": 0.01,
+          "pillsGap": 0.05,
+          "imageGap": 0.06,
+          "floatsDelay": 0.2,
+          "floatStagger": 0.11
+        }
       }
+    },
+    "system": {
+      "eyebrow": "",
+      "title": "",
+      "body": "",
+      "align": "center",
+      "spacing": {
+        "top": 0,
+        "bottom": 75,
+        "contentGap": 0
+      },
+      "media": {
+        "size": 74
+      }
+    },
+    "flows": {
+      "title": "Look back. Talk it out. Move forward.",
+      "body": "Your reflections become a record of your experiences \nand a way to turn insight into action.",
+      "phoneScale": 1.04,
+      "spacing": {
+        "top": 85,
+        "contentGap": 75
+      }
+    },
+    "guided": {
+      "title": "A framework for when your thoughts need more structure",
+      "body": "Choose from evidence-based reflection mental models. \nMomo guides you through it, one question at a time.",
+      "woopLabel": "",
+      "modelsLabel": "",
+      "spacing": {
+        "contentGap": 56
+      }
+    },
+    "dynamic": {
+      "eyebrow": "CROSS-DEVICE",
+      "title": "Catch it on your wrist. \nUnpack it on your phone.",
+      "body": "A timely nudge becomes a deeper reflection when you're ready to talk.",
+      "align": "center",
+      "watch": {
+        "strapColor": "#96b6d4"
+      },
+      "spacing": {
+        "contentGap": 46
+      },
+      "deviceEntrance": {
+        "preset": "split sides",
+        "duration": 1.25
+      }
+    },
+    "outcomes": {
+      "eyebrow": "USER OUTCOMES",
+      "align": "center"
     }
   },
   "Nav Momo": {
@@ -504,7 +673,11 @@
   },
   "Nav": {
     "position": "fixed",
-    "backdrop": "none"
+    "backdrop": "none",
+    "resumeArrow": {
+      "scale": 1.15,
+      "x": 4
+    }
   },
   "Project open": {
     "momoFlight": true,
@@ -513,15 +686,16 @@
       "cornerZone": 11
     }
   },
-  "Unwind shader": {
+  "Momo shader": {
     "frame": 2738590
   },
-  "Unwind case study · order": {
-    "section": "flows",
-    "order": "story, persona, moment, overview, notification, flows, dynamic, howItWorks, guided, context, tracking, system, outcomes",
+  "Momo case study · order": {
+    "section": "system",
+    "order": "story, persona, moment, overview, notification, system, flows, dynamic, howItWorks, guided, context, tracking, outcomes",
     "max": 13,
     "keep": {
       "Overview": "hide",
+      "The notification": "hide",
       "How it works": "hide",
       "The moment": "hide",
       "Context": "hide",
@@ -541,7 +715,7 @@
   "Header band": {
     "about": false,
     "harvard-mit": false,
-    "unwind": false,
+    "momo": false,
     "filo": false
   },
   "Footer links": {
@@ -556,15 +730,51 @@
   "Footer": {
     "desktopHeight": 200
   },
-  "Unwind intro": {
+  "Momo intro": {
+    "speed": 1.3,
+    "timingSeconds": {
+      "meetingNotice": 1.2,
+      "goodLuckNotice": 1.95,
+      "threePm": 1.5,
+      "fivePm": 0.8,
+      "evening": 0.9,
+      "bodySignals": 1.6,
+      "signalChecks": 2.65,
+      "momoNudge": 2.4,
+      "reflectionChoice": 2,
+      "momoEntrance": 1.75,
+      "voiceReflection": 4.75,
+      "heroHandoff": 1.6,
+      "heroHold": 1.45
+    },
     "hero": {
       "width": 280,
-      "energy": 0.28
+      "energy": 0.28,
+      "topGap": 33
+    },
+    "skip": {
+      "style": "progress",
+      "hover": "fill",
+      "click": "squish",
+      "placement": "bottom-right",
+      "ringThickness": 3.4
+    },
+    "replayHint": {
+      "firstDelay": 3,
+      "showFor": 5,
+      "hideFor": 3,
+      "intensity": 1.5,
+      "pillPosition": "center"
     }
   },
   "Filo case study": {
     "page": {
       "snap": "off"
+    },
+    "story": {
+      "problemTitle": "Fashion doesn’t have a discovery problem. It has a follow-through problem.",
+      "problemBody": "Designers already find compelling new materials. Most disappear during\n development because nobody can answer how they perform, how to manufacture with\n them or whether supply can scale.",
+      "opportunityTitle": "AI can move the work forward not just talk about it."
     }
   },
   "Momo welcome": {
@@ -573,6 +783,124 @@
     "momo": {
       "size": 60,
       "y": 4
+    }
+  },
+  "Momo system sequence": {
+    "sequenceSpeed": 3,
+    "motionSpeed": 1.5,
+    "card": {
+      "radius": 35,
+      "fill": "#f5f5f5",
+      "scaleX": 0.78,
+      "scaleY": 0.87
+    },
+    "gradient": {
+      "show": false,
+      "opacity": 0,
+      "palette": "momo",
+      "deep": "#09235e",
+      "mid": "#477fb2",
+      "glow": "#86a5e2",
+      "light": "#d3d4d9",
+      "spread": 2,
+      "x": 100,
+      "y": 50
+    },
+    "glass": {
+      "show": true,
+      "tint": 1,
+      "blur": 0,
+      "saturate": 1,
+      "edge": 1,
+      "sheen": 1,
+      "sheenAngle": 171,
+      "glow": 0
+    },
+    "shadow": {
+      "show": true,
+      "color": "#2a5976",
+      "opacity": 0.21,
+      "x": 3,
+      "spread": -6
+    },
+    "momoLogo": {
+      "x": 57,
+      "y": 32,
+      "scale": 0.4,
+      "outline": 5.2,
+      "color": "#a4cbed"
+    },
+    "momoText": {
+      "x": -25,
+      "y": 30,
+      "scale": 0.61,
+      "color": "#a4cbed"
+    },
+    "icons": {
+      "circleColor": "#4caaf7",
+      "titleGap": 13
+    },
+    "text": {
+      "titles": "#159DD2",
+      "labels": "#159DD2"
+    },
+    "stepHold": {
+      "youShare": 0.5,
+      "dataIn": 0.5,
+      "answersOut": 0.5,
+      "backToYou": 0.5
+    },
+    "arrowTips": {
+      "animation": "slide"
+    },
+    "labels": {
+      "size": 1.1
+    },
+    "entrance": {
+      "preset": "cascade",
+      "duration": 2.05,
+      "distance": 132
+    },
+    "userIcon": {
+      "y": -4,
+      "scale": 0.89
+    },
+    "watchIcon": {
+      "x": -1,
+      "y": -1,
+      "scale": 0.93
+    },
+    "phoneIcon": {
+      "x": -1,
+      "scale": 1.03
+    },
+    "momoIcon": {
+      "scale": 0.94
+    },
+    "expertsIcon": {
+      "y": -4,
+      "scale": 0.89
+    }
+  },
+  "Momo paper": {
+    "arrow": {
+      "x": -4,
+      "y": 1.5,
+      "scale": 1.09
+    },
+    "width": 585,
+    "peek": 161,
+    "entrance": {
+      "depth": 420,
+      "duration": 1.85
+    }
+  },
+  "Selection": {
+    "height": 0.7
+  },
+  "Cursor": {
+    "text": {
+      "durationMs": 480
     }
   }
 }

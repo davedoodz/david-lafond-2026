@@ -53,7 +53,7 @@ export type OpenSpec = {
   /** Share of the run, at its end, over which the artwork fades out (0 = stays). */
   contentFade: number
   effect: OpenEffect
-  /** Cards with Momo (Unwind): Momo flies from the card into the nav's Momo on the page. */
+  /** Cards with Momo (Momo): Momo flies from the card into the nav's Momo on the page. */
   momoFlight: boolean
   /** Seconds Momo keeps animating after the click before it flies into the nav (0 = fly as soon as the page is ready). */
   momoHoldSeconds: number
@@ -160,7 +160,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   surface.style.backgroundColor = cardStyle.backgroundColor
   overlay.append(dim, surface)
 
-  // A layer that tracks the growing rect. Cards with a live shader (Unwind): the shader grows
+  // A layer that tracks the growing rect. Cards with a live shader (Momo): the shader grows
   // in it, continuing from the card's current frame, so it reflows like the card.
   const frameLayer = document.createElement('div')
   frameLayer.className = 'project-open__frame'
@@ -219,6 +219,7 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
       inset[edge] = from[edge] * (1 - ease.fn(Math.min(1, Math.max(0, local))))
     }
     const overall = ease.fn(Math.min(1, elapsed / ease.duration))
+    momo?.follow(overall)
     // Each corner follows its own two edges: full card radius while they are far from the
     // screen, easing to square as they arrive, so the card turns full-bleed as it lands.
     const corner = (a: number, b: number) => {
@@ -371,17 +372,26 @@ function momoCanvas(root: ParentNode): HTMLCanvasElement | null {
 /**
  * Lifts the card's Momo above the expansion as a live mirror of the card's own clip, so
  * it keeps animating (no restart, no second clip) for `holdSeconds`, then flies into
- * the nav's Momo once the page is committed.
+ * the nav's Momo once the page is committed. It starts exactly where the card shows it
+ * and `follow(p)` carries it to the screen centre as the card grows (p = card progress).
  */
 function liftMomo(card: HTMLElement, holdSeconds: number) {
   const source = momoCanvas(card)
   if (!source || !source.width) return null
-  const from = source.getBoundingClientRect()
+  const sourceRect = source.getBoundingClientRect()
+  const fromX = sourceRect.left + sourceRect.width / 2
+  const fromY = sourceRect.top + sourceRect.height / 2
   const mirror = document.createElement('canvas')
   mirror.className = 'project-open__momo'
   mirror.width = source.width
   mirror.height = source.height
-  Object.assign(mirror.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px` })
+  Object.assign(mirror.style, {
+    left: `${fromX}px`,
+    top: `${fromY}px`,
+    width: `${sourceRect.width}px`,
+    height: `${sourceRect.height}px`,
+    transform: 'translate(-50%, -50%)',
+  })
   const ctx = mirror.getContext('2d')
   // Follows whichever of the card's clips is showing, so its own blend carries on too.
   let frame = 0
@@ -397,6 +407,11 @@ function liftMomo(card: HTMLElement, holdSeconds: number) {
   const stop = () => cancelAnimationFrame(frame)
 
   return {
+    /** Places Momo `p` (0–1, eased) of the way from its card position to the screen centre. */
+    follow(p: number) {
+      mirror.style.left = `${(fromX + (document.documentElement.clientWidth / 2 - fromX) * p).toFixed(2)}px`
+      mirror.style.top = `${(fromY + (window.innerHeight / 2 - fromY) * p).toFixed(2)}px`
+    },
     /** Resolves once Momo has animated for `holdSeconds` since the click. A tap or key skips it. */
     hold(): Promise<void> {
       const left = holdSeconds * 1000 - (performance.now() - started)
@@ -421,19 +436,31 @@ function liftMomo(card: HTMLElement, holdSeconds: number) {
       if (!slot || !target) {
         // No Momo in the nav: Momo fades out where it is, before the page's own intro starts.
         await mirror
-          .animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.92)' }], { duration: Math.min(duration, 380), easing: 'ease-out', fill: 'forwards' })
+          .animate(
+            [
+              { opacity: 1, transform: 'translate(-50%, -50%)' },
+              { opacity: 0, transform: 'translate(-50%, -50%) scale(0.92)' },
+            ],
+            { duration: Math.min(duration, 380), easing: 'ease-out', fill: 'forwards' },
+          )
           .finished.catch(() => {})
         return mirror.remove()
       }
       const to = target.getBoundingClientRect()
       slot.style.visibility = 'hidden'
-      const dx = to.left + to.width / 2 - (from.left + from.width / 2)
-      const dy = to.top + to.height / 2 - (from.top + from.height / 2)
-      const flight = mirror.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${to.width / from.width})` }], {
-        duration,
-        easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
-        fill: 'forwards',
-      })
+      const dx = to.left + to.width / 2 - document.documentElement.clientWidth / 2
+      const dy = to.top + to.height / 2 - window.innerHeight / 2
+      const flight = mirror.animate(
+        [
+          { transform: 'translate(-50%, -50%)' },
+          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${to.width / sourceRect.width})` },
+        ],
+        {
+          duration,
+          easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
+          fill: 'forwards',
+        },
+      )
       await flight.finished.catch(() => {})
       slot.style.visibility = ''
       mirror.remove()

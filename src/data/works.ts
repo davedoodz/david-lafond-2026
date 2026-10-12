@@ -2,7 +2,7 @@ import type { Route } from '../lib/router'
 
 /** Selected works. Media (image/video loops) plugs in per card once assets exist. */
 export type Work = {
-  id: 'unwind' | 'filo' | 'harvard-mit'
+  id: 'momo' | 'filo' | 'harvard-mit'
   title: string
   shortTitle: string
   /** Surface under the card for the custom cursor (white dot on dark, black on light). */
@@ -13,11 +13,11 @@ export type Work = {
 
 export const WORKS: Work[] = [
   {
-    id: 'unwind',
-    title: 'Unwind – Novel Multimodal AI Reflection System for Behavioral Change',
-    shortTitle: 'Unwind',
+    id: 'momo',
+    title: 'Momo – Novel Multimodal AI Reflection System for Behavioral Change',
+    shortTitle: 'Momo',
     surface: 'dark',
-    route: 'unwind',
+    route: 'momo',
   },
   {
     id: 'filo',

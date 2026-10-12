@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { sampleTracking, watchTracking, type TrackingKeyframe, type Quad } from './watchTracking'
 import './trackingEditor.css'
 
-const STORAGE_KEY = 'unwind-watch-tracking-v1'
+const STORAGE_KEY = 'momo-watch-tracking-v1'
 export function loadTracking(): TrackingKeyframe[] {
   try {
     const keys: TrackingKeyframe[] = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')

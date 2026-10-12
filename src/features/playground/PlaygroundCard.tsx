@@ -5,7 +5,14 @@ type Props = {
   item: PlaygroundItem
   title: string
   isActive: boolean
-  onOpen: (id: string, el: HTMLButtonElement) => void
+  canReorder: boolean
+  isDragging: boolean
+  isDropTarget: boolean
+  onOpen: (id: string, el: HTMLButtonElement, scrollY: number) => void
+  onReorderStart: (id: string) => void
+  onReorderOver: (id: string) => void
+  onReorderDrop: (sourceId: string, targetId: string) => void
+  onReorderEnd: () => void
   cardRef: (id: string, el: HTMLButtonElement | null) => void
   mediaHostRef: (id: string, el: HTMLDivElement | null) => void
 }
@@ -18,9 +25,26 @@ type Props = {
  * synthetic event system to this button (React bubbles portaled events along the React tree,
  * not the DOM tree). Native `addEventListener` on the real button element sidesteps that.
  */
-export function PlaygroundCard({ item, title, isActive, onOpen, cardRef, mediaHostRef }: Props) {
+export function PlaygroundCard({
+  item,
+  title,
+  isActive,
+  canReorder,
+  isDragging,
+  isDropTarget,
+  onOpen,
+  onReorderStart,
+  onReorderOver,
+  onReorderDrop,
+  onReorderEnd,
+  cardRef,
+  mediaHostRef,
+}: Props) {
   const [pressed, setPressed] = useState(false)
   const btnRef = useRef<HTMLButtonElement | null>(null)
+  const ignoreClickUntilRef = useRef(0)
+  const pointerDownScrollRef = useRef<number | null>(null)
+  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; dragging: boolean; targetId: string } | null>(null)
 
   const setButtonEl = useCallback(
     (el: HTMLButtonElement | null) => {
@@ -34,26 +58,81 @@ export function PlaygroundCard({ item, title, isActive, onOpen, cardRef, mediaHo
   useEffect(() => {
     const el = btnRef.current
     if (!el) return
-    const handleClick = () => onOpen(item.id, el)
-    const handleDown = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') setPressed(true)
+    const handleClick = () => {
+      const scrollY = pointerDownScrollRef.current ?? window.scrollY
+      pointerDownScrollRef.current = null
+      if (performance.now() < ignoreClickUntilRef.current) return
+      onOpen(item.id, el, scrollY)
     }
-    const handleRelease = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') setPressed(false)
+    const handleDown = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') setPressed(true)
+      pointerDownScrollRef.current = window.scrollY
+      if (!canReorder || event.button !== 0) return
+      dragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        dragging: false,
+        targetId: item.id,
+      }
+    }
+    const handleMove = (event: PointerEvent) => {
+      const drag = dragRef.current
+      if (!drag || drag.pointerId !== event.pointerId) return
+      if (!drag.dragging && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >= 6) {
+        drag.dragging = true
+        ignoreClickUntilRef.current = Number.POSITIVE_INFINITY
+        el.setPointerCapture(event.pointerId)
+        onReorderStart(item.id)
+      }
+      if (!drag.dragging) return
+      event.preventDefault()
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('.pg-card')
+      const targetId = target?.dataset.pgId
+      if (targetId && targetId !== drag.targetId) {
+        drag.targetId = targetId
+        onReorderOver(targetId)
+      }
+    }
+    const finishPointer = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') setPressed(false)
+      const drag = dragRef.current
+      if (!drag || drag.pointerId !== event.pointerId) return
+      if (drag.dragging) {
+        event.preventDefault()
+        ignoreClickUntilRef.current = performance.now() + 250
+        onReorderDrop(item.id, drag.targetId)
+        onReorderEnd()
+      }
+      dragRef.current = null
+      if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId)
+    }
+    const cancelPointer = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') setPressed(false)
+      if (dragRef.current?.pointerId === event.pointerId) {
+        dragRef.current = null
+        ignoreClickUntilRef.current = performance.now() + 250
+        onReorderEnd()
+      }
+    }
+    const handleLeave = (event: PointerEvent) => {
+      if (event.pointerType === 'touch' && !dragRef.current?.dragging) setPressed(false)
     }
     el.addEventListener('click', handleClick)
     el.addEventListener('pointerdown', handleDown)
-    el.addEventListener('pointerup', handleRelease)
-    el.addEventListener('pointerleave', handleRelease)
-    el.addEventListener('pointercancel', handleRelease)
+    el.addEventListener('pointermove', handleMove)
+    el.addEventListener('pointerup', finishPointer)
+    el.addEventListener('pointerleave', handleLeave)
+    el.addEventListener('pointercancel', cancelPointer)
     return () => {
       el.removeEventListener('click', handleClick)
       el.removeEventListener('pointerdown', handleDown)
-      el.removeEventListener('pointerup', handleRelease)
-      el.removeEventListener('pointerleave', handleRelease)
-      el.removeEventListener('pointercancel', handleRelease)
+      el.removeEventListener('pointermove', handleMove)
+      el.removeEventListener('pointerup', finishPointer)
+      el.removeEventListener('pointerleave', handleLeave)
+      el.removeEventListener('pointercancel', cancelPointer)
     }
-  }, [item.id, onOpen])
+  }, [canReorder, item.id, onOpen, onReorderDrop, onReorderEnd, onReorderOver, onReorderStart])
 
   return (
     <button
@@ -61,6 +140,10 @@ export function PlaygroundCard({ item, title, isActive, onOpen, cardRef, mediaHo
       ref={setButtonEl}
       data-pg-id={item.id}
       className="pg-card"
+      data-reorderable={canReorder || undefined}
+      data-presentation={item.presentation}
+      data-dragging={isDragging || undefined}
+      data-drop-target={isDropTarget || undefined}
       data-active={isActive || undefined}
       data-pressed={pressed || undefined}
       aria-label={`Open ${title}`}

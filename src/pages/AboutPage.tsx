@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { ContributionGraph } from '../components/ContributionGraph'
+import { SHEET_LABEL_TOP } from '../components/SelectedWorks'
 import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
 import { ArrowDownIcon } from '../components/icons'
@@ -83,8 +84,6 @@ const CONFIG = {
     playFitPadding: [56, 0, 200, 1] as [number, number, number, number],
     /** Fit mode: label to first row of cards (px). */
     playFitGap: [40, 0, 200, 1] as [number, number, number, number],
-    /** "My playground" label only: move up (−) / down (+), px, independent of the cards. */
-    labelY: [0, -1200, 400, 1] as [number, number, number, number],
     /** Playground section (label + grid + graph): move up (−) / down (+), px. */
     playY: [0, -300, 300, 1] as [number, number, number, number],
     /** Extra space above / below the playground section (px; negative pulls neighbours closer). */
@@ -128,8 +127,32 @@ export function AboutPage() {
   const headingSoft = t.storyEntrance.heading.preset === 'soft'
   const bodySoft = t.storyEntrance.body.preset === 'soft'
   const playRef = useRef<HTMLElement>(null)
-  // A label moved with labelY sits outside the cards' reveal, so it is shown as placed.
-  useReveal(playRef, t.spacing.labelY ? '.pg-card' : '#play-title, .pg-card', t.reveal, revealRun)
+  const playTitleRef = useRef<HTMLHeadingElement>(null)
+  // The label is placed from the sheet edge (below), so it sits outside the cards' reveal.
+  useReveal(playRef, '.pg-card', t.reveal, revealRun)
+
+  // "My playground" sits as far below the dark sheet's top edge as "Selected projects" does on Home.
+  // It stays in flow (the cards never move); only its own offset is set, re-measured on resize.
+  useLayoutEffect(() => {
+    const dark = darkRef.current
+    const title = playTitleRef.current
+    if (!dark || !title) return
+    const mobile = window.matchMedia('(max-width: 640px)')
+    const place = () => {
+      title.style.top = '0px'
+      const natural = title.getBoundingClientRect().top - dark.getBoundingClientRect().top
+      const want = mobile.matches ? SHEET_LABEL_TOP.mobile : SHEET_LABEL_TOP.desktop
+      title.style.top = `${want - natural}px`
+    }
+    place()
+    const observer = new ResizeObserver(place)
+    observer.observe(dark)
+    mobile.addEventListener('change', place)
+    return () => {
+      observer.disconnect()
+      mobile.removeEventListener('change', place)
+    }
+  }, [])
 
   const dome = t.dome
   const domeMobile = t.domeMobile
@@ -283,7 +306,6 @@ export function AboutPage() {
     '--play-arrow-y': `${t.spacing.labelArrowY}px`,
     '--play-fit-pad': `${t.spacing.playFitPadding}px`,
     '--play-y': `${t.spacing.playY}px`,
-    '--play-label-y': `${t.spacing.labelY}px`,
     '--play-above': `${t.spacing.playSpaceAbove}px`,
     '--play-below': `${t.spacing.playSpaceBelow}px`,
     '--play-fit-gap': `${t.spacing.playFitGap}px`,
@@ -327,7 +349,7 @@ export function AboutPage() {
       <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined}>
         <SheetLayers preset={t.sheet.preset} />
         <section ref={playRef} className="about__play" data-fit={t.spacing.playFit || undefined} aria-labelledby="play-title">
-          <h2 id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor }}>
+          <h2 ref={playTitleRef} id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor }}>
             <EditableText as="span" label="Playground label" value={t.playgroundLabel} onChange={(next) => setValue('playgroundLabel', next)} /> <ArrowDownIcon />
           </h2>
           <Playground />

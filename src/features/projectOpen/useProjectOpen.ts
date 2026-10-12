@@ -35,13 +35,13 @@ export const OPEN_PRESETS: Record<string, { timing: Easing | Spring; delay: Edge
 const CONFIG = {
   /** How the card becomes the page (see OPEN_EFFECTS); the preset below sets its timing. */
   effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'expand' },
-  /** Unwind: Momo flies from the card into the nav's Momo. */
+  /** Momo: Momo flies from the card into the nav's Momo. */
   momoFlight: false,
-  /** Unwind: seconds Momo keeps animating after the click before it flies into the nav (a tap or key skips it). */
+  /** Momo: seconds Momo keeps animating after the click before it flies into the nav (a tap or key skips it). */
   momoHoldSeconds: [1, 0, 5, 0.05] as Tuple,
   preset: { type: 'select' as const, options: [...Object.keys(OPEN_PRESETS), 'custom'], default: 'glide' },
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
-  previewUnwind: { type: 'action' as const, label: 'Preview (open Unwind)' },
+  previewMomo: { type: 'action' as const, label: 'Preview (open Momo)' },
   previewFilo: { type: 'action' as const, label: 'Preview (open Filo)' },
   /** Filo / Harvard & MIT: how the card's artwork moves while the card grows. */
   content: {
@@ -73,7 +73,7 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
   const t = useTuning('Project open', CONFIG, {
     onAction: (action) => {
       const route =
-        action === 'preview' ? 'harvard-mit' : action === 'previewUnwind' ? 'unwind' : action === 'previewFilo' ? 'filo' : null
+        action === 'preview' ? 'harvard-mit' : action === 'previewMomo' ? 'momo' : action === 'previewFilo' ? 'filo' : null
       if (!route) return
       const card = document.querySelector<HTMLElement>(`[data-work="${route}"]`)
       if (!card || !specRef.current) return

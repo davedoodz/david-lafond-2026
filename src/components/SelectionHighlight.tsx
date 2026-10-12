@@ -10,8 +10,23 @@
  * Boxes are placed in document coordinates, so scrolling needs no redraw.
  */
 import { useEffect, useRef } from 'react'
+import { useTuning } from '../tuning/useTuning'
 
 const FIELD_SELECTOR = 'input, textarea'
+
+type Tuple = [number, number, number, number]
+
+/** DialKit "Selection": the shape of each highlight block. */
+const SELECTION_CONFIG = {
+  /** Block height as a multiple of the text's line box (font ascent to descent). */
+  height: [1, 0.3, 1.6, 0.01] as Tuple,
+  /** Extra px above and below each block. 3 closes the seam between wrapped lines at height 1. */
+  padY: [3, 0, 16, 0.5] as Tuple,
+  /** Extra px left and right of each block. */
+  padX: [3, 0, 16, 0.5] as Tuple,
+  /** Moves every block down (+) or up (−), in px. */
+  offsetY: [0, -20, 20, 0.5] as Tuple,
+}
 
 function collectRects(range: Range, out: DOMRect[]): void {
   const root = range.commonAncestorContainer
@@ -45,6 +60,10 @@ function collectRects(range: Range, out: DOMRect[]): void {
 
 export function SelectionHighlight() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const tuning = useTuning('Selection', SELECTION_CONFIG)
+  const tuningRef = useRef(tuning)
+  tuningRef.current = tuning
+  const redrawRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     const host = hostRef.current
@@ -60,34 +79,43 @@ export function SelectionHighlight() {
         for (let i = 0; i < selection.rangeCount; i += 1) collectRects(selection.getRangeAt(i), rects)
       }
 
-      // Expand each fragment enough to overlap the font's line-box rounding.
-      // Client rects can leave a 2–3px seam between wrapped lines even after
-      // outward integer rounding.
-      const overlap = 3
+      // Each block is centred on its line box and scaled by the height dial. The
+      // padding overlaps the font's line-box rounding: client rects can leave a
+      // 2–3px seam between wrapped lines even after outward integer rounding.
+      const { height, padX, padY, offsetY } = tuningRef.current
       while (host.childElementCount > rects.length) host.lastElementChild!.remove()
       while (host.childElementCount < rects.length) host.appendChild(document.createElement('div'))
       const { scrollX, scrollY } = window
       rects.forEach((rect, i) => {
         const box = host.children[i] as HTMLDivElement
-        const left = Math.floor(rect.left + scrollX) - overlap
-        const top = Math.floor(rect.top + scrollY) - overlap
-        const right = Math.ceil(rect.right + scrollX) + overlap
-        const bottom = Math.ceil(rect.bottom + scrollY) + overlap
+        const half = (rect.height * height) / 2 + padY
+        const centre = rect.top + rect.height / 2 + scrollY + offsetY
+        const left = Math.floor(rect.left + scrollX - padX)
+        const top = Math.floor(centre - half)
+        const right = Math.ceil(rect.right + scrollX + padX)
+        const bottom = Math.ceil(centre + half)
         box.style.cssText = `left:${left}px;top:${top}px;width:${right - left}px;height:${bottom - top}px`
       })
     }
     const schedule = (): void => {
       if (!raf) raf = requestAnimationFrame(draw)
     }
+    redrawRef.current = schedule
 
     document.addEventListener('selectionchange', schedule)
     window.addEventListener('resize', schedule)
     return () => {
       cancelAnimationFrame(raf)
+      redrawRef.current = null
       document.removeEventListener('selectionchange', schedule)
       window.removeEventListener('resize', schedule)
     }
   }, [])
+
+  // A dial change reshapes the current selection live.
+  useEffect(() => {
+    redrawRef.current?.()
+  }, [tuning.height, tuning.padX, tuning.padY, tuning.offsetY])
 
   return <div ref={hostRef} className="selection-hl" aria-hidden="true" />
 }

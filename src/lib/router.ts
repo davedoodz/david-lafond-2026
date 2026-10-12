@@ -10,21 +10,21 @@
 import { useSyncExternalStore } from 'react'
 import { flushSync } from 'react-dom'
 
-export type Route = 'work' | 'about' | 'harvard-mit' | 'unwind' | 'filo'
+export type Route = 'work' | 'about' | 'harvard-mit' | 'momo' | 'filo'
 
 const ROUTE_BY_PATH: Record<string, Route> = {
   '/': 'work',
   '/work': 'work',
   '/about': 'about',
   '/work/harvard-mit': 'harvard-mit',
-  '/work/unwind': 'unwind',
+  '/work/momo': 'momo',
   '/work/filo': 'filo',
 }
 export const PATH_BY_ROUTE: Record<Route, string> = {
   work: '/',
   about: '/about',
   'harvard-mit': '/work/harvard-mit',
-  unwind: '/work/unwind',
+  momo: '/work/momo',
   filo: '/work/filo',
 }
 

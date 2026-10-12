@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'motion/react'
 import type { ResolvedValues } from 'dialkit'
 import { useTuning } from '../../tuning/useTuning'
@@ -8,6 +8,7 @@ import { toMotionTransition } from './motionTransition'
 import { closeDavebot, getDavebotTrigger, openDavebot, takeDavebotQuote, useDavebotOpen } from './davebotStore'
 import { DAVEBOT_ENTRY_BY_ID, rankEntries, type AnswerSegment } from './davebotIndex'
 import { GhostMark } from './GhostMark'
+import { ArrowUpRightIcon } from '../../components/icons'
 import './davebot.css'
 
 type Row = {
@@ -21,7 +22,7 @@ type Row = {
 
 type Part = { text: string; emphasis: boolean }
 
-type Answer = { title?: string; route?: string; parts: Part[] }
+type Answer = { parts: Part[] }
 
 type Phase = 'suggestions' | 'query' | 'thinking' | 'answer' | 'offline'
 
@@ -52,7 +53,7 @@ function toParts(segments: AnswerSegment[]): Part[] {
 function buildSuggestionRows(tuning: Tuning): Row[] {
   const slots: Array<{ id: string; visible: boolean; label: string }> = [
     { id: 'work', visible: tuning.visible.suggestion1, label: tuning.text.suggestion1 },
-    { id: 'unwind', visible: tuning.visible.suggestion2, label: tuning.text.suggestion2 },
+    { id: 'momo', visible: tuning.visible.suggestion2, label: tuning.text.suggestion2 },
     { id: 'contact', visible: tuning.visible.suggestion3, label: tuning.text.suggestion3 },
   ]
   return slots
@@ -305,17 +306,6 @@ function DavebotPanel() {
     setLiveMessage('Davebot is thinking')
 
     const localEntry = rankEntries(value)[0]
-    if (localEntry) {
-      conversationRef.current.push(
-        { role: 'user', content: value },
-        { role: 'assistant', content: localEntry.answer.map(segment => segment.text).join('') },
-      )
-      if (run !== answerRunRef.current) return
-      currentEntryIdRef.current = localEntry.id
-      setPhase('answer')
-      setAnswer({ title: localEntry.title, route: localEntry.route, parts: toParts(localEntry.answer) })
-      return
-    }
 
     try {
       const controller = new AbortController()
@@ -323,7 +313,11 @@ function DavebotPanel() {
       const response = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: value, history: conversationRef.current.slice(-6) }),
+        body: JSON.stringify({
+          query: value,
+          history: conversationRef.current.slice(-6),
+          contextId: localEntry?.id,
+        }),
         signal: controller.signal,
       })
       if (!response.ok) throw new Error(`Davebot API returned ${response.status}`)
@@ -332,11 +326,23 @@ function DavebotPanel() {
       if (run !== answerRunRef.current) return
       conversationRef.current.push({ role: 'user', content: value }, { role: 'assistant', content: payload.answer })
       const source = payload.source?.id ? DAVEBOT_ENTRY_BY_ID[payload.source.id] : undefined
-      currentEntryIdRef.current = source?.id ?? excludeId
+      currentEntryIdRef.current = source?.id ?? localEntry?.id ?? excludeId
       setPhase('answer')
-      setAnswer({ title: source?.title, route: source?.route, parts: toParts([{ text: payload.answer.trim() }]) })
+      setAnswer({ parts: toParts([{ text: payload.answer.trim() }]) })
     } catch {
       if (run !== answerRunRef.current) return
+      if (localEntry) {
+        const localAnswer = localEntry.answer.map(segment => segment.text).join('')
+        conversationRef.current.push(
+          { role: 'user', content: value },
+          { role: 'assistant', content: localAnswer },
+        )
+        currentEntryIdRef.current = localEntry.id
+        setPhase('answer')
+        setAnswer({ parts: toParts(localEntry.answer) })
+        setLiveMessage('Davebot is using his pocket notes. The larger filing cabinet is temporarily offline.')
+        return
+      }
       currentEntryIdRef.current = excludeId
       setPhase('offline')
       setAnswer({ parts: toParts([{ text: OFFLINE_COPY }]) })
@@ -464,13 +470,6 @@ function DavebotPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, inputValue, readOnly])
 
-  function onSourceClick(event: MouseEvent<HTMLAnchorElement>, route: string) {
-    if (/^https?:/.test(route)) return
-    event.preventDefault()
-    requestClose()
-    if (!route.startsWith('mailto:')) navigate(route as Route)
-    else window.location.href = route
-  }
 
   const groupLabel = phase === 'suggestions' ? (tuning.visible.suggestedLabel ? tuning.text.suggestedLabel : '') : 'Ask or jump'
   const footerLeft = tuning.visible.footerLeftText ? tuning.text.footerLeft : ''
@@ -562,22 +561,6 @@ function DavebotPanel() {
                       part.emphasis ? <strong key={index}>{part.text}</strong> : <span key={index}>{part.text}</span>,
                     )}
                   </p>
-                  {!streaming && phase === 'answer' && answer.route && answer.title && (
-                    <div className="davebot-answer__actions">
-                      <a
-                        className="davebot-source"
-                        href={answer.route}
-                        target={/^https?:/.test(answer.route) ? '_blank' : undefined}
-                        rel={/^https?:/.test(answer.route) ? 'noopener noreferrer' : undefined}
-                        onClick={event => onSourceClick(event, answer.route as string)}
-                      >
-                        <span className="davebot-source__arrow" aria-hidden="true">
-                          &#8599;
-                        </span>
-                        <span>Source · {answer.title}</span>
-                      </a>
-                    </div>
-                  )}
                 </div>
                 {!streaming && (
                   <div className="davebot-recovery">
@@ -637,9 +620,10 @@ function DavebotRow({
   onPick: (row: Row) => void
 }) {
   const isAsk = row.action === 'ask'
-  const glyph = isAsk ? '' : '\u2197'
-  const showHint = isAsk ? tuning.visible.askLabel : true
-  const hintText = isAsk ? tuning.text.askRowLabel : row.hint
+  const glyph = !isAsk
+  // Nav rows carry only the arrow; the ask row keeps its tunable label.
+  const showHint = isAsk && tuning.visible.askLabel
+  const hintText = isAsk ? tuning.text.askRowLabel : ''
 
   return (
     <button
@@ -653,7 +637,7 @@ function DavebotRow({
     >
       {glyph && (
         <span className="davebot-row__icon" aria-hidden="true">
-          {glyph}
+          <ArrowUpRightIcon />
         </span>
       )}
       <span className="davebot-row__label">{row.label}</span>

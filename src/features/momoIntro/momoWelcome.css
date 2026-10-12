@@ -1,0 +1,98 @@
+.momo-welcome {
+  width: min(var(--welcome-width, 380px), calc((100svh - 112px) * 1312 / 2672), calc(100vw - 64px));
+  flex: none;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+}
+.momo-welcome__phone {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1312 / 2672;
+  isolation: isolate;
+}
+.momo-welcome__phone[data-phase='rising'] { will-change: transform, opacity; }
+.momo-welcome__screen {
+  position: absolute;
+  inset: 2% 4.8%;
+  border-radius: 14% / 6.7%;
+  overflow: hidden;
+  container-type: inline-size;
+  background: #53bffe;
+  color: white;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.momo-welcome__shader,
+.momo-welcome__shade,
+.momo-welcome__content {
+  position: absolute;
+  inset: 0;
+}
+.momo-welcome__shader canvas { display: block; width: 100%; height: 100%; }
+.momo-welcome__shade { background: #000; opacity: 0; pointer-events: none; }
+.momo-welcome__frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.momo-welcome__mascot {
+  position: absolute;
+  top: 16%;
+  left: 16%;
+  width: 68%;
+  height: 33%;
+  padding: 0;
+  background: none;
+}
+.momo-welcome__mascot > img { position: absolute; top: calc(50% + var(--welcome-momo-y)); left: calc(50% + var(--welcome-momo-x)); height: var(--welcome-momo-size); max-width: none; width: auto; translate: -50% -50%; object-fit: contain; }
+.momo-welcome__brand { position: absolute; top: 57.5%; left: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 2.4cqw; }
+.momo-welcome__mark { width: var(--welcome-mark-size, 19.8cqw); height: auto; flex: none; translate: var(--welcome-mark-x, 0) var(--welcome-mark-y, 0); }
+.momo-welcome__type { width: var(--welcome-type-size, 37.8cqw); height: auto; flex: none; translate: var(--welcome-type-x, 0) var(--welcome-type-y, 0); }
+.momo-welcome__actions { position: absolute; top: 72%; left: 8%; width: 84%; display: grid; gap: 2.8cqw; }
+.momo-welcome__actions > div {
+  min-height: 13cqw;
+  padding: 2.5cqw 2cqw;
+  border-radius: 999px;
+  font-size: 5cqw;
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: 1.2;
+  display: grid;
+  place-items: center;
+}
+.momo-welcome__primary { background: var(--welcome-primary, #3cb7f3); }
+.momo-welcome__secondary { background: color-mix(in srgb, var(--welcome-secondary, #fff) 35%, transparent); }
+.momo-welcome__primary { outline: var(--welcome-stroke, 0px) solid #fff; outline-offset: calc(-1 * var(--welcome-stroke, 0px)); }
+/* Liquid Glass presets: translucent fill, backdrop blur + saturation, a lit top rim, a soft lower rim, and a faint drop. */
+.momo-welcome__actions:not([data-style='flat']) > div {
+  -webkit-backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-sat, 180%));
+  backdrop-filter: blur(var(--glass-blur, 14px)) saturate(var(--glass-sat, 180%));
+  background: var(--glass-fill, color-mix(in srgb, var(--welcome-secondary, #fff) 16%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .55),
+    inset 0 -1px 0 rgb(255 255 255 / .18),
+    inset 0 0 0 1px rgb(255 255 255 / .22),
+    0 6px 18px rgb(10 50 90 / .14);
+  text-shadow: 0 1px 2px rgb(10 50 90 / .18);
+}
+.momo-welcome__actions[data-style='glass'] > .momo-welcome__primary { --glass-fill: color-mix(in srgb, var(--welcome-primary) 24%, transparent); }
+.momo-welcome__actions[data-style='tinted'] > .momo-welcome__primary { --glass-fill: color-mix(in srgb, var(--welcome-primary) 55%, transparent); --glass-sat: 200%; }
+.momo-welcome__actions[data-style='frosted'] > div { --glass-fill: color-mix(in srgb, var(--welcome-secondary) 32%, transparent); --glass-blur: 28px; --glass-sat: 140%; }
+.momo-welcome__actions[data-style='frosted'] > .momo-welcome__primary { --glass-fill: color-mix(in srgb, var(--welcome-primary) 42%, transparent); }
+.momo-welcome__actions[data-style='prominent'] > .momo-welcome__primary { --glass-fill: color-mix(in srgb, var(--welcome-primary) 8%, white); color: color-mix(in srgb, var(--welcome-primary) 72%, #07527c); text-shadow: none; }
+.momo-welcome__legal {
+  position: absolute;
+  top: 89%;
+  left: 5%;
+  width: 90%;
+  margin: 0;
+  font-size: 3.7cqw;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -.035em;
+}
+.momo-welcome__legal u { text-underline-offset: .16em; text-decoration-thickness: 1px; }
+/* The loop itself runs on the Web Animations API (MomoWelcome.tsx) so its timing is tunable. */
+.momo-welcome__enter { opacity: 0; }
+/* Before the intro hands off, the phone waits below, hidden; it rises once the film is done. */
+.momo-welcome__phone[data-phase='waiting']:not([data-reduced]) { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .momo-welcome__enter { opacity: 1; }
+  .momo-welcome__shade { opacity: var(--welcome-overlay, .34); }
+}

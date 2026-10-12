@@ -1,7 +1,26 @@
 .case {
   --case-sidebar: 220px;
   --case-content: 1040px;
+  --case-frame-edge: calc(var(--edge) + var(--case-sidebar));
+  --case-heading-scale: 0.78;
+  --case-copy-scale: 0.88;
+  --case-reading: 680px;
+  --case-story-reading: 410px;
   background: var(--paper);
+}
+
+/* Page › text size. Compact is the portfolio default; the other modes are comparison tools. */
+.case[data-text-size='balanced'] {
+  --case-heading-scale: 0.9;
+  --case-copy-scale: 0.95;
+  --case-reading: 740px;
+  --case-story-reading: 440px;
+}
+.case[data-text-size='display'] {
+  --case-heading-scale: 1;
+  --case-copy-scale: 1;
+  --case-reading: 820px;
+  --case-story-reading: 460px;
 }
 
 .case__light {
@@ -90,33 +109,78 @@
   display: grid;
   align-content: center;
   justify-content: center;
-  gap: var(--media-gap, 72px);
-  padding: 96px var(--edge) 64px calc(var(--edge) + var(--case-sidebar));
+  gap: var(--section-content-gap, 72px);
+  padding: var(--section-pad-top, 96px) var(--case-frame-edge) var(--section-pad-bottom, 64px);
+}
+
+/* Every case-study section enters with a light, floating motion. The page observer sets
+   data-reveal-live='true' to play it. Once the section is fully off screen it rebuilds the
+   animation as 'armed': paused on its first frame, so scrolling back never shows the settled
+   section before the replay starts. */
+.case[data-section-reveal='float up'] .case__light > .case__section[data-reveal-live] {
+  animation: case-reveal-float-up 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case[data-section-reveal='drift in'] .case__light > .case__section[data-reveal-live] {
+  animation: case-reveal-drift-in 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live] {
+  animation: case-reveal-float-left 950ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case[data-section-reveal='float from sides'] .case__light > .case__section[data-reveal-live]:nth-of-type(even) {
+  animation-name: case-reveal-float-right;
+}
+.case[data-section-reveal='soft bloom'] .case__light > .case__section[data-reveal-live] {
+  animation: case-reveal-soft-bloom 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case__section[data-reveal-live='armed'],
+[data-reveal-live='armed'][data-text-reveal] .case__section-copy > * {
+  animation-play-state: paused !important;
+}
+@keyframes case-reveal-float-up {
+  from { opacity: 0.5; translate: 0 28px; rotate: 0.3deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+@keyframes case-reveal-drift-in {
+  from { opacity: 0.35; translate: 0 18px; scale: 0.985; rotate: -0.25deg; }
+  to { opacity: 1; translate: 0 0; scale: 1; rotate: 0deg; }
+}
+@keyframes case-reveal-float-left {
+  from { opacity: 0.35; translate: -32px 18px; rotate: -0.4deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+@keyframes case-reveal-float-right {
+  from { opacity: 0.35; translate: 32px 18px; rotate: 0.4deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+@keyframes case-reveal-soft-bloom {
+  from { opacity: 0.25; translate: 0 10px; scale: 0.97; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
 }
 
 .case__section[data-layout='text'],
+.case__section[data-layout='bottom'],
+.case__section[data-layout='top'],
 .case__section[data-layout='below'],
 .case__section[data-layout='above'] {
   grid-template-columns: min(var(--case-content), 100%);
-  justify-items: start;
+  justify-items: center;
 }
-.case__section[data-layout='above'] .case__media {
-  order: -1;
-}
-.case__section[data-layout='below'] .case__media,
-.case__section[data-layout='above'] .case__media {
-  justify-self: center;
-}
-
 .case__section[data-layout='right'],
 .case__section[data-layout='left'] {
-  grid-template-columns: minmax(0, var(--case-text, 520px)) auto;
+  grid-template-columns: repeat(2, minmax(0, 420px));
+  justify-content: center;
   align-items: center;
 }
-.case__section[data-layout='left'] {
-  grid-template-columns: auto minmax(0, var(--case-text, 520px));
+.case__section:is([data-layout='text'], [data-layout='bottom'], [data-layout='top'], [data-layout='below'], [data-layout='above'], [data-layout='right'], [data-layout='left']) .case__text {
+  justify-self: center;
+  width: min(100%, var(--case-reading));
 }
-.case__section[data-layout='left'] .case__media {
+.case__section:is([data-layout='bottom'], [data-layout='top'], [data-layout='below'], [data-layout='above'], [data-layout='right'], [data-layout='left']) .case__media {
+  justify-self: center;
+  height: min(var(--media-h, 72svh), 52svh);
+}
+.case__section:is([data-layout='top'], [data-layout='above'], [data-layout='left'])
+  > :is(.case__media, .case__notification, .case__figure, .case__devices) {
   order: -1;
 }
 
@@ -131,19 +195,19 @@
 }
 
 .case__title {
-  font-size: var(--text-display);
+  font-size: calc(var(--text-display) * var(--case-heading-scale));
   font-weight: 400;
   line-height: 1.15;
   color: var(--ink-950);
   text-wrap: balance;
 }
 .case__title--hero {
-  font-size: calc(var(--text-display) * 1.2);
+  font-size: calc(var(--text-display) * 1.2 * var(--case-heading-scale));
 }
 
 .case__body {
   margin-top: 20px;
-  font-size: var(--text-body);
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
   line-height: 1.3;
   color: var(--stone-600);
   white-space: pre-wrap;
@@ -187,8 +251,7 @@
   translate: var(--media-x, 0%) var(--media-y, 0%);
   background: transparent;
 }
-.case__section[data-layout='below'] .case__media,
-.case__section[data-layout='above'] .case__media {
+.case__section:is([data-layout='bottom'], [data-layout='top'], [data-layout='below'], [data-layout='above']) .case__media {
   height: min(var(--media-h, 72svh), 46svh);
 }
 
@@ -196,8 +259,8 @@
 .case__section[data-layout='center'] {
   grid-template-columns: min(var(--case-content), 100%);
   justify-items: center;
-  gap: var(--media-gap, 28px);
-  padding-inline: calc(var(--edge) + var(--case-sidebar));
+  gap: var(--section-content-gap, 28px);
+  padding-inline: var(--case-frame-edge);
 }
 .case__section[data-layout='center'] .case__media {
   order: -1;
@@ -243,23 +306,19 @@ html[data-case-snap] .case .footer {
 }
 
 @media (max-width: 1100px) {
+  .case {
+    --case-frame-edge: var(--edge);
+  }
   .case__sidebar {
     display: none;
-  }
-  .case .case__section[data-layout='rise'],
-  .case .case__section[data-layout='center'] {
-    padding-inline: var(--edge);
   }
   .case__back--inline {
     display: inline-flex;
     margin-bottom: 24px;
   }
-  .case__section {
-    padding-left: var(--edge);
-  }
 }
 
-/* Narrow: text on top, the video fills whatever height is left, so every stop fits one screen. */
+/* Narrow: directional rows collapse to a vertical equivalent and stay within one screen. */
 @media (max-width: 800px) {
   .case__section,
   .case__section[data-layout] {
@@ -270,12 +329,19 @@ html[data-case-snap] .case .footer {
     padding: 88px var(--edge) 32px;
   }
   .case__section[data-layout] .case__media {
-    order: 0;
     align-self: center;
     flex: 0 1 auto;
     min-height: 0;
     height: min(var(--media-h, 72svh), 100%);
     max-height: 60svh;
+  }
+  .case__section:is([data-layout='top'], [data-layout='left'])
+    > :is(.case__media, .case__notification, .case__figure, .case__devices) {
+    order: -1;
+  }
+  .case__section:is([data-layout='bottom'], [data-layout='right'])
+    > :is(.case__media, .case__notification, .case__figure, .case__devices) {
+    order: 0;
   }
   .case__section[data-layout='center'] .case__media {
     order: -1;
@@ -347,7 +413,7 @@ html[data-case-snap] .case__moment {
   scroll-snap-align: start;
 }
 
-/* Partner logos in the hero (Unwind). */
+/* Partner logos in the hero (Momo). */
 .case__logos {
   display: flex;
   flex-wrap: wrap;
@@ -356,9 +422,45 @@ html[data-case-snap] .case__moment {
   gap: calc(var(--logo-gap) * 0.5) var(--logo-gap);
   translate: var(--logo-x) var(--logo-y, 0px);
 }
+.case__logos a {
+  position: relative;
+  display: block;
+  border-radius: 8px;
+  transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+}
 .case__logos img {
   display: block;
   width: auto;
+}
+.case__logos a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--logo-hover-color, #53bffe);
+  -webkit-mask: var(--logo-mask) center / contain no-repeat;
+  mask: var(--logo-mask) center / contain no-repeat;
+  opacity: 0;
+  filter: drop-shadow(0 0 9px var(--logo-hover-color, #53bffe));
+  mix-blend-mode: screen;
+  transition: opacity 220ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .case__logos a:hover { transform: translateY(-2px) scale(1.025); }
+  .case__logos a:hover img { opacity: 1; }
+  .case__logos a:hover::after { opacity: var(--logo-hover-opacity, .85); }
+}
+.case__logos a:focus-visible {
+  outline: 2px solid var(--logo-hover-color, #53bffe);
+  outline-offset: 6px;
+}
+.case__logos a:focus-visible img { opacity: 1; }
+.case__logos a:focus-visible::after { opacity: var(--logo-hover-opacity, .85); }
+@media (prefers-reduced-motion: reduce) {
+  .case__logos a,
+  .case__logos img,
+  .case__logos a::after { transition: none; }
+  .case__logos a:hover { transform: none; }
 }
 .case__logos[data-placement='below meta'] {
   margin-top: var(--logo-offset);
@@ -393,9 +495,8 @@ html[data-case-snap] .case__moment {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--media-gap, 44px);
-  padding: 118px var(--edge) 0;
-  padding-inline: calc(var(--edge) + var(--case-sidebar));
+  gap: var(--section-content-gap, 44px);
+  padding: var(--section-pad-top, 118px) var(--case-frame-edge) var(--section-pad-bottom, 0px);
   overflow: clip;
 }
 .case__section[data-layout='rise'] .case__text {
@@ -418,11 +519,11 @@ html[data-case-snap] .case__moment {
   align-content: center;
   height: auto;
   min-height: 100svh;
-  padding-block: clamp(72px, 10svh, 120px);
+  padding-block: var(--section-pad-top, clamp(72px, 10svh, 120px)) var(--section-pad-bottom, clamp(72px, 10svh, 120px));
 }
 .case__story-cols {
   display: grid;
-  gap: var(--story-gap, 44px);
+  gap: var(--section-content-gap, 44px);
   width: min(1040px, 100%);
   margin: 0 auto;
   padding: 0;
@@ -430,37 +531,108 @@ html[data-case-snap] .case__moment {
 }
 .case__story-cols > li {
   display: grid;
-  grid-template-columns: var(--story-art-w, 300px) minmax(0, var(--story-text-w, 460px));
   justify-content: center;
   align-items: center;
-  gap: clamp(28px, 4vw, 64px);
+  gap: 24px;
+}
+
+/* Story entrance presets. The StoryRow remounts its list on each re-entry, so these
+   animations replay when scrolling away and back. */
+[data-story-reveal='soft rise'] .case__story-cols > li {
+  animation: story-reveal-rise 800ms calc(var(--i, 0) * 140ms) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-story-reveal='cascade'] .case__story-cols > li {
+  animation: story-reveal-cascade 900ms calc(var(--i, 0) * 180ms) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-story-reveal='from sides'] .case__story-cols > li {
+  animation: story-reveal-side 850ms calc(var(--i, 0) * 160ms) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-story-reveal='from sides'] .case__story-cols > li:nth-child(even) {
+  animation-name: story-reveal-side-right;
+}
+[data-story-reveal='scale in'] .case__story-cols > li {
+  animation: story-reveal-scale 760ms calc(var(--i, 0) * 130ms) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-story-reveal='still'] .case__story-cols > li {
+  animation: none;
+}
+@keyframes story-reveal-rise {
+  from { opacity: 0; translate: 0 28px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes story-reveal-cascade {
+  from { opacity: 0; translate: 0 20px; scale: 0.97; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+@keyframes story-reveal-side {
+  from { opacity: 0; translate: -40px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes story-reveal-side-right {
+  from { opacity: 0; translate: 40px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes story-reveal-scale {
+  from { opacity: 0; scale: 0.92; }
+  to { opacity: 1; scale: 1; }
+}
+[data-story-layout='top'] .case__story-cols > li,
+[data-story-layout='bottom'] .case__story-cols > li {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+/* Alignment (story → align). left: art and text share one left edge; center: everything centred. */
+[data-story-layout='top'][data-story-align='left'] .case__story-cols > li,
+[data-story-layout='bottom'][data-story-align='left'] .case__story-cols > li {
+  grid-template-columns: minmax(0, max(var(--story-art-w, 300px), var(--story-text-w, 460px)));
+  justify-items: start;
+}
+[data-story-align='center'] .case__story-text {
+  justify-items: center;
+  text-align: center;
+}
+/* stretch: the card spans the text column, so both share left and right edges. */
+[data-story-layout='top'][data-story-align='stretch'] .case__story-cols > li,
+[data-story-layout='bottom'][data-story-align='stretch'] .case__story-cols > li {
+  grid-template-columns: minmax(0, var(--story-text-w, 460px));
+  justify-items: stretch;
+}
+[data-story-layout='top'][data-story-align='stretch'] .story-art,
+[data-story-layout='bottom'][data-story-align='stretch'] .story-art,
+[data-story-layout='top'][data-story-align='stretch'] .case__story-text,
+[data-story-layout='bottom'][data-story-align='stretch'] .case__story-text {
+  width: 100%;
+}
+/* Text alignment is independent from the art/column alignment. This lets `align: stretch`
+   keep the artwork full-width while centring only the number, label, title and body. */
+[data-story-text-align='left'] .case__story-text {
+  justify-items: start;
+  text-align: left;
+}
+[data-story-text-align='center'] .case__story-text {
+  justify-items: center;
+  text-align: center;
+}
+[data-story-text-align='center'] .case__story-body {
+  margin-inline: auto;
+}
+[data-story-layout='left'] .case__story-cols > li,
+[data-story-layout='right'] .case__story-cols > li {
+  grid-template-columns: minmax(0, var(--story-art-w, 300px)) minmax(0, var(--story-text-w, 460px));
+}
+[data-story-layout='bottom'] .story-art,
+[data-story-layout='right'] .story-art {
+  order: 1;
 }
 .case__story-text {
   display: grid;
   align-content: start;
   gap: 10px;
+  width: min(100%, var(--story-text-w, 460px));
 }
-[data-story-art='none'] .case__story-cols > li {
-  grid-template-columns: minmax(0, var(--story-text-w, 460px));
-}
-[data-story-layout='art right'] .story-art,
-[data-story-layout='alternate'] li:nth-child(even) .story-art {
-  order: 2;
-}
-[data-story-layout='alternate'] li:nth-child(even) {
-  grid-template-columns: minmax(0, var(--story-text-w, 460px)) var(--story-art-w, 300px);
-}
-[data-story-layout='art right'] li {
-  grid-template-columns: minmax(0, var(--story-text-w, 460px)) var(--story-art-w, 300px);
-}
-/* Columns: the original three-up row, art on top, no rules. */
-[data-story-layout='columns'] .case__story-cols {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: min(1120px, 100%);
-}
-[data-story-layout='columns'] .case__story-cols > li {
-  grid-template-columns: 1fr;
-  align-items: start;
+.case__story .story-art {
+  box-sizing: border-box;
+  width: min(100%, var(--story-art-w, 300px));
 }
 .case__story-step {
   font-size: var(--text-small);
@@ -468,17 +640,23 @@ html[data-case-snap] .case__moment {
   font-variant-numeric: tabular-nums;
 }
 .case__story-title {
-  font-size: calc(var(--text-display) * var(--story-title, 0.5));
+  font-size: calc(var(--text-display) * var(--story-title, 0.5) * var(--case-heading-scale));
   line-height: 1.15;
   font-weight: 400;
   color: var(--ink-950);
   text-wrap: balance;
 }
 .case__story-body {
-  font-size: var(--text-body);
-  line-height: 1.4;
+  max-width: var(--case-story-reading);
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
   color: var(--stone-600);
+  line-height: 1.4;
   text-wrap: pretty;
+}
+/* The Opportunity body is a numbered list stored as three text lines. Keep its block centred
+   with the rest of the section, but align only those lines to a shared left edge. */
+.case__story-cols > [data-row='opportunity'] .case__story-body {
+  text-align: left;
 }
 
 /* Graphic panel looks. */
@@ -495,6 +673,39 @@ html[data-case-snap] .case__moment {
   padding: 18px;
   border-radius: 24px;
   background: #eef8ff;
+}
+/* Glass: the system card's fill + gradient with the story's own glass dials, as --glass-*
+   (see useStoryGlass). Same layering as the system card: surface on ::before, palette glow
+   under it on ::after (so the backdrop blur refracts it), art above both. */
+[data-story-art='glass'] .story-art {
+  position: relative;
+  isolation: isolate;
+  padding: var(--glass-pad, 18px);
+}
+[data-story-art='glass'] .story-art > * {
+  position: relative;
+  z-index: 1;
+}
+[data-story-art='glass'] .story-art::before,
+[data-story-art='glass'] .story-art::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+[data-story-art='glass'] .story-art::before {
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--glass-radius, 12px);
+  background: var(--glass-gradient, none), var(--glass-fill, rgb(245 248 252 / 0.7));
+  box-shadow: var(--glass-edge, inset 0 0 0 1px rgb(255 255 255 / 0.8));
+  -webkit-backdrop-filter: var(--glass-backdrop, blur(16px) saturate(1.6));
+  backdrop-filter: var(--glass-backdrop, blur(16px) saturate(1.6));
+}
+[data-story-art='glass'] .story-art::after {
+  inset: -4%;
+  z-index: -1;
+  background: var(--glass-glow, none);
+  filter: blur(var(--glass-glow-blur, 16px));
 }
 [data-story-art='outline'] .story-art {
   padding: 18px;
@@ -540,7 +751,8 @@ html[data-case-snap] .case__moment {
   transform-box: fill-box;
   transform-origin: center;
 }
-.case__story:not([data-live]) * {
+.case__story li:not([data-live]),
+.case__story li:not([data-live]) * {
   animation-play-state: paused !important;
 }
 [data-story-motion='draw'] .sa-draw {
@@ -556,11 +768,125 @@ html[data-case-snap] .case__moment {
 [data-story-motion='off'] .sa-ping {
   animation: none;
 }
-[data-story-motion='pulse'] :is(.sa-spark, .sa-bars line) {
-  animation: story-breathe 2.4s calc(var(--i, 0) * 0.15s) ease-in-out infinite;
+[data-story-motion='pulse'] .sa-spark {
+  animation: story-breathe 2.4s ease-in-out infinite;
 }
-[data-story-motion='draw'] .sa-bars line {
-  animation: story-breathe 1.8s calc(var(--i, 0) * 0.12s) ease-in-out infinite;
+/* Icons loop whenever motion is on (transform and opacity only):
+   watch beats like a pulse, phone buzzes, voice bars speak, spark twinkles. */
+.case__story :is(.sa-icon, .sa-bars line, .sa-spark) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+[data-story-motion]:not([data-story-motion='off']) .sa-watch {
+  animation: story-heartbeat 1.6s ease-in-out infinite;
+}
+[data-story-motion]:not([data-story-motion='off']) .sa-phone {
+  animation: story-buzz 3.2s ease-in-out infinite;
+}
+[data-story-motion]:not([data-story-motion='off']) .sa-bars line {
+  animation: story-speak 1.1s calc(var(--i, 0) * -0.17s) ease-in-out infinite;
+}
+[data-story-motion='draw'] .sa-spark {
+  animation: story-twinkle 3s ease-in-out infinite;
+}
+/* The watch's heart line redraws left to right on each beat, while the watch grows. */
+[data-story-motion]:not([data-story-motion='off']) li .sa-beat {
+  stroke-dasharray: 1 1;
+  animation: story-beat-draw 1.6s ease-out infinite;
+}
+@keyframes story-beat-draw {
+  0% { stroke-dashoffset: 1; opacity: 1; }
+  30% { stroke-dashoffset: 0; }
+  85% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+/* A small star sparkles at the main star's top right as it grows. */
+.case__story .sa-spark-mini {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+[data-story-motion='draw'] .sa-spark-mini {
+  animation: story-sparkle 3s ease-in-out infinite;
+}
+[data-story-motion='pulse'] .sa-spark-mini {
+  animation: story-sparkle 2.4s ease-in-out infinite;
+}
+@keyframes story-sparkle {
+  0%, 25%, 100% { transform: scale(0.85); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 1; }
+  65% { transform: scale(1); opacity: 1; }
+}
+/* Stress at the peak: still, then a short tense jolt. */
+[data-story-motion]:not([data-story-motion='off']) .sa-stress {
+  animation: story-jolt 2.4s ease-in-out infinite;
+}
+@keyframes story-jolt {
+  0%, 50%, 100% { transform: scale(1) rotate(0); }
+  56% { transform: scale(1.15) rotate(-6deg); }
+  62% { transform: scale(1.1) rotate(6deg); }
+  68% { transform: scale(1.12) rotate(-4deg); }
+  76% { transform: scale(1) rotate(0); }
+}
+@keyframes story-heartbeat {
+  0%, 40%, 100% { transform: scale(1); }
+  10% { transform: scale(1.08); }
+  20% { transform: scale(1); }
+  30% { transform: scale(1.05); }
+}
+@keyframes story-buzz {
+  0%, 62%, 100% { transform: rotate(0); }
+  66% { transform: rotate(-7deg); }
+  70% { transform: rotate(7deg); }
+  74% { transform: rotate(-5deg); }
+  78% { transform: rotate(5deg); }
+  82% { transform: rotate(0); }
+}
+@keyframes story-speak {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.45); }
+}
+@keyframes story-twinkle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.18); opacity: 0.85; }
+}
+/* Draw motion sequencing: dots, dotted lines and devices wait for the curve (see storyArt Wipe).
+   --at is seconds after the row's curve starts; the row's --i stagger is added the same way as .sa-draw. */
+.case__story :is(.sa-after, .sa-wipe) {
+  transform-box: fill-box;
+}
+[data-story-motion='draw'] .sa-after {
+  transform-origin: center;
+  animation: story-appear 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-story-motion='draw'] .sa-wipe--up {
+  transform-origin: bottom;
+  animation: story-wipe-y 0.6s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+[data-story-motion='draw'] .sa-wipe--right {
+  transform-origin: left;
+  animation: story-wipe-x 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+/* The Problem phone pops up from below instead of scaling in. */
+[data-story-motion='draw'] .sa-after--rise {
+  animation-name: story-pop-up;
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes story-pop-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes story-appear {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes story-wipe-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes story-wipe-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 @keyframes story-draw {
   from { stroke-dashoffset: 1; }
@@ -573,6 +899,36 @@ html[data-case-snap] .case__moment {
 @keyframes story-breathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.25); }
+}
+/* Solution handoff: wrist signal, then spoken reflection near the peak.
+   Still/reduced-motion shows the final phone state. */
+.sa-solution-watch { opacity: 0; }
+.sa-solution-phone { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  [data-story-motion]:not([data-story-motion='off']) .sa-solution-watch {
+    animation: story-solution-watch 5.2s calc(var(--i, 0) * 0.35s) linear both;
+  }
+  [data-story-motion]:not([data-story-motion='off']) .sa-solution-phone {
+    animation: story-solution-phone 5.2s calc(var(--i, 0) * 0.35s) linear both;
+  }
+}
+/* The Solution watch beats exactly once: the loop starts once the watch has appeared (2.5s + 0.5s
+   appear) and ends at 4.6s, just before the watch group fades out (92% of 5.2s = 4.78s). The heart
+   line holds undrawn until then. Row speed scales every timing here together. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-story-motion]:not([data-story-motion='off']) li .sa-solution-watch :is(.sa-watch, .sa-beat) {
+    animation-delay: calc(var(--i, 0) * 0.35s + 3s);
+    animation-iteration-count: 1;
+    animation-fill-mode: both;
+  }
+}
+@keyframes story-solution-watch {
+  0%, 92% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes story-solution-phone {
+  0%, 99.9% { opacity: 0; }
+  100% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .case__story * {
@@ -596,8 +952,8 @@ html[data-case-snap] .case__moment {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat;
-  -webkit-mask: url('/work/unwind/flows/phone-mask.png') center / contain no-repeat;
+  mask: url('/work/momo/flows/phone-mask.png') center / contain no-repeat;
+  -webkit-mask: url('/work/momo/flows/phone-mask.png') center / contain no-repeat;
 }
 .case__phone-label {
   margin: 18px 0 0;
@@ -605,185 +961,220 @@ html[data-case-snap] .case__moment {
   color: var(--stone-600);
   text-align: center;
 }
-.case__flows,
-.case__guided {
+.case__flows .case__phone-label {
+  display: none;
+}
+
+/* Core flows: the saved editor Custom preset. The outer phones move inward
+   33.6px and turn 22° toward the centre; all three remain level at 522px. */
+.case__flows {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 40px;
+  justify-content: flex-start;
+  gap: 0;
+  padding: var(--section-pad-top, clamp(74px, 7.5svh, 90px)) var(--case-frame-edge) var(--section-pad-bottom, clamp(34px, 4svh, 48px));
+  /* The section clips so the phones rise out of its bottom edge, but the phone
+     shadows must pass that edge or they end in a hard line on short screens. */
+  overflow-clip-margin: 96px;
 }
-/* Room for the staggered row: the heading stays clear of the highest phone. */
-.case__flows {
-  gap: calc(40px + var(--stagger));
+.case__guided {
+  overflow-clip-margin: 96px;
+}
+/* The models loop is the mode pill, picker and info card alone (460×810, card shadow baked in): no phone
+   outline to mask, no drop-shadow, as tall as the WOOP phone beside it. */
+.case__phone--bare {
+  aspect-ratio: 460 / 810;
+  filter: none;
+}
+/* The crop cuts the card's baked-in shadow; feather all four edges so it fades into the page. */
+.case__phone--bare .case__phone-video {
+  --feather: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent), linear-gradient(transparent, #000 5%, #000 93%, transparent);
+  mask: var(--feather);
+  mask-composite: intersect;
+  -webkit-mask: var(--feather);
+  -webkit-mask-composite: source-in;
 }
 .case__flows .case__phone {
-  height: min(58svh, 580px);
+  height: 522px;
+  filter: drop-shadow(0 22px 30px rgb(23 23 23 / 0.2));
 }
 .case__flows-head {
   display: grid;
+  flex: none;
   justify-items: center;
+  max-width: 760px;
   text-align: center;
-  max-width: 640px;
+}
+.case__flows-head .case__title {
+  font-size: clamp(42px, 3vw, 48px);
+}
+.case__flows-head .case__eyebrow {
+  font-size: clamp(15px, 1.15vw, 18px);
+  letter-spacing: 0.04em;
+}
+.case__flows-head .case__eyebrow {
+  margin-bottom: 22px;
 }
 .case__flows-row,
 .case__guided-row {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: clamp(20px, 3.5vw, 56px);
+  gap: 50px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-
-/* Core flows: each phone sits on its own step and slides at its own rate with scroll;
-   the first time the row is seen, they rise out of the bottom in turn. */
-.case__flows-row > li {
-  translate: 0 calc(var(--k) * var(--stagger) + var(--flow, 0) * var(--parallax) * (1 + var(--i) * 0.45));
+.case__flows-row {
+  width: min(1160px, calc(100vw - 2 * var(--case-frame-edge)));
+  margin-top: var(--section-content-gap, clamp(100px, 11.25svh, 133px));
+  --flows-gap: 50px;
+  scale: var(--flows-scale, 1);
+  transform-origin: 50% 0;
 }
-.case__flows-row > li > * {
+.case__flow-card {
+  position: relative;
+  flex: none;
+  transform-style: preserve-3d;
+}
+/* Shared rise-on-view (core flows + guided): see useRiseOnView. Cards slide in from below
+   when the section is reached scrolling down, and from above when reached scrolling up. */
+.case__rise {
   opacity: 0;
-  translate: 0 60svh;
+  transform: translate3d(0, 60svh, 0);
   transition:
     opacity 700ms ease calc(var(--i) * 140ms),
-    translate 1100ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 140ms);
+    transform 1100ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 140ms);
 }
-.case__flows[data-seen] .case__flows-row > li > * {
+.case__flow-card[data-position='center'] {
+  z-index: 2;
+}
+/* Perspective lives on each card, not the row: while a card fades (opacity < 1)
+   the browser flattens its 3D children, so a row perspective would only reach the
+   tilted phone once the fade ended and the tilt would pop in. The origin points at
+   the row centre so the settled view matches the row perspective. */
+.case__flow-card {
+  perspective: 1600px;
+  perspective-origin: 50% 50%;
+}
+.case__flow-card[data-position='left'] {
+  perspective-origin: calc(150% + var(--flows-gap)) 50%;
+}
+.case__flow-card[data-position='right'] {
+  perspective-origin: calc(-50% - var(--flows-gap)) 50%;
+}
+[data-seen] .case__rise {
   opacity: 1;
-  translate: 0 0;
+  transform: translate3d(0, 0, 0);
+}
+[data-from='above']:not([data-seen]) .case__rise {
+  transform: translate3d(0, -60svh, 0);
+}
+[data-resetting] .case__rise {
+  transition: none;
+}
+/* Text-block entrances. Elements stay visible until the page's section observer first marks the
+   section (see the section reveal above): played on entry, armed on frame one once fully off screen. */
+[data-text-reveal] .case__section-copy > * { --tr-i: 0; }
+[data-text-reveal] .case__section-copy > :nth-child(2) { --tr-i: 1; }
+[data-text-reveal] .case__section-copy > :nth-child(3) { --tr-i: 2; }
+[data-reveal-live][data-text-reveal='cascade'] .case__section-copy > * {
+  animation: text-reveal-rise var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
+}
+[data-reveal-live][data-text-reveal='rise together'] .case__section-copy > * {
+  animation: text-reveal-rise var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+[data-reveal-live][data-text-reveal='from sides'] .case__section-copy > * {
+  animation: text-reveal-left var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
+}
+[data-reveal-live][data-text-reveal='from sides'] .case__section-copy > :nth-child(even) {
+  animation-name: text-reveal-right;
+}
+[data-reveal-live][data-text-reveal='focus'] .case__section-copy > * {
+  animation: text-reveal-focus var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
+}
+[data-reveal-live][data-text-reveal='wipe'] .case__section-copy > * {
+  animation: text-reveal-wipe var(--text-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
+}
+[data-reveal-live][data-text-reveal='fade'] .case__section-copy > * {
+  animation: text-reveal-fade var(--text-reveal-duration, 0.7s) ease-out both;
+  animation-delay: calc(var(--tr-i) * var(--text-reveal-stagger, 0.1s));
+}
+@keyframes text-reveal-rise { from { opacity: 0; transform: translate3d(0, 28px, 0); } }
+@keyframes text-reveal-left { from { opacity: 0; transform: translate3d(-44px, 0, 0); } }
+@keyframes text-reveal-right { from { opacity: 0; transform: translate3d(44px, 0, 0); } }
+@keyframes text-reveal-focus {
+  from { opacity: 0; transform: scale(0.97); filter: blur(10px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes text-reveal-wipe {
+  from { opacity: 0; transform: translate3d(0, 0.45em, 0); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(-10%); }
+}
+@keyframes text-reveal-fade { from { opacity: 0; } }
+
+/* Guided's existing reveal menu now controls only its two videos; text has the independent
+   shared menu above. */
+.case__guided { --dir: 1; }
+.case__guided[data-from='above'] { --dir: -1; }
+.case__guided:not([data-guided-reveal='rise']) .case__rise {
+  transition:
+    opacity 700ms ease calc(320ms + var(--i) * 140ms),
+    transform 1100ms cubic-bezier(0.16, 1, 0.3, 1) calc(320ms + var(--i) * 140ms),
+    filter 800ms ease calc(320ms + var(--i) * 140ms),
+    clip-path 1100ms cubic-bezier(0.16, 1, 0.3, 1) calc(320ms + var(--i) * 140ms);
+}
+.case__guided[data-guided-reveal='cascade'] .case__rise {
+  transform: translate3d(0, calc(var(--dir) * 96px), 0) scale(0.96);
+}
+.case__guided[data-guided-reveal='focus'] .case__rise {
+  transform: scale(0.92);
+  filter: blur(14px);
+}
+.case__guided[data-guided-reveal='from sides'] .case__rise {
+  transform: translate3d(calc((var(--i) * 2 - 1) * 22vw), 0, 0) rotate(calc((var(--i) * 2 - 1) * 4deg));
+}
+.case__guided[data-guided-reveal='wipe'] .case__rise {
+  transform: translate3d(0, 40px, 0);
+  clip-path: inset(100% -30% -30% -30%);
+}
+.case__guided:not([data-guided-reveal='rise'], [data-guided-reveal='still'])[data-seen] .case__rise {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: inset(-30%);
+}
+.case__guided:not([data-guided-reveal='rise'], [data-guided-reveal='still'])[data-resetting] .case__rise { transition: none; }
+.case__guided[data-guided-reveal='still'] .case__rise {
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 
-/* Lock screen with a live notification. */
-.lock {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 874 / 1780;
-  border-radius: 13%/6.4%;
-  filter: drop-shadow(0 30px 40px rgb(23 23 23 / 0.14));
-  /* Notification sizes are in cqw of this phone, so it keeps iPhone proportions at any size. */
-  container-type: inline-size;
-}
-.lock__bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-/* Proportions from a real iPhone lock screen (440 pt wide): the screen is 89.8% of this image,
-   so 1 pt ≈ 0.204cqw. 15 pt side gaps, 38 pt icon, ~20 pt title, ~17.5 pt body. Apple system
-   font, not the site's Beatrice. */
-.lock__note {
-  position: absolute;
-  left: 8.15%;
-  right: 8.15%;
-  top: 36%;
-  display: grid;
-  grid-template-columns: 7.8cqw 1fr;
-  column-gap: 2.7cqw;
-  padding: 3.3cqw 3.5cqw 3.4cqw 2.7cqw;
-  border-radius: 5cqw;
-  background: rgb(245 245 247 / 0.62);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  color: #111;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
-  font-size: 3.6cqw;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  animation: lock-note 7s cubic-bezier(0.22, 1, 0.36, 1) infinite;
-}
-.lock__icon {
-  grid-row: 1 / 3;
-  width: 7.8cqw;
-  height: 7.8cqw;
-  border-radius: 1.75cqw;
-  /* momo-open.webp: the cloud sits at x 28–173, y 21–144 of 200, so it is shifted down to centre. */
-  background: #eaf5ff url('/work/unwind/intro/momo-open.webp') 50% 72% / 96% no-repeat;
-}
-.lock__row {
-  display: flex;
-  align-items: baseline;
-  gap: 1.5cqw;
-}
-.lock__app {
-  font-weight: 600;
-  color: rgb(17 17 17 / 0.55);
-}
-.lock__time {
-  margin-left: auto;
-  color: rgb(17 17 17 / 0.45);
-}
-.lock__copy {
-  grid-column: 2;
-}
-.lock__title {
-  margin: 0.15cqw 0 0;
-  font-size: 4.05cqw;
-  font-weight: 600;
-}
-.lock__text {
-  margin: 0.2cqw 0 0;
-}
-.lock__actions {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 1.6cqw;
-  max-height: 0;
-  margin-top: 0;
-  overflow: hidden;
-  animation: lock-actions 7s cubic-bezier(0.22, 1, 0.36, 1) infinite;
-}
-.lock__actions span {
-  padding: 2.4cqw;
-  border-radius: 3.6cqw;
-  background: rgb(255 255 255 / 0.7);
-  text-align: center;
-  font-weight: 500;
-}
-.lock__actions span:first-child {
-  color: #0a7bd6;
-}
-@keyframes lock-note {
-  0%,
-  8% {
-    opacity: 0;
-    translate: 0 -24px;
-    scale: 0.96;
-  }
-  16%,
-  88% {
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal-live][data-text-reveal] .case__section-copy > * {
+    animation: none;
     opacity: 1;
-    translate: 0 0;
-    scale: 1;
-  }
-  96%,
-  100% {
-    opacity: 0;
-    translate: 0 -12px;
-    scale: 0.98;
+    transform: none;
+    filter: none;
+    clip-path: none;
   }
 }
-@keyframes lock-actions {
-  0%,
-  38% {
-    max-height: 0;
-    margin-top: 0;
-  }
-  48%,
-  88% {
-    max-height: 30cqw;
-    margin-top: 3cqw;
-  }
-  100% {
-    max-height: 0;
-    margin-top: 0;
-  }
+.case__flow-device {
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
 }
-.case:not([data-intro]) .case__flows:not([data-seen]) .lock__note {
-  animation-play-state: paused;
+.case__flow-card[data-position='left'] .case__flow-device {
+  transform: translateX(33.6px) rotateY(22deg);
 }
-
+.case__flow-card[data-position='right'] .case__flow-device {
+  transform: translateX(-33.6px) rotateY(-22deg);
+}
 @media (max-width: 800px) {
   .case__story-cols {
     grid-template-columns: 1fr;
@@ -794,31 +1185,66 @@ html[data-case-snap] .case__moment {
     gap: 6px;
   }
   .case__story-title {
-    font-size: calc(var(--text-display) * 0.9);
+    font-size: calc(var(--text-display) * 0.9 * var(--case-heading-scale));
   }
-  .case__flows {
-    gap: calc(28px + var(--stagger) * 0.5);
+  .case__section.case__flows[data-layout='flows'] {
+    justify-content: flex-start;
+    gap: 0;
+    padding: var(--section-pad-top, 84px) var(--edge) var(--section-pad-bottom, 32px);
   }
-  .case__flows-row,
+  .case__flows-head .case__eyebrow {
+    margin-bottom: 14px;
+  }
+  .case__flows-head .case__title {
+    font-size: clamp(28px, 8vw, 34px);
+  }
+  .case__flows-head .case__eyebrow {
+    font-size: 13px;
+  }
+  .case__flows-row {
+    width: calc(100vw - 2 * var(--edge));
+    gap: 8px;
+    --flows-gap: 8px;
+    margin-top: clamp(42px, 7svh, 68px);
+    translate: none;
+  }
   .case__guided-row {
     gap: 8px;
   }
-  /* Phones size by width so each row fits the screen exactly. */
-  .case__flows .case__phone,
-  .case__guided .case__phone {
-    height: auto;
+  .case__flow-card {
     width: calc((100vw - 2 * var(--edge) - 16px) / 3);
+    min-width: 0;
+  }
+  .case__flows .case__phone {
+    width: 100%;
+    height: auto;
+  }
+  .case__flow-card[data-position='left'] .case__flow-device {
+    transform: translateX(15.12px) rotateY(22deg);
+  }
+  .case__flow-card[data-position='right'] .case__flow-device {
+    transform: translateX(-15.12px) rotateY(-22deg);
+  }
+  .case__guided {
+    --guided-w: calc((100vw - 2 * var(--edge) - 8px) / 2.2);
   }
   .case__guided .case__phone {
-    width: calc((100vw - 2 * var(--edge) - 8px) / 2.2);
+    width: var(--guided-w);
+    height: auto;
   }
-  .case__flows-row > li {
-    translate: 0 calc(var(--k) * var(--stagger) * 0.45 + var(--flow, 0) * var(--parallax) * 0.5 * (1 + var(--i) * 0.45));
+  /* Narrower than desktop so the pair still fits; 1.15 × width at 460/810 matches the phone height. */
+  .case__guided .case__phone--bare {
+    width: calc(var(--guided-w) * 1.15);
   }
   .case__phone-label {
     margin-top: 10px;
     font-size: 11px;
     line-height: 1.25;
+  }
+  .case__flows .case__phone-label {
+    width: 100%;
+    font-size: 11px;
+    text-wrap: balance;
   }
   .case__section[data-layout='rise'] {
     padding-top: 88px;
@@ -836,7 +1262,7 @@ html[data-case-snap] .case__moment {
     max-height: none;
   }
   .case__section[data-layout='rise'] .case__title--hero {
-    font-size: calc(var(--text-display) * 1.05);
+    font-size: calc(var(--text-display) * 1.05 * var(--case-heading-scale));
   }
   .case .case__section[data-layout='rise'] .case__meta {
     grid-template-columns: repeat(3, auto);
@@ -853,19 +1279,10 @@ html[data-case-snap] .case__moment {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .case__flows-row > li,
-  .case__flows-row > li > * {
-    translate: none;
+  .case__rise {
     opacity: 1;
+    transform: none;
     transition: none;
-  }
-  .lock__note,
-  .lock__actions {
-    animation: none;
-  }
-  .lock__actions {
-    max-height: 30cqw;
-    margin-top: 3cqw;
   }
 }
 
@@ -925,8 +1342,13 @@ html[data-case-snap] .case__group > * {
     gap: 16px;
   }
   .case__story .story-art {
-    order: 0;
     max-width: 360px;
+  }
+  .case__story:is([data-story-layout='top'], [data-story-layout='left']) .story-art {
+    order: 0;
+  }
+  .case__story:is([data-story-layout='bottom'], [data-story-layout='right']) .story-art {
+    order: 1;
   }
 }
 
@@ -938,7 +1360,7 @@ html[data-case-snap] .case__group > * {
   gap: var(--persona-gap, 96px);
   height: auto;
   min-height: 100svh;
-  padding-block: clamp(96px, 12svh, 140px);
+  padding-block: var(--section-pad-top, clamp(96px, 12svh, 140px)) var(--section-pad-bottom, clamp(96px, 12svh, 140px));
 }
 .case__persona > * {
   width: min(1040px, 100%);
@@ -947,36 +1369,53 @@ html[data-case-snap] .case__group > * {
 .case__persona h3 {
   margin: 0;
 }
-.persona__intro {
+.persona__intro,
+[data-persona-image='top'] .persona__intro,
+[data-persona-image='bottom'] .persona__intro,
+[data-persona-image='none'] .persona__intro {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--persona-img-w, 480px);
+  grid-template-columns: minmax(0, var(--case-reading));
+  justify-content: center;
   align-items: center;
-  gap: clamp(32px, 5vw, 72px);
+  gap: var(--section-content-gap, 32px);
 }
-[data-persona-image='left'] .persona__intro {
-  grid-template-columns: var(--persona-img-w, 480px) minmax(0, 1fr);
+[data-persona-image='left'] .persona__intro,
+[data-persona-image='right'] .persona__intro {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 420px));
+  justify-content: center;
+  align-items: center;
+  gap: var(--section-content-gap, clamp(32px, 5vw, 64px));
 }
-[data-persona-image='left'] .persona__photo {
-  order: -1;
-}
-[data-persona-image='top'] .persona__intro {
-  grid-template-columns: minmax(0, 640px);
-  justify-content: start;
-}
-[data-persona-image='top'] .persona__photo {
-  order: -1;
+.persona__stage {
+  position: relative;
+  justify-self: center;
   width: min(var(--persona-img-w, 480px), 100%);
 }
-[data-persona-image='none'] .persona__intro {
-  grid-template-columns: minmax(0, 640px);
+[data-persona-image='top'] .persona__stage,
+[data-persona-image='left'] .persona__stage {
+  order: -1;
+}
+[data-persona-image='bottom'] .persona__stage,
+[data-persona-image='right'] .persona__stage {
+  order: 1;
 }
 .persona__who {
   display: grid;
-  gap: 14px;
+  gap: 0;
+}
+.persona__who > .eyebrow {
+  margin-bottom: var(--persona-eyebrow-gap, var(--persona-text-gap, 14px));
+}
+.persona__who > .persona__title {
+  margin-bottom: var(--persona-title-gap, var(--persona-text-gap, 14px));
+}
+.persona__who > .persona__body {
+  margin: 0 0 var(--persona-body-gap, var(--persona-text-gap, 14px));
 }
 .persona__title {
   margin: 0;
-  font-size: calc(var(--text-display) * 1.4 * var(--persona-title, 1));
+  font-size: calc(var(--text-display) * 1.4 * var(--persona-title, 1) * var(--case-heading-scale));
   line-height: 1.05;
   font-weight: 400;
   letter-spacing: -0.02em;
@@ -984,29 +1423,39 @@ html[data-case-snap] .case__group > * {
   text-wrap: balance;
 }
 .persona__title--sub {
-  font-size: calc(var(--text-display) * var(--persona-title, 1));
+  font-size: calc(var(--text-display) * var(--persona-title, 1) * var(--case-heading-scale));
 }
 .persona__body {
-  font-size: var(--text-body);
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
   line-height: 1.45;
   color: var(--stone-600);
   text-wrap: pretty;
 }
+
 .persona__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 10px 0 0;
+  margin: 0 0 var(--persona-tags-gap, 10px);
   padding: 0;
   list-style: none;
 }
 .persona__tags li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 7px 14px;
   border: 1px solid rgb(23 23 23 / 0.1);
   border-radius: 999px;
   font-size: var(--text-small);
   color: var(--stone-600);
   background: #fff;
+}
+
+.case__persona[data-profile-layout='3 top / 3 bottom'] .persona__tags {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  justify-content: center;
 }
 .persona__photo {
   display: block;
@@ -1015,14 +1464,178 @@ html[data-case-snap] .case__group > * {
   border-radius: var(--persona-img-r, 28px);
 }
 
-/* Driven by / Challenges. */
-.persona__traits {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(32px, 5vw, 72px);
+/* Key contexts as cards floating around the portrait (persona › float). Each preset only
+   changes the entrance animation; `translate` carries the bob so the two compose. */
+.persona__floats {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
 }
+.persona__float {
+  --float-cycle: calc(var(--float-pace, 3.2s) * 4);
+  position: absolute;
+  box-sizing: border-box;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  width: var(--float-w, 250px);
+  padding: 14px 16px;
+  border: 1px solid rgb(83 191 254 / 0.28);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.9);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 36px -14px rgb(23 23 23 / 0.3);
+  pointer-events: auto;
+  animation: persona-bob calc(4s + var(--i) * 0.5s) calc(var(--i) * -1.1s) ease-in-out infinite;
+}
+.persona__floats .persona__float > * {
+  grid-area: auto;
+}
+.persona__float-scene {
+  width: 64px;
+  height: auto;
+  overflow: visible;
+}
+/* Slots keep the face and the worry cloud clear. */
+.persona__float[data-slot='0'] {
+  top: 6%;
+  left: calc(-1 * var(--float-spread, 56px));
+}
+.persona__float[data-slot='1'] {
+  top: -4%;
+  right: calc(-1 * var(--float-spread, 56px));
+}
+.persona__float[data-slot='2'] {
+  bottom: 20%;
+  left: calc(-1 * var(--float-spread, 56px));
+}
+.persona__float[data-slot='3'] {
+  bottom: 2%;
+  right: calc(-1 * var(--float-spread, 56px));
+}
+[data-float='one at a time'] .persona__float {
+  animation:
+    persona-float-one var(--float-cycle) calc(var(--i) * var(--float-pace, 3.2s)) ease-in-out infinite both,
+    persona-bob calc(4s + var(--i) * 0.5s) ease-in-out infinite;
+}
+[data-float='two at a time'] .persona__float {
+  animation:
+    persona-float-two var(--float-cycle) calc(var(--i) * var(--float-pace, 3.2s)) ease-in-out infinite both,
+    persona-bob calc(4s + var(--i) * 0.5s) ease-in-out infinite;
+}
+[data-float='pop'] .persona__float {
+  animation:
+    persona-float-pop var(--float-cycle) calc(var(--i) * var(--float-pace, 3.2s)) infinite both,
+    persona-bob calc(4s + var(--i) * 0.5s) ease-in-out infinite;
+}
+[data-float='drift'] .persona__float {
+  animation:
+    persona-float-in var(--pe-float-duration, 0.9s) calc(0.2s + var(--i) * 0.35s) cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    persona-bob calc(4s + var(--i) * 0.5s) calc(var(--i) * -1.1s) ease-in-out infinite;
+}
+[data-float='still'] .persona__float {
+  animation: none;
+}
+/* Persona entrance (float → entrance dials): text rows, pills, portrait, floating cards; reversed
+   when scrolled into from below. Keyframes and delays come from casePersona's entranceTimeline as --pe-* vars. */
+.case__persona .persona__who > :is(.eyebrow, .persona__title, .persona__body) {
+  animation: var(--pe-text-kf, none) var(--pe-dur, 0.7s) var(--pe-text-0, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case__persona .persona__who > .persona__title {
+  animation-delay: var(--pe-text-1, 0s);
+}
+.case__persona .persona__who > .persona__body {
+  animation-delay: var(--pe-text-2, 0s);
+}
+.case__persona .persona__tags > li {
+  animation: var(--pe-pills-kf, none) var(--pe-dur, 0.7s) var(--pe-delay, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case__persona .persona__photo {
+  animation: var(--pe-image-kf, none) var(--pe-dur, 0.7s) var(--pe-image, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* Floating cards start their loop only once the portrait has landed. */
+.case__persona .persona__floats {
+  animation: pe-hold var(--pe-floats, 0s) step-end both;
+}
+/* First value: the card's show/hide loop, shifted to start after the portrait; second: the bob. */
+.case__persona:is([data-float='one at a time'], [data-float='two at a time'], [data-float='pop']) .persona__float {
+  animation-delay: calc(var(--pe-floats, 0s) + var(--i) * var(--float-pace, 3.2s)), 0s;
+}
+.case__persona[data-float='drift'] .persona__float {
+  animation-delay: calc(var(--pe-floats, 0s) + var(--i) * var(--pe-float-stagger, 0.35s)), calc(var(--i) * -1.1s);
+}
+@keyframes pe-hold { from { visibility: hidden; } to { visibility: visible; } }
+@keyframes pe-rise { from { opacity: 0; transform: translateY(var(--pe-dist, 24px)); } }
+@keyframes pe-fade { from { opacity: 0; } }
+@keyframes pe-scale { from { opacity: 0; transform: scale(0.92); } }
+@keyframes pe-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes pe-slide { from { opacity: 0; transform: translateX(calc(-1 * var(--pe-dist, 24px))); } }
+@keyframes pe-focus {
+  from { opacity: 0; transform: scale(0.96); filter: blur(12px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes pe-wipe {
+  from { opacity: 0; transform: translateY(var(--pe-dist, 24px)); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(-10%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .case__persona :is(.persona__who > *, .persona__tags > li, .persona__photo, .persona__floats, .persona__float) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: none;
+  }
+}
+
+.case__persona:not([data-live]) .persona__float {
+  animation-play-state: paused;
+}
+/* Editing pins only the active card; ordinary pointer hover never pauses the sequence. */
+.persona__float:focus-within {
+  animation: none;
+  opacity: 1;
+  visibility: visible;
+  z-index: 1;
+}
+@keyframes persona-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 calc(-1 * var(--float-bob, 6px)); }
+}
+@keyframes persona-float-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes persona-float-one {
+  0% { opacity: 0; visibility: hidden; transform: translateY(12px) scale(0.96); }
+  6%, 22% { opacity: 1; visibility: visible; transform: none; }
+  28%, 100% { opacity: 0; visibility: hidden; transform: translateY(-8px) scale(0.98); }
+}
+@keyframes persona-float-two {
+  0% { opacity: 0; visibility: hidden; transform: translateY(12px) scale(0.96); }
+  6%, 46% { opacity: 1; visibility: visible; transform: none; }
+  52%, 100% { opacity: 0; visibility: hidden; transform: translateY(-8px) scale(0.98); }
+}
+@keyframes persona-float-pop {
+  0% { opacity: 0; visibility: hidden; transform: scale(0.6); animation-timing-function: cubic-bezier(0.3, 1.5, 0.5, 1); }
+  5%, 22% { opacity: 1; visibility: visible; transform: none; animation-timing-function: ease-in; }
+  26%, 100% { opacity: 0; visibility: hidden; transform: scale(0.85); }
+}
+
+/* Driven by / Challenges. */
+.persona__traits,
 [data-persona-traits='stacked'] .persona__traits {
+  display: grid;
   grid-template-columns: minmax(0, 560px);
+  justify-content: center;
   gap: 48px;
 }
 .persona__traits-group {
@@ -1071,6 +1684,8 @@ html[data-case-snap] .case__group > * {
 .persona__moments header {
   display: grid;
   gap: 12px;
+  width: min(100%, var(--case-reading));
+  margin-inline: auto;
 }
 .persona__moments ol {
   display: grid;
@@ -1128,6 +1743,9 @@ html[data-case-snap] .case__group > * {
   color: var(--stone-600);
 }
 .persona__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   grid-area: tag;
   align-self: start;
   justify-self: start;
@@ -1135,7 +1753,8 @@ html[data-case-snap] .case__group > * {
   padding: 6px 12px;
   border-radius: 999px;
   background: #fff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font);
+  font-weight: 500;
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1226,8 +1845,27 @@ html[data-case-snap] .case__group > * {
   .case__persona .persona__moments ol {
     grid-template-columns: 1fr;
   }
-  .case__persona .persona__photo {
+  .case__persona:is([data-persona-image='top'], [data-persona-image='left']) .persona__stage {
     order: -1;
+  }
+  .case__persona:is([data-persona-image='bottom'], [data-persona-image='right']) .persona__stage {
+    order: 1;
+  }
+  /* No room beside the portrait: the cards sit under it, all visible. */
+  .persona__floats {
+    position: static;
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+    pointer-events: auto;
+  }
+  .persona__float {
+    position: static;
+    width: auto;
+    animation: none !important;
+  }
+  .case__persona[data-profile-layout='3 top / 3 bottom'] .persona__tags {
+    grid-template-columns: repeat(2, max-content);
   }
   .case__persona .persona__moments li {
     grid-template-columns: 1fr;
@@ -1247,6 +1885,8 @@ html[data-case-snap] .case__group > * {
   justify-content: center;
   width: 100%;
   flex: none;
+  /* heroSpacing › y › phone: visual nudge; the hero keeps its layout. */
+  translate: 0 var(--hero-phone-y, 0px);
 }
 .case .case__section--hero:has(.case__devices) {
   height: auto;
@@ -1266,4 +1906,46 @@ html[data-case-snap] .case__group > * {
 }
 .persona__moments ol[hidden] {
   display: none;
+}
+
+/* Shared section-copy contract: one measure and one type scale across the case-study story.
+   Alignment remains a per-section DialKit choice. */
+.case__section-copy {
+  width: min(100%, var(--case-reading));
+  max-width: none;
+  margin-inline: auto;
+  justify-items: start;
+  text-align: left;
+}
+.case__section-copy :is(.case__eyebrow, .eyebrow) {
+  font-size: var(--text-small);
+  letter-spacing: 0.04em;
+}
+.case__section-copy :is(.case__title, .persona__title) {
+  font-size: calc(var(--text-display) * var(--case-heading-scale));
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--ink-950);
+  text-wrap: balance;
+}
+.case__section-copy :is(.case__body, .persona__body) {
+  font-size: calc(var(--text-body) * var(--case-copy-scale));
+  line-height: 1.3;
+  color: var(--stone-600);
+  text-wrap: pretty;
+}
+/* A cleared title or body takes no space, so the section's Media Gap alone sets the distance from
+   the text to the media below. A field being cleared on the page stays until it loses focus. */
+.case__section-copy > :is(.case__title, .case__body):empty:not(:focus) {
+  display: none;
+}
+.case__section-copy > .case__eyebrow:not(:has(~ :is(.case__title, .case__body):not(:empty))) {
+  margin-bottom: 0;
+}
+.case__section[data-copy-align='center'] .case__section-copy {
+  justify-items: center;
+  text-align: center;
+}
+.case__section[data-copy-align='center'] .case__section-copy .persona__tags {
+  justify-content: center;
 }

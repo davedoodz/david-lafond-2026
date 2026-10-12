@@ -249,9 +249,9 @@ html[data-about-snap] .about .footer {
   position: relative;
   top: var(--play-y, 0px);
 }
-/* About → spacing → labelY: the label alone; `top` leaves the reveal's transform free. */
+/* The label's `top` is set from script so it sits as far below the sheet edge as Home's label;
+   `top` leaves the reveal's transform free. */
 #play-title {
   position: relative;
-  top: var(--play-label-y, 0px);
   z-index: 1;
 }

@@ -17,4 +17,19 @@ export const CURSOR_CONFIG = {
     durationMs: [220, 0, 800, 10] as [number, number, number, number],
     _collapsed: false,
   },
+  /** Over readable text (not links/buttons): the dot morphs into a text caret. */
+  text: {
+    preset: {
+      type: 'select' as const,
+      options: ['morph', 'stretch', 'drop', 'fade', 'elastic'],
+      default: 'morph',
+    },
+    durationMs: [260, 0, 900, 10] as [number, number, number, number],
+    /** Caret width in px. */
+    width: [2, 1, 6, 0.5] as [number, number, number, number],
+    /** Caret height as a multiple of the hovered text's font size. */
+    height: [1, 0.5, 1.6, 0.05] as [number, number, number, number],
+    opacity: [1, 0.1, 1, 0.01] as [number, number, number, number],
+    _collapsed: false,
+  },
 }

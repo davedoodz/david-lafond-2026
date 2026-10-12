@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
-import { ChevronLeftIcon } from './icons'
+import { ArrowUpRightIcon, ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
 import { isLightUnder } from '../lib/surface'
 import { useTuning } from '../tuning/useTuning'
@@ -26,6 +26,16 @@ const NAV_CONFIG = {
   padBottom: [16, 0, 48, 1] as Tuple,
   /** Which side Davebot (the ghost) sits on; the links take the other side. */
   order: { type: 'select' as const, options: ['links · Davebot', 'Davebot · links'], default: 'links · Davebot' },
+  /** Up-right arrow shown beside "Resume" on hover; it never shifts the other links. */
+  resumeArrow: {
+    /** Size as a multiple of the link text (1 = one em). */
+    scale: [1, 0.4, 2, 0.05] as Tuple,
+    /** Gap after the word (px). */
+    x: [6, -10, 30, 0.5] as Tuple,
+    /** Vertical nudge (px); negative lifts it. */
+    y: [0, -12, 12, 0.5] as Tuple,
+    _collapsed: false,
+  },
 }
 
 function internalLink(route: Route) {
@@ -36,7 +46,7 @@ function internalLink(route: Route) {
   }
 }
 
-const PROJECT_ROUTES: Route[] = ['unwind', 'filo', 'harvard-mit']
+const PROJECT_ROUTES: Route[] = ['momo', 'filo', 'harvard-mit']
 
 /** Back to the work list: history when we came from it (restores the scroll), else the Work page. */
 function goBack(event: MouseEvent<HTMLAnchorElement>) {
@@ -46,7 +56,7 @@ function goBack(event: MouseEvent<HTMLAnchorElement>) {
   else navigate('work')
 }
 
-/** "< Back" link. Project pages place it under Davebot in the shared nav. */
+/** "< Back" link. Project pages place it top-left, above the section list (Momo, Filo) or alone (Harvard & MIT). */
 export function BackLink({ className = '' }: { className?: string }) {
   return (
     <a className={`nav__back ${className}`.trim()} href="/" onClick={goBack}>
@@ -100,14 +110,17 @@ export function Nav({ route }: Props) {
     }
   }, [pin, route])
 
-  const style = pin
-    ? ({
-        '--nav-h': `${height}px`,
-        '--nav-backdrop-opacity': t.backdrop === 'none' ? 0 : t.backdropOpacity,
-        '--nav-blur': t.backdrop === 'blur' ? `${t.blur}px` : '0px',
-        '--nav-pad-bottom': `${t.padBottom}px`,
-      } as CSSProperties)
-    : undefined
+  const style = {
+    '--resume-arrow-scale': t.resumeArrow.scale,
+    '--resume-arrow-x': `${t.resumeArrow.x}px`,
+    '--resume-arrow-y': `${t.resumeArrow.y}px`,
+    ...(pin && {
+      '--nav-h': `${height}px`,
+      '--nav-backdrop-opacity': t.backdrop === 'none' ? 0 : t.backdropOpacity,
+      '--nav-blur': t.backdrop === 'blur' ? `${t.blur}px` : '0px',
+      '--nav-pad-bottom': `${t.padBottom}px`,
+    }),
+  } as CSSProperties
 
   return (
     <>
@@ -115,7 +128,6 @@ export function Nav({ route }: Props) {
       <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
-          {(route === 'harvard-mit' || route === 'filo') && <BackLink />}
         </div>
         <nav className="nav__links" aria-label="Primary">
           <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
@@ -124,8 +136,9 @@ export function Nav({ route }: Props) {
           <a href="/about" aria-current={route === 'about' ? 'page' : undefined} onClick={internalLink('about')}>
             About
           </a>
-          <a href={RESUME_URL} target="_blank" rel="noopener">
+          <a className="nav__resume" href={RESUME_URL} target="_blank" rel="noopener">
             Resume
+            <ArrowUpRightIcon className="nav__resume-arrow" />
           </a>
         </nav>
       </header>

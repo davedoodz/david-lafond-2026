@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Momo intro — “Your body notices first”, six variants</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;1,14..32,400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./momo-intro-kit.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>“Your body notices first” — six variants</h1>
+          <p class="sub">One scenario for the persona (the high-functioning overthinker): Wednesday, 2:47 PM, just out of a tense 1:1 with their manager, Priya. Each variant keeps the same braid and cuts a different amount of the system, from the full chain to a three-beat glimpse. All are under 8 s and end by assembling the real case-study hero around the braid, which settles into its slot above the title.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Typeface">
+          <button type="button" data-view="both" aria-pressed="true">Both</button>
+          <button type="button" data-view="inter" aria-pressed="false">Inter</button>
+          <button type="button" data-view="test" aria-pressed="false">Test Family</button>
+        </div>
+      </header>
+      <div id="list"></div>
+    </main>
+    <script type="module">
+      import { W, TAU, C, clamp, lerp, seg, ease, io, curl, mount, HERO_BRAID } from './momo-intro-kit.js'
+
+      // ---------- The one scenario ----------
+      const S = {
+        scene: 'Wednesday, 2:47 PM. Just out of a tense 1:1.',
+        hr: 'Heart rate 96 bpm ↑',
+        hrv: 'HRV 28 ms ↓',
+        still: 'Sitting still',
+        meet: '1:1 with Priya',
+        ended: 'ended 2:45 PM',
+        mail: '“Launch timeline: concerns”',
+        free: 'Next 30 min free',
+        quote: ['Priya pushed back on the timeline', 'and I just froze…'],
+        insight: 'Third 1:1 this month that left you tense.',
+        plan: 'Before Thursday’s 1:1: write your 3 points.',
+      }
+      /** Where every film's braid ends: its slot above the title in the real hero. */
+      const LOCK = HERO_BRAID
+
+      // ---------- Devices (ink only; the braid is placed beside them) ----------
+      function watch(a, cx, cy, s, al, k = 1) {
+        if (al <= 0.01) return
+        a.group(s, cx, cy, () => {
+          a.box(cx, cy, 150, 180, 44, { a: al, fill: '#e7e2da', stroke: null, shadow: 24 })
+          a.box(cx, cy, 134, 164, 36, { a: al, fill: '#0b0a09', stroke: null })
+          const ka = al * k
+          a.text('Something changed.', cx, cy - 50, { size: 12.5, color: '#ffffff', a: ka })
+          a.text('Your heart rate rose', cx, cy - 31, { size: 9.5, color: '#bdbdbd', a: ka })
+          a.text('while you were still.', cx, cy - 19, { size: 9.5, color: '#bdbdbd', a: ka })
+          a.text('How are you feeling?', cx, cy - 4, { size: 9.5, color: '#bdbdbd', a: ka })
+          a.box(cx, cy + 24, 112, 24, 12, { a: ka, fill: C.blue, stroke: null })
+          a.text('Talk for 30 seconds', cx, cy + 24, { size: 9.5, color: '#ffffff', a: ka })
+          a.box(cx, cy + 52, 112, 22, 11, { a: ka, fill: '#2a2a2a', stroke: null })
+          a.text('Not now', cx, cy + 52, { size: 9.5, color: '#d6d6d6', a: ka })
+        })
+      }
+      function phone(a, cx, cy, s, al, draw = () => {}) {
+        if (al <= 0.01) return
+        a.group(s, cx, cy, () => {
+          a.box(cx, cy, 204, 410, 42, { a: al, stroke: C.ink9, lw: 2 })
+          a.box(cx, cy - 186, 58, 15, 8, { a: al, fill: C.ink9, stroke: null })
+          draw()
+        })
+      }
+      /** Transcript lines typed out, centred at y. */
+      function transcript(a, x, y, t0, size, al, gap = 1.3) {
+        S.quote.forEach((line, i) => {
+          const s0 = t0 + i * 0.55
+          const str = a.typed(line, s0, s0 + 0.55)
+          if (str) a.text(str, x, y + i * size * gap, { size, it: true, a: al })
+        })
+      }
+      /** Phone screen: the entries list, then the AI insight and plan. */
+      function review(a, cx, cy, t0, al) {
+        const list = io(a.t, t0, 99, 0.3) * al
+        a.label('Entries', cx - 78, cy - 150, list, { align: 'left' })
+        ;[['Today', S.meet, true], ['Oct 14', S.meet, false], ['Oct 2', 'Team review', false]].forEach(([d, s, now], i) => {
+          const y = cy - 116 + i * 36, ka = ease.out(seg(a.t, t0 + i * 0.12, t0 + i * 0.12 + 0.3)) * al
+          a.box(cx, y, 168, 30, 9, { a: ka, fill: now ? '#EAF6FF' : '#ffffff', stroke: null })
+          a.text(d, cx - 74, y, { size: 9.5, color: C.s4, align: 'left', a: ka })
+          a.text(s, cx - 34, y, { size: 10.5, align: 'left', a: ka })
+        })
+        const ins = ease.out(seg(a.t, t0 + 0.55, t0 + 0.9)) * al
+        a.box(cx, cy + 24, 168, 62, 12, { a: ins, fill: '#ffffff', stroke: null, shadow: 12 })
+        a.icon('spark', cx - 70, cy + 6, 10, ins, C.blue)
+        a.text('Pattern', cx - 60, cy + 6, { size: 9.5, color: C.s4, align: 'left', a: ins })
+        a.text('Third 1:1 this month', cx - 74, cy + 26, { size: 10.5, align: 'left', a: ins })
+        a.text('that left you tense.', cx - 74, cy + 41, { size: 10.5, align: 'left', a: ins })
+        const pl = ease.out(seg(a.t, t0 + 0.85, t0 + 1.2)) * al
+        a.box(cx, cy + 96, 168, 62, 12, { a: pl, fill: '#EAF6FF', stroke: null })
+        a.icon('cal', cx - 70, cy + 78, 10, pl, C.deep)
+        a.text('Plan', cx - 60, cy + 78, { size: 9.5, color: C.deep, align: 'left', a: pl })
+        a.text('Before Thursday’s 1:1:', cx - 74, cy + 98, { size: 10.5, align: 'left', a: pl })
+        a.text('write your 3 points.', cx - 74, cy + 113, { size: 10.5, align: 'left', a: pl })
+      }
+      const beat = (t, bpm = 1.6) => Math.exp(-(((t * bpm) % 1) * 7))
+      const speech = (t) => 0.35 + 0.4 * Math.abs(Math.sin(t * 9.1) * Math.sin(t * 3.7 + 1))
+      /** Moves a braid placement {x, y, len, sc} toward the lockup position. */
+      const toLockup = (p, k) => ({ x: lerp(p.x, LOCK.x, k), y: lerp(p.y, LOCK.y, k), len: lerp(p.len, LOCK.len, k), sc: lerp(p.sc, LOCK.sc, k) })
+      const mix = (p, q, k) => ({ x: lerp(p.x, q.x, k), y: lerp(p.y, q.y, k), len: lerp(p.len, q.len, k), sc: lerp(p.sc, q.sc, k) })
+
+      const FILMS = [
+        {
+          title: 'The full chain',
+          dur: 8,
+          idea: 'Everything in the vision, in order: body signals and the day’s context (calendar, email) feed in, the Watch asks at the right moment, the iPhone listens, then the entries view shows the pattern and a plan. It is a complete product glimpse, at the edge of what a first-time viewer can read.',
+          beats: ['0–2 body + calendar + email', '2–3.3 Watch asks', '3.3–4.9 iPhone listens', '4.9–6.3 entries → pattern → plan', '6.5 → the case-study hero'],
+          keeps: 'Biometrics, calendar, email, Watch prompt, voice journal, entries, AI pattern, plan.',
+          cuts: 'Nothing conceptual; each step gets about 1.3 s.',
+          tradeoff: 'Most complete and most true to the vision, but the busiest. Someone new to the project may catch the arc without reading every label.',
+          draw(a) {
+            const t = a.t
+            const toWatch = ease.inOut(seg(t, 1.95, 2.45))
+            const toPhone = ease.inOut(seg(t, 3.2, 3.7))
+            const calm = ease.inOut(seg(t, 4.9, 5.5))
+            const lock = ease.inOut(seg(t, 5.85, 6.65))
+            let p = { x: W / 2, y: 270, len: 560, sc: 1 }
+            p = mix(p, { x: W / 2, y: 270, len: 120, sc: 0.3 }, toWatch)
+            p = mix(p, { x: 600, y: 412, len: 150, sc: 0.38 }, toPhone)
+            p = toLockup(p, lock)
+            let env = lerp(0.2 + 0.55 * beat(t), 0.3, toWatch)
+            env = lerp(env, speech(t), toPhone * (1 - calm)); env = lerp(env, 0.06, calm)
+            const hide = toWatch * (1 - toPhone)
+            a.braid(curl(p.x, p.y, p.len, 0), { env, scale: p.sc, alpha: 1 - hide * 0.9 })
+
+            a.label(S.scene, W / 2, 46, io(t, 0.1, 6.1))
+            const ch = io(t, 0.2, 2.15, 0.3)
+            ;[['heart', S.hr, 300, 160, 0.25], ['heart', S.hrv, 660, 160, 0.45], ['cal', S.meet, 300, 390, 0.85, S.ended], ['mail', 'Email from Priya', 660, 390, 1.05, S.mail]].forEach(([ic, l, x, y, at, sub]) => {
+              const k = ease.out(seg(t, at, at + 0.35)) * ch
+              a.chip(l, x, y, { icon: ic, a: k, sub })
+              a.link(x, y + (y < 270 ? 18 : -24), lerp(x, W / 2, 0.6), 270, ease.out(seg(t, at + 0.2, at + 0.7)), k)
+            })
+            a.text('Momo reads your body and your day…', W / 2, 92, { size: 22, a: io(t, 0.3, 2.1) })
+            watch(a, lerp(W / 2, 600, toPhone), lerp(270, 300, toPhone), lerp(lerp(0.85, 1.05, ease.out(seg(t, 1.95, 2.4))), 0.6, toPhone), io(t, 1.95, 3.55, 0.35), ease.out(seg(t, 2.2, 2.5)))
+            a.ripple(W / 2, 270, 2.15, { r0: 110, r1: 190 })
+            a.text('…and picks the right moment to ask.', W / 2, 92, { size: 22, a: io(t, 2.15, 3.3) })
+            const ph = io(t, 3.25, 6.15, 0.35)
+            phone(a, 600, 280, 0.82, ph, () => {
+              const voice = io(t, 3.4, 4.95, 0.25)
+              a.label('Voice reflection', 600, 140, voice * ph)
+              transcript(a, 600, 224, 3.6, 11.5, voice * ph)
+              review(a, 600, 280, 5.0, ph)
+            })
+            a.text('You talk it through.', 280, 270, { size: 22, a: io(t, 3.6, 4.95) })
+            a.text('AI finds the pattern', 280, 254, { size: 22, a: io(t, 5.05, 6.15) })
+            a.text('and plans the next one.', 280, 284, { size: 22, a: io(t, 5.2, 6.15) })
+            a.hero(6.6)
+          },
+        },
+        {
+          title: 'Signals converge',
+          dur: 7.5,
+          idea: 'The braid is literally the multimodal idea. Three strands (body, calendar, email) run on their own rows, then twist together into one braid at 2:47 PM: the moment Momo decides to ask. The braid then becomes the voice, and settles into a plan.',
+          beats: ['0–2.3 three strands, three sources', '2.3–3.2 they braid: 2:47 PM', '3.4–4.8 you talk', '4.8–6 pattern + plan', '6.2 → the case-study hero'],
+          keeps: 'Multimodal context as the core visual, the timing decision, voice, AI pattern, plan.',
+          cuts: 'Device drawings (the Watch is a ripple and a label), the entries list.',
+          tradeoff: 'The clearest picture of “many signals → one moment”, and it uses the braid best. You lose the hardware story: viewers won’t see that it lives on a Watch and an iPhone.',
+          draw(a) {
+            const t = a.t
+            const merge = ease.inOut(seg(t, 2.25, 3.1))
+            const calm = ease.inOut(seg(t, 4.85, 5.5))
+            const lock = ease.inOut(seg(t, 5.45, 6.25))
+            const ROWS = [
+              { k: 0, ic: 'heart', title: 'Body', data: `${S.hr} · ${S.hrv}` },
+              { k: 1, ic: 'cal', title: 'Calendar', data: `${S.meet} · ${S.ended}` },
+              { k: 2, ic: 'mail', title: 'Email', data: `From Priya: ${S.mail}` },
+            ]
+            ROWS.forEach((r, i) => {
+              const on = ease.out(seg(t, 0.2 + i * 0.45, 0.65 + i * 0.45))
+              const y = lerp(150 + i * 120, 270, merge)
+              const env = r.k === 0 ? 0.15 + 0.6 * beat(t) : r.k === 1 ? 0.35 : 0.2
+              if (merge < 1) a.braid(curl(lerp(620, W / 2, merge), y, lerp(400, 560, merge), 0), { strands: [r.k], env, scale: lerp(0.8, 1, merge), alpha: on * (1 - merge) })
+              const la = on * (1 - ease.inOut(seg(t, 2.0, 2.4)))
+              a.icon(r.ic, 116, 150 + i * 120 - 10, 15, la, C.blue)
+              a.text(r.title, 134, 150 + i * 120 - 10, { size: 17, align: 'left', a: la })
+              a.text(r.data, 116, 150 + i * 120 + 16, { size: 12.5, color: C.s6, align: 'left', a: la })
+            })
+            let env = lerp(0.6, speech(t), ease.inOut(seg(t, 3.3, 3.6)) * (1 - calm)); env = lerp(env, 0.06, calm)
+            const p = toLockup({ x: W / 2, y: 270, len: 560, sc: 1 }, lock)
+            a.braid(curl(p.x, p.y, p.len, 0), { env, scale: p.sc, alpha: merge })
+
+            a.label(S.scene, W / 2, 46, io(t, 0.1, 2.2))
+            a.label('2:47 PM · the right moment', W / 2, 150, io(t, 2.7, 3.6))
+            a.ripple(W / 2, 270, 2.85, { r0: 40, r1: 170 })
+            a.text('Apple Watch: How are you feeling?', W / 2, 380, { size: 18, a: io(t, 2.85, 3.6) })
+            a.chip('30-second voice note', W / 2, 150, { icon: 'mic', a: io(t, 3.5, 4.85) })
+            transcript(a, W / 2, 372, 3.6, 19, io(t, 3.6, 4.85))
+            a.label('From your entries', W / 2, 140, io(t, 4.9, 6.0))
+            a.text(S.insight, W / 2, 176, { size: 22, a: io(t, 4.95, 6.0) })
+            a.chip(S.plan, W / 2, 372, { icon: 'cal', a: io(t, 5.2, 6.0), size: 14 })
+            a.hero(6.2)
+          },
+        },
+        {
+          title: 'One afternoon',
+          dur: 7.5,
+          idea: 'The braid is the person’s afternoon. A calendar block marks the 1:1, the line knots during it, and a playhead moves through the day. At 2:47, when the meeting is over and the next half hour is free, the Watch asks. The film ends on Thursday’s 1:1 with a plan already attached.',
+          beats: ['0–2.4 the afternoon plays', '2.4 2:47: meeting over, time free', '3.3–4.6 you talk', '4.7–6 Thursday, with a plan', '6.2 → the case-study hero'],
+          keeps: 'Why this moment (meeting ended + free time + body), voice, plan carried into the calendar.',
+          cuts: 'Device drawings, the entries list, email.',
+          tradeoff: 'Best at explaining timing: the reason it asks at 2:47 is visible. Reads as a calendar product for a second or two before the voice step lands.',
+          draw(a) {
+            const t = a.t
+            const X = (h) => 120 + (h - 12) * 120
+            const ph = lerp(12, 14.78, ease.inOut(seg(t, 0.3, 2.3)))
+            const spike = ease.out(seg(ph, 13.9, 14.4)) * (1 - ease.inOut(seg(t, 4.7, 5.6)))
+            const voice = io(t, 3.3, 4.7, 0.25)
+            const lock = ease.inOut(seg(t, 5.45, 6.25))
+            const u = (h) => (X(h) - 120) / 720
+            const ampAt = (x) => 0.25 + spike * 2.3 * Math.exp(-(((x - u(14.37)) / 0.05) ** 2)) + voice * 1.6 * Math.exp(-(((x - u(14.78)) / 0.05) ** 2))
+            const p = toLockup({ x: W / 2, y: 300, len: 720, sc: 1 }, lock)
+            let env = 0.25 + 0.45 * spike * beat(t); env = lerp(env, speech(t), voice)
+            a.braid(curl(p.x, p.y, p.len, 0), { env, scale: p.sc, closed: 0.55 * (1 - lock), ampAt: (x) => lerp(ampAt(x), 1, lock) })
+
+            const day = 1 - ease.inOut(seg(t, 5.8, 6.15))
+            a.label(S.scene, W / 2, 46, io(t, 0.1, 2.3) )
+            ;['12 PM', '1', '2', '3', '4', '5', '6 PM'].forEach((l, i) => a.text(l, X(12 + i), 420, { size: 11, color: C.s4, a: ease.out(seg(t, 0.05, 0.4)) * day }))
+            const blk = ease.out(seg(t, 0.5, 0.85)) * day
+            a.box((X(14) + X(14.75)) / 2, 236, X(14.75) - X(14), 34, 8, { a: blk, fill: '#EAF6FF', stroke: null })
+            a.text(S.meet, (X(14) + X(14.75)) / 2, 236, { size: 11.5, a: blk })
+            a.icon('mail', X(13.67), 366, 13, ease.out(seg(t, 0.8, 1.1)) * day, C.blue)
+            a.text('Email from Priya', X(13.67) + 12, 366, { size: 11, color: C.s6, align: 'left', a: ease.out(seg(t, 0.8, 1.1)) * day * (1 - voice) })
+            const hx = X(ph)
+            a.draw((c) => { const k = ease.out(seg(t, 0.25, 0.5)) * day; if (k <= 0.01) return; c.save(); c.globalAlpha = k * 0.8; c.strokeStyle = C.ink9; c.lineWidth = 1; c.beginPath(); c.moveTo(hx, 190); c.lineTo(hx, 400); c.stroke(); c.restore() })
+            a.dot(hx, 190, 3.5, C.ink9, ease.out(seg(t, 0.25, 0.5)) * day)
+            a.ripple(X(14.78), 300, 2.35, { r0: 10, r1: 110 })
+            a.chip('2:47 PM · meeting over · next 30 min free', W / 2 + 40, 140, { icon: 'heart', a: io(t, 2.35, 3.35), size: 13 })
+            a.text('Apple Watch: Talk for 30 seconds?', W / 2, 92, { size: 20, a: io(t, 2.45, 3.35) })
+            a.text('You talk it through.', W / 2, 92, { size: 20, a: io(t, 3.3, 4.65) })
+            transcript(a, W / 2 + 120, 150, 3.45, 15, voice)
+            const thu = ease.out(seg(t, 4.75, 5.1)) * day
+            a.box(X(17.5), 236, 120, 34, 8, { a: thu, fill: '#EAF6FF', stroke: null })
+            a.text('Thu · ' + S.meet, X(17.5), 236, { size: 11.5, a: thu })
+            a.link(X(14.78), 236, X(17.5) - 60, 236, ease.out(seg(t, 4.7, 5.2)), thu)
+            a.chip('Plan: write your 3 points', X(17.5) - 20, 176, { icon: 'spark', a: ease.out(seg(t, 5.05, 5.4)) * day })
+            a.text('Next time, you walk in prepared.', W / 2, 92, { size: 20, a: io(t, 4.85, 6.0) })
+            a.hero(6.2)
+          },
+        },
+        {
+          title: 'Device relay',
+          dur: 7.5,
+          idea: 'The concept you picked, made specific. The braid starts as the body’s signal with its context around it, gathers into the Watch for the prompt, moves to the iPhone as the voice, and the same phone then shows the entries, the pattern and the plan.',
+          beats: ['0–1.6 body + meeting context', '1.6–2.9 Watch asks', '2.9–4.6 iPhone listens', '4.6–6 entries → pattern → plan', '6.3 → the case-study hero'],
+          keeps: 'Biometrics, calendar, Watch → iPhone hand-off, voice journal, entries, pattern, plan.',
+          cuts: 'Email (calendar alone shows “context”).',
+          tradeoff: 'Closest to “your body notices first” and easy to follow because it is one object moving between two devices. Slightly less “multimodal” than variant 02.',
+          draw(a) {
+            const t = a.t
+            const toWatch = ease.inOut(seg(t, 1.5, 2.0))
+            const toPhone = ease.inOut(seg(t, 2.9, 3.4))
+            const calm = ease.inOut(seg(t, 4.6, 5.2))
+            const lock = ease.inOut(seg(t, 5.55, 6.35))
+            let p = { x: W / 2, y: 260, len: 560, sc: 1 }
+            p = mix(p, { x: W / 2, y: 280, len: 120, sc: 0.3 }, toWatch)
+            p = mix(p, { x: W / 2, y: 425, len: 150, sc: 0.38 }, toPhone)
+            p = toLockup(p, lock)
+            let env = lerp(0.2 + 0.55 * beat(t, lerp(1.1, 1.8, seg(t, 0, 1.4))), 0.3, toWatch)
+            env = lerp(env, speech(t), toPhone * (1 - calm)); env = lerp(env, 0.06, calm)
+            a.braid(curl(p.x, p.y, p.len, 0), { env, scale: p.sc, alpha: 1 - toWatch * (1 - toPhone) * 0.9 })
+
+            a.text('Your body notices before you do.', W / 2, 92, { size: 26, a: io(t, 0.15, 1.6) })
+            const ch = io(t, 0.2, 1.75, 0.3)
+            ;[['heart', S.hr, 250, 0.35], ['heart', S.hrv, 480, 0.55], ['cal', `${S.meet} · ${S.ended}`, 730, 0.75]].forEach(([ic, l, x, at]) => a.chip(l, x, 380, { icon: ic, a: ease.out(seg(t, at, at + 0.35)) * ch }))
+            watch(a, W / 2, 270, lerp(0.85, 1.1, ease.out(seg(t, 1.5, 1.95))), io(t, 1.5, 3.1, 0.3), ease.out(seg(t, 1.75, 2.05)))
+            a.ripple(W / 2, 270, 1.7, { r0: 120, r1: 200 })
+            a.text('It picks the right moment to ask.', W / 2, 60, { size: 22, a: io(t, 1.7, 2.95) })
+            const ph = io(t, 2.95, 6.0, 0.35)
+            phone(a, W / 2, 290, 0.88, ph, () => {
+              const voice = io(t, 3.1, 4.65, 0.25)
+              a.label('Voice reflection', W / 2, 136, voice * ph)
+              transcript(a, W / 2, 230, 3.35, 12, voice * ph)
+              review(a, W / 2, 290, 4.7, ph)
+            })
+            a.text('You talk it through.', 210, 270, { size: 22, a: io(t, 3.2, 4.65) })
+            a.text('It learns your patterns', 750, 254, { size: 22, a: io(t, 4.8, 6.0) })
+            a.text('and plans what’s next.', 750, 284, { size: 22, a: io(t, 4.95, 6.0) })
+            a.hero(6.3)
+          },
+        },
+        {
+          title: 'Why now?',
+          dur: 7.2,
+          idea: 'Leads with the intelligence: the film asks “Why now?” and answers with three reasons from different sources (body, calendar, schedule). Then the Watch asks, you talk, and you get a plan. The most direct pitch of the timing engine.',
+          beats: ['0–2.7 Why now? three reasons', '2.8–3.9 Watch asks', '4–5.3 you talk', '5.3–6.1 plan', '6.2 → the case-study hero'],
+          keeps: 'Context reasoning (body + calendar + free time), Watch prompt, voice, plan.',
+          cuts: 'The entries list and AI pattern, email, the iPhone drawing.',
+          tradeoff: 'Very legible, almost a headline. It explains the “why” better than any other variant but sells the reflection side (entries, review with AI) only in one line.',
+          draw(a) {
+            const t = a.t
+            const toWatch = ease.inOut(seg(t, 2.7, 3.2))
+            const back = ease.inOut(seg(t, 3.9, 4.3))
+            const calm = ease.inOut(seg(t, 5.25, 5.8))
+            const lock = ease.inOut(seg(t, 5.45, 6.25))
+            let p = { x: W / 2, y: 400, len: 520, sc: 0.95 }
+            p = mix(p, { x: W / 2, y: 280, len: 110, sc: 0.3 }, toWatch)
+            p = mix(p, { x: W / 2, y: 300, len: 560, sc: 1 }, back)
+            p = toLockup(p, lock)
+            let env = lerp(0.2 + 0.55 * beat(t), 0.3, toWatch)
+            env = lerp(env, speech(t), back * (1 - calm)); env = lerp(env, 0.06, calm)
+            a.braid(curl(p.x, p.y, p.len, 0), { env, scale: p.sc, alpha: 1 - toWatch * (1 - back) * 0.9 })
+
+            a.label(S.scene, W / 2, 46, io(t, 0.1, 2.7))
+            a.text('Why now?', W / 2, 104, { size: 38, a: io(t, 0.2, 2.75) })
+            ;[['heart', 'Heart rate up 18% while sitting still'], ['cal', `${S.meet} just ended`], ['cal', 'Next 30 minutes are free']].forEach(([ic, l], i) => {
+              a.chip(l, W / 2, 178 + i * 52, { icon: ic, a: ease.out(seg(t, 0.6 + i * 0.55, 0.95 + i * 0.55)) * (1 - ease.inOut(seg(t, 2.5, 2.8))), size: 15 })
+            })
+            watch(a, W / 2, 270, lerp(0.85, 1.1, ease.out(seg(t, 2.75, 3.2))), io(t, 2.75, 4.0, 0.3), ease.out(seg(t, 2.95, 3.25)))
+            a.ripple(W / 2, 270, 2.95, { r0: 120, r1: 200 })
+            a.text('So it asks.', W / 2, 60, { size: 24, a: io(t, 2.95, 3.95) })
+            a.chip('30-second voice note', W / 2, 400, { icon: 'mic', a: io(t, 4.05, 5.25) })
+            transcript(a, W / 2, 168, 4.15, 22, io(t, 4.1, 5.25))
+            a.label('Next time', W / 2, 150, io(t, 5.35, 6.05))
+            a.text(S.plan, W / 2, 186, { size: 24, a: io(t, 5.4, 6.05) })
+            a.hero(6.2)
+          },
+        },
+        {
+          title: 'Three-beat glimpse',
+          dur: 6.8,
+          idea: 'The lightest version: three short lines over the braid, no data, no devices. Notices → you talk → you plan. Only the braid changes behaviour (heartbeat, voice, calm line), so it reads instantly even with no context.',
+          beats: ['0–2 it notices (heartbeat)', '2–4.2 you talk (voice)', '4.2–5.5 you plan (calm)', '5.6 → the case-study hero'],
+          keeps: 'The arc of the product and the braid as its single symbol.',
+          cuts: 'All specifics: devices, data sources, entries, AI review.',
+          tradeoff: 'Easiest to follow and the most elegant, but generic: it could describe many wellness apps. The case study below has to do the explaining.',
+          draw(a) {
+            const t = a.t
+            const voice = io(t, 2.0, 4.25, 0.35)
+            const calm = ease.inOut(seg(t, 4.1, 4.8))
+            const lock = ease.inOut(seg(t, 4.85, 5.65))
+            const p = toLockup({ x: W / 2, y: 290, len: 600, sc: 1 }, lock)
+            let env = lerp(0.18 + 0.6 * beat(t, lerp(1.1, 1.9, seg(t, 0, 1.8))), speech(t), voice); env = lerp(env, 0.05, calm)
+            a.braid(curl(p.x, p.y, p.len, 0), { env, scale: p.sc })
+            a.ripple(W / 2, 290, 1.55, { r0: 30, r1: 200 })
+            a.label('After a tense 1:1', W / 2, 150, io(t, 0.1, 2.0))
+            a.text('Your body notices first.', W / 2, 192, { size: 30, a: io(t, 0.25, 2.0) })
+            a.label('Apple Watch → iPhone', W / 2, 150, io(t, 2.05, 4.15))
+            a.text('You talk it through.', W / 2, 192, { size: 30, a: io(t, 2.15, 4.15) })
+            a.label('AI · from your entries', W / 2, 150, io(t, 4.2, 5.45))
+            a.text('You plan what’s next.', W / 2, 192, { size: 30, a: io(t, 4.3, 5.45) })
+            a.hero(5.6)
+          },
+        },
+      ]
+
+      await mount(FILMS)
+    </script>
+  </body>
+</html>

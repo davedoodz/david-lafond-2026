@@ -116,6 +116,13 @@ export function ControlledScroll() {
     const max = () => root.scrollHeight - window.innerHeight
 
     const step = (now: number) => {
+      if (root.dataset.playgroundZoomOpen) {
+        frame = 0
+        target = pos = window.scrollY
+        origin = null
+        releaseSnap()
+        return
+      }
       frame = 0
       const dt = Math.min(64, now - (last || now - 16))
       last = now
@@ -137,6 +144,10 @@ export function ControlledScroll() {
     }
 
     const onWheel = (e: WheelEvent) => {
+      if (root.dataset.playgroundZoomOpen) {
+        e.preventDefault()
+        return
+      }
       const mode = ref.current.mode
       if (mode === 'native') return
       if (e.defaultPrevented || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
@@ -152,7 +163,8 @@ export function ControlledScroll() {
       if (origin === null) origin = window.scrollY
       target += dy
       const vh = window.innerHeight
-      target = Math.max(0, origin - upDistance * vh, Math.min(max(), origin + downDistance * vh, target))
+      // A page can raise the top of the scroll range (Momo locks out its played intro stage).
+      target = Math.max(Number(root.dataset.scrollMin) || 0, origin - upDistance * vh, Math.min(max(), origin + downDistance * vh, target))
       holdSnap()
       clearTimeout(gestureEnd)
       gestureEnd = window.setTimeout(() => {

@@ -1,12 +1,16 @@
 .cg {
-  --cg-cell: var(--cg-cell-d);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
   padding-top: var(--cg-top-d);
-  translate: var(--cg-x-d) var(--cg-y-d);
-  /* GitHub dark-theme greens. */
+  --cg-x: var(--cg-x-d);
+  translate: var(--cg-x) var(--cg-y-d);
+  /* Above the contact section (z-index 1, later in the page), which can overlap it through About's
+     playSpaceBelow, so the logo and the grass get the pointer. */
+  position: relative;
+  z-index: 2;
+  /* GitHub dark-theme greens (flat fallback; the grass palette lives in grassField.ts). */
   --cg-0: #232323;
   --cg-1: #0e4429;
   --cg-2: #006d32;
@@ -22,28 +26,45 @@
   --cg-4: #f5f5f5;
 }
 
-.cg__title {
-  transition: color 180ms ease;
-}
-
-.cg__title:hover,
-.cg__title:focus-visible {
-  color: var(--paper);
-}
-
 .cg__graph {
   display: grid;
   gap: 6px;
 }
 
-.cg__months,
-.cg__weeks {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: var(--cg-cell);
-  column-gap: var(--cg-gap);
+/* GitHub mark: out of flow under the graph, so it never moves the layout. It undoes the graph's
+   x nudge to stay centred on the page; y is its distance below the graph. */
+.cg__logo {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  display: block;
+  width: var(--cg-logo-size);
+  height: var(--cg-logo-size);
+  translate: calc(-50% - var(--cg-x)) var(--cg-logo-y);
+  color: #fff;
+  opacity: var(--cg-logo-opacity);
+  transition: opacity 0.2s var(--ease-out);
 }
 
+.cg__logo:is(:hover, :focus-visible) {
+  opacity: 1;
+}
+
+.cg__logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Grass ---------- */
+
+/* Month names sit above the field, each over its first week's back edge. */
+.cg__labels {
+  position: relative;
+  height: 10px;
+}
+
+.cg__labels span,
 .cg__months span {
   overflow: visible;
   white-space: nowrap;
@@ -52,14 +73,40 @@
   color: var(--stone-600);
 }
 
+.cg__labels span {
+  position: absolute;
+  top: 0;
+}
+
+.cg__stage {
+  position: relative;
+}
+
+.cg__grass {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+/* ---------- Flat fallback (no WebGL2) ---------- */
+
+.cg__months,
+.cg__weeks {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc(var(--cg-cell) * 0.8);
+  column-gap: calc(var(--cg-cell) * 0.2);
+}
+
 .cg__week {
   display: grid;
-  grid-template-rows: repeat(7, var(--cg-cell));
-  row-gap: var(--cg-gap);
+  grid-template-rows: repeat(7, calc(var(--cg-cell) * 0.8));
+  row-gap: calc(var(--cg-cell) * 0.2);
 }
 
 .cg__day {
-  border-radius: var(--cg-radius);
+  border-radius: 2px;
   background: var(--cg-0);
 }
 
@@ -85,8 +132,8 @@
 
 @media (max-width: 640px) {
   .cg {
-    --cg-cell: var(--cg-cell-m);
     padding-top: var(--cg-top-m);
-    translate: var(--cg-x-m) var(--cg-y-m);
+    --cg-x: var(--cg-x-m);
+    translate: var(--cg-x) var(--cg-y-m);
   }
 }

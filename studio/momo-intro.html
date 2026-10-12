@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Momo intro — 10 directions</title>
+    <style>
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+      @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-SemiboldItalic.woff2') format('woff2'); font-weight: 600; font-style: italic; }
+      :root { --paper: #f5f5f5; --ink: #0b0a09; --s6: #6f6b68; --s4: #a6a09c; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #ebeae8; color: var(--ink); font-family: Beatrice, system-ui, sans-serif; letter-spacing: -0.01em; }
+      header { display: flex; flex-wrap: wrap; gap: 24px; align-items: end; justify-content: space-between; padding: 40px 44px 28px; }
+      h1 { margin: 0; font-size: 32px; font-weight: 400; }
+      header p { max-width: 680px; margin: 8px 0 0; color: var(--s6); font-size: 15px; line-height: 1.35; }
+      .controls { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--s6); }
+      .controls button { padding: 8px 14px; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+      .controls button[aria-pressed='true'] { background: var(--ink); color: #fff; border-color: var(--ink); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 36px 28px; padding: 0 44px 64px; }
+      figure { margin: 0; }
+      .frame { position: relative; cursor: zoom-in; }
+      canvas { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; background: var(--paper); box-shadow: 0 0 30px rgb(23 23 23 / 0.08); }
+      .bar { position: absolute; left: 14px; right: 14px; bottom: 10px; height: 2px; border-radius: 2px; background: rgb(11 10 9 / 0.08); overflow: hidden; }
+      .bar i { display: block; height: 100%; width: 100%; background: rgb(11 10 9 / 0.35); transform-origin: left; }
+      .scrub { display: flex; gap: 10px; align-items: center; padding: 10px 4px 0; font-size: 12px; color: var(--s6); font-variant-numeric: tabular-nums; }
+      .scrub button { width: 30px; height: 26px; flex-shrink: 0; padding: 0; border: 1px solid #d6d3d0; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+      .scrub input { flex: 1; accent-color: #0b0a09; }
+      .scrub output { width: 64px; text-align: right; }
+      .focus .scrub { width: min(92vw, 150svh); color: #dcd9d6; }
+      .focus .scrub input { accent-color: #53bffe; }
+      figcaption { display: grid; gap: 6px; padding: 14px 4px 0; }
+      .name { display: flex; gap: 10px; align-items: baseline; font-size: 18px; }
+      .num { color: var(--s4); font-size: 13px; font-variant-numeric: tabular-nums; }
+      .idea { color: var(--s6); font-size: 14px; line-height: 1.35; }
+      .meta { color: var(--s4); font-size: 12px; line-height: 1.35; }
+      .focus { position: fixed; inset: 0; z-index: 10; display: none; place-items: center; gap: 16px; padding: 32px; background: rgb(11 10 9 / 0.78); backdrop-filter: blur(6px); }
+      .focus[data-open] { display: grid; }
+      .focus canvas { width: min(92vw, 150svh); box-shadow: none; }
+      .focus .cap { max-width: min(92vw, 150svh); color: #f5f5f5; font-size: 15px; line-height: 1.4; }
+      .focus .cap b { font-weight: 500; }
+      .focus .hint { color: #a6a09c; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Momo — intro motion, 10 directions</h1>
+        <p>
+          Abstract foundations only (no real assets). Each one explains the core idea: people can name the loop, but knowing isn’t doing. RE:SELF catches the
+          moment as it happens and turns it into a “what if” and an if-then plan. Every direction ends by handing off to the hero below.
+        </p>
+      </div>
+      <div class="controls">
+        <span>Speed</span>
+        <button data-speed="0.5">0.5×</button>
+        <button data-speed="1" aria-pressed="true">1×</button>
+        <button data-speed="1.5">1.5×</button>
+        <button id="replay">Replay all</button>
+      </div>
+    </header>
+    <main class="grid" id="grid"></main>
+    <div class="focus" id="focus" role="dialog" aria-modal="true">
+      <canvas id="focusCanvas" width="1920" height="1080"></canvas>
+      <div class="scrub" id="focusScrub"></div>
+      <div class="cap" id="focusCap"></div>
+      <div class="hint">Space pause/play · , . step 0.1s · drag to scrub · ← → switch · Esc close</div>
+    </div>
+
+    <script type="module">
+      const W = 960, H = 540, DUR = 7, HOLD = 1.4
+      const C = { paper: '#f5f5f5', ink: '#0b0a09', ink9: '#171717', s6: '#6f6b68', s4: '#a6a09c', s2: '#dcd9d6', blue: '#53BFFE', sky: '#CBEFFE', mist: '#E9EEF8', cyan: '#00D0FF', deep: '#1E7FB8' }
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+      const lerp = (a, b, t) => a + (b - a) * t
+      const seg = (t, a, b) => clamp((t - a) / (b - a))
+      const ease = {
+        out: (t) => 1 - (1 - t) ** 3,
+        in: (t) => t ** 3,
+        inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
+        expo: (t) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t)),
+        back: (t) => { const c = 1.70158; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2 },
+      }
+      const hash = (i, j, k) => { const x = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453; return x - Math.floor(x) }
+      const rng = (seed) => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296) }
+      const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})` }
+      const font = (size, weight = 400, style = '') => `${style} ${weight} ${size}px Beatrice, system-ui, sans-serif`
+
+      function text(ctx, str, x, y, { size = 16, weight = 400, color = C.ink, align = 'left', base = 'alphabetic', alpha = 1, style = '', track = 0 } = {}) {
+        if (alpha <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= alpha
+        ctx.font = font(size, weight, style)
+        ctx.fillStyle = color
+        ctx.textAlign = align
+        ctx.textBaseline = base
+        ctx.letterSpacing = `${track}px`
+        ctx.fillText(str, x, y)
+        ctx.restore()
+      }
+      const rrect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r) }
+
+      // --- The hero every direction hands off to (rough mock of /work/momo).
+      const MEDIA = { x: 560, y: 110, w: 330, h: 330 }
+      function drawMedia(ctx, a = 1, m = MEDIA) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        rrect(ctx, m.x, m.y, m.w, m.h, 14)
+        const g = ctx.createLinearGradient(m.x, m.y, m.x, m.y + m.h)
+        g.addColorStop(0, '#c6e6f6'); g.addColorStop(0.55, '#96bd9f'); g.addColorStop(1, '#5d8c58')
+        ctx.fillStyle = g
+        ctx.fill()
+        const pw = m.w * 0.4, ph = pw * 2.05, px = m.x + m.w / 2 - pw / 2, py = m.y + m.h / 2 - ph / 2
+        rrect(ctx, px, py, pw, ph, pw * 0.17); ctx.fillStyle = '#121212'; ctx.fill()
+        rrect(ctx, px + 4, py + 4, pw - 8, ph - 8, pw * 0.14)
+        const s = ctx.createLinearGradient(0, py, 0, py + ph)
+        s.addColorStop(0, '#fbfbfb'); s.addColorStop(0.6, '#f1f6fa'); s.addColorStop(1, '#a6d7fb')
+        ctx.fillStyle = s
+        ctx.fill()
+        ctx.restore()
+      }
+      function drawPage(ctx, a = 1, dy = 0, { media = true } = {}) {
+        if (a <= 0) return
+        ctx.save()
+        ctx.globalAlpha *= a
+        ctx.translate(0, dy)
+        text(ctx, '‹  BACK', 40, 120, { size: 10, weight: 500, color: C.s6 })
+        ;['Overview', 'Problem', 'Opportunity', 'Solution', 'Context', 'Tracking change', 'Outcomes'].forEach((s, i) => text(ctx, s, 40, 150 + i * 20, { size: 10, color: C.s4 }))
+        text(ctx, 'MOMO · RE:SELF · 2025', 200, 176, { size: 10, color: C.s4, track: 1 })
+        ;['Momo – Novel Multimodal', 'AI Reflection System', 'for Behavioral Change'].forEach((s, i) => text(ctx, s, 200, 218 + i * 38, { size: 31 }))
+        ;[['ROLE', 'Lead Product Designer'], ['TIMELINE', 'March – Sept 2025'], ['TEAM', '2 dev · 2 design · 2 therapists']].forEach(([k, v], i) => {
+          text(ctx, k, 200 + i * 112, 356, { size: 9, color: C.s4 })
+          text(ctx, v, 200 + i * 112, 372, { size: 9, color: C.s6 })
+        })
+        ctx.restore()
+        if (media) drawMedia(ctx, a, { ...MEDIA, y: MEDIA.y + dy })
+      }
+      /** Block wipe: `p` 0→1 covers the frame block by block. */
+      function blocks(ctx, p, color, { cols = 16, rows = 9, seed = 7, diag = false } = {}) {
+        if (p <= 0) return
+        const r = rng(seed), cw = W / cols, ch = H / rows
+        ctx.fillStyle = color
+        for (let j = 0; j < rows; j++)
+          for (let i = 0; i < cols; i++) {
+            let th = r()
+            if (diag) th = ((i / cols + j / rows) / 2) * 0.75 + th * 0.25
+            if (th < p) ctx.fillRect(Math.floor(i * cw), Math.floor(j * ch), Math.ceil(cw) + 1, Math.ceil(ch) + 1)
+          }
+      }
+      const bez = (p, u) => {
+        const v = 1 - u
+        return [0, 1].map((k) => v ** 3 * p[0][k] + 3 * v * v * u * p[1][k] + 3 * v * u * u * p[2][k] + u ** 3 * p[3][k])
+      }
+      function strokeBez(ctx, p, upto) {
+        if (upto <= 0) return
+        ctx.beginPath()
+        for (let s = 0; s <= 60; s++) {
+          const [x, y] = bez(p, (s / 60) * upto)
+          s ? ctx.lineTo(x, y) : ctx.moveTo(x, y)
+        }
+        ctx.stroke()
+      }
+
+      // ---------------------------------------------------------------- directions
+      const DIRECTIONS = [
+        {
+          name: 'The Loop, Broken',
+          idea: 'A dot laps a ring: the recurring regret (“again ×3”). It slows, the ring tightens, snaps open, and unrolls into a straight line. The pattern stops being a circle.',
+          vibe: 'Geometric · precise · Swiss minimal',
+          handoff: 'The line becomes the page’s calm baseline; the hero fades up.',
+          draw(ctx, t) {
+            const cx = 480, cy = 250, L = 520, ly = cy + 40
+            const tighten = ease.inOut(seg(t, 1.9, 3.0)), open = ease.out(seg(t, 3.1, 3.5)), unroll = ease.inOut(seg(t, 3.3, 4.5)), hand = ease.inOut(seg(t, 5.1, 6.3))
+            const R = lerp(120, 64, tighten), gap = lerp(0.02, 0.9, open)
+            const pt = (u) => {
+              const a = gap / 2 + u * (Math.PI * 2 - gap)
+              return [lerp(cx + Math.cos(a) * R, cx + L / 2 - u * L, unroll), lerp(cy + Math.sin(a) * R, ly, unroll)]
+            }
+            ctx.globalAlpha = 1 - hand
+            ctx.lineWidth = 2
+            ctx.strokeStyle = unroll > 0.5 ? C.ink : C.s2
+            ctx.beginPath()
+            for (let k = 0; k <= 180; k++) { const [x, y] = pt(k / 180); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y) }
+            ctx.stroke()
+            const p = seg(t, 0, 3.2), f = (p * (1 - 0.35 * p)) / 0.65, ang = Math.PI * 2 * 3 * f
+            const laps = Math.min(3, Math.floor(3 * f) + 1)
+            const escape = ease.inOut(seg(t, 3.2, 4.5))
+            for (let k = 14; k >= 0; k--) {
+              const a = ang - k * 0.07 * (1 - escape)
+              const x = lerp(cx + Math.cos(a) * R, cx + L / 2 + 16, escape), y = lerp(cy + Math.sin(a) * R, ly, escape)
+              ctx.fillStyle = hexA(C.ink, k ? (1 - k / 15) * 0.25 * (1 - escape) : 1)
+              ctx.beginPath(); ctx.arc(x, y, k ? 5 : 7, 0, Math.PI * 2); ctx.fill()
+            }
+            text(ctx, `again ×${laps}`, cx, cy + 5, { size: 15, color: C.s6, align: 'center', alpha: 1 - open })
+            text(ctx, 'Break the loop.', cx - L / 2, ly - 30, { size: 52, alpha: seg(t, 4.2, 4.9) })
+            ctx.globalAlpha = 1
+            drawPage(ctx, hand, lerp(24, 0, hand))
+          },
+        },
+        {
+          name: 'The Action Gap',
+          idea: '“Knowing” and “doing” pull apart, and the space between them is measured: the action gap. A blue bar fills it, the words slam together, and a pixel wipe cuts to the page.',
+          vibe: 'Kinetic typography · big editorial type',
+          handoff: 'Checkerboard block wipe in ink, uncovering the hero.',
+          draw(ctx, t) {
+            const size = 96, by = 300
+            ctx.font = font(size)
+            const wK = ctx.measureText('Knowing').width, wD = ctx.measureText('doing').width
+            const inK = ease.out(seg(t, 0.1, 0.8)), split = ease.inOut(seg(t, 0.9, 1.7)), widen = ease.inOut(seg(t, 1.9, 2.9)), fill = ease.inOut(seg(t, 3.1, 3.8)), slam = ease.expo(seg(t, 3.9, 4.4))
+            const gap = lerp(lerp(30, W - 80 - wK - wD, widen), 26, slam)
+            const total = wK + gap + wD, x0 = 480 - total / 2
+            if (t < 5.2) {
+              const kx = lerp(480 - wK / 2, x0, split)
+              text(ctx, 'Knowing', kx, by + (1 - inK) * 30, { size, alpha: inK })
+              text(ctx, 'doing', x0 + wK + gap + (1 - split) * 40, by, { size, alpha: split })
+              const gx0 = x0 + wK + 14, gx1 = x0 + wK + gap - 14
+              if (widen > 0 && slam < 1) {
+                ctx.strokeStyle = hexA(C.s4, widen * (1 - fill))
+                ctx.lineWidth = 1
+                ctx.beginPath(); ctx.moveTo(gx0, by + 40); ctx.lineTo(gx1, by + 40); ctx.moveTo(gx0, by + 32); ctx.lineTo(gx0, by + 48); ctx.moveTo(gx1, by + 32); ctx.lineTo(gx1, by + 48); ctx.stroke()
+                text(ctx, 'the action gap', (gx0 + gx1) / 2, by + 68, { size: 14, color: C.s6, align: 'center', alpha: widen * (1 - fill) })
+                text(ctx, 'isn’t', (gx0 + gx1) / 2, by - 30, { size: 30, color: C.s4, align: 'center', alpha: widen * (1 - fill) })
+              }
+              if (fill > 0) {
+                ctx.fillStyle = C.blue
+                const bw = Math.max(10, (gx1 - gx0) * fill)
+                rrect(ctx, gx0, by - 38, bw, 12, 6); ctx.fill()
+              }
+            } else drawPage(ctx)
+            if (t < 5.2) blocks(ctx, ease.in(seg(t, 4.6, 5.2)), C.ink9, { seed: 3 })
+            else blocks(ctx, 1 - seg(t, 5.25, 6.1), C.ink9, { seed: 3 })
+          },
+        },
+        {
+          name: 'Pulse',
+          idea: 'A biometric trace. Stress climbs (bpm up, the line turns jagged), the watch catches the spike (“noticed · 18:42”), then the signal softens into a slow blue breath.',
+          vibe: 'Data-viz · medical calm · live instrument',
+          handoff: 'The trace flattens into a hairline that lifts away as the hero rises.',
+          draw(ctx, t) {
+            const cy = 280
+            const stress = ease.inOut(seg(t, 0.2, 2.3)), calm = ease.inOut(seg(t, 2.9, 4.2)), flat = ease.inOut(seg(t, 4.3, 5.1)), hand = ease.inOut(seg(t, 5.1, 6.3))
+            const amp = lerp(lerp(40, 110, stress), 34, calm) * (1 - flat)
+            const yAt = (x) => {
+              const u = x * 0.04 - t * 8
+              const jag = Math.max(0, Math.sin(u)) ** 24 - Math.max(0, Math.sin(u - 0.35)) ** 40 * 0.45 + stress * 0.18 * Math.sin(u * 5.3 + t * 3) * Math.sin(u * 1.7)
+              return cy - amp * ((1 - calm) * jag + calm * Math.sin(u * 0.3))
+            }
+            const lift = lerp(0, -170, hand)
+            for (const [color, a] of [[C.ink, 1 - calm], [C.blue, calm]]) {
+              if (a <= 0.01) continue
+              const g = ctx.createLinearGradient(40, 0, 920, 0)
+              g.addColorStop(0, hexA(color, 0)); g.addColorStop(0.15, hexA(color, a)); g.addColorStop(0.85, hexA(color, a)); g.addColorStop(1, hexA(color, 0))
+              ctx.strokeStyle = g
+              ctx.lineWidth = lerp(1.6, 2.4, calm)
+              ctx.globalAlpha = 1 - hand
+              ctx.beginPath()
+              for (let x = 40; x <= 920; x += 3) { const y = yAt(x) + lift; x === 40 ? ctx.moveTo(x, y) : ctx.lineTo(x, y) }
+              ctx.stroke()
+            }
+            const cap = seg(t, 2.3, 3.3)
+            if (cap > 0 && cap < 1) {
+              ctx.strokeStyle = hexA(C.blue, 1 - cap); ctx.lineWidth = 2
+              ctx.beginPath(); ctx.arc(700, cy - 60, 8 + cap * 40, 0, Math.PI * 2); ctx.stroke()
+            }
+            text(ctx, 'noticed · 18:42', 700, cy - 120, { size: 13, color: C.blue, align: 'center', alpha: seg(t, 2.4, 2.8) * (1 - seg(t, 3.6, 4.0)) })
+            const bpm = Math.round(lerp(lerp(68, 118, stress), 62, calm))
+            text(ctx, 'HEART RATE', 60, 70, { size: 11, color: C.s4, track: 1, alpha: 1 - hand })
+            text(ctx, String(bpm), 60, 118, { size: 44, color: calm > 0.5 ? C.blue : C.ink, alpha: 1 - hand })
+            text(ctx, 'bpm', 60 + (bpm > 99 ? 76 : 52), 118, { size: 13, color: C.s6, alpha: 1 - hand })
+            ctx.globalAlpha = 1
+            drawPage(ctx, hand, lerp(40, 0, hand))
+          },
+        },
+        {
+          name: 'What If',
+          idea: 'One path reaches a moment and forks: a grey, dashed “what happened” and a blue “what if”. The real outcome fades; the counterfactual thickens into an if-then plan.',
+          vibe: 'Diagrammatic · branching · thinking out loud',
+          handoff: 'The blue branch dissolves as the hero fades in behind it.',
+          draw(ctx, t) {
+            const N = [400, 270]
+            const A = [N, [560, 270], [640, 420], [880, 420]], B = [N, [560, 270], [640, 120], [880, 120]]
+            const hand = ease.inOut(seg(t, 5.0, 6.2)), dim = seg(t, 3.6, 4.4)
+            ctx.globalAlpha = 1 - hand
+            ctx.lineCap = 'round'
+            ctx.strokeStyle = C.ink; ctx.lineWidth = 2
+            const g = ease.inOut(seg(t, 0.2, 1.3))
+            ctx.beginPath(); ctx.moveTo(80, 270); ctx.lineTo(lerp(80, N[0], g), 270); ctx.stroke()
+            ctx.save(); ctx.globalAlpha *= 1 - 0.8 * dim; ctx.setLineDash([6, 7]); ctx.strokeStyle = C.s4
+            strokeBez(ctx, A, ease.inOut(seg(t, 1.6, 2.6))); ctx.restore()
+            ctx.strokeStyle = C.blue; ctx.lineWidth = lerp(2, 4.5, dim)
+            strokeBez(ctx, B, ease.inOut(seg(t, 2.5, 3.5)))
+            const node = seg(t, 1.2, 1.4)
+            if (node > 0) {
+              ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(N[0], N[1], 7 * ease.back(node), 0, Math.PI * 2); ctx.fill()
+              const ring = seg(t, 1.3, 2.1)
+              ctx.strokeStyle = hexA(C.ink, (1 - ring) * 0.6); ctx.lineWidth = 1.5
+              ctx.beginPath(); ctx.arc(N[0], N[1], 7 + ring * 34, 0, Math.PI * 2); ctx.stroke()
+            }
+            text(ctx, 'the moment', N[0], N[1] - 30, { size: 13, color: C.s6, align: 'center', alpha: seg(t, 1.3, 1.7) })
+            text(ctx, 'what happened', 880, 452, { size: 16, color: C.s4, align: 'right', alpha: seg(t, 2.3, 2.7) * (1 - 0.7 * dim) })
+            text(ctx, 'what if', 880, 100, { size: 26, color: C.blue, align: 'right', alpha: seg(t, 3.2, 3.6) })
+            text(ctx, 'if tired at dinner → then pause', 880, 152, { size: 13, color: C.deep, align: 'right', alpha: seg(t, 4.0, 4.6) })
+            ctx.globalAlpha = 1
+            drawPage(ctx, hand, lerp(20, 0, hand))
+          },
+        },
+        {
+          name: 'Rewind',
+          idea: 'A filmstrip of the day plays, stops, then rewinds hard (timecode counting back) to land on the one moment worth replaying, which zooms up to become the product.',
+          vibe: 'Cinematic · editorial · time as material',
+          handoff: 'The chosen frame morphs into the hero’s media card.',
+          draw(ctx, t) {
+            const COLORS = [['#f6d8b8', '#e9a27a'], ['#c6e6f6', '#96bd9f'], ['#2d3a5a', '#e98f5d'], ['#dcd9d6', '#a6a09c'], ['#1b2233', '#53607a'], ['#fbe9d0', '#f1c27d'], ['#cbeffe', '#53bffe'], ['#e7e2f7', '#b9a7f5'], ['#b9d7c2', '#5f8f5a'], ['#f3d1d1', '#c98686'], ['#e9eef8', '#9fb3d9'], ['#fff3c9', '#e8c65a']]
+            const pos = (t) => (t < 1.2 ? 200 * t : t < 1.8 ? 240 + 60 * ease.out(seg(t, 1.2, 1.8)) : 300 - 1476 * ease.inOut(seg(t, 1.9, 4.2)))
+            const p = pos(t), v = (p - pos(t - 0.03)) / 0.03
+            const z = ease.inOut(seg(t, 4.3, 5.4)), hand = ease.inOut(seg(t, 4.8, 5.9))
+            drawPage(ctx, hand, 0, { media: false })
+            const fw = 180, fh = 112, stride = 196, cy = 270
+            const copies = Math.abs(v) > 300 ? 6 : 1
+            for (let c = 0; c < copies; c++) {
+              const off = c * v * 0.004
+              ctx.globalAlpha = (copies > 1 ? 0.28 : 1) * (1 - z)
+              const iMin = Math.floor((p - 600) / stride) - 1, iMax = Math.ceil((p + 600) / stride) + 1
+              for (let i = iMin; i <= iMax; i++) {
+                const x = 480 + i * stride - p - off
+                if (i === -6 && z > 0) continue
+                const [a, b] = COLORS[((i % 12) + 12) % 12]
+                const g = ctx.createLinearGradient(0, cy - fh / 2, 0, cy + fh / 2); g.addColorStop(0, a); g.addColorStop(1, b)
+                ctx.fillStyle = g; rrect(ctx, x - fw / 2, cy - fh / 2, fw, fh, 8); ctx.fill()
+              }
+            }
+            ctx.globalAlpha = 1
+            if (z > 0) {
+              const m = { x: lerp(480 - fw / 2, MEDIA.x, z), y: lerp(cy - fh / 2, MEDIA.y, z), w: lerp(fw, MEDIA.w, z), h: lerp(fh, MEDIA.h, z) }
+              const [a, b] = COLORS[6]
+              const g = ctx.createLinearGradient(0, m.y, 0, m.y + m.h); g.addColorStop(0, a); g.addColorStop(1, b)
+              ctx.fillStyle = g; rrect(ctx, m.x, m.y, m.w, m.h, lerp(8, 14, z)); ctx.fill()
+              drawMedia(ctx, seg(t, 4.9, 5.6), m)
+            }
+            ctx.globalAlpha = 1 - z
+            ctx.fillStyle = C.blue; ctx.fillRect(479, cy - 90, 2, 180)
+            const secs = 18 * 3600 + 42 * 60 + Math.round(p * 1.4), hh = Math.floor(secs / 3600), mm = Math.floor((secs % 3600) / 60), ss = secs % 60
+            const rew = v < -50
+            text(ctx, `${hh}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`, 480, 150, { size: 26, weight: 500, align: 'center', color: rew ? C.blue : C.ink })
+            text(ctx, rew ? '◀◀  REWIND' : t > 4 ? 'THIS MOMENT' : '▶  PLAY', 480, 124, { size: 11, color: rew ? C.blue : C.s4, align: 'center', track: 1.5 })
+            ctx.globalAlpha = 1
+          },
+        },
+        {
+          name: 'Breathe',
+          idea: 'A soft, gooey orb breathes in and out: the calm the product aims for, and the pause an if-then plan creates. On the last exhale it shrinks to a seed that grows into the product.',
+          vibe: 'Organic · ambient · wellness',
+          handoff: 'The seed stretches into the hero’s media card; the text fades in around it.',
+          draw(ctx, t) {
+            const cx = 480, cy = 250
+            const b = (1 - Math.cos((2 * Math.PI * Math.min(t, 4.8)) / 2.4)) / 2
+            const R = lerp(70 + 60 * b, 10, ease.inOut(seg(t, 4.8, 5.4)))
+            const m = ease.inOut(seg(t, 5.4, 6.4))
+            if (m < 1) {
+              ctx.save(); ctx.globalAlpha = 1 - m
+              for (const [dx, dy, k, col] of [[-R * 0.25, R * 0.1, 0.8, C.cyan], [0, 0, 1, C.blue]]) {
+                ctx.beginPath()
+                for (let s = 0; s <= 90; s++) {
+                  const a = (s / 90) * Math.PI * 2
+                  const r = R * k * (1 + 0.06 * Math.sin(3 * a + t * 1.7) + 0.04 * Math.sin(5 * a - t * 1.3))
+                  const x = cx + dx + Math.cos(a) * r, y = cy + dy + Math.sin(a) * r
+                  s ? ctx.lineTo(x, y) : ctx.moveTo(x, y)
+                }
+                const g = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R * 1.1)
+                g.addColorStop(0, C.mist); g.addColorStop(0.45, C.sky); g.addColorStop(1, hexA(col, 0.85))
+                ctx.fillStyle = g; ctx.shadowColor = hexA(C.blue, 0.35); ctx.shadowBlur = 60; ctx.fill()
+              }
+              ctx.restore()
+              const rising = Math.sin((2 * Math.PI * t) / 2.4) > 0
+              const lab = Math.abs(Math.sin((2 * Math.PI * t) / 2.4))
+              text(ctx, rising ? 'breathe in' : 'breathe out', cx, cy + 190, { size: 16, color: C.s6, align: 'center', alpha: t < 4.8 ? 0.35 + 0.65 * lab : 1 - seg(t, 4.8, 5.2) })
+            }
+            if (t > 5.3) {
+              const r = { x: lerp(cx - 10, MEDIA.x, m), y: lerp(cy - 10, MEDIA.y, m), w: lerp(20, MEDIA.w, m), h: lerp(20, MEDIA.h, m) }
+              ctx.fillStyle = C.blue; rrect(ctx, r.x, r.y, r.w, r.h, lerp(10, 14, m)); ctx.fill()
+              drawMedia(ctx, m, r)
+            }
+            drawPage(ctx, seg(t, 5.9, 6.7), 0, { media: false })
+          },
+        },
+        {
+          name: 'Into the Moment',
+          idea: 'A continuous zoom through concentric rings, like a watch face: trigger → feeling → thought → reaction. At the core is the moment itself, in blue, which floods the frame.',
+          vibe: 'Depth · hypnotic · z-axis travel',
+          handoff: 'The blue flood thins away to reveal the hero.',
+          draw(ctx, t) {
+            const cx = 480, cy = 270, z = t * 1.05
+            const WORDS = ['trigger', 'feeling', 'thought', 'reaction', 'regret', 'pattern', 'choice', 'moment']
+            for (let i = 0; i < 22; i++) {
+              const r = 16 * 1.85 ** (z - i)
+              if (r < 2 || r > 1400) continue
+              const a = clamp((r - 20) / 50) * clamp((900 - r) / 400) * (1 - seg(t, 4.5, 5.2))
+              ctx.strokeStyle = hexA(C.ink, 0.75 * a); ctx.lineWidth = 1.2
+              ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke()
+              if (i % 2 === 0) {
+                ctx.strokeStyle = hexA(C.ink, 0.35 * a); ctx.beginPath()
+                for (let k = 0; k < 60; k++) { const an = (k / 60) * Math.PI * 2, l = r * (k % 5 ? 0.025 : 0.05); ctx.moveTo(cx + Math.cos(an) * r, cy + Math.sin(an) * r); ctx.lineTo(cx + Math.cos(an) * (r - l), cy + Math.sin(an) * (r - l)) }
+                ctx.stroke()
+              }
+              text(ctx, WORDS[i % WORDS.length], cx, cy - r - 8, { size: clamp(r * 0.07, 9, 26), color: C.s6, align: 'center', alpha: a })
+            }
+            if (t > 4.9) drawPage(ctx)
+            if (t > 3.6) {
+              const rc = 4 * Math.exp(3.4 * (t - 3.6))
+              ctx.fillStyle = hexA(C.blue, 1 - seg(t, 5.3, 6.2))
+              ctx.beginPath(); ctx.arc(cx, cy, rc, 0, Math.PI * 2); ctx.fill()
+              text(ctx, 'the moment', cx, cy + 8, { size: 30, color: '#fff', align: 'center', alpha: seg(t, 3.9, 4.4) * (1 - seg(t, 4.9, 5.3)) })
+            }
+          },
+        },
+        {
+          name: 'Noise → Signal',
+          idea: 'A field of flickering pixels (the noise of a hard moment) settles cell by cell into one clear word. Reflection turns chaos into something readable, then a block wipe hands over.',
+          vibe: 'Generative · pixel/dither · echoes the site’s dither bands',
+          handoff: 'Diagonal blue block wipe onto the hero.',
+          draw(ctx, t) {
+            const cols = 48, rows = 27, cell = 20
+            if (!this.mask) {
+              const o = document.createElement('canvas'); o.width = cols; o.height = rows
+              const c = o.getContext('2d'); c.font = font(12, 500); c.textAlign = 'center'; c.fillStyle = '#000'; c.fillText('momo', cols / 2, 18)
+              const d = c.getImageData(0, 0, cols, rows).data
+              this.mask = Array.from({ length: cols * rows }, (_, k) => d[k * 4 + 3] > 90)
+            }
+            if (t < 5.3) {
+              for (let j = 0; j < rows; j++)
+                for (let i = 0; i < cols; i++) {
+                  const at = 1.1 + hash(i, j, 1) * 1.8 + (i / cols) * 0.6
+                  const target = this.mask[j * cols + i]
+                  let on, size = 16
+                  if (t < at) on = hash(i, j, Math.floor(t * 10)) < 0.42
+                  else { on = target; if (target) size = 16 * ease.back(seg(t, at, at + 0.25)) }
+                  if (!on) continue
+                  ctx.fillStyle = target && t > 3.6 + (i / cols) * 0.8 ? C.blue : C.ink
+                  const o = (cell - size) / 2
+                  ctx.fillRect(i * cell + o, j * cell + o, size, size)
+                }
+              blocks(ctx, seg(t, 4.7, 5.3), C.blue, { cols: 24, rows: 14, seed: 5, diag: true })
+            } else {
+              drawPage(ctx)
+              blocks(ctx, 1 - seg(t, 5.35, 6.2), C.blue, { cols: 24, rows: 14, seed: 5, diag: true })
+            }
+          },
+        },
+        {
+          name: 'Say It Out Loud',
+          idea: 'A voice waveform: someone journaling out loud. Fragments float up (“I snapped again”, “so tired”), then the product gathers them into one sentence: an if-then plan.',
+          vibe: 'Conversational · voice UI · warm',
+          handoff: 'The plan and its underline drift up and away; the hero fades in.',
+          draw(ctx, t) {
+            const cy = 330, hand = ease.inOut(seg(t, 5.1, 6.2))
+            const speak = seg(t, 0.2, 0.5) * (1 - seg(t, 2.9, 3.4))
+            const flat = ease.inOut(seg(t, 3.0, 3.8))
+            ctx.globalAlpha = 1 - hand
+            for (let i = 0; i < 64; i++) {
+              const x = 192 + i * 9, env = Math.sin((i / 63) * Math.PI) ** 1.3
+              const a = speak * env * (0.25 + 0.75 * Math.abs(Math.sin(i * 0.37 + t * 9)) * Math.abs(Math.sin(i * 0.11 - t * 5.3))) * (0.6 + 0.4 * Math.sin(t * 14) * Math.sin(t * 3.1))
+              const h = Math.max(2, a * 110)
+              ctx.fillStyle = flat > 0.5 ? C.blue : C.ink
+              rrect(ctx, x, cy - h / 2, 5, h, 2.5); ctx.fill()
+            }
+            const lineW = 576 * flat
+            if (flat > 0) { ctx.fillStyle = C.blue; ctx.fillRect(480 - lineW / 2, cy - 1, lineW, 2) }
+            const CHIPS = [['I snapped again', 300, 150], ['at dinner', 520, 118], ['so tired', 670, 176], ['every time', 410, 92], ['why do I…', 236, 212]]
+            const conv = ease.inOut(seg(t, 3.2, 4.0))
+            CHIPS.forEach(([w, x, y], k) => {
+              const s = seg(t, 0.5 + k * 0.5, 1.1 + k * 0.5)
+              if (s <= 0) return
+              const px = lerp(x, 480, conv), py = lerp(lerp(cy - 40, y, ease.out(s)), 210, conv)
+              ctx.font = font(13); const tw = ctx.measureText(w).width + 24
+              ctx.save(); ctx.globalAlpha *= s * (1 - conv)
+              rrect(ctx, px - tw / 2, py - 15, tw, 30, 15); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = C.s2; ctx.lineWidth = 1; ctx.stroke()
+              ctx.restore()
+              text(ctx, w, px, py + 5, { size: 13, color: C.s6, align: 'center', alpha: s * (1 - conv) })
+            })
+            const plan = 'If I’m tired at dinner → then I pause and breathe.'
+            const n = Math.floor(plan.length * seg(t, 3.7, 4.8))
+            text(ctx, plan.slice(0, n), 480, 222 - hand * 60, { size: 26, align: 'center' })
+            ctx.globalAlpha = 1
+            drawPage(ctx, hand, lerp(24, 0, hand))
+          },
+        },
+        {
+          name: 'Ripple',
+          idea: 'A single point, like a wrist, sends out quiet sensing ripples. When stress rises (“HR 104 ↑”) one ripple turns blue and keeps going, and inside it everything changes.',
+          vibe: 'Minimal · radial · sensor-driven',
+          handoff: 'Circular reveal: the hero is already inside the blue ripple.',
+          draw(ctx, t) {
+            const cx = 480, cy = 300
+            const big = ease.expo(seg(t, 3.0, 4.8)) * 1150
+            for (let k = 0; k < 5; k++) {
+              const t0 = 0.3 + k * 0.6, r = (t - t0) * 210
+              if (r <= 0 || r > 460) continue
+              ctx.strokeStyle = hexA(k === 4 ? C.blue : C.ink, (1 - r / 460) * 0.8); ctx.lineWidth = 1.3
+              ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke()
+            }
+            const pulse = 1 + 0.25 * Math.sin(t * 8) * (1 - seg(t, 3, 3.4))
+            ctx.fillStyle = seg(t, 2.4, 2.8) > 0.5 ? C.blue : C.ink
+            ctx.beginPath(); ctx.arc(cx, cy, 6 * pulse, 0, Math.PI * 2); ctx.fill()
+            text(ctx, 'HR 104 ↑', cx + 18, cy - 14, { size: 13, color: C.blue, alpha: seg(t, 2.4, 2.8) * (1 - seg(t, 3.2, 3.6)) })
+            if (big > 0) {
+              ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, big, 0, Math.PI * 2); ctx.clip()
+              ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H)
+              drawPage(ctx, seg(t, 3.4, 4.6))
+              ctx.restore()
+              ctx.strokeStyle = C.blue; ctx.lineWidth = lerp(6, 0, seg(t, 4.2, 5.2))
+              ctx.beginPath(); ctx.arc(cx, cy, big, 0, Math.PI * 2); ctx.stroke()
+            }
+          },
+        },
+      ]
+
+      // ---------------------------------------------------------------- runtime
+      let speed = 1
+      const tiles = []
+      const grid = document.getElementById('grid')
+      DIRECTIONS.forEach((d, i) => {
+        const fig = document.createElement('figure')
+        fig.innerHTML = `<div class="frame"><canvas width="${W}" height="${H}"></canvas><div class="bar"><i></i></div></div>
+          <div class="scrub"></div>
+          <figcaption><div class="name"><span class="num">${String(i + 1).padStart(2, '0')}</span>${d.name}</div>
+          <div class="idea">${d.idea}</div><div class="meta">${d.vibe} · Handoff: ${d.handoff}</div></figcaption>`
+        grid.append(fig)
+        const canvas = fig.querySelector('canvas')
+        const tile = { d, i, ctx: canvas.getContext('2d'), bar: fig.querySelector('.bar i'), start: performance.now(), visible: true, scale: 1, paused: null }
+        tile.ui = scrubber(fig.querySelector('.scrub'), tile)
+        tiles.push(tile)
+        fig.querySelector('.frame').addEventListener('click', () => openFocus(i))
+        new IntersectionObserver(([e]) => (tile.visible = e.isIntersecting)).observe(canvas)
+      })
+
+      /** Play/pause + time slider for a tile. `tile.paused` holds the frozen time (s) or null while playing. */
+      function scrubber(host, tile) {
+        host.innerHTML = `<button type="button" aria-label="Pause">❚❚</button><input type="range" min="0" max="${DUR}" step="0.01" value="0" aria-label="Time"><output>0.00s</output>`
+        const [btn, range, out] = host.children
+        const setPaused = (at) => {
+          if (at === null) tile.start = performance.now() - ((tile.paused ?? 0) / speed) * 1000
+          tile.paused = at
+          btn.textContent = at === null ? '❚❚' : '▶'
+          btn.setAttribute('aria-label', at === null ? 'Pause' : 'Play')
+        }
+        btn.addEventListener('click', (e) => { e.stopPropagation(); setPaused(tile.paused === null ? localT(tile, performance.now()) : null) })
+        range.addEventListener('input', () => setPaused(Number(range.value)))
+        return {
+          setPaused,
+          sync(t) { if (document.activeElement !== range) range.value = String(t); out.textContent = `${t.toFixed(2)}s` },
+        }
+      }
+
+      function render(ctx, d, t, scale = 1) {
+        ctx.setTransform(scale, 0, 0, scale, 0, 0)
+        ctx.globalAlpha = 1
+        ctx.fillStyle = C.paper
+        ctx.fillRect(0, 0, W, H)
+        ctx.save()
+        d.draw(ctx, t)
+        ctx.restore()
+      }
+      const localT = (tile, now) => (tile.paused !== null && tile.paused !== undefined ? tile.paused : Math.min(DUR, (((now - tile.start) / 1000) * speed) % (DUR + HOLD)))
+
+      const focus = document.getElementById('focus'), fctx = document.getElementById('focusCanvas').getContext('2d')
+      const focusTile = { start: 0, i: 0, paused: null }
+      focusTile.ui = scrubber(document.getElementById('focusScrub'), focusTile)
+      document.getElementById('focusScrub').addEventListener('click', (e) => e.stopPropagation())
+      function openFocus(i) {
+        focusTile.i = (i + DIRECTIONS.length) % DIRECTIONS.length
+        focusTile.start = performance.now()
+        focusTile.ui.setPaused(null)
+        const d = DIRECTIONS[focusTile.i]
+        document.getElementById('focusCap').innerHTML = `<b>${String(focusTile.i + 1).padStart(2, '0')} · ${d.name}</b> — ${d.idea}<br><span style="color:#a6a09c">${d.vibe} · Handoff: ${d.handoff}</span>`
+        focus.dataset.open = ''
+      }
+      focus.addEventListener('click', () => { focusTile.paused = null; focusTile.ui.setPaused(null); focusTile.start = performance.now() })
+      addEventListener('keydown', (e) => {
+        if (!('open' in focus.dataset)) return
+        if (e.key === 'Escape') delete focus.dataset.open
+        if (e.key === 'ArrowRight') openFocus(focusTile.i + 1)
+        if (e.key === 'ArrowLeft') openFocus(focusTile.i - 1)
+        if (e.key === ' ') { e.preventDefault(); focusTile.ui.setPaused(focusTile.paused === null ? localT(focusTile, performance.now()) : null) }
+        if (e.key === ',' || e.key === '.') focusTile.ui.setPaused(clamp(localT(focusTile, performance.now()) + (e.key === '.' ? 0.1 : -0.1), 0, DUR))
+      })
+      document.querySelectorAll('[data-speed]').forEach((b) =>
+        b.addEventListener('click', () => {
+          speed = Number(b.dataset.speed)
+          document.querySelectorAll('[data-speed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+        }),
+      )
+      document.getElementById('replay').addEventListener('click', () => tiles.forEach((t) => { t.paused = null; t.ui.setPaused(null); t.start = performance.now() }))
+
+      // Debug hook for headless review: render direction `i` at time `t` into a data URL.
+      window.renderAt = (i, t) => {
+        const c = document.createElement('canvas'); c.width = W; c.height = H
+        render(c.getContext('2d'), DIRECTIONS[i], t)
+        return c.toDataURL('image/png')
+      }
+      // Same hook over the DOM, for tools that evaluate in an isolated world.
+      addEventListener('studio:render', (e) => {
+        document.body.dataset.render = window.renderAt(e.detail.i, e.detail.t)
+      })
+
+      await document.fonts.load(font(20)); await document.fonts.load(font(20, 500))
+      const frame = (now) => {
+        if ('open' in focus.dataset) { const t = localT(focusTile, now); render(fctx, DIRECTIONS[focusTile.i], t, 2); focusTile.ui.sync(t) }
+        else
+          for (const tile of tiles) {
+            if (!tile.visible) continue
+            const t = localT(tile, now)
+            render(tile.ctx, tile.d, t)
+            tile.bar.style.transform = `scaleX(${t / DUR})`
+            tile.ui.sync(t)
+          }
+        requestAnimationFrame(frame)
+      }
+      requestAnimationFrame(frame)
+      window.studioReady = true
+      document.body.dataset.ready = ''
+    </script>
+  </body>
+</html>

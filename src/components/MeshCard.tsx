@@ -1,5 +1,5 @@
 /**
- * Paper "MeshGradient" fill for a case-study card (Unwind).
+ * Paper "MeshGradient" fill for a case-study card (Momo).
  *
  * Same ShaderMount pattern as DitherBand: one WebGL canvas that pauses when the
  * card is offscreen or the tab is hidden. The card's flat background colour
@@ -48,7 +48,7 @@ export function spawnMesh(card: Element, host: HTMLElement) {
 }
 
 export function MeshCard() {
-  const t = useTuning('Unwind shader', CONFIG)
+  const t = useTuning('Momo shader', CONFIG)
   const hostRef = useRef<HTMLDivElement>(null)
   const mountRef = useRef<ShaderMount | null>(null)
 

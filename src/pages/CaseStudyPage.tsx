@@ -4,37 +4,41 @@ import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
 import { BackLink, Nav } from '../components/Nav'
 import type { Work } from '../data/works'
-import { UnwindIntro } from '../features/unwindIntro/UnwindIntro'
-import { MomoWelcome } from '../features/unwindIntro/MomoWelcome'
+import { MOMO_BRAID_LAYOUT_EVENT, MomoIntro } from '../features/momoIntro/MomoIntro'
+import { MomoWelcome } from '../features/momoIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
+import { ArxivPaper } from '../features/arxivPaper/ArxivPaper'
+import { MomoSystemFigure } from '../features/momoSystem/MomoSystemFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
 import type { DialConfig } from 'dialkit'
-import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, UNWIND_CONFIG, type ProtoVideo } from './caseStudyContent'
+import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, MOMO_CONFIG, type ProtoVideo, type SectionSpacing, type TextReveal } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import { PersonaSection, type Persona } from './casePersona'
 import { EvidenceSection, MediaPlaceholder, PrinciplesSection, ReframeSection } from './filoSections'
+import { FiloOpportunityArt, FiloProblemArt, FiloSolutionArt } from './filoStoryArt'
+import { DeviceInsights } from './DeviceInsights'
 import './CaseStudyPage.css'
 
-type Id = Extract<Work['id'], 'unwind' | 'filo'>
+type Id = Extract<Work['id'], 'momo' | 'filo'>
 type Props = { id: Id }
 
 const PANELS = {
-  unwind: { name: 'Unwind case study', config: UNWIND_CONFIG },
+  momo: { name: 'Momo case study', config: MOMO_CONFIG },
   filo: { name: 'Filo case study', config: FILO_CONFIG },
 } as const
 
-type Media = { video: string; placeholder?: string; figure: string; layout: string; size: number; gap: number; x: number; y: number; radius: number }
-type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; harvardScale: number }
+type Media = { video: string; placeholder?: string; figure: string; layout: string; size: number; x: number; y: number; radius: number }
+type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; hoverColor: string; hoverOpacity: number; harvardScale: number }
 
 const LOGOS = [
-  { src: '/work/unwind/logos/media-lab.svg', alt: 'MIT Media Lab', harvard: false },
-  { src: '/work/unwind/logos/fluid-interfaces.svg', alt: 'Fluid Interfaces', harvard: false },
-  { src: '/work/unwind/logos/multisensory-intelligence.svg', alt: 'Multisensory Intelligence', harvard: false },
-  { src: '/work/unwind/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', harvard: true },
+  { src: '/work/momo/logos/media-lab.svg', alt: 'MIT Media Lab', href: 'https://www.media.mit.edu/', harvard: false },
+  { src: '/work/momo/logos/fluid-interfaces.svg', alt: 'Fluid Interfaces', href: 'https://www.media.mit.edu/groups/fluid-interfaces/overview/', harvard: false },
+  { src: '/work/momo/logos/multisensory-intelligence.svg', alt: 'Multisensory Intelligence', href: 'https://www.media.mit.edu/groups/multisensory-intelligence/overview/', harvard: false },
+  { src: '/work/momo/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', href: 'https://hms.harvard.edu/', harvard: true },
 ]
 
-/** Live watch-notification prototype (built from reself-voice-prototypes into public/work/unwind/notification). */
+/** Live watch-notification prototype (built from reself-voice-prototypes into public/work/momo/notification). */
 function NotificationDemo({ media }: { media: Media }) {
   // Same origin: hide the prototype's own DialKit panel and pull the explainer rail in so it fits beside the watch.
   const hidePanel = (e: SyntheticEvent<HTMLIFrameElement>) => {
@@ -47,8 +51,8 @@ function NotificationDemo({ media }: { media: Media }) {
   return (
     <iframe
       className="case__notification"
-      src="/work/unwind/notification/notification.html"
-      title="Unwind watch notification prototype"
+      src="/work/momo/notification/notification.html"
+      title="Momo watch notification prototype"
       loading="lazy"
       onLoad={hidePanel}
       style={{ '--media-h': `${media.size}svh`, '--media-x': `${media.x}%`, '--media-y': `${media.y}%`, '--media-radius': `${media.radius}px` } as CSSProperties}
@@ -62,15 +66,24 @@ function LogoRow({ l }: { l: Logos }) {
     <div
       className="case__logos"
       data-placement={l.placement}
-      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, opacity: l.opacity } as CSSProperties}
+      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, '--logo-hover-color': l.hoverColor, '--logo-hover-opacity': l.hoverOpacity, opacity: l.opacity } as CSSProperties}
     >
       {LOGOS.map((logo) => (
-        <img key={logo.src} src={logo.src} alt={logo.alt} style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
+        <a
+          key={logo.src}
+          href={logo.href}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Visit ${logo.alt} website (opens in a new tab)`}
+          style={{ '--logo-mask': `url("${logo.src}")` } as CSSProperties}
+        >
+          <img src={logo.src} alt="" style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
+        </a>
       ))}
     </div>
   )
 }
-type Section = { eyebrow: string; title: string; body: string; media: Media }
+type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; media: Media; textReveal?: TextReveal }
 type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
 
 /**
@@ -83,7 +96,7 @@ const SCREEN_LAST: WristFrame['screen'] = [[956, 379], [1073, 360], [1111, 530],
 const WRIST_FRAMES: WristFrame[] = Array.from({ length: WRIST_COUNT }, (_, k) => {
   const t = k / (WRIST_COUNT - 1)
   return {
-    src: `/work/unwind/watch/sequence/frame-${String(k + 1).padStart(4, '0')}.webp`,
+    src: `/work/momo/watch/sequence/frame-${String(k + 1).padStart(4, '0')}.webp`,
     width: 1980,
     height: 1044,
     screen: SCREEN_FIRST.map((p, i) => [p[0] + (SCREEN_LAST[i][0] - p[0]) * t, p[1] + (SCREEN_LAST[i][1] - p[1]) * t]) as WristFrame['screen'],
@@ -103,7 +116,7 @@ type OrderDials = Arrangement & { section: string; swapWith: string; structure?:
 /**
  * Alternative page structures. Each keeps its own order / max / keep (a `recruiter` subfolder), so
  * switching `structure` back to `current` restores the current page untouched. The copy for the
- * alternative lives in the Unwind panel's `recruiter` folder (RECRUITER_COPY) and overrides
+ * alternative lives in the Momo panel's `recruiter` folder (RECRUITER_COPY) and overrides
  * the section copy only while that structure is active.
  */
 const RECRUITER_ORDER = 'story, overview, persona, howItWorks, moment, notification, dynamic, flows, guided, tracking, context, system, outcomes'
@@ -160,7 +173,7 @@ const ORDER_CONFIGS = Object.fromEntries(
       k,
       {
         /** Which page structure to show; the move/swap/reset actions edit the active one. */
-        ...(k === 'unwind' ? { structure: { type: 'select' as const, options: STRUCTURE_OPTIONS, default: 'current' } } : {}),
+        ...(k === 'momo' ? { structure: { type: 'select' as const, options: STRUCTURE_OPTIONS, default: 'current' } } : {}),
         section: { type: 'select' as const, options, default: keys[0] },
         up: { type: 'action' as const, label: 'Move up' },
         down: { type: 'action' as const, label: 'Move down' },
@@ -169,9 +182,9 @@ const ORDER_CONFIGS = Object.fromEntries(
         swapWith: { type: 'select' as const, options, default: keys[1] ?? keys[0] },
         swap: { type: 'action' as const, label: 'Swap' },
         reset: { type: 'action' as const, label: 'Reset order' },
-        // Unwind caps at 8 screens; Filo shows every section.
-        ...arrangement(keys.join(', '), k === 'unwind' ? MAX_SECTIONS : keys.length),
-        ...(k === 'unwind' ? { recruiter: { ...arrangement(RECRUITER_ORDER, keys.length), _collapsed: true } } : {}),
+        // Momo caps at 8 screens; Filo shows every section.
+        ...arrangement(keys.join(', '), k === 'momo' ? MAX_SECTIONS : keys.length),
+        ...(k === 'momo' ? { recruiter: { ...arrangement(RECRUITER_ORDER, keys.length), _collapsed: true } } : {}),
       },
     ]
   }),
@@ -232,8 +245,8 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
       ref={ref}
       key={name}
       className="case__media"
-      src={`/work/unwind/${dims.dir}/${name}.mp4`}
-      poster={`/work/unwind/${dims.dir}/${name}.webp`}
+      src={`/work/momo/${dims.dir}/${name}.mp4`}
+      poster={`/work/momo/${dims.dir}/${name}.webp`}
       muted
       loop
       playsInline
@@ -253,7 +266,7 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
 }
 
 /**
- * Case-study page (Unwind, Filo): Apple-style storytelling. Each section is
+ * Case-study page (Momo, Filo): Apple-style storytelling. Each section is
  * one full-screen mandatory snap stop pairing a few lines of copy with a
  * prototype recording. A sticky sidebar lists the sections (their eyebrows) and
  * tracks the one in view. All copy is editable on the page in dev.
@@ -261,11 +274,22 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
 export function CaseStudyPage({ id }: Props) {
   const panel = PANELS[id]
   const { values, setValue } = useTuningController(panel.name, panel.config)
-  const base = values as unknown as Record<string, Section> & { page: { snap: string; showSidebar: boolean; contentWidth: number; textWidth: number }; hero: Hero }
+  const base = values as unknown as Record<string, Section> & {
+    page: {
+      snap: string
+      showSidebar: boolean
+      showSections: boolean
+      textSize: 'compact' | 'balanced' | 'display'
+      sectionReveal: 'float up' | 'drift in' | 'float from sides' | 'soft bloom' | 'still'
+      contentWidth: number
+      textWidth: number
+    }
+    hero: Hero
+  }
   const page = base.page
   const hero = base.hero
-  // True while the Unwind voice story plays on the stage above the hero.
-  const [intro, setIntro] = useState(id === 'unwind')
+  // True while the Momo voice story plays on the stage above the hero.
+  const [intro, setIntro] = useState(id === 'momo')
   const allKeys = SECTION_KEYS[id]
   const orderPanel = useTuningController(`${panel.name} · order`, ORDER_CONFIGS[id], {
     onAction: (action) => {
@@ -295,10 +319,10 @@ export function CaseStudyPage({ id }: Props) {
     },
   })
   const od = orderPanel.values as unknown as OrderDials
-  const recruiter = id === 'unwind' && od.structure === 'recruiter'
+  const recruiter = id === 'momo' && od.structure === 'recruiter'
   const arrangement: Arrangement = recruiter && od.recruiter ? od.recruiter : od
   const groups = resolveGroups(parseOrder(arrangement.order, allKeys), arrangement.keep, arrangement.max ?? MAX_SECTIONS, SECTION_LABELS[id])
-  // Recruiter structure: its copy (Unwind panel › recruiter) overrides the section copy, and on-page edits save there.
+  // Recruiter structure: its copy (Momo panel › recruiter) overrides the section copy, and on-page edits save there.
   const all = (recruiter ? mergeCopy(base, (base as unknown as { recruiter: object }).recruiter) : base) as typeof base
   const keys = groups.map((g) => g[0])
   const orderSig = groups.map((g) => g.join('+')).join(',')
@@ -312,10 +336,15 @@ export function CaseStudyPage({ id }: Props) {
   }, [orderSig])
   const heroSpacing = (
     all as unknown as {
-      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; y: { braid: number; title: number; meta: number; logos: number } }
+      heroSpacing?: { logosToTitle: number; titleToMeta: number; metaToPhone: number; y: { braid: number; title: number; meta: number; logos: number; phone: number } }
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
+  // The intro draws the braid on a fixed canvas and caches the slot coordinates.
+  // A translated slot does not trigger ResizeObserver, so tell it to remeasure after this dial moves.
+  useLayoutEffect(() => {
+    if (id === 'momo') window.dispatchEvent(new Event(MOMO_BRAID_LAYOUT_EVENT))
+  }, [id, heroSpacing?.y.braid])
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
   useLayoutEffect(() => {
@@ -345,12 +374,37 @@ export function CaseStudyPage({ id }: Props) {
       },
       { rootMargin: '-50% 0px -50% 0px' },
     )
-    sections.forEach((s) => observer.observe(s))
+    // Reveal: play once 18% of a section (or half the screen, for very tall ones) is in view. Once a
+    // section is fully off screen, rebuild its reveal paused on frame one ('armed'), so a return
+    // never shows the settled section before it replays. Reduced motion never arms (CSS shows it still).
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const el = entry.target as HTMLElement
+          const state = el.dataset.revealLive
+          const shown = entry.intersectionRatio >= 0.18 || entry.intersectionRect.height >= (entry.rootBounds?.height ?? Infinity) / 2
+          // First report for a section already partly on screen: play now rather than hide it.
+          if (state !== 'true' && (shown || (state === undefined && entry.isIntersecting))) el.dataset.revealLive = 'true'
+          else if (!entry.isIntersecting && !reduce && state !== 'armed') {
+            delete el.dataset.revealLive
+            void el.offsetWidth
+            el.dataset.revealLive = 'armed'
+          }
+        }
+      },
+      { threshold: [0, 0.05, 0.1, 0.18] },
+    )
+    sections.forEach((s) => {
+      observer.observe(s)
+      revealObserver.observe(s)
+    })
     const dark = main.querySelector('.case__dark')
     const darkObserver = new IntersectionObserver(([entry]) => setOnDark(entry.isIntersecting), { rootMargin: '0px 0px -60% 0px' })
     if (dark) darkObserver.observe(dark)
     return () => {
       observer.disconnect()
+      revealObserver.disconnect()
       darkObserver.disconnect()
     }
   }, [orderSig])
@@ -386,7 +440,16 @@ export function CaseStudyPage({ id }: Props) {
 
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
-    if (key === 'story') return <StoryRow key={key} s={s as unknown as Story} edit={edit} />
+    if (id === 'momo' && key === 'dynamic') return <DeviceInsights key={key} copy={s} edit={edit} />
+    if (key === 'story')
+      return (
+        <StoryRow
+          key={key}
+          s={s as unknown as Story}
+          edit={edit}
+          arts={id === 'filo' ? [<FiloProblemArt key="p" />, <FiloOpportunityArt key="o" />, <FiloSolutionArt key="s" />] : undefined}
+        />
+      )
     if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} />
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} />
@@ -395,7 +458,7 @@ export function CaseStudyPage({ id }: Props) {
     if (id === 'filo' && key === 'reframe') return <ReframeSection key={key} f={fields} edit={edit} />
     if (id === 'filo' && key === 'principles') return <PrinciplesSection key={key} f={fields} edit={edit} />
     const hasDemo = s.media.figure === 'notification'
-    const hasFigure = ['flow', 'system', 'vision', 'signals'].includes(s.media.figure)
+    const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper'].includes(s.media.figure)
     const hasPlaceholder = !hasFigure && !hasDemo && s.media.video === 'placeholder'
     const hasVideo = !hasFigure && !hasDemo && !hasPlaceholder && s.media.video !== 'none'
     return (
@@ -404,17 +467,28 @@ export function CaseStudyPage({ id }: Props) {
         className={`case__section${isHero ? ' case__section--hero' : ''}`}
         data-section={key}
         data-layout={hasVideo || hasPlaceholder || hasFigure || hasDemo ? s.media.layout : 'text'}
+        data-copy-align={s.align}
+        data-text-reveal={s.textReveal?.preset}
         style={
           {
-            '--media-gap': `${s.media.gap}px`,
+            '--section-pad-top': `${s.spacing.top}px`,
+            '--section-pad-bottom': `${s.spacing.bottom}px`,
+            '--section-content-gap': `${s.spacing.contentGap}px`,
+            ...(s.textReveal
+              ? {
+                  '--text-reveal-duration': `${s.textReveal.duration}s`,
+                  '--text-reveal-stagger': `${s.textReveal.stagger}s`,
+                }
+              : {}),
             ...(isHero && heroSpacing
               ? {
                   '--hero-logos-gap': `${heroSpacing.logosToTitle}px`,
                   '--hero-meta-gap': `${heroSpacing.titleToMeta}px`,
-                  '--media-gap': `${heroSpacing.metaToPhone}px`,
+                  '--section-content-gap': `${heroSpacing.metaToPhone}px`,
                   '--hero-braid-y': `${heroSpacing.y.braid}px`,
                   '--hero-title-y': `${heroSpacing.y.title}px`,
                   '--hero-meta-y': `${heroSpacing.y.meta}px`,
+                  '--hero-phone-y': `${heroSpacing.y.phone ?? 0}px`,
                   '--logo-y': `${heroSpacing.y.logos}px`,
                 }
               : {}),
@@ -422,14 +496,14 @@ export function CaseStudyPage({ id }: Props) {
         }
         aria-labelledby={`case-${key}`}
       >
-        <div className="case__text">
-          {isHero && id !== 'filo' && <BackLink className="case__back case__back--inline" />}
+        <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
+          {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} />
-          ) : isHero && id === 'unwind' ? (
-            // The intro's braided voice band is drawn here (by UnwindIntro's canvas) in place of the eyebrow.
-            // UnwindIntro enables it once the film can replay: hovering swells the band and shows the pill.
+          ) : isHero && id === 'momo' ? (
+            // The intro's braided voice band is drawn here (by MomoIntro's canvas) in place of the eyebrow.
+            // MomoIntro enables it once the film can replay: hovering swells the band and shows the pill.
             <button type="button" className="case__braid-slot" aria-label="Replay intro" aria-hidden="true" disabled>
               <span className="case__braid-hint" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -465,15 +539,22 @@ export function CaseStudyPage({ id }: Props) {
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
         </div>
-        {isHero && id === 'unwind' ? (
+        {isHero && id === 'momo' ? (
           <div className="case__devices">
-            <MomoWelcome />
+            <MomoWelcome active={!intro} />
           </div>
         ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
         {hasPlaceholder && <MediaPlaceholder label={s.media.placeholder ?? ''} size={s.media.size} x={s.media.x} y={s.media.y} radius={s.media.radius} />}
         {hasDemo && <NotificationDemo media={s.media} />}
-        {hasFigure && <ReselfFigure kind={s.media.figure as 'flow' | 'system' | 'vision' | 'signals'} />}
+        {hasFigure &&
+          (s.media.figure === 'system' ? (
+            <MomoSystemFigure />
+          ) : s.media.figure === 'paper' ? (
+            <ArxivPaper />
+          ) : (
+            <ReselfFigure kind={s.media.figure as 'flow' | 'vision' | 'signals'} />
+          ))}
       </section>
     )
   }
@@ -484,23 +565,27 @@ export function CaseStudyPage({ id }: Props) {
       className="case"
       data-work={id}
       data-intro={intro || undefined}
+      data-text-size={page.textSize}
+      data-section-reveal={page.sectionReveal}
       style={{ '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
     >
-      {id === 'unwind' && <UnwindIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}
+      {id === 'momo' && <MomoIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}
       <div className="case__light" data-surface="light">
         <Nav route={id} />
         {page.showSidebar && (
           <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
-            {id !== 'filo' && <BackLink className="case__back" />}
-            <ol className="case__toc">
-              {keys.map((key) => (
-                <li key={key}>
-                  <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
-                    {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
-                  </button>
-                </li>
-              ))}
-            </ol>
+            <BackLink className="case__back" />
+            {page.showSections && (
+              <ol className="case__toc">
+                {keys.map((key) => (
+                  <li key={key}>
+                    <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
+                      {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
           </aside>
         )}
         {renderSection('hero', hero, true)}
