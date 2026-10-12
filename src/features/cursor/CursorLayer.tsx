@@ -236,13 +236,15 @@ export function CursorLayer() {
       hide();
       endPress();
     };
-    // A page switch swaps the surface under a pointer that has not moved, so no
-    // pointer event fires. The style flush commits the new colour while
-    // `is-instant` has the fade off.
+    // A page switch swaps the content under a resting pointer without moving it.
+    // Keep the same tracker (and coordinates), then synchronously clear/reapply
+    // surface, hover, and text state against the committed page.
     resyncRef.current = (): void => {
       if (!visible) return;
       dot.classList.add("is-instant");
       applyOwner(surfaceAtPointer());
+      applyHover(document.elementFromPoint(rawX, rawY));
+      applyText();
       void getComputedStyle(dot, "::before").backgroundColor;
       dot.classList.remove("is-instant");
     };
@@ -309,7 +311,7 @@ export function CursorLayer() {
       if (frame) cancelAnimationFrame(frame);
       resyncRef.current = null;
     };
-  }, [fine, route]);
+  }, [fine]);
 
   // Runs inside the route commit (also inside a View Transition's update), so the
   // colour is already right when the new page is first painted.

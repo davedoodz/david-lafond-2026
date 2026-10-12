@@ -21,8 +21,7 @@
     "page-flip": "2.0.7",
     "perfect-freehand": "1.2.3",
     "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "thinking-orbs": "^0.3.2"
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

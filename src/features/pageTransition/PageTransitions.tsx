@@ -104,28 +104,39 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
       : settings.mirror && back
         ? 'back'
         : 'forward'
-  // Sideways: the incoming WORK / ABOUT / RESUME cluster is isolated into one
-  // stationary layer, visible from frame one. Davebot and both pages keep their
-  // existing motion; using only the incoming nav avoids a dark/light crossfade.
+  // Sideways: isolate WORK / ABOUT / RESUME into one stationary shared layer.
+  // Finish loading the destination before starting the visual transition so
+  // its nav snapshot exists from the first animated frame.
   const sideways = root.dataset.vtDir === 'left' || root.dataset.vtDir === 'right'
-  if (sideways) pinIfVisible('.nav__links', 'data-vt-pin-links')
   if (settings.pinNav && !sideways) pinIfVisible('.nav', 'data-vt-pin-nav')
   if (settings.pinShader) pinIfVisible('.dither-band--header', 'data-vt-pin-shader')
 
-  const transition = document.startViewTransition(async () => {
-    // Load the next page's chunk before committing, so the new snapshot is the real page.
-    await preloadRoute(to)
-    flushSync(update)
-  })
-  void transition.finished.finally(() => {
-    // A newer transition may have started; only clean up our own state.
-    if (root.dataset.vt !== settings.preset) return
-    delete root.dataset.vt
-    delete root.dataset.vtDir
-    root.removeAttribute('data-vt-pin-nav')
-    root.removeAttribute('data-vt-pin-links')
-    root.removeAttribute('data-vt-pin-shader')
-  })
+  const routeReady = preloadRoute(to)
+  const startTransition = async () => {
+    await routeReady
+    if (sideways) pinIfVisible('.nav__links', 'data-vt-pin-links')
+    if (root.hasAttribute('data-vt-pin-links')) {
+      root.setAttribute('data-vt-pin-links-ready', '')
+      const activeNavLink = document.querySelector('.nav__links a[aria-current]')
+      if (activeNavLink) void getComputedStyle(activeNavLink).color
+    }
+
+    const transition = document.startViewTransition(() => {
+      flushSync(update)
+    })
+    void transition.finished.finally(() => {
+      // A newer transition may have started; only clean up our own state.
+      if (root.dataset.vt !== settings.preset) return
+      delete root.dataset.vt
+      delete root.dataset.vtDir
+      root.removeAttribute('data-vt-pin-nav')
+      root.removeAttribute('data-vt-pin-links')
+      root.removeAttribute('data-vt-pin-links-ready')
+      root.removeAttribute('data-vt-pin-shader')
+    })
+  }
+
+  void startTransition()
 }
 
 export function PageTransitions() {

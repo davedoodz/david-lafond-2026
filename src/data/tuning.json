@@ -487,6 +487,7 @@
       "gapDesktop": 169,
       "stackToHeadingDesktop": 76,
       "labelTopDesktop": 99,
+      "labelTopMobile": 24,
       "playFitGap": 0,
       "playY": 40,
       "playSpaceBelow": -93
@@ -781,7 +782,8 @@
     }
   },
   "Footer": {
-    "desktopHeight": 200
+    "desktopHeight": 200,
+    "mobileHeight": 193
   },
   "Momo intro": {
     "speed": 1.3,

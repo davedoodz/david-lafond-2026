@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'motion/react'
 import type { ResolvedValues } from 'dialkit'
-import { ThinkingOrb } from 'thinking-orbs'
 import { useTuning } from '../../tuning/useTuning'
 import { navigate, type Route } from '../../lib/router'
 import { DAVEBOT_CONFIG, DAVEBOT_PANEL, ghostFill } from './davebotConfig'
@@ -552,16 +551,7 @@ function DavebotPanel() {
           <div className="davebot-body">
             {phase === 'thinking' && (
               <div className="davebot-status">
-                <ThinkingOrb
-                  className="davebot-status__orb"
-                  state="shaping"
-                  size={64}
-                  dots={0.75}
-                  dotSize={2}
-                  theme={tuning.box.style === 'paper' ? 'light' : 'dark'}
-                  aria-hidden="true"
-                />
-                <span>Davebot is thinking</span>
+                <span className="davebot-status__thinking">Davebot is thinking</span>
               </div>
             )}
 
