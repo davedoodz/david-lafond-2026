@@ -778,45 +778,11 @@
     }
   },
   "Momo welcome": {
-    "blackOverlay": 0.09,
-    "prototypeWidth": 290,
-    "buttons": {
-      "style": "frosted"
-    },
-    "rise": {
-      "distance": 120,
-      "delay": 0,
-      "spring": {
-        "type": "spring",
-        "visualDuration": 0.4,
-        "bounce": 0.45
-      },
-      "fade": 0.25
-    },
-    "timing": {
-      "fullLoopDuration": 8.5,
-      "shadeAt": 0,
-      "shadeIn": 2.5,
-      "shadeOut": 2.5,
-      "momoAt": 0,
-      "logoAt": 0.25,
-      "buttonsAt": 0.85,
-      "legalAt": 1.2,
-      "fadeIn": 1.95,
-      "holdUntil": 7.7,
-      "fadeOut": 2
-    },
+    "blackOverlay": 0.16,
+    "prototypeWidth": 305,
     "momo": {
-      "size": 71,
+      "size": 60,
       "y": 4
-    },
-    "logo": {
-      "size": 14.7,
-      "outlineStroke": 5.5
-    },
-    "wordmark": {
-      "size": 31.8,
-      "x": 0.3
     }
   },
   "Momo system sequence": {
@@ -929,12 +895,12 @@
       "duration": 1.85
     }
   },
-  "Momo welcome": {
-    "blackOverlay": 0.16,
-    "prototypeWidth": 305,
-    "momo": {
-      "size": 60,
-      "y": 4
+  "Selection": {
+    "height": 0.7
+  },
+  "Cursor": {
+    "text": {
+      "durationMs": 480
     }
   }
 }
