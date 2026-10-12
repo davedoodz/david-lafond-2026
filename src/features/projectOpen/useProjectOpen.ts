@@ -8,9 +8,10 @@ import type { Route } from '../../lib/router'
 import { useTuning } from '../../tuning/useTuning'
 import type { Easing, Spring } from '../pageTransition/cssTiming'
 import { CONTENT_FEELS, OPEN_EFFECTS, openProject, type ContentFeel, type Edges, type OpenEffect, type OpenSpec } from './projectOpen'
+import { SLIDE_FEELS, type SlideFeel } from './slide'
 
 type Tuple = [number, number, number, number]
-type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'momoHoldSeconds' | 'contentStrength' | 'contentFade'> & {
+type Look = Pick<OpenSpec, 'endRadius' | 'cornerZone' | 'titleFade' | 'dim' | 'revealMs' | 'momoFlight' | 'momoHoldSeconds' | 'contentStrength' | 'contentFade' | 'slide'> & {
   effect: OpenEffect
   contentFeel: ContentFeel
 }
@@ -33,8 +34,8 @@ export const OPEN_PRESETS: Record<string, { timing: Easing | Spring; delay: Edge
 }
 
 const CONFIG = {
-  /** How the card becomes the page (see OPEN_EFFECTS); the preset below sets its timing. */
-  effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'expand' },
+  /** How the card becomes the page (see OPEN_EFFECTS); slide uses `slide` below, the rest the preset. */
+  effect: { type: 'select' as const, options: [...OPEN_EFFECTS], default: 'slide' },
   /** Momo: Momo flies from the card into the nav's Momo. */
   momoFlight: false,
   /** Momo: seconds Momo keeps animating after the click before it flies into the nav (a tap or key skips it). */
@@ -43,6 +44,18 @@ const CONFIG = {
   preview: { type: 'action' as const, label: 'Preview (open Harvard & MIT)' },
   previewMomo: { type: 'action' as const, label: 'Preview (open Momo)' },
   previewFilo: { type: 'action' as const, label: 'Preview (open Filo)' },
+  /** slide: the page arrives as a card from the right. Pick a feel; `custom` uses the dials below it. */
+  slide: {
+    feel: { type: 'select' as const, options: [...Object.keys(SLIDE_FEELS), 'custom'], default: 'smooth' },
+    motion: { type: 'easing' as const, duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    /** The Work page under the card: drift left (px), shrink (1 = none), darken. */
+    drift: [60, 0, 600, 1] as Tuple,
+    scale: [1, 0.8, 1, 0.01] as Tuple,
+    dim: [0.12, 0, 0.8, 0.01] as Tuple,
+    /** Corner radius of the moving card (px). */
+    radius: [24, 0, 120, 1] as Tuple,
+    _collapsed: false,
+  },
   /** Filo / Harvard & MIT: how the card's artwork moves while the card grows. */
   content: {
     feel: { type: 'select' as const, options: [...CONTENT_FEELS], default: 'grow' },
@@ -90,6 +103,9 @@ export function useProjectOpen(): (card: HTMLElement, route: Route) => void {
     contentFeel: t.content.feel as ContentFeel,
     contentStrength: t.content.strength,
     contentFade: t.content.fade,
+    slide:
+      SLIDE_FEELS[t.slide.feel] ??
+      ({ motion: t.slide.motion, drift: t.slide.drift, scale: t.slide.scale, dim: t.slide.dim, radius: t.slide.radius } as SlideFeel),
   }
   const named = OPEN_PRESETS[t.preset]
   specRef.current = named

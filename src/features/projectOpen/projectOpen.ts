@@ -13,19 +13,21 @@ import { preloadRoute } from '../../lib/routeChunks'
 import { pageUrl } from '../book/bookPages'
 import { spawnMesh } from '../../components/MeshCard'
 import { sampleSpring, toCssTiming, type Easing, type Spring } from '../pageTransition/cssTiming'
+import { slideIn, type SlideFeel } from './slide'
 import './projectOpen.css'
 
 export type Edges = { top: number; right: number; bottom: number; left: number }
 
 /**
  * How the card becomes the page.
+ * - slide: the page arrives as a card from the right, over the Work page (feel: `slide`).
  * - expand: the card's colour grows to fill the screen, then fades to the page.
  * - curtain: grows like expand, then lifts away upward to uncover the page.
  * - window: the card's frame grows to fill the screen, showing the real page inside it.
  * - iris: the page opens in a growing circle from the card's centre.
  * - zoom: the view zooms through the card while the page fades up.
  */
-export const OPEN_EFFECTS = ['expand', 'curtain', 'window', 'iris', 'zoom'] as const
+export const OPEN_EFFECTS = ['slide', 'expand', 'curtain', 'window', 'iris', 'zoom'] as const
 export type OpenEffect = (typeof OPEN_EFFECTS)[number]
 
 /**
@@ -69,6 +71,8 @@ export type OpenSpec = {
   dim: number
   /** Fade of the full-screen card after the page is committed. */
   revealMs: number
+  /** slide: how the page card travels in (see SLIDE_FEELS). */
+  slide: SlideFeel
 }
 
 type Ease = { fn: (t: number) => number; duration: number }
@@ -138,8 +142,12 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
     return
   }
   running = true
-  if (spec.effect === 'window' || spec.effect === 'iris' || spec.effect === 'zoom') {
-    if (typeof document.startViewTransition === 'function') {
+  if (typeof document.startViewTransition === 'function') {
+    if (spec.effect === 'slide') {
+      void slideIn(spec.slide, pageReady, commit).finally(() => (running = false))
+      return
+    }
+    if (spec.effect === 'window' || spec.effect === 'iris' || spec.effect === 'zoom') {
       void revealThrough(card, spec, pageReady, commit).finally(() => (running = false))
       return
     }
