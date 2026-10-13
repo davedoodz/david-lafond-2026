@@ -8,6 +8,10 @@ export type FiloStorySettings = StoryCopy & {
   animationPreset: string
   loopSeconds: number
   playbackSpeed: number
+  toteSpin: number
+  parkaSpin: number
+  blouseSpin: number
+  windbreakerSpin: number
 }
 
 const ASSETS = '/work/filo/studio/'
@@ -18,40 +22,44 @@ function MaterialImage({ asset, className = '' }: { asset: string; className?: s
   return <img className={`fs-material-image ${className}`} src={`${ASSETS}${asset}.webp`} alt="" loading="lazy" decoding="async" draggable={false} />
 }
 
-/** Existing Futurefabric 3D renders: 36 transparent views in a 6 × 6 sheet. */
-function Product({ name, className = '' }: { name: string; className?: string }) {
-  return <div className={`fs-product ${className}`}><div className="fs-turntable" style={{ backgroundImage: `url(/work/filo/sprites/${name}-spritesheet.webp)` }} /></div>
+/** Full-resolution Futurefabric 3D renders: 36 transparent 768px views in a 6 × 6 sheet. */
+function Product({ name, spin, className = '' }: { name: string; spin: number; className?: string }) {
+  return <div className={`fs-product ${className}`} style={{ '--fs-spin': spin } as CSSProperties}>
+    <div className="fs-turntable" style={{ backgroundImage: `url(/work/filo/sprites-hd/${name}-spritesheet.webp)` }} />
+  </div>
 }
 
-function MarketGap() {
+type Spins = Pick<FiloStorySettings, 'toteSpin' | 'parkaSpin' | 'blouseSpin' | 'windbreakerSpin'>
+
+function MarketGap({ s }: { s: Spins }) {
   return <>
     <div className="fs-gap-material fs-move">
       <MaterialImage asset="cellulose" className="fs-gap-photo" />
       <MaterialImage asset="tag-scan" className="fs-gap-tag" />
     </div>
     <div className="fs-gap-library fs-move"><MaterialImage asset="library" /></div>
-    <Product name="zara-pinatex-bag" className="fs-gap-bag fs-move" />
-    <Product name="northface" className="fs-gap-garment fs-move" />
+    <Product name="zara-pinatex-bag" spin={s.toteSpin} className="fs-gap-bag fs-move" />
+    <Product name="northface" spin={s.parkaSpin} className="fs-gap-garment fs-move" />
     <MaterialImage asset="nfc" className="fs-gap-nfc fs-symbol" />
   </>
 }
 
-function Opportunity() {
+function Opportunity({ s }: { s: Spins }) {
   return <>
     <svg className="fs-thread" viewBox="0 0 800 440" fill="none" aria-hidden="true">
       <path pathLength="1" d="M150 240 C205 365 280 320 325 225 S400 160 455 240 S580 340 665 205" />
     </svg>
     <div className="fs-opportunity-material fs-move"><MaterialImage asset="thread-tag" /></div>
     <div className="fs-opportunity-record fs-move"><img src="/work/filo/story/phone-file.webp" alt="" loading="lazy" decoding="async" /></div>
-    <Product name="northface" className="fs-opportunity-garment fs-move" />
+    <Product name="orange-fiber-x-h-m-conscious-exclusive-collection-2019" spin={s.blouseSpin} className="fs-opportunity-garment fs-move" />
     <MaterialImage asset="nfc" className="fs-opportunity-nfc fs-symbol" />
   </>
 }
 
-function Solution() {
+function Solution({ s }: { s: Spins }) {
   return <>
     <div className="fs-solution-material fs-move"><MaterialImage asset="tag-scan" /></div>
-    <Product name="northface" className="fs-solution-garment fs-move" />
+    <Product name="xtep-pla-windbreaker" spin={s.windbreakerSpin} className="fs-solution-garment fs-move" />
     <div className="fs-solution-phone fs-move">
       {PHONE_SCENES.map((scene, index) => <img
         className="fs-phone-frame"
@@ -104,11 +112,11 @@ export function FiloStory({ s, edit }: { s: FiloStorySettings; edit: (path: stri
   const preset = requested && PRESETS.includes(requested) ? requested : s.animationPreset
   const rows = [
     ['problem', s.problemLabel, s.problemTitle, s.problemBody,
-      'Looped material study: a swatch becomes an NFC-tagged sample while the surrounding material library and illustrative 3D garments remain disconnected.', <MarketGap key="gap" />],
+      'Looped material study: a swatch becomes an NFC-tagged sample while the surrounding material library, a Piñatex tote and a Moon Parka remain disconnected.', <MarketGap key="gap" s={s} />],
     ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody,
-      'A lime thread connects the physical Filo tag, its Technical File and an illustrative Futurefabric 3D garment.', <Opportunity key="opportunity" />],
+      'A lime thread connects the physical Filo tag, its Technical File and an illustrative Orange Fiber garment.', <Opportunity key="opportunity" s={s} />],
     ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody,
-      'Automatic Filo concept film: tap the tag, open the Technical File, capture a bench observation, flag the supplier-claimed 60 degree limit against 130 degree fusing, and prepare a sample plan for human approval. No real actions are performed.', <Solution key="solution" />],
+      'Automatic Filo concept film: tap the tag, open the Technical File, capture a bench observation, flag the supplier-claimed 60 degree limit against 130 degree fusing, and prepare a sample plan for human approval. No real actions are performed.', <Solution key="solution" s={s} />],
   ] as const
   return <section
     id="filo-story"

@@ -38,7 +38,7 @@
 .fs-thread { position: absolute; inset: 0; width: 100%; height: 100%; color: #bdcf71; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .fs-opportunity-material { width: 26%; height: 49%; left: 6%; top: 27%; rotate: -5deg; }
 .fs-opportunity-record { width: 24%; height: 90%; left: 38%; top: 4%; }
-.fs-opportunity-garment { width: 37%; left: 66%; top: 20%; }
+.fs-opportunity-garment { width: 33%; left: 64%; top: 20%; }
 .fs-stage .fs-opportunity-nfc { width: 12%; height: 22%; left: 26%; top: 14%; }
 /* The product lives below Meet Filo; only its real screen content changes. */
 .fs-solution-phone { width: 34%; height: 97%; left: 33%; top: 1%; }
@@ -49,8 +49,10 @@
 .fs-stage .fs-solution-warning { width: 15%; height: 23%; left: 71%; top: 65%; opacity: 0; }
 /* One shared cycle for each film. No frame-by-frame React renders or idle timers. */
 .fs-film[data-live='true'] .fs-move { animation: fs-material-drift var(--fs-duration) ease-in-out infinite; }
+/* Each object has its own spin speed; the column step stays six times the row step so all 36 views play in order. */
 .fs-film[data-live='true'] .fs-turntable {
-  animation: fs-turn-x calc(var(--fs-duration) / 12) steps(6) infinite, fs-turn-y calc(var(--fs-duration) / 2) steps(6) infinite;
+  --fs-turn: calc(var(--fs-duration) / 2 / var(--fs-spin, 1));
+  animation: fs-turn-x calc(var(--fs-turn) / 6) steps(6) infinite, fs-turn-y var(--fs-turn) steps(6) infinite;
 }
 .fs-film[data-live='true'] .fs-gap-photo { animation: fs-photo-out var(--fs-duration) ease-in-out infinite; }
 .fs-film[data-live='true'] .fs-gap-tag { animation: fs-tag-in var(--fs-duration) ease-in-out infinite; }
