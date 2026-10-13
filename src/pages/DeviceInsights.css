@@ -18,7 +18,6 @@
   display: flex;
   justify-content: center;
 }
-.case[data-work='filo'] .mc-stage { --accent: var(--filo-moss, #4f6b4a); }
 /* The studio's 750 × 611 device row, scaled as one piece like its "Device size" setting. */
 .mc-devices { flex-shrink: 0; display: flex; align-items: center; width: 750px; height: 611px; transform: scale(var(--mc-scale, 1.1)); transform-origin: top center; }
 .mc-watch__screen, .mc-phone__screen { font-family: var(--screen-font); letter-spacing: -0.01em; }

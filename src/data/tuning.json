@@ -346,11 +346,24 @@
   },
   "Portfolio book": {
     "switch": {
-      "bounce": 0.16,
-      "lag": 0.1,
-      "squash": 0.06
+      "durationMs": 270,
+      "bounce": 0.18,
+      "lag": 0.03,
+      "squash": 0.03
     },
     "bookGridOnly": true,
+    "diagram": {
+      "outlines": {
+        "width": 0.25
+      },
+      "grid": {
+        "columns": 33,
+        "rows": 48
+      },
+      "motion": {
+        "durationMs": 2150
+      }
+    },
     "video": {
       "scaleDesktop": 0.62,
       "scaleMobile": 0.8,
@@ -834,6 +847,16 @@
       "snap": "off",
       "sectionReveal": "still"
     },
+    "hero": {
+      "spacing": {
+        "top": 106,
+        "bottom": 62,
+        "contentGap": 99
+      },
+      "media": {
+        "radius": 21
+      }
+    },
     "heroSpacing": {
       "logosToTitle": 54,
       "titleToMeta": 20,
@@ -848,60 +871,23 @@
       "placement": "below meta",
       "height": 39,
       "gap": 27,
-      "offset": 28,
-      "hoverColor": "#6f8f69"
+      "offset": 28
     },
-    "hero": {
-      "spacing": {
-        "top": 106,
-        "bottom": 62,
-        "contentGap": 99
+    "research": {
+      "primaryVisual": "video",
+      "miroVideo": {
+        "speed": 2,
+        "cropRight": 0.24,
+        "cropTop": 0.41,
+        "radius": 14
       },
-      "media": {
-        "radius": 21
-      }
-    },
-    "story": {
-      "preset": "custom",
-      "align": "stretch",
-      "textAlign": "center",
-      "art": "line",
-      "opportunityArt": "converge",
-      "reveal": "cascade",
-      "speed": {
-        "problem": 1.75,
-        "opportunity": 1.75,
-        "solution": 1.75
-      },
-      "spacing": {
-        "top": 233,
-        "bottom": 210,
-        "contentGap": 383
-      },
-      "artText": {
-        "problemMoment": "",
-        "problemOpened": "",
-        "opportunityMoment": "",
-        "solutionCheckIn": ""
+      "interviewVideo": {
+        "speed": 1.5,
+        "radius": 14
       }
     },
     "persona": {
-      "align": "center",
-      "image": "bottom",
-      "blockGap": 100,
-      "moments": {},
-      "spacing": {
-        "bottom": 0
-      },
       "float": {
-        "preset": "drift",
-        "pace": 4.9,
-        "cardWidth": 330,
-        "spread": 169,
-        "bob": 20,
-        "eyebrowGap": 17,
-        "bodyGap": 22,
-        "tagsGap": 40,
         "entrance": {
           "duration": 0.3,
           "distance": 6,
@@ -912,45 +898,6 @@
           "floatsDelay": 0.2,
           "floatStagger": 0.11
         }
-      }
-    },
-    "flows": {
-      "phoneScale": 1.04,
-      "spacing": {
-        "top": 85,
-        "contentGap": 75
-      }
-    },
-    "dynamic": {
-      "align": "center",
-      "watch": {
-        "strapColor": "#96b6d4"
-      },
-      "spacing": {
-        "contentGap": 46
-      },
-      "deviceEntrance": {
-        "preset": "split sides",
-        "duration": 1.25
-      }
-    },
-    "guided": {
-      "spacing": {
-        "contentGap": 56
-      }
-    },
-    "outcomes": {
-      "align": "center"
-    },
-    "system": {
-      "align": "center",
-      "spacing": {
-        "top": 0,
-        "bottom": 75,
-        "contentGap": 0
-      },
-      "media": {
-        "size": 74
       }
     }
   },

@@ -16,17 +16,13 @@ import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, MOMO_CONFIG, type ProtoVideo
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import { PersonaSection, type Persona } from './casePersona'
 import { DeviceInsights } from './DeviceInsights'
-import { FiloOpportunityArt, FiloProblemArt, FiloSolutionArt } from './filoStoryArt'
-import { FiloBench } from '../features/filoCase/FiloBench'
-import { FiloBenchPhone, FiloDigestPhone, FiloFilePhone, FiloLadderPhone, FiloLadderPicker } from '../features/filoCase/FiloFlowScreens'
-import { FiloSystemFigure } from '../features/filoCase/FiloSystemFigure'
-import { FiloWelcome } from '../features/filoCase/FiloWelcome'
-import { FILO_SCENE } from '../features/filoCase/FiloTagScene'
+import { FiloStory, type FiloStorySettings } from './filoStoryArt'
+import { FiloFilms } from '../features/filoCase/FiloFilms'
+import type { FilmGroup } from '../features/filoCase/filoFilmPlan'
 import { FiloNext } from '../features/filoCase/FiloNext'
+import { FiloResearchFigure, type FiloResearchSettings } from '../features/filoCase/FiloResearch'
 import './CaseStudyPage.css'
 
-const FILO_FLOW_SCREENS = [<FiloDigestPhone key="d" />, <FiloFilePhone key="f" />, <FiloBenchPhone key="b" />] as const
-const FILO_GUIDED_SCREENS = [<FiloLadderPicker key="p" />, <FiloLadderPhone key="l" />] as const
 
 type Id = Extract<Work['id'], 'momo' | 'filo'>
 type Props = { id: Id }
@@ -154,7 +150,7 @@ const SECTION_LABELS = Object.fromEntries(
         const eyebrow = (p.config as Record<string, { eyebrow?: { default?: string } | string }>)[s]?.eyebrow
         const text = typeof eyebrow === 'string' ? eyebrow : eyebrow?.default
         // DialKit uses '.' as a path separator, so labels used as keys must not contain one.
-        return [s, (SPECIAL_LABELS[s] ?? text ?? s).replace(/\./g, '')]
+        return [s, (k === 'filo' && s === 'story' ? 'Market gap · Opportunity · Solution' : SPECIAL_LABELS[s] ?? text ?? s).replace(/\./g, '')]
       }),
     ),
   ]),
@@ -456,30 +452,25 @@ export function CaseStudyPage({ id }: Props) {
 
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
-    if (key === 'dynamic') return <DeviceInsights key={key} copy={s} edit={edit} scene={id === 'filo' ? FILO_SCENE : undefined} />
+    if (key === 'dynamic') return <DeviceInsights key={key} copy={s} edit={edit} />
     if (key === 'story')
-      return (
-        <StoryRow
-          key={key}
-          s={s as unknown as Story}
-          edit={edit}
-          arts={id === 'filo' ? [<FiloProblemArt key="p" />, <FiloOpportunityArt key="o" />, <FiloSolutionArt key="s" />] : undefined}
-          selectable={id === 'momo'}
-        />
-      )
+      return id === 'filo'
+        ? <FiloStory key={key} s={s as unknown as FiloStorySettings} edit={edit} />
+        : <StoryRow key={key} s={s as unknown as Story} edit={edit} selectable />
     const filo = id === 'filo'
-    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={!filo} visual={filo ? <FiloBench /> : undefined} />
-    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable={!filo} screens={filo ? FILO_FLOW_SCREENS : undefined} />
-    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable={!filo} screens={filo ? FILO_GUIDED_SCREENS : undefined} />
+    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={!filo} visual={filo ? <img className="persona__photo" src="/work/filo/studio/library.webp" alt="Tagged fabric samples on a material-development bench" width={1000} height={809} loading="lazy" /> : undefined} />
+    const hasFilms = filo && ['source', 'evidence', 'scale', 'handoff'].includes(key)
+    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
+    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />
     const hasDemo = s.media.figure === 'notification'
-    const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper', 'next'].includes(s.media.figure)
-    const hasVideo = !hasFigure && !hasDemo && s.media.video !== 'none'
+    const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper', 'research', 'next'].includes(s.media.figure)
+    const hasVideo = !hasFilms && !hasFigure && !hasDemo && s.media.video !== 'none'
     return (
       <section
         key={key}
-        className={`case__section${isHero ? ' case__section--hero' : ''}`}
+        className={`case__section${isHero ? ' case__section--hero' : hasFilms ? ' filo-film-section' : ''}`}
         data-section={key}
-        data-layout={isHero || hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
+        data-layout={isHero || hasFilms || hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
         data-copy-align={s.align}
         data-text-reveal={s.textReveal?.preset}
         style={
@@ -554,13 +545,15 @@ export function CaseStudyPage({ id }: Props) {
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} id={id} />}
         </div>
         {isHero ? (
-          <div className="case__devices">{id === 'momo' ? <MomoWelcome active={!intro} /> : <FiloWelcome active />}</div>
-        ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
+          <div className="case__devices">{id === 'momo' ? <MomoWelcome active={!intro} /> : <FiloFilms group="hero" />}</div>
+        ) : hasFilms ? <FiloFilms group={key as FilmGroup} /> : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} id={id} />}
         {hasDemo && <NotificationDemo media={s.media} />}
         {hasFigure &&
           (s.media.figure === 'system' ? (
-            filo ? <FiloSystemFigure /> : <MomoSystemFigure />
+            <MomoSystemFigure />
+          ) : s.media.figure === 'research' ? (
+            <FiloResearchFigure settings={s as unknown as FiloResearchSettings} />
           ) : s.media.figure === 'next' ? (
             <FiloNext />
           ) : s.media.figure === 'paper' ? (

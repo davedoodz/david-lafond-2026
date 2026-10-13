@@ -13,7 +13,7 @@ const STEPS = [
   { id: 'send', label: 'Watch to iPhone', ms: 2800 },
   { id: 'nudge', label: 'A gentle nudge', ms: 3600 },
 ] as const
-type StepId = string
+type StepId = typeof STEPS[number]['id']
 const TRANSITION_MS = 700
 const SCALE = 1.1
 /* Unscaled row: Watch 260 + gap 190 + phone 300; phone height 300 × 1780 / 874. */
@@ -84,14 +84,12 @@ function Screens({ step, render }: { step: StepId; render: (id: StepId) => React
   }, [step])
   return <>{layers.map(l => <div key={l.n} className={`mc-screen${l.phase ? ` mc-screen--${l.phase}` : ''}`}>{render(l.id)}</div>)}</>
 }
-export type DeviceSceneStep = { id: string; label: string; ms: number }
-export type DeviceScene = { steps: DeviceSceneStep[]; left: (id: string) => ReactNode; phone: (id: string) => ReactNode; link?: (id: string) => ReactNode; ariaLabel: string }
 
 
 type DeviceEntrance = { preset: 'handoff' | 'rise together' | 'split sides' | 'scale in' | 'focus' | 'still'; duration: number; stagger: number }
-type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; watch?: { strapColor: string }; deviceEntrance?: DeviceEntrance; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void; scene?: DeviceScene }
+type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; watch?: { strapColor: string }; deviceEntrance?: DeviceEntrance; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void }
 
-export function DeviceInsights({ copy, edit, scene }: Props) {
+export function DeviceInsights({ copy, edit }: Props) {
   const ref = useRef<HTMLElement>(null)
   const stage = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
@@ -101,7 +99,7 @@ export function DeviceInsights({ copy, edit, scene }: Props) {
   const entrance = copy.deviceEntrance ?? { preset: 'still', duration: 0.8, stagger: 0.18 }
   const textReveal = copy.textReveal ?? { preset: 'still', duration: 0.7, stagger: 0.1 }
   const strapColor = copy.watch?.strapColor ?? '#d6ccc4'
-  const steps = scene?.steps ?? STEPS
+  const steps = STEPS
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -144,7 +142,7 @@ export function DeviceInsights({ copy, edit, scene }: Props) {
       observer.disconnect()
       media.removeEventListener('change', update)
     }
-  }, [scene])
+  }, [])
   useLayoutEffect(() => {
     const el = stage.current
     if (!el) return
@@ -166,23 +164,17 @@ export function DeviceInsights({ copy, edit, scene }: Props) {
         <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} selectable />
         <EditableText className="case__body" label="Insights body" value={copy.body} onChange={edit('dynamic.body')} selectable />
       </header>
-      <div ref={stage} className="mc-stage" style={{ '--mc-scale': scale } as CSSProperties} role="img" aria-label={scene?.ariaLabel ?? 'Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?'}>
+      <div ref={stage} className="mc-stage" style={{ '--mc-scale': scale } as CSSProperties} role="img" aria-label="Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?">
         <div className="mc-devices" aria-hidden="true">
-          {scene ? (
-            <div className="mc-left">{scene.left(id)}</div>
-          ) : (
-            <div className="mc-watch">
-              <div className="mc-watch__screen"><Screens step={id} render={watchScreen} /></div>
-              <img className="mc-watch__img" src="/work/momo/devices/watch-starlight.png" alt="" />
-            </div>
-          )}
+          <div className="mc-watch">
+            <div className="mc-watch__screen"><Screens step={id} render={watchScreen} /></div>
+            <img className="mc-watch__img" src="/work/momo/devices/watch-starlight.png" alt="" />
+          </div>
           <div className="mc-link" data-state={id}>
-            {scene?.link ? scene.link(id) : (
-              <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
-            )}
+            <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
           </div>
           <div className="mc-phone">
-            <div className="mc-phone__screen"><Screens step={id} render={scene?.phone ?? phoneScreen} /></div>
+            <div className="mc-phone__screen"><Screens step={id} render={phoneScreen} /></div>
             <img className="mc-phone__img" src="/work/momo/devices/iphone-silver.png" alt="" />
           </div>
         </div>
