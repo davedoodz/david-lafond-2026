@@ -21,7 +21,7 @@ export const WORKS: Work[] = [
   },
   {
     id: 'filo',
-    title: 'Filo – Agentic Commerce for Biomaterial Adoption in Fashion',
+    title: 'Filo – An Agentic Sample Room for Biomaterial Adoption in Fashion',
     shortTitle: 'Filo',
     surface: 'light',
     route: 'filo',

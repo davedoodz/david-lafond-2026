@@ -1,8 +1,8 @@
 /**
- * First-load entrance for the header: the dither shader, the Davebot ghost and
- * the four nav links, each with its own preset. Plays on document load;
- * project slides replay the nav only, after the card has fully settled.
- * "Replay" re-runs the whole header.
+ * First-load entrance for the header: the dither shader, Davebot and the three
+ * nav links. It plays on document load; project slides and project Back
+ * transitions replay the nav after the moving surface has settled. "Replay"
+ * re-runs the whole header.
  *
  * Only opacity / transform / filter / clip-path animate (WAAPI), on the
  * wrappers, so the ghost's hover `scale` and the links' colour transitions
@@ -38,7 +38,7 @@ const CONFIG = {
     staggerMs: [70, 0, 400, 5] as Tuple,
     distance: [12, 0, 80, 1] as Tuple,
   },
-  /** Existing nav presets, timed from the card landing rather than document load. */
+  /** Existing nav presets, timed from the project surface landing. */
   afterSlide: {
     delayMs: [0, 0, 1000, 10] as Tuple,
     durationMs: [450, 150, 2000, 10] as Tuple,

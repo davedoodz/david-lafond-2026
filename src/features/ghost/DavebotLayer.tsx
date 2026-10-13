@@ -234,6 +234,9 @@ function DavebotPanel() {
     // The exit spring can run for most of a second; a second Esc/veil click mustn't restart it.
     if (closingRef.current) return
     closingRef.current = true
+    // Release the overlay's cursor contrast now, not when the return spring unmounts it.
+    rootRef.current?.removeAttribute('data-surface')
+    window.dispatchEvent(new Event('cursor:show'))
     answerRunRef.current += 1
     abortRef.current?.abort()
     const flight = measureFlight(getDavebotTrigger(), ghostWrapRef.current, ghostX.get(), ghostY.get(), ghostScale.get())
@@ -548,8 +551,7 @@ function DavebotPanel() {
           <div className="davebot-body">
             {phase === 'thinking' && (
               <div className="davebot-status">
-                <span className="davebot-status__line" aria-hidden="true" />
-                <span>Davebot is thinking</span>
+                <span className="davebot-status__thinking">Davebot is thinking</span>
               </div>
             )}
 

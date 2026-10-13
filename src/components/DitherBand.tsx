@@ -126,9 +126,9 @@ const PAGE_PRESETS = {
     lilac: { color: '#B9A7F5', opacity: 0.35 },
   },
   filo: {
-    blush: { color: '#F4A7AE', opacity: 0.4 },
-    rose: { color: '#E0707C', opacity: 0.3 },
-    moss: { color: '#8DB38B', opacity: 0.35 },
+    moss: { color: '#4F6B4A', opacity: 0.3 },
+    sage: { color: '#8DB38B', opacity: 0.35 },
+    'deep moss': { color: '#3B5237', opacity: 0.3 },
     clay: { color: '#C98F6B', opacity: 0.3 },
   },
   'harvard-mit': {
@@ -166,7 +166,7 @@ const CONFIG = {
   footer: { ...band(false, 440992, { color: '#706B68', pixelSize: 4.2, scale: 1.14 }), _collapsed: true },
   /** Header band on each project page only (footer and every other page keep the site bands). */
   momoPage: pageBand('momo', PAGE_PRESETS.momo['momo blue']),
-  filoPage: pageBand('filo', PAGE_PRESETS.filo.blush),
+  filoPage: pageBand('filo', PAGE_PRESETS.filo.moss),
   harvardMitPage: pageBand('harvard-mit', PAGE_PRESETS['harvard-mit'].crimson),
 }
 

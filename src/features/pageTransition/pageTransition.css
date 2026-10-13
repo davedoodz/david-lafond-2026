@@ -48,25 +48,11 @@
   animation-timing-function: var(--vt-in-ease);
 }
 
-/* Project Back: WORK / ABOUT / RESUME stay continuously visible while the old
-   and new page snapshots move sideways. Show the incoming cluster from frame
-   one; its position matches the outgoing cluster, so no crossfade is needed. */
-:root[data-vt-pin-links] .nav__links {
-  /* Project Back always lands on Work's light top surface. Apply its final
-     colours before the incoming snapshot, rather than waiting for Nav's
-     under-surface sampler to catch up after the transition starts. */
-  --nav-idle: var(--stone-400);
-  --nav-active: var(--ink-900);
-  view-transition-name: project-nav-links;
-}
-
-:root[data-vt]::view-transition-group(project-nav-links),
-:root[data-vt]::view-transition-new(project-nav-links) {
-  animation: none;
-}
-
-:root[data-vt]::view-transition-old(project-nav-links) {
-  display: none;
+/* Project Back: the nav bar stays empty while the pages slide; the header
+   intro replays the Davebot and link entrances once the destination lands. */
+:root[data-vt-hide-nav] .nav__ghost,
+:root[data-vt-hide-nav] .nav__links {
+  visibility: hidden;
 }
 
 /* fade — straight crossfade */

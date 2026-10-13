@@ -310,6 +310,19 @@ export function PhotoStack({ className }: { className?: string }) {
       })
     }
 
+    // Rapid taps can move this card forward again while its original cycle is still finishing.
+    // Reconcile against the latest order before releasing motion ownership; otherwise every
+    // overlapping cycle leaves its card in the back slot it captured when it began.
+    const finalPose = slotPoses[orderRef.current.indexOf(frontId)]
+    if (reducedMotion) {
+      x.set(finalPose.x)
+      y.set(finalPose.y)
+      rotate.set(finalPose.rotate)
+      scale.set(1)
+    } else {
+      moveTo(frontId, { ...finalPose, scale: 1 }, toMotionTransition(values.cycle.springTuck))
+    }
+
     setCyclingIds((prev) => {
       const next = new Set(prev)
       next.delete(frontId)

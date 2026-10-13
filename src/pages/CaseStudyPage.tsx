@@ -15,10 +15,14 @@ import type { DialConfig } from 'dialkit'
 import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, MOMO_CONFIG, type ProtoVideo, type SectionSpacing, type TextReveal } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
 import { PersonaSection, type Persona } from './casePersona'
-import { EvidenceSection, MediaPlaceholder, PrinciplesSection, ReframeSection } from './filoSections'
-import { FiloOpportunityArt, FiloProblemArt, FiloSolutionArt } from './filoStoryArt'
 import { DeviceInsights } from './DeviceInsights'
+import { FiloStory, type FiloStorySettings } from './filoStoryArt'
+import { FiloFilms } from '../features/filoCase/FiloFilms'
+import type { FilmGroup } from '../features/filoCase/filoFilmPlan'
+import { FiloNext } from '../features/filoCase/FiloNext'
+import { FiloResearchFigure, type FiloResearchSettings } from '../features/filoCase/FiloResearch'
 import './CaseStudyPage.css'
+
 
 type Id = Extract<Work['id'], 'momo' | 'filo'>
 type Props = { id: Id }
@@ -31,12 +35,20 @@ const PANELS = {
 type Media = { video: string; placeholder?: string; figure: string; layout: string; size: number; x: number; y: number; radius: number }
 type Logos = { show: boolean; placement: string; height: number; gap: number; offset: number; x: number; opacity: number; hoverColor: string; hoverOpacity: number; harvardScale: number }
 
-const LOGOS = [
-  { src: '/work/momo/logos/media-lab.svg', alt: 'MIT Media Lab', href: 'https://www.media.mit.edu/', harvard: false },
-  { src: '/work/momo/logos/fluid-interfaces.svg', alt: 'Fluid Interfaces', href: 'https://www.media.mit.edu/groups/fluid-interfaces/overview/', harvard: false },
-  { src: '/work/momo/logos/multisensory-intelligence.svg', alt: 'Multisensory Intelligence', href: 'https://www.media.mit.edu/groups/multisensory-intelligence/overview/', harvard: false },
-  { src: '/work/momo/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', href: 'https://hms.harvard.edu/', harvard: true },
-]
+/** `scale` evens out optical size between marks; Harvard's follows the harvardScale dial. */
+const LOGOS: Record<Id, { src: string; alt: string; href: string; harvard?: boolean; scale?: number }[]> = {
+  momo: [
+    { src: '/work/momo/logos/media-lab.svg', alt: 'MIT Media Lab', href: 'https://www.media.mit.edu/' },
+    { src: '/work/momo/logos/fluid-interfaces.svg', alt: 'Fluid Interfaces', href: 'https://www.media.mit.edu/groups/fluid-interfaces/overview/' },
+    { src: '/work/momo/logos/multisensory-intelligence.svg', alt: 'Multisensory Intelligence', href: 'https://www.media.mit.edu/groups/multisensory-intelligence/overview/' },
+    { src: '/work/momo/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', href: 'https://hms.harvard.edu/', harvard: true },
+  ],
+  filo: [
+    { src: '/work/filo/logos/arts-at-mit.svg', alt: 'Arts at MIT', href: 'https://arts.mit.edu/', scale: 1.05 },
+    { src: '/work/filo/logos/mit-designx.svg', alt: 'MIT DesignX', href: 'https://designx.mit.edu/', scale: 1.2 },
+    { src: '/work/filo/logos/polimi.svg', alt: 'Politecnico di Milano', href: 'https://www.polimi.it/', scale: 0.8 },
+  ],
+}
 
 /** Live watch-notification prototype (built from reself-voice-prototypes into public/work/momo/notification). */
 function NotificationDemo({ media }: { media: Media }) {
@@ -61,14 +73,14 @@ function NotificationDemo({ media }: { media: Media }) {
 }
 
 /** Partner logo row for the hero; placement and size come from the "logos" dials. */
-function LogoRow({ l }: { l: Logos }) {
+function LogoRow({ l, id }: { l: Logos; id: Id }) {
   return (
     <div
       className="case__logos"
       data-placement={l.placement}
       style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, '--logo-hover-color': l.hoverColor, '--logo-hover-opacity': l.hoverOpacity, opacity: l.opacity } as CSSProperties}
     >
-      {LOGOS.map((logo) => (
+      {LOGOS[id].map((logo) => (
         <a
           key={logo.src}
           href={logo.href}
@@ -77,7 +89,7 @@ function LogoRow({ l }: { l: Logos }) {
           aria-label={`Visit ${logo.alt} website (opens in a new tab)`}
           style={{ '--logo-mask': `url("${logo.src}")` } as CSSProperties}
         >
-          <img src={logo.src} alt="" style={{ height: logo.harvard ? `calc(var(--logo-h) * ${l.harvardScale})` : 'var(--logo-h)' }} />
+          <img src={logo.src} alt="" style={{ height: `calc(var(--logo-h) * ${logo.harvard ? l.harvardScale : (logo.scale ?? 1)})` }} />
         </a>
       ))}
     </div>
@@ -138,7 +150,7 @@ const SECTION_LABELS = Object.fromEntries(
         const eyebrow = (p.config as Record<string, { eyebrow?: { default?: string } | string }>)[s]?.eyebrow
         const text = typeof eyebrow === 'string' ? eyebrow : eyebrow?.default
         // DialKit uses '.' as a path separator, so labels used as keys must not contain one.
-        return [s, (SPECIAL_LABELS[s] ?? text ?? s).replace(/\./g, '')]
+        return [s, (k === 'filo' && s === 'story' ? 'Market gap · Opportunity · Solution' : SPECIAL_LABELS[s] ?? text ?? s).replace(/\./g, '')]
       }),
     ),
   ]),
@@ -440,34 +452,25 @@ export function CaseStudyPage({ id }: Props) {
 
   const renderSection = (key: string, s: Section, isHero = false) => {
     if (key === 'moment') return renderMoment(key, s as unknown as Moment)
-    if (id === 'momo' && key === 'dynamic') return <DeviceInsights key={key} copy={s} edit={edit} />
+    if (key === 'dynamic') return <DeviceInsights key={key} copy={s} edit={edit} />
     if (key === 'story')
-      return (
-        <StoryRow
-          key={key}
-          s={s as unknown as Story}
-          edit={edit}
-          arts={id === 'filo' ? [<FiloProblemArt key="p" />, <FiloOpportunityArt key="o" />, <FiloSolutionArt key="s" />] : undefined}
-          selectable={id === 'momo'}
-        />
-      )
-    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={id === 'momo'} />
-    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable={id === 'momo'} />
-    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable={id === 'momo'} />
-    const fields = s as unknown as Record<string, string>
-    if (id === 'filo' && key === 'evidence') return <EvidenceSection key={key} f={fields} edit={edit} />
-    if (id === 'filo' && key === 'reframe') return <ReframeSection key={key} f={fields} edit={edit} />
-    if (id === 'filo' && key === 'principles') return <PrinciplesSection key={key} f={fields} edit={edit} />
+      return id === 'filo'
+        ? <FiloStory key={key} s={s as unknown as FiloStorySettings} edit={edit} />
+        : <StoryRow key={key} s={s as unknown as Story} edit={edit} selectable />
+    const filo = id === 'filo'
+    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={!filo} visual={filo ? <img className="persona__photo" src="/work/filo/studio/library.webp" alt="Tagged fabric samples on a material-development bench" width={1000} height={809} loading="lazy" /> : undefined} />
+    const hasFilms = filo && ['source', 'evidence', 'scale', 'handoff'].includes(key)
+    if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
+    if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />
     const hasDemo = s.media.figure === 'notification'
-    const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper'].includes(s.media.figure)
-    const hasPlaceholder = !hasFigure && !hasDemo && s.media.video === 'placeholder'
-    const hasVideo = !hasFigure && !hasDemo && !hasPlaceholder && s.media.video !== 'none'
+    const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper', 'research', 'next'].includes(s.media.figure)
+    const hasVideo = !hasFilms && !hasFigure && !hasDemo && s.media.video !== 'none'
     return (
       <section
         key={key}
-        className={`case__section${isHero ? ' case__section--hero' : ''}`}
+        className={`case__section${isHero ? ' case__section--hero' : hasFilms ? ' filo-film-section' : ''}`}
         data-section={key}
-        data-layout={hasVideo || hasPlaceholder || hasFigure || hasDemo ? s.media.layout : 'text'}
+        data-layout={isHero || hasFilms || hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
         data-copy-align={s.align}
         data-text-reveal={s.textReveal?.preset}
         style={
@@ -499,9 +502,9 @@ export function CaseStudyPage({ id }: Props) {
       >
         <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
           {isHero && <BackLink className="case__back case__back--inline" />}
-          {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} />}
+          {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} id={id} />}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
-            <LogoRow l={logos} />
+            <LogoRow l={logos} id={id} />
           ) : isHero && id === 'momo' ? (
             // The intro's braided voice band is drawn here (by MomoIntro's canvas) in place of the eyebrow.
             // MomoIntro enables it once the film can replay: hovering swells the band and shows the pill.
@@ -539,19 +542,20 @@ export function CaseStudyPage({ id }: Props) {
               ))}
             </dl>
           )}
-          {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} />}
+          {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} id={id} />}
         </div>
-        {isHero && id === 'momo' ? (
-          <div className="case__devices">
-            <MomoWelcome active={!intro} />
-          </div>
-        ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
-        {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} />}
-        {hasPlaceholder && <MediaPlaceholder label={s.media.placeholder ?? ''} size={s.media.size} x={s.media.x} y={s.media.y} radius={s.media.radius} />}
+        {isHero ? (
+          <div className="case__devices">{id === 'momo' ? <MomoWelcome active={!intro} /> : <FiloFilms group="hero" />}</div>
+        ) : hasFilms ? <FiloFilms group={key as FilmGroup} /> : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
+        {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} id={id} />}
         {hasDemo && <NotificationDemo media={s.media} />}
         {hasFigure &&
           (s.media.figure === 'system' ? (
             <MomoSystemFigure />
+          ) : s.media.figure === 'research' ? (
+            <FiloResearchFigure settings={s as unknown as FiloResearchSettings} />
+          ) : s.media.figure === 'next' ? (
+            <FiloNext />
           ) : s.media.figure === 'paper' ? (
             <ArxivPaper />
           ) : (

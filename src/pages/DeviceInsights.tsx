@@ -13,7 +13,7 @@ const STEPS = [
   { id: 'send', label: 'Watch to iPhone', ms: 2800 },
   { id: 'nudge', label: 'A gentle nudge', ms: 3600 },
 ] as const
-type StepId = (typeof STEPS)[number]['id']
+type StepId = typeof STEPS[number]['id']
 const TRANSITION_MS = 700
 const SCALE = 1.1
 /* Unscaled row: Watch 260 + gap 190 + phone 300; phone height 300 × 1780 / 874. */
@@ -85,6 +85,7 @@ function Screens({ step, render }: { step: StepId; render: (id: StepId) => React
   return <>{layers.map(l => <div key={l.n} className={`mc-screen${l.phase ? ` mc-screen--${l.phase}` : ''}`}>{render(l.id)}</div>)}</>
 }
 
+
 type DeviceEntrance = { preset: 'handoff' | 'rise together' | 'split sides' | 'scale in' | 'focus' | 'still'; duration: number; stagger: number }
 type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; watch?: { strapColor: string }; deviceEntrance?: DeviceEntrance; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void }
 
@@ -98,6 +99,7 @@ export function DeviceInsights({ copy, edit }: Props) {
   const entrance = copy.deviceEntrance ?? { preset: 'still', duration: 0.8, stagger: 0.18 }
   const textReveal = copy.textReveal ?? { preset: 'still', duration: 0.7, stagger: 0.1 }
   const strapColor = copy.watch?.strapColor ?? '#d6ccc4'
+  const steps = STEPS
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -105,7 +107,7 @@ export function DeviceInsights({ copy, edit }: Props) {
     const update = () => {
       setReduced(media.matches)
       if (media.matches) {
-        setStep(2)
+        setStep(steps.length - 1)
         el.dataset.seen = ''
       }
     }
@@ -151,10 +153,10 @@ export function DeviceInsights({ copy, edit }: Props) {
   /* Loops: the sequence restarts right after "Yes, let's talk it out" is tapped. */
   useEffect(() => {
     if (!visible || reduced) return
-    const timer = setTimeout(() => setStep((step + 1) % STEPS.length), STEPS[step].ms)
+    const timer = setTimeout(() => setStep((step + 1) % steps.length), steps[step].ms)
     return () => clearTimeout(timer)
   }, [visible, reduced, step])
-  const id = STEPS[step].id
+  const id = steps[step].id
   return (
     <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={entrance.preset} data-text-reveal={textReveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-watch-strap': strapColor, '--mc-reveal-duration': `${entrance.duration}s`, '--mc-reveal-stagger': `${entrance.stagger}s`, '--text-reveal-duration': `${textReveal.duration}s`, '--text-reveal-stagger': `${textReveal.stagger}s` } as CSSProperties}>
       <header className="insights__heading case__section-copy">

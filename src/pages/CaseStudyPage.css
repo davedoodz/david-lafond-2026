@@ -634,11 +634,6 @@ html[data-case-snap] .case__moment {
   box-sizing: border-box;
   width: min(100%, var(--story-art-w, 300px));
 }
-.case__story-step {
-  font-size: var(--text-small);
-  color: var(--stone-400);
-  font-variant-numeric: tabular-nums;
-}
 .case__story-title {
   font-size: calc(var(--text-display) * var(--story-title, 0.5) * var(--case-heading-scale));
   line-height: 1.15;

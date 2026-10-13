@@ -62,7 +62,7 @@ export type Story = {
   titleScale: number
   textWidth: number
   spacing: SectionSpacing
-  /** Momo art captions; other case studies pass their own `arts`. */
+  /** Momo art captions. */
   artText?: StoryArtText
   /** Momo glass art cards (art: 'glass'). */
   glass?: StoryGlass
@@ -106,14 +106,13 @@ const STORY_PRESETS: Record<string, Look> = {
   columns: { art: 'card', opportunityArt: 'three', motion: 'draw', reveal: 'soft rise' },
 }
 
-/** `arts` replaces the Momo graphics (problem, opportunity, solution) for another case study. */
-export function StoryRow({ s, edit, arts, selectable = false }: { s: Story; edit: Edit; arts?: [ReactNode, ReactNode, ReactNode]; selectable?: boolean }) {
+export function StoryRow({ s, edit, selectable = false }: { s: Story; edit: Edit; selectable?: boolean }) {
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const glassVars = useStoryGlass(s.glass)
   const rows = [
-    ['problem', s.problemLabel, s.problemTitle, s.problemBody, arts?.[0] ?? <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} />],
-    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, arts?.[1] ?? <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} />],
-    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, arts?.[2] ?? <SolutionArt key="s" text={s.artText} />],
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody, <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} />],
+    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} />],
+    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, <SolutionArt key="s" text={s.artText} />],
   ] as const
   return (
     <section
@@ -130,11 +129,10 @@ export function StoryRow({ s, edit, arts, selectable = false }: { s: Story; edit
       style={{ ...glassVars, '--story-art-w': `${s.artWidth}px`, '--section-pad-top': `${s.spacing.top}px`, '--section-pad-bottom': `${s.spacing.bottom}px`, '--section-content-gap': `${s.spacing.contentGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
     >
       <ol className="case__story-cols">
-        {rows.map(([k, label, title, body, art], i) => (
+        {rows.map(([k, label, title, body, art]) => (
           <StoryItem key={k} row={k} speed={s.speed[k]}>
             {look.art !== 'none' && <div className="story-art">{art}</div>}
             <div className="case__story-text">
-              <span className="case__story-step">{String(i + 1).padStart(2, '0')}</span>
               <p className="eyebrow">{label}</p>
               <EditableText as="h2" className="case__story-title" label={`${label} title`} value={title} onChange={edit(`story.${k}Title`)} selectable={selectable} />
               <EditableText className="case__story-body" label={`${label} body`} value={body} onChange={edit(`story.${k}Body`)} selectable={selectable} />

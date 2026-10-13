@@ -287,7 +287,8 @@ function Icon({ name }: { name: string }) {
   )
 }
 
-export function PersonaSection({ p, edit, selectable = false }: { p: Persona; edit: Edit; selectable?: boolean }) {
+/** `visual` replaces the Momo portrait (Filo's sample-bench still life); it fills the `.persona__photo` box. */
+export function PersonaSection({ p, edit, selectable = false, visual }: { p: Persona; edit: Edit; selectable?: boolean; visual?: ReactNode }) {
   const look = { ...(PERSONA_PRESETS[p.preset] ?? p), image: p.image }
   const ref = useRef<HTMLElement>(null)
   const wasLive = useRef(false)
@@ -421,15 +422,17 @@ export function PersonaSection({ p, edit, selectable = false }: { p: Persona; ed
         </div>
         {look.image !== 'none' && (
           <div className="persona__stage">
-            <img
-              className="persona__photo"
-              src="/work/momo/persona/overthinker.jpg"
-              alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
-              width={1374}
-              height={1145}
-              loading="lazy"
-              decoding="async"
-            />
+            {visual ?? (
+              <img
+                className="persona__photo"
+                src="/work/momo/persona/overthinker.jpg"
+                alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
+                width={1374}
+                height={1145}
+                loading="lazy"
+                decoding="async"
+              />
+            )}
             {float && (
               <ul key={floatCycle} className="persona__floats" aria-label={m.title}>
                 {SCENES.map((scene, i) => {

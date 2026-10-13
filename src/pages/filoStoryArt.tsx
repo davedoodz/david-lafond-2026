@@ -1,135 +1,144 @@
-import type { CSSProperties } from 'react'
-/**
- * Graphics for the Problem · Opportunity · Solution rows on the Filo case study.
- * Same language as the Momo story art: ink line work, one accent for what moves.
- * Accent marks carry `sa-b` (and `sa-draw` for strokes that draw in), so only they animate.
- * Problem and Solution share one track: swatch → spec → tests → scale → line review.
- */
-const INK = '#171717'
-const STONE = '#a6a09c'
-const ACCENT = '#5f8a10'
-const LIME = '#cdf56f'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { EditableText } from '../components/EditableText'
+import type { Story } from './caseStudyFlows'
+import './filoStoryArt.css'
 
-const label = (x: number, y: number, t: string, fill = STONE, anchor: 'start' | 'middle' | 'end' = 'middle') => (
-  <text x={x} y={y} fontSize={11} fill={fill} textAnchor={anchor} letterSpacing="0.02em">
-    {t}
-  </text>
-)
-
-const Y = 76
-/** x of the line-review gate; its posts sit 10 px either side. */
-const GATE = 204
-const STOPS = [
-  { x: 86, t: 'spec' },
-  { x: 128, t: 'tests' },
-  { x: 170, t: 'scale' },
-]
-
-/** A fabric swatch with a pinked (zig-zag) bottom edge. */
-function Swatch({ x, y }: { x: number; y: number }) {
-  const zig = Array.from({ length: 6 }, (_, i) => `L${x - 18 + i * 6 + 3} ${y + 18} L${x - 18 + (i + 1) * 6} ${y + 14}`).join(' ')
-  return (
-    <path
-      d={`M${x - 18} ${y + 14} V${y - 16} H${x + 18} V${y + 14} ${zig}`}
-      fill="#fff"
-      stroke={INK}
-      strokeWidth={1.6}
-      strokeLinejoin="round"
-    />
-  )
+type StoryCopy = Pick<Story, 'problemLabel' | 'problemTitle' | 'problemBody' | 'opportunityLabel' | 'opportunityTitle' | 'opportunityBody' | 'solutionLabel' | 'solutionTitle' | 'solutionBody' | 'spacing' | 'textWidth'>
+export type FiloStorySettings = StoryCopy & {
+  animationPreset: string
+  loopSeconds: number
+  playbackSpeed: number
+  toteSpin: number
+  parkaSpin: number
+  blouseSpin: number
+  windbreakerSpin: number
 }
 
-/** The line review: a gate the material has to reach. */
-function Gate({ x, y }: { x: number; y: number }) {
-  return (
-    <g fill="none" stroke={INK} strokeWidth={1.6} strokeLinecap="round">
-      <path d={`M${x - 10} ${y + 18} V${y - 18} M${x + 10} ${y + 18} V${y - 18} M${x - 14} ${y - 18} H${x + 14}`} />
-    </g>
-  )
+const ASSETS = '/work/filo/studio/'
+const PHONE_SCENES = ['nfc', 'file', 'listening', 'warning', 'approval'] as const
+const PRESETS = ['quiet dissolve', 'material drift', 'exploded assembly']
+
+function MaterialImage({ asset, className = '' }: { asset: string; className?: string }) {
+  return <img className={`fs-material-image ${className}`} src={`${ASSETS}${asset}.webp`} alt="" loading="lazy" decoding="async" draggable={false} />
 }
 
-function Track() {
-  return (
-    <>
-      <path d={`M52 ${Y} H${GATE - 10}`} stroke={STONE} strokeWidth={1} opacity={0.5} />
-      <Swatch x={34} y={Y} />
-      <Gate x={GATE} y={Y} />
-      {label(34, Y + 44, 'swatch', INK)}
-      {label(GATE, Y - 28, 'line review', INK)}
-    </>
-  )
+/** Full-resolution Futurefabric 3D renders: 36 transparent 768px views in a 6 × 6 sheet. */
+function Product({ name, spin, className = '' }: { name: string; spin: number; className?: string }) {
+  return <div className={`fs-product ${className}`} style={{ '--fs-spin': spin } as CSSProperties}>
+    <div className="fs-turntable" style={{ backgroundImage: `url(/work/filo/sprites-hd/${name}-spritesheet.webp)` }} />
+  </div>
 }
 
-/** Problem: the material starts down the track and stalls at the first unknown; polyester takes its slot. */
-export function FiloProblemArt() {
-  return (
-    <svg viewBox="0 0 240 160" role="img" aria-label="A new material stalls at its first unknown and never reaches the line review">
-      <Track />
-      <path className="sa-b sa-draw" pathLength={1} d={`M52 ${Y} H80`} stroke={ACCENT} strokeWidth={2.4} strokeLinecap="round" />
-      {STOPS.map((s, i) => (
-        <g key={s.t}>
-          <circle cx={s.x} cy={Y} r={7} fill="#fff" stroke={i === 0 ? ACCENT : STONE} strokeWidth={1.4} />
-          <text x={s.x} y={Y + 4} fontSize={10} fill={i === 0 ? ACCENT : STONE} textAnchor="middle">
-            ?
-          </text>
-          {label(s.x, Y - 16, s.t)}
-        </g>
-      ))}
-      <path d={`M104 ${Y + 52} Q${GATE} ${Y + 52} ${GATE} ${Y + 24}`} fill="none" stroke={INK} strokeWidth={1.4} strokeDasharray="2 4" strokeLinecap="round" />
-      {label(100, Y + 56, 'polyester instead', STONE, 'end')}
+type Spins = Pick<FiloStorySettings, 'toteSpin' | 'parkaSpin' | 'blouseSpin' | 'windbreakerSpin'>
+
+function MarketGap({ s }: { s: Spins }) {
+  return <>
+    <div className="fs-gap-material fs-move">
+      <MaterialImage asset="cellulose" className="fs-gap-photo" />
+      <MaterialImage asset="tag-scan" className="fs-gap-tag" />
+    </div>
+    <div className="fs-gap-library fs-move"><MaterialImage asset="library" /></div>
+    <Product name="zara-pinatex-bag" spin={s.toteSpin} className="fs-gap-bag fs-move" />
+    <Product name="northface" spin={s.parkaSpin} className="fs-gap-garment fs-move" />
+    <MaterialImage asset="nfc" className="fs-gap-nfc fs-symbol" />
+  </>
+}
+
+function Opportunity({ s }: { s: Spins }) {
+  return <>
+    <svg className="fs-thread" viewBox="0 0 800 440" fill="none" aria-hidden="true">
+      <path pathLength="1" d="M150 240 C205 365 280 320 325 225 S400 160 455 240 S580 340 665 205" />
     </svg>
-  )
+    <div className="fs-opportunity-material fs-move"><MaterialImage asset="thread-tag" /></div>
+    <div className="fs-opportunity-record fs-move"><img src="/work/filo/story/phone-file.webp" alt="" loading="lazy" decoding="async" /></div>
+    <Product name="orange-fiber-x-h-m-conscious-exclusive-collection-2019" spin={s.blouseSpin} className="fs-opportunity-garment fs-move" />
+    <MaterialImage asset="nfc" className="fs-opportunity-nfc fs-symbol" />
+  </>
 }
 
-/** Opportunity: one agent working across the parties a material has to pass through. */
-export function FiloOpportunityArt() {
-  const parties = [
-    { x: 40, y: 34, t: 'suppliers' },
-    { x: 200, y: 34, t: 'labs' },
-    { x: 40, y: 128, t: 'factory' },
-    { x: 200, y: 128, t: 'line review' },
-  ]
-  return (
-    <svg viewBox="0 0 240 160" role="img" aria-label="An agent connects suppliers, labs, the factory and the line review">
-      {parties.map((p, i) => (
-        <g key={p.t}>
-          <path
-            className="sa-b sa-draw"
-            pathLength={1}
-            d={`M120 80 L${p.x} ${p.y}`}
-            stroke={ACCENT}
-            strokeWidth={1.8}
-            strokeLinecap="round"
-            style={{ '--i': i } as CSSProperties}
-          />
-          <rect x={p.x - 9} y={p.y - 9} width={18} height={18} rx={5} fill="#fff" stroke={INK} strokeWidth={1.4} />
-          {label(p.x, p.y < 80 ? p.y - 16 : p.y + 26, p.t)}
-        </g>
-      ))}
-      <circle className="sa-b sa-ping" cx={120} cy={80} r={18} fill={ACCENT} opacity={0.16} />
-      <circle cx={120} cy={80} r={14} fill={LIME} stroke={INK} strokeWidth={1.4} />
-      {/* The thread: Filo's mark. */}
-      <path d="M113 84 C113 74 127 74 127 80 C127 86 117 86 117 80" fill="none" stroke={INK} strokeWidth={1.5} strokeLinecap="round" />
-    </svg>
-  )
+function Solution({ s }: { s: Spins }) {
+  return <>
+    <div className="fs-solution-material fs-move"><MaterialImage asset="tag-scan" /></div>
+    <Product name="xtep-pla-windbreaker" spin={s.windbreakerSpin} className="fs-solution-garment fs-move" />
+    <div className="fs-solution-phone fs-move">
+      {PHONE_SCENES.map((scene, index) => <img
+        className="fs-phone-frame"
+        key={scene}
+        src={`/work/filo/story/phone-${scene}.webp`}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={{ '--phase': index === 0 ? 0 : (index - PHONE_SCENES.length) / PHONE_SCENES.length } as CSSProperties}
+      />)}
+    </div>
+    <MaterialImage asset="warning" className="fs-solution-warning fs-symbol" />
+  </>
 }
 
-/** Solution: the same track, every unknown answered, the material reaches the line review. */
-export function FiloSolutionArt() {
-  return (
-    <svg viewBox="0 0 240 160" role="img" aria-label="Every unknown is answered and the material reaches the line review with a go">
-      <Track />
-      <path className="sa-b sa-draw" pathLength={1} d={`M52 ${Y} H${GATE - 10}`} stroke={ACCENT} strokeWidth={2.4} strokeLinecap="round" />
-      {STOPS.map((s) => (
-        <g key={s.t}>
-          <circle cx={s.x} cy={Y} r={7} fill={LIME} stroke={ACCENT} strokeWidth={1.4} />
-          <path d={`M${s.x - 3} ${Y} l2 2.5 l4 -5`} fill="none" stroke={INK} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
-          {label(s.x, Y - 16, s.t, INK)}
-        </g>
-      ))}
-      <circle className="sa-b sa-ping" cx={GATE} cy={Y} r={10} fill={ACCENT} opacity={0.18} />
-      <circle className="sa-b" cx={GATE} cy={Y} r={4.5} fill={ACCENT} />
-      {label(GATE, Y + 44, 'go', ACCENT)}
-    </svg>
-  )
+/** Like Momo: play on entry, stop offscreen, restart from the first frame on return. */
+function StoryFilm({ kind, label, children }: { kind: string; label: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)')
+    let visible = false
+    const sync = () => {
+      el.dataset.live = String(visible && !reduced.matches)
+      el.dataset.paused = String(document.hidden)
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      // Observe the visual, not the taller article, so mobile can always trigger playback.
+      visible = entry.isIntersecting
+      sync()
+    }, { threshold: 0 })
+    observer.observe(el)
+    reduced.addEventListener('change', sync)
+    document.addEventListener('visibilitychange', sync)
+    sync()
+    return () => {
+      observer.disconnect()
+      reduced.removeEventListener('change', sync)
+      document.removeEventListener('visibilitychange', sync)
+    }
+  }, [])
+  return <div className={`fs-film fs-film--${kind}`} ref={ref} role="img" aria-label={label}>
+    <div className="fs-stage" aria-hidden="true">{children}</div>
+  </div>
+}
+
+export function FiloStory({ s, edit }: { s: FiloStorySettings; edit: (path: string) => (next: string) => void }) {
+  const requested = new URLSearchParams(window.location.search).get('filoAnimation')?.replaceAll('-', ' ')
+  const preset = requested && PRESETS.includes(requested) ? requested : s.animationPreset
+  const rows = [
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody,
+      'Looped material study: a swatch becomes an NFC-tagged sample while the surrounding material library, a Piñatex tote and a Moon Parka remain disconnected.', <MarketGap key="gap" s={s} />],
+    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody,
+      'A lime thread connects the physical Filo tag, its Technical File and an illustrative Orange Fiber garment.', <Opportunity key="opportunity" s={s} />],
+    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody,
+      'Automatic Filo concept film: tap the tag, open the Technical File, capture a bench observation, flag the supplier-claimed 60 degree limit against 130 degree fusing, and prepare a sample plan for human approval. No real actions are performed.', <Solution key="solution" s={s} />],
+  ] as const
+  return <section
+    id="filo-story"
+    data-section="story"
+    className="case__section filo-story"
+    data-preset={preset}
+    aria-label="Market gap, opportunity and solution"
+    style={{
+      '--section-pad-top': `${s.spacing.top}px`,
+      '--section-pad-bottom': `${s.spacing.bottom}px`,
+      '--fs-chapter-gap': `${s.spacing.contentGap}px`,
+      '--fs-copy-width': `${s.textWidth}px`,
+      '--fs-duration': `${s.loopSeconds / s.playbackSpeed}s`,
+    } as CSSProperties}
+  >
+    {rows.map(([key, label, title, body, description, visual]) => <article className="fs-chapter" data-chapter={key} key={key}>
+      <div className="fs-copy">
+        <p className="eyebrow">{label}</p>
+        <EditableText as="h2" value={title} label={`${label} title`} onChange={edit(`story.${key}Title`)} />
+        <EditableText as="p" value={body} label={`${label} body`} onChange={edit(`story.${key}Body`)} />
+      </div>
+      <StoryFilm kind={key} label={description}>{visual}</StoryFilm>
+    </article>)}
+  </section>
 }

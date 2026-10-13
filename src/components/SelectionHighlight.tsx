@@ -112,12 +112,22 @@ export function SelectionHighlight() {
     }
     redrawRef.current = schedule
 
+    const dismissOnClick = (event: PointerEvent): void => {
+      if (event.button !== 0 || (event.target instanceof Element && event.target.closest('.ghost-button.is-cued'))) return
+      const selection = document.getSelection()
+      if (!selection || selection.isCollapsed) return
+      selection.removeAllRanges()
+      host.replaceChildren()
+    }
+
     document.addEventListener('selectionchange', schedule)
+    document.addEventListener('pointerdown', dismissOnClick, true)
     window.addEventListener('resize', schedule)
     return () => {
       cancelAnimationFrame(raf)
       redrawRef.current = null
       document.removeEventListener('selectionchange', schedule)
+      document.removeEventListener('pointerdown', dismissOnClick, true)
       window.removeEventListener('resize', schedule)
     }
   }, [])

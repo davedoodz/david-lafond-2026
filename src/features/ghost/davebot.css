@@ -251,7 +251,6 @@ body.davebot-open {
 .davebot-status {
   display: flex;
   align-items: center;
-  gap: 10px;
   min-height: 52px;
   padding: 14px 16px;
   color: var(--davebot-ink-muted);
@@ -259,11 +258,35 @@ body.davebot-open {
   line-height: 20px;
 }
 
-.davebot-status__line {
-  width: 18px;
-  height: 1px;
-  flex: 0 0 18px;
-  background: var(--davebot-highlight, #f2b544);
+.davebot-status__thinking {
+  color: transparent;
+  background: linear-gradient(
+    90deg,
+    var(--davebot-ink-muted) 0%,
+    var(--davebot-ink-muted) 42%,
+    var(--davebot-ink) 50%,
+    var(--davebot-ink-muted) 58%,
+    var(--davebot-ink-muted) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: davebot-thinking-shine 1.8s linear infinite;
+}
+
+@keyframes davebot-thinking-shine {
+  to {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .davebot-status__thinking {
+    color: var(--davebot-ink-muted);
+    background: none;
+    animation: none;
+  }
 }
 
 .davebot-answer {

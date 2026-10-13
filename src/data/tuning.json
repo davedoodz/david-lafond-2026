@@ -121,8 +121,9 @@
       "headerOpacity": 0.25
     },
     "filoPage": {
-      "preset": "blush",
-      "headerColor": "#FFE1E2"
+      "preset": "custom",
+      "headerColor": "#4F6B4A",
+      "headerOpacity": 0.25
     }
   },
   "Signature": {
@@ -345,11 +346,24 @@
   },
   "Portfolio book": {
     "switch": {
-      "bounce": 0.16,
-      "lag": 0.1,
-      "squash": 0.06
+      "durationMs": 270,
+      "bounce": 0.18,
+      "lag": 0.03,
+      "squash": 0.03
     },
     "bookGridOnly": true,
+    "diagram": {
+      "outlines": {
+        "width": 0.25
+      },
+      "grid": {
+        "columns": 33,
+        "rows": 48
+      },
+      "motion": {
+        "durationMs": 2150
+      }
+    },
     "video": {
       "scaleDesktop": 0.62,
       "scaleMobile": 0.8,
@@ -487,6 +501,7 @@
       "gapDesktop": 169,
       "stackToHeadingDesktop": 76,
       "labelTopDesktop": 99,
+      "labelTopMobile": 24,
       "playFitGap": 0,
       "playY": 40,
       "playSpaceBelow": -93
@@ -586,7 +601,7 @@
       "height": 39,
       "gap": 27,
       "offset": 28,
-      "hoverColor": "#71c4f8"
+      "hoverColor": "#6f8f69"
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
@@ -781,7 +796,8 @@
     }
   },
   "Footer": {
-    "desktopHeight": 200
+    "desktopHeight": 200,
+    "mobileHeight": 193
   },
   "Momo intro": {
     "speed": 1.3,
@@ -828,17 +844,79 @@
   },
   "Filo case study": {
     "page": {
-      "snap": "off"
+      "snap": "off",
+      "sectionReveal": "still"
     },
-    "story": {
-      "problemTitle": "Fashion doesn’t have a discovery problem. It has a follow-through problem.",
-      "problemBody": "Designers already find compelling new materials. Most disappear during\n development because nobody can answer how they perform, how to manufacture with\n them or whether supply can scale.",
-      "opportunityTitle": "AI can move the work forward not just talk about it."
+    "hero": {
+      "spacing": {
+        "top": 106,
+        "bottom": 62,
+        "contentGap": 99
+      },
+      "media": {
+        "radius": 21
+      }
+    },
+    "heroSpacing": {
+      "logosToTitle": 54,
+      "titleToMeta": 20,
+      "y": {
+        "braid": -42,
+        "title": -24,
+        "meta": -23,
+        "logos": -17
+      }
+    },
+    "logos": {
+      "placement": "below meta",
+      "height": 39,
+      "gap": 27,
+      "offset": 28
+    },
+    "research": {
+      "primaryVisual": "video",
+      "miroVideo": {
+        "speed": 2,
+        "cropRight": 0.24,
+        "cropTop": 0.41,
+        "radius": 14
+      },
+      "interviewVideo": {
+        "speed": 1.5,
+        "radius": 14
+      }
+    },
+    "persona": {
+      "float": {
+        "entrance": {
+          "duration": 0.3,
+          "distance": 6,
+          "textStagger": 0.02,
+          "pillStagger": 0.01,
+          "pillsGap": 0.05,
+          "imageGap": 0.06,
+          "floatsDelay": 0.2,
+          "floatStagger": 0.11
+        }
+      }
     }
   },
   "Momo welcome": {
     "blackOverlay": 0.16,
     "prototypeWidth": 305,
+    "timing": {
+      "fullLoopDuration": 10,
+      "shadeAt": 0,
+      "shadeIn": 1,
+      "shadeOut": 4,
+      "momoAt": 0.55,
+      "logoAt": 0.55,
+      "buttonsAt": 0.65,
+      "legalAt": 0.8,
+      "fadeIn": 2.3,
+      "holdUntil": 7.6,
+      "fadeOut": 1.65
+    },
     "momo": {
       "size": 60,
       "y": 4

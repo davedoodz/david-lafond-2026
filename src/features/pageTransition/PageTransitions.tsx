@@ -92,6 +92,7 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
     typeof document.startViewTransition !== 'function' ||
     window.matchMedia(REDUCED_MOTION).matches
   if (skip) {
+    root.removeAttribute('data-vt-hide-nav')
     update()
     return
   }
@@ -104,28 +105,43 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
       : settings.mirror && back
         ? 'back'
         : 'forward'
-  // Sideways: the incoming WORK / ABOUT / RESUME cluster is isolated into one
-  // stationary layer, visible from frame one. Davebot and both pages keep their
-  // existing motion; using only the incoming nav avoids a dark/light crossfade.
+  // Project Back: the nav stays empty while the pages slide, then replays its
+  // entrance once the destination has landed.
+  const projectBack = back && PROJECT_ROUTES.includes(from)
   const sideways = root.dataset.vtDir === 'left' || root.dataset.vtDir === 'right'
-  if (sideways) pinIfVisible('.nav__links', 'data-vt-pin-links')
   if (settings.pinNav && !sideways) pinIfVisible('.nav', 'data-vt-pin-nav')
   if (settings.pinShader) pinIfVisible('.dither-band--header', 'data-vt-pin-shader')
 
-  const transition = document.startViewTransition(async () => {
-    // Load the next page's chunk before committing, so the new snapshot is the real page.
-    await preloadRoute(to)
-    flushSync(update)
-  })
-  void transition.finished.finally(() => {
-    // A newer transition may have started; only clean up our own state.
-    if (root.dataset.vt !== settings.preset) return
-    delete root.dataset.vt
-    delete root.dataset.vtDir
-    root.removeAttribute('data-vt-pin-nav')
-    root.removeAttribute('data-vt-pin-links')
-    root.removeAttribute('data-vt-pin-shader')
-  })
+  // Finish loading the destination before starting the visual transition so
+  // its snapshot exists from the first animated frame.
+  const routeReady = preloadRoute(to)
+  const startTransition = async () => {
+    await routeReady
+    // Set before the old snapshot is captured so neither page shows nav items.
+    // Toggle, so an interrupted project Back cannot leave the nav hidden.
+    root.toggleAttribute('data-vt-hide-nav', projectBack)
+
+    const transition = document.startViewTransition(() => {
+      flushSync(update)
+    })
+    void transition.finished.finally(() => {
+      // A newer transition may have started; only clean up our own state.
+      if (root.dataset.vt !== settings.preset) return
+      delete root.dataset.vt
+      delete root.dataset.vtDir
+      root.removeAttribute('data-vt-pin-nav')
+      root.removeAttribute('data-vt-pin-shader')
+
+      if (projectBack) {
+        // Same task: the entrance animations start from their hidden first
+        // frame (fill: backwards) before the items become visible again.
+        window.dispatchEvent(new Event('project-slide-settled'))
+        root.removeAttribute('data-vt-hide-nav')
+      }
+    })
+  }
+
+  void startTransition()
 }
 
 export function PageTransitions() {

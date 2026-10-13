@@ -1,0 +1,65 @@
+.case[data-work='filo'] { --filo-moss: #4f6b4a; }
+.case[data-work='filo'] .persona__tag { color: var(--filo-moss); }
+.case[data-work='filo'] .case__section--hero {
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+}
+.case[data-work='filo'] .case__section--hero .case__devices {
+  width: min(100%, 750px);
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+.case__section.filo-film-section {
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+  grid-template-columns: minmax(0, min(var(--case-content), 100%));
+  justify-items: center;
+  gap: var(--section-content-gap, 64px);
+}
+.filo-film-section .case__text { max-width: 650px; text-align: center; }
+.filo-film-section .case__body { margin-inline: auto; }
+.filo-films { position: relative; width: 100%; padding: 10px 0 35px; }
+.filo-films__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: clamp(24px, 4vw, 72px); }
+.filo-film { margin: 0; min-width: 0; width: 100%; justify-self: center; }
+.filo-film video { display: block; width: 100%; height: auto; background: transparent; pointer-events: none; }
+.filo-film--detail video, .filo-film--upper video { border-radius: 18px; box-shadow: 0 16px 35px #1719180b; }
+.filo-film--phone { max-width: 350px; }
+.filo-film--detail { max-width: 310px; }
+.filo-film--upper { max-width: 350px; }
+.filo-films--hero .filo-films__grid { grid-template-columns: 1.05fr .95fr; gap: clamp(30px, 5vw, 90px); max-width: 620px; margin: auto; }
+.filo-films--hero .filo-film--phone { max-width: 300px; }
+.filo-films--hero .filo-film--detail { max-width: 255px; translate: 0 32px; }
+.filo-films--source .filo-film:last-child { align-self: start; margin-top: 62px; }
+.filo-films--evidence .filo-films__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 64px; }
+.filo-films--evidence .filo-film { grid-column: span 2; }
+.filo-films--evidence .filo-film:nth-child(n+4) { grid-column: span 3; }
+.filo-films--evidence .filo-film:nth-child(4) { justify-self: end; max-width: 330px; }
+.filo-films--evidence .filo-film:nth-child(5) { justify-self: start; max-width: 285px; }
+.filo-films--scale .filo-films__grid { grid-template-columns: 1fr 1fr; gap: clamp(40px, 7vw, 100px); max-width: 760px; margin: auto; }
+.filo-films--scale .filo-film--detail { max-width: 300px; }
+.filo-films--handoff .filo-film:first-child { align-self: start; margin-top: 30px; }
+.filo-films--handoff .filo-film:last-child { align-self: end; margin-bottom: 44px; }
+.filo-films__pause { position: absolute; right: 0; bottom: 0; width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #17191818; border-radius: 50%; background: transparent; color: #7c827b; cursor: pointer; }
+.filo-films__pause:hover, .filo-films__pause:focus-visible { color: #171918; border-color: #17191855; }
+@media (max-width: 1100px) {
+  .filo-films__grid { gap: 30px; }
+  .filo-films--evidence .filo-films__grid { gap: 48px 28px; }
+}
+@media (max-width: 700px) {
+  .case__section.filo-film-section { padding-inline: 22px; min-height: 0; }
+  .case[data-work='filo'] .case__section--hero .case__devices { width: 100%; }
+  .filo-films__grid, .filo-films--hero .filo-films__grid, .filo-films--scale .filo-films__grid, .filo-films--evidence .filo-films__grid { grid-template-columns: minmax(0, 1fr); gap: 52px; }
+  .filo-films .filo-film { grid-column: auto; justify-self: center; margin-block: 0; align-self: center; translate: none; }
+  .filo-films--evidence .filo-film:nth-child(n) { grid-column: auto; justify-self: center; }
+  .filo-films .filo-film--phone { max-width: min(82%, 320px); }
+  .filo-films .filo-film--detail { max-width: min(86%, 310px); }
+  .filo-films .filo-film--upper { max-width: min(92%, 350px); }
+  .filo-films--hero .filo-films__grid { grid-template-columns: 1.1fr .9fr; gap: 18px; }
+  .filo-films--hero .filo-film { max-width: 100%; }
+  .filo-films--hero .filo-film--detail { translate: 0 15px; }
+  .filo-films__pause { right: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .filo-films__pause { display: none; } }
