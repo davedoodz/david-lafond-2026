@@ -48,34 +48,12 @@
   animation-timing-function: var(--vt-in-ease);
 }
 
-/* Project Back: isolate WORK / ABOUT / RESUME from the sideways page motion.
-   Difference blending keeps the stationary labels legible while the dark Work
-   page crosses the light case study underneath them. */
-:root[data-vt-pin-links] .nav__links {
-  view-transition-name: project-nav-links;
+/* Project Back: the nav bar stays empty while the pages slide; the header
+   intro replays the Davebot and link entrances once the destination lands. */
+:root[data-vt-hide-nav] .nav__ghost,
+:root[data-vt-hide-nav] .nav__links {
+  visibility: hidden;
 }
-
-:root[data-vt-pin-links-ready] .nav__links {
-  --nav-idle: var(--text-muted);
-  --nav-active: var(--paper);
-}
-
-:root[data-vt-pin-links-ready] .nav__links a {
-  transition: none;
-}
-
-:root[data-vt]::view-transition-group(project-nav-links) {
-  mix-blend-mode: difference;
-}
-
-:root[data-vt]::view-transition-new(project-nav-links) {
-  animation: none;
-}
-
-:root[data-vt]::view-transition-old(project-nav-links) {
-  display: none;
-}
-
 
 /* fade — straight crossfade */
 :root[data-vt='fade']::view-transition-old(root) {

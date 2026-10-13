@@ -115,8 +115,18 @@ export function Nav({ route }: Props) {
     window.addEventListener('resize', queue)
     // Sections also move without scrolling (reveals, snapping), so re-check a few times a second.
     const timer = window.setInterval(queue, 300)
+    // A View Transition makes elementsFromPoint report only <html>. Resample
+    // as soon as that overlay is removed instead of waiting for the 300 ms
+    // fallback interval; this keeps the live nav colour aligned with its
+    // outgoing snapshot.
+    const transitionObserver = new MutationObserver(queue)
+    transitionObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-vt'],
+    })
     return () => {
       window.clearInterval(timer)
+      transitionObserver.disconnect()
       cancelAnimationFrame(frame)
       window.removeEventListener('scroll', queue)
       window.removeEventListener('resize', queue)
