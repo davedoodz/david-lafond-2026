@@ -1,0 +1,205 @@
+/* The System section holds only this card; it grows like Momo's equivalent section. */
+.case__section:has(> .filo-system) {
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+  padding-block: clamp(96px, 12svh, 140px);
+}
+
+.filo-system {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 1200px);
+  margin-inline: auto;
+  padding: clamp(28px, 4vw, 56px);
+  box-sizing: border-box;
+  display: grid;
+  gap: clamp(16px, 2.4vw, 32px);
+  border-radius: 48px;
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.94), rgb(242 245 240 / 0.88));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 2px 0 rgb(16 19 18 / 0.04),
+    0 40px 90px -30px rgb(16 19 18 / 0.28);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+}
+.filo-system::after {
+  content: '';
+  position: absolute;
+  inset: -6%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 45% at 22% 18%, rgb(79 107 74 / 0.18), transparent 70%),
+    radial-gradient(50% 42% at 82% 86%, rgb(111 143 105 / 0.14), transparent 70%);
+  filter: blur(48px);
+}
+
+.filo-system__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.filo-system__brand span {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--filo-moss-deep);
+}
+
+.filo-system__diagram {
+  display: block;
+  width: min(100%, calc((100svh - 220px) * 1040 / 800));
+  height: auto;
+  margin-inline: auto;
+}
+
+/* --- Nodes. */
+.filo-node__halo {
+  fill: var(--filo-moss-soft);
+  opacity: 0.1;
+  transition: opacity 0.5s ease;
+}
+.filo-node.is-active .filo-node__halo {
+  opacity: 0.55;
+}
+.filo-node__ring {
+  fill: #fff;
+  stroke: rgb(16 19 18 / 0.1);
+  stroke-width: 1.5;
+  transition: stroke 0.4s ease, filter 0.4s ease;
+}
+.filo-node.is-active .filo-node__ring {
+  stroke: var(--filo-moss);
+  filter: drop-shadow(0 6px 16px rgb(79 107 74 / 0.22));
+}
+.filo-node__icon {
+  fill: none;
+  stroke: var(--filo-ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.4s ease;
+}
+.filo-node--filo .filo-node__ring {
+  fill: var(--filo-moss-wash);
+  stroke-width: 1.8;
+}
+.filo-node__wordmark {
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  fill: var(--filo-moss-deep);
+}
+.filo-node.is-active .filo-node__icon {
+  stroke: var(--filo-moss-deep);
+}
+.filo-node__label {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-anchor: middle;
+  fill: var(--filo-stone);
+  transition: fill 0.4s ease;
+}
+.filo-node.is-active .filo-node__label {
+  fill: var(--filo-ink);
+}
+
+/* --- Edges. */
+.filo-edge path {
+  fill: none;
+  stroke: var(--filo-moss-light);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  opacity: 0.22;
+  transition: opacity 0.45s ease;
+}
+.filo-edge.is-reverse path {
+  stroke: var(--filo-moss);
+  opacity: 0;
+}
+.filo-edge__trunk {
+  stroke-width: 2.25;
+}
+.filo-edge.is-active path {
+  opacity: 1;
+}
+.filo-edge.is-active:not(.is-reverse) path {
+  stroke-dasharray: 7 9;
+  animation: filo-flow 1s linear infinite;
+}
+.filo-edge.is-reverse.is-active path {
+  stroke-dasharray: 7 9;
+  animation: filo-flow 1s linear infinite reverse;
+}
+.filo-edge.is-settled path {
+  opacity: 0.55;
+}
+@keyframes filo-flow {
+  to { stroke-dashoffset: -64; }
+}
+
+/* --- Edge annotations: small icon + label, lit only during its step. */
+.filo-edge-label circle {
+  fill: #fff;
+  stroke: rgb(16 19 18 / 0.1);
+  stroke-width: 1.2;
+}
+.filo-edge-label path {
+  fill: none;
+  stroke: var(--filo-stone);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.filo-edge-label text {
+  font-size: 15px;
+  font-weight: 500;
+  fill: var(--filo-stone);
+  dominant-baseline: middle;
+}
+.filo-edge-label {
+  opacity: 0.4;
+  transition: opacity 0.45s ease;
+}
+.filo-edge-label.is-active {
+  opacity: 1;
+}
+.filo-edge-label.is-active circle {
+  stroke: var(--filo-moss);
+}
+.filo-edge-label.is-active path {
+  stroke: var(--filo-moss);
+}
+.filo-edge-label.is-active text {
+  fill: var(--filo-ink);
+  font-weight: 600;
+}
+.filo-edge-label.is-settled {
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filo-edge.is-active path {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .filo-system__diagram {
+    width: min(100%, calc((100svh - 260px) * 1040 / 760));
+  }
+  .filo-node__label {
+    font-size: 17px;
+  }
+  .filo-edge-label text {
+    font-size: 17px;
+  }
+}

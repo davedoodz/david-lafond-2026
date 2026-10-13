@@ -33,7 +33,7 @@ type Tuple = [number, number, number, number]
 const CONFIG = {
   cards: {
     momo: { type: 'color' as const, default: '#57BFFF' },
-    filo: { type: 'color' as const, default: '#FFE1E2' },
+    filo: { type: 'color' as const, default: '#4F6B4A' },
     'harvard-mit': { type: 'color' as const, default: '#171717' },
   },
   titles: {

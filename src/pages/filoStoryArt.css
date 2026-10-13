@@ -1,0 +1,14 @@
+.filo-diagram { width: 100%; height: auto; overflow: visible; color: #171717; }
+.filo-diagram text { font-family: inherit; font-size: 11px; fill: currentColor; stroke: none; }
+.filo-diagram .fd-caption { font-size: 11px; fill: #52634e; }
+.filo-diagram .fd-link, .filo-diagram .fd-thread { fill: none; stroke: #4f6b4a; stroke-width: 1.5; stroke-linecap: round; }
+.filo-diagram .fd-thread { stroke-width: 2; }
+.filo-diagram .fd-link--broken { stroke: #9a9690; stroke-dasharray: 3 6; }
+.filo-diagram .fd-rule { stroke: #d4d2cb; stroke-width: 1; }
+.filo-diagram .fd-node rect { fill: #f3f1e9; stroke: #d5d4cd; }
+.filo-diagram .fd-node--accent rect, .filo-diagram .fd-center { fill: #e7ede4; stroke: #4f6b4a; }
+.filo-diagram .fd-orbit { fill: none; stroke: #d4d2cb; stroke-dasharray: 2 5; }
+.filo-diagram .fd-gate { fill: #f3f1e9; stroke: #4f6b4a; stroke-width: 1.25; }
+.filo-diagram .fd-gate--blocked { stroke: #936443; stroke-dasharray: 3 3; }
+.filo-diagram .fd-break path { fill: none; stroke: #936443; stroke-width: 2; }
+.filo-diagram .fd-status { font-size: 10px; fill: #52634e; }

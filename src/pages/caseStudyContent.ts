@@ -5,7 +5,6 @@
  * in dev and autosaves to tuning.json, like the About story.
  */
 import { FLOAT_DIALS, PERSONA_DIALS } from './casePersona'
-import { EVIDENCE_DIALS, PRINCIPLES_DIALS, REFRAME_DIALS } from './filoSections'
 import { PEAK_ICONS, STORY_ART_TEXT, type StoryArtText } from './storyArt'
 
 type Tuple = [number, number, number, number]
@@ -22,8 +21,6 @@ export const PROTO_VIDEOS = {
 } as const
 export type ProtoVideo = keyof typeof PROTO_VIDEOS
 const VIDEO_OPTIONS = ['none', ...Object.keys(PROTO_VIDEOS)]
-/** Filo has no recordings yet: a labelled block marks where each prototype loop will go. */
-const PLACEHOLDER_OPTIONS = ['none', 'placeholder']
 
 /** Media direction. `center` and `rise` remain available for project heroes. */
 const LAYOUTS = ['bottom', 'top', 'right', 'left', 'center', 'rise']
@@ -33,11 +30,9 @@ type SectionDefaults = {
   title: string
   body?: string
   align?: 'left' | 'center'
-  video?: ProtoVideo | 'none' | 'placeholder'
-  /** Label inside the placeholder block (Filo, until the prototype loops exist). */
-  placeholder?: string
-  /** Diagram shown instead of a video ('system': the animated Momo system walkthrough; 'paper': the arXiv paper tucked under the footer). */
-  figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals' | 'paper'
+  video?: ProtoVideo | 'none'
+  /** Diagram shown instead of a video ('system': the animated system walkthrough; 'paper': Momo's arXiv paper under the footer; 'next': Filo's what's-next thread). */
+  figure?: 'none' | 'flow' | 'system' | 'notification' | 'vision' | 'signals' | 'paper' | 'next'
   layout?: 'bottom' | 'top' | 'right' | 'left' | 'center' | 'rise'
   size?: number
   gap?: number
@@ -73,8 +68,7 @@ export function sectionDials(d: SectionDefaults, videos: string[] = VIDEO_OPTION
     spacing: sectionSpacingDials(96, 64, d.gap ?? 72),
     media: {
       video: { type: 'select' as const, options: videos, default: d.video ?? 'none' },
-      ...(d.placeholder !== undefined ? { placeholder: { type: 'text' as const, default: d.placeholder } } : {}),
-      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification', 'paper'], default: d.figure ?? 'none' },
+      figure: { type: 'select' as const, options: ['none', 'flow', 'system', 'vision', 'signals', 'notification', 'paper', 'next'], default: d.figure ?? 'none' },
       layout: { type: 'select' as const, options: LAYOUTS, default: d.layout ?? 'bottom' },
       /** Video height, % of the screen height. */
       size: [d.size ?? 72, 20, 95, 1] as Tuple,
@@ -451,162 +445,139 @@ export const MOMO_CONFIG = {
 }
 
 const txt = (d: string) => ({ type: 'text' as const, default: d })
-/** A Filo section with a placeholder block where its prototype loop will go. */
-const filoSection = (d: SectionDefaults) => sectionDials({ layout: 'bottom', gap: 40, size: 52, ...d }, PLACEHOLDER_OPTIONS)
-const filoFlow = (eyebrow: string, title: string, body: string, placeholder: string) =>
-  filoSection({ eyebrow, title, body, video: 'placeholder', placeholder })
+/** Filo renders live UI, not recordings. */
+const NO_VIDEO = ['none']
 
 /**
- * Filo (formerly EcoFabriq): the 2024 marketplace reframed, after 11 interviews, as an agent
- * that gets a chosen biomaterial through a brand's development process. Source of the copy:
- * textura-exchange/CASE-STUDY-SPINE.md. Prototype loops don't exist yet; each flow shows a
- * labelled placeholder until its recording is cut.
+ * Filo: the 2024 EcoFabriq marketplace reframed, after 11 interviews, as a sample-room agent with a
+ * phone app that gets a chosen biomaterial into production. Same eight sections as Momo
+ * (hero, story, persona, system, flows, dynamic, guided, outcomes); moss replaces Momo blue.
+ * Copy source: textura-exchange/CASE-STUDY-SPINE.md and the interview notes.
  */
 export const FILO_CONFIG = {
   page: pageDials,
-  hero: heroDials(
-    {
-      eyebrow: 'Filo · MIT × Polimi hackathon → 2026 redesign',
-      title: 'Filo – Agentic Commerce for Biomaterial Adoption in Fashion',
-      video: 'placeholder',
-      placeholder: 'Hero loop · the Filo workspace',
-      layout: 'bottom',
-      size: 46,
-      gap: 48,
-      role: 'Product Designer\nUser research',
-      timeline: 'Hackathon: late 2024\nInterviews: 2025\nRedesign: 2026',
-      team: '1 engineer\n2 fashion designers\n1 product designer',
-    },
-    PLACEHOLDER_OPTIONS,
-  ),
-  /** Problem, Opportunity and Solution; each row supports art above, below, left or right. */
+  hero: heroDials({
+    eyebrow: '',
+    title: 'An Agentic Sample Room for Biomaterial Adoption in Fashion',
+    layout: 'rise',
+    size: 78,
+    gap: 44,
+    role: 'Product Designer & Researcher',
+    timeline: 'Hackathon 2024 · Redesign 2026',
+    team: '1 engineer, 2 fashion designers, 1 product designer',
+  }, NO_VIDEO),
+  heroSpacing: MOMO_CONFIG.heroSpacing,
+  /** Partner logos in the hero (public/work/filo/logos). */
+  logos: { ...MOMO_CONFIG.logos, hoverColor: { type: 'color' as const, default: '#6f8f69' } },
+  /** Problem, Opportunity and Solution, drawn in the Momo line language with moss marks. */
   story: {
     problemLabel: txt('Problem'),
     opportunityLabel: txt('Opportunity'),
     solutionLabel: txt('Solution'),
-    problemTitle: txt('New materials die between the swatch and the line review.'),
-    problemBody: txt(
-      'Designers can find biomaterials. What they can’t do is prove one will sew, dye, pass QA and scale in time for the season. So brands stick with what they know, and the startups behind those materials run out of runway.',
-    ),
-    opportunityTitle: txt('AI can now act, not just answer.'),
-    opportunityBody: txt(
-      'Agents can request samples, compare quotes, book lab tests and draft briefs across many parties. That slow, repetitive, multi-party work is exactly what makes a new material too risky to try.',
-    ),
-    solutionTitle: txt('An agent that gets a chosen material to production.'),
-    solutionBody: txt(
-      'Filo runs sampling, testing and the factory handoff, then returns a go/no-go with evidence. The designer still picks the material. Filo makes it safe to say yes.',
-    ),
-    /** Look presets set art and motion; Layout stays independently adjustable. */
-    preset: { type: 'select' as const, options: ['calm cards', 'editorial', 'outline', 'minimal', 'custom'], default: 'calm cards' },
+    problemTitle: txt('Fashion doesn’t have a discovery problem. It has a follow-through problem.'),
+    problemBody: txt('Designers already find compelling new materials. Most disappear during development because nobody can answer how they perform, how to manufacture with them or whether supply can scale.'),
+    opportunityTitle: txt('AI can move the work forward, not just talk about it.'),
+    opportunityBody: txt('1. Agents can email suppliers, labs and factories.\n2. A phone can read a tagged swatch in one tap.\n3. EU product passports will require material data.'),
+    solutionTitle: txt('Meet Filo'),
+    solutionBody: txt('A sample-room agent that runs sampling, lab tests and the factory handoff, so a designer can say yes to a new material.'),
+    preset: { type: 'select' as const, options: ['custom'], default: 'custom' },
     layout: { type: 'select' as const, options: ['bottom', 'top', 'right', 'left'], default: 'top' },
-    art: { type: 'select' as const, options: ['card', 'line', 'outline', 'none'], default: 'card' },
-    opportunityArt: { type: 'select' as const, options: ['three'], default: 'three' },
+    align: { type: 'select' as const, options: ['left', 'center', 'stretch'], default: 'stretch' },
+    textAlign: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
+    art: { type: 'select' as const, options: ['line', 'card', 'outline', 'none'], default: 'line' },
+    opportunityArt: { type: 'select' as const, options: ['converge'], default: 'converge' },
     motion: { type: 'select' as const, options: ['draw', 'pulse', 'off'], default: 'draw' },
+    reveal: { type: 'select' as const, options: ['soft rise', 'cascade', 'from sides', 'scale in', 'still'], default: 'cascade' },
     artWidth: [300, 160, 480, 5] as Tuple,
-    /** Playback speed of each row's art and text animation (1 = as designed, 2 = twice as fast). */
     speed: {
-      problem: [1, 0.25, 3, 0.05] as Tuple,
-      opportunity: [1, 0.25, 3, 0.05] as Tuple,
-      solution: [1, 0.25, 3, 0.05] as Tuple,
+      problem: [1.75, 0.25, 3, 0.05] as Tuple,
+      opportunity: [1.75, 0.25, 3, 0.05] as Tuple,
+      solution: [1.75, 0.25, 3, 0.05] as Tuple,
       _collapsed: false,
     },
-    spacing: sectionSpacingDials(96, 96, 44),
+    spacing: sectionSpacingDials(233, 210, 383),
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
     _collapsed: true,
   },
-  origin: filoSection({
-    eyebrow: 'Where it started',
-    title: 'A 24-hour answer: a marketplace with a chatbot.',
-    body: 'In late 2024, four of us built EcoFabriq at an MIT × Polimi hackathon. Biomaterial providers listed materials. Designers described their project to a chatbot and got matching materials, specs and locations to order from.\n\nIt demoed well. Then mentors asked who pays, why this beats a catalogue, and what happens if a mushroom coat sells 10,000 units. We had no answers.',
-    video: 'placeholder',
-    placeholder: '2024 demo · EcoFabriq chatbot',
-    layout: 'bottom',
-    size: 40,
-    gap: 64,
-  }),
-  /** Quote wall from the interviews (rendered as `evidence`). */
-  evidence: EVIDENCE_DIALS,
-  insight: filoSection({
-    eyebrow: 'Insight',
-    title: 'Discovery wasn’t the bottleneck. Adoption was.',
-    body: 'We had automated the one step designers enjoy. The pain sat after it: sampling with no spec sheet, lab tests, factory constraints, and a scale question that reaches the line review with no answer.\n\nThe material startups don’t fail because they can’t make the material. They fail because no brand will carry the risk of going first.',
-    layout: 'bottom',
-  }),
-  /** Before → after table (rendered as `reframe`). */
-  reframe: REFRAME_DIALS,
-  /** Persona sheet (shared with Momo), no portrait, one scenario card. */
+  /** Persona with the sample-bench still life; interview quotes float around it. */
   persona: {
     ...PERSONA_DIALS,
-    spacing: sectionSpacingDials(110, 110, 32),
     eyebrow: txt('User persona'),
     title: txt('The technical designer handed a new material.'),
-    body: txt(
-      'She turns a designer’s sketch and fabric choice into a garment a factory can build. When a biomaterial lands on her desk, she becomes the project manager for every unknown.',
-    ),
-    tags: txt('Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM'),
-    preset: { type: 'select' as const, options: ['custom'], default: 'custom' },
-    image: { type: 'select' as const, options: ['none'], default: 'none' },
-    contexts: { type: 'select' as const, options: ['scenario'], default: 'scenario' },
-    driven: {
-      title: txt('Driven by'),
-      d1: txt('Ships the line on time, every season'),
-      d2: txt('Protects fit, quality and the brand’s name'),
-      d3: txt('Wants the new material to actually work'),
-      _collapsed: true,
-    },
-    challenges: {
-      title: txt('Challenges'),
-      c1: txt('Weeks of back-and-forth with suppliers and factories'),
-      c2: txt('Carries the risk personally if it fails'),
-      c3: txt('Gets asked “can we make 10,000?” with no answer'),
-      _collapsed: true,
-    },
+    body: txt('She turns a sketch and a fabric choice into a garment a factory can build.\nWhen a biomaterial lands on her bench, every unknown becomes her job.'),
+    tags: txt('Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the risk if it fails'),
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
+    image: { type: 'select' as const, options: ['bottom', 'top', 'none'], default: 'bottom' },
+    blockGap: [100, 32, 200, 1] as Tuple,
     moments: {
       ...PERSONA_DIALS.moments,
-      eyebrow: txt('One moment · Monday, 9:12 AM'),
-      title: txt('A bacterial-cellulose sheet lands on next season’s overshirt.'),
-      body: txt(
-        'The designer loved the swatch at a trade fair. There’s no spec sheet, the factory has never cut it, and line review is in six weeks. Today she would quietly swap it for the polyester she knows.',
-      ),
+      m1Quote: txt('“How does it sew up? What if it doesn’t dye right?”'),
+      m1Tag: txt('Know before you cut'),
+      m2Quote: txt('“Heat can’t apply. No solvent.”'),
+      m2Tag: txt('Catch it at the bench'),
+      m3Quote: txt('“Our suppliers never worked with these materials.”'),
+      m3Tag: txt('One thread, not ten'),
+      m4Quote: txt('“If it’s a hit, can we make 10,000?”'),
+      m4Tag: txt('Answer the line review'),
+    },
+    spacing: sectionSpacingDials(110, 0, 32),
+    float: {
+      ...FLOAT_DIALS,
+      preset: { type: 'select' as const, options: ['one at a time', 'two at a time', 'pop', 'drift', 'still'], default: 'drift' },
+      pace: [4.9, 1.5, 8, 0.1] as Tuple,
+      cardWidth: [330, 160, 360, 5] as Tuple,
+      spread: [169, -40, 200, 1] as Tuple,
+      bob: [20, 0, 20, 1] as Tuple,
+      eyebrowGap: [17, 0, 80, 1] as Tuple,
+      bodyGap: [22, 0, 120, 1] as Tuple,
+      tagsGap: [40, 0, 100, 1] as Tuple,
     },
   },
-  overview: filoSection({
-    eyebrow: 'Product overview',
-    title: 'Pick the material. Filo gets it to production.',
-    body: 'Attach a material to a style. Filo proposes an adoption plan, runs it within a budget you set, and builds a technical file as results come in: how it sews, what it passed, how far it scales.',
-    video: 'placeholder',
-    placeholder: 'Product overview · 60 s loop',
-  }),
-  flowPlan: filoFlow(
-    'Flow 1 · Adoption plan',
-    'One material in. One plan out.',
-    'Drop in a swatch photo, a supplier link or a recipe. Filo lists what it knows, what’s missing, the runs it would do, the total cost and the date of a go/no-go. One approval starts it.',
-    'Prototype · Flow 1 — adoption plan',
-  ),
-  flowSamples: filoFlow(
-    'Flow 2 · Sample run',
-    'Three suppliers. One approval card.',
-    'Filo requests swatches, compares lead time, price and sample size, then orders within your budget. You make one decision, not three email threads.',
-    'Prototype · Flow 2 — sample run',
-  ),
-  flowFile: filoFlow(
-    'Flow 3 · Technical file',
-    'The file fills in as results arrive.',
-    'Colorfastness, seam strength, pilling and dimensional stability land as lab reports. A heat limit clashes with the factory’s fusing step and gets flagged. Filo drafts the factory brief from the constraints.',
-    'Prototype · Flow 3 — technical file',
-  ),
-  flowScale: filoFlow(
-    'Flow 4 · Scale ladder',
-    '“If it sells, can we make 10,000?”',
-    'Capacity, lead time and price at 500, 2,000 and 10,000 units, the gap at each step, and a fallback material. One slide for the line review.',
-    'Prototype · Flow 4 — scale ladder',
-  ),
-  /** Agent rules as four cards (rendered as `principles`). */
-  principles: PRINCIPLES_DIALS,
-  next: filoSection({
-    eyebrow: 'What’s next',
-    title: 'What I’d test next.',
-    body: 'The prototypes are staged: supplier replies and test results are scripted; the 3D material is real. Next, I’d put Flow 1 in front of five technical designers, and ask one material startup whether they would answer a brand’s agent.\n\nOne open question: from 2027, EU Digital Product Passports could make a material’s technical file mandatory, not optional.',
-  }),
+  system: sectionDials({ eyebrow: '', title: '', body: '', align: 'center', figure: 'system', layout: 'bottom', gap: 0 }, NO_VIDEO),
+  flows: {
+    ...MOMO_CONFIG.flows,
+    eyebrow: txt('Core flows'),
+    title: txt('Approve. Capture. Know.'),
+    body: txt('Filo runs the slow, multi-party work overnight.\nYou approve it in one tap, add what you see at the bench, and the file fills itself in.'),
+    phoneScale: [1.04, 0.6, 1.25, 0.01] as Tuple,
+    entriesLabel: txt('Morning digest'),
+    voiceLabel: txt('Technical file'),
+    trackerLabel: txt('Bench capture'),
+    spacing: sectionSpacingDials(85, 42, 75),
+  },
+  dynamic: {
+    ...MOMO_CONFIG.dynamic,
+    eyebrow: txt('The differentiation'),
+    title: txt('The tap is infrastructure.\nThe file is the product.'),
+    body: txt('NFC-connected samples already exist. Filo turns the tap into the start of an active Technical File: supplier claims, bench evidence and production constraints accumulate in context, then the agent follows through with human approval.'),
+    align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
+    spacing: sectionSpacingDials(110, 72, 46),
+    deviceEntrance: {
+      ...MOMO_CONFIG.dynamic.deviceEntrance,
+      preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'split sides' },
+      duration: [1.25, 0.25, 1.8, 0.05] as Tuple,
+    },
+  },
+  guided: {
+    ...MOMO_CONFIG.guided,
+    eyebrow: txt('Scale ladder'),
+    title: txt('An answer for “can we make 10,000?”'),
+    body: txt('Before line review, swipe the ladder. Filo shows capacity, lead time and price\nat each step, and a fallback if supply runs short.'),
+    woopLabel: txt(''),
+    modelsLabel: txt(''),
+    spacing: sectionSpacingDials(96, 64, 56),
+  },
+  outcomes: {
+    ...sectionDials({
+      eyebrow: 'What’s next',
+      title: 'Next, a real sample room.',
+      body: 'The prototype answers the mentors’ questions on screen. The next test is whether technical designers and one supplier trust it with a real run.',
+      align: 'center',
+      layout: 'bottom',
+      figure: 'next',
+      gap: 48,
+    }, NO_VIDEO),
+    textReveal: textRevealDials(),
+  },
 }

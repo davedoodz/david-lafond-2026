@@ -130,11 +130,10 @@ export function StoryRow({ s, edit, arts, selectable = false }: { s: Story; edit
       style={{ ...glassVars, '--story-art-w': `${s.artWidth}px`, '--section-pad-top': `${s.spacing.top}px`, '--section-pad-bottom': `${s.spacing.bottom}px`, '--section-content-gap': `${s.spacing.contentGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
     >
       <ol className="case__story-cols">
-        {rows.map(([k, label, title, body, art], i) => (
+        {rows.map(([k, label, title, body, art]) => (
           <StoryItem key={k} row={k} speed={s.speed[k]}>
             {look.art !== 'none' && <div className="story-art">{art}</div>}
             <div className="case__story-text">
-              <span className="case__story-step">{String(i + 1).padStart(2, '0')}</span>
               <p className="eyebrow">{label}</p>
               <EditableText as="h2" className="case__story-title" label={`${label} title`} value={title} onChange={edit(`story.${k}Title`)} selectable={selectable} />
               <EditableText className="case__story-body" label={`${label} body`} value={body} onChange={edit(`story.${k}Body`)} selectable={selectable} />
@@ -218,7 +217,8 @@ function useRiseOnView() {
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
 export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
-export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edit; selectable?: boolean }) {
+/** `screens` replaces the three recordings with live phones (Filo); each fills a `.case__phone` box. */
+export function CoreFlows({ f, edit, selectable = false, screens }: { f: Flows; edit: Edit; selectable?: boolean; screens?: readonly [ReactNode, ReactNode, ReactNode] }) {
   const ref = useRiseOnView()
   useEffect(() => {
     const section = ref.current
@@ -270,7 +270,7 @@ export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edi
       <ol className="case__flows-row">
         {phones.map(([name, label, position], i) => (
           <li key={name} className="case__flow-card case__rise" data-position={position} style={{ '--i': i } as CSSProperties}>
-            <div className="case__flow-device"><PhoneVideo name={name} /></div>
+            <div className="case__flow-device">{screens ? <span className="case__phone" aria-hidden="true">{screens[i]}</span> : <PhoneVideo name={name} />}</div>
             <EditableText as="p" className="case__phone-label" label={`${name} label`} value={label} onChange={edit(`flows.${name}Label`)} />
           </li>
         ))}
@@ -282,7 +282,8 @@ export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edi
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type GuidedReveal = 'rise' | 'cascade' | 'focus' | 'from sides' | 'wipe' | 'still'
 export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
-export function GuidedPair({ g, edit, selectable = false }: { g: Guided; edit: Edit; selectable?: boolean }) {
+/** `screens` replaces the two recordings with live UI (Filo): [bare card, phone]. */
+export function GuidedPair({ g, edit, selectable = false, screens }: { g: Guided; edit: Edit; selectable?: boolean; screens?: readonly [ReactNode, ReactNode] }) {
   const ref = useRiseOnView()
   return (
     <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} data-text-reveal={g.textReveal.preset} aria-labelledby="case-guided" style={{ '--section-pad-top': `${g.spacing.top}px`, '--section-pad-bottom': `${g.spacing.bottom}px`, '--section-content-gap': `${g.spacing.contentGap}px`, '--text-reveal-duration': `${g.textReveal.duration}s`, '--text-reveal-stagger': `${g.textReveal.stagger}s` } as CSSProperties}>
@@ -299,7 +300,11 @@ export function GuidedPair({ g, edit, selectable = false }: { g: Guided; edit: E
           ] as const
         ).map(([name, label, field], i) => (
           <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
-            <PhoneVideo name={name} className={name === 'guided-woop-pick' ? 'case__phone--bare' : ''} />
+            {screens ? (
+              <span className={`case__phone${i === 0 ? ' case__phone--bare' : ''}`} aria-hidden="true">{screens[i]}</span>
+            ) : (
+              <PhoneVideo name={name} className={name === 'guided-woop-pick' ? 'case__phone--bare' : ''} />
+            )}
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}

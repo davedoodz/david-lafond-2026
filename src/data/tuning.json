@@ -121,8 +121,9 @@
       "headerOpacity": 0.25
     },
     "filoPage": {
-      "preset": "blush",
-      "headerColor": "#FFE1E2"
+      "preset": "custom",
+      "headerColor": "#4F6B4A",
+      "headerOpacity": 0.25
     }
   },
   "Signature": {
@@ -587,7 +588,7 @@
       "height": 39,
       "gap": 27,
       "offset": 28,
-      "hoverColor": "#71c4f8"
+      "hoverColor": "#6f8f69"
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
@@ -830,12 +831,127 @@
   },
   "Filo case study": {
     "page": {
-      "snap": "off"
+      "snap": "off",
+      "sectionReveal": "still"
+    },
+    "heroSpacing": {
+      "logosToTitle": 54,
+      "titleToMeta": 20,
+      "y": {
+        "braid": -42,
+        "title": -24,
+        "meta": -23,
+        "logos": -17
+      }
+    },
+    "logos": {
+      "placement": "below meta",
+      "height": 39,
+      "gap": 27,
+      "offset": 28,
+      "hoverColor": "#6f8f69"
+    },
+    "hero": {
+      "spacing": {
+        "top": 106,
+        "bottom": 62,
+        "contentGap": 99
+      },
+      "media": {
+        "radius": 21
+      }
     },
     "story": {
-      "problemTitle": "Fashion doesn’t have a discovery problem. It has a follow-through problem.",
-      "problemBody": "Designers already find compelling new materials. Most disappear during\n development because nobody can answer how they perform, how to manufacture with\n them or whether supply can scale.",
-      "opportunityTitle": "AI can move the work forward not just talk about it."
+      "preset": "custom",
+      "align": "stretch",
+      "textAlign": "center",
+      "art": "line",
+      "opportunityArt": "converge",
+      "reveal": "cascade",
+      "speed": {
+        "problem": 1.75,
+        "opportunity": 1.75,
+        "solution": 1.75
+      },
+      "spacing": {
+        "top": 233,
+        "bottom": 210,
+        "contentGap": 383
+      },
+      "artText": {
+        "problemMoment": "",
+        "problemOpened": "",
+        "opportunityMoment": "",
+        "solutionCheckIn": ""
+      }
+    },
+    "persona": {
+      "align": "center",
+      "image": "bottom",
+      "blockGap": 100,
+      "moments": {},
+      "spacing": {
+        "bottom": 0
+      },
+      "float": {
+        "preset": "drift",
+        "pace": 4.9,
+        "cardWidth": 330,
+        "spread": 169,
+        "bob": 20,
+        "eyebrowGap": 17,
+        "bodyGap": 22,
+        "tagsGap": 40,
+        "entrance": {
+          "duration": 0.3,
+          "distance": 6,
+          "textStagger": 0.02,
+          "pillStagger": 0.01,
+          "pillsGap": 0.05,
+          "imageGap": 0.06,
+          "floatsDelay": 0.2,
+          "floatStagger": 0.11
+        }
+      }
+    },
+    "flows": {
+      "phoneScale": 1.04,
+      "spacing": {
+        "top": 85,
+        "contentGap": 75
+      }
+    },
+    "dynamic": {
+      "align": "center",
+      "watch": {
+        "strapColor": "#96b6d4"
+      },
+      "spacing": {
+        "contentGap": 46
+      },
+      "deviceEntrance": {
+        "preset": "split sides",
+        "duration": 1.25
+      }
+    },
+    "guided": {
+      "spacing": {
+        "contentGap": 56
+      }
+    },
+    "outcomes": {
+      "align": "center"
+    },
+    "system": {
+      "align": "center",
+      "spacing": {
+        "top": 0,
+        "bottom": 75,
+        "contentGap": 0
+      },
+      "media": {
+        "size": 74
+      }
     }
   },
   "Momo welcome": {
