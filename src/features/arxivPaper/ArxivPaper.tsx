@@ -14,6 +14,7 @@ type PaperDials = {
   shadow: { opacity: number; blur: number; y: number }
   arrow: { x: number; y: number; scale: number }
   pillSize: { padX: number; padY: number; text: number }
+  pillOffset: { x: number; y: number }
   marker: { show: boolean; color: string; note: string }
   entrance: { show: boolean; depth: number; duration: number; trigger: number }
 }
@@ -33,6 +34,11 @@ export const MOMO_PAPER_CONFIG = {
     padX: [16, 8, 48, 1] as Tuple,
     padY: [9, 4, 24, 1] as Tuple,
     text: [15, 11, 24, 0.5] as Tuple,
+  },
+  /** Pill's top-left corner relative to the pointer (px), matching About → Photo stack → caption → cursor. */
+  pillOffset: {
+    x: [16, -200, 200, 1] as Tuple,
+    y: [-51, -200, 200, 1] as Tuple,
   },
   /** Red marker note drawn on the page on hover: a loop around David's name, an arrow and a note. */
   marker: {
@@ -128,6 +134,8 @@ export function ArxivPaper() {
           '--pill-pad-x': `${d.pillSize.padX}px`,
           '--pill-pad-y': `${d.pillSize.padY}px`,
           '--pill-text': `${d.pillSize.text}px`,
+          '--pill-off-x': `${d.pillOffset.x}px`,
+          '--pill-off-y': `${d.pillOffset.y}px`,
           '--marker': d.marker.color,
           '--paper-rise-depth': `${d.entrance.depth}px`,
           '--paper-rise-time': `${d.entrance.duration}s`,
