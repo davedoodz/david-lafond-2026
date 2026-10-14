@@ -47,7 +47,7 @@ import { LayoutEditor } from './LayoutEditor'
 import { diagramSource } from './layoutDiagram'
 import type { Riffle } from './scanner/scannerScene'
 import { usePageLayouts } from './usePageLayouts'
-import { DIAGRAM_PRESETS, useDiagramTransition, type ScanLink, type ScanSession } from './useDiagramTransition'
+import { DIAGRAM_PRESETS, useDiagramTransition, type ScanLink, type ScanRequest, type ScanSession } from './useDiagramTransition'
 
 /** Dev only: Rollup drops the branch (and three.js) from the public build. */
 const ScannerLayer = import.meta.env.DEV ? lazy(() => import('./scanner/ScannerLayer')) : null
@@ -150,6 +150,9 @@ const CONFIG = {
       lineColor: colorField('#fff3df'),
       beamOpacity: [0.9, 0, 2, 0.05] as Tuple,
       lineGlow: [14, 2, 60, 1] as Tuple,
+      /** Grid mode: the scan covers every spread, scrolling the page under the line. Document px
+       * the line crosses per second. */
+      gridSpeed: [700, 150, 3000, 10] as Tuple,
       /** Book mode: the scan closes the book onto its front cover, opens it, thumbs through every
        * leaf like a real book (several in the air at once), closes the back cover, holds, then turns
        * the whole book back to the front cover (Book → Cover Flip Ms). The beam sweeps top to bottom
@@ -420,14 +423,17 @@ export function BookViewer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diagram.enabled, layouts.pages, lookKey])
   // The scanner forces `scan` for its own toggle and reads back the timeline its beam follows.
-  const scanOverride = useRef<string | null>(null)
+  // In Grid mode the toggle covers the whole document, not just the spreads on screen.
+  const scanOverride = useRef<ScanRequest | null>(null)
   const scanSession = useRef<ScanSession | null>(null)
   const scanLink = useMemo<ScanLink>(() => ({ override: scanOverride, session: scanSession }), [])
   useDiagramTransition(diagram.enabled, layouts.pages, t.diagram, motion, lookKey, scanLink)
   const diagramOn = useRef(diagram.enabled)
   diagramOn.current = diagram.enabled
+  const gridSpeed = useRef(scanner.gridSpeed)
+  gridSpeed.current = scanner.gridSpeed
   const startScan = useCallback(() => {
-    scanOverride.current = 'scan'
+    scanOverride.current = { preset: 'scan', wholePage: modeRef.current === 'grid', pxPerSecond: gridSpeed.current }
     setValue('diagram.enabled', !diagramOn.current)
   }, [setValue])
   const bookState = useRef(state)
@@ -628,7 +634,7 @@ export function BookViewer() {
           <ScannerLayer
             visible={scanner.show && mode !== 'video' && !zoom && editingSpread === null}
             active={diagram.enabled}
-            lockPage={mode === 'grid'}
+            follow={mode === 'grid'}
             look={scanner}
             onPrepare={prepareScan}
             onScan={startScan}

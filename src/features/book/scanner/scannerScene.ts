@@ -80,6 +80,9 @@ export type ScannerHost = {
   anchor(): DOMRect | null
   /** On-screen page union (viewport px), or null when nothing can be scanned. */
   stage(): Box | null
+  /** The scan covers every page in the document: the scanner scrolls to the top first, keeps the
+   * line on screen as it sweeps down, and scrolls back to the top on its way home. */
+  follow(): boolean
   /** Called on click, before the flight: e.g. close the book onto its front cover. */
   prepare(): void
   /** Flip the diagram with the `scan` preset. */
@@ -286,6 +289,12 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
   let session: ScanSession | null = null
   let sessionBefore = 0
   let scanStart = 0
+  /** Follow run (see `ScannerHost.follow`) and the scroll position each phase started from. */
+  let follow = false
+  let scrollFrom = 0
+  const scrollTo = (top: number) => {
+    if (Math.abs(scrollY - top) > 0.5) window.scrollTo({ top, behavior: 'instant' })
+  }
   let flash = 0
   let last = performance.now()
   let raf = 0
@@ -335,6 +344,7 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
 
   const begin = (name: PhaseName, now: number) => {
     phase = { name, start: now, from: { ...pose } }
+    scrollFrom = scrollY
   }
 
   const update = (now: number, dt: number) => {
@@ -368,6 +378,8 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
           const cx = (from.x + to.x) / 2 + (-dy / length) * bend
           const cy = (from.y + to.y) / 2 + (dx / length) * bend
           const u = 1 - e
+          // Follow runs start and end at the top of the document, where the scanner rests.
+          if (follow) scrollTo(mix(scrollFrom, 0, e))
           pose = {
             x: u * u * from.x + 2 * u * e * cx + e * e * to.x,
             y: u * u * from.y + 2 * u * e * cy + e * e * to.y,
@@ -428,14 +440,24 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
             placeBeam(box, box.top + (r?.line ?? 1) * (box.bottom - box.top))
           }
         } else {
-          // Document px from the toggle when the reveal animates, so a mid-scan scroll keeps it on the pages.
-          const bounds = session?.bounds ? { ...session.bounds, top: session.bounds.top - scrollY, bottom: session.bounds.bottom - scrollY } : box
-          if (p === null || !bounds) {
+          if (p === null || (!session?.bounds && !box)) {
             begin('return', now)
           } else {
             const share = clamp01((p - SCAN_START) / (SCAN_END - SCAN_START))
             beam = smooth(0.02, SCAN_START, p) * (1 - smooth(SCAN_END, SCAN_END + 0.06, p))
-            placeBeam(bounds, bounds.top + share * (bounds.bottom - bounds.top))
+            // A follow scan turning the diagram off plays mirrored keyframes in reverse, so it too runs down.
+            const line = session?.follow && !session.forward ? 1 - share : share
+            if (session?.follow && session.bounds) {
+              // The page scrolls in step with the line, so the line glides down the screen as the
+              // pages pass under it, from the top of the first page to the bottom of the last.
+              const end = Math.min(document.documentElement.scrollHeight - innerHeight, session.bounds.bottom + 24 - innerHeight)
+              scrollTo(mix(scrollFrom, Math.max(scrollFrom, end), line))
+            }
+            // Document px from the toggle when the reveal animates, so a scroll keeps it on the pages.
+            const bounds = session?.bounds ? { ...session.bounds, top: session.bounds.top - scrollY, bottom: session.bounds.bottom - scrollY } : box!
+            placeBeam(bounds, bounds.top + line * (bounds.bottom - bounds.top))
+            // Leave once the beam is out rather than through the long settle of a whole-document run.
+            if (session?.follow && (session.forward ? p >= SCAN_END + 0.06 : p <= 0.02)) begin('return', now)
           }
         }
       }
@@ -556,6 +578,7 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
       }
       host.prepare()
       stage = box
+      follow = host.follow()
       host.onBusy(true)
       begin('travel', performance.now())
       kick()

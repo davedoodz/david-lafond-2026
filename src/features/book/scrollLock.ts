@@ -1,8 +1,9 @@
 /**
  * Freeze page scroll (wheel, touch, keys, scrollbar) at the current position; returns the release.
  * Nothing scrolls while locked, so no scroll listeners or springs have to chase moving content.
+ * `hold: false` blocks only the user: the caller drives `scrollTo` itself and keeps where it ends.
  */
-export function lockScroll() {
+export function lockScroll({ hold = true } = {}) {
   const root = document.documentElement
   const body = document.body
   const lockedY = window.scrollY
@@ -22,7 +23,7 @@ export function lockScroll() {
   root.style.scrollSnapType = 'none'
   body.style.overflow = 'hidden'
   body.style.overscrollBehavior = 'none'
-  window.addEventListener('scroll', holdScrollPosition, { passive: true })
+  if (hold) window.addEventListener('scroll', holdScrollPosition, { passive: true })
   window.addEventListener('wheel', preventScroll, { passive: false, capture: true })
   window.addEventListener('touchmove', preventScroll, { passive: false, capture: true })
   return () => {
@@ -34,6 +35,6 @@ export function lockScroll() {
     root.style.scrollSnapType = previous.rootSnap
     body.style.overflow = previous.bodyOverflow
     body.style.overscrollBehavior = previous.bodyOverscroll
-    window.scrollTo({ top: lockedY, behavior: 'instant' })
+    if (hold) window.scrollTo({ top: lockedY, behavior: 'instant' })
   }
 }

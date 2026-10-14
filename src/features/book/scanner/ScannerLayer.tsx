@@ -18,10 +18,11 @@ const DECODER_PATH = `${import.meta.env.BASE_URL}draco/`
 /** Gap between the switch and the scanner slot. */
 const GAP = 14
 
-export default function ScannerLayer({ visible, active, lockPage, look, onPrepare, onScan, onRiffle, session }: {
+export default function ScannerLayer({ visible, active, follow, look, onPrepare, onScan, onRiffle, session }: {
   visible: boolean
-  /** Freeze page scroll for the whole run (Grid mode, where the pass covers the viewport). */
-  lockPage: boolean
+  /** Grid mode: the scan covers every page and scrolls the document under the line; the user's own
+   * scrolling is frozen for the run. */
+  follow: boolean
   /** Diagram currently shown: the next scan turns it back into the pages. */
   active: boolean
   look: ScannerLook
@@ -35,10 +36,10 @@ export default function ScannerLayer({ visible, active, lockPage, look, onPrepar
   const controller = useRef<ScannerController | null>(null)
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
-  const latest = useRef({ look, onPrepare, onScan, onRiffle, visible })
-  latest.current = { look, onPrepare, onScan, onRiffle, visible }
+  const latest = useRef({ look, onPrepare, onScan, onRiffle, visible, follow })
+  latest.current = { look, onPrepare, onScan, onRiffle, visible, follow }
 
-  useLayoutEffect(() => (busy && lockPage ? lockScroll() : undefined), [busy, lockPage])
+  useLayoutEffect(() => (busy && follow ? lockScroll({ hold: false }) : undefined), [busy, follow])
   // Sit just right of the switch; the switch's width changes with its labels and the viewport.
   const size = look.restSize
   useLayoutEffect(() => {
@@ -63,6 +64,7 @@ export default function ScannerLayer({ visible, active, lockPage, look, onPrepar
     void createScanner(canvas, {
       anchor: () => buttonRef.current?.getBoundingClientRect() ?? null,
       stage: () => pageUnion(visibleLayoutPages().map(({ rect }) => rect)),
+      follow: () => latest.current.follow,
       prepare: () => latest.current.onPrepare(),
       scan: () => latest.current.onScan(),
       riffle: () => latest.current.onRiffle(),

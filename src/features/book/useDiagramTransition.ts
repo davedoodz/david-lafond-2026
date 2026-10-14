@@ -35,44 +35,58 @@ const hidden = { opacity: 0 }
 const scanOffset = (share: number) => SCAN_START + (SCAN_END - SCAN_START) * clamp01(share)
 
 /** One `scan` toggle: the page union it sweeps (document px) and the animation that times it.
- * `clock` is null when nothing animates (no visible page, reduced motion, or Animate off). */
+ * `clock` is null when nothing animates (no visible page, reduced motion, or Animate off).
+ * `follow`: the union runs past the viewport, so whoever draws the line scrolls to keep it in view. */
 export type ScanSession = {
   id: number
   clock: Animation | null
   duration: number
   forward: boolean
+  follow: boolean
   bounds: { top: number; bottom: number; left: number; right: number } | null
 }
+/** One-shot request for the next toggle. `wholePage` sweeps every layout page in the document, not
+ * just those on screen, at `pxPerSecond` instead of Motion's duration. */
+export type ScanRequest = { preset: string; wholePage?: boolean; pxPerSecond?: number }
 export type ScanLink = {
-  /** One-shot preset for the next toggle; consumed by the hook. */
-  override: RefObject<string | null>
+  /** Consumed by the hook on the next toggle. */
+  override: RefObject<ScanRequest | null>
   session: RefObject<ScanSession | null>
 }
 
-/** Layout page images currently on screen, measured together before any overlay write. */
-export function visibleLayoutPages() {
+/** Layout page images on screen (or anywhere in the document with `offscreen`), measured together
+ * before any overlay write. */
+export function visibleLayoutPages(offscreen = false) {
   return [...document.querySelectorAll<HTMLImageElement>('img[data-layout-page]')].flatMap((image) => {
     if (image.closest('[aria-hidden="true"], [data-zoomed]')) return []
     const rect = image.getBoundingClientRect()
-    if (!image.getClientRects().length || rect.width < 1 || rect.height < 1 || rect.bottom <= 0 || rect.top >= innerHeight || rect.right <= 0 || rect.left >= innerWidth) return []
+    if (!image.getClientRects().length || rect.width < 1 || rect.height < 1) return []
+    if (!offscreen && (rect.bottom <= 0 || rect.top >= innerHeight || rect.right <= 0 || rect.left >= innerWidth)) return []
     const style = getComputedStyle(image)
     return style.visibility === 'hidden' ? [] : [{ image, rect, style }]
   })
 }
 
-/** Union of rects, clipped to the viewport. */
-export function pageUnion(rects: DOMRect[]) {
+/** Union of rects, clipped to the viewport unless `clip` is false. */
+export function pageUnion(rects: DOMRect[], clip = true) {
   if (!rects.length) return null
+  const top = Math.min(...rects.map((r) => r.top))
+  const bottom = Math.max(...rects.map((r) => r.bottom))
   return {
-    top: Math.max(0, Math.min(...rects.map((r) => r.top))),
-    bottom: Math.min(innerHeight, Math.max(...rects.map((r) => r.bottom))),
+    top: clip ? Math.max(0, top) : top,
+    bottom: clip ? Math.min(innerHeight, bottom) : bottom,
     left: Math.max(0, Math.min(...rects.map((r) => r.left))),
     right: Math.min(innerWidth, Math.max(...rects.map((r) => r.right))),
   }
 }
 
+/** `mirror` (a whole-document scan turning the diagram off): the reversed timeline still sweeps top
+ * to bottom, so the forward keyframes run bottom to top over the mirrored span. */
+const mirrored = (span: ScanSpan): ScanSpan => ({ top: 1 - span.top - span.height, height: span.height })
+const wipe = (hidden: number, mirror: boolean) => mirror ? `inset(${hidden.toFixed(3)}% 0 0 0)` : `inset(0 0 ${hidden.toFixed(3)}% 0)`
+
 /** Rules (dots, grid, edge guides) reveal as one layer, so they render exactly like the resting image. */
-function ruleReveal(preset: string, span: ScanSpan): Keyframe[] {
+function ruleReveal(preset: string, span: ScanSpan, mirror: boolean): Keyframe[] {
   const end = DRAW_START + SPAN * 0.9
   const reveal = (from: string, to: string, easing = ENTER): Keyframe[] => [
     { clipPath: from, opacity: 0, offset: 0 },
@@ -86,9 +100,10 @@ function ruleReveal(preset: string, span: ScanSpan): Keyframe[] {
   if (preset === 'scan') {
     // Linear, so the clip edge stays under the scanner's line. Parts of the page outside the
     // swept (on-screen) union open at once: above before the pass, below after it.
+    if (mirror) span = mirrored(span)
     const first = clamp01(-span.top / span.height)
     const last = clamp01((1 - span.top) / span.height)
-    const clip = (fraction: number) => `inset(0 0 ${((1 - fraction) * 100).toFixed(3)}% 0)`
+    const clip = (fraction: number) => wipe((1 - fraction) * 100, mirror)
     const at = (fraction: number) => scanOffset(span.top + span.height * fraction)
     return [
       { clipPath: clip(first), opacity: 1, offset: 0 },
@@ -118,18 +133,20 @@ function ruleReveal(preset: string, span: ScanSpan): Keyframe[] {
 
 /** Each preset maps one block element (fill, outline, handle) to a window of the shared timeline.
  * Only transform, opacity and clip animate; outlines never scale, since scaling a hairline smears it. */
-function entry(preset: string, g: Geometry, span: ScanSpan): Entry {
+function entry(preset: string, g: Geometry, span: ScanSpan, mirror: boolean): Entry {
   const cx = (g.x + g.w / 2) / 100
   const cy = (g.y + g.h / 2) / 100
   switch (preset) {
     case 'scan': {
       // Each element is wiped open exactly while the line crosses it.
-      const at = (y: number) => scanOffset(span.top + span.height * clamp01(y / 100))
+      const s = mirror ? mirrored(span) : span
+      const top = mirror ? 100 - g.y - g.h : g.y
+      const at = (y: number) => scanOffset(s.top + s.height * clamp01(y / 100))
       return {
-        start: at(g.y),
-        end: at(g.y + g.h),
-        from: { clipPath: 'inset(0 0 100% 0)' },
-        to: { clipPath: 'inset(0 0 0% 0)' },
+        start: at(top),
+        end: at(top + g.h),
+        from: { clipPath: wipe(100, mirror) },
+        to: { clipPath: wipe(0, mirror) },
         easing: 'linear',
       }
     }
@@ -200,10 +217,12 @@ export function useDiagramTransition(enabled: boolean, pages: Record<number, Pag
     if (!import.meta.env.DEV) return
     const { pages: layouts, settings: look, motion: timing, link: scanLink } = current.current
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
-    const preset = (changed && scanLink?.override.current) || timing.preset
+    const request = changed ? scanLink?.override.current : null
+    const preset = request?.preset || timing.preset
+    const wholePage = preset === 'scan' && !!request?.wholePage
     if (changed && scanLink) scanLink.override.current = null
-    const publish = (session: Omit<ScanSession, 'id' | 'duration' | 'forward'>) => {
-      if (changed && scanLink && preset === 'scan') scanLink.session.current = { id: ++scanSessions, duration: timing.durationMs, forward: enabled, ...session }
+    const publish = (session: Pick<ScanSession, 'clock' | 'bounds'>, duration = timing.durationMs) => {
+      if (changed && scanLink && preset === 'scan') scanLink.session.current = { id: ++scanSessions, duration, forward: enabled, follow: wholePage, ...session }
     }
     // Look or timing edits mid-flight snap to the resting state instead of replaying stale geometry.
     if (!changed || !timing.animate || reduce || look.opacity === 0) {
@@ -229,9 +248,11 @@ export function useDiagramTransition(enabled: boolean, pages: Record<number, Pag
       }).catch(() => { /* Cancelled on unmount or a reduced-motion change. */ })
     }
 
-    // Measure visible pages together, before any overlay writes force a layout.
-    const visible = visibleLayoutPages()
-    const union = pageUnion(visible.map(({ rect }) => rect))
+    // Measure pages together, before any overlay writes force a layout. A whole-document scan takes
+    // every page, off screen too, and sweeps their full (unclipped) union.
+    const visible = visibleLayoutPages(wholePage)
+    const union = pageUnion(visible.map(({ rect }) => rect), !wholePage)
+    const mirror = wholePage && !enabled
     const targets = visible.flatMap(({ image, rect, style }) => {
       if (running.current.has(image)) return []
       const layout = layouts[Number(image.dataset.layoutPage)]
@@ -249,7 +270,10 @@ export function useDiagramTransition(enabled: boolean, pages: Record<number, Pag
       }]
     })
     const scanEase = getComputedStyle(document.documentElement).getPropertyValue('--reveal-ease').trim() || 'ease-in-out'
-    const duration = timing.durationMs
+    // Whole document: the line crosses the union at a steady speed, however long the page is.
+    const duration = wholePage && union && request?.pxPerSecond
+      ? Math.round(((union.bottom - union.top) / request.pxPerSecond) * 1000 / (SCAN_END - SCAN_START))
+      : timing.durationMs
     for (const job of running.current.values()) play(job, enabled)
 
     targets.forEach(({ image, layout, parent, box, span, radius, fit, position, objectFit }, index) => {
@@ -306,7 +330,7 @@ export function useDiagramTransition(enabled: boolean, pages: Record<number, Pag
         { opacity: to, offset: 1 },
       ]
       animate(svg, handoff(1, 0))
-      animate(rules, ruleReveal(preset, span))
+      animate(rules, ruleReveal(preset, span, mirror))
       animate(rest, handoff(0, 1))
       for (const node of svg.querySelectorAll<SVGElement>('[data-kind]')) {
         const kind = node.dataset.kind!
@@ -322,7 +346,7 @@ export function useDiagramTransition(enabled: boolean, pages: Record<number, Pag
           continue
         }
         const g: Geometry = { kind, x: Number(node.dataset.x ?? 0), y: Number(node.dataset.y ?? 0), w: Number(node.dataset.w ?? 100), h: Number(node.dataset.h ?? 100) }
-        const { start, end, from, to, easing, origin } = entry(preset, g, span)
+        const { start, end, from, to, easing, origin } = entry(preset, g, span, mirror)
         if (origin) Object.assign(node.style, { transformBox: 'fill-box', transformOrigin: origin })
         const settled: Keyframe = to ?? (from.transform ? { opacity: 1, transform: 'none' } : { opacity: 1 })
         animate(node, [
@@ -335,7 +359,9 @@ export function useDiagramTransition(enabled: boolean, pages: Record<number, Pag
 
       const original = new Image()
       original.src = image.dataset.layoutOriginal!
-      const job: RunningPage = { image, overlay, animations, clock: animations[2], target: enabled, ready: original.complete && original.naturalWidth > 0, revision: 0 }
+      // Off-screen pages of a whole-document scan start with the rest: their originals load long
+      // before the line reaches them, and a late start would fall out of step with the shared clock.
+      const job: RunningPage = { image, overlay, animations, clock: animations[2], target: enabled, ready: wholePage || (original.complete && original.naturalWidth > 0), revision: 0 }
       running.current.set(image, job)
       play(job, enabled)
       if (!job.ready) {
@@ -348,6 +374,6 @@ export function useDiagramTransition(enabled: boolean, pages: Record<number, Pag
     })
     // Any page's rules reveal is the shared clock: same duration, same start, reversed together.
     const clock = running.current.values().next().value?.clock ?? null
-    publish({ clock, bounds: union && { top: union.top + scrollY, bottom: union.bottom + scrollY, left: union.left, right: union.right } })
+    publish({ clock, bounds: union && { top: union.top + scrollY, bottom: union.bottom + scrollY, left: union.left, right: union.right } }, duration)
   }, [enabled, pages, lookKey, motion.animate, motion.preset, motion.durationMs, motion.scanDim])
 }
