@@ -10,9 +10,14 @@
   --cur-size: 10px;
   --cur-pressed-scale: 0.55;
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0 auto auto 0;
   z-index: 2147483647; /* above everything, including the DialKit panel (z 10002) */
+  /* A manual popover, so it can re-enter the top layer above modal dialogs; drop UA popover box styles. */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: visible;
   width: var(--cur-size);
   height: var(--cur-size);
   pointer-events: none;

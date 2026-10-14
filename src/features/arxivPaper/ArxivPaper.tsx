@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties, type PointerEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useTuningController } from '../../tuning/useTuning'
 import { ArrowUpRightIcon } from '../../components/icons'
 import { ARROW_HEAD, ARROW_SHAFT, LOOP } from './markerPaths'
@@ -14,9 +15,15 @@ type PaperDials = {
   shadow: { opacity: number; blur: number; y: number }
   arrow: { x: number; y: number; scale: number }
   pillSize: { padX: number; padY: number; text: number }
+  pillOffset: { x: number; y: number }
+  pillExit: { preset: PillExit; duration: number }
   marker: { show: boolean; color: string; note: string }
   entrance: { show: boolean; depth: number; duration: number; trigger: number }
 }
+
+/** How the pill leaves when the pointer exits the paper; every preset keeps following the cursor. */
+const PILL_EXITS = ['fade', 'into cursor', 'shrink', 'blur', 'drop', 'lift', 'instant'] as const
+type PillExit = (typeof PILL_EXITS)[number]
 
 export const ARXIV_PAPER_URL = 'https://arxiv.org/abs/2604.06477'
 
@@ -33,6 +40,16 @@ export const MOMO_PAPER_CONFIG = {
     padX: [16, 8, 48, 1] as Tuple,
     padY: [9, 4, 24, 1] as Tuple,
     text: [15, 11, 24, 0.5] as Tuple,
+  },
+  /** Pill's top-left corner relative to the pointer (px), matching About → Photo stack → caption → cursor. */
+  pillOffset: {
+    x: [16, -200, 200, 1] as Tuple,
+    y: [-51, -200, 200, 1] as Tuple,
+  },
+  /** Hover off: how the pill disappears (it keeps following the cursor the whole time) and how long it takes (ms). */
+  pillExit: {
+    preset: { type: 'select' as const, options: [...PILL_EXITS], default: 'into cursor' },
+    duration: [240, 60, 800, 10] as Tuple,
   },
   /** Red marker note drawn on the page on hover: a loop around David's name, an arrow and a note. */
   marker: {
@@ -70,6 +87,8 @@ export function ArxivPaper() {
   const { values } = useTuningController('Momo paper', MOMO_PAPER_CONFIG)
   const d = values as unknown as PaperDials
   const ref = useRef<HTMLAnchorElement>(null)
+  const pillRef = useRef<HTMLSpanElement>(null)
+  const leaving = useRef<{ timer: number; track: (event: globalThis.PointerEvent) => void } | null>(null)
   const { show: entrance, trigger } = d.entrance
 
   // Pop up from under the footer whenever the section scrolls into view; sink again once it's fully out
@@ -94,15 +113,44 @@ export function ArxivPaper() {
     return () => observer.disconnect()
   }, [entrance, trigger])
 
-  // The pill follows the pointer; written straight to CSS vars so moving never re-renders.
-  const follow = (event: PointerEvent<HTMLAnchorElement>) => {
-    const el = ref.current
-    if (!el || event.pointerType === 'touch') return
-    const r = el.getBoundingClientRect()
-    el.style.setProperty('--pill-x', `${event.clientX - r.left}px`)
-    el.style.setProperty('--pill-y', `${event.clientY - r.top}px`)
-    el.dataset.pointer = ''
+  // The pill lives in a fixed layer on <body>, placed at the pointer's viewport position. Scrolling
+  // leaves the pointer where it is, so the pill stays with it; the paper's lift and tilt never resize it.
+  // Written straight to the element so moving never re-renders.
+  const move = (x: number, y: number) => {
+    if (pillRef.current) pillRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`
   }
+  const stopLeaving = () => {
+    if (!leaving.current) return
+    window.clearTimeout(leaving.current.timer)
+    window.removeEventListener('pointermove', leaving.current.track)
+    leaving.current = null
+  }
+  const place = (x: number, y: number) => {
+    const pill = pillRef.current
+    if (!pill) return
+    stopLeaving()
+    move(x, y)
+    pill.dataset.state = 'shown'
+  }
+  const follow = (event: PointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType !== 'touch') place(event.clientX, event.clientY)
+  }
+  // Leaving plays the exit preset while the pill keeps tracking the pointer off the paper; once it has
+  // finished it resets, invisible, to the entry pose.
+  const hide = () => {
+    const pill = pillRef.current
+    if (!pill || pill.dataset.state !== 'shown') return
+    stopLeaving()
+    pill.dataset.state = 'leaving'
+    const track = (event: globalThis.PointerEvent) => move(event.clientX, event.clientY)
+    window.addEventListener('pointermove', track, { passive: true })
+    const timer = window.setTimeout(() => {
+      stopLeaving()
+      delete pill.dataset.state
+    }, d.pillExit.duration + 20)
+    leaving.current = { timer, track }
+  }
+  useEffect(() => stopLeaving, [])
 
   return (
     <a
@@ -114,7 +162,13 @@ export function ArxivPaper() {
       aria-label={`${d.pill} (opens in a new tab)`}
       onPointerEnter={follow}
       onPointerMove={follow}
-      onPointerLeave={() => ref.current && delete ref.current.dataset.pointer}
+      onPointerLeave={hide}
+      onFocus={(event) => {
+        if (!event.currentTarget.matches(':focus-visible')) return
+        const r = event.currentTarget.getBoundingClientRect()
+        place(r.left + r.width * 0.3, r.top + r.height * 0.38)
+      }}
+      onBlur={hide}
       style={
         {
           '--paper-w': `${d.width}px`,
@@ -122,12 +176,6 @@ export function ArxivPaper() {
           '--paper-lift': `${d.lift}px`,
           '--paper-tilt': `${d.tilt}deg`,
           '--paper-shadow': `0 ${d.shadow.y}px ${d.shadow.blur}px rgb(0 0 0 / ${d.shadow.opacity})`,
-          '--pill-arrow-x': `${d.arrow.x}px`,
-          '--pill-arrow-y': `${d.arrow.y}px`,
-          '--pill-arrow-scale': d.arrow.scale,
-          '--pill-pad-x': `${d.pillSize.padX}px`,
-          '--pill-pad-y': `${d.pillSize.padY}px`,
-          '--pill-text': `${d.pillSize.text}px`,
           '--marker': d.marker.color,
           '--paper-rise-depth': `${d.entrance.depth}px`,
           '--paper-rise-time': `${d.entrance.duration}s`,
@@ -167,10 +215,33 @@ export function ArxivPaper() {
           </svg>
         )}
       </span>
-      <span className="arxiv-paper__pill" aria-hidden="true">
-        {d.pill}
-        <ArrowUpRightIcon className="arxiv-paper__arrow" />
-      </span>
+      {createPortal(
+        <span
+          ref={pillRef}
+          className="arxiv-paper__pill"
+          data-exit={d.pillExit.preset}
+          aria-hidden="true"
+          style={
+            {
+              '--pill-arrow-x': `${d.arrow.x}px`,
+              '--pill-arrow-y': `${d.arrow.y}px`,
+              '--pill-arrow-scale': d.arrow.scale,
+              '--pill-pad-x': `${d.pillSize.padX}px`,
+              '--pill-pad-y': `${d.pillSize.padY}px`,
+              '--pill-text': `${d.pillSize.text}px`,
+              '--pill-off-x': `${d.pillOffset.x}px`,
+              '--pill-off-y': `${d.pillOffset.y}px`,
+              '--pill-exit-ms': `${d.pillExit.duration}ms`,
+            } as CSSProperties
+          }
+        >
+          <span className="arxiv-paper__pill-box">
+            {d.pill}
+            <ArrowUpRightIcon className="arxiv-paper__arrow" />
+          </span>
+        </span>,
+        document.body,
+      )}
     </a>
   )
 }

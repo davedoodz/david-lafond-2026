@@ -8,6 +8,7 @@ import { MOMO_BRAID_LAYOUT_EVENT, MomoIntro } from '../features/momoIntro/MomoIn
 import { MomoWelcome } from '../features/momoIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { ArxivPaper } from '../features/arxivPaper/ArxivPaper'
+import { FiloMilestones } from '../features/filoCase/FiloMilestones'
 import { MomoSystemFigure } from '../features/momoSystem/MomoSystemFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
@@ -604,6 +605,7 @@ export function CaseStudyPage({ id }: Props) {
             </div>
           ),
         )}
+        {id === 'filo' && <FiloMilestones />}
       </div>
       <div className="case__dark" data-surface="dark">
         <ContactCta />

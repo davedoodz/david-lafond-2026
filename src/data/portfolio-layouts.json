@@ -1,0 +1,70 @@
+{
+  "17": {
+    "background": "white",
+    "blocks": [
+      {
+        "id": "b1",
+        "label": "Editorial collage",
+        "x": 0,
+        "y": 0,
+        "w": 100,
+        "h": 42,
+        "color": "black"
+      },
+      {
+        "id": "b2",
+        "label": "Publication caption 1",
+        "x": 6,
+        "y": 46,
+        "w": 27,
+        "h": 12.666666666666666,
+        "color": "black"
+      },
+      {
+        "id": "b3",
+        "label": "Publication caption 2",
+        "x": 6,
+        "y": 62.666666666666664,
+        "w": 27,
+        "h": 12.666666666666666,
+        "color": "black"
+      },
+      {
+        "id": "b4",
+        "label": "Publication caption 3",
+        "x": 6,
+        "y": 79.33333333333333,
+        "w": 27,
+        "h": 12.666666666666666,
+        "color": "black"
+      },
+      {
+        "id": "b5",
+        "label": "Website view",
+        "x": 39,
+        "y": 46,
+        "w": 55,
+        "h": 22,
+        "color": "black"
+      },
+      {
+        "id": "b6",
+        "label": "Digital journal",
+        "x": 39,
+        "y": 72.077,
+        "w": 55,
+        "h": 20,
+        "color": "black"
+      },
+      {
+        "id": "b7",
+        "label": "Page number",
+        "x": 91,
+        "y": 94,
+        "w": 3,
+        "h": 2,
+        "color": "black"
+      }
+    ]
+  }
+}

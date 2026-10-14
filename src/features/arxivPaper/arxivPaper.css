@@ -77,12 +77,19 @@
   outline-offset: 6px;
 }
 
-/* Pill: follows the pointer, sitting just above it; keyboard focus shows it centred on the page. */
+/* Pill: a fixed layer on <body> moved to the pointer (see ArxivPaper `place`), so it follows the cursor
+   while scrolling and keeps its natural width. The box's top-left sits at the pointer plus the offset,
+   like the About photo deck's cursor pill. */
 .arxiv-paper__pill {
-  position: absolute;
-  left: 50%;
-  top: 38%;
-  z-index: 1;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+.arxiv-paper__pill-box {
+  display: block;
+  width: max-content;
   padding: var(--pill-pad-y, 9px) var(--pill-pad-x, 16px);
   border-radius: 999px;
   background: var(--ink-900);
@@ -92,19 +99,52 @@
   line-height: 1.2;
   white-space: nowrap;
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
-  pointer-events: none;
+  /* Idle: invisible in the entry pose, reached instantly once an exit has finished. */
   opacity: 0;
-  translate: -50% calc(-100% - 10px);
+  translate: var(--pill-off-x, 16px) var(--pill-off-y, -51px);
   scale: 0.7;
-  transform-origin: 50% 100%;
+  transform-origin: 0% 100%;
+}
+.arxiv-paper__pill[data-state='shown'] .arxiv-paper__pill-box {
+  opacity: 1;
+  scale: 1;
   transition:
     opacity 180ms ease,
-    scale 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    scale 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 180ms ease,
+    transform 180ms ease;
 }
-.arxiv-paper[data-pointer] .arxiv-paper__pill {
-  left: var(--pill-x);
-  top: var(--pill-y);
-  translate: -50% calc(-100% - 16px);
+
+/* Leaving (Momo paper → pillExit): the pill keeps tracking the pointer while one of these plays. */
+.arxiv-paper__pill[data-state='leaving'] .arxiv-paper__pill-box {
+  opacity: 0;
+  scale: 1;
+  transition:
+    opacity var(--pill-exit-ms, 240ms) ease,
+    scale var(--pill-exit-ms, 240ms) cubic-bezier(0.4, 0, 0.7, 0.2),
+    filter var(--pill-exit-ms, 240ms) ease,
+    transform var(--pill-exit-ms, 240ms) cubic-bezier(0.4, 0, 0.7, 0.2);
+}
+/* Into cursor: shrinks toward the pointer itself, as if the dot swallows it. */
+.arxiv-paper__pill[data-state='leaving'][data-exit='into cursor'] .arxiv-paper__pill-box {
+  scale: 0.15;
+  transform-origin: calc(-1 * var(--pill-off-x, 16px)) calc(-1 * var(--pill-off-y, -51px));
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='shrink'] .arxiv-paper__pill-box {
+  scale: 0.6;
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='blur'] .arxiv-paper__pill-box {
+  scale: 1.06;
+  filter: blur(8px);
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='drop'] .arxiv-paper__pill-box {
+  transform: translateY(14px);
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='lift'] .arxiv-paper__pill-box {
+  transform: translateY(-14px);
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='instant'] .arxiv-paper__pill-box {
+  transition: none;
 }
 .arxiv-paper__arrow {
   display: inline-block;
@@ -114,10 +154,6 @@
   vertical-align: -0.12em;
   translate: var(--pill-arrow-x, 0px) var(--pill-arrow-y, 0px);
   scale: var(--pill-arrow-scale, 1);
-}
-.arxiv-paper:is(:hover, :focus-visible) .arxiv-paper__pill {
-  opacity: 1;
-  scale: 1;
 }
 
 /* Red marker note: hidden at rest; on hover the loop, note and arrow are drawn in order, like a pen.
@@ -190,7 +226,7 @@
 }
 
 @media (max-width: 640px) {
-  .arxiv-paper__pill {
+  .arxiv-paper__pill-box {
     font-size: 13px;
   }
 }
@@ -200,17 +236,21 @@
     translate: none !important;
     transition: none !important;
   }
-  .arxiv-paper__sheet,
-  .arxiv-paper__pill {
+  .arxiv-paper__sheet {
+    transition: opacity 120ms ease;
+  }
+  .arxiv-paper__pill .arxiv-paper__pill-box,
+  .arxiv-paper__pill[data-state] .arxiv-paper__pill-box,
+  .arxiv-paper__pill[data-state='leaving'][data-exit] .arxiv-paper__pill-box {
+    scale: 1;
+    filter: none;
+    transform: none;
     transition: opacity 120ms ease;
   }
   .arxiv-paper:is(:hover, :focus-visible) .arxiv-paper__sheet {
     translate: none;
     rotate: none;
     animation: none;
-  }
-  .arxiv-paper__pill {
-    scale: 1;
   }
   .arxiv-paper:is(:hover, :focus-visible) :is(.arxiv-paper__mark, .arxiv-paper__note) {
     transition: none;

@@ -1,0 +1,175 @@
+/* Filo milestones (FiloMilestones.tsx): two photo cards tucked under the dark footer sheet.
+   The sheet comes later in the page, so it paints over the cards' tucked-in bottoms. */
+.filo-milestones {
+  /* Tucked depth under the footer; the click lift clears it plus the gap. */
+  --ms-tuck: var(--ms-peek, 120px);
+  /* Own stacking layer below the dark sheet, so a hovered card can come forward without covering the footer. */
+  position: relative;
+  z-index: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-inline: 24px;
+  margin-bottom: calc(-1 * var(--ms-tuck));
+}
+
+.filo-milestones__card {
+  position: relative;
+  flex: 0 1 var(--ms-w, 440px);
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #e9e7e2;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.16);
+  transform-origin: 50% 100%;
+  rotate: calc(-1 * var(--ms-tilt, 4deg));
+  /* Sunk under the footer until the cards scroll into view. */
+  translate: 0 var(--ms-depth, 260px);
+  transition:
+    translate 0s,
+    rotate 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    scale 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 320ms ease;
+}
+.filo-milestones__card + .filo-milestones__card {
+  margin-left: calc(-1 * var(--ms-overlap, 36px));
+  rotate: var(--ms-tilt, 4deg);
+}
+.filo-milestones__card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+.filo-milestones__card:focus-visible {
+  outline: 2px solid var(--ink-900);
+  outline-offset: 4px;
+}
+
+/* Scroll-in: rise out from under the footer, the second card a beat later. */
+.filo-milestones[data-risen] .filo-milestones__card {
+  translate: none;
+  transition:
+    translate 900ms cubic-bezier(0.3, 1.35, 0.5, 1),
+    rotate 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    scale 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 320ms ease;
+}
+.filo-milestones[data-risen] .filo-milestones__card + .filo-milestones__card {
+  transition-delay: 120ms, 0s, 0s, 0s;
+}
+
+/* Hover: the card pops up out of the footer, straightens and comes to the front with a single wobble;
+   the other card settles back. */
+@media (hover: hover) {
+  .filo-milestones[data-risen] .filo-milestones__card {
+    transition:
+      translate 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      rotate 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      scale 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 320ms ease;
+  }
+  .filo-milestones[data-risen] .filo-milestones__card:hover {
+    z-index: 1;
+    translate: 0 calc(-1 * var(--ms-lift, 56px));
+    rotate: 0deg;
+    scale: 1.04;
+    box-shadow: 0 40px 90px rgb(0 0 0 / 0.22);
+    animation: filo-milestone-wobble 700ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 120ms;
+  }
+  .filo-milestones[data-risen]:has(.filo-milestones__card:hover) .filo-milestones__card:not(:hover, [data-lifted]) {
+    translate: 0 12px;
+    scale: 0.97;
+  }
+}
+
+/* Click: the card straightens and lifts until its bottom clears the footer's top edge, then the zoom
+   takes over from its lifted rect (FiloMilestones) and hides it until the zoom lands back on it.
+   Selector outranks the hover and second-card delay rules above. */
+.filo-milestones[data-lifting][data-risen] .filo-milestones__card[data-lifted],
+.filo-milestones[data-lifting]:not([data-risen]) .filo-milestones__card[data-lifted] {
+  z-index: 2;
+  translate: 0 calc(-1 * (var(--ms-tuck) + var(--ms-lift-gap, 24px)));
+  rotate: 0deg;
+  scale: 1.04;
+  animation: none;
+  box-shadow: 0 40px 90px rgb(0 0 0 / 0.22);
+  transition:
+    translate var(--ms-lift-ms, 380ms) cubic-bezier(0.22, 1, 0.36, 1),
+    rotate var(--ms-lift-ms, 380ms) cubic-bezier(0.22, 1, 0.36, 1),
+    scale var(--ms-lift-ms, 380ms) cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms ease;
+}
+.filo-milestones__card[data-zoomed] {
+  visibility: hidden;
+}
+
+/* Lightbox (FiloPhotoZoom), same look as the About playground zoom. */
+.filo-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+.filo-zoom__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(11 10 9 / var(--fz-dim, 0.6));
+  backdrop-filter: blur(var(--fz-blur, 20px));
+  -webkit-backdrop-filter: blur(var(--fz-blur, 20px));
+}
+.filo-zoom__card {
+  position: fixed;
+  overflow: hidden;
+  background: #e9e7e2;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.45);
+  outline: none;
+}
+.filo-zoom__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+@keyframes filo-milestone-wobble {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: rotate(1.6deg);
+  }
+  55% {
+    transform: rotate(-1deg);
+  }
+  78% {
+    transform: rotate(0.4deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .filo-milestones {
+    --ms-tuck: calc(0.5 * var(--ms-peek, 120px));
+    padding: 48px 16px 0;
+  }
+  .filo-milestones__card {
+    border-radius: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filo-milestones__card,
+  .filo-milestones[data-risen] .filo-milestones__card,
+  .filo-milestones[data-risen] .filo-milestones__card:hover,
+  .filo-milestones[data-risen]:has(.filo-milestones__card:hover) .filo-milestones__card:not(:hover, [data-lifted]) {
+    translate: none !important;
+    scale: 1 !important;
+    transition: box-shadow 160ms ease !important;
+    animation: none !important;
+  }
+}

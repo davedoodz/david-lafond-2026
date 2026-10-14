@@ -6,8 +6,21 @@
  * counter / next / last and zoom controls. Grid mode shows every spread and
  * scrolls with the page. Book Grid Only removes the Video tab and places one
  * walkthrough below either reading view. Cover hint controls live under Book.
+ *
+ * Dev experiment: DialKit → Portfolio book → Diagram → Enabled reveals the
+ * skeleton overlay. Activation is session-only; every reload starts with scans.
+ * Opacity and Scan Opacity set the resting mix; Fills, Outlines, Dots, Grid and
+ * Guides each have their own show / ink (auto, custom color, or block) / width /
+ * opacity / style. Motion picks a preset (construct, sweep, cascade, bloom, fade):
+ * the scan never moves, it only dims (Scan Dim) while skeleton elements draw over it.
+ * DialKit's Edit current spread opens the flat canvas for the current book spread
+ * or last opened grid spread. Drag/resize, nudge with arrows, or enter percentages.
+ * Grid columns/rows drive snapping; the editor shows grid and block-edge guides.
+ * Edits autosave to src/data/portfolio-layouts.json; pending local copies can
+ * be retried if the dev server is unavailable. No toolbar appears on the page,
+ * and neither the experiment nor its saved settings changes the public site.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   BookIcon,
   ChevronLeftIcon,
@@ -28,8 +41,15 @@ import { PAGE_COUNT, SPREADS, pageLabel } from './bookPages'
 import { SpreadGrid } from './SpreadGrid'
 import './book.css'
 import { VideoCard, videoDials } from './VideoCard'
+import { LayoutEditor } from './LayoutEditor'
+import { diagramSource } from './layoutDiagram'
+import { usePageLayouts } from './usePageLayouts'
+import { DIAGRAM_PRESETS, useDiagramTransition } from './useDiagramTransition'
 
 type Tuple = [number, number, number, number]
+const colorField = (value: string) => ({ type: 'color' as const, default: value })
+const inkField = (fallback: string, options = ['auto', 'custom']) => ({ type: 'select' as const, options, default: fallback })
+const lineStyleField = (fallback: string) => ({ type: 'select' as const, options: ['solid', 'dashed', 'dotted'], default: fallback })
 type Mode = 'video' | 'book' | 'grid'
 
 /** Native cover materials + timing; presets never change interior-page physics. */
@@ -46,6 +66,64 @@ const CONFIG = {
   switch: switchDials(),
   /** Test a two-tab viewer with the walkthrough below either reading view. */
   bookGridOnly: false,
+  diagram: {
+    enabled: false,
+    edit: { type: 'action' as const, label: 'Edit current spread' },
+    /** Every skeleton layer at once; the scan stays put underneath. */
+    opacity: [1, 0, 1, 0.05] as Tuple,
+    /** How much of the spread shows through once the skeleton has settled. */
+    scanOpacity: [0.6, 0, 1, 0.05] as Tuple,
+    snap: true,
+    fills: { show: true, opacity: [0.08, 0, 1, 0.02] as Tuple, _collapsed: true },
+    outlines: {
+      show: true,
+      ink: inkField('block', ['block', 'auto', 'custom']),
+      color: colorField('#000000'),
+      width: [1, 0.25, 8, 0.25] as Tuple,
+      opacity: [1, 0, 1, 0.05] as Tuple,
+      style: lineStyleField('solid'),
+      handles: false,
+      _collapsed: true,
+    },
+    dots: {
+      show: false,
+      ink: inkField('auto'),
+      color: colorField('#000000'),
+      size: [2, 0.5, 12, 0.25] as Tuple,
+      spacing: [28, 8, 80, 1] as Tuple,
+      opacity: [0.4, 0, 1, 0.05] as Tuple,
+      _collapsed: true,
+    },
+    grid: {
+      show: true,
+      ink: inkField('auto'),
+      color: colorField('#000000'),
+      width: [0.25, 0.25, 8, 0.25] as Tuple,
+      opacity: [0.7, 0, 1, 0.05] as Tuple,
+      style: lineStyleField('solid'),
+      columns: [12, 2, 48, 1] as Tuple,
+      rows: [16, 2, 48, 1] as Tuple,
+      _collapsed: true,
+    },
+    guides: {
+      show: false,
+      ink: inkField('auto'),
+      color: colorField('#000000'),
+      width: [0.5, 0.25, 8, 0.25] as Tuple,
+      opacity: [0.35, 0, 1, 0.05] as Tuple,
+      style: lineStyleField('dotted'),
+      _collapsed: true,
+    },
+    motion: {
+      animate: true,
+      preset: { type: 'select' as const, options: [...DIAGRAM_PRESETS], default: 'construct' },
+      durationMs: [1400, 300, 4000, 50] as Tuple,
+      /** The spread only fades while the skeleton draws over it. */
+      scanDim: [0.35, 0, 1, 0.05] as Tuple,
+      _collapsed: true,
+    },
+    _collapsed: false,
+  },
   video: videoDials,
   book: {
     /** Share of the largest size that fits the stage. */
@@ -176,12 +254,16 @@ const CONFIG = {
 }
 
 const spreadOfIndex = (index: number) => (index === 0 ? 0 : Math.ceil(index / 2))
+const SESSION_ONLY_DIAGRAM = ['diagram.enabled'] as const
 
 export function BookViewer() {
   const replayEntrance = useRef<() => void>(() => {})
   const replayBook = useRef<() => void>(() => {})
+  const editDiagram = useRef<() => void>(() => {})
   const { values: t, setValue } = useTuningController('Portfolio book', CONFIG, {
+    sessionOnly: SESSION_ONLY_DIAGRAM,
     onAction: (action) => {
+      if (action === 'diagram.edit') editDiagram.current()
       if (action === 'grid.entrance.replay') replayEntrance.current()
       if (action === 'book.entrance.replay') replayBook.current()
       if (action.startsWith('book.coverFeels.')) {
@@ -278,6 +360,24 @@ export function BookViewer() {
   const controller = useRef<BookController | null>(null)
 
   const spread = spreadOfIndex(state.index)
+  const layouts = usePageLayouts()
+  const [editingSpread, setEditingSpread] = useState<number | null>(null)
+  const diagram = { ...t.diagram, enabled: import.meta.env.DEV && t.diagram.enabled }
+  // Nested DialKit folders: one serialized key tracks every look control without listing them.
+  const { enabled: _enabled, edit: _edit, motion, ...look } = t.diagram
+  const lookKey = JSON.stringify(look)
+  const diagramSources = useMemo(() => {
+    if (!diagram.enabled) return undefined
+    return Object.fromEntries(Object.entries(layouts.pages).map(([page, layout]) => [page, diagramSource(layout, t.diagram)]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diagram.enabled, layouts.pages, lookKey])
+  useDiagramTransition(diagram.enabled, layouts.pages, t.diagram, motion, lookKey)
+  const gridSelection = useRef(0)
+  editDiagram.current = () => {
+    setValue('diagram.enabled', true)
+    setZoom(null)
+    setEditingSpread(mode === 'grid' ? gridSelection.current : spread)
+  }
   const counter =
     state.orientation === 'portrait' ? String(state.index + 1) : pageLabel(SPREADS[spread])
   const atStart = state.index === 0
@@ -357,7 +457,7 @@ export function BookViewer() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() !== 'g' || event.metaKey || event.ctrlKey || event.altKey) return
-      if ((event.target as HTMLElement | null)?.closest('input, textarea, [contenteditable="true"]')) return
+      if ((event.target as HTMLElement | null)?.closest('.dialkit-root, input, textarea, select, [contenteditable="true"]')) return
       switchTo(mode === 'grid' ? 'book' : 'grid')
     }
     window.addEventListener('keydown', onKey)
@@ -366,6 +466,7 @@ export function BookViewer() {
 
   const [zoom, setZoom] = useState<{ spread: number; source: HTMLElement; origin: DOMRect; closing: boolean } | null>(null)
   const openZoom = useCallback((next: number, source: HTMLElement) => {
+    gridSelection.current = next
     const origin = source.getBoundingClientRect()
     source.closest<HTMLElement>('.spread-grid__card')!.dataset.zoomReturn = 'true'
     setZoom({ spread: next, source, origin, closing: false })
@@ -376,6 +477,7 @@ export function BookViewer() {
     setZoom((current) => {
       if (!current || current.closing) return current
       const spread = (current.spread + direction + SPREADS.length) % SPREADS.length
+      gridSelection.current = spread
       const source = gridRef.current?.querySelector<HTMLElement>(`.spread-grid > li:nth-child(${spread + 1}) .spread-grid__pages`)
       if (!source) return current
       source.closest<HTMLElement>('.spread-grid__card')!.dataset.zoomReturn = 'true'
@@ -419,6 +521,7 @@ export function BookViewer() {
           active={mode === 'book'}
           controllerRef={controller}
           onChange={setState}
+          diagramSources={diagramSources}
         />
         <div className="viewer__bar">
           <div className="viewer__nav">
@@ -458,6 +561,7 @@ export function BookViewer() {
             onOpen={openZoom}
             showPageNumbers={t.grid.showPageNumbers}
             zoomed={zoom?.spread ?? null}
+            diagramSources={diagramSources}
           />
         </div>
       )}
@@ -465,6 +569,7 @@ export function BookViewer() {
       {zoom && (
         <SpreadZoom
           pages={SPREADS[zoom.spread]}
+          diagramSources={diagramSources}
           source={zoom.source}
           originRect={zoom.origin}
           gridRadius={t.grid.cornerRadius}
@@ -475,6 +580,17 @@ export function BookViewer() {
           onClosed={clearZoom}
           onNavigate={navigateZoom}
         />
+      )}
+      {editingSpread !== null && import.meta.env.DEV && (
+        <LayoutEditor spread={editingSpread} pages={layouts.pages} settings={t.diagram}
+          status={layouts.status} onSave={layouts.savePage}
+          onSpread={(next) => {
+            setEditingSpread(next)
+            gridSelection.current = next
+            if (mode === 'book') controller.current?.jumpTo(SPREADS[next][0] - 1)
+          }}
+          onSettings={(key, value) => setValue(`diagram.${key}`, value)}
+          onRetry={layouts.retry} onClose={() => setEditingSpread(null)} />
       )}
     </section>
   )

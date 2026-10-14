@@ -22,6 +22,8 @@ const SAVED = saved as Record<string, Overrides>
 export type TuningOptions = {
   /** Called with the full dot path of an action control, e.g. `signature.open`. */
   onAction?: (action: string) => void
+  /** Dot paths that start from code defaults and never write to tuning.json. */
+  sessionOnly?: readonly string[]
 }
 
 export type TuningController<T extends DialConfig> = {
@@ -112,8 +114,27 @@ function diff(values: unknown, base: unknown): unknown {
   return JSON.stringify(values) === JSON.stringify(base) ? undefined : values
 }
 
+function withoutPaths(value: Overrides | undefined, paths: readonly string[]): Overrides | undefined {
+  if (!value || !paths.length) return value
+  const result = { ...value }
+  for (const path of paths) {
+    const keys = path.split('.')
+    let branch: AnyConfig | undefined = result
+    for (const key of keys.slice(0, -1)) {
+      if (!isObj(branch[key])) { branch = undefined; break }
+      branch[key] = { ...branch[key] }
+      branch = branch[key] as AnyConfig
+    }
+    if (branch) delete branch[keys[keys.length - 1]]
+  }
+  return result
+}
+
+const NO_SESSION_PATHS: readonly string[] = []
+
 function useTuningControllerDev<T extends DialConfig>(name: string, config: T, options?: TuningOptions): TuningController<T> {
-  const merged = useMemo(() => applyOverrides(config, SAVED[name]) as T, [name, config])
+  const sessionOnly = options?.sessionOnly ?? NO_SESSION_PATHS
+  const merged = useMemo(() => applyOverrides(config, withoutPaths(SAVED[name], sessionOnly)) as T, [name, config, sessionOnly])
   const baseline = useMemo(() => resolveStatic(config), [config])
   const onActionRef = useRef(options?.onAction)
   onActionRef.current = options?.onAction
@@ -134,7 +155,7 @@ function useTuningControllerDev<T extends DialConfig>(name: string, config: T, o
   useEffect(() => {
     quietUntil.current = performance.now() + 1000
   }, [merged])
-  const overrides = diff(dial.values, baseline) as Overrides | undefined
+  const overrides = withoutPaths(diff(dial.values, baseline) as Overrides | undefined, sessionOnly)
   const serialized = JSON.stringify(overrides ?? {})
   useEffect(() => {
     if (valuesKey === lastValues.current) return
@@ -152,10 +173,10 @@ function useTuningControllerDev<T extends DialConfig>(name: string, config: T, o
 const staticCache = new Map<string, unknown>()
 const noop = () => {}
 
-function useTuningControllerStatic<T extends DialConfig>(name: string, config: T): TuningController<T> {
+function useTuningControllerStatic<T extends DialConfig>(name: string, config: T, options?: TuningOptions): TuningController<T> {
   let values = staticCache.get(name) as ResolvedValues<T> | undefined
   if (!values) {
-    values = resolveStatic(applyOverrides(config, SAVED[name]) as T)
+    values = resolveStatic(applyOverrides(config, withoutPaths(SAVED[name], options?.sessionOnly ?? NO_SESSION_PATHS)) as T)
     staticCache.set(name, values)
   }
   return { values, setValue: noop }

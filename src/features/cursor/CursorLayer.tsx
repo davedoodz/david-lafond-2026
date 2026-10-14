@@ -278,6 +278,18 @@ export function CursorLayer() {
       // An overlay can relinquish its surface while the pointer remains still.
       resyncRef.current?.();
     };
+    // Modal dialogs enter the browser top layer, above every z-index. The dot is a
+    // manual popover, so re-showing it puts it back on top of the newest modal.
+    const raise = (): void => {
+      if (!dot.isConnected) return;
+      if (dot.matches(":popover-open")) dot.hidePopover();
+      dot.showPopover();
+    };
+    raise();
+    const topLayer = new MutationObserver((records) => {
+      if (records.some((r) => r.target instanceof HTMLDialogElement && r.target.open)) raise();
+    });
+    topLayer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"] });
 
     window.addEventListener("cursor:hide", onHide);
     window.addEventListener("cursor:show", onShow);
@@ -309,6 +321,7 @@ export function CursorLayer() {
       window.removeEventListener("pointerout", onPointerLeaveWindow);
       window.removeEventListener("blur", onBlur);
       if (frame) cancelAnimationFrame(frame);
+      topLayer.disconnect();
       resyncRef.current = null;
     };
   }, [fine]);
@@ -325,6 +338,7 @@ export function CursorLayer() {
     <div
       ref={dotRef}
       className="cur-dot"
+      popover="manual"
       data-text-preset={tuning.text.preset}
       aria-hidden="true"
       style={{
