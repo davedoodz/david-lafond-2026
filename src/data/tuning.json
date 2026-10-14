@@ -894,14 +894,14 @@
       }
     },
     "persona": {
-      "title": "The technical designer handed a new material.",
-      "body": "She turns a sketch and a fabric choice into a garment a factory can build.\nWhen a biomaterial lands on her bench, every unknown becomes her job.",
-      "tags": "Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the risk if it fails",
+      "title": "The technical designer handed an unfamiliar material.",
+      "body": "She turns a design and material choice into something a factory can reliably make.\nWith an unfamiliar material, every new constraint has to be understood before production.",
+      "tags": "Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the technical risk if it fails",
       "moments": {
-        "m1Quote": "“How does it sew up? What if it doesn’t dye right?”",
-        "m2Quote": "“Heat can’t apply. No solvent.”",
-        "m3Quote": "“Our suppliers never worked with these materials.”",
-        "m4Quote": "“If it’s a hit, can we make 10,000?”"
+        "m1Quote": "“How does it sew? What happens when we fuse, press or wash it?”",
+        "m2Quote": "“We can’t use heat or solvent on this.”",
+        "m3Quote": "“Our factories haven’t worked with this material before.”",
+        "m4Quote": "“Can this construction still work at 10,000 units?”"
       },
       "float": {
         "entrance": {
