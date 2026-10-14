@@ -68,8 +68,9 @@ export type ScannerLook = {
 /** Book mode: the pages turning under the beam. The scanner holds its pose until both this and the
  * diagram reveal finish. */
 export type Riffle = {
-  /** 0–1 from first turn to the last landing, or null once the hold after it is over. */
-  progress(now: number): number | null
+  /** Scan line (0 top – 1 bottom of the pages) and beam strength now, or null once the hold after
+   * the last view is over. */
+  frame(now: number): { line: number; beam: number } | null
   cancel(): void
 }
 
@@ -280,6 +281,8 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
    * closes onto its cover or opens into spreads. */
   let stage: Box | null = null
   let riffle: Riffle | null = null
+  /** Eased riffle beam strength, so on/off at the riffle's ends never pops. */
+  let riffleBeam = 0
   let session: ScanSession | null = null
   let sessionBefore = 0
   let scanStart = 0
@@ -406,21 +409,23 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
           begin('scan', now)
           host.scan()
           riffle = host.riffle()
+          riffleBeam = 0
         }
       } else {
         const p = progress(now)
-        const r = riffle?.progress(now) ?? null
+        const r = riffle?.frame(now) ?? null
         const lock = box ? lockPose(box) : from
         // A faint hum while the beam runs.
         pose = { ...lock, y: lock.y + Math.sin(now / 38) * 0.35 }
         if (riffle) {
-          // The line crosses the book once over the whole riffle, fading in and out at its ends.
+          // Each view (cover, spread, back cover) gets its own full pass; the riffle drives the line.
+          riffleBeam = damp(riffleBeam, r?.beam ?? 0, 70, dt)
           if (r === null && p === null) {
             riffle = null
             begin('return', now)
-          } else if (box && r !== null) {
-            beam = smooth(0, 0.04, r) * (1 - smooth(0.96, 1, r))
-            placeBeam(box, box.top + r * (box.bottom - box.top))
+          } else if (box) {
+            beam = riffleBeam
+            placeBeam(box, box.top + (r?.line ?? 1) * (box.bottom - box.top))
           }
         } else {
           // Document px from the toggle when the reveal animates, so a mid-scan scroll keeps it on the pages.

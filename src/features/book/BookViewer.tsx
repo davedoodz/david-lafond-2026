@@ -150,12 +150,14 @@ const CONFIG = {
       lineColor: colorField('#fff3df'),
       beamOpacity: [0.9, 0, 2, 0.05] as Tuple,
       lineGlow: [14, 2, 60, 1] as Tuple,
-      /** Book mode: the scan closes the book onto its front cover, then turns every page to the back
-       * cover under the beam. Delay counts from the scan's start; Step is the gap between turns. */
+      /** Book mode: the scan closes the book onto its front cover, then the beam sweeps each view
+       * (cover, every spread, back cover) top to bottom and the page turns between sweeps. After the
+       * hold, the whole book turns back to the front cover (Book → Cover Flip Ms).
+       * Delay: before the cover's sweep. Sweep: one full pass per view. Flip: each turn. */
       riffle: {
         show: true,
-        delayMs: [250, 0, 2000, 10] as Tuple,
-        stepMs: [110, 30, 600, 5] as Tuple,
+        delayMs: [150, 0, 2000, 10] as Tuple,
+        sweepMs: [220, 60, 1500, 5] as Tuple,
         flipMs: [130, 40, 800, 5] as Tuple,
         holdMs: [350, 0, 2000, 10] as Tuple,
         _collapsed: false,
@@ -433,25 +435,42 @@ export function BookViewer() {
   }, [])
   const startRiffle = useCallback((): Riffle | null => {
     if (!riffles()) return null
-    const { delayMs, stepMs, flipMs, holdMs } = riffleLook.current
+    const { delayMs, sweepMs, flipMs, holdMs } = riffleLook.current
     const { index, orientation } = bookState.current
     const last = PAGE_COUNT - 1
     // Spreads turn two pages at a time; the front cover opens onto the first spread on its own.
     const turns = orientation === 'portrait' ? last - index : (index === 0 ? 1 : 0) + Math.ceil((last - Math.max(1, index)) / 2)
+    // View k (0 = where the riffle starts) is swept from `start + k * step`, then turn k + 1 begins.
+    const step = sweepMs + flipMs
     const start = performance.now() + delayMs
-    const end = start + Math.max(0, turns - 1) * stepMs + flipMs
+    const end = start + turns * step + sweepMs
     let done = 0
     let timer = 0
-    // Scheduled against the start time, so timer drift never stretches the riffle.
+    // Scheduled against the start time, so timer drift never stretches the riffle. After the last
+    // sweep and the hold, the whole book turns back over onto its front cover.
     const tick = () => {
-      if (modeRef.current !== 'book' || done >= turns) return
+      if (modeRef.current !== 'book') return
+      if (done >= turns) {
+        controller.current?.first()
+        return
+      }
       controller.current?.next(flipMs)
       done++
-      timer = window.setTimeout(tick, Math.max(0, start + done * stepMs - performance.now()))
+      timer = window.setTimeout(tick, Math.max(0, (done < turns ? start + done * step + sweepMs : end + holdMs) - performance.now()))
     }
-    timer = window.setTimeout(tick, delayMs)
+    timer = window.setTimeout(tick, delayMs + sweepMs)
     return {
-      progress: (now) => (now >= end + holdMs ? null : Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)))),
+      frame: (now) => {
+        if (now >= end + holdMs) return null
+        const t = now - start
+        if (t <= 0 || now >= end) return { line: t <= 0 ? 0 : 1, beam: 0 }
+        const k = Math.min(turns, Math.floor(t / step))
+        const local = t - k * step
+        // Sweep down while the view rests; retrace to the top while the next page turns.
+        if (local < sweepMs) return { line: local / sweepMs, beam: 1 }
+        const back = (local - sweepMs) / flipMs
+        return { line: 1 - back * back * (3 - 2 * back), beam: 1 }
+      },
       cancel: () => clearTimeout(timer),
     }
   }, [])
