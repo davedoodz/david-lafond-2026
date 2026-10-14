@@ -1,0 +1,43 @@
+/* Ease token from the transitions.dev skeleton-reveal recipe (transitions/skeleton-reveal.md);
+   it times the scan's dim and settle. */
+:root {
+  --reveal-ease: ease-in-out;
+}
+
+.spread-grid__pages { position: relative; }
+
+/* Ephemeral, aria-hidden layer over one page. The scan below stays fixed; only
+   its opacity and the SVG skeleton's own elements animate. */
+.diagram-transition {
+  position: absolute;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+}
+.diagram-transition__scan,
+.diagram-transition > svg,
+.diagram-transition > .diagram-transition__rest,
+.diagram-transition > .diagram-transition__rules {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+  scale: none;
+}
+.diagram-transition > .diagram-transition__rest,
+.diagram-transition > .diagram-transition__rules { display: block; }
+.diagram-transition__scan {
+  background-repeat: no-repeat;
+  will-change: opacity;
+}
+.diagram-transition > svg { display: block; overflow: visible; }
+
+@media (prefers-reduced-motion: reduce) {
+  .diagram-transition { display: none; }
+}

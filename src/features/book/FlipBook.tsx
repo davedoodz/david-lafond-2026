@@ -60,6 +60,7 @@ type Props = {
   active: boolean
   controllerRef: RefObject<BookController | null>
   onChange: (state: BookState) => void
+  diagramSources?: Record<number, string>
 }
 
 /** Below this spread width the book shows one page at a time. */
@@ -77,7 +78,7 @@ function visiblePages(index: number, orientation: Orientation): number[] {
   return [left, left + 1]
 }
 
-export function FlipBook({ look, startIndex, active, controllerRef, onChange }: Props) {
+export function FlipBook({ look, startIndex, active, controllerRef, onChange, diagramSources }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const tiltRef = useRef<HTMLDivElement>(null)
   const shiftRef = useRef<HTMLDivElement>(null)
@@ -93,6 +94,10 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
   const flipRef = useRef<PageFlip | null>(null)
   const updateMaterialRef = useRef<(() => void) | null>(null)
   useEffect(() => { updateMaterialRef.current?.() }, [look.coverMaterial])
+  const diagramRef = useRef(diagramSources)
+  diagramRef.current = diagramSources
+  const refreshDiagrams = useRef<(() => void) | null>(null)
+  useEffect(() => { refreshDiagrams.current?.() }, [diagramSources])
 
   // page-flip reads its settings object live, so the flip duration dial applies without a remount.
   useEffect(() => {
@@ -128,6 +133,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       const img = document.createElement('img')
       img.alt = i === 0 ? 'Portfolio front cover' : i === PAGE_COUNT - 1 ? 'Portfolio back cover' : `Portfolio page ${i + 1}`
       img.decoding = 'async'
+      img.dataset.layoutPage = String(i + 1)
+      img.style.backgroundSize = '100% 100%'
       page.appendChild(img)
       if (i === 0) {
         const hint = document.createElement('span')
@@ -144,8 +151,29 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
     const setQuality = (i: number, next: PageQuality) => {
       if (quality[i] === next) return
       quality[i] = next
-      images[i].src = pageUrl(i + 1, next)
+      const original = pageUrl(i + 1, next)
+      images[i].dataset.layoutOriginal = original
+      images[i].src = diagramRef.current?.[i + 1] ?? original
+      images[i].style.backgroundImage = diagramRef.current ? `url("${original}")` : ''
     }
+    refreshDiagrams.current = () => {
+      images.forEach((image, i) => {
+        const source = diagramRef.current?.[i + 1]
+        const level = quality[i]
+        const original = pageUrl(i + 1, level === 'none' ? 'thumb' : level)
+        image.dataset.layoutOriginal = original
+        image.style.backgroundImage = source && level !== 'none' ? `url("${original}")` : ''
+        if (source) image.src = source
+        else if (level !== 'none') image.src = pageUrl(i + 1, level)
+        else image.removeAttribute('src')
+      })
+      stage.querySelectorAll<HTMLImageElement>('.book__solid img[data-page]').forEach((image) => {
+        const page = Number(image.dataset.page)
+        image.src = diagramRef.current?.[page] ?? pageUrl(page, 'medium')
+        image.style.backgroundImage = diagramRef.current ? `url("${pageUrl(page, 'medium')}")` : ''
+      })
+    }
+    refreshDiagrams.current()
 
     /** Load around `center`; never downgrade medium, so turning back is instant. */
     const hydrate = (center: number) => {
@@ -231,6 +259,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
 
     /** Swap the visible pages to the detail scan after it has decoded, so nothing flashes. */
     const loadDetail = () => {
+      if (diagramRef.current) return
       const wanted = visiblePages(flip.getCurrentPageIndex(), orientation)
       if (wanted.every((i) => quality[i] === 'detail')) return
       const token = ++detailToken
@@ -561,7 +590,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
 
     const onKey = (event: KeyboardEvent) => {
       if (!activeRef.current || event.metaKey || event.ctrlKey || event.altKey) return
-      if ((event.target as HTMLElement | null)?.closest('input, textarea, [contenteditable="true"]')) return
+      if ((event.target as HTMLElement | null)?.closest('.dialkit-root, input, textarea, select, [contenteditable="true"]')) return
       const actions: Record<string, () => void> = {
         ArrowRight: () => turn(true),
         ArrowLeft: () => turn(false),
@@ -619,7 +648,13 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
         face.className = `book__solid-${side}`
         if (side === 'front' || side === 'back') {
           const image = document.createElement('img')
-          image.src = pageUrl(side === 'front' ? 1 : PAGE_COUNT, 'medium')
+          const page = side === 'front' ? 1 : PAGE_COUNT
+          image.dataset.page = String(page)
+          image.dataset.layoutPage = String(page)
+          image.dataset.layoutOriginal = pageUrl(page, 'medium')
+          image.style.backgroundSize = '100% 100%'
+          image.style.backgroundImage = diagramRef.current ? `url("${pageUrl(page, 'medium')}")` : ''
+          image.src = diagramRef.current?.[page] ?? pageUrl(page, 'medium')
           image.alt = ''
           face.appendChild(image)
         }
@@ -684,6 +719,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange }: 
       clearTimeout(coverHintTimer)
       stage.removeAttribute('data-cover-return-wait')
       updateMaterialRef.current = null
+      refreshDiagrams.current = null
       observer.disconnect()
       stage.removeEventListener('pointermove', onPointerMove)
       stage.removeEventListener('pointerdown', onPointerDown)

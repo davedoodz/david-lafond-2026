@@ -8,13 +8,14 @@ type Props = {
   showPageNumbers: boolean
   /** Spread shown in the zoom; its thumbnail hides so the zoom reads as lifting it out. */
   zoomed: number | null
+  diagramSources?: Record<number, string>
 }
 
 /**
  * Every spread at a glance, laid out as the open book shows it: covers sit
  * alone on their side of the spine. Thumbs load lazily as the grid scrolls.
  */
-export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNumbers, zoomed }: Props) {
+export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNumbers, zoomed, diagramSources }: Props) {
   return (
     <ol className="spread-grid">
       {SPREADS.map((pages, spread) => {
@@ -36,7 +37,9 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
             >
               <span className="spread-grid__pages" data-surface={pageSurface(pages[0])}>
                 {pages.map((page) => (
-                  <img key={page} src={pageUrl(page, 'thumb')} alt="" loading="lazy" decoding="async" />
+                  <img key={page} data-layout-page={page} data-layout-original={pageUrl(page, 'thumb')}
+                    src={diagramSources?.[page] ?? pageUrl(page, 'thumb')} alt="" loading="lazy" decoding="async"
+                    style={diagramSources ? { backgroundImage: `url("${pageUrl(page, 'thumb')}")`, backgroundSize: '100% 100%' } : undefined} />
                 ))}
               </span>
               {showPageNumbers && <span className="spread-grid__label">{label}</span>}

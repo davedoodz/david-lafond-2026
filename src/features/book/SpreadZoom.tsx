@@ -40,6 +40,7 @@ type Props = {
   onClose: () => void
   onClosed: () => void
   onNavigate: (direction: -1 | 1) => void
+  diagramSources?: Record<number, string>
 }
 
 function useViewport() {
@@ -61,7 +62,7 @@ function flipFrom(rect: DOMRect, target: { x: number; y: number; width: number; 
   }
 }
 
-export function SpreadZoom({ pages, source, originRect, gridRadius, closing, look, transition, onClose, onClosed, onNavigate }: Props) {
+export function SpreadZoom({ pages, source, originRect, gridRadius, closing, look, transition, onClose, onClosed, onNavigate, diagramSources }: Props) {
   const { w: vw, h: vh } = useViewport()
   const reduced = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, [])
   const [settled, setSettled] = useState(false)
@@ -130,6 +131,7 @@ export function SpreadZoom({ pages, source, originRect, gridRadius, closing, loo
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement | null)?.closest('.dialkit-root')) return
       if (event.key === 'Escape') onClose()
       if (closing || event.altKey || event.ctrlKey || event.metaKey) return
       if (event.target instanceof HTMLElement && (event.target.isContentEditable || event.target.matches('input, textarea, select'))) return
@@ -194,10 +196,13 @@ export function SpreadZoom({ pages, source, originRect, gridRadius, closing, loo
         <div className="spread-zoom__surface">
         {pages.map((page) => (
           <span key={page} className="spread-zoom__page">
-            <img src={pageUrl(page, 'thumb')} alt="" />
+            <img src={diagramSources?.[page] ?? pageUrl(page, 'thumb')} alt="" />
             <img
               className="spread-zoom__sharp"
-              src={pageUrl(page, 'medium')}
+              data-layout-page={page}
+              data-layout-original={pageUrl(page, 'medium')}
+              style={diagramSources ? { backgroundImage: `url("${pageUrl(page, 'medium')}")`, backgroundSize: '100% 100%' } : undefined}
+              src={diagramSources?.[page] ?? pageUrl(page, 'medium')}
               alt=""
               onLoad={(event) => { event.currentTarget.dataset.ready = 'true' }}
             />
