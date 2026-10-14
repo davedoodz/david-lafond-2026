@@ -150,15 +150,21 @@ const CONFIG = {
       lineColor: colorField('#fff3df'),
       beamOpacity: [0.9, 0, 2, 0.05] as Tuple,
       lineGlow: [14, 2, 60, 1] as Tuple,
-      /** Book mode: the scan closes the book onto its front cover, then the beam sweeps each view
-       * (cover, every spread, back cover) top to bottom and the page turns between sweeps. After the
-       * hold, the whole book turns back to the front cover (Book → Cover Flip Ms).
-       * Delay: before the cover's sweep. Sweep: one full pass per view. Flip: each turn. */
+      /** Book mode: the scan closes the book onto its front cover, opens it, thumbs through every
+       * leaf like a real book (several in the air at once), closes the back cover, holds, then turns
+       * the whole book back to the front cover (Book → Cover Flip Ms). The beam sweeps top to bottom
+       * throughout, one pass per Sweep. */
       riffle: {
         show: true,
         delayMs: [150, 0, 2000, 10] as Tuple,
-        sweepMs: [220, 60, 1500, 5] as Tuple,
-        flipMs: [130, 40, 800, 5] as Tuple,
+        /** Opening the front cover and closing the back cover. */
+        coverMs: [420, 100, 1500, 10] as Tuple,
+        /** One leaf's turn. */
+        leafMs: [520, 120, 2000, 10] as Tuple,
+        /** Gap between leaves lifting; smaller means more leaves in the air. */
+        stepMs: [55, 10, 400, 5] as Tuple,
+        /** One beam pass, top to bottom. */
+        sweepMs: [650, 150, 3000, 10] as Tuple,
         holdMs: [350, 0, 2000, 10] as Tuple,
         _collapsed: false,
       },
@@ -435,43 +441,45 @@ export function BookViewer() {
   }, [])
   const startRiffle = useCallback((): Riffle | null => {
     if (!riffles()) return null
-    const { delayMs, sweepMs, flipMs, holdMs } = riffleLook.current
-    const { index, orientation } = bookState.current
-    const last = PAGE_COUNT - 1
-    // Spreads turn two pages at a time; the front cover opens onto the first spread on its own.
-    const turns = orientation === 'portrait' ? last - index : (index === 0 ? 1 : 0) + Math.ceil((last - Math.max(1, index)) / 2)
-    // View k (0 = where the riffle starts) is swept from `start + k * step`, then turn k + 1 begins.
-    const step = sweepMs + flipMs
+    const { delayMs, coverMs, leafMs, stepMs, sweepMs, holdMs } = riffleLook.current
     const start = performance.now() + delayMs
-    const end = start + turns * step + sweepMs
-    let done = 0
-    let timer = 0
-    // Scheduled against the start time, so timer drift never stretches the riffle. After the last
-    // sweep and the hold, the whole book turns back over onto its front cover.
-    const tick = () => {
-      if (modeRef.current !== 'book') return
-      if (done >= turns) {
-        controller.current?.first()
-        return
-      }
-      controller.current?.next(flipMs)
-      done++
-      timer = window.setTimeout(tick, Math.max(0, (done < turns ? start + done * step + sweepMs : end + holdMs) - performance.now()))
+    // Known once the leaves start; until then the run is open-ended.
+    let end = Infinity
+    const timers: number[] = []
+    let leaves: { cancel: () => void } | null = null
+    const at = (time: number, action: () => void) => {
+      // Leaving Book mode ends the run, so the scanner never waits on leaves that will not turn.
+      timers.push(window.setTimeout(() => {
+        if (modeRef.current === 'book') action()
+        else end = Math.min(end, performance.now())
+      }, Math.max(0, time - performance.now())))
     }
-    timer = window.setTimeout(tick, delayMs + sweepMs)
+    // Open the front cover, thumb through the leaves, close the back cover, hold, turn back over.
+    at(start, () => controller.current?.next(coverMs))
+    at(start + coverMs + 30, () => {
+      const run = controller.current?.riffle(leafMs, stepMs)
+      if (!run) return
+      leaves = run
+      const back = performance.now() + run.durationMs + 80
+      end = back + coverMs
+      at(back, () => controller.current?.next(coverMs))
+      at(end + holdMs, () => controller.current?.first())
+    })
     return {
       frame: (now) => {
         if (now >= end + holdMs) return null
         const t = now - start
         if (t <= 0 || now >= end) return { line: t <= 0 ? 0 : 1, beam: 0 }
-        const k = Math.min(turns, Math.floor(t / step))
-        const local = t - k * step
-        // Sweep down while the view rests; retrace to the top while the next page turns.
-        if (local < sweepMs) return { line: local / sweepMs, beam: 1 }
-        const back = (local - sweepMs) / flipMs
+        // Down over most of each pass, then a quick eased retrace to the top.
+        const phase = (t % sweepMs) / sweepMs
+        if (phase < 0.85) return { line: phase / 0.85, beam: 1 }
+        const back = (phase - 0.85) / 0.15
         return { line: 1 - back * back * (3 - 2 * back), beam: 1 }
       },
-      cancel: () => clearTimeout(timer),
+      cancel: () => {
+        timers.forEach(clearTimeout)
+        leaves?.cancel()
+      },
     }
   }, [])
   const gridSelection = useRef(0)
@@ -620,6 +628,7 @@ export function BookViewer() {
           <ScannerLayer
             visible={scanner.show && mode !== 'video' && !zoom && editingSpread === null}
             active={diagram.enabled}
+            lockPage={mode === 'grid'}
             look={scanner}
             onPrepare={prepareScan}
             onScan={startScan}

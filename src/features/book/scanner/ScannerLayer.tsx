@@ -8,6 +8,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
+import { lockScroll } from '../scrollLock'
 import { pageUnion, visibleLayoutPages, type ScanSession } from '../useDiagramTransition'
 import { createScanner, type Riffle, type ScannerController, type ScannerLook } from './scannerScene'
 import './scanner.css'
@@ -17,8 +18,10 @@ const DECODER_PATH = `${import.meta.env.BASE_URL}draco/`
 /** Gap between the switch and the scanner slot. */
 const GAP = 14
 
-export default function ScannerLayer({ visible, active, look, onPrepare, onScan, onRiffle, session }: {
+export default function ScannerLayer({ visible, active, lockPage, look, onPrepare, onScan, onRiffle, session }: {
   visible: boolean
+  /** Freeze page scroll for the whole run (Grid mode, where the pass covers the viewport). */
+  lockPage: boolean
   /** Diagram currently shown: the next scan turns it back into the pages. */
   active: boolean
   look: ScannerLook
@@ -35,6 +38,7 @@ export default function ScannerLayer({ visible, active, look, onPrepare, onScan,
   const latest = useRef({ look, onPrepare, onScan, onRiffle, visible })
   latest.current = { look, onPrepare, onScan, onRiffle, visible }
 
+  useLayoutEffect(() => (busy && lockPage ? lockScroll() : undefined), [busy, lockPage])
   // Sit just right of the switch; the switch's width changes with its labels and the viewport.
   const size = look.restSize
   useLayoutEffect(() => {

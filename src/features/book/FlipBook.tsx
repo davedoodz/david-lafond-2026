@@ -28,6 +28,10 @@ export type BookController = {
   last: () => void
   /** Open page `index` (0-based) without an animation, e.g. from the grid. */
   jumpTo: (index: number) => void
+  /** Thumb through the book like a real one: from the first spread, every leaf fans over to the left,
+   * several in the air at once, landing on the last spread. Each leaf turns in `leafMs`; a new one
+   * lifts every `stepMs`. Returns the total duration (ms) and a cancel. */
+  riffle: (leafMs: number, stepMs: number) => { durationMs: number; cancel: () => void }
   zoomBy: (factor: number) => void
   zoomReset: () => void
 }
@@ -694,6 +698,106 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
         shift.style.transition = previousTransition
       }
     }
+
+    // --- Riffle: a temporary 3D leaf stack over the open spread. page-flip animates one page at a
+    // time, so fanning many leaves at once is drawn here, then handed back on the last spread.
+    let riffleCancel: (() => void) | null = null
+    const riffle = (leafMs: number, stepMs: number) => {
+      riffleCancel?.()
+      const firstLeft = 2
+      const lastLeft = PAGE_COUNT - 2
+      const leaves = (lastLeft - firstLeft) / 2
+      const durationMs = Math.max(0, leaves - 1) * stepMs + leafMs
+      if (orientation === 'portrait' || reducedMotion) {
+        // One page at a time on narrow screens: land on the last spread directly.
+        const timer = window.setTimeout(() => controllerRef.current?.jumpTo(lastLeft - 1), durationMs)
+        return { durationMs, cancel: () => clearTimeout(timer) }
+      }
+      setZoom(1)
+      // Load the landing spread at full quality while the leaves fly.
+      hydrate(lastLeft - 1)
+      const { pageWidth, height } = render.getRect()
+      const face = (page: number) => {
+        const original = pageUrl(page, 'thumb')
+        const diagram = diagramRef.current?.[page]
+        return diagram ? `url("${diagram}"), url("${original}")` : `url("${original}")`
+      }
+      const layer = document.createElement('div')
+      layer.className = 'book__riffle'
+      layer.setAttribute('aria-hidden', 'true')
+      layer.style.cssText = `--leaf-w:${pageWidth}px;--leaf-h:${height}px`
+      // Under the stack: the last right page, revealed once every leaf has lifted.
+      const base = document.createElement('i')
+      base.className = 'book__riffle-base'
+      base.style.backgroundImage = face(lastLeft + 1)
+      layer.appendChild(base)
+      const sides = (front: number, back: number, inner: boolean) => {
+        // A leaf is two hinged halves so it can bend; each half shows its share of both pages. Turned
+        // over, the inner half lies against the spine, under the back page's right half.
+        const half = document.createElement('div')
+        half.className = inner ? 'book__leaf-half' : 'book__leaf-half is-outer'
+        for (const [side, page, position] of [['front', front, inner ? '0%' : '100%'], ['back', back, inner ? '100%' : '0%']] as const) {
+          const sheet = document.createElement('i')
+          sheet.className = `book__leaf-${side}`
+          sheet.style.backgroundImage = face(page)
+          sheet.style.backgroundPosition = `${position} 0`
+          half.appendChild(sheet)
+        }
+        return half
+      }
+      const animations: Animation[] = []
+      const ease = 'cubic-bezier(0.45, 0, 0.2, 1)'
+      for (let leaf = 0; leaf < leaves; leaf++) {
+        const front = firstLeft + 1 + leaf * 2
+        const element = document.createElement('div')
+        element.className = 'book__leaf'
+        const inner = sides(front, front + 1, true)
+        const outer = sides(front, front + 1, false)
+        inner.appendChild(outer)
+        element.appendChild(inner)
+        layer.appendChild(element)
+        // Small depth offsets keep the flat stacks ordered: the top right leaf lifts first, the
+        // latest landed leaf lies on top on the left.
+        const rightZ = (leaves - leaf) * 0.2
+        const leftZ = (leaf + 1) * 0.2
+        const timing = { duration: leafMs, delay: leaf * stepMs, fill: 'both' as const }
+        animations.push(element.animate([
+          { transform: `translateZ(${rightZ}px) rotateY(0deg)` },
+          { transform: `translateZ(${leftZ}px) rotateY(-180deg)` },
+        ], { ...timing, easing: ease }))
+        // The outer half trails the spine on the way up and overshoots a little as it settles.
+        animations.push(outer.animate([
+          { transform: 'rotateY(0deg)' },
+          { transform: 'rotateY(32deg)', offset: 0.4 },
+          { transform: 'rotateY(-9deg)', offset: 0.82 },
+          { transform: 'rotateY(0deg)' },
+        ], { ...timing, easing: 'ease-in-out' }))
+      }
+      zoomLayer.appendChild(layer)
+      // The page block under the left page thickens as leaves land.
+      let readFrame = 0
+      const started = performance.now()
+      const readAlong = () => {
+        const landed = Math.min(leaves, Math.max(0, (performance.now() - started - leafMs * 0.5) / stepMs))
+        shift.style.setProperty('--read', String((firstLeft - 1 + landed * 2) / (PAGE_COUNT - 1)))
+        if (landed < leaves) readFrame = requestAnimationFrame(readAlong)
+      }
+      readFrame = requestAnimationFrame(readAlong)
+      const cleanup = () => {
+        cancelAnimationFrame(readFrame)
+        animations.forEach((animation) => animation.cancel())
+        layer.remove()
+        riffleCancel = null
+      }
+      riffleCancel = cleanup
+      // Hand back to page-flip on the last spread, then drop the stack once it has painted there.
+      void Promise.all(animations.map((animation) => animation.finished)).then(() => {
+        if (riffleCancel !== cleanup) return
+        controllerRef.current?.jumpTo(lastLeft - 1)
+        requestAnimationFrame(() => requestAnimationFrame(() => { if (riffleCancel === cleanup) cleanup() }))
+      }, () => {})
+      return { durationMs, cancel: cleanup }
+    }
     controllerRef.current = {
       next: (flipMs) => {
         if (target.zoom > 1) setZoom(1)
@@ -712,12 +816,14 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
         syncSpread(index)
         report()
       },
+      riffle,
       zoomBy: (factor) => setZoom(target.zoom * factor),
       zoomReset: () => setZoom(1),
     }
 
     return () => {
       wholeBookFlip?.cancel()
+      riffleCancel?.()
       cancelAnimationFrame(frame)
       clearTimeout(coverHintTimer)
       stage.removeAttribute('data-cover-return-wait')
