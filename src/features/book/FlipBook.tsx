@@ -21,7 +21,8 @@ import { PAGE_COUNT, PAGE_ASPECT, pageUrl, pageSurface, type PageQuality } from 
 export type BookState = { index: number; orientation: Orientation; zoom: number }
 
 export type BookController = {
-  next: () => void
+  /** `flipMs` overrides this turn's duration (covers included), e.g. for the scanner's riffle. */
+  next: (flipMs?: number) => void
   prev: () => void
   first: () => void
   last: () => void
@@ -516,11 +517,13 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
     // pinches, and clicks page-flip already turned (its corner hot zones) are left alone.
     let wholeBookFlip: Animation | null = null
     let wholeBookTurning = false
-    const turn = (forward: boolean) => {
+    const turn = (forward: boolean, flipMs?: number) => {
       if (wholeBookTurning) return
       const index = flip.getCurrentPageIndex()
       const coverTurn = forward ? index === 0 || index >= PAGE_COUNT - 3 : index <= 1 || index === PAGE_COUNT - 1
-      flip.getSettings().flippingTime = coverTurn ? lookRef.current.coverFlipMs : lookRef.current.flipMs
+      flip.getSettings().flippingTime = flipMs ?? (coverTurn ? lookRef.current.coverFlipMs : lookRef.current.flipMs)
+      // Fast turns outrun the ±2 page hydration on `flipping`; load further ahead.
+      if (flipMs !== undefined && forward) hydrate(clamp(index + 6, 0, PAGE_COUNT - 1))
       if (forward) flip.flipNext()
       else flip.flipPrev()
     }
@@ -692,9 +695,9 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
       }
     }
     controllerRef.current = {
-      next: () => {
+      next: (flipMs) => {
         if (target.zoom > 1) setZoom(1)
-        turn(true)
+        turn(true, flipMs)
       },
       prev: () => {
         if (target.zoom > 1) setZoom(1)

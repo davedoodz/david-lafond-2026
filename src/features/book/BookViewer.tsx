@@ -45,6 +45,7 @@ import './book.css'
 import { VideoCard, videoDials } from './VideoCard'
 import { LayoutEditor } from './LayoutEditor'
 import { diagramSource } from './layoutDiagram'
+import type { Riffle } from './scanner/scannerScene'
 import { usePageLayouts } from './usePageLayouts'
 import { DIAGRAM_PRESETS, useDiagramTransition, type ScanLink, type ScanSession } from './useDiagramTransition'
 
@@ -143,9 +144,22 @@ const CONFIG = {
       lockDepth: [180, 0, 600, 5] as Tuple,
       aimPitch: [18, -30, 60, 1] as Tuple,
       lightMs: [260, 0, 1200, 10] as Tuple,
+      /** Light cone from the visor. */
       beamColor: colorField('#fff3df'),
+      /** Scan line where the beam meets the page. */
+      lineColor: colorField('#fff3df'),
       beamOpacity: [0.9, 0, 2, 0.05] as Tuple,
       lineGlow: [14, 2, 60, 1] as Tuple,
+      /** Book mode: the scan closes the book onto its front cover, then turns every page to the back
+       * cover under the beam. Delay counts from the scan's start; Step is the gap between turns. */
+      riffle: {
+        show: true,
+        delayMs: [250, 0, 2000, 10] as Tuple,
+        stepMs: [110, 30, 600, 5] as Tuple,
+        flipMs: [130, 40, 800, 5] as Tuple,
+        holdMs: [350, 0, 2000, 10] as Tuple,
+        _collapsed: false,
+      },
       _collapsed: true,
     },
     _collapsed: false,
@@ -408,6 +422,39 @@ export function BookViewer() {
     scanOverride.current = 'scan'
     setValue('diagram.enabled', !diagramOn.current)
   }, [setValue])
+  const bookState = useRef(state)
+  bookState.current = state
+  const riffleLook = useRef(scanner.riffle)
+  riffleLook.current = scanner.riffle
+  const riffles = () => modeRef.current === 'book' && riffleLook.current.show && !!controller.current
+  // The riffle starts from the closed front cover; the book re-centres while the scanner flies.
+  const prepareScan = useCallback(() => {
+    if (riffles() && bookState.current.index !== 0) controller.current?.jumpTo(0)
+  }, [])
+  const startRiffle = useCallback((): Riffle | null => {
+    if (!riffles()) return null
+    const { delayMs, stepMs, flipMs, holdMs } = riffleLook.current
+    const { index, orientation } = bookState.current
+    const last = PAGE_COUNT - 1
+    // Spreads turn two pages at a time; the front cover opens onto the first spread on its own.
+    const turns = orientation === 'portrait' ? last - index : (index === 0 ? 1 : 0) + Math.ceil((last - Math.max(1, index)) / 2)
+    const start = performance.now() + delayMs
+    const end = start + Math.max(0, turns - 1) * stepMs + flipMs
+    let done = 0
+    let timer = 0
+    // Scheduled against the start time, so timer drift never stretches the riffle.
+    const tick = () => {
+      if (modeRef.current !== 'book' || done >= turns) return
+      controller.current?.next(flipMs)
+      done++
+      timer = window.setTimeout(tick, Math.max(0, start + done * stepMs - performance.now()))
+    }
+    timer = window.setTimeout(tick, delayMs)
+    return {
+      progress: (now) => (now >= end + holdMs ? null : Math.min(1, Math.max(0, (now - start) / Math.max(1, end - start)))),
+      cancel: () => clearTimeout(timer),
+    }
+  }, [])
   const gridSelection = useRef(0)
   editDiagram.current = () => {
     setValue('diagram.enabled', true)
@@ -555,7 +602,9 @@ export function BookViewer() {
             visible={scanner.show && mode !== 'video' && !zoom && editingSpread === null}
             active={diagram.enabled}
             look={scanner}
+            onPrepare={prepareScan}
             onScan={startScan}
+            onRiffle={startRiffle}
             session={scanSession}
           />
         </Suspense>

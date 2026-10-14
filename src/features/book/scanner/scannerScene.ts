@@ -57,10 +57,20 @@ export type ScannerLook = {
   aimPitch: number
   /** Visor / grip light ramp, interruptible. */
   lightMs: number
+  /** Light cone from the visor, and the scan line where it meets the page. */
   beamColor: string
+  lineColor: string
   beamOpacity: number
   /** Half height (px) of the glow around the scan line. */
   lineGlow: number
+}
+
+/** Book mode: the pages turning under the beam. The scanner holds its pose until both this and the
+ * diagram reveal finish. */
+export type Riffle = {
+  /** 0–1 from first turn to the last landing, or null once the hold after it is over. */
+  progress(now: number): number | null
+  cancel(): void
 }
 
 type Box = { top: number; bottom: number; left: number; right: number }
@@ -69,8 +79,12 @@ export type ScannerHost = {
   anchor(): DOMRect | null
   /** On-screen page union (viewport px), or null when nothing can be scanned. */
   stage(): Box | null
+  /** Called on click, before the flight: e.g. close the book onto its front cover. */
+  prepare(): void
   /** Flip the diagram with the `scan` preset. */
   scan(): void
+  /** Start turning pages under the beam, or null to scan in place. */
+  riffle(): Riffle | null
   session(): ScanSession | null
   onBusy(busy: boolean): void
 }
@@ -262,8 +276,10 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
   let light = 0
   let phase: Phase | null = null
   let pose: Pose = { x: -999, y: -999, z: 0, size: initial.restSize, yaw: rad(initial.restYaw), pitch: rad(initial.restPitch) }
-  /** Click-time union, in document px so a mid-run scroll keeps the pass on the same pages. */
+  /** Page union, re-measured every frame of a run and eased, so the scanner follows the book as it
+   * closes onto its cover or opens into spreads. */
   let stage: Box | null = null
+  let riffle: Riffle | null = null
   let session: ScanSession | null = null
   let sessionBefore = 0
   let scanStart = 0
@@ -284,7 +300,13 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
       pitch: rad(look.restPitch + hover * 6),
     }
   }
-  const viewStage = (): Box | null => stage && { ...stage, top: stage.top - scrollY, bottom: stage.bottom - scrollY }
+  const viewStage = (dt: number): Box | null => {
+    const live = host.stage()
+    if (!live || !stage) return (stage = live ?? stage)
+    const ease = (key: keyof Box) => damp(stage![key], live[key], 90, dt)
+    stage = { top: ease('top'), bottom: ease('bottom'), left: ease('left'), right: ease('right') }
+    return stage
+  }
   const lockPose = (box: Box): Pose => {
     const { x } = center(box)
     const y = Math.min(box.bottom - look.lockInset - look.scanSize / 2, height - look.scanSize / 2 - 12)
@@ -322,7 +344,7 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
     if (!phase) {
       if (rest) pose = rest
     } else {
-      const box = viewStage()
+      const box = viewStage(dt)
       const elapsed = now - phase.start
       const { from } = phase
       if (phase.name === 'travel' || phase.name === 'return') {
@@ -383,19 +405,33 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
           scanStart = now
           begin('scan', now)
           host.scan()
+          riffle = host.riffle()
         }
       } else {
         const p = progress(now)
+        const r = riffle?.progress(now) ?? null
         const lock = box ? lockPose(box) : from
         // A faint hum while the beam runs.
         pose = { ...lock, y: lock.y + Math.sin(now / 38) * 0.35 }
-        const bounds = session?.bounds ?? stage
-        if (p === null || !bounds) {
-          begin('return', now)
+        if (riffle) {
+          // The line crosses the book once over the whole riffle, fading in and out at its ends.
+          if (r === null && p === null) {
+            riffle = null
+            begin('return', now)
+          } else if (box && r !== null) {
+            beam = smooth(0, 0.04, r) * (1 - smooth(0.96, 1, r))
+            placeBeam(box, box.top + r * (box.bottom - box.top))
+          }
         } else {
-          const share = clamp01((p - SCAN_START) / (SCAN_END - SCAN_START))
-          beam = smooth(0.02, SCAN_START, p) * (1 - smooth(SCAN_END, SCAN_END + 0.06, p))
-          placeBeam(bounds, bounds.top - scrollY + share * (bounds.bottom - bounds.top))
+          // Document px from the toggle when the reveal animates, so a mid-scan scroll keeps it on the pages.
+          const bounds = session?.bounds ? { ...session.bounds, top: session.bounds.top - scrollY, bottom: session.bounds.bottom - scrollY } : box
+          if (p === null || !bounds) {
+            begin('return', now)
+          } else {
+            const share = clamp01((p - SCAN_START) / (SCAN_END - SCAN_START))
+            beam = smooth(0.02, SCAN_START, p) * (1 - smooth(SCAN_END, SCAN_END + 0.06, p))
+            placeBeam(bounds, bounds.top + share * (bounds.bottom - bounds.top))
+          }
         }
       }
     }
@@ -409,8 +445,8 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
       lamp.material.emissiveIntensity = lamp.on * light
       if (lamp.fadeOpacity) lamp.material.opacity = light
     }
-    const color = (fanMaterial.uniforms.uColor.value as Color).set(look.beamColor)
-    ;(lineMaterial.uniforms.uColor.value as Color).copy(color)
+    ;(fanMaterial.uniforms.uColor.value as Color).set(look.beamColor)
+    ;(lineMaterial.uniforms.uColor.value as Color).set(look.lineColor)
     fanMaterial.uniforms.uOpacity.value = beam * look.beamOpacity
     lineMaterial.uniforms.uOpacity.value = beam * look.beamOpacity
     lineMaterial.uniforms.uGlow.value = look.lineGlow
@@ -480,6 +516,8 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
     if (!phase) return
     phase = null
     session = null
+    riffle?.cancel()
+    riffle = null
     host.onBusy(false)
   }
 
@@ -511,7 +549,8 @@ export async function createScanner(canvas: HTMLCanvasElement, host: ScannerHost
         kick()
         return
       }
-      stage = { ...box, top: box.top + scrollY, bottom: box.bottom + scrollY }
+      host.prepare()
+      stage = box
       host.onBusy(true)
       begin('travel', performance.now())
       kick()
