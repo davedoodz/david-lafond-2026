@@ -101,11 +101,18 @@ const pageDials = {
   _collapsed: false,
 }
 
-const heroDials = (d: SectionDefaults & { role: string; timeline: string; team: string }, videos?: string[]) => ({
+type HeroMeta = { role: string; timeline: string; team: string; extra?: string; extraLabel?: string }
+const heroDials = (d: SectionDefaults & HeroMeta, videos?: string[]) => ({
   ...sectionDials(d, videos),
   spacing: sectionSpacingDials(118, 0, d.gap ?? 44),
+  /** Meta row under the title: role · timeline · extra · team. Eyebrows are editable; an empty extra hides its column. */
+  roleLabel: { type: 'text' as const, default: 'Role' },
   role: { type: 'text' as const, default: d.role },
+  timelineLabel: { type: 'text' as const, default: 'Timeline' },
   timeline: { type: 'text' as const, default: d.timeline },
+  extraLabel: { type: 'text' as const, default: d.extraLabel ?? '' },
+  extra: { type: 'text' as const, default: d.extra ?? '' },
+  teamLabel: { type: 'text' as const, default: 'Team' },
   team: { type: 'text' as const, default: d.team },
   _collapsed: false,
 })
@@ -463,6 +470,8 @@ export const FILO_CONFIG = {
     gap: 44,
     role: 'Product Designer & Researcher',
     timeline: 'Hackathon 2024 · Redesign 2026',
+    extraLabel: 'Platform',
+    extra: 'iOS app',
     team: '1 engineer, 2 fashion designers, 1 product designer',
   }, NO_VIDEO),
   heroSpacing: MOMO_CONFIG.heroSpacing,
@@ -520,21 +529,21 @@ export const FILO_CONFIG = {
   persona: {
     ...PERSONA_DIALS,
     eyebrow: txt('User persona'),
-    title: txt('The technical designer handed a new material.'),
-    body: txt('She turns a sketch and a fabric choice into a garment a factory can build.\nWhen a biomaterial lands on her bench, every unknown becomes her job.'),
-    tags: txt('Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the risk if it fails'),
+    title: txt('The technical designer handed an unfamiliar material.'),
+    body: txt('She turns a design and material choice into something a factory can reliably make.\nWith an unfamiliar material, every new constraint has to be understood before production.'),
+    tags: txt('Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the technical risk if it fails'),
     align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     image: { type: 'select' as const, options: ['bottom', 'top', 'none'], default: 'bottom' },
     blockGap: [100, 32, 200, 1] as Tuple,
     moments: {
       ...PERSONA_DIALS.moments,
-      m1Quote: txt('“How does it sew up? What if it doesn’t dye right?”'),
+      m1Quote: txt('“How does it sew? What happens when we fuse, press or wash it?”'),
       m1Tag: txt('Know before you cut'),
-      m2Quote: txt('“Heat can’t apply. No solvent.”'),
+      m2Quote: txt('“We can’t use heat or solvent on this.”'),
       m2Tag: txt('Catch it at the bench'),
-      m3Quote: txt('“Our suppliers never worked with these materials.”'),
+      m3Quote: txt('“Our factories haven’t worked with this material before.”'),
       m3Tag: txt('One thread, not ten'),
-      m4Quote: txt('“If it’s a hit, can we make 10,000?”'),
+      m4Quote: txt('“Can this construction still work at 10,000 units?”'),
       m4Tag: txt('Answer the line review'),
     },
     spacing: sectionSpacingDials(110, 0, 32),

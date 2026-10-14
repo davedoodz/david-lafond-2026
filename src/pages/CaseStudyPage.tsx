@@ -45,9 +45,9 @@ const LOGOS: Record<Id, { src: string; alt: string; href: string; harvard?: bool
     { src: '/work/momo/logos/harvard-medical-school.svg', alt: 'Harvard Medical School', href: 'https://hms.harvard.edu/', harvard: true },
   ],
   filo: [
-    { src: '/work/filo/logos/arts-at-mit.svg', alt: 'Arts at MIT', href: 'https://arts.mit.edu/', scale: 1.05 },
     { src: '/work/filo/logos/mit-designx.svg', alt: 'MIT DesignX', href: 'https://designx.mit.edu/', scale: 1.2 },
     { src: '/work/filo/logos/polimi.svg', alt: 'Politecnico di Milano', href: 'https://www.polimi.it/', scale: 0.8 },
+    { src: '/work/filo/logos/arts-at-mit.svg', alt: 'Arts at MIT', href: 'https://arts.mit.edu/', scale: 1.05 },
   ],
 }
 
@@ -115,7 +115,8 @@ const WRIST_FRAMES: WristFrame[] = Array.from({ length: WRIST_COUNT }, (_, k) =>
     screen: SCREEN_FIRST.map((p, i) => [p[0] + (SCREEN_LAST[i][0] - p[0]) * t, p[1] + (SCREEN_LAST[i][1] - p[1]) * t]) as WristFrame['screen'],
   }
 })
-type Hero = Section & { role: string; timeline: string; team: string }
+type HeroField = 'role' | 'timeline' | 'extra' | 'team'
+type Hero = Section & Record<HeroField | `${HeroField}Label`, string>
 
 /** Story sections (everything except page-level folders and the hero), in config order. */
 const NON_SECTIONS = new Set(['page', 'hero', 'logos', 'heroSpacing', 'recruiter'])
@@ -301,6 +302,7 @@ export function CaseStudyPage({ id }: Props) {
   }
   const page = base.page
   const hero = base.hero
+  const metaFields: HeroField[] = hero.extra || hero.extraLabel ? ['role', 'timeline', 'extra', 'team'] : ['role', 'timeline', 'team']
   // True while the Momo voice story plays on the stage above the hero.
   const [intro, setIntro] = useState(id === 'momo')
   const allKeys = SECTION_KEYS[id]
@@ -459,7 +461,7 @@ export function CaseStudyPage({ id }: Props) {
         ? <FiloStory key={key} s={s as unknown as FiloStorySettings} edit={edit} />
         : <StoryRow key={key} s={s as unknown as Story} edit={edit} selectable />
     const filo = id === 'filo'
-    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={!filo} visual={filo ? <img className="persona__photo" src="/work/filo/studio/library.webp" alt="Tagged fabric samples on a material-development bench" width={1000} height={809} loading="lazy" /> : undefined} />
+    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={!filo} visual={filo ? <img className="persona__photo" src="/work/filo/studio/persona-bench.webp" alt="A technical designer inspects an unfamiliar material swatch beside her sewing machine and garment sketches" width={1376} height={1143} loading="lazy" /> : undefined} />
     const hasFilms = filo && ['source', 'evidence', 'scale', 'handoff'].includes(key)
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />
@@ -534,10 +536,12 @@ export function CaseStudyPage({ id }: Props) {
             <EditableText className="case__body" label={`${key} body`} value={s.body} onChange={edit(`${key}.body`)} selectable={id === 'momo' && key === 'outcomes'} />
           )}
           {isHero && (
-            <dl className="case__meta">
-              {(['role', 'timeline', 'team'] as const).map((field) => (
+            <dl className="case__meta" style={{ '--meta-cols': metaFields.length } as CSSProperties}>
+              {metaFields.map((field) => (
                 <div key={field}>
-                  <dt className="eyebrow">{field}</dt>
+                  <dt className="eyebrow">
+                    <EditableText as="span" label={`${field} eyebrow`} value={hero[`${field}Label`]} onChange={edit(`hero.${field}Label`)} />
+                  </dt>
                   <EditableText as="p" className="case__meta-value" label={field} value={hero[field]} onChange={edit(`hero.${field}`)} />
                 </div>
               ))}
