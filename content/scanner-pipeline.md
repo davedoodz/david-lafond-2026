@@ -39,16 +39,47 @@ Hover lighting is controlled in browser code, not baked as `VisorOn` / `VisorOff
 
 Their exported emissive intensity starts at 0. Browser code animates the intensity to the tuned ON values, reverses from the current value on pointer leave, and can interrupt the transition without restarting it. This matches the two state references and keeps DialKit in control of timing and brightness.
 
+## Codex MCP setup on the PC
+
+Codex—not Antigravity—is the MCP client. The Antigravity `mcp_config.json` is not used. Codex reads `%USERPROFILE%\.codex\config.toml`.
+
+With Blender open and its MCP add-on running on port `9876`, register the bridge from PowerShell:
+
+```powershell
+codex mcp add blender-mcp --env BLENDER_HOST=127.0.0.1 --env BLENDER_PORT=9876 -- node "C:/Users/David/blender-mcp-20261013-234105/src/mcp-server/dist/index.js"
+```
+
+Verify:
+
+```powershell
+codex mcp list
+```
+
+If the Codex CLI is unavailable, add this directly to `%USERPROFILE%\.codex\config.toml`:
+
+```toml
+[mcp_servers.blender-mcp]
+command = "node"
+args = ["C:/Users/David/blender-mcp-20261013-234105/src/mcp-server/dist/index.js"]
+
+[mcp_servers.blender-mcp.env]
+BLENDER_HOST = "127.0.0.1"
+BLENDER_PORT = "9876"
+```
+
+Restart Codex after changing MCP configuration. Test with: `Use blender-mcp to report Blender's connection status. Do not modify the scene.`
+
 ## Workflow
 
-1. On the PC, clone the portfolio branch and open it in Antigravity.
+1. On the PC, clone the portfolio branch and open it in Codex.
 2. Keep Blender open with Blender MCP running on `ws://127.0.0.1:9876`.
-3. Select Astra in Antigravity and paste the prompt below.
-4. Astra creates only a blockout first, renders the required views, and waits for approval.
-5. After approval: details → materials → optional idle clip → validation → GLB export.
-6. Validate the GLB in a three.js glTF viewer and with `gltf-validator`.
-7. Commit only `public/work/harvard-mit/scanner/scanner.glb` to the portfolio repository. Store `.blend`, turntable, and full-resolution review media in the DavidOS Drive vault.
-8. On the Mac, integrate the GLB with lazy-loaded three.js / React Three Fiber and synchronize the scanner beam with the existing skeleton reveal.
+3. Select Astra in Codex and confirm it can call `blender-mcp`.
+4. Paste the prompt below.
+5. Astra creates only a blockout first, renders the required views, and waits for approval.
+6. After approval: details → materials → optional idle clip → validation → GLB export.
+7. Validate the GLB in a three.js glTF viewer and with `gltf-validator`.
+8. Commit only `public/work/harvard-mit/scanner/scanner.glb` to the portfolio repository. Store `.blend`, turntable, and full-resolution review media in the DavidOS Drive vault.
+9. On the Mac, integrate the GLB with lazy-loaded three.js / React Three Fiber and synchronize the scanner beam with the existing skeleton reveal.
 
 ## GLB contract
 
@@ -99,7 +130,7 @@ Use Principled BSDF and glTF-supported inputs only. Avoid procedural nodes unles
 
 ---
 
-## Prompt for Astra — Antigravity + Blender MCP
+## Prompt for Astra — Codex + Blender MCP
 
 Attach or explicitly reference all three files under `content/scanner-references/`, then paste everything below.
 
