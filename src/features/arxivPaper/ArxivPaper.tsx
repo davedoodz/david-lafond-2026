@@ -16,9 +16,14 @@ type PaperDials = {
   arrow: { x: number; y: number; scale: number }
   pillSize: { padX: number; padY: number; text: number }
   pillOffset: { x: number; y: number }
+  pillExit: { preset: PillExit; duration: number }
   marker: { show: boolean; color: string; note: string }
   entrance: { show: boolean; depth: number; duration: number; trigger: number }
 }
+
+/** How the pill leaves when the pointer exits the paper; every preset keeps following the cursor. */
+const PILL_EXITS = ['fade', 'into cursor', 'shrink', 'blur', 'drop', 'lift', 'instant'] as const
+type PillExit = (typeof PILL_EXITS)[number]
 
 export const ARXIV_PAPER_URL = 'https://arxiv.org/abs/2604.06477'
 
@@ -40,6 +45,11 @@ export const MOMO_PAPER_CONFIG = {
   pillOffset: {
     x: [16, -200, 200, 1] as Tuple,
     y: [-51, -200, 200, 1] as Tuple,
+  },
+  /** Hover off: how the pill disappears (it keeps following the cursor the whole time) and how long it takes (ms). */
+  pillExit: {
+    preset: { type: 'select' as const, options: [...PILL_EXITS], default: 'into cursor' },
+    duration: [240, 60, 800, 10] as Tuple,
   },
   /** Red marker note drawn on the page on hover: a loop around David's name, an arrow and a note. */
   marker: {
@@ -78,6 +88,7 @@ export function ArxivPaper() {
   const d = values as unknown as PaperDials
   const ref = useRef<HTMLAnchorElement>(null)
   const pillRef = useRef<HTMLSpanElement>(null)
+  const leaving = useRef<{ timer: number; track: (event: globalThis.PointerEvent) => void } | null>(null)
   const { show: entrance, trigger } = d.entrance
 
   // Pop up from under the footer whenever the section scrolls into view; sink again once it's fully out
@@ -105,17 +116,41 @@ export function ArxivPaper() {
   // The pill lives in a fixed layer on <body>, placed at the pointer's viewport position. Scrolling
   // leaves the pointer where it is, so the pill stays with it; the paper's lift and tilt never resize it.
   // Written straight to the element so moving never re-renders.
+  const move = (x: number, y: number) => {
+    if (pillRef.current) pillRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`
+  }
+  const stopLeaving = () => {
+    if (!leaving.current) return
+    window.clearTimeout(leaving.current.timer)
+    window.removeEventListener('pointermove', leaving.current.track)
+    leaving.current = null
+  }
   const place = (x: number, y: number) => {
     const pill = pillRef.current
     if (!pill) return
-    pill.style.transform = `translate3d(${x}px, ${y}px, 0)`
-    pill.dataset.shown = ''
+    stopLeaving()
+    move(x, y)
+    pill.dataset.state = 'shown'
   }
   const follow = (event: PointerEvent<HTMLAnchorElement>) => {
     if (event.pointerType !== 'touch') place(event.clientX, event.clientY)
   }
-  // Leaving only fades the pill where it is; it never jumps back to the page.
-  const hide = () => pillRef.current && delete pillRef.current.dataset.shown
+  // Leaving plays the exit preset while the pill keeps tracking the pointer off the paper; once it has
+  // finished it resets, invisible, to the entry pose.
+  const hide = () => {
+    const pill = pillRef.current
+    if (!pill || pill.dataset.state !== 'shown') return
+    stopLeaving()
+    pill.dataset.state = 'leaving'
+    const track = (event: globalThis.PointerEvent) => move(event.clientX, event.clientY)
+    window.addEventListener('pointermove', track, { passive: true })
+    const timer = window.setTimeout(() => {
+      stopLeaving()
+      delete pill.dataset.state
+    }, d.pillExit.duration + 20)
+    leaving.current = { timer, track }
+  }
+  useEffect(() => stopLeaving, [])
 
   return (
     <a
@@ -184,6 +219,7 @@ export function ArxivPaper() {
         <span
           ref={pillRef}
           className="arxiv-paper__pill"
+          data-exit={d.pillExit.preset}
           aria-hidden="true"
           style={
             {
@@ -195,6 +231,7 @@ export function ArxivPaper() {
               '--pill-text': `${d.pillSize.text}px`,
               '--pill-off-x': `${d.pillOffset.x}px`,
               '--pill-off-y': `${d.pillOffset.y}px`,
+              '--pill-exit-ms': `${d.pillExit.duration}ms`,
             } as CSSProperties
           }
         >

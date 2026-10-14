@@ -99,21 +99,52 @@
   line-height: 1.2;
   white-space: nowrap;
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  /* Idle: invisible in the entry pose, reached instantly once an exit has finished. */
   opacity: 0;
   translate: var(--pill-off-x, 16px) var(--pill-off-y, -51px);
   scale: 0.7;
   transform-origin: 0% 100%;
-  /* Hiding only fades; the scale resets after the fade so the next hover pops in again. */
-  transition:
-    opacity 180ms ease,
-    scale 0s 180ms;
 }
-.arxiv-paper__pill[data-shown] .arxiv-paper__pill-box {
+.arxiv-paper__pill[data-state='shown'] .arxiv-paper__pill-box {
   opacity: 1;
   scale: 1;
   transition:
     opacity 180ms ease,
-    scale 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    scale 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+/* Leaving (Momo paper → pillExit): the pill keeps tracking the pointer while one of these plays. */
+.arxiv-paper__pill[data-state='leaving'] .arxiv-paper__pill-box {
+  opacity: 0;
+  scale: 1;
+  transition:
+    opacity var(--pill-exit-ms, 240ms) ease,
+    scale var(--pill-exit-ms, 240ms) cubic-bezier(0.4, 0, 0.7, 0.2),
+    filter var(--pill-exit-ms, 240ms) ease,
+    transform var(--pill-exit-ms, 240ms) cubic-bezier(0.4, 0, 0.7, 0.2);
+}
+/* Into cursor: shrinks toward the pointer itself, as if the dot swallows it. */
+.arxiv-paper__pill[data-state='leaving'][data-exit='into cursor'] .arxiv-paper__pill-box {
+  scale: 0.15;
+  transform-origin: calc(-1 * var(--pill-off-x, 16px)) calc(-1 * var(--pill-off-y, -51px));
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='shrink'] .arxiv-paper__pill-box {
+  scale: 0.6;
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='blur'] .arxiv-paper__pill-box {
+  scale: 1.06;
+  filter: blur(8px);
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='drop'] .arxiv-paper__pill-box {
+  transform: translateY(14px);
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='lift'] .arxiv-paper__pill-box {
+  transform: translateY(-14px);
+}
+.arxiv-paper__pill[data-state='leaving'][data-exit='instant'] .arxiv-paper__pill-box {
+  transition: none;
 }
 .arxiv-paper__arrow {
   display: inline-block;
@@ -208,9 +239,12 @@
   .arxiv-paper__sheet {
     transition: opacity 120ms ease;
   }
-  .arxiv-paper__pill-box,
-  .arxiv-paper__pill[data-shown] .arxiv-paper__pill-box {
+  .arxiv-paper__pill .arxiv-paper__pill-box,
+  .arxiv-paper__pill[data-state] .arxiv-paper__pill-box,
+  .arxiv-paper__pill[data-state='leaving'][data-exit] .arxiv-paper__pill-box {
     scale: 1;
+    filter: none;
+    transform: none;
     transition: opacity 120ms ease;
   }
   .arxiv-paper:is(:hover, :focus-visible) .arxiv-paper__sheet {
