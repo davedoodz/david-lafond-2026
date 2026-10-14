@@ -79,7 +79,20 @@ Restart Codex after changing MCP configuration. Test with: `Use blender-mcp to r
 6. After approval: details → materials → optional idle clip → validation → GLB export.
 7. Validate the GLB in a three.js glTF viewer and with `gltf-validator`.
 8. Commit only `public/work/harvard-mit/scanner/scanner.glb` to the portfolio repository. Store `.blend`, turntable, and full-resolution review media in the DavidOS Drive vault.
-9. On the Mac, integrate the GLB with lazy-loaded three.js / React Three Fiber and synchronize the scanner beam with the existing skeleton reveal.
+9. On the Mac, integrate the GLB with lazy-loaded three.js and synchronize the scanner beam with the existing skeleton reveal.
+
+## Browser integration (built)
+
+Astra's validated GLB (`a234de7`, 79 KB, Draco, ~11k triangles, no clips) is live in dev. DialKit → Portfolio book → Diagram → Scanner tunes it.
+
+- `src/features/book/scanner/scannerScene.ts`: plain three.js, not React Three Fiber. One model on an imperative timeline that reads a WAAPI clock gains nothing from a React renderer. A fixed full-viewport canvas maps the page plane to CSS pixels, renders only while something changes, and is portalled to `<body>`.
+- `src/features/book/scanner/ScannerLayer.tsx`: the real control is an invisible button beside the switch (focus, keyboard, hover). Lazy and dev-only, so three.js is absent from the production bundle.
+- Run: travel to the visible-page center → 360° spin → descend to bottom-center, back to the viewer, visor tilted up → flip the diagram → return. A second click scans back out, bottom to top.
+- Sync: the scanner forces the `scan` preset for its own toggle. That preset reveals in viewport space, so one line crosses every visible page (Book or Grid). The beam reads the reveal animation's own `currentTime`, so it waits for decode, reverses, and settles with the overlay.
+- Hover and scan lights ramp `emissiveIntensity` to each material's exported `hover_on_strength` (strip 8, grid 0.8, LED 6).
+- Browser-side material change: `KHR_materials_transmission` on `Mat_VisorGlass` / `Mat_VisorGrid` becomes plain transparency. Transmission would add a second full-viewport pass every frame; over the black cavity it reads the same.
+- Draco decoder is self-hosted in `public/draco/` (copied from `three/examples/jsm/libs/draco/gltf/`); update it with the `three` version.
+- Astra shipped no `Idle` clip; the rest float runs in code (Scanner → Idle).
 
 ## GLB contract
 

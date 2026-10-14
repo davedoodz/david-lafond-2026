@@ -1,0 +1,40 @@
+/* Scanner slot beside the Video / Book / Grid switch. The model draws on .scanner-canvas above it;
+   the button itself stays invisible except for the keyboard focus ring. */
+.viewer__scanner {
+  position: absolute;
+  z-index: 5;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.viewer__scanner[data-ready='true'] {
+  visibility: visible;
+}
+
+.viewer__scanner[aria-disabled='true'] {
+  cursor: progress;
+}
+
+.viewer__scanner:focus-visible {
+  outline: 1.5px solid var(--paper);
+  outline-offset: 4px;
+}
+
+/* Above the viewer, below Davebot (z 90). The spread zoom lives inside the viewer's stacking context,
+   so the scanner hides while it is open. Never takes pointer input. */
+.scanner-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.scanner-canvas[data-visible='false'] {
+  visibility: hidden;
+}

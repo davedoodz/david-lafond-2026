@@ -11,8 +11,10 @@
  * skeleton overlay. Activation is session-only; every reload starts with scans.
  * Opacity and Scan Opacity set the resting mix; Fills, Outlines, Dots, Grid and
  * Guides each have their own show / ink (auto, custom color, or block) / width /
- * opacity / style. Motion picks a preset (construct, sweep, cascade, bloom, fade):
+ * opacity / style. Motion picks a preset (construct, sweep, cascade, bloom, fade, scan):
  * the scan never moves, it only dims (Scan Dim) while skeleton elements draw over it.
+ * The 3D scanner beside the switch (Diagram → Scanner) runs the same toggle as a performance: it flies
+ * over the visible pages, turns its back to you, and its beam drives the `scan` preset top to bottom.
  * DialKit's Edit current spread opens the flat canvas for the current book spread
  * or last opened grid spread. Drag/resize, nudge with arrows, or enter percentages.
  * Grid columns/rows drive snapping; the editor shows grid and block-edge guides.
@@ -20,7 +22,7 @@
  * be retried if the dev server is unavailable. No toolbar appears on the page,
  * and neither the experiment nor its saved settings changes the public site.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   BookIcon,
   ChevronLeftIcon,
@@ -44,7 +46,10 @@ import { VideoCard, videoDials } from './VideoCard'
 import { LayoutEditor } from './LayoutEditor'
 import { diagramSource } from './layoutDiagram'
 import { usePageLayouts } from './usePageLayouts'
-import { DIAGRAM_PRESETS, useDiagramTransition } from './useDiagramTransition'
+import { DIAGRAM_PRESETS, useDiagramTransition, type ScanLink, type ScanSession } from './useDiagramTransition'
+
+/** Dev only: Rollup drops the branch (and three.js) from the public build. */
+const ScannerLayer = import.meta.env.DEV ? lazy(() => import('./scanner/ScannerLayer')) : null
 
 type Tuple = [number, number, number, number]
 const colorField = (value: string) => ({ type: 'color' as const, default: value })
@@ -120,6 +125,27 @@ const CONFIG = {
       durationMs: [1400, 300, 4000, 50] as Tuple,
       /** The spread only fades while the skeleton draws over it. */
       scanDim: [0.35, 0, 1, 0.05] as Tuple,
+      _collapsed: true,
+    },
+    /** 3D scanner beside the switch: click to fly it over the pages and scan the diagram in or out. */
+    scanner: {
+      show: true,
+      restSize: [60, 32, 140, 1] as Tuple,
+      scanSize: [150, 60, 360, 1] as Tuple,
+      restYaw: [-28, -90, 90, 1] as Tuple,
+      restPitch: [14, -30, 45, 1] as Tuple,
+      idle: [1, 0, 2, 0.05] as Tuple,
+      travelMs: [650, 150, 2000, 10] as Tuple,
+      spinMs: [800, 150, 2000, 10] as Tuple,
+      descendMs: [600, 150, 2000, 10] as Tuple,
+      returnMs: [850, 150, 2500, 10] as Tuple,
+      lockInset: [16, -160, 240, 1] as Tuple,
+      lockDepth: [180, 0, 600, 5] as Tuple,
+      aimPitch: [18, -30, 60, 1] as Tuple,
+      lightMs: [260, 0, 1200, 10] as Tuple,
+      beamColor: colorField('#fff3df'),
+      beamOpacity: [0.9, 0, 2, 0.05] as Tuple,
+      lineGlow: [14, 2, 60, 1] as Tuple,
       _collapsed: true,
     },
     _collapsed: false,
@@ -364,14 +390,24 @@ export function BookViewer() {
   const [editingSpread, setEditingSpread] = useState<number | null>(null)
   const diagram = { ...t.diagram, enabled: import.meta.env.DEV && t.diagram.enabled }
   // Nested DialKit folders: one serialized key tracks every look control without listing them.
-  const { enabled: _enabled, edit: _edit, motion, ...look } = t.diagram
+  const { enabled: _enabled, edit: _edit, motion, scanner, ...look } = t.diagram
   const lookKey = JSON.stringify(look)
   const diagramSources = useMemo(() => {
     if (!diagram.enabled) return undefined
     return Object.fromEntries(Object.entries(layouts.pages).map(([page, layout]) => [page, diagramSource(layout, t.diagram)]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diagram.enabled, layouts.pages, lookKey])
-  useDiagramTransition(diagram.enabled, layouts.pages, t.diagram, motion, lookKey)
+  // The scanner forces `scan` for its own toggle and reads back the timeline its beam follows.
+  const scanOverride = useRef<string | null>(null)
+  const scanSession = useRef<ScanSession | null>(null)
+  const scanLink = useMemo<ScanLink>(() => ({ override: scanOverride, session: scanSession }), [])
+  useDiagramTransition(diagram.enabled, layouts.pages, t.diagram, motion, lookKey, scanLink)
+  const diagramOn = useRef(diagram.enabled)
+  diagramOn.current = diagram.enabled
+  const startScan = useCallback(() => {
+    scanOverride.current = 'scan'
+    setValue('diagram.enabled', !diagramOn.current)
+  }, [setValue])
   const gridSelection = useRef(0)
   editDiagram.current = () => {
     setValue('diagram.enabled', true)
@@ -513,6 +549,17 @@ export function BookViewer() {
         onSelect={(key) => switchTo(key as Mode)}
         look={t.switch}
       />
+      {ScannerLayer && (
+        <Suspense fallback={null}>
+          <ScannerLayer
+            visible={scanner.show && mode !== 'video' && !zoom && editingSpread === null}
+            active={diagram.enabled}
+            look={scanner}
+            onScan={startScan}
+            session={scanSession}
+          />
+        </Suspense>
+      )}
 
       <div ref={bookRef} className="viewer__book" aria-hidden={mode !== 'book'} inert={mode !== 'book'}>
         <FlipBook
