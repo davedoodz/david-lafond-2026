@@ -23,6 +23,11 @@ const CONFIG = {
     x: [0, -400, 400, 1] as [number, number, number, number],
     xMobile: [0, -200, 200, 1] as [number, number, number, number],
   },
+  /** Sticker intro text size (px); pills and stickers scale with it. */
+  introSize: {
+    desktop: [20, 12, 40, 1] as [number, number, number, number],
+    mobile: [14, 10, 32, 1] as [number, number, number, number],
+  },
   /** Vertical gaps between the hero text elements (px). */
   spacing: {
     /** Line height of the sticker intro lines (× font size). */
@@ -78,7 +83,7 @@ export function WorkPage() {
             <br />
             <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
-          <WorkIntroStickers align={t.align.intro === 'center' ? 'center' : 'left'} />
+          <WorkIntroStickers align={t.align.intro === 'center' ? 'center' : 'left'} size={t.introSize} />
           <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />
         </section>

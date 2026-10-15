@@ -4,7 +4,13 @@
 
 /* Lines break only where David wrote them; each line may run past the column's max-width. */
 .hero__intro.work-intro-stickers__p {
+  font-size: var(--intro-size-d, var(--text-body));
   line-height: var(--intro-leading, 1.2);
+}
+@media (max-width: 640px) {
+  .hero__intro.work-intro-stickers__p {
+    font-size: var(--intro-size-m, var(--text-body));
+  }
 }
 .hero__intro.work-intro-stickers__p:not([data-flow='wrap']) {
   max-width: none;

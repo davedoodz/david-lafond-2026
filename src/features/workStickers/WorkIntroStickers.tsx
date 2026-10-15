@@ -31,8 +31,9 @@ interface Parts {
   label?: HTMLSpanElement
 }
 
-/** `align="center"` centres every line on the hero column; long lines spill evenly to both sides. */
-export function WorkIntroStickers({ align = 'left' }: { align?: 'left' | 'center' }) {
+/** `align="center"` centres every line on the hero column; long lines spill evenly to both sides.
+ * `size` sets the intro text in px (desktop / mobile); pills and stickers are sized in em, so they scale with it. */
+export function WorkIntroStickers({ align = 'left', size }: { align?: 'left' | 'center'; size?: { desktop: number; mobile: number } }) {
   const partsRef = useRef<Record<string, Parts>>({})
   const paragraphsRef = useRef<HTMLParagraphElement[]>([])
   const fitRef = useRef<() => void>(() => {})
@@ -113,8 +114,8 @@ export function WorkIntroStickers({ align = 'left' }: { align?: 'left' | 'center
       }
     }
   }, [])
-  // The available width depends on alignment, so refit when it changes.
-  useLayoutEffect(() => fitRef.current(), [align])
+  // The available width depends on alignment and text size, so refit when either changes.
+  useLayoutEffect(() => fitRef.current(), [align, size?.desktop, size?.mobile])
 
   function bindPart<K extends keyof Parts>(id: string, key: K) {
     return (el: NonNullable<Parts[K]> | null) => {
@@ -134,7 +135,15 @@ export function WorkIntroStickers({ align = 'left' }: { align?: 'left' | 'center
       {paragraphs.map((paragraph, p) => (
         // Not selectable (drags would highlight across moving pills); data-fit-ignore keeps the
         // pills' changing widths from resizing and re-centering the hero column (useFitColumn).
-        <p key={p} className="hero__intro work-intro-stickers__p" data-enter="1" data-fit-ignore data-align={align} ref={bindParagraph(p)}>
+        <p
+          key={p}
+          className="hero__intro work-intro-stickers__p"
+          data-enter="1"
+          data-fit-ignore
+          data-align={align}
+          style={size && ({ '--intro-size-d': `${size.desktop}px`, '--intro-size-m': `${size.mobile}px` } as CSSProperties)}
+          ref={bindParagraph(p)}
+        >
           {toLines(paragraph).map((line, l) => (
             <span key={l} className="ws-line">
               {line.map((token, i) =>
