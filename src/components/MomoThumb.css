@@ -1,0 +1,10 @@
+/* The thumbnail fills the Momo card above its mesh and under its shade, title and link. */
+.mt-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mt-host > .mt-card {
+  width: 100%;
+  height: 100%;
+}
