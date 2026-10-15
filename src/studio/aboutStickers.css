@@ -1,0 +1,37 @@
+.story-study { color-scheme: light; color: #444440; background: #f6f6f6; --page: #f6f6f6; --text: #666662; --pill: #e8e8e5; --size: 30px; --leading: 1.45; }
+.story-study .studio-header { background: #f6f6f6; border-color: #dededb; }
+.story-study .studio-header a span, .story-study .edition { color: #6a6a64; }
+.story-study .studio-header button, .story-study .editor-heading button { border-color: #cdcdc7; }
+.story-study .preview { padding-top: 34px; }
+.story-study .preview-meta { color: #71716a; }
+.story-study .live-dot { background: #6d8666; }
+.story-study .intro { margin: 0 auto; padding: 44px 0 48px; letter-spacing: -.045em; }
+.story-study .intro p + p { margin-top: 1em; }
+.story-study .sticker-art { filter: drop-shadow(0 1px 1px #0003); }
+.story-study .editor { position: sticky; top: 0; align-self: start; max-height: 100svh; background: #efefed; border-color: #dededb; scrollbar-color: #bbbcb5 transparent; }
+.story-study .eyebrow, .story-study .editor-note, .story-study .status, .story-study .theme-bridge p { color: #666660; }
+.story-study .editor-tabs { background: #e2e2de; }
+.story-study .editor-tabs button { color: #686863; }
+.story-study .editor-tabs button[aria-selected=true] { background: #fafaf8; color: #353530; box-shadow: 0 1px 3px #0001; }
+.story-study .slot-shortcuts { flex-wrap: wrap; }
+.story-study .slot-shortcuts button { border-color: #cecec8; }
+.story-study .slot-shortcuts button:hover { background: #e1e1db; }
+.story-study .status, .story-study .bridge-disclosure { border-color: #d6d6d0; }
+.story-study .external-link { color: #496745; }
+.story-study .theme-bridge textarea, .story-study .theme-bridge select { color: #444440; background: #fafaf8; border-color: #babab3; }
+.story-study .primary-button { color: #fff; background: #4f624b; }
+.story-study .token-colors button { border-color: #cecec8; }
+.story-study .token-colors i { border-color: #babab3; }
+.story-study .preview-bottom { margin-top: 25px; }
+.story-study button:focus-visible, .story-study a:focus-visible, .story-study select:focus-visible, .story-study textarea:focus-visible { outline-color: #5c7954; }
+.story-study .sticker-editor { --se-bg: #fafaf8; --se-fg: #353530; --se-muted: #6a6a64; --se-line: #d9d9d3; --se-field: #efefec; --se-active: #e2e2dd; --se-primary: #4f624b; --se-primary-fg: #fff; box-shadow: 0 24px 60px #3a3a3022, 0 2px 8px #3a3a3014; }
+.story-study .se-color input::-webkit-color-swatch, .story-study .se-swatch { border-color: #0000001f; }
+.story-study .sticker-editor :is(input, select):focus-visible { outline-color: #5c7954; }
+.story-study .se-danger { color: #b0463a; }
+.story-study .slot-shortcuts button.is-removed { color: #6a6a64; }
+.story-study.is-editing-copy :is(.copy-run, .sticker-plain):focus { outline-color: #5c7954; }
+@media (max-width: 760px) {
+  .story-study .intro { padding: 38px 0; }
+  .story-study .editor { position: static; max-height: none; }
+  .story-study .preview-meta { font-size: 10px; }
+}
