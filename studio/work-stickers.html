@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Work intro · Sticker studio</title>
+  <link rel="stylesheet" href="/src/studio/workStickers.css" />
+</head>
+<body>
+  <header class="studio-header">
+    <a href="/">David Lafond <span>/ Work intro</span></a>
+    <span class="edition">Sticker study · 01</span>
+    <button id="toggle-editor" aria-expanded="true" aria-controls="editor">Hide controls</button>
+  </header>
+  <main class="workspace">
+    <section class="preview" aria-label="Work introduction preview">
+      <div class="preview-meta"><span class="live-dot"></span> Interactive copy <span class="preview-rule"></span><span>Hover. Click. Make it yours.</span></div>
+      <div id="intro" class="intro" aria-label="David’s work introduction">
+        <p>I’ve led interdisciplinary <button class="sticker" data-slot="teams" aria-describedby="interaction-hint">creative teams</button> — from global <button class="sticker" data-slot="cities" aria-describedby="interaction-hint">smart city projects</button> to world-class <button class="sticker" data-slot="labs" aria-describedby="interaction-hint">research labs</button>.</p>
+        <p>Now, I’m bringing this perspective to <button class="sticker" data-slot="products" aria-describedby="interaction-hint">product design</button> — where ideas can <button class="sticker" data-slot="faster" aria-describedby="interaction-hint">move faster</button> and <button class="sticker" data-slot="further" aria-describedby="interaction-hint">reach further</button>.</p>
+      </div>
+      <div class="preview-footer">
+        <p id="interaction-hint">Click a highlighted phrase to turn over its sticker. Press E or use the pencil to edit it. Use Edit text to rewrite any of the copy.</p>
+        <div class="footer-actions"><button id="reset-copy" hidden>Reset text</button><button id="edit-copy" aria-pressed="false" aria-controls="intro">Edit text</button><button id="cycle-all">Turn all stickers <span aria-hidden="true">↗</span></button></div>
+      </div>
+      <div class="preview-bottom"><span>Same perspective. A little more personality.</span><span>Beatrice / inline motion</span></div>
+    </section>
+    <aside id="editor" class="editor" aria-label="Sticker customization">
+      <div class="editor-heading"><div><span class="eyebrow">WORK INTRO</span><h1>Make it yours.</h1></div><button id="export" title="Download your current sticker settings">Export</button></div>
+      <div class="editor-tabs" role="tablist" aria-label="Customization tools">
+        <button id="dial-tab" role="tab" aria-selected="true" aria-controls="dial-panel">DialKit</button>
+        <button id="graphical-tab" role="tab" aria-selected="false" aria-controls="graphical-panel" tabindex="-1">GraphicalUI</button>
+      </div>
+      <section id="dial-panel" role="tabpanel" aria-labelledby="dial-tab">
+        <p class="editor-note">Set the global landing and letter animations below. Open a sticker to change its words, artwork, gradient, tilt, and its own animation.</p>
+        <div id="slot-shortcuts" class="slot-shortcuts" role="group" aria-label="Open a sticker editor"></div>
+        <div id="dial-root"></div>
+      </section>
+      <section id="graphical-panel" role="tabpanel" aria-labelledby="graphical-tab" hidden>
+        <div class="theme-bridge">
+          <h2>Your theme, your stickers.</h2>
+          <p>Build a palette in Graphical, then paste the CSS custom properties from your theme export here. Pick a target and apply a color.</p>
+          <a class="external-link" href="https://www.graphicalui.com/marketing/preview?theme=atlas&amp;tab=theme&amp;mode=light" target="_blank" rel="noopener noreferrer">Open Graphical’s theme editor ↗</a>
+          <label for="theme-css">Graphical theme CSS</label>
+          <textarea id="theme-css" rows="7" spellcheck="false" placeholder=":root {&#10;  --my-accent: #a8dbbc;&#10;  --my-surface: #242424;&#10;}"></textarea>
+          <button id="read-theme" class="primary-button">Read color tokens</button>
+          <label for="token-target">Apply a color to</label>
+          <select id="token-target"><option value="appearance.background">Page background</option><option value="appearance.text">Intro text</option><option value="appearance.pill">Pill background</option></select>
+          <div id="token-colors" class="token-colors"></div>
+          <p class="bridge-disclosure">This is a local theme-import bridge, not an embedded Graphical editor. Graphical does not expose a public custom-sticker editor. Artwork and animation are edited in DialKit.</p>
+        </div>
+      </section>
+      <p id="status" role="status" class="status">Every edit saves to studio/work-stickers.saved.json, so a refresh keeps it. Export saves a JSON copy. The loop turns one pill at a time; set each pill's timing in its editor. It stops for reduced motion. Your live work page is unchanged.</p>
+    </aside>
+  </main>
+  <script id="sticker-config" type="application/json">
+  {
+    "id": "work-stickers",
+    "theme": "dark",
+    "appearance": { "background": "#171717", "text": "#f0efee", "pill": "#2b2b2b", "textSize": 35, "lineHeight": 1.55 },
+    "slots": {
+      "teams": { "title": "Creative teams", "color": "#ffc175", "tilt": -9, "labels": ["creative teams", "design teams", "research teams"], "icons": ["people", "spark", "orbit"] },
+      "cities": { "title": "Smart cities", "color": "#83c9f4", "tilt": 8, "labels": ["smart city projects", "urban experiences", "connected places"], "icons": ["city", "globe", "layers"] },
+      "labs": { "title": "Research labs", "color": "#b8a0f5", "tilt": -8, "labels": ["research labs", "research studios", "innovation labs"], "icons": ["orbit", "flask", "spark"] },
+      "products": { "title": "Product design", "color": "#a8dbbc", "tilt": 7, "labels": ["product design", "digital products", "human experiences"], "icons": ["cursor", "layers", "heart"] },
+      "faster": { "title": "Move faster", "color": "#ffe066", "fill": "Gradient", "gradientEnd": "#ff8a4c", "gradientAngle": 160, "tilt": -10, "labels": ["move faster", "ship sooner", "learn quicker"], "icons": ["bolt", "rocket", "spark"] },
+      "further": { "title": "Reach further", "color": "#7fd1c7", "fill": "Gradient", "gradientEnd": "#6a7dff", "gradientAngle": 120, "tilt": 9, "labels": ["reach further", "scale wider", "travel farther"], "icons": ["arrow", "globe", "rocket"] }
+    }
+  }
+  </script>
+  <script type="module" src="/src/studio/workStickers.js"></script>
+</body>
+</html>
