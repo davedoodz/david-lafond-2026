@@ -305,31 +305,6 @@
           }
         },
         {
-          "label": "product management",
-          "artwork": "layers",
-          "image": "/work/stickers/37769d2833d3b20a.png",
-          "fill": "Solid",
-          "color": "#a8dbbc",
-          "gradientEnd": "#d4edde",
-          "gradientAngle": 135,
-          "outline": 0.5,
-          "size": 1.63,
-          "offsetX": 0.03,
-          "offsetY": 0.02,
-          "side": "Left",
-          "gap": 0.44,
-          "ends": 0.4,
-          "height": 1.28,
-          "tilt": -8,
-          "hoverRotate": 0,
-          "hoverX": 0,
-          "hoverY": -0.11,
-          "motion": {
-            "landing": "Spin",
-            "letters": "Hop"
-          }
-        },
-        {
           "label": "design engineering",
           "artwork": "heart",
           "image": "/work/stickers/25e0ed42ad563b03.png",
@@ -349,6 +324,31 @@
           "hoverRotate": 0,
           "hoverX": -0.05,
           "hoverY": -0.09,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "product management",
+          "artwork": "layers",
+          "image": "/work/stickers/37769d2833d3b20a.png",
+          "fill": "Solid",
+          "color": "#a8dbbc",
+          "gradientEnd": "#d4edde",
+          "gradientAngle": 135,
+          "outline": 0.5,
+          "size": 1.63,
+          "offsetX": 0.03,
+          "offsetY": 0.02,
+          "side": "Left",
+          "gap": 0.44,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -8,
+          "hoverRotate": 0,
+          "hoverX": 0,
+          "hoverY": -0.11,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"

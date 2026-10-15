@@ -332,10 +332,9 @@
     }
   },
   "Hero": {
-    "align": {
-      "x": 65
-    },
+    "role": "Looking for my next meaningful mission to embark on.",
     "spacing": {
+      "introLineHeight": 1.56,
       "titleToIntroDesktop": 28,
       "introToIntroDesktop": 20,
       "introToIntroMobile": 19
