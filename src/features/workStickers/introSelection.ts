@@ -68,6 +68,13 @@ export function bindIntroSelection(
   for (const p of paragraphs) p.querySelectorAll('.ws-pill').forEach(pill => resize.observe(pill))
   signal.addEventListener('abort', () => { resize.disconnect(); cancelAnimationFrame(frame) })
 
+  // Double/triple clicks on a pill would select its word or the whole line; a pill click only turns it.
+  for (const p of paragraphs) {
+    p.addEventListener('mousedown', event => {
+      if (event.detail > 1 && (event.target as Element).closest('.ws-pill')) event.preventDefault()
+    }, { signal })
+  }
+
   document.addEventListener('copy', event => {
     const range = currentRange()
     // A selection that runs past the intro keeps the browser's own copy.
