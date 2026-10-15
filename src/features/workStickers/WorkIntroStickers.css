@@ -14,6 +14,14 @@
   width: max-content;
   white-space: nowrap;
 }
+/* Centred: a column flexbox centres each line, and lines wider than the column spill evenly both ways. */
+.hero__intro.work-intro-stickers__p[data-align='center'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: none;
+  margin-inline: 0;
+}
 
 .ws-pill {
   --accent: #b8d0ee;

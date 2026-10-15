@@ -18,6 +18,8 @@ const CONFIG = {
   /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
   align: {
     text: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    /** Sticker intro only: left-aligned with the text block, or centred on it. */
+    intro: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     x: [0, -400, 400, 1] as [number, number, number, number],
     xMobile: [0, -200, 200, 1] as [number, number, number, number],
   },
@@ -76,7 +78,7 @@ export function WorkPage() {
             <br />
             <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
-          <WorkIntroStickers />
+          <WorkIntroStickers align={t.align.intro === 'center' ? 'center' : 'left'} />
           <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />
         </section>

@@ -31,9 +31,11 @@ interface Parts {
   label?: HTMLSpanElement
 }
 
-export function WorkIntroStickers() {
+/** `align="center"` centres every line on the hero column; long lines spill evenly to both sides. */
+export function WorkIntroStickers({ align = 'left' }: { align?: 'left' | 'center' }) {
   const partsRef = useRef<Record<string, Parts>>({})
   const paragraphsRef = useRef<HTMLParagraphElement[]>([])
+  const fitRef = useRef<() => void>(() => {})
 
   useLayoutEffect(() => {
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
@@ -97,6 +99,7 @@ export function WorkIntroStickers() {
 
     const paragraphElements = paragraphsRef.current.filter(Boolean)
     const fit = () => fitLines(paragraphElements, records)
+    fitRef.current = fit
     fit()
     addEventListener('resize', fit, { signal: controller.signal })
     document.fonts?.ready.then(fit)
@@ -110,6 +113,8 @@ export function WorkIntroStickers() {
       }
     }
   }, [])
+  // The available width depends on alignment, so refit when it changes.
+  useLayoutEffect(() => fitRef.current(), [align])
 
   function bindPart<K extends keyof Parts>(id: string, key: K) {
     return (el: NonNullable<Parts[K]> | null) => {
@@ -129,7 +134,7 @@ export function WorkIntroStickers() {
       {paragraphs.map((paragraph, p) => (
         // Not selectable (drags would highlight across moving pills); data-fit-ignore keeps the
         // pills' changing widths from resizing and re-centering the hero column (useFitColumn).
-        <p key={p} className="hero__intro work-intro-stickers__p" data-enter="1" data-fit-ignore ref={bindParagraph(p)}>
+        <p key={p} className="hero__intro work-intro-stickers__p" data-enter="1" data-fit-ignore data-align={align} ref={bindParagraph(p)}>
           {toLines(paragraph).map((line, l) => (
             <span key={l} className="ws-line">
               {line.map((token, i) =>
@@ -191,7 +196,10 @@ function fitLines(paragraphs: HTMLParagraphElement[], records: StickerRecord[]) 
   let scale = 1
   for (const p of paragraphs) {
     const box = p.getBoundingClientRect()
-    const available = root - box.left - Math.max(16, Math.min(box.left, 40))
+    const margin = Math.max(16, Math.min(box.left, 40))
+    // Centred lines spill to both sides of the column's centre, so the nearer screen edge limits them.
+    const center = box.left + box.width / 2
+    const available = p.dataset.align === 'center' ? 2 * Math.min(center - margin, root - margin - center) : root - box.left - margin
     for (const line of p.querySelectorAll<HTMLElement>('.ws-line')) {
       let widest = line.getBoundingClientRect().width
       for (const record of records) {
