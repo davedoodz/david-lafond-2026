@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { motion, useMotionValue, useTransform, type Transition, type Variants } from 'motion/react'
+import { motion, useIsPresent, useMotionValue, useTransform, type Transition, type Variants } from 'motion/react'
 
 type Props = {
   srcSet: string
   src: string
   alt: string
+  /** White title over a bottom shade, like a playground zoom card. Empty hides both. */
+  caption: string
+  /** `--title-*` / `--shade-*` vars for the caption, the same ones the playground sets. */
+  captionStyle: CSSProperties
   /** The lifted card's rect at open; the zoom FLIPs from here. */
   originRect: DOMRect
   /** Photo width / height. */
@@ -39,6 +43,8 @@ export function FiloPhotoZoom({
   srcSet,
   src,
   alt,
+  caption,
+  captionStyle,
   originRect,
   ratio,
   widthVw,
@@ -52,6 +58,7 @@ export function FiloPhotoZoom({
 }: Props) {
   const { w: vw, h: vh } = useViewportSize()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const isPresent = useIsPresent()
 
   const target = useMemo(() => {
     const width = Math.min(vw * (widthVw / 100), vh * (maxHeightVh / 100) * ratio)
@@ -106,7 +113,8 @@ export function FiloPhotoZoom({
         aria-label={alt}
         tabIndex={-1}
         className="filo-zoom__card"
-        style={{ width: target.width, height: target.height, left: target.x, top: target.y, scaleX, scaleY, borderRadius }}
+        data-closing={isPresent ? undefined : ''}
+        style={{ ...captionStyle, width: target.width, height: target.height, left: target.x, top: target.y, scaleX, scaleY, borderRadius }}
         initial={reducedMotion ? { opacity: 0 } : flip}
         animate={{ x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 }}
         variants={variants}
@@ -115,6 +123,12 @@ export function FiloPhotoZoom({
         onClick={(event) => event.stopPropagation()}
       >
         <img srcSet={srcSet} sizes={`${Math.round(target.width)}px`} src={src} alt={alt} draggable={false} />
+        {caption && (
+          <>
+            <span className="card-shade" aria-hidden="true" />
+            <p className="card-title">{caption}</p>
+          </>
+        )}
       </motion.div>
     </div>
   )

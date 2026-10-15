@@ -136,6 +136,25 @@
   object-fit: cover;
   user-select: none;
 }
+/* Bottom caption, same treatment as the playground zoom card: a darkening gradient under a white
+   title. Hidden while closing so the text never squashes with the card's FLIP back to the page. */
+.filo-zoom__card .card-shade {
+  z-index: 2;
+  inset: -1px;
+  background-image: linear-gradient(
+    in oklab 180deg,
+    color-mix(in oklab, #0b0a09 0%, transparent) var(--shade-start, 0%),
+    #0b0a09 var(--shade-end, 100%)
+  );
+  opacity: var(--shade-opacity, 0.48);
+}
+.filo-zoom__card .card-title {
+  z-index: 3;
+  text-align: left;
+}
+.filo-zoom__card[data-closing] :is(.card-shade, .card-title) {
+  opacity: 0;
+}
 @keyframes filo-milestone-wobble {
   0%,
   100% {

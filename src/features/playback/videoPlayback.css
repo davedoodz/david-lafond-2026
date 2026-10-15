@@ -1,0 +1,76 @@
+/* Shared video controls (VideoPlayback.tsx): the media surface is a keyboard-accessible playback
+   toggle; the restart circle stays above it. The host must be a positioned element. */
+.playback-toggle {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: inherit;
+}
+.playback-toggle:focus-visible {
+  outline: 2px solid white;
+  outline-offset: -6px;
+}
+.playback-feedback {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(20 18 16 / 0.55);
+  color: white;
+  pointer-events: none;
+}
+.playback-feedback svg {
+  width: 48%;
+  height: 48%;
+  fill: currentColor;
+}
+
+/* Opacity dials live on the playground root (Playground → restart); elsewhere the defaults apply. */
+.playback-restart {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(38 36 34 / var(--pg-restart-opacity, 0.62));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--paper);
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out);
+}
+.playback-restart:hover,
+.playback-restart:focus-visible {
+  background: rgb(38 36 34 / var(--pg-restart-hover-opacity, 0.76));
+}
+.playback-restart svg {
+  width: 20px;
+  height: 20px;
+}
+/* Sits left of the replay circle: replay width + 8px gap. */
+.playback-youtube {
+  right: 68px;
+}
+
+@media (max-width: 640px) {
+  .playback-restart {
+    width: 38px;
+    height: 38px;
+  }
+  .playback-youtube {
+    right: 62px;
+  }
+}

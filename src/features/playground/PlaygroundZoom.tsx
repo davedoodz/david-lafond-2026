@@ -8,8 +8,7 @@ import {
   type Transition,
   type Variants,
 } from 'motion/react'
-import { Pause, Play, RotateCcw } from 'lucide-react'
-import { useTuning } from '../../tuning/useTuning'
+import { PlaybackToggle, RestartButton, YouTubeButton } from '../playback/VideoPlayback'
 import type { PlaygroundItem } from '../../data/playground'
 import { cardRatioForViewport } from './constants'
 import { restartCardVideos } from './CardVideo'
@@ -76,68 +75,6 @@ function useViewportSize() {
     return () => window.removeEventListener('resize', onResize)
   }, [])
   return size
-}
-
-const PLAYBACK_CONFIG = {
-  scale: [1, 0.4, 3, 0.05] as [number, number, number, number],
-  fadeInMs: [180, 0, 1000, 10] as [number, number, number, number],
-  holdMs: [450, 0, 2000, 10] as [number, number, number, number],
-  fadeOutMs: [300, 0, 1500, 10] as [number, number, number, number],
-}
-
-/** Pause feedback persists; play feedback clears after its entrance and hold. */
-function PlaybackToggle({ host, reducedMotion }: { host: React.RefObject<HTMLDivElement | null>; reducedMotion: boolean }) {
-  const t = useTuning('Playground playback', PLAYBACK_CONFIG)
-  const [paused, setPaused] = useState(false)
-  const [feedback, setFeedback] = useState<'pause' | 'play' | null>(null)
-  const pausedAnimations = useRef<Animation[]>([])
-  useEffect(() => {
-    const root = host.current
-    if (!root) return
-    const sync = (event: Event) => {
-      if (!(event.target instanceof HTMLVideoElement)) return
-      const stopped = event.target.paused
-      setPaused(stopped)
-      setFeedback(stopped ? 'pause' : 'play')
-    }
-    root.addEventListener('pause', sync, true)
-    root.addEventListener('play', sync, true)
-    return () => {
-      root.removeEventListener('pause', sync, true)
-      root.removeEventListener('play', sync, true)
-    }
-  }, [host])
-  useEffect(() => {
-    if (feedback !== 'play') return
-    const timer = window.setTimeout(() => setFeedback(null), (reducedMotion ? 0 : t.fadeInMs) + t.holdMs)
-    return () => window.clearTimeout(timer)
-  }, [feedback, t.fadeInMs, t.holdMs, reducedMotion])
-  return <button type="button" className="pg-playback-toggle" aria-label={paused ? 'Play video' : 'Pause video'} onClick={() => {
-    const root = host.current
-    if (!root) return
-    const willPause = !paused
-    setPaused(willPause)
-    setFeedback(willPause ? 'pause' : 'play')
-    if (willPause) {
-      pausedAnimations.current = root.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running')
-      pausedAnimations.current.forEach((animation) => animation.pause())
-      root.querySelectorAll<HTMLVideoElement>('video.pg-video').forEach((video) => video.pause())
-    } else {
-      pausedAnimations.current.forEach((animation) => animation.playState === 'paused' && animation.play())
-      pausedAnimations.current = []
-      root.querySelectorAll<HTMLVideoElement>('video.pg-video').forEach((video) => void video.play().catch(() => {}))
-    }
-  }}>
-    <AnimatePresence>
-      {feedback && <motion.span key={feedback} className="pg-playback-feedback"
-        style={{ width: 88 * t.scale, height: 88 * t.scale }}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: reducedMotion ? 0 : t.fadeOutMs / 1000 } }}
-        transition={{ duration: reducedMotion ? 0 : t.fadeInMs / 1000 }}
-      >
-          {feedback === 'pause' ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-      </motion.span>}
-    </AnimatePresence>
-  </button>
 }
 
 /** Fullscreen modal: blurred/dimmed backdrop + the active card FLIP-animated from its grid rect to a centered rect. */
@@ -284,12 +221,9 @@ export function PlaygroundZoom({
               <p className="card-title">{title}</p>
             </motion.div>
           </AnimatePresence>
-          {item.video && isPresent && <PlaybackToggle key={item.id} host={mediaRef} reducedMotion={reducedMotion} />}
-          {item.video && isPresent && (
-            <button type="button" className="pg-zoom-nav pg-zoom-restart" onClick={restart} aria-label="Restart video">
-              <RotateCcw aria-hidden="true" strokeWidth={1.6} />
-            </button>
-          )}
+          {item.video && isPresent && <PlaybackToggle key={item.id} host={mediaRef} videoSelector="video.pg-video" reducedMotion={reducedMotion} pauseAnimations />}
+          {item.video && isPresent && <RestartButton onRestart={restart} />}
+          {item.youtube && isPresent && <YouTubeButton href={item.youtube} label={`Watch ${title} on YouTube`} />}
         </motion.div>
         {hasSiblings && isPresent && (
           <>

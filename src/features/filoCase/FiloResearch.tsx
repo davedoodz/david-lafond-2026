@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
+import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import './filoResearch.css'
 
 type ResearchVisual = 'image' | 'video'
@@ -27,8 +28,16 @@ type ResearchVideoProps = {
   cropTop?: number
 }
 
+/**
+ * Autoplaying research clip with playground-style controls: clicking the clip pauses or plays it,
+ * the top-right button replays it from the start. A user pause sticks: scrolling back into view
+ * does not resume it.
+ */
 function ResearchVideo({ src, poster, width, height, label, speed, cropRight = 0, cropTop = 0 }: ResearchVideoProps) {
   const ref = useRef<HTMLVideoElement>(null)
+  const hostRef = useRef<HTMLDivElement>(null)
+  const userPaused = useRef(false)
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const right = cropRight / 100
   const top = cropTop / 100
   const cropped = right > 0 || top > 0
@@ -56,7 +65,7 @@ function ResearchVideo({ src, poster, width, height, label, speed, cropRight = 0
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
     let visible = false
     const sync = () => {
-      if (visible && !motion.matches) void video.play().catch(() => {})
+      if (visible && !motion.matches && !userPaused.current) void video.play().catch(() => {})
       else video.pause()
     }
     const observer = new IntersectionObserver(
@@ -72,21 +81,42 @@ function ResearchVideo({ src, poster, width, height, label, speed, cropRight = 0
     }
   }, [src])
 
+  const restart = () => {
+    const video = ref.current
+    if (!video) return
+    userPaused.current = false
+    video.currentTime = 0
+    void video.play().catch(() => {})
+  }
+
   return (
-    <video
-      ref={ref}
-      src={src}
-      poster={poster}
-      width={width}
-      height={height}
-      muted
-      loop
-      playsInline
-      preload="metadata"
-      disablePictureInPicture
-      aria-label={label}
-      style={mediaStyle}
-    />
+    // Cropped clips fill the frame's aspect box; uncropped ones size the frame themselves.
+    <div ref={hostRef} className="filo-research__media" style={cropped ? { position: 'absolute', inset: 0 } : undefined}>
+      <video
+        ref={ref}
+        src={src}
+        poster={poster}
+        width={width}
+        height={height}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        disablePictureInPicture
+        aria-label={label}
+        style={mediaStyle}
+      />
+      <PlaybackToggle
+        host={hostRef}
+        videoSelector="video"
+        reducedMotion={reducedMotion}
+        feedbackOnMediaEvents={false}
+        onUserToggle={(paused) => {
+          userPaused.current = paused
+        }}
+      />
+      <RestartButton onRestart={restart} />
+    </div>
   )
 }
 

@@ -25,6 +25,7 @@ type Dials = {
     dimOpacity: number
     spring: Parameters<typeof toMotionTransition>[0]
   }
+  caption: { size: number; x: number; y: number; shadow: boolean; shadeStart: number; shadeEnd: number; shadeOpacity: number }
 }
 
 const CONFIG = {
@@ -64,6 +65,16 @@ const CONFIG = {
     blur: [20, 0, 60, 1] as Tuple,
     dimOpacity: [0.6, 0, 1, 0.01] as Tuple,
     spring: { type: 'spring', visualDuration: 0.5, bounce: 0.2 } as const,
+  },
+  /** Zoomed photo: the pill text sits at the bottom over a shade. Defaults match the saved Playground title/shade dials. */
+  caption: {
+    size: [16, 10, 32, 1] as Tuple,
+    x: [22, 0, 80, 1] as Tuple,
+    y: [22, 0, 80, 1] as Tuple,
+    shadow: true,
+    shadeStart: [0, 0, 100, 1] as Tuple,
+    shadeEnd: [100, 0, 100, 1] as Tuple,
+    shadeOpacity: [0.48, 0, 1, 0.01] as Tuple,
   },
 }
 
@@ -270,6 +281,18 @@ export function FiloMilestones() {
                 srcSet={srcSetFor(zoom.name)}
                 src={srcFor(zoom.name)}
                 alt={CARDS.find((card) => card.name === zoom.name)!.alt}
+                caption={d.pill[zoom.name]}
+                captionStyle={
+                  {
+                    '--title-size': `${d.caption.size}px`,
+                    '--title-x': `${d.caption.x}px`,
+                    '--title-y': `${d.caption.y}px`,
+                    '--card-title-shadow': d.caption.shadow ? undefined : 'none',
+                    '--shade-start': `${d.caption.shadeStart}%`,
+                    '--shade-end': `${d.caption.shadeEnd}%`,
+                    '--shade-opacity': d.caption.shadeOpacity,
+                  } as CSSProperties
+                }
                 originRect={zoom.origin}
                 ratio={RATIO}
                 widthVw={d.zoom.widthVw}
