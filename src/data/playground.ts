@@ -15,6 +15,8 @@ export type PlaygroundItem = {
   presentation?: 'journal' | 'phone' | 'critical-action' | 'portfolio'
   /** Phone cards: the original recording with its own baked-in device frame, offered by the frame toggle. */
   recordedFrame?: { video: string; poster: string }
+  /** Zoomed card shows a YouTube button beside replay that opens this URL. */
+  youtube?: string
 }
 
 export const playgroundItems: PlaygroundItem[] = [
@@ -49,6 +51,7 @@ export const playgroundItems: PlaygroundItem[] = [
     title: 'Architectural sketchbooks',
     video: '/about/playground/architectural-sketchbooks.mp4',
     poster: '/about/playground/architectural-sketchbooks.webp',
+    youtube: 'https://youtu.be/tk3uZaiHI_c?si=Yc6KKG1K7BpmI9mz',
   },
   {
     id: 'p06',
@@ -56,6 +59,7 @@ export const playgroundItems: PlaygroundItem[] = [
     video: '/about/playground/davids-journal.mp4',
     poster: '/about/playground/davids-journal.webp',
     presentation: 'journal',
+    youtube: 'https://www.youtube.com/@davids.journal',
   },
   {
     id: 'p07',

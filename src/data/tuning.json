@@ -355,12 +355,26 @@
     },
     "bookGridOnly": true,
     "diagram": {
+      "scanOpacity": 1,
+      "fills": {
+        "show": false,
+        "opacity": 1
+      },
       "outlines": {
         "width": 0.25
       },
+      "dots": {
+        "opacity": 1
+      },
       "grid": {
+        "show": false,
+        "color": "#ff599a",
+        "opacity": 1,
         "columns": 33,
         "rows": 48
+      },
+      "guides": {
+        "opacity": 1
       },
       "motion": {
         "durationMs": 2150
@@ -466,7 +480,7 @@
     }
   },
   "About": {
-    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never very good at accepting “that’s just how it is.”\n\nThat curiosity took me from pre-med to architecture, designing at startup speed across continents, and eventually in world class research labs.\n\nI’ve changed directions more than once, usually because I found something new I couldn’t stop thinking about.\n\nNow, that something is product design.\n\nI’m still learning, still experimenting, and definitely still figuring things out.\n\nBut I’m excited to put my head down, do the work, and see where this next chapter takes me.\n\nA la vida,\n\n- David",
+    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never very good at accepting “that’s just how it is.”\n\nThat urge to explore took me from pre-med to architecture to urban design. \n\n(with many failed entrepreneurial ventures along the way)\n\nLuckily in my early 20s, I've had the privilege of being mentored by incredible architects who taught me the ways humans make sense of form and spaces.\n\nThose formative years engrained in me a deep fascination for the craft of world building.\n\nAnd in my mid 20s, eventually made my way into world-class research labs hacking together innovative products amongst like-minded creative rebels.\n\n\nI’ve definitely changed directions more than once.\n\nAnd \n\n– usually because I found something new I couldn’t stop thinking about.\n\nNow, that something is product design. \n\nI’m still learning, still experimenting, and definitely still figuring things out.\n\nBut I’m excited to put my head down, do the work, and see where this next chapter takes me.\n\n\n\nA la vida,\n\n- David",
     "sheet": {
       "travel": 1.5,
       "depth": 2
@@ -896,15 +910,6 @@
       }
     },
     "persona": {
-      "title": "The technical designer handed an unfamiliar material.",
-      "body": "She turns a design and material choice into something a factory can reliably make.\nWith an unfamiliar material, every new constraint has to be understood before production.",
-      "tags": "Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the technical risk if it fails",
-      "moments": {
-        "m1Quote": "“How does it sew? What happens when we fuse, press or wash it?”",
-        "m2Quote": "“We can’t use heat or solvent on this.”",
-        "m3Quote": "“Our factories haven’t worked with this material before.”",
-        "m4Quote": "“Can this construction still work at 10,000 units?”"
-      },
       "float": {
         "entrance": {
           "duration": 0.3,

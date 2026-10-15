@@ -31,6 +31,8 @@ const CONFIG = {
   heading: { type: 'text' as const, default: 'Aw, flattered you wanna hear my story.' },
   /** Mobile heading: kept on one line or two balanced lines; the type shrinks only as far as that needs. */
   headingLinesMobile: { type: 'select' as const, options: ['one', 'two'], default: 'one' },
+  /** Heading and story text alignment. */
+  align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
   story: { type: 'text' as const, default: STORY, placeholder: 'Blank lines = paragraph breaks' },
   playgroundLabel: { type: 'text' as const, default: 'My playground' },
   playgroundLabelColor: { type: 'color' as const, default: '#FFFFFF' },
@@ -333,7 +335,7 @@ export function AboutPage() {
         <div className="about__top-stop" aria-hidden="true" />
         <Nav route="about" />
         <PhotoStack className="about__stack" />
-        <section ref={storyRef} className={`about__story column ${entrance.className}`} style={entrance.style} aria-labelledby="about-title">
+        <section ref={storyRef} className={`about__story column ${entrance.className}`} style={entrance.style} data-align={t.align} aria-labelledby="about-title">
           <EditableText
             as="h1"
             id="about-title"

@@ -613,21 +613,6 @@
   transform: translateY(-50%);
 }
 
-.pg-zoom-restart {
-  top: 16px;
-  right: 16px;
-  z-index: 4;
-  background: rgb(38 36 34 / var(--pg-restart-opacity, 0.62));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.pg-zoom-restart:hover,
-.pg-zoom-restart:focus-visible {
-  background: rgb(38 36 34 / var(--pg-restart-hover-opacity, 0.76));
-}
-
-
 @media (max-width: 640px) {
   .pg-zoom-prev {
     left: 12px;
@@ -649,35 +634,3 @@
   }
 }
 
-/* The media surface is a keyboard-accessible playback toggle; restart stays above it. */
-.pg-playback-toggle {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
-  border-radius: inherit;
-}
-.pg-playback-toggle:focus-visible {
-  outline: 2px solid white;
-  outline-offset: -6px;
-}
-.pg-playback-feedback {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: rgb(20 18 16 / 0.55);
-  color: white;
-  pointer-events: none;
-}
-.pg-playback-feedback svg {
-  width: 48%;
-  height: 48%;
-  fill: currentColor;
-}
