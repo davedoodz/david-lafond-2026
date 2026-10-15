@@ -332,11 +332,13 @@
     }
   },
   "Hero": {
-    "intro2": "Now, I’m bringing this perspective to product design — where ideas can move faster and reach further.",
+    "introText2": "Now, I’m bringing that range to {products} \nwhere ideas have room to {faster}.",
+    "role": "Looking for my next meaningful mission to embark on.",
     "align": {
-      "x": 65
+      "x": 27
     },
     "spacing": {
+      "introLineHeight": 1.56,
       "titleToIntroDesktop": 28,
       "introToIntroDesktop": 20,
       "introToIntroMobile": 19
@@ -353,15 +355,36 @@
     },
     "bookGridOnly": true,
     "diagram": {
+      "scanOpacity": 1,
+      "fills": {
+        "show": false,
+        "opacity": 1
+      },
       "outlines": {
         "width": 0.25
       },
+      "dots": {
+        "opacity": 1
+      },
       "grid": {
+        "show": false,
+        "color": "#ff599a",
+        "opacity": 1,
         "columns": 33,
         "rows": 48
       },
+      "guides": {
+        "opacity": 1
+      },
       "motion": {
         "durationMs": 2150
+      },
+      "scanner": {
+        "beamColor": "#80fa51",
+        "lineColor": "#76cd9b",
+        "riffle": {
+          "delayMs": 250
+        }
       }
     },
     "video": {
@@ -464,7 +487,7 @@
     }
   },
   "About": {
-    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never very good at accepting “that’s just how it is.”\n\nThat curiosity took me from pre-med to architecture, designing at startup speed across continents, and eventually in world class research labs.\n\nI’ve changed directions more than once, usually because I found something new I couldn’t stop thinking about.\n\nNow, that something is product design.\n\nI’m still learning, still experimenting, and definitely still figuring things out.\n\nBut I’m excited to put my head down, do the work, and see where this next chapter takes me.\n\nA la vida,\n\n- David",
+    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never very good at accepting “that’s just how it is.”\n\nThat urge to explore took me from pre-med to architecture to urban design. \n\n(with many failed entrepreneurial ventures along the way)\n\nLuckily in my early 20s, I've had the privilege of being mentored by incredible architects who taught me the ways humans make sense of form and spaces.\n\nThose formative years engrained in me a deep fascination for the craft of world building.\n\nAnd in my mid 20s, eventually made my way into world-class research labs hacking together innovative products amongst like-minded creative rebels.\n\n\nI’ve definitely changed directions more than once.\n\nAnd \n\n– usually because I found something new I couldn’t stop thinking about.\n\nNow, that something is product design. \n\nI’m still learning, still experimenting, and definitely still figuring things out.\n\nBut I’m excited to put my head down, do the work, and see where this next chapter takes me.\n\n\n\nA la vida,\n\n- David",
     "sheet": {
       "travel": 1.5,
       "depth": 2
@@ -894,15 +917,6 @@
       }
     },
     "persona": {
-      "title": "The technical designer handed an unfamiliar material.",
-      "body": "She turns a design and material choice into something a factory can reliably make.\nWith an unfamiliar material, every new constraint has to be understood before production.",
-      "tags": "Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the technical risk if it fails",
-      "moments": {
-        "m1Quote": "“How does it sew? What happens when we fuse, press or wash it?”",
-        "m2Quote": "“We can’t use heat or solvent on this.”",
-        "m3Quote": "“Our factories haven’t worked with this material before.”",
-        "m4Quote": "“Can this construction still work at 10,000 units?”"
-      },
       "float": {
         "entrance": {
           "duration": 0.3,
@@ -1102,6 +1116,81 @@
     "pill": {
       "hackathon": "We won the design hackathon! 🏆 ",
       "incubator": "And then got accepted into an incubator!  🚀"
+    }
+  },
+  "MomoThumbnail": {
+    "copy": {
+      "watchText": "Morning walk, calmer day. Make it a habit?"
+    },
+    "timing": {
+      "sleepStart": 2110,
+      "transition": "cut"
+    },
+    "desktop": {
+      "watch": {
+        "x": 86,
+        "y": 285,
+        "scale": 1.05
+      },
+      "phone": {
+        "top": -248,
+        "width": 276
+      },
+      "momo": {
+        "y": 229,
+        "lineEndLeft": 0.3,
+        "lineEndRight": 0.295
+      },
+      "states": {
+        "asleep": {
+          "y": -9,
+          "scale": 0.92
+        }
+      }
+    },
+    "mobile": {
+      "watch": {
+        "y": 392
+      },
+      "phone": {
+        "x": 62,
+        "top": -142
+      },
+      "momo": {
+        "lineEndLeft": 0.305,
+        "lineEndRight": 0.295
+      },
+      "states": {
+        "asleep": {
+          "y": -8,
+          "scale": 0.92
+        }
+      }
+    },
+    "pillText": {
+      "inputs": {
+        "Movement": 0.75,
+        "HRV": 0.75,
+        "Breathing": 0.5,
+        "Sleep": 0.5,
+        "Voice": 0.25,
+        "Journal": 0.25
+      },
+      "outputs": {
+        "Nudge": 0.5,
+        "Check-in": 0.75,
+        "Reflection": 0.75,
+        "Insights": 0.75,
+        "Goals": 0.5,
+        "Tracking": 0.5
+      }
+    },
+    "watchLogo": {
+      "scale": 0.81,
+      "y": 10.5,
+      "color": "#ffffff",
+      "outlineStroke": 4.2,
+      "textGapX": 3.8
     }
   }
 }

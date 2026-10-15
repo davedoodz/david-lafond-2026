@@ -66,6 +66,11 @@ const CONFIG = {
   reveal: revealDials(),
   /** How the heading and story arrive on load, tuned separately. soft = the shared Entrance rise. */
   storyEntrance: storyEntranceDials(),
+  /** Story text size (px). */
+  textSize: {
+    desktop: [20, 12, 40, 1] as [number, number, number, number],
+    mobile: [14, 10, 32, 1] as [number, number, number, number],
+  },
   spacing: {
     gapDesktop: [214, 40, 600, 1] as [number, number, number, number],
     gapMobile: [149, 24, 500, 1] as [number, number, number, number],
@@ -299,6 +304,8 @@ export function AboutPage() {
   }, [])
 
   const style = {
+    '--story-size-d': `${t.textSize.desktop}px`,
+    '--story-size-m': `${t.textSize.mobile}px`,
     '--story-gap-d': `${t.spacing.gapDesktop}px`,
     '--story-gap-m': `${t.spacing.gapMobile}px`,
     '--stack-gap-d': `${t.spacing.stackToHeadingDesktop}px`,
