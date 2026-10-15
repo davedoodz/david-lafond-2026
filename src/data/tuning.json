@@ -332,7 +332,11 @@
     }
   },
   "Hero": {
+    "introText2": "Now, I’m bringing that range to {products} \nwhere ideas have room to {faster}.",
     "role": "Looking for my next meaningful mission to embark on.",
+    "align": {
+      "x": 27
+    },
     "spacing": {
       "introLineHeight": 1.56,
       "titleToIntroDesktop": 28,
