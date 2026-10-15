@@ -11,10 +11,8 @@
  * skeleton overlay. Activation is session-only; every reload starts with scans.
  * Opacity and Scan Opacity set the resting mix; Fills, Outlines, Dots, Grid and
  * Guides each have their own show / ink (auto, custom color, or block) / width /
- * opacity / style. Motion picks a preset (construct, sweep, cascade, bloom, fade, scan):
+ * opacity / style. Motion picks a preset (construct, sweep, cascade, bloom, fade):
  * the scan never moves, it only dims (Scan Dim) while skeleton elements draw over it.
- * The 3D scanner beside the switch (Diagram → Scanner) runs the same toggle as a performance: it flies
- * over the visible pages, turns its back to you, and its beam drives the `scan` preset top to bottom.
  * DialKit's Edit current spread opens the flat canvas for the current book spread
  * or last opened grid spread. Drag/resize, nudge with arrows, or enter percentages.
  * Grid columns/rows drive snapping; the editor shows grid and block-edge guides.
@@ -22,7 +20,7 @@
  * be retried if the dev server is unavailable. No toolbar appears on the page,
  * and neither the experiment nor its saved settings changes the public site.
  */
-import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   BookIcon,
   ChevronLeftIcon,
@@ -45,12 +43,8 @@ import './book.css'
 import { VideoCard, videoDials } from './VideoCard'
 import { LayoutEditor } from './LayoutEditor'
 import { diagramSource } from './layoutDiagram'
-import type { Riffle } from './scanner/scannerScene'
 import { usePageLayouts } from './usePageLayouts'
-import { DIAGRAM_PRESETS, useDiagramTransition, type ScanLink, type ScanRequest, type ScanSession } from './useDiagramTransition'
-
-/** Dev only: Rollup drops the branch (and three.js) from the public build. */
-const ScannerLayer = import.meta.env.DEV ? lazy(() => import('./scanner/ScannerLayer')) : null
+import { DIAGRAM_PRESETS, useDiagramTransition } from './useDiagramTransition'
 
 type Tuple = [number, number, number, number]
 const colorField = (value: string) => ({ type: 'color' as const, default: value })
@@ -126,51 +120,6 @@ const CONFIG = {
       durationMs: [1400, 300, 4000, 50] as Tuple,
       /** The spread only fades while the skeleton draws over it. */
       scanDim: [0.35, 0, 1, 0.05] as Tuple,
-      _collapsed: true,
-    },
-    /** 3D scanner beside the switch: click to fly it over the pages and scan the diagram in or out. */
-    scanner: {
-      show: true,
-      restSize: [60, 32, 140, 1] as Tuple,
-      scanSize: [150, 60, 360, 1] as Tuple,
-      restYaw: [-28, -90, 90, 1] as Tuple,
-      restPitch: [14, -30, 45, 1] as Tuple,
-      idle: [1, 0, 2, 0.05] as Tuple,
-      travelMs: [650, 150, 2000, 10] as Tuple,
-      spinMs: [800, 150, 2000, 10] as Tuple,
-      descendMs: [600, 150, 2000, 10] as Tuple,
-      returnMs: [850, 150, 2500, 10] as Tuple,
-      lockInset: [16, -160, 240, 1] as Tuple,
-      lockDepth: [180, 0, 600, 5] as Tuple,
-      aimPitch: [18, -30, 60, 1] as Tuple,
-      lightMs: [260, 0, 1200, 10] as Tuple,
-      /** Light cone from the visor. */
-      beamColor: colorField('#fff3df'),
-      /** Scan line where the beam meets the page. */
-      lineColor: colorField('#fff3df'),
-      beamOpacity: [0.9, 0, 2, 0.05] as Tuple,
-      lineGlow: [14, 2, 60, 1] as Tuple,
-      /** Grid mode: the scan covers every spread, scrolling the page under the line. Document px
-       * the line crosses per second. */
-      gridSpeed: [700, 150, 3000, 10] as Tuple,
-      /** Book mode: the scan closes the book onto its front cover, opens it, thumbs through every
-       * leaf like a real book (several in the air at once), closes the back cover, holds, then turns
-       * the whole book back to the front cover (Book → Cover Flip Ms). The beam sweeps top to bottom
-       * throughout, one pass per Sweep. */
-      riffle: {
-        show: true,
-        delayMs: [150, 0, 2000, 10] as Tuple,
-        /** Opening the front cover and closing the back cover. */
-        coverMs: [420, 100, 1500, 10] as Tuple,
-        /** One leaf's turn. */
-        leafMs: [520, 120, 2000, 10] as Tuple,
-        /** Gap between leaves lifting; smaller means more leaves in the air. */
-        stepMs: [55, 10, 400, 5] as Tuple,
-        /** One beam pass, top to bottom. */
-        sweepMs: [650, 150, 3000, 10] as Tuple,
-        holdMs: [350, 0, 2000, 10] as Tuple,
-        _collapsed: false,
-      },
       _collapsed: true,
     },
     _collapsed: false,
@@ -415,79 +364,14 @@ export function BookViewer() {
   const [editingSpread, setEditingSpread] = useState<number | null>(null)
   const diagram = { ...t.diagram, enabled: import.meta.env.DEV && t.diagram.enabled }
   // Nested DialKit folders: one serialized key tracks every look control without listing them.
-  const { enabled: _enabled, edit: _edit, motion, scanner, ...look } = t.diagram
+  const { enabled: _enabled, edit: _edit, motion, ...look } = t.diagram
   const lookKey = JSON.stringify(look)
   const diagramSources = useMemo(() => {
     if (!diagram.enabled) return undefined
     return Object.fromEntries(Object.entries(layouts.pages).map(([page, layout]) => [page, diagramSource(layout, t.diagram)]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diagram.enabled, layouts.pages, lookKey])
-  // The scanner forces `scan` for its own toggle and reads back the timeline its beam follows.
-  // In Grid mode the toggle covers the whole document, not just the spreads on screen.
-  const scanOverride = useRef<ScanRequest | null>(null)
-  const scanSession = useRef<ScanSession | null>(null)
-  const scanLink = useMemo<ScanLink>(() => ({ override: scanOverride, session: scanSession }), [])
-  useDiagramTransition(diagram.enabled, layouts.pages, t.diagram, motion, lookKey, scanLink)
-  const diagramOn = useRef(diagram.enabled)
-  diagramOn.current = diagram.enabled
-  const gridSpeed = useRef(scanner.gridSpeed)
-  gridSpeed.current = scanner.gridSpeed
-  const startScan = useCallback(() => {
-    scanOverride.current = { preset: 'scan', wholePage: modeRef.current === 'grid', pxPerSecond: gridSpeed.current }
-    setValue('diagram.enabled', !diagramOn.current)
-  }, [setValue])
-  const bookState = useRef(state)
-  bookState.current = state
-  const riffleLook = useRef(scanner.riffle)
-  riffleLook.current = scanner.riffle
-  const riffles = () => modeRef.current === 'book' && riffleLook.current.show && !!controller.current
-  // The riffle starts from the closed front cover; the book re-centres while the scanner flies.
-  const prepareScan = useCallback(() => {
-    if (riffles() && bookState.current.index !== 0) controller.current?.jumpTo(0)
-  }, [])
-  const startRiffle = useCallback((): Riffle | null => {
-    if (!riffles()) return null
-    const { delayMs, coverMs, leafMs, stepMs, sweepMs, holdMs } = riffleLook.current
-    const start = performance.now() + delayMs
-    // Known once the leaves start; until then the run is open-ended.
-    let end = Infinity
-    const timers: number[] = []
-    let leaves: { cancel: () => void } | null = null
-    const at = (time: number, action: () => void) => {
-      // Leaving Book mode ends the run, so the scanner never waits on leaves that will not turn.
-      timers.push(window.setTimeout(() => {
-        if (modeRef.current === 'book') action()
-        else end = Math.min(end, performance.now())
-      }, Math.max(0, time - performance.now())))
-    }
-    // Open the front cover, thumb through the leaves, close the back cover, hold, turn back over.
-    at(start, () => controller.current?.next(coverMs))
-    at(start + coverMs + 30, () => {
-      const run = controller.current?.riffle(leafMs, stepMs)
-      if (!run) return
-      leaves = run
-      const back = performance.now() + run.durationMs + 80
-      end = back + coverMs
-      at(back, () => controller.current?.next(coverMs))
-      at(end + holdMs, () => controller.current?.first())
-    })
-    return {
-      frame: (now) => {
-        if (now >= end + holdMs) return null
-        const t = now - start
-        if (t <= 0 || now >= end) return { line: t <= 0 ? 0 : 1, beam: 0 }
-        // Down over most of each pass, then a quick eased retrace to the top.
-        const phase = (t % sweepMs) / sweepMs
-        if (phase < 0.85) return { line: phase / 0.85, beam: 1 }
-        const back = (phase - 0.85) / 0.15
-        return { line: 1 - back * back * (3 - 2 * back), beam: 1 }
-      },
-      cancel: () => {
-        timers.forEach(clearTimeout)
-        leaves?.cancel()
-      },
-    }
-  }, [])
+  useDiagramTransition(diagram.enabled, layouts.pages, t.diagram, motion, lookKey)
   const gridSelection = useRef(0)
   editDiagram.current = () => {
     setValue('diagram.enabled', true)
@@ -629,20 +513,6 @@ export function BookViewer() {
         onSelect={(key) => switchTo(key as Mode)}
         look={t.switch}
       />
-      {ScannerLayer && (
-        <Suspense fallback={null}>
-          <ScannerLayer
-            visible={scanner.show && mode !== 'video' && !zoom && editingSpread === null}
-            active={diagram.enabled}
-            follow={mode === 'grid'}
-            look={scanner}
-            onPrepare={prepareScan}
-            onScan={startScan}
-            onRiffle={startRiffle}
-            session={scanSession}
-          />
-        </Suspense>
-      )}
 
       <div ref={bookRef} className="viewer__book" aria-hidden={mode !== 'book'} inert={mode !== 'book'}>
         <FlipBook

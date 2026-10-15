@@ -378,13 +378,6 @@
       },
       "motion": {
         "durationMs": 2150
-      },
-      "scanner": {
-        "beamColor": "#80fa51",
-        "lineColor": "#76cd9b",
-        "riffle": {
-          "delayMs": 250
-        }
       }
     },
     "video": {
