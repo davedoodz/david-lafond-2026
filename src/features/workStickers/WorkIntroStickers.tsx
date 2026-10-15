@@ -7,7 +7,7 @@
  * pills land, hover, and loop exactly as they do there. No DialKit, editor, or local persistence
  * ships here — just the engine's render/hover/turn/loop bound to this frozen config.
  */
-import { Fragment, useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createLoopScheduler, createStickerEngine, turn as engineTurn, type Look, type StickerRecord } from './engine.js'
 import config from './workStickers.live.json'
 import './WorkIntroStickers.css'
@@ -17,7 +17,23 @@ type LiveSticker = LiveStickers[keyof LiveStickers]
 type Token = { type: 'text'; text: string } | { type: 'sticker'; id: string }
 
 const look = config.look as Look
-const paragraphs = config.paragraphs as Token[][]
+
+/** The authored intro as editable text: one string per paragraph, `{id}` marks a pill, newlines break lines. */
+export const DEFAULT_INTRO_TEXT = (config.paragraphs as Token[][]).map(paragraph =>
+  paragraph.map(token => (token.type === 'text' ? token.text : `{${token.id}}`)).join(''),
+)
+
+/** Parses editable intro text back into tokens. Unknown or repeated `{id}`s stay literal text. */
+function parseIntro(text: string, used: Set<string>): Token[] {
+  return text.split(/(\{\w+\})/).flatMap((part): Token[] => {
+    const id = /^\{(\w+)\}$/.exec(part)?.[1]
+    if (id && id in config.stickers && !used.has(id)) {
+      used.add(id)
+      return [{ type: 'sticker', id }]
+    }
+    return part ? [{ type: 'text', text: part }] : []
+  })
+}
 
 function buildValues(sticker: LiveSticker): StickerRecord['values'] {
   const values: StickerRecord['values'] = { face: 'Face 1', timing: sticker.timing }
@@ -31,9 +47,15 @@ interface Parts {
   label?: HTMLSpanElement
 }
 
-/** `align="center"` centres every line on the hero column; long lines spill evenly to both sides.
+/** `text` is the intro, one string per paragraph (see DEFAULT_INTRO_TEXT); the parent should remount
+ * this component (via `key`) when it changes so the engine rebinds to the new pills.
+ * `align="center"` centres every line on the hero column; long lines spill evenly to both sides.
  * `size` sets the intro text in px (desktop / mobile); pills and stickers are sized in em, so they scale with it. */
-export function WorkIntroStickers({ align = 'left', size }: { align?: 'left' | 'center'; size?: { desktop: number; mobile: number } }) {
+export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', size }: { text?: string[]; align?: 'left' | 'center'; size?: { desktop: number; mobile: number } }) {
+  const [paragraphs] = useState(() => {
+    const used = new Set<string>()
+    return text.filter(paragraph => paragraph.trim()).map(paragraph => parseIntro(paragraph, used))
+  })
   const partsRef = useRef<Record<string, Parts>>({})
   const paragraphsRef = useRef<HTMLParagraphElement[]>([])
   const fitRef = useRef<() => void>(() => {})
@@ -127,6 +149,7 @@ export function WorkIntroStickers({ align = 'left', size }: { align?: 'left' | '
   function bindParagraph(index: number) {
     return (el: HTMLParagraphElement | null) => {
       if (el) paragraphsRef.current[index] = el
+      else delete paragraphsRef.current[index]
     }
   }
 

@@ -2,7 +2,7 @@ import { useRef, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
-import { WorkIntroStickers } from '../features/workStickers/WorkIntroStickers'
+import { DEFAULT_INTRO_TEXT, WorkIntroStickers } from '../features/workStickers/WorkIntroStickers'
 import { Signature } from '../features/signature/Signature'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
@@ -13,6 +13,9 @@ const CONFIG = {
   headlineLead: { type: 'text' as const, default: 'I’m' },
   headlineName: { type: 'text' as const, default: 'David Lafond' },
   headlineTagline: { type: 'text' as const, default: 'a product designer.' },
+  /** Sticker intro paragraphs. {cities} {labs} {products} {faster} place the pills; Enter breaks a line. */
+  introText1: { type: 'text' as const, default: DEFAULT_INTRO_TEXT[0], placeholder: '{cities} {labs} {products} {faster} = pills' },
+  introText2: { type: 'text' as const, default: DEFAULT_INTRO_TEXT[1], placeholder: '{cities} {labs} {products} {faster} = pills' },
   /** Name lives in the headline; this line sits directly above the signature. */
   role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
   /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
@@ -83,7 +86,12 @@ export function WorkPage() {
             <br />
             <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
-          <WorkIntroStickers align={t.align.intro === 'center' ? 'center' : 'left'} size={t.introSize} />
+          <WorkIntroStickers
+            key={`${t.introText1}\u0000${t.introText2}`}
+            text={[t.introText1, t.introText2]}
+            align={t.align.intro === 'center' ? 'center' : 'left'}
+            size={t.introSize}
+          />
           <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />
         </section>
