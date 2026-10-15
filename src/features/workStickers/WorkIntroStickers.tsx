@@ -127,7 +127,9 @@ export function WorkIntroStickers() {
   return (
     <>
       {paragraphs.map((paragraph, p) => (
-        <p key={p} className="hero__intro work-intro-stickers__p" data-enter="1" data-selectable ref={bindParagraph(p)}>
+        // Not selectable (drags would highlight across moving pills); data-fit-ignore keeps the
+        // pills' changing widths from resizing and re-centering the hero column (useFitColumn).
+        <p key={p} className="hero__intro work-intro-stickers__p" data-enter="1" data-fit-ignore ref={bindParagraph(p)}>
           {toLines(paragraph).map((line, l) => (
             <span key={l} className="ws-line">
               {line.map((token, i) =>
