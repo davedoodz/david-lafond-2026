@@ -89,6 +89,23 @@ const RADIUS = 20
 const srcSetFor = (name: CardName) => `/work/filo/milestones/${name}-800.webp 800w, /work/filo/milestones/${name}-1600.webp 1600w`
 const srcFor = (name: CardName) => `/work/filo/milestones/${name}-1600.webp`
 
+/**
+ * The zoom shows the 1600w file. Fetch and decode it before the zoom mounts, or its first frames are the
+ * card's empty fill. The Image objects stay referenced so the decoded pixels stay cached.
+ */
+const zoomImages = new Map<CardName, { image: HTMLImageElement; ready: Promise<void> }>()
+function decodeZoomImage(name: CardName): Promise<void> {
+  let entry = zoomImages.get(name)
+  if (!entry) {
+    const image = new Image()
+    image.src = srcFor(name)
+    // A failed decode still opens the zoom; the browser then loads the file as usual.
+    entry = { image, ready: image.decode().catch(() => {}) }
+    zoomImages.set(name, entry)
+  }
+  return entry.ready
+}
+
 /** Hold the page still while a photo is lifted or zoomed: no wheel, touch or keyboard scrolling behind it. */
 function useScrollLock(locked: boolean) {
   useEffect(() => {
@@ -148,6 +165,7 @@ export function FiloMilestones() {
     if (!el) return
     const observer = new IntersectionObserver(
       ([entry]) => {
+        if (entry.isIntersecting) for (const card of CARDS) void decodeZoomImage(card.name)
         if (entry.intersectionRatio >= 0.25) el.dataset.risen = ''
         else if (!entry.isIntersecting) delete el.dataset.risen
       },
@@ -162,10 +180,22 @@ export function FiloMilestones() {
     if (!lifted || zoom) return
     const card = cardRefs.current.get(lifted)
     if (!card) return
-    const open = () => setZoom({ name: lifted, origin: card.getBoundingClientRect() })
+    // Open once the lift has settled and the zoom photo is decoded (normally long before: it starts on scroll-in).
+    let cancelled = false
+    let opened = false
+    const ready = decodeZoomImage(lifted)
+    const open = () => {
+      if (opened) return
+      opened = true
+      void ready.then(() => {
+        if (!cancelled) setZoom({ name: lifted, origin: card.getBoundingClientRect() })
+      })
+    }
     if (reducedMotion) {
       open()
-      return
+      return () => {
+        cancelled = true
+      }
     }
     const timer = window.setTimeout(open, d.zoom.liftMs + 40)
     const onEnd = (event: TransitionEvent) => {
@@ -173,6 +203,7 @@ export function FiloMilestones() {
     }
     card.addEventListener('transitionend', onEnd)
     return () => {
+      cancelled = true
       window.clearTimeout(timer)
       card.removeEventListener('transitionend', onEnd)
     }
@@ -278,7 +309,6 @@ export function FiloMilestones() {
             {zoom && (
               <FiloPhotoZoom
                 key="zoom"
-                srcSet={srcSetFor(zoom.name)}
                 src={srcFor(zoom.name)}
                 alt={CARDS.find((card) => card.name === zoom.name)!.alt}
                 caption={d.pill[zoom.name]}
