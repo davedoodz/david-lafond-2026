@@ -18,11 +18,20 @@ const CONFIG = {
   /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
   align: {
     text: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    /** Sticker intro only: left-aligned with the text block, or centred on it. */
+    intro: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     x: [0, -400, 400, 1] as [number, number, number, number],
     xMobile: [0, -200, 200, 1] as [number, number, number, number],
   },
+  /** Sticker intro text size (px); pills and stickers scale with it. */
+  introSize: {
+    desktop: [20, 12, 40, 1] as [number, number, number, number],
+    mobile: [14, 10, 32, 1] as [number, number, number, number],
+  },
   /** Vertical gaps between the hero text elements (px). */
   spacing: {
+    /** Line height of the sticker intro lines (× font size). */
+    introLineHeight: [1.2, 1, 2.2, 0.01] as [number, number, number, number],
     titleToIntroDesktop: [30, 0, 200, 1] as [number, number, number, number],
     introToIntroDesktop: [24, 0, 200, 1] as [number, number, number, number],
     introToRoleDesktop: [42, 0, 200, 1] as [number, number, number, number],
@@ -56,6 +65,7 @@ export function WorkPage() {
               ...entrance.style,
               '--align-x': `${t.align.x}px`,
               '--align-x-m': `${t.align.xMobile}px`,
+              '--intro-leading': String(t.spacing.introLineHeight),
               '--gap-title-intro-d': `${t.spacing.titleToIntroDesktop}px`,
               '--gap-intro-intro-d': `${t.spacing.introToIntroDesktop}px`,
               '--gap-intro-role-d': `${t.spacing.introToRoleDesktop}px`,
@@ -73,7 +83,7 @@ export function WorkPage() {
             <br />
             <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
-          <WorkIntroStickers />
+          <WorkIntroStickers align={t.align.intro === 'center' ? 'center' : 'left'} size={t.introSize} />
           <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />
         </section>

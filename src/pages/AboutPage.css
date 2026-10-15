@@ -29,7 +29,7 @@
   /* Keep Paper's wrap width even when the heading widens the shared column. */
   max-width: var(--column);
   margin-top: 40px;
-  font-size: var(--text-body);
+  font-size: var(--story-size-d, var(--text-body));
   line-height: 1.2;
   color: var(--stone-600);
   white-space: pre-wrap;
@@ -88,6 +88,7 @@
   }
   .about__text {
     margin-top: 33px;
+    font-size: var(--story-size-m, var(--text-body));
   }
   .about__dark {
     border-radius: 20px 20px 0 0;

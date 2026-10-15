@@ -31,8 +31,12 @@ interface Parts {
   label?: HTMLSpanElement
 }
 
-export function WorkIntroStickers() {
+/** `align="center"` centres every line on the hero column; long lines spill evenly to both sides.
+ * `size` sets the intro text in px (desktop / mobile); pills and stickers are sized in em, so they scale with it. */
+export function WorkIntroStickers({ align = 'left', size }: { align?: 'left' | 'center'; size?: { desktop: number; mobile: number } }) {
   const partsRef = useRef<Record<string, Parts>>({})
+  const paragraphsRef = useRef<HTMLParagraphElement[]>([])
+  const fitRef = useRef<() => void>(() => {})
 
   useLayoutEffect(() => {
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
@@ -94,6 +98,13 @@ export function WorkIntroStickers() {
     }, { signal: controller.signal })
     loop.schedule()
 
+    const paragraphElements = paragraphsRef.current.filter(Boolean)
+    const fit = () => fitLines(paragraphElements, records)
+    fitRef.current = fit
+    fit()
+    addEventListener('resize', fit, { signal: controller.signal })
+    document.fonts?.ready.then(fit)
+
     return () => {
       controller.abort()
       loop.stop()
@@ -103,6 +114,8 @@ export function WorkIntroStickers() {
       }
     }
   }, [])
+  // The available width depends on alignment and text size, so refit when either changes.
+  useLayoutEffect(() => fitRef.current(), [align, size?.desktop, size?.mobile])
 
   function bindPart<K extends keyof Parts>(id: string, key: K) {
     return (el: NonNullable<Parts[K]> | null) => {
@@ -111,29 +124,101 @@ export function WorkIntroStickers() {
       else delete parts[key]
     }
   }
+  function bindParagraph(index: number) {
+    return (el: HTMLParagraphElement | null) => {
+      if (el) paragraphsRef.current[index] = el
+    }
+  }
 
   return (
     <>
       {paragraphs.map((paragraph, p) => (
-        <p key={p} className="hero__intro work-intro-stickers__p" data-enter="1" data-selectable>
-          {paragraph.map((token, i) =>
-            token.type === 'text' ? (
-              <Fragment key={i}>{token.text}</Fragment>
-            ) : (
-              <button
-                key={i}
-                type="button"
-                className="ws-pill"
-                style={{ '--pill': look.appearance.pill, '--icon-scale': look.appearance.stickerScale } as CSSProperties}
-                ref={bindPart(token.id, 'button')}
-              >
-                <span className="ws-pill-art" aria-hidden="true" ref={bindPart(token.id, 'icon')} />
-                <span className="ws-pill-text" aria-hidden="true" ref={bindPart(token.id, 'label')} />
-              </button>
-            ),
-          )}
+        // Not selectable (drags would highlight across moving pills); data-fit-ignore keeps the
+        // pills' changing widths from resizing and re-centering the hero column (useFitColumn).
+        <p
+          key={p}
+          className="hero__intro work-intro-stickers__p"
+          data-enter="1"
+          data-fit-ignore
+          data-align={align}
+          style={size && ({ '--intro-size-d': `${size.desktop}px`, '--intro-size-m': `${size.mobile}px` } as CSSProperties)}
+          ref={bindParagraph(p)}
+        >
+          {toLines(paragraph).map((line, l) => (
+            <span key={l} className="ws-line">
+              {line.map((token, i) =>
+                token.type === 'text' ? (
+                  <Fragment key={i}>{token.text}</Fragment>
+                ) : (
+                  <button
+                    key={i}
+                    type="button"
+                    className="ws-pill"
+                    style={{ '--pill': look.appearance.pill, '--icon-scale': look.appearance.stickerScale } as CSSProperties}
+                    ref={bindPart(token.id, 'button')}
+                  >
+                    <span className="ws-pill-art" aria-hidden="true" ref={bindPart(token.id, 'icon')} />
+                    <span className="ws-pill-text" aria-hidden="true" ref={bindPart(token.id, 'label')} />
+                  </button>
+                ),
+              )}
+            </span>
+          ))}
         </p>
       ))}
     </>
   )
+}
+
+/** Splits a paragraph at its authored line breaks; each line then renders unbroken. */
+function toLines(paragraph: Token[]): Token[][] {
+  const lines: Token[][] = [[]]
+  for (const token of paragraph) {
+    if (token.type !== 'text') { lines[lines.length - 1].push(token); continue }
+    token.text.split('\n').forEach((part, i) => {
+      if (i > 0) lines.push([])
+      if (part) lines[lines.length - 1].push({ type: 'text', text: part })
+    })
+  }
+  // Spaces next to a break would hang at a line's edge.
+  for (const line of lines) {
+    const first = line[0], last = line[line.length - 1]
+    if (first?.type === 'text') first.text = first.text.trimStart()
+    if (last?.type === 'text') last.text = last.text.trimEnd()
+  }
+  return lines
+}
+
+/* Each line always stays on one line. Lines may run past the column into the free space on its
+ * right; when even that is too narrow, the intro's font shrinks until the widest line fits.
+ * "Widest" assumes each pill shows its longest phrase, so the size never jumps as pills turn. */
+// Every phrase each pill can show, from the frozen config.
+const labelsById = new Map(Object.entries(config.stickers).map(([id, sticker]) => [id, sticker.faces.map(face => face.label.trim())]))
+const labelWidths = (record: StickerRecord, font: string): number[] => {
+  const context = document.createElement('canvas').getContext('2d')!
+  context.font = font
+  return (labelsById.get(record.id) ?? []).map(label => context.measureText(label).width)
+}
+function fitLines(paragraphs: HTMLParagraphElement[], records: StickerRecord[]) {
+  for (const p of paragraphs) p.style.fontSize = ''
+  const root = document.documentElement.clientWidth
+  let scale = 1
+  for (const p of paragraphs) {
+    const box = p.getBoundingClientRect()
+    const margin = Math.max(16, Math.min(box.left, 40))
+    // Centred lines spill to both sides of the column's centre, so the nearer screen edge limits them.
+    const center = box.left + box.width / 2
+    const available = p.dataset.align === 'center' ? 2 * Math.min(center - margin, root - margin - center) : root - box.left - margin
+    for (const line of p.querySelectorAll<HTMLElement>('.ws-line')) {
+      let widest = line.getBoundingClientRect().width
+      for (const record of records) {
+        if (!line.contains(record.button)) continue
+        const label = record.label.getBoundingClientRect().width
+        widest += Math.max(...labelWidths(record, getComputedStyle(record.label).font)) - label
+      }
+      scale = Math.min(scale, available / widest)
+    }
+  }
+  if (scale >= 1) return
+  for (const p of paragraphs) p.style.fontSize = `${parseFloat(getComputedStyle(p).fontSize) * scale}px`
 }
