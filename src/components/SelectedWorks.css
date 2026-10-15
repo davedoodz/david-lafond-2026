@@ -206,6 +206,27 @@ html[data-works-snap] body:has(.works) .footer {
   pointer-events: none;
 }
 
+/* Two soft, still glows under the wall. Painted as radial gradients, not filter: blur, and the tiles fake
+   the frost with a translucent fill instead of backdrop-filter: blurring a smooth field changes almost
+   nothing, but re-blurring under ~16 moving tiles (plus drifting glows) every frame made scrolling past
+   the card stutter. */
+.ecowall__glow {
+  position: absolute;
+  width: 70%;
+  aspect-ratio: 1;
+  opacity: 0.9;
+}
+.ecowall__glow--a {
+  left: -15%;
+  top: -25%;
+  background: radial-gradient(closest-side, var(--glow-a) 45%, transparent);
+}
+.ecowall__glow--b {
+  right: -20%;
+  bottom: -35%;
+  background: radial-gradient(closest-side, var(--glow-b) 45%, transparent);
+}
+
 .ecowall__wall {
   position: absolute;
   inset: 0;
@@ -217,7 +238,11 @@ html[data-works-snap] body:has(.works) .footer {
   left: 0;
   top: 0;
   border-radius: var(--tile-radius, 16px);
-  background: rgb(255 255 255 / var(--tile-alpha, 0.6));
+  background: linear-gradient(160deg, rgb(255 255 255 / calc(var(--glass-fill, 0.17) + 0.12)), rgb(255 255 255 / var(--glass-fill, 0.17)));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / var(--glass-edge, 0.42)),
+    inset 0 0 0 1px rgb(255 255 255 / calc(var(--glass-edge, 0.42) * 0.55)),
+    0 10px 24px rgb(60 45 30 / 0.08);
   will-change: transform;
 }
 
