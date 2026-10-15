@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Study — text highlight over the sticker intro</title>
+<style>
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+  :root { --bg: #171717; --paper: #f5f5f5; --muted: #8a8580; --line: #2a2a2a; --hl: #fff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--paper); font-family: 'Beatrice', system-ui, sans-serif; letter-spacing: -0.01em; }
+  /* Native selection is invisible, like the site: each card draws its own fill. */
+  ::selection { background: transparent; color: inherit; }
+  header { max-width: 1360px; margin: 0 auto; padding: 48px 32px 8px; display: flex; gap: 32px; align-items: end; justify-content: space-between; flex-wrap: wrap; }
+  header h1 { margin: 0; font-weight: 500; font-size: 22px; }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 14px; max-width: 640px; line-height: 1.45; user-select: none; }
+  .controls { display: flex; gap: 8px; user-select: none; }
+  .controls button { font: inherit; font-size: 13px; color: var(--paper); background: #262626; border: 1px solid #333; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+  .controls button[aria-pressed='true'] { background: var(--paper); color: #111; }
+  main { max-width: 1360px; margin: 0 auto; padding: 24px 32px 80px; display: grid; grid-template-columns: repeat(auto-fill, minmax(620px, 1fr)); gap: 20px; }
+  .card { position: relative; isolation: isolate; border: 1px solid var(--line); border-radius: 16px; padding: 22px 28px 20px; overflow: hidden; }
+  .card h2 { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: 0.02em; user-select: none; }
+  .card h2 span { color: var(--muted); font-weight: 400; margin-right: 6px; }
+  .card .why { margin: 4px 0 22px; color: var(--muted); font-size: 13px; line-height: 1.45; user-select: none; min-height: 38px; }
+  .card .copy { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); user-select: none; white-space: pre-wrap; min-height: 2.6em; }
+  .card .copy b { color: var(--paper); font-weight: 400; }
+
+  /* Intro — mirrors WorkIntroStickers.css at 20px, without the pill's own stacking context
+     so a sticker can sit above the highlight layer when a variant asks for it. */
+  .intro { font-size: 20px; line-height: 1.56; cursor: text; }
+  .intro p { margin: 0 0 20px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .ws-line { display: block; width: max-content; white-space: nowrap; }
+  .ws-pill { --art-pad: calc(1.2em + var(--gap, 0em) + var(--ends, 0em)); --text-pad: calc(0.15em + var(--ends, 0em));
+    position: relative; display: inline-block; vertical-align: baseline; height: var(--pill-height, 1.28em);
+    padding: 0 var(--text-pad) 0 var(--art-pad); border-radius: 999px; background: #2b2b2b;
+    line-height: var(--pill-height, 1.28em); white-space: nowrap; transition: background-color .18s ease-out, color .18s ease-out, box-shadow .18s ease-out; }
+  .sticker-art { position: absolute; top: 50%; left: calc(var(--ends, 0em) - 0.05em); width: 1.2em; height: 1.2em; margin-top: -0.6em;
+    display: grid; place-items: center; transform: rotate(var(--tilt)) scale(1.04); filter: drop-shadow(0 2px 1px #0005); pointer-events: none; }
+  .sticker-art img { --edge: 0.0625em; width: 100%; height: 100%; object-fit: contain;
+    filter: drop-shadow(var(--edge) 0 0 #f7f5f0) drop-shadow(calc(var(--edge) * -1) 0 0 #f7f5f0) drop-shadow(0 var(--edge) 0 #f7f5f0) drop-shadow(0 calc(var(--edge) * -1) 0 #f7f5f0); }
+  .label { position: relative; }
+
+  /* The highlight layer: same as the site's .selection-hl — white blocks, difference-blended. */
+  .hl { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: difference; z-index: 2; }
+  .hl > div { position: absolute; background: var(--hl); }
+  .hl > div.round { border-radius: 999px; }
+  .hl.soft > div { border-radius: 4px; }
+
+  /* Variant treatments for pills inside the selection. */
+  [data-v='band'] .sticker-art,
+  [data-v='top'] .sticker-art,
+  [data-v='flip'] .sticker-art,
+  [data-v='snap'] .sticker-art,
+  [data-v='lift'] .sticker-art { z-index: 3; }
+  [data-v='flip'] .ws-pill.sel,
+  [data-v='snap'] .ws-pill.sel { background: var(--hl); color: #111; }
+  [data-v='ring'] .ws-pill.sel { box-shadow: inset 0 0 0 1.5px var(--paper); background: #333; }
+  [data-v='lift'] .ws-pill.sel { background: var(--hl); color: #111; }
+  [data-v='lift'] .ws-pill.sel .sticker-art { transform: translateY(-0.12em) rotate(calc(var(--tilt) * 0.3)) scale(1.12); transition: transform .25s cubic-bezier(.2,.9,.3,1.3); }
+  [data-v='lift'] .ws-pill .sticker-art { transition: transform .25s cubic-bezier(.2,.9,.3,1.3); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Text highlight × sticker intro</h1>
+    <p>Eight ways the hero's selection fill could treat the pills; the first card is the refined pick. Each card starts with the same selection; drag inside any card to try your own. The fill is the site's real one: white blocks, difference-blended. The line under each card shows what would be copied.</p>
+  </div>
+  <div class="controls">
+    <button id="turn" aria-pressed="false">Turn pills</button>
+    <button id="reset">Reset selections</button>
+  </div>
+</header>
+<main id="cards"></main>
+
+<script type="module">
+import config from '/src/features/workStickers/workStickers.live.json'
+import tuning from '/src/data/tuning.json'
+
+const VARIANTS = [
+  { v: 'band', name: 'Continuous band (chosen: C, refined)', why: 'C with one block per line: each block spans the full line height and runs edge to edge across text and pills, so no steps or notches at the pills. Lines in a paragraph meet exactly. A partly selected pill selects its whole phrase, matching what is lit.' },
+  { v: 'text', name: 'Text only', why: 'Today\'s overlay, pills left out. Words highlight; pills stay dark, so the fill breaks at every pill.' },
+  { v: 'through', name: 'Straight through', why: 'One band over everything, pills included. Simple, but the blend inverts the sticker artwork into negative colors.' },
+  { v: 'top', name: 'Band, stickers on top', why: 'Continuous band over text and pills; stickers sit above the fill so the artwork keeps its real colors.' },
+  { v: 'flip', name: 'Pill becomes the highlight', why: 'The fill runs to each pill and the pill itself turns white with dark text, keeping its rounded shape inside the band.' },
+  { v: 'ring', name: 'Pill outlined', why: 'Words highlight; a selected pill gets a thin light ring instead of a fill. Quietest: the pills read as objects, not text.' },
+  { v: 'snap', name: 'Whole pills, copies the phrase', why: 'Like "pill becomes the highlight", but a pill is all-or-nothing: touching it selects the whole phrase, so copying never cuts a word.' },
+  { v: 'lift', name: 'Pill highlights, sticker pops', why: 'The pill turns white and its sticker lifts and straightens a little, the same feedback as hover, so selecting feels alive.' },
+]
+
+// The intro as it reads on the site today: the Hero DialKit text when set, else the exported copy.
+const authored = config.paragraphs.map(paragraph => paragraph.map(t => (t.type === 'text' ? t.text : `{${t.id}}`)).join(''))
+const paragraphs = [tuning.Hero?.introText1 ?? authored[0], tuning.Hero?.introText2 ?? authored[1]].map(text =>
+  text.split(/(\{\w+\})/).filter(Boolean).map(part => {
+    const id = /^\{(\w+)\}$/.exec(part)?.[1]
+    return id && id in config.stickers ? { type: 'sticker', id } : { type: 'text', text: part }
+  }),
+)
+const faceIndex = Object.fromEntries(Object.keys(config.stickers).map(id => [id, 0]))
+
+function pill(id) {
+  const face = config.stickers[id].faces[faceIndex[id]]
+  const b = document.createElement('span')
+  b.className = 'ws-pill'
+  b.dataset.id = id
+  const art = document.createElement('span')
+  art.className = 'sticker-art'
+  art.setAttribute('aria-hidden', 'true')
+  const img = document.createElement('img')
+  img.alt = ''
+  img.draggable = false
+  art.append(img)
+  const label = document.createElement('span')
+  label.className = 'label'
+  label.append(document.createTextNode(''))
+  b.append(art, label)
+  paint(b, face)
+  return b
+}
+
+function paint(b, face) {
+  b.style.setProperty('--tilt', `${face.tilt}deg`)
+  b.style.setProperty('--gap', `${face.gap}em`)
+  b.style.setProperty('--ends', `${face.ends ?? 0}em`)
+  b.style.setProperty('--pill-height', `${face.height ?? 1.28}em`)
+  const art = b.querySelector('.sticker-art')
+  art.style.translate = `${face.offsetX}em ${face.offsetY}em`
+  art.style.scale = String(face.size)
+  art.querySelector('img').src = face.image
+  // Keep the same text node so live selection ranges survive a turn.
+  b.querySelector('.label').firstChild.data = face.label.trim()
+}
+
+function intro() {
+  const root = document.createElement('div')
+  root.className = 'intro'
+  for (const paragraph of paragraphs) {
+    const p = document.createElement('p')
+    let line = document.createElement('span')
+    line.className = 'ws-line'
+    p.append(line)
+    for (const token of paragraph) {
+      if (token.type === 'sticker') { line.append(pill(token.id)); continue }
+      token.text.split('\n').forEach((part, i) => {
+        if (i > 0) { line = document.createElement('span'); line.className = 'ws-line'; p.append(line) }
+        const text = i > 0 ? part.trimStart() : part
+        if (text) line.append(document.createTextNode(text))
+      })
+    }
+    for (const l of p.children) { const last = l.lastChild; if (last?.nodeType === 3) last.data = last.data.trimEnd() }
+    root.append(p)
+  }
+  return root
+}
+
+const cards = []
+const host = document.getElementById('cards')
+VARIANTS.forEach((variant, i) => {
+  const card = document.createElement('section')
+  card.className = 'card'
+  card.dataset.v = variant.v
+  card.innerHTML = `<h2><span>${String.fromCharCode(65 + i)}</span>${variant.name}</h2><p class="why">${variant.why}</p>`
+  const body = intro()
+  const hl = document.createElement('div')
+  hl.className = 'hl'
+  const copy = document.createElement('div')
+  copy.className = 'copy'
+  card.append(body, copy, hl)
+  host.append(card)
+  cards.push({ card, body, hl, copy, v: variant.v, range: null })
+})
+
+/* Text nodes inside `range`, each clipped to the range. */
+function textParts(range, root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  const parts = []
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (!range.intersectsNode(n) || !n.data.trim()) continue
+    const r = document.createRange()
+    r.selectNodeContents(n)
+    if (n === range.startContainer) r.setStart(n, range.startOffset)
+    if (n === range.endContainer) r.setEnd(n, range.endOffset)
+    if (!r.collapsed) parts.push(r)
+  }
+  return parts
+}
+
+const PAD = 3
+function block(c, rect, round, pad = round ? 0 : PAD) {
+  const base = c.card.getBoundingClientRect()
+  const d = document.createElement('div')
+  if (round) d.className = 'round'
+  // `pad` grows the block on every side; the line band passes 0 because it is already sized exactly.
+  Object.assign(d.style, {
+    left: `${rect.left - base.left - pad}px`, top: `${rect.top - base.top - pad}px`,
+    width: `${rect.width + pad * 2}px`, height: `${rect.height + pad * 2}px`,
+  })
+  c.hl.append(d)
+}
+
+/* For "snap": grow the range so it never ends inside a pill. */
+function snapToPills(c) {
+  const r = c.range
+  for (const p of c.body.querySelectorAll('.ws-pill')) {
+    if (!r.intersectsNode(p)) continue
+    if (p.contains(r.startContainer)) r.setStartBefore(p)
+    if (p.contains(r.endContainer)) r.setEndAfter(p)
+  }
+}
+
+function draw(c) {
+  c.hl.replaceChildren()
+  const pills = [...c.body.querySelectorAll('.ws-pill')]
+  pills.forEach(p => p.classList.remove('sel'))
+  if (!c.range || c.range.collapsed) { c.copy.textContent = 'Copies: —'; return }
+  if (c.v === 'snap' || c.v === 'band') snapToPills(c)
+  const selected = pills.filter(p => c.range.intersectsNode(p))
+  selected.forEach(p => p.classList.add('sel'))
+  const inPill = n => n.parentElement.closest('.ws-pill')
+
+  if (c.v === 'band') {
+    drawBand(c, selected)
+    c.copy.innerHTML = `Copies: <b></b>`
+    c.copy.querySelector('b').textContent = `“${copyText(c)}”`
+    return
+  }
+  for (const part of textParts(c.range, c.body)) {
+    const owner = inPill(part.startContainer)
+    // Pill text gets its own treatment except in "straight through".
+    if (owner && c.v !== 'through') continue
+    for (const rect of part.getClientRects()) if (rect.width >= 1) block(c, rect, false)
+  }
+  if (c.v === 'through' || c.v === 'top') {
+    for (const p of selected) block(c, p.getBoundingClientRect(), false)
+  }
+  c.copy.innerHTML = `Copies: <b></b>`
+  c.copy.querySelector('b').textContent = `“${copyText(c)}”`
+}
+
+/* "band": one block per line, full line height, from the first selected thing to the last. */
+function drawBand(c, selected) {
+  const inPill = n => n.parentElement.closest('.ws-pill')
+  const lines = new Map()
+  const extend = (line, rect) => {
+    const span = lines.get(line) ?? { left: Infinity, right: -Infinity }
+    span.left = Math.min(span.left, rect.left)
+    span.right = Math.max(span.right, rect.right)
+    lines.set(line, span)
+  }
+  for (const part of textParts(c.range, c.body)) {
+    if (inPill(part.startContainer)) continue
+    const line = part.startContainer.parentElement.closest('.ws-line')
+    for (const rect of part.getClientRects()) if (rect.width >= 1) extend(line, rect)
+  }
+  for (const p of selected) extend(p.closest('.ws-line'), p.getBoundingClientRect())
+  for (const [line, span] of lines) {
+    const box = line.getBoundingClientRect()
+    // Full line box vertically (lines in a paragraph touch, never overlap); a little air at the ends.
+    block(c, new DOMRect(span.left - PAD, box.top, span.right - span.left + PAD * 2, box.height), false, 0)
+  }
+}
+
+/* What the clipboard would get: each line's selected text, lines joined by a newline, paragraphs by a blank line. */
+function copyText(c) {
+  return [...c.body.querySelectorAll('p')].map(p =>
+    [...p.querySelectorAll('.ws-line')].map(line => {
+      if (!c.range.intersectsNode(line)) return null
+      const r = document.createRange()
+      r.selectNodeContents(line)
+      if (line.contains(c.range.startContainer)) r.setStart(c.range.startContainer, c.range.startOffset)
+      if (line.contains(c.range.endContainer)) r.setEnd(c.range.endContainer, c.range.endOffset)
+      return r.toString().replace(/\s+/g, ' ').trim()
+    }).filter(Boolean).join('\n'),
+  ).filter(Boolean).join('\n\n')
+}
+
+function drawAll() { cards.forEach(draw) }
+
+function preset(c) {
+  // Same starting selection everywhere: from "projects" through "room".
+  const walker = document.createTreeWalker(c.body, NodeFilter.SHOW_TEXT)
+  let start, end
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (!start && n.data.includes('projects')) start = [n, n.data.indexOf('projects')]
+    if (n.data.includes('room')) end = [n, n.data.indexOf('room') + 4]
+  }
+  const r = document.createRange()
+  r.setStart(...start)
+  r.setEnd(...end)
+  c.range = r
+}
+
+function reset() { getSelection().removeAllRanges(); cards.forEach(preset); drawAll() }
+
+document.addEventListener('selectionchange', () => {
+  const s = getSelection()
+  if (!s.rangeCount) return
+  const r = s.getRangeAt(0)
+  const c = cards.find(c => c.body.contains(r.commonAncestorContainer))
+  if (!c || r.collapsed) return
+  c.range = r.cloneRange()
+  draw(c)
+})
+addEventListener('resize', drawAll)
+
+let timer = null
+const turnButton = document.getElementById('turn')
+turnButton.addEventListener('click', () => {
+  const on = turnButton.getAttribute('aria-pressed') !== 'true'
+  turnButton.setAttribute('aria-pressed', String(on))
+  clearInterval(timer)
+  if (!on) return
+  const ids = Object.keys(config.stickers)
+  let k = 0
+  timer = setInterval(() => {
+    const id = ids[k++ % ids.length]
+    faceIndex[id] = (faceIndex[id] + 1) % config.stickers[id].faces.length
+    const face = config.stickers[id].faces[faceIndex[id]]
+    document.querySelectorAll(`.ws-pill[data-id="${id}"]`).forEach(b => paint(b, face))
+    requestAnimationFrame(drawAll)
+  }, 1400)
+})
+document.getElementById('reset').addEventListener('click', reset)
+
+await document.fonts.ready
+await Promise.all([...document.images].map(img => img.decode().catch(() => {})))
+reset()
+</script>
+</body>
+</html>

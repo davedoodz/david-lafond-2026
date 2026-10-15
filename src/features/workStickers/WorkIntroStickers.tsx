@@ -10,6 +10,7 @@
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createLoopScheduler, createStickerEngine, turn as engineTurn, type Look, type StickerRecord } from './engine.js'
 import config from './workStickers.live.json'
+import { bindIntroSelection } from './introSelection'
 import './WorkIntroStickers.css'
 
 type LiveStickers = typeof config.stickers
@@ -127,6 +128,9 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', s
     addEventListener('resize', fit, { signal: controller.signal })
     document.fonts?.ready.then(fit)
 
+    const recordsByButton = new Map(records.map(record => [record.button as HTMLElement, record]))
+    bindIntroSelection(paragraphElements, pill => recordsByButton.get(pill)?.current ?? pill.textContent ?? '', controller.signal)
+
     return () => {
       controller.abort()
       loop.stop()
@@ -156,12 +160,14 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', s
   return (
     <>
       {paragraphs.map((paragraph, p) => (
-        // Not selectable (drags would highlight across moving pills); data-fit-ignore keeps the
-        // pills' changing widths from resizing and re-centering the hero column (useFitColumn).
+        // Selectable, with its own highlight band (introSelection.ts, data-hl-local); data-fit-ignore keeps
+        // the pills' changing widths from resizing and re-centering the hero column (useFitColumn).
         <p
           key={p}
           className="hero__intro work-intro-stickers__p"
           data-enter="1"
+          data-selectable
+          data-hl-local
           data-fit-ignore
           data-align={align}
           style={size && ({ '--intro-size-d': `${size.desktop}px`, '--intro-size-m': `${size.mobile}px` } as CSSProperties)}
