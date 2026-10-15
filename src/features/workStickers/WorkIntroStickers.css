@@ -2,8 +2,17 @@
  * .ws-pill so this never depends on the studio's editor styles. Sizes stay in em so pills scale
  * with the hero font (see WorkPage.css's --text-body). */
 
-.work-intro-stickers__p {
-  white-space: pre-line;
+/* Lines break only where David wrote them; each line may run past the column's max-width. */
+.hero__intro.work-intro-stickers__p {
+  line-height: var(--intro-leading, 1.2);
+}
+.hero__intro.work-intro-stickers__p:not([data-flow='wrap']) {
+  max-width: none;
+}
+.ws-line {
+  display: block;
+  width: max-content;
+  white-space: nowrap;
 }
 
 .ws-pill {

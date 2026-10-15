@@ -23,6 +23,8 @@ const CONFIG = {
   },
   /** Vertical gaps between the hero text elements (px). */
   spacing: {
+    /** Line height of the sticker intro lines (× font size). */
+    introLineHeight: [1.2, 1, 2.2, 0.01] as [number, number, number, number],
     titleToIntroDesktop: [30, 0, 200, 1] as [number, number, number, number],
     introToIntroDesktop: [24, 0, 200, 1] as [number, number, number, number],
     introToRoleDesktop: [42, 0, 200, 1] as [number, number, number, number],
@@ -56,6 +58,7 @@ export function WorkPage() {
               ...entrance.style,
               '--align-x': `${t.align.x}px`,
               '--align-x-m': `${t.align.xMobile}px`,
+              '--intro-leading': String(t.spacing.introLineHeight),
               '--gap-title-intro-d': `${t.spacing.titleToIntroDesktop}px`,
               '--gap-intro-intro-d': `${t.spacing.introToIntroDesktop}px`,
               '--gap-intro-role-d': `${t.spacing.introToRoleDesktop}px`,
