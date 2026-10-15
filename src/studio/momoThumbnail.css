@@ -1,0 +1,85 @@
+@font-face {
+  font-family: 'Beatrice';
+  src: url('/fonts/Beatrice-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Beatrice';
+  src: url('/fonts/Beatrice-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+:root {
+  --paper: #f5f5f5;
+  --ink-900: #171717;
+  --stone-600: #6f6b68;
+  --navy: #123a5c;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-900);
+  font: 400 15px/1.45 'Beatrice', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Page chrome ---------- */
+
+.studio-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px 40px;
+  background: rgb(245 245 245 / 0.86);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgb(23 23 23 / 0.06);
+}
+.studio-header a { color: inherit; text-decoration: none; font-weight: 500; }
+.studio-header a span { color: var(--stone-600); font-weight: 400; }
+.edition { color: var(--stone-600); font-size: 13px; }
+
+.board { display: grid; gap: 72px; max-width: 1480px; margin: 0 auto; padding: 40px 40px 96px; }
+.board-intro { max-width: 78ch; margin: 0; color: var(--stone-600); }
+
+/* Desktop and mobile cards share a row at equal height: 0.5686 W = 1.34 w → W / w ≈ 2.357. */
+.variant { display: grid; grid-template-columns: minmax(0, 2.357fr) minmax(0, 1fr); gap: 14px 32px; align-items: start; }
+.frame { display: grid; gap: 10px; min-width: 0; }
+.lbl { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--stone-600); }
+/* The note sits under the desktop card, beside the mobile card. Every control is in the DialKit panel. */
+.variant__note { grid-column: 1; align-self: start; margin: 0; max-width: 78ch; color: var(--stone-600); }
+.variant__note b { display: block; color: var(--ink-900); font-weight: 500; margin-bottom: 2px; }
+
+/* ---------- Card frame: the live Selected Works card (engine markup with chrome) ---------- */
+
+.mt-card { background: #57bfff; box-shadow: 0 0 54.5px 16px rgb(23 23 23 / 0.15); }
+.mt-card--d { aspect-ratio: 867 / 493; border-radius: 25px; }
+.mt-card--m { aspect-ratio: 100 / 134; border-radius: 12px; }
+.mt-mesh { position: absolute; inset: 0; }
+.mt-mesh canvas { width: 100%; height: 100%; display: block; }
+.mt-shade {
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  background-image: linear-gradient(in oklab 180deg, oklab(20.5% 0 0 / 0%) 50%, oklab(20.5% 0 0) 92.5%);
+  opacity: 0.45;
+}
+.mt-title { z-index: 9; margin: 0; line-height: 1.2; color: var(--paper); text-shadow: 0 0 12px rgb(255 255 255 / 0.25); }
+.mt-card--d .mt-title { left: 45px; right: 45px; bottom: 35px; font-size: 20px; }
+.mt-card--m .mt-title { left: 16px; bottom: 16px; font-size: 16px; }
+
+@media (max-width: 900px) {
+  .board { padding: 24px 16px 64px; }
+  .variant { grid-template-columns: 1fr; }
+  .variant__note { grid-column: 1; }
+  .frame:not(:first-child) { max-width: 360px; }
+  .studio-header { padding: 14px 16px; flex-wrap: wrap; }
+}

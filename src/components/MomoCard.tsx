@@ -16,7 +16,7 @@
  */
 import { stackedAlpha } from '../lib/stackedAlpha'
 import { useEffect, useRef, type CSSProperties } from 'react'
-import { useTuning, useTuningController } from '../tuning/useTuning'
+import { useTuningController } from '../tuning/useTuning'
 import './momo.css'
 
 type Tuple = [number, number, number, number]
@@ -79,11 +79,6 @@ const PRESETS: Record<string, Blend> = {
   'soft blur': { fadeMs: 700, blur: 6, outScale: 1, inScale: 1, dip: false },
   breathe: { fadeMs: 700, blur: 4, outScale: 0.94, inScale: 1.06, dip: false },
   dip: { fadeMs: 600, blur: 2, outScale: 0.97, inScale: 0.97, dip: true },
-}
-
-export function MomoCard() {
-  const t = useTuning('Momo mascot', CONFIG)
-  return <Momo mode={t.clip as MomoMode} size={`${t.size}%`} x={`${t.x}%`} y={`${t.y}%`} />
 }
 
 type MomoProps = {

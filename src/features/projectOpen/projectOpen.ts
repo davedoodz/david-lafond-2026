@@ -373,9 +373,9 @@ function mirrorArtwork(card: HTMLElement) {
   return { layer, sync, width, height }
 }
 
-/** The visible Momo frame inside a card or nav slot, if any. */
+/** The visible Momo frame inside a card or nav slot, if any (the nav's Momo, or the card thumbnail's face). */
 function momoCanvas(root: ParentNode): HTMLCanvasElement | null {
-  const canvases = [...root.querySelectorAll<HTMLCanvasElement>('.momo__clip')]
+  const canvases = [...root.querySelectorAll<HTMLCanvasElement>('.momo__clip, .mt-face')]
   return canvases.find((canvas) => Number(getComputedStyle(canvas).opacity) > 0.5) ?? canvases[0] ?? null
 }
 
