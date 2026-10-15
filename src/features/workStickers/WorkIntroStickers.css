@@ -73,6 +73,13 @@
 .ws-pill[data-side='right'] {
   padding: 0 var(--art-pad) 0 var(--text-pad);
 }
+/* Clicking a pill turns it; repeated clicks must not select its words. A drag across the
+   intro still lights the whole pill (introSelection.ts measures pills, not their text). */
+.work-intro-stickers__p .ws-pill,
+.work-intro-stickers__p .ws-pill * {
+  -webkit-user-select: none;
+  user-select: none;
+}
 .ws-pill:hover,
 .ws-pill:focus-visible {
   background: color-mix(in srgb, var(--pill, #2b2b2b), var(--tint, var(--accent)) 14%);
