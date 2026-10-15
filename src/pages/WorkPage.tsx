@@ -2,6 +2,7 @@ import { useRef, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
+import { WorkIntroStickers } from '../features/workStickers/WorkIntroStickers'
 import { Signature } from '../features/signature/Signature'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
@@ -12,14 +13,6 @@ const CONFIG = {
   headlineLead: { type: 'text' as const, default: 'I’m' },
   headlineName: { type: 'text' as const, default: 'David Lafond' },
   headlineTagline: { type: 'text' as const, default: 'a product designer.' },
-  intro: {
-    type: 'text' as const,
-    default: 'I’ve led interdisciplinary creative teams – from global smart city projects to world-class research labs.',
-  },
-  intro2: {
-    type: 'text' as const,
-    default: 'Now, I’m bringing this experience to product design — where ideas can move faster and reach further.',
-  },
   /** Name lives in the headline; this line sits directly above the signature. */
   role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
   /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
@@ -80,8 +73,7 @@ export function WorkPage() {
             <br />
             <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
-          <p className="hero__intro" data-enter="1" data-selectable>{t.intro}</p>
-          <p className="hero__intro" data-enter="1" data-selectable>{t.intro2}</p>
+          <WorkIntroStickers />
           <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />
         </section>

@@ -1,0 +1,445 @@
+{
+  "look": {
+    "appearance": {
+      "pill": "#2b2b2b",
+      "stickerScale": 1.04
+    },
+    "motion": {
+      "landing": "Spin",
+      "letters": "Hop",
+      "letterStagger": 0.08,
+      "letterSpeed": 2.1,
+      "lift": 4,
+      "hoverScale": 1.1,
+      "spring": {
+        "type": "spring",
+        "visualDuration": 0.42,
+        "bounce": 0.25
+      },
+      "loop": true
+    },
+    "hop": {
+      "height": 0.3,
+      "perDistance": 0,
+      "peak": 0.2,
+      "lean": 0,
+      "rise": 0,
+      "exit": 0,
+      "blur": 0,
+      "ripple": 0
+    }
+  },
+  "paragraphs": [
+    [
+      {
+        "type": "text",
+        "text": "I’ve led projects across  "
+      },
+      {
+        "type": "sticker",
+        "id": "cities"
+      },
+      {
+        "type": "text",
+        "text": " \nwith work that's taken me to "
+      },
+      {
+        "type": "sticker",
+        "id": "labs"
+      },
+      {
+        "type": "text",
+        "text": "."
+      }
+    ],
+    [
+      {
+        "type": "text",
+        "text": "Now, I’m bringing this experience to "
+      },
+      {
+        "type": "sticker",
+        "id": "products"
+      },
+      {
+        "type": "text",
+        "text": " \nwhere ideas have room to "
+      },
+      {
+        "type": "sticker",
+        "id": "faster"
+      },
+      {
+        "type": "text",
+        "text": "."
+      }
+    ]
+  ],
+  "stickers": {
+    "cities": {
+      "title": "Smart cities",
+      "timing": {
+        "hold": 2.5,
+        "duration": 0.42,
+        "letterSpeed": 1
+      },
+      "faces": [
+        {
+          "label": "urban design hubs ",
+          "artwork": "city",
+          "image": "/work/stickers/73d1427320269d82.png",
+          "fill": "Solid",
+          "color": "#83c9f4",
+          "gradientEnd": "#c1e4fa",
+          "gradientAngle": 135,
+          "outline": 0.5,
+          "size": 1.64,
+          "offsetX": 0.28,
+          "offsetY": 0.1,
+          "side": "Left",
+          "gap": 0.8,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -4,
+          "hoverRotate": 0,
+          "hoverX": -0.01,
+          "hoverY": -0.07,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "research labs",
+          "artwork": "globe",
+          "image": "/work/stickers/a2a67d8737059a27.png",
+          "fill": "Solid",
+          "color": "#83c9f4",
+          "gradientEnd": "#c1e4fa",
+          "gradientAngle": 135,
+          "outline": 0.5,
+          "size": 1.92,
+          "offsetX": 0.35,
+          "offsetY": -0.01,
+          "side": "Left",
+          "gap": 0.76,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -6,
+          "hoverRotate": 0,
+          "hoverX": -0.05,
+          "hoverY": -0.11,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "architecture studios",
+          "artwork": "layers",
+          "image": "/work/stickers/eaf23d4357717ab9.png",
+          "fill": "Solid",
+          "color": "#83c9f4",
+          "gradientEnd": "#c1e4fa",
+          "gradientAngle": 135,
+          "outline": 0.5,
+          "size": 1.52,
+          "offsetX": 0.27,
+          "offsetY": 0.03,
+          "side": "Left",
+          "gap": 0.29,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": 10,
+          "hoverRotate": 16,
+          "hoverX": 0.03,
+          "hoverY": -0.12,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        }
+      ]
+    },
+    "labs": {
+      "title": "Research labs",
+      "timing": {
+        "hold": 2.5,
+        "duration": 0.42,
+        "letterSpeed": 1
+      },
+      "faces": [
+        {
+          "label": "Montréal",
+          "artwork": "city",
+          "image": "/work/stickers/0a849ad335f9652f.png",
+          "fill": "Solid",
+          "color": "#b8a0f5",
+          "gradientEnd": "#dcd0fa",
+          "gradientAngle": 135,
+          "outline": 0,
+          "size": 1.54,
+          "offsetX": 0.08,
+          "offsetY": 0.02,
+          "side": "Left",
+          "gap": 0.42,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": 8,
+          "hoverRotate": 0,
+          "hoverX": -0.05,
+          "hoverY": -0.08,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "Boston",
+          "artwork": "flask",
+          "image": "/work/stickers/2951d4194d1f93e7.png",
+          "fill": "Solid",
+          "color": "#b8a0f5",
+          "gradientEnd": "#dcd0fa",
+          "gradientAngle": 135,
+          "outline": 0.9,
+          "size": 1.47,
+          "offsetX": 0.04,
+          "offsetY": -0.01,
+          "side": "Left",
+          "gap": 0.34,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": 8,
+          "hoverRotate": 12,
+          "hoverX": 0.01,
+          "hoverY": -0.13,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "Rotterdam",
+          "artwork": "spark",
+          "image": "/work/stickers/80ec5295942850d8.png",
+          "fill": "Solid",
+          "color": "#b8a0f5",
+          "gradientEnd": "#dcd0fa",
+          "gradientAngle": 135,
+          "outline": 0.5,
+          "size": 1.7,
+          "offsetX": 0.05,
+          "offsetY": 0,
+          "side": "Left",
+          "gap": 0.33,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -6,
+          "hoverRotate": 0,
+          "hoverX": 0,
+          "hoverY": -0.08,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "Dubai",
+          "artwork": "cursor",
+          "image": "/work/stickers/b48cf36225b40700.png",
+          "fill": "Solid",
+          "color": "#b8a0f5",
+          "gradientEnd": "#dcd0fa",
+          "gradientAngle": 135,
+          "outline": 0.8,
+          "size": 1.4,
+          "offsetX": 0.1,
+          "offsetY": 0.03,
+          "side": "Left",
+          "gap": 0.48,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": 8,
+          "hoverRotate": 0,
+          "hoverX": 0,
+          "hoverY": -0.12,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        }
+      ]
+    },
+    "products": {
+      "title": "Product design",
+      "timing": {
+        "hold": 2.5,
+        "duration": 0.42,
+        "letterSpeed": 1
+      },
+      "faces": [
+        {
+          "label": "product design",
+          "artwork": "cursor",
+          "image": "/work/stickers/453283e299e2709a.png",
+          "fill": "Solid",
+          "color": "#a8dbbc",
+          "gradientEnd": "#d4edde",
+          "gradientAngle": 135,
+          "outline": 0,
+          "size": 2.42,
+          "offsetX": 0.33,
+          "offsetY": 0.07,
+          "side": "Left",
+          "gap": 0.94,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": 3,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "product management",
+          "artwork": "layers",
+          "image": "/work/stickers/37769d2833d3b20a.png",
+          "fill": "Solid",
+          "color": "#a8dbbc",
+          "gradientEnd": "#d4edde",
+          "gradientAngle": 135,
+          "outline": 0.5,
+          "size": 1.63,
+          "offsetX": 0.03,
+          "offsetY": 0.02,
+          "side": "Left",
+          "gap": 0.44,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -8,
+          "hoverRotate": 0,
+          "hoverX": 0,
+          "hoverY": -0.11,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "design engineering",
+          "artwork": "heart",
+          "image": "/work/stickers/25e0ed42ad563b03.png",
+          "fill": "Solid",
+          "color": "#a8dbbc",
+          "gradientEnd": "#d4edde",
+          "gradientAngle": 135,
+          "outline": 0,
+          "size": 2.02,
+          "offsetX": 0.04,
+          "offsetY": 0.03,
+          "side": "Left",
+          "gap": 0.44,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": 13,
+          "hoverRotate": 0,
+          "hoverX": -0.05,
+          "hoverY": -0.09,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        }
+      ]
+    },
+    "faster": {
+      "title": "Move faster",
+      "timing": {
+        "hold": 2.5,
+        "duration": 0.42,
+        "letterSpeed": 1
+      },
+      "faces": [
+        {
+          "label": "move faster",
+          "artwork": "bolt",
+          "image": "/work/stickers/87e9e5a16a17cad8.png",
+          "fill": "Gradient",
+          "color": "#ffea9e",
+          "gradientEnd": "#db8000",
+          "gradientAngle": 0,
+          "outline": 0.5,
+          "size": 1.76,
+          "offsetX": 0.08,
+          "offsetY": 0.01,
+          "side": "Left",
+          "gap": 0.48,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -1,
+          "hoverRotate": -8,
+          "hoverX": -0.02,
+          "hoverY": -0.1,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "pivot sooner",
+          "artwork": "rocket",
+          "image": "/work/stickers/808eb12f8f2070d6.png",
+          "fill": "Solid",
+          "color": "#ffffff",
+          "gradientEnd": "#ffffff",
+          "gradientAngle": 286,
+          "outline": 0.5,
+          "size": 1.67,
+          "offsetX": 0.16,
+          "offsetY": 0.12,
+          "side": "Left",
+          "gap": 0.75,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -18,
+          "hoverRotate": -14,
+          "hoverX": -0.03,
+          "hoverY": -0.07,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        },
+        {
+          "label": "reach further",
+          "artwork": "spark",
+          "image": "/work/stickers/8a4b8ed541162d96.png",
+          "fill": "Solid",
+          "color": "#ffffff",
+          "gradientEnd": "#ffffff",
+          "gradientAngle": 286,
+          "outline": 0.5,
+          "size": 1.72,
+          "offsetX": 0.24,
+          "offsetY": 0.03,
+          "side": "Left",
+          "gap": 0.82,
+          "ends": 0.4,
+          "height": 1.28,
+          "tilt": -2,
+          "hoverRotate": 0,
+          "hoverX": -0.02,
+          "hoverY": -0.11,
+          "motion": {
+            "landing": "Spin",
+            "letters": "Hop"
+          }
+        }
+      ]
+    }
+  }
+}
