@@ -1103,5 +1103,80 @@
       "hackathon": "We won the design hackathon! 🏆 ",
       "incubator": "And then got accepted into an incubator!  🚀"
     }
+  },
+  "MomoThumbnail": {
+    "copy": {
+      "watchText": "Morning walk, calmer day. Make it a habit?"
+    },
+    "timing": {
+      "sleepStart": 2110,
+      "transition": "cut"
+    },
+    "desktop": {
+      "watch": {
+        "x": 86,
+        "y": 285,
+        "scale": 1.05
+      },
+      "phone": {
+        "top": -248,
+        "width": 276
+      },
+      "momo": {
+        "y": 229,
+        "lineEndLeft": 0.3,
+        "lineEndRight": 0.295
+      },
+      "states": {
+        "asleep": {
+          "y": -9,
+          "scale": 0.92
+        }
+      }
+    },
+    "mobile": {
+      "watch": {
+        "y": 392
+      },
+      "phone": {
+        "x": 62,
+        "top": -142
+      },
+      "momo": {
+        "lineEndLeft": 0.305,
+        "lineEndRight": 0.295
+      },
+      "states": {
+        "asleep": {
+          "y": -8,
+          "scale": 0.92
+        }
+      }
+    },
+    "pillText": {
+      "inputs": {
+        "Movement": 0.75,
+        "HRV": 0.75,
+        "Breathing": 0.5,
+        "Sleep": 0.5,
+        "Voice": 0.25,
+        "Journal": 0.25
+      },
+      "outputs": {
+        "Nudge": 0.5,
+        "Check-in": 0.75,
+        "Reflection": 0.75,
+        "Insights": 0.75,
+        "Goals": 0.5,
+        "Tracking": 0.5
+      }
+    },
+    "watchLogo": {
+      "scale": 0.81,
+      "y": 10.5,
+      "color": "#ffffff",
+      "outlineStroke": 4.2,
+      "textGapX": 3.8
+    }
   }
 }

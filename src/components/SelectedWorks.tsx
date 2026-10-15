@@ -23,7 +23,7 @@ import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
 import { HarvardMitCard } from './HarvardMitCard'
 import { FiloCard } from './FiloCard'
 import { MeshCard } from './MeshCard'
-import { MomoCard } from './MomoCard'
+import { MomoThumb } from './MomoThumb'
 import { useProjectOpen } from '../features/projectOpen/useProjectOpen'
 import { PATH_BY_ROUTE } from '../lib/router'
 import './SelectedWorks.css'
@@ -411,7 +411,7 @@ export function SelectedWorks() {
                     />
                   )}
                   {work.id === 'momo' && <MeshCard />}
-                  {work.id === 'momo' && <MomoCard />}
+                  {work.id === 'momo' && <MomoThumb />}
                   {work.id === 'filo' && <FiloCard />}
                   {work.id === 'harvard-mit' && <HarvardMitCard />}
                   <div className="card-shade" />
