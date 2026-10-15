@@ -34,6 +34,12 @@
   color: var(--stone-600);
   white-space: pre-wrap;
 }
+.about__story[data-align='center'] {
+  text-align: center;
+}
+.about__story[data-align='center'] :is(.about__heading, .about__text) {
+  margin-inline: auto;
+}
 
 .is-editable {
   outline: 1px dashed transparent;
