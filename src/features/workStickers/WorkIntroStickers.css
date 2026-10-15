@@ -4,8 +4,22 @@
 
 /* Lines break only where David wrote them; each line may run past the column's max-width. */
 .hero__intro.work-intro-stickers__p {
+  position: relative; /* anchors the highlight band; no z-index, so it stays in the page's blend */
   font-size: var(--intro-size-d, var(--text-body));
   line-height: var(--intro-leading, 1.2);
+}
+/* Selection band (introSelection.ts): white blocks in `difference`, like the site's .selection-hl,
+   above the text and pills but under the stickers, so the artwork keeps its colors. */
+.ws-hl {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+.ws-hl > span {
+  position: absolute;
+  background: #fff;
 }
 @media (max-width: 640px) {
   .hero__intro.work-intro-stickers__p {
@@ -49,7 +63,6 @@
   white-space: nowrap;
   text-align: left;
   cursor: pointer;
-  isolation: isolate;
   touch-action: manipulation;
   transition:
     padding 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -80,6 +93,7 @@
 }
 .ws-pill-art .sticker-art {
   position: absolute;
+  z-index: 2; /* above the selection band (.ws-hl); the pill has no stacking context of its own */
   top: 50%;
   left: calc(var(--ends, 0em) - 0.05em);
   width: 1.2em;
