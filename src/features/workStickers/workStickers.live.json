@@ -101,9 +101,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": -4,
-          "hoverRotate": 0,
-          "hoverX": -0.01,
-          "hoverY": -0.07,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -126,9 +126,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": -6,
-          "hoverRotate": 0,
-          "hoverX": -0.05,
-          "hoverY": -0.11,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -151,9 +151,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": 10,
-          "hoverRotate": 16,
-          "hoverX": 0.03,
-          "hoverY": -0.12,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -172,7 +172,7 @@
         {
           "label": "Montréal",
           "artwork": "city",
-          "image": "/work/stickers/0a849ad335f9652f.png",
+          "image": "/work/stickers/49fee5fae93fe193.png",
           "fill": "Solid",
           "color": "#b8a0f5",
           "gradientEnd": "#dcd0fa",
@@ -186,9 +186,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": 8,
-          "hoverRotate": 0,
-          "hoverX": -0.05,
-          "hoverY": -0.08,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -211,9 +211,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": 8,
-          "hoverRotate": 12,
-          "hoverX": 0.01,
-          "hoverY": -0.13,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -236,9 +236,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": -6,
-          "hoverRotate": 0,
-          "hoverX": 0,
-          "hoverY": -0.08,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -247,23 +247,23 @@
         {
           "label": "Dubai",
           "artwork": "cursor",
-          "image": "/work/stickers/b48cf36225b40700.png",
+          "image": "/work/stickers/e46d30c50ae510e7.png",
           "fill": "Solid",
           "color": "#b8a0f5",
           "gradientEnd": "#dcd0fa",
           "gradientAngle": 135,
           "outline": 0.8,
-          "size": 1.4,
+          "size": 1.44,
           "offsetX": 0.1,
           "offsetY": 0.03,
           "side": "Left",
-          "gap": 0.48,
+          "gap": 0.24,
           "ends": 0.4,
           "height": 1.28,
-          "tilt": 8,
-          "hoverRotate": 0,
-          "hoverX": 0,
-          "hoverY": -0.12,
+          "tilt": 3,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -321,8 +321,8 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": 13,
-          "hoverRotate": 0,
-          "hoverX": -0.05,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
           "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
@@ -346,9 +346,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": -8,
-          "hoverRotate": 0,
-          "hoverX": 0,
-          "hoverY": -0.11,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -381,9 +381,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": -1,
-          "hoverRotate": -8,
+          "hoverRotate": 1,
           "hoverX": -0.02,
-          "hoverY": -0.1,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -406,9 +406,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": -18,
-          "hoverRotate": -14,
-          "hoverX": -0.03,
-          "hoverY": -0.07,
+          "hoverRotate": 1,
+          "hoverX": -0.02,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
@@ -431,9 +431,9 @@
           "ends": 0.4,
           "height": 1.28,
           "tilt": -2,
-          "hoverRotate": 0,
+          "hoverRotate": 1,
           "hoverX": -0.02,
-          "hoverY": -0.11,
+          "hoverY": -0.09,
           "motion": {
             "landing": "Spin",
             "letters": "Hop"
