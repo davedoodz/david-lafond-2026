@@ -42,8 +42,6 @@
 .filo-films--scale .filo-film--detail { max-width: 300px; }
 .filo-films--handoff .filo-film:first-child { align-self: start; margin-top: 30px; }
 .filo-films--handoff .filo-film:last-child { align-self: end; margin-bottom: 44px; }
-.filo-films__pause { position: absolute; right: 0; bottom: 0; width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #17191818; border-radius: 50%; background: transparent; color: #7c827b; cursor: pointer; }
-.filo-films__pause:hover, .filo-films__pause:focus-visible { color: #171918; border-color: #17191855; }
 @media (max-width: 1100px) {
   .filo-films__grid { gap: 30px; }
   .filo-films--evidence .filo-films__grid { gap: 48px 28px; }
@@ -60,6 +58,4 @@
   .filo-films--hero .filo-films__grid { grid-template-columns: 1.1fr .9fr; gap: 18px; }
   .filo-films--hero .filo-film { max-width: 100%; }
   .filo-films--hero .filo-film--detail { translate: 0 15px; }
-  .filo-films__pause { right: 4px; }
 }
-@media (prefers-reduced-motion: reduce) { .filo-films__pause { display: none; } }

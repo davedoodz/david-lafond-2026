@@ -9,7 +9,7 @@
  *
  * Draws only while the card is on screen; reduced motion shows one still frame.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { useTuning } from '../tuning/useTuning'
 
 type Tuple = [number, number, number, number]
@@ -27,7 +27,13 @@ const CONFIG = {
   /** Gap between tiles as a share of the tile. */
   gap: [0.12, 0, 0.5, 0.01] as Tuple,
   tileRadius: [0.1, 0, 0.5, 0.01] as Tuple,
-  tileOpacity: [0.6, 0, 1, 0.01] as Tuple,
+  /** "Linen glass" (studio/filo-card-palettes.html): frosted-look tiles over a linen field with two drifting glows. */
+  glass: {
+    fill: [0.17, 0, 0.9, 0.01] as Tuple,
+    edge: [0.42, 0, 1, 0.01] as Tuple,
+    glowA: { type: 'color' as const, default: '#D6C7B4' },
+    glowB: { type: 'color' as const, default: '#C3B19C' },
+  },
 }
 
 const SPRITES = [
@@ -169,7 +175,6 @@ export function FiloCard() {
 
       wall.style.transform = `rotate(${cur.tilt}deg) scale(${cur.zoom})`
       wall.style.setProperty('--tile-radius', `${tile * cur.tileRadius}px`)
-      wall.style.setProperty('--tile-alpha', String(cur.tileOpacity))
       tiles.forEach((tl, i) => {
         if (!tl.near) {
           tl.el.style.visibility = 'hidden'
@@ -216,7 +221,20 @@ export function FiloCard() {
   }, [])
 
   return (
-    <div className="works__mesh ecowall" aria-hidden="true">
+    <div
+      className="works__mesh ecowall"
+      aria-hidden="true"
+      style={
+        {
+          '--glass-fill': v.glass.fill,
+          '--glass-edge': v.glass.edge,
+          '--glow-a': v.glass.glowA,
+          '--glow-b': v.glass.glowB,
+        } as CSSProperties
+      }
+    >
+      <span className="ecowall__glow ecowall__glow--a" />
+      <span className="ecowall__glow ecowall__glow--b" />
       <div ref={wallRef} className="ecowall__wall" />
     </div>
   )
