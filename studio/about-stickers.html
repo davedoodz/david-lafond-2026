@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>A bit of a misfit · Sticker studio</title>
+  <link rel="stylesheet" href="/src/studio/workStickers.css" />
+  <link rel="stylesheet" href="/src/studio/aboutStickers.css" />
+</head>
+<body class="story-study">
+  <header class="studio-header">
+    <a href="/about">David Lafond <span>/ My story</span></a>
+    <a class="edition" href="/studio/work-stickers.html">Work intro ↗</a>
+    <button id="toggle-editor" aria-expanded="true" aria-controls="editor">Hide controls</button>
+  </header>
+  <main class="workspace">
+    <section class="preview" aria-label="Personal story preview">
+      <div class="preview-meta"><span class="live-dot"></span> A few things about me <span class="preview-rule"></span><span>Sticker study · 02</span></div>
+      <div id="intro" class="intro" aria-label="David’s personal story">
+        <p>I’ve always felt like a bit of a <button class="sticker" data-slot="misfit" aria-describedby="interaction-hint">misfit</button>.</p>
+        <p>Curious, restless, and never very good at accepting “that’s just how it is.”</p>
+        <p>That curiosity took me from pre-med to <button class="sticker" data-slot="architecture" aria-describedby="interaction-hint">architecture</button>, designing across continents, and eventually in world class <button class="sticker" data-slot="labs" aria-describedby="interaction-hint">research labs</button>.</p>
+        <p>I’ve changed directions more than once, usually because I found something new I couldn’t stop thinking about.</p>
+        <p>Now, that something is <button class="sticker" data-slot="products" aria-describedby="interaction-hint">product design</button>.</p>
+        <p>I’m still learning, still <button class="sticker" data-slot="experimenting" aria-describedby="interaction-hint">experimenting</button>, and definitely still figuring things out.</p>
+        <p>But I’m excited to put my head down, do the work, and see where this <button class="sticker" data-slot="chapter" aria-describedby="interaction-hint">next chapter</button> takes me.</p>
+        <p>A la vida,</p>
+        <p>- David</p>
+      </div>
+      <div class="preview-footer">
+        <p id="interaction-hint">Click a highlighted phrase to turn over its sticker. Press E or use the pencil to edit it. Use Edit text to rewrite any of the story.</p>
+        <div class="footer-actions"><button id="reset-copy" hidden>Reset text</button><button id="edit-copy" aria-pressed="false" aria-controls="intro">Edit text</button><button id="cycle-all">Turn all stickers <span aria-hidden="true">↗</span></button></div>
+      </div>
+      <div class="preview-bottom"><span>A story that’s still being written.</span><span>Beatrice / inline motion</span></div>
+    </section>
+    <aside id="editor" class="editor" aria-label="Sticker customization">
+      <div class="editor-heading"><div><span class="eyebrow">MY STORY</span><h1>Make it yours.</h1></div><button id="export" title="Download your current sticker settings">Export</button></div>
+      <div class="editor-tabs" role="tablist" aria-label="Customization tools">
+        <button id="dial-tab" role="tab" aria-selected="true" aria-controls="dial-panel">DialKit</button>
+        <button id="graphical-tab" role="tab" aria-selected="false" aria-controls="graphical-panel" tabindex="-1">GraphicalUI</button>
+      </div>
+      <section id="dial-panel" role="tabpanel" aria-labelledby="dial-tab">
+        <p class="editor-note">Your original story is Face 1. Set the global landing and letter animations below. Open a sticker to change its words, artwork, gradient, tilt, and its own animation.</p>
+        <div id="slot-shortcuts" class="slot-shortcuts" role="group" aria-label="Open a sticker editor"></div>
+        <div id="dial-root"></div>
+      </section>
+      <section id="graphical-panel" role="tabpanel" aria-labelledby="graphical-tab" hidden>
+        <div class="theme-bridge">
+          <h2>Your theme, your stickers.</h2>
+          <p>Build a palette in Graphical, then paste the CSS custom properties from your theme export here. Pick a target and apply a color.</p>
+          <a class="external-link" href="https://www.graphicalui.com/marketing/preview?theme=atlas&amp;tab=theme&amp;mode=light" target="_blank" rel="noopener noreferrer">Open Graphical’s theme editor ↗</a>
+          <label for="theme-css">Graphical theme CSS</label>
+          <textarea id="theme-css" rows="7" spellcheck="false" placeholder=":root {&#10;  --my-accent: #b8a0f5;&#10;  --my-surface: #f6f6f6;&#10;}"></textarea>
+          <button id="read-theme" class="primary-button">Read color tokens</button>
+          <label for="token-target">Apply a color to</label>
+          <select id="token-target"><option value="appearance.background">Page background</option><option value="appearance.text">Story text</option><option value="appearance.pill">Pill background</option></select>
+          <div id="token-colors" class="token-colors"></div>
+          <p class="bridge-disclosure">This is a local theme-import bridge, not an embedded Graphical editor. Artwork and animation are edited in DialKit.</p>
+        </div>
+      </section>
+      <p id="status" role="status" class="status">Every edit saves to studio/about-stickers.saved.json, so a refresh keeps it. Export saves a JSON copy, including uploaded artwork. The loop turns one pill at a time; set each pill's timing in its editor. It stops for reduced motion. Your live portfolio is unchanged.</p>
+    </aside>
+  </main>
+  <script id="sticker-config" type="application/json">
+  {
+    "id": "about-stickers",
+    "theme": "light",
+    "appearance": { "background": "#f6f6f6", "text": "#666662", "pill": "#e8e8e5", "textSize": 30, "lineHeight": 1.45 },
+    "slots": {
+      "misfit": { "title": "Misfit", "color": "#edac72", "tilt": -10, "labels": ["misfit", "daydreamer", "explorer"], "icons": ["spark", "orbit", "globe"] },
+      "architecture": { "title": "Architecture", "color": "#87badb", "tilt": 7, "labels": ["architecture", "spatial design", "built environments"], "icons": ["city", "layers", "globe"] },
+      "labs": { "title": "Research labs", "color": "#b8a0f5", "tilt": -8, "labels": ["research labs", "research studios", "innovation labs"], "icons": ["orbit", "flask", "spark"] },
+      "products": { "title": "Product design", "color": "#a8c9aa", "tilt": 7, "labels": ["product design", "digital products", "human experiences"], "icons": ["cursor", "layers", "heart"] },
+      "experimenting": { "title": "Experimenting", "color": "#e5bc67", "tilt": -7, "labels": ["experimenting", "exploring", "making"], "icons": ["flask", "globe", "spark"] },
+      "chapter": { "title": "Next chapter", "color": "#dfaaa7", "tilt": 8, "labels": ["next chapter", "new direction", "next adventure"], "icons": ["layers", "cursor", "globe"] }
+    }
+  }
+  </script>
+  <script type="module" src="/src/studio/workStickers.js"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@ import { useRef, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
+import { DEFAULT_INTRO_TEXT, WorkIntroStickers } from '../features/workStickers/WorkIntroStickers'
 import { Signature } from '../features/signature/Signature'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
@@ -12,24 +13,28 @@ const CONFIG = {
   headlineLead: { type: 'text' as const, default: 'I’m' },
   headlineName: { type: 'text' as const, default: 'David Lafond' },
   headlineTagline: { type: 'text' as const, default: 'a product designer.' },
-  intro: {
-    type: 'text' as const,
-    default: 'I’ve led interdisciplinary creative teams – from global smart city projects to world-class research labs.',
-  },
-  intro2: {
-    type: 'text' as const,
-    default: 'Now, I’m bringing this experience to product design — where ideas can move faster and reach further.',
-  },
+  /** Sticker intro paragraphs. {cities} {labs} {products} {faster} place the pills; Enter breaks a line. */
+  introText1: { type: 'text' as const, default: DEFAULT_INTRO_TEXT[0], placeholder: '{cities} {labs} {products} {faster} = pills' },
+  introText2: { type: 'text' as const, default: DEFAULT_INTRO_TEXT[1], placeholder: '{cities} {labs} {products} {faster} = pills' },
   /** Name lives in the headline; this line sits directly above the signature. */
   role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
   /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
   align: {
     text: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
+    /** Sticker intro only: left-aligned with the text block, or centred on it. */
+    intro: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     x: [0, -400, 400, 1] as [number, number, number, number],
     xMobile: [0, -200, 200, 1] as [number, number, number, number],
   },
+  /** Sticker intro text size (px); pills and stickers scale with it. */
+  introSize: {
+    desktop: [20, 12, 40, 1] as [number, number, number, number],
+    mobile: [14, 10, 32, 1] as [number, number, number, number],
+  },
   /** Vertical gaps between the hero text elements (px). */
   spacing: {
+    /** Line height of the sticker intro lines (× font size). */
+    introLineHeight: [1.2, 1, 2.2, 0.01] as [number, number, number, number],
     titleToIntroDesktop: [30, 0, 200, 1] as [number, number, number, number],
     introToIntroDesktop: [24, 0, 200, 1] as [number, number, number, number],
     introToRoleDesktop: [42, 0, 200, 1] as [number, number, number, number],
@@ -63,6 +68,7 @@ export function WorkPage() {
               ...entrance.style,
               '--align-x': `${t.align.x}px`,
               '--align-x-m': `${t.align.xMobile}px`,
+              '--intro-leading': String(t.spacing.introLineHeight),
               '--gap-title-intro-d': `${t.spacing.titleToIntroDesktop}px`,
               '--gap-intro-intro-d': `${t.spacing.introToIntroDesktop}px`,
               '--gap-intro-role-d': `${t.spacing.introToRoleDesktop}px`,
@@ -80,8 +86,12 @@ export function WorkPage() {
             <br />
             <span className="hero__tagline">{t.headlineTagline}</span>
           </h1>
-          <p className="hero__intro" data-enter="1" data-selectable>{t.intro}</p>
-          <p className="hero__intro" data-enter="1" data-selectable>{t.intro2}</p>
+          <WorkIntroStickers
+            key={`${t.introText1}\u0000${t.introText2}`}
+            text={[t.introText1, t.introText2]}
+            align={t.align.intro === 'center' ? 'center' : 'left'}
+            size={t.introSize}
+          />
           <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />
         </section>

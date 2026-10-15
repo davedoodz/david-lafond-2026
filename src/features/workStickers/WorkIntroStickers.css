@@ -1,0 +1,168 @@
+/* Live Work-page sticker pills. Mirrors src/studio/workStickers.css's .sticker rules, scoped under
+ * .ws-pill so this never depends on the studio's editor styles. Sizes stay in em so pills scale
+ * with the hero font (see WorkPage.css's --text-body). */
+
+/* Lines break only where David wrote them; each line may run past the column's max-width. */
+.hero__intro.work-intro-stickers__p {
+  font-size: var(--intro-size-d, var(--text-body));
+  line-height: var(--intro-leading, 1.2);
+}
+@media (max-width: 640px) {
+  .hero__intro.work-intro-stickers__p {
+    font-size: var(--intro-size-m, var(--text-body));
+  }
+}
+.hero__intro.work-intro-stickers__p:not([data-flow='wrap']) {
+  max-width: none;
+}
+.ws-line {
+  display: block;
+  width: max-content;
+  white-space: nowrap;
+}
+/* Centred: a column flexbox centres each line, and lines wider than the column spill evenly both ways. */
+.hero__intro.work-intro-stickers__p[data-align='center'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.ws-pill {
+  --accent: #b8d0ee;
+  --art-pad: calc(1.2em + var(--gap, 0em) + var(--ends, 0em));
+  --text-pad: calc(0.15em + var(--ends, 0em));
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  height: var(--pill-height, 1.28em);
+  max-width: 100%;
+  padding: 0 var(--text-pad) 0 var(--art-pad);
+  border: 0;
+  border-radius: 999px;
+  background: var(--pill, #2b2b2b);
+  color: inherit;
+  font: inherit;
+  line-height: var(--pill-height, 1.28em);
+  letter-spacing: inherit;
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+  isolation: isolate;
+  touch-action: manipulation;
+  transition:
+    padding 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    line-height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.25s ease-out;
+}
+.ws-pill[data-side='right'] {
+  padding: 0 var(--art-pad) 0 var(--text-pad);
+}
+.ws-pill:hover,
+.ws-pill:focus-visible {
+  background: color-mix(in srgb, var(--pill, #2b2b2b), var(--tint, var(--accent)) 14%);
+}
+.ws-pill:focus-visible {
+  border-radius: 999px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-pill {
+    transition: none;
+  }
+}
+
+.ws-pill-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ws-pill-art .sticker-art {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--ends, 0em) - 0.05em);
+  width: 1.2em;
+  height: 1.2em;
+  margin-top: -0.6em;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--tilt)) scale(var(--icon-scale, 1));
+  filter: drop-shadow(0 2px 1px #0005);
+}
+.ws-pill-art .sticker-art[data-side='right'] {
+  left: auto;
+  right: calc(var(--ends, 0em) - 0.05em);
+}
+.ws-pill-art .sticker-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.ws-pill-art .sticker-art img {
+  --edge: calc(var(--outline, 2.5) * 0.025em);
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(var(--edge) 0 0 #f7f5f0)
+    drop-shadow(calc(var(--edge) * -1) 0 0 #f7f5f0)
+    drop-shadow(0 var(--edge) 0 #f7f5f0)
+    drop-shadow(0 calc(var(--edge) * -1) 0 #f7f5f0);
+}
+.ws-pill-art .sticker-art .die-cut {
+  stroke: #f7f5f0;
+  stroke-width: var(--outline, 2.5);
+  paint-order: stroke fill;
+}
+.ws-pill-art .sticker-art .art-fill {
+  fill: var(--art-fill, var(--accent));
+}
+.ws-pill-art .sticker-art .art-detail {
+  color: color-mix(in srgb, var(--accent) 35%, #152330);
+}
+.ws-pill-art .sticker-art .art-light {
+  color: #fff;
+}
+
+.ws-pill-text {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  max-width: 100%;
+  overflow: clip;
+}
+/* Letter presets that travel outside the text's own line box need vertical room to breathe. */
+.ws-pill-text:is(
+    [data-letters='Wave'],
+    [data-letters='Arc'],
+    [data-letters='Zoom'],
+    [data-letters='Elastic'],
+    [data-letters='Bloom'],
+    [data-letters='Sway'],
+    [data-letters='Hop'],
+    [data-letters='Punch'],
+    [data-letters='Tilt'],
+    [data-letters='Melt'],
+    [data-letters='Twirl'],
+    [data-letters='Spin'],
+    [data-letters='Tumble'],
+    [data-letters='Pinwheel'],
+    [data-letters='Barrel'],
+    [data-letters='Hinge']
+  ) {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+.ws-pill-text:is([data-letters='Flip'], [data-letters='Hinge'], [data-letters='Turn'], [data-letters='Coin'], [data-letters='Barrel'], [data-letters='Domino']) {
+  perspective: 4em;
+}
+.ws-pill-text .sticker-char {
+  display: inline-block;
+  white-space: pre;
+}
+.ws-pill-text .sticker-ghost {
+  position: absolute;
+  pointer-events: none;
+}

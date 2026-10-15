@@ -2,6 +2,8 @@ import { useLayoutEffect, type RefObject } from 'react'
 
 /** Non-text boxes that count toward a block's width (buttons, signature). */
 const BOX_SELECTOR = '.chat, .sig-root'
+/** Blocks whose content changes on its own (the Work sticker intro) never resize or move the column. */
+const IGNORE_SELECTOR = '[data-fit-ignore]'
 
 /**
  * Shrink-wraps every `.column` inside `root` to the widest rendered text line,
@@ -31,7 +33,7 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
         let right = left
         const walker = document.createTreeWalker(col, NodeFilter.SHOW_TEXT)
         for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-          if (!node.textContent?.trim()) continue
+          if (!node.textContent?.trim() || node.parentElement?.closest(IGNORE_SELECTOR)) continue
           range.selectNodeContents(node)
           for (const rect of range.getClientRects()) right = Math.max(right, rect.right)
         }
@@ -67,7 +69,7 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
     const mutations = new MutationObserver((records) => {
       const inColumn = records.some((r) => {
         const el = r.target instanceof Element ? r.target : r.target.parentElement
-        return Boolean(el?.closest('.column'))
+        return Boolean(el?.closest('.column') && !el.closest(IGNORE_SELECTOR))
       })
       if (inColumn) schedule()
     })
