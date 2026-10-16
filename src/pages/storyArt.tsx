@@ -42,6 +42,26 @@ export const STORY_ART_TEXT: StoryArtText = {
   solutionCheckIn: "check-in, right then",
 };
 
+/**
+ * Seconds each step of the three diagrams takes at row speed 1 (DialKit story → timing). Steps run
+ * one after another, so lengthening one pushes every later step back. Row speed still scales all.
+ */
+export type StoryTiming = {
+  problem: { curve: number; icon: number; line: number; phone: number };
+  /** `stagger`: gap between the three converging lines starting. */
+  opportunity: { lines: number; stagger: number; dot: number };
+  /** `beat`: the watch's one heartbeat · `hold`: watch on screen after it appears · `fade`: watch leaving. */
+  solution: { curve: number; dot: number; line: number; watch: number; beat: number; hold: number; fade: number; phoneLine: number; phone: number };
+};
+export const STORY_TIMING: StoryTiming = {
+  problem: { curve: 1.6, icon: 0.5, line: 0.6, phone: 0.7 },
+  opportunity: { lines: 1.6, stagger: 0.35, dot: 0.5 },
+  solution: { curve: 1.6, dot: 0.4, line: 0.5, watch: 0.5, beat: 1.6, hold: 1.78, fade: 0.42, phoneLine: 0.6, phone: 0.7 },
+};
+
+/** `--at` (start) and `--dur` for one step. */
+const step = (at: number, dur: number) => ({ "--at": `${at}s`, "--dur": `${dur}s` }) as CSSProperties;
+
 const label = (
   x: number,
   y: number,
@@ -185,14 +205,15 @@ function Stress({ x, y, s = 1, icon = "bolt" }: { x: number; y: number; s?: numb
 
 /**
  * Reveals its children by growing a mask rect (transform only): `up` from the box's bottom edge,
- * `right` from its left edge. Starts `at` seconds after the row's curve starts (motion: draw).
+ * `right` from its left edge. Starts `at` seconds after the row's curve starts and takes `dur`
+ * (motion: draw).
  */
-function Wipe({ box: [x, y, w, h], from, at, children }: { box: [number, number, number, number]; from: "up" | "right"; at: number; children: ReactNode }) {
+function Wipe({ box: [x, y, w, h], from, at, dur, children }: { box: [number, number, number, number]; from: "up" | "right"; at: number; dur: number; children: ReactNode }) {
   const id = `sa-wipe-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <>
       <mask id={id} maskUnits="userSpaceOnUse" x={x} y={y} width={w} height={h}>
-        <rect className={`sa-wipe sa-wipe--${from}`} x={x} y={y} width={w} height={h} fill="#fff" style={{ "--at": `${at}s` } as CSSProperties} />
+        <rect className={`sa-wipe sa-wipe--${from}`} x={x} y={y} width={w} height={h} fill="#fff" style={step(at, dur)} />
       </mask>
       <g mask={`url(#${id})`}>{children}</g>
     </>
@@ -200,7 +221,11 @@ function Wipe({ box: [x, y, w, h], from, at, children }: { box: [number, number,
 }
 
 /** Problem: the feeling peaks, and the app only opens after it has faded. */
-export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?: StoryArtText; peakIcon?: string }) {
+export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt", timing = STORY_TIMING.problem }: { text?: StoryArtText; peakIcon?: string; timing?: StoryTiming["problem"] }) {
+  const t = timing;
+  const iconAt = t.curve;
+  const lineAt = iconAt + t.icon;
+  const phoneAt = lineAt + t.line;
   return (
     <svg
       viewBox="0 0 240 160"
@@ -210,6 +235,7 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?
       <path d="M14 136 H226" stroke={STONE} strokeWidth={1} opacity={0.5} />
       <path
         className="sa-b sa-draw"
+        style={step(0, t.curve)}
         pathLength={1}
         d={CURVE}
         fill="none"
@@ -218,11 +244,11 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?
         strokeLinecap="round"
       />
       {label(88, 20, text.problemMoment, STONE, "end")}
-      <g className="sa-after" style={{ "--at": "1.6s" } as CSSProperties}>
+      <g className="sa-after" style={step(iconAt, t.icon)}>
         <Stress x={104} y={16} icon={peakIcon} />
       </g>
       {/* After the curve: the peak icon pops, then the dotted line draws up, then the phone appears. */}
-      <Wipe box={[194, 58, 12, 74]} from="up" at={2.1}>
+      <Wipe box={[194, 58, 12, 74]} from="up" at={lineAt} dur={t.line}>
         <path
           d="M200 128 V62"
           stroke={INK}
@@ -231,7 +257,7 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?
           strokeLinecap="round"
         />
       </Wipe>
-      <g className="sa-after sa-after--rise" style={{ "--at": "2.7s" } as CSSProperties}>
+      <g className="sa-after sa-after--rise" style={step(phoneAt, t.phone)}>
         <Phone x={200} y={38} s={0.8} />
       </g>
       {label(200, 154, text.problemOpened, INK)}
@@ -240,7 +266,15 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt" }: { text?
 }
 
 /** Solution: the same curve, met at its peak by a check-in on the wrist. */
-export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) {
+export function SolutionArt({ text = STORY_ART_TEXT, timing = STORY_TIMING.solution }: { text?: StoryArtText; timing?: StoryTiming["solution"] }) {
+  const t = timing;
+  const dotAt = t.curve;
+  const lineAt = dotAt + t.dot;
+  const watchAt = lineAt + t.line;
+  const beatAt = watchAt + t.watch;
+  const fadeAt = beatAt + t.hold;
+  const phoneLineAt = fadeAt + t.fade;
+  const phoneAt = phoneLineAt + t.phoneLine;
   return (
     <svg
       viewBox="0 0 240 160"
@@ -250,6 +284,7 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
       <path d="M14 136 H226" stroke={STONE} strokeWidth={1} opacity={0.5} />
       <path
         className="sa-b sa-draw"
+        style={step(0, t.curve)}
         pathLength={1}
         d={CURVE}
         fill="none"
@@ -258,7 +293,7 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
         strokeLinecap="round"
       />
       {/* After the curve: the peak dot, then the dotted line draws left to right, then the watch. */}
-      <g className="sa-after" style={{ "--at": "1.6s" } as CSSProperties}>
+      <g className="sa-after" style={step(dotAt, t.dot)}>
         <circle
           className="sa-b sa-ping"
           cx={104}
@@ -269,8 +304,8 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
         />
         <circle className="sa-b" cx={104} cy={34} r={5} fill={BLUE} />
       </g>
-      <g className="sa-solution-watch">
-      <Wipe box={[110, 32, 44, 30]} from="right" at={2}>
+      <g className="sa-solution-watch" style={{ "--fade-at": `${fadeAt}s`, "--fade": `${t.fade}s`, "--beat-at": `${beatAt}s`, "--beat": `${t.beat}s` } as CSSProperties}>
+      <Wipe box={[110, 32, 44, 30]} from="right" at={lineAt} dur={t.line}>
         <path
           d="M150 58 Q128 44 114 38"
           fill="none"
@@ -280,15 +315,15 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
           strokeLinecap="round"
         />
       </Wipe>
-      <g className="sa-after" style={{ "--at": "2.5s" } as CSSProperties}>
+      <g className="sa-after" style={step(watchAt, t.watch)}>
         <Watch x={164} y={64} s={0.75} />
       </g>
       </g>
-      <g className="sa-solution-phone">
-        <Wipe box={[136, 43, 12, 47]} from="up" at={5.2}>
+      <g className="sa-solution-phone" style={{ "--show-at": `${phoneLineAt}s` } as CSSProperties}>
+        <Wipe box={[136, 43, 12, 47]} from="up" at={phoneLineAt} dur={t.phoneLine}>
           <path d="M142 88 V46" stroke={INK} strokeWidth={1.4} strokeDasharray="2 4" strokeLinecap="round" />
         </Wipe>
-        <g className="sa-after sa-after--rise" style={{ "--at": "5.8s" } as CSSProperties}>
+        <g className="sa-after sa-after--rise" style={step(phoneAt, t.phone)}>
           <Phone x={142} y={24} s={0.8}>
             <Voice x={0} y={2} s={0.42} />
           </Phone>
@@ -300,7 +335,8 @@ export function SolutionArt({ text = STORY_ART_TEXT }: { text?: StoryArtText }) 
 }
 
 /** Opportunity: the three technologies, either as three tiles or converging on the moment. */
-export function OpportunityArt({ variant, text = STORY_ART_TEXT }: { variant: string; text?: StoryArtText }) {
+export function OpportunityArt({ variant, text = STORY_ART_TEXT, timing = STORY_TIMING.opportunity }: { variant: string; text?: StoryArtText; timing?: StoryTiming["opportunity"] }) {
+  const t = timing;
   if (variant === "converge")
     return (
       <svg
@@ -316,7 +352,7 @@ export function OpportunityArt({ variant, text = STORY_ART_TEXT }: { variant: st
             key={y}
             className="sa-b sa-draw"
             pathLength={1}
-            style={{ "--i": i } as CSSProperties}
+            style={step(i * t.stagger, t.lines)}
             d={`M58 ${y} C130 ${y} 140 80 196 80`}
             fill="none"
             stroke={BLUE}
@@ -324,9 +360,8 @@ export function OpportunityArt({ variant, text = STORY_ART_TEXT }: { variant: st
             strokeLinecap="round"
           />
         ))}
-        {/* The moment appears once all three lines have converged. Lines end at 0.7s + 1.6s;
-            the last line (--i 2) ends at 0.7s + 1.6s. */}
-        <g className="sa-after" style={{ "--at": "2.3s" } as CSSProperties}>
+        {/* The moment appears once all three lines have converged: the last starts two staggers in. */}
+        <g className="sa-after" style={step(2 * t.stagger + t.lines, t.dot)}>
           <circle
             className="sa-b sa-ping"
             cx={206}
