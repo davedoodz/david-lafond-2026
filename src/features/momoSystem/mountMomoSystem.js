@@ -906,13 +906,13 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
 
     /** Arrow-tip entrance, timed to the moment its line finishes drawing. `fade` is the studio original. */
     function playTip(head, paint, op, pts, delay, draw) {
-      const blue = { [paint]: BLUE }
+      // Colour comes from CSS (.edge.is-blue → --momo), so the tip is the same blue while it enters as at rest.
       if (tipAnimation === 'fade' || !TIP_ANIMATIONS.includes(tipAnimation) || !pts) {
-        head.animate([{ opacity: 0, ...blue }, { opacity: 0, ...blue, offset: 0.85 }, { opacity: op, ...blue }], { duration: draw, delay, fill: 'backwards' })
+        head.animate([{ opacity: 0 }, { opacity: 0, offset: 0.85 }, { opacity: op }], { duration: draw, delay, fill: 'backwards' })
         return
       }
       if (tipAnimation === 'instant') {
-        head.animate([{ opacity: 0, ...blue }, { opacity: op, ...blue }], { duration: 1, delay: delay + draw, fill: 'backwards' })
+        head.animate([{ opacity: 0 }, { opacity: op }], { duration: 1, delay: delay + draw, fill: 'backwards' })
         return
       }
       // Scale and slide around the tip point, along the arrow's final run.
@@ -927,7 +927,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         slide: [{ opacity: 0, transform: T(1, 16) }, { opacity: op, transform: T(1) }],
         bounce: [{ opacity: 0, transform: T(0) }, { opacity: op, transform: T(1.35), offset: 0.4 }, { opacity: op, transform: T(0.85), offset: 0.65 }, { opacity: op, transform: T(1.08), offset: 0.85 }, { opacity: op, transform: T(1) }],
       }[tipAnimation]
-      head.animate(frames.map((f) => ({ ...f, ...blue })), {
+      head.animate(frames, {
         duration: (tipAnimation === 'bounce' ? 620 : 380) / motionSpeed,
         delay: delay + draw * 0.9,
         easing: 'cubic-bezier(.2,.8,.2,1)',
@@ -976,10 +976,10 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
           const full = lines[e].getTotalLength()
           lines[e].getAnimations().forEach((a) => a.cancel())
           lines[e].animate(
-            [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full, stroke: BLUE }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0, stroke: BLUE }],
+            [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0 }],
             { duration: draw, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' },
           )
-          // Line and head grow in blue and stay blue (CSS .is-blue) for the step and after it.
+          // Line and head grow in their resting colour (CSS .is-blue → --momo) and keep it after the step.
           const tipPts = edgePts.get(lines[e].parentNode)
           lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
             const paint = head.getAttribute('fill') === 'none' ? 'stroke' : 'fill'
