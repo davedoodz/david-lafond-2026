@@ -9,6 +9,8 @@ import { MomoWelcome } from '../features/momoIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { ArxivPaper } from '../features/arxivPaper/ArxivPaper'
 import { FiloMilestones } from '../features/filoCase/FiloMilestones'
+import { FiloPersonaLoop } from '../features/filoCase/FiloPersonaLoop'
+import { FiloQuoteArt } from '../features/filoCase/FiloQuoteArt'
 import { MomoSystemFigure } from '../features/momoSystem/MomoSystemFigure'
 import { WristSequence, type WristFrame } from '../features/wristSequence/WristSequence'
 import { useTuningController } from '../tuning/useTuning'
@@ -461,7 +463,17 @@ export function CaseStudyPage({ id }: Props) {
         ? <FiloStory key={key} s={s as unknown as FiloStorySettings} edit={edit} />
         : <StoryRow key={key} s={s as unknown as Story} edit={edit} selectable />
     const filo = id === 'filo'
-    if (key === 'persona') return <PersonaSection key={key} p={s as unknown as Persona} edit={edit} selectable={!filo} visual={filo ? <img className="persona__photo" src="/work/filo/studio/persona-bench.webp" alt="A technical designer inspects an unfamiliar material swatch beside her sewing machine and garment sketches" width={1376} height={1143} loading="lazy" /> : undefined} />
+    if (key === 'persona')
+      return (
+        <PersonaSection
+          key={key}
+          p={s as unknown as Persona}
+          edit={edit}
+          selectable={!filo}
+          visual={filo ? <FiloPersonaLoop alt="A technical designer at her desk calls a supplier, sketches, sews a sample, checks a swatch and types up the result" /> : undefined}
+          quoteArt={filo ? (i) => <FiloQuoteArt index={i} /> : undefined}
+        />
+      )
     const hasFilms = filo && ['source', 'evidence', 'scale', 'handoff'].includes(key)
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />

@@ -49,6 +49,8 @@ function collectRects(range: Range, out: DOMRect[]): void {
     // Collapsed whitespace has no client rects, so it adds nothing.
     if (!parent || !node.data) continue
     if (getComputedStyle(parent).userSelect === 'none') continue
+    // Blocks that draw their own selection band (the Work sticker intro).
+    if (parent.closest('[data-hl-local]')) continue
     part.selectNodeContents(node)
     if (node === range.startContainer) part.setStart(node, range.startOffset)
     if (node === range.endContainer) part.setEnd(node, range.endOffset)

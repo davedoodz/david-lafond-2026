@@ -1,0 +1,16 @@
+/* The canvas paints over the still (scene 1) once every scene is decoded; the still then hides,
+   or it would show through the transparent frames. */
+.filo-persona-loop {
+  position: relative;
+  aspect-ratio: 1352 / 948;
+}
+.filo-persona-loop__still,
+.filo-persona-loop__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.filo-persona-loop[data-ready] .filo-persona-loop__still {
+  visibility: hidden;
+}

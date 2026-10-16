@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { motion, useIsPresent, useMotionValue, useTransform, type Transition, type Variants } from 'motion/react'
 
 type Props = {
-  srcSet: string
+  /** Already fetched and decoded by the caller, so the zoom paints the photo on its first frame. */
   src: string
   alt: string
   /** White title over a bottom shade, like a playground zoom card. Empty hides both. */
@@ -40,7 +40,6 @@ function useViewportSize() {
  * `custom`. Mount inside AnimatePresence, portaled to <body>.
  */
 export function FiloPhotoZoom({
-  srcSet,
   src,
   alt,
   caption,
@@ -122,7 +121,7 @@ export function FiloPhotoZoom({
         transition={transition}
         onClick={(event) => event.stopPropagation()}
       >
-        <img srcSet={srcSet} sizes={`${Math.round(target.width)}px`} src={src} alt={alt} draggable={false} />
+        <img src={src} alt={alt} decoding="sync" draggable={false} />
         {caption && (
           <>
             <span className="card-shade" aria-hidden="true" />

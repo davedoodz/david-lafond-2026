@@ -461,7 +461,8 @@ const NO_VIDEO = ['none']
  * Copy source: textura-exchange/CASE-STUDY-SPINE.md and the interview notes.
  */
 export const FILO_CONFIG = {
-  page: pageDials,
+  // Temporary: list the sections under Back to review the order. Turn off via Page → showSections.
+  page: { ...pageDials, showSections: true },
   hero: heroDials({
     eyebrow: '',
     title: 'An Agentic Sample Room for Biomaterial Adoption in Fashion',
@@ -525,7 +526,7 @@ export const FILO_CONFIG = {
       radius: [18, 0, 60, 1] as Tuple,
     },
   },
-  /** Persona with the sample-bench still life; interview quotes float around it. */
+  /** Persona with the technical designer's desk loop; interview quotes float around it. */
   persona: {
     ...PERSONA_DIALS,
     eyebrow: txt('User persona'),
@@ -537,19 +538,26 @@ export const FILO_CONFIG = {
     blockGap: [100, 32, 200, 1] as Tuple,
     moments: {
       ...PERSONA_DIALS.moments,
+      // Interviewees from textura-exchange/CASE-STUDY-SPINE.md, kept anonymous: common role + company, one line.
+      // m2's label is invented (her real label isn't on record); m4 is a mentor's question — David to confirm.
       m1Quote: txt('“How does it sew? What happens when we fuse, press or wash it?”'),
+      m1Role: txt('Technical designer, BlueSTEM'),
       m1Tag: txt('Know before you cut'),
       m2Quote: txt('“We can’t use heat or solvent on this.”'),
+      m2Role: txt('Designer, Stella McCartney'),
       m2Tag: txt('Catch it at the bench'),
-      m3Quote: txt('“Our factories haven’t worked with this material before.”'),
-      m3Tag: txt('One thread, not ten'),
+      m3Quote: txt('“First we look at performance, then at how to do it in the most responsible way.”'),
+      m3Role: txt('Product lead, O’Neill'),
+      m3Tag: txt('Performance first'),
       m4Quote: txt('“Can this construction still work at 10,000 units?”'),
+      m4Role: txt('Merchandiser, Calvin Klein'),
       m4Tag: txt('Answer the line review'),
     },
     spacing: sectionSpacingDials(110, 0, 32),
     float: {
       ...FLOAT_DIALS,
       preset: { type: 'select' as const, options: ['one at a time', 'two at a time', 'pop', 'drift', 'still'], default: 'drift' },
+      content: { ...FLOAT_DIALS.content, default: 'quote + role' },
       pace: [4.9, 1.5, 8, 0.1] as Tuple,
       cardWidth: [330, 160, 360, 5] as Tuple,
       spread: [169, -40, 200, 1] as Tuple,

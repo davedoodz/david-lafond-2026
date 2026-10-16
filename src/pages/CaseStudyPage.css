@@ -1585,7 +1585,7 @@ html[data-case-snap] .case__group > * {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .case__persona :is(.persona__who > *, .persona__tags > li, .persona__photo, .persona__floats, .persona__float) {
+  .case__persona :is(.persona__who > *, .persona__tags > li, .persona__photo, .persona__floats, .persona__float, .persona__quotes) {
     animation: none;
     opacity: 1;
     transform: none;
@@ -1626,6 +1626,225 @@ html[data-case-snap] .case__group > * {
   0% { opacity: 0; visibility: hidden; transform: scale(0.6); animation-timing-function: cubic-bezier(0.3, 1.5, 0.5, 1); }
   5%, 22% { opacity: 1; visibility: visible; transform: none; animation-timing-function: ease-in; }
   26%, 100% { opacity: 0; visibility: hidden; transform: scale(0.85); }
+}
+
+/* Who said it (float › content: quote + role): plain attribution, not a pill. Always one line. */
+.persona__role {
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: 1.3;
+  color: var(--stone-500, #78716c);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.persona__role::before {
+  content: '— ';
+}
+
+/* Quote layouts under the portrait (float › quotes). They arrive after the portrait, replayed with
+   the rest of the persona entrance (pe-* animations are rewound by casePersona). */
+.persona__quotes {
+  order: 2;
+  justify-self: center;
+  box-sizing: border-box;
+  width: min(1040px, 100%);
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+  animation: pe-rise var(--pe-dur, 0.7s) var(--pe-floats, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.persona__quotes .persona__quote {
+  grid-area: auto;
+  align-self: auto;
+  color: var(--stone-700, #44403c);
+  text-wrap: pretty;
+}
+.persona__quotes .persona__tag {
+  grid-area: auto;
+}
+
+/* transcript: call-notes rows, attribution in the margin. */
+[data-quotes='transcript'] .persona__quotes {
+  width: min(820px, 100%);
+}
+[data-quotes='transcript'] .persona__quote-item {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  column-gap: 32px;
+  align-items: baseline;
+  padding: 22px 0;
+  border-top: 1px solid rgb(23 23 23 / 0.1);
+}
+[data-quotes='transcript'] .persona__quote-item:last-child {
+  border-bottom: 1px solid rgb(23 23 23 / 0.1);
+}
+[data-quotes='transcript'] .persona__quote-item > :not(.persona__quote) {
+  grid-column: 1;
+  grid-row: 1;
+}
+[data-quotes='transcript'] .persona__quote {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: calc(var(--text-body) * 1.15);
+  line-height: 1.35;
+}
+[data-quotes='transcript'] .persona__role::before {
+  content: none;
+}
+
+/* wall: four quote cards, all visible, no motion. */
+[data-quotes='wall'] .persona__quotes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+[data-quotes='wall'] .persona__quote-item {
+  display: grid;
+  align-content: space-between;
+  gap: 20px;
+  min-height: 150px;
+  padding: 28px 30px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 16px 36px -22px rgb(23 23 23 / 0.25);
+}
+[data-quotes='wall'] .persona__quote {
+  font-size: calc(var(--text-body) * 1.25);
+  line-height: 1.3;
+}
+
+/* spotlight: one large quote at a time; dots pick one. */
+.persona__spotlight-stage {
+  display: grid;
+  width: min(820px, 100%);
+  margin: 0 auto;
+  text-align: center;
+}
+[data-quotes='spotlight'] .persona__quote-item {
+  grid-area: 1 / 1;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 14px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+}
+[data-quotes='spotlight'] .persona__quote-item[data-active] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.6s ease 0.15s, visibility 0s;
+}
+[data-quotes='spotlight'] .persona__quote {
+  font-size: clamp(22px, 2.4vw, 32px);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.persona__spotlight-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 24px;
+}
+.persona__spotlight-dots button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.persona__spotlight-dots button::before {
+  content: '';
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin: auto;
+  border-radius: 50%;
+  background: rgb(23 23 23 / 0.18);
+  transition: background 0.3s ease;
+}
+.persona__spotlight-dots button[aria-current]::before {
+  background: var(--ink-950);
+}
+.persona__spotlight-dots button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* marquee: a slow sliding row of cards; it keeps moving under the pointer and pauses only off screen. */
+[data-quotes='marquee'] .persona__quotes {
+  width: min(1240px, 100vw);
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.persona__marquee-track {
+  display: flex;
+  width: max-content;
+  animation: persona-marquee var(--quote-loop, 40s) linear infinite;
+}
+.case__persona:not([data-live]) .persona__marquee-track {
+  animation-play-state: paused;
+}
+.persona__marquee-track ul {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0 16px 0 0;
+  list-style: none;
+}
+[data-quotes='marquee'] .persona__quote-item {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+  box-sizing: border-box;
+  width: 340px;
+  padding: 24px 26px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 30px -20px rgb(23 23 23 / 0.25);
+}
+[data-quotes='marquee'] .persona__quote {
+  font-size: calc(var(--text-body) * 1.1);
+  line-height: 1.3;
+}
+@keyframes persona-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 720px) {
+  [data-quotes='wall'] .persona__quotes {
+    grid-template-columns: 1fr;
+  }
+  [data-quotes='transcript'] .persona__quote-item {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+  [data-quotes='transcript'] .persona__quote-item > * {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .persona__marquee-track {
+    width: auto;
+    animation: none;
+  }
+  .persona__marquee-track ul {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0;
+  }
+  .persona__marquee-track ul[aria-hidden] {
+    display: none;
+  }
+  [data-quotes='spotlight'] .persona__quote-item {
+    transition: none;
+  }
 }
 
 /* Driven by / Challenges. */
