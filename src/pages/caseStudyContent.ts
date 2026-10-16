@@ -461,8 +461,7 @@ const NO_VIDEO = ['none']
  * Copy source: textura-exchange/CASE-STUDY-SPINE.md and the interview notes.
  */
 export const FILO_CONFIG = {
-  // Temporary: list the sections under Back to review the order. Turn off via Page → showSections.
-  page: { ...pageDials, showSections: true },
+  page: pageDials,
   hero: heroDials({
     eyebrow: '',
     title: 'An Agentic Sample Room for Biomaterial Adoption in Fashion',
