@@ -52,6 +52,40 @@
   /* Static blur (never animated) so the blooms have no visible box edge outside the card. */
   filter: blur(48px);
 }
+/* Pressed seal (case study "seal" dials): sits in the visible card's bottom-right corner, sized and
+   offset in card units like the lockup. One tone slightly darker than the card; a white lip below-right
+   and a soft shade above-left read as letters pressed into the paper. */
+.momo-system > .momo-seal {
+  --u: min(1px, 100cqw / 928);
+  position: absolute;
+  z-index: 0;
+  right: calc(var(--system-card-inset-x, 0px) + 14 * var(--u) - var(--system-seal-x, 0) * var(--u));
+  bottom: calc(var(--system-card-inset-y, 0px) + 22 * var(--u) - var(--system-seal-y, 0) * var(--u));
+  width: calc(190 * var(--u) * var(--system-seal-scale, 1));
+  height: auto;
+  aspect-ratio: 1;
+  pointer-events: none;
+  color: rgb(96 104 122 / 0.16);
+  filter: drop-shadow(0.6px 0.8px 0 rgb(255 255 255 / 0.95)) drop-shadow(-0.5px -0.6px 0.4px rgb(40 48 66 / 0.16));
+  user-select: none;
+}
+.momo-seal__line,
+.momo-seal__mark line,
+.momo-seal__snake { fill: none; stroke: currentColor; }
+.momo-seal__line { stroke-width: 1.4; }
+.momo-seal__rim { stroke-width: 2.6; }
+.momo-seal__mark line { stroke-width: 3.2; stroke-linecap: round; }
+.momo-seal__snake { stroke-width: 2.6; stroke-linecap: round; }
+.momo-seal__dot,
+.momo-seal__mark circle,
+.momo-seal__mark path:not(.momo-seal__snake) { fill: currentColor; }
+.momo-seal__text {
+  fill: currentColor;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
 /* The replay button sits in the visible card's corner (the card is inset by the scale dials), at the
    playground cards' transparency (Playground > restart: 0.3 / 0.6 on hover). It stays hidden until the
    walkthrough has fully finished (data-done, set by MomoSystemFigure), then fades in; it hides at once. */

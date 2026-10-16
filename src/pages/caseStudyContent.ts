@@ -5,7 +5,7 @@
  * in dev and autosaves to tuning.json, like the About story.
  */
 import { FLOAT_DIALS, PERSONA_DIALS } from './casePersona'
-import { PEAK_ICONS, STORY_ART_TEXT, type StoryArtText } from './storyArt'
+import { PEAK_ICONS, STORY_ART_TEXT, STORY_TIMING, type StoryArtText } from './storyArt'
 
 type Tuple = [number, number, number, number]
 
@@ -320,11 +320,17 @@ export const MOMO_CONFIG = {
     artWidth: [300, 160, 480, 5] as Tuple,
     /** Playback speed of each row's art and text animation (1 = as designed, 2 = twice as fast). */
     speed: {
-      problem: [1, 0.25, 3, 0.05] as Tuple,
-      opportunity: [1, 0.25, 3, 0.05] as Tuple,
-      solution: [1, 0.25, 3, 0.05] as Tuple,
+      problem: [1, 0.25, 10, 0.05] as Tuple,
+      opportunity: [1, 0.25, 10, 0.05] as Tuple,
+      solution: [1, 0.25, 10, 0.05] as Tuple,
       _collapsed: false,
     },
+    /** Seconds per step of each diagram at speed 1; steps run in order, so a longer step pushes the
+     * rest back. Row speed above still scales them all. */
+    timing: Object.fromEntries(Object.entries(STORY_TIMING).map(([row, steps]) => [row, {
+      ...Object.fromEntries(Object.entries(steps).map(([k, v]) => [k, [v, 0.05, 8, 0.01] as Tuple])),
+      _collapsed: true,
+    }])) as { [Row in keyof typeof STORY_TIMING]: Record<keyof (typeof STORY_TIMING)[Row], Tuple> & { _collapsed: boolean } },
     spacing: sectionSpacingDials(96, 96, 44),
     titleScale: [0.62, 0.3, 0.9, 0.01] as Tuple,
     textWidth: [460, 280, 720, 10] as Tuple,
@@ -562,8 +568,11 @@ export const FILO_CONFIG = {
       spread: [169, -40, 200, 1] as Tuple,
       bob: [20, 0, 20, 1] as Tuple,
       eyebrowGap: [17, 0, 80, 1] as Tuple,
-      bodyGap: [22, 0, 120, 1] as Tuple,
-      tagsGap: [40, 0, 100, 1] as Tuple,
+      bodyGap: [16, 0, 200, 1] as Tuple,
+      tagsGap: [72, 0, 300, 1] as Tuple,
+      // Sticker and glass bubbles are Momo's; Filo keeps its plain portrait and cards.
+      sticker: { ...FLOAT_DIALS.sticker, show: false },
+      bubbles: { ...FLOAT_DIALS.bubbles, look: { ...FLOAT_DIALS.bubbles.look, default: 'card' } },
     },
   },
   source: sectionDials({

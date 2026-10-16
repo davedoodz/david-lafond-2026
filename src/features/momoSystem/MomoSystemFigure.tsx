@@ -4,6 +4,7 @@ import { mountMomoSystem, TIP_ANIMATIONS, type TipAnimation, type MomoSystemHand
 import { cardSurface, GRADIENT_PALETTES, publishSystemBase, type GradientDials } from './systemSurface'
 import { useTuningController } from '../../tuning/useTuning'
 import { RestartButton } from '../playback/VideoPlayback'
+import { MomoSeal } from './MomoSeal'
 
 type Tuple = [number, number, number, number]
 type SequenceDials = {
@@ -21,6 +22,7 @@ type SequenceDials = {
   arrowTips: { animation: TipAnimation }
   labels: { size: number }
   text: { titles: string; labels: string; icons: string; arrows: string }
+  seal: { scale: number; x: number; y: number }
   entrance: { preset: EntrancePreset; duration: number; distance: number; delay: number; stagger: number }
 } & Record<`${NodeIcon}Icon`, { x: number; y: number; scale: number }>
 
@@ -152,6 +154,13 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
     icons: { type: 'color' as const, default: '#5B8DEF' },
     arrows: { type: 'color' as const, default: '#5B8DEF' },
   },
+  /** Pressed "Clinically informed · Mental health" seal in the card's bottom-right corner. x/y are px on the
+   *  full-size card (+x right, +y down) from its default spot; scale 1 is 190px across. */
+  seal: {
+    scale: [1, 0.4, 2, 0.01] as Tuple,
+    x: [0, -400, 200, 1] as Tuple,
+    y: [0, -400, 200, 1] as Tuple,
+  },
   system: {
     scale: [1, 0.5, 1.5, 0.01] as Tuple,
   },
@@ -242,6 +251,9 @@ export function MomoSystemFigure() {
     '--system-text-y': speed.momoText.y,
     '--system-text-scale': speed.momoText.scale,
     '--system-text-color': speed.momoText.color,
+    '--system-seal-scale': speed.seal.scale,
+    '--system-seal-x': speed.seal.x,
+    '--system-seal-y': speed.seal.y,
     '--system-icon-circle': speed.icons.circleColor,
     '--system-title-color': speed.text.titles,
     '--system-label-color': speed.text.labels,
@@ -382,6 +394,7 @@ export function MomoSystemFigure() {
         <span className="momo-system__type" aria-hidden="true" />
       </div>
       <div ref={ref} className="momo-system__diagram" />
+      <MomoSeal />
       <RestartButton onRestart={handleReplay} label="Replay diagram" />
     </div>
   )

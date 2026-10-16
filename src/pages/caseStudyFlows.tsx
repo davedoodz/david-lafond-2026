@@ -1,6 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
-import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText } from './storyArt'
+import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText, type StoryTiming } from './storyArt'
 import type { SectionSpacing, TextReveal } from './caseStudyContent'
 import { cardSurface, useSystemBase, type GlassDials } from '../features/momoSystem/systemSurface'
 
@@ -59,6 +59,8 @@ export type Story = {
   artWidth: number
   /** Playback speed per row (1 = as designed). */
   speed: Record<'problem' | 'opportunity' | 'solution', number>
+  /** Momo: seconds per diagram step at speed 1 (see STORY_TIMING). */
+  timing?: StoryTiming
   titleScale: number
   textWidth: number
   spacing: SectionSpacing
@@ -110,9 +112,9 @@ export function StoryRow({ s, edit, selectable = false }: { s: Story; edit: Edit
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const glassVars = useStoryGlass(s.glass)
   const rows = [
-    ['problem', s.problemLabel, s.problemTitle, s.problemBody, <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} />],
-    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} />],
-    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, <SolutionArt key="s" text={s.artText} />],
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody, <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} timing={s.timing?.problem} />],
+    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} timing={s.timing?.opportunity} />],
+    ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, <SolutionArt key="s" text={s.artText} timing={s.timing?.solution} />],
   ] as const
   return (
     <section

@@ -655,7 +655,11 @@
       "body": "Generally independent and capable, but prone to stress and rumination. \nThey want a private, low-friction emotional outlet.",
       "align": "center",
       "image": "bottom",
-      "blockGap": 100,
+      "imageWidth": 535,
+      "imageRadius": 24,
+      "cardRadius": 27,
+      "titleScale": 0.98,
+      "blockGap": 102,
       "moments": {
         "m2Quote": "“Argh, why did I say that?”",
         "m3Quote": "“There's always so much to do…”",
@@ -670,16 +674,16 @@
         "cardWidth": 330,
         "spread": 169,
         "bob": 20,
+        "pillsPosition": "under image",
         "eyebrowGap": 17,
-        "bodyGap": 22,
-        "tagsGap": 40,
+        "bodyGap": 58,
+        "tagsGap": 77,
         "entrance": {
           "duration": 0.3,
           "distance": 6,
           "textStagger": 0.02,
           "pillStagger": 0.01,
           "pillsGap": 0.05,
-          "imageGap": 0.06,
           "floatsDelay": 0.2,
           "floatStagger": 0.11
         }
