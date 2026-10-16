@@ -385,9 +385,9 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
 
   /* ---------- Pill text: per-label vertical nudge inside its pill ---------- */
 
-  const applyPillText = (nudges) => {
+  const applyPillText = (nudges, textY) => {
     for (const [label, y] of Object.entries(nudges))
-      for (const el of root.querySelectorAll(`span[data-ty="${CSS.escape(label)}"]`)) el.style.top = `${y}px`
+      for (const el of root.querySelectorAll(`span[data-ty="${CSS.escape(label)}"]`)) el.style.top = `${y + textY}px`
   }
 
   const visible = new Set()
@@ -748,7 +748,10 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
       // Play the new timing from the top (not on load: syncMotion already started the loop).
       if (!first && motion) restart(performance.now())
     }
-    if (changed((d) => d.pillText)) applyPillText({ ...v.pillText.inputs, ...v.pillText.outputs })
+    if (changed((d) => d.pillText)) {
+      applyPillText({ ...v.pillText.inputs, ...v.pillText.outputs }, v.pillText.textY)
+      root.style.setProperty('--pill-icon-y', `${v.pillText.iconY}px`)
+    }
     if (changed((d) => d.watchLogo)) {
       const s = root.style
       const l = v.watchLogo

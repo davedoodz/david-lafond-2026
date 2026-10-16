@@ -32,7 +32,8 @@
   fill: currentColor;
 }
 
-/* Opacity dials live on the playground root (Playground → restart); elsewhere the defaults apply. */
+/* Opacity dials live on the playground root (Playground → restart); elsewhere the defaults match the
+   playground's saved values (0.3 / 0.6 on hover), so every replay button reads the same. */
 .playback-restart {
   position: absolute;
   top: 16px;
@@ -45,7 +46,7 @@
   height: 44px;
   border: 0;
   border-radius: 50%;
-  background: rgb(38 36 34 / var(--pg-restart-opacity, 0.62));
+  background: rgb(38 36 34 / var(--pg-restart-opacity, 0.3));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--paper);
@@ -54,7 +55,7 @@
 }
 .playback-restart:hover,
 .playback-restart:focus-visible {
-  background: rgb(38 36 34 / var(--pg-restart-hover-opacity, 0.76));
+  background: rgb(38 36 34 / var(--pg-restart-hover-opacity, 0.6));
 }
 .playback-restart svg {
   width: 20px;

@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Brain, Briefcase, Building2, CalendarDays, CalendarCheck, MessageCircle, RefreshCw, RotateCcw, Sparkles, Watch, type LucideIcon } from 'lucide-react'
 import { EditableText } from '../components/EditableText'
+import { usePushBubbles } from '../features/pushBubbles/usePushBubbles'
 import type { SectionSpacing } from './caseStudyContent'
 
 type Tuple = [number, number, number, number]
@@ -135,8 +136,39 @@ export const FLOAT_DIALS = {
     floatStagger: [0.18, 0, 1.5, 0.01] as Tuple,
     _collapsed: false,
   },
+  /** Pointer push: the cursor shoves floating cards the way it is moving, then they spring back to rest. */
+  push: {
+    enabled: { type: 'boolean' as const, default: true },
+    /** Px outside a card's edge where the cursor starts to touch it. */
+    reach: [36, 0, 160, 1] as Tuple,
+    /** How hard the cursor pushes; the final offset is still clamped to maxOffset. */
+    strength: [1, 0, 3, 0.05] as Tuple,
+    /** How much the cursor's direction of travel steers the push (0 = straight away from the cursor). */
+    carry: [0.7, 0, 1, 0.05] as Tuple,
+    /** Max px a card can be pushed from its resting position. */
+    maxOffset: [16, 0, 40, 1] as Tuple,
+    /** How hard a pushed card pulls back toward rest. */
+    stiffness: [140, 40, 400, 2] as Tuple,
+    /** How quickly the pull-back settles; higher is less bouncy. */
+    damping: [24, 4, 60, 0.5] as Tuple,
+    /** Max rotation (deg) while pushed, proportional to the horizontal offset. */
+    tilt: [3, 0, 20, 0.5] as Tuple,
+    _collapsed: true,
+  },
   _collapsed: false,
 }
+type Push = {
+  enabled: boolean
+  reach: number
+  strength: number
+  carry: number
+  maxOffset: number
+  stiffness: number
+  damping: number
+  tilt: number
+}
+/** Falls back to the dial defaults for presets (Filo) that don't spread the `push` folder. */
+const DEFAULT_PUSH: Push = { enabled: true, reach: 36, strength: 1, carry: 0.7, maxOffset: 16, stiffness: 140, damping: 24, tilt: 3 }
 type Entrance = {
   text: string
   pills: string
@@ -164,6 +196,7 @@ export type Float = {
   bodyGap: number
   tagsGap: number
   entrance?: Entrance
+  push?: Push
 }
 
 /** Preset name → keyframes name in CaseStudyPage.css (`pe-*`). */
@@ -395,6 +428,7 @@ export function PersonaSection({
   const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0, fromAbove, floatsIn) : null
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const quotesLayout = float?.quotes ?? 'floating'
+  const setFloatPushRef = usePushBubbles(SCENES.length, float?.push ?? DEFAULT_PUSH)
   /** One quote's content, shared by every quote layout; `copy` renders plain text (marquee's repeat). */
   const quoteParts = (i: number, copy = false) => {
     const n = `m${i + 1}`
@@ -531,7 +565,9 @@ export function PersonaSection({
               <ul key={floatCycle} className="persona__floats" aria-label={m.title}>
                 {quoteIndexes.map((i) => (
                   <li key={i} className="persona__float" data-slot={i} style={{ '--i': i } as CSSProperties}>
-                    {quoteParts(i)}
+                    <div className="persona__float-push" ref={setFloatPushRef[i]}>
+                      {quoteParts(i)}
+                    </div>
                   </li>
                 ))}
               </ul>

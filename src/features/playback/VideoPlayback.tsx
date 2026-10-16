@@ -118,9 +118,9 @@ export function PlaybackToggle({
 }
 
 /** Top-right replay circle that sits above the playback toggle. */
-export function RestartButton({ onRestart }: { onRestart: () => void }) {
+export function RestartButton({ onRestart, label = 'Restart video' }: { onRestart: () => void; label?: string }) {
   return (
-    <button type="button" className="playback-restart" onClick={onRestart} aria-label="Restart video">
+    <button type="button" className="playback-restart" onClick={onRestart} aria-label={label}>
       <RotateCcw aria-hidden="true" strokeWidth={1.6} />
     </button>
   )

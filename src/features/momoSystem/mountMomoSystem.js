@@ -888,7 +888,10 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     }
 
     const SVGNS = 'http://www.w3.org/2000/svg'
-    svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>')
+    // story-glass / story-glass-shadow: the case-study card's glassy node discs (stop colours come from CSS).
+    svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter>'
+      + '<linearGradient id="story-glass" x1="0" y1="0" x2="1" y2="1"><stop class="glass-stop-a" offset="0"/><stop class="glass-stop-b" offset="1"/></linearGradient>'
+      + '<filter id="story-glass-shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2a5976" flood-opacity="0.12"/></filter></defs>')
     // The embed waits for start() (its host calls it once the figure is in view).
     let step = 0, playing = studio && !reduceMotion, started = 0, flows = [], labels = [], feel = FEELS.breathe
     // rewind() holds step 1 at its first instant (clock at -1, reveals paused) until start().
@@ -1113,10 +1116,24 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       section.style.setProperty('--progress', String(Math.max(0, Math.min(1, t / dur))))
       // The case study plays the walkthrough once and rests on the full loop; its host restarts it on re-entry.
       if (playing && t > dur) {
-        if (sequence && step === STORY.length - 1) setPlaying(false)
-        else show(step + 1)
+        if (sequence && step === STORY.length - 1) {
+          setPlaying(false)
+          announceDone()
+        } else show(step + 1)
       }
       if (!destroyed) requestAnimationFrame(frame)
+    }
+
+    // Sequence mode: tells the host (event 'momosystem:done', bubbling) once the walkthrough rests on its last
+    // step and every finite animation has settled. start() and rewind() void any pending announcement.
+    let doneRun = 0
+    function announceDone() {
+      const run = ++doneRun
+      const pending = section.getAnimations({ subtree: true })
+        .filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime))
+      Promise.allSettled(pending.map((a) => a.finished)).then(() => {
+        if (run === doneRun && !rewound && !destroyed) section.dispatchEvent(new CustomEvent('momosystem:done', { bubbles: true }))
+      })
     }
 
     const timingInputs = [...section.querySelectorAll('[data-t]')]
@@ -1424,9 +1441,11 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         held.forEach((a) => a.cancel())
         held = []
         rewound = false
+        doneRun++
         if (reduceMotion) {
           setPlaying(false)
           show(STORY.length - 1)
+          announceDone()
           return
         }
         setPlaying(true)
@@ -1442,6 +1461,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         setPlaying(false)
         held.forEach((a) => a.cancel())
         rewound = true
+        doneRun++
         show(0)
         held = section.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition))
         held.forEach((a) => a.pause())

@@ -750,12 +750,13 @@ html[data-case-snap] .case__moment {
 .case__story li:not([data-live]) * {
   animation-play-state: paused !important;
 }
+/* --at / --dur: per-step start and length from DialKit story → timing (storyArt `step`). */
 [data-story-motion='draw'] .sa-draw {
   stroke-dasharray: 1 1;
-  animation: story-draw 1.6s calc(var(--i, 0) * 0.25s) cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: story-draw var(--dur, 1.6s) var(--at, calc(var(--i, 0) * 0.25s)) cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 [data-story-motion='draw'] li .sa-draw {
-  animation-delay: calc(var(--i, 0) * 0.35s);
+  animation-delay: var(--at, calc(var(--i, 0) * 0.35s));
 }
 [data-story-motion] .sa-ping {
   animation: story-ping 2.4s ease-out infinite;
@@ -851,20 +852,20 @@ html[data-case-snap] .case__moment {
 }
 [data-story-motion='draw'] .sa-after {
   transform-origin: center;
-  animation: story-appear 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: story-appear var(--dur, 0.5s) calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 [data-story-motion='draw'] .sa-wipe--up {
   transform-origin: bottom;
-  animation: story-wipe-y 0.6s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: story-wipe-y var(--dur, 0.6s) calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 [data-story-motion='draw'] .sa-wipe--right {
   transform-origin: left;
-  animation: story-wipe-x 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: story-wipe-x var(--dur, 0.5s) calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 /* The Problem phone pops up from below instead of scaling in. */
 [data-story-motion='draw'] .sa-after--rise {
   animation-name: story-pop-up;
-  animation-duration: 0.7s;
+  animation-duration: var(--dur, 0.7s);
   animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes story-pop-up {
@@ -895,31 +896,31 @@ html[data-case-snap] .case__moment {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.25); }
 }
-/* Solution handoff: wrist signal, then spoken reflection near the peak.
-   Still/reduced-motion shows the final phone state. */
+/* Solution handoff: wrist signal, then spoken reflection near the peak. Times come from
+   storyArt (--fade-at, --fade, --beat-at, --beat, --show-at). Still/reduced-motion shows the final phone state. */
 .sa-solution-watch { opacity: 0; }
 .sa-solution-phone { opacity: 1; }
 @media (prefers-reduced-motion: no-preference) {
   [data-story-motion]:not([data-story-motion='off']) .sa-solution-watch {
-    animation: story-solution-watch 5.2s calc(var(--i, 0) * 0.35s) linear both;
+    animation: story-solution-watch var(--fade, 0.42s) calc(var(--i, 0) * 0.35s + var(--fade-at, 4.78s)) linear both;
   }
   [data-story-motion]:not([data-story-motion='off']) .sa-solution-phone {
-    animation: story-solution-phone 5.2s calc(var(--i, 0) * 0.35s) linear both;
+    animation: story-solution-phone var(--show-at, 5.2s) calc(var(--i, 0) * 0.35s) linear both;
   }
 }
-/* The Solution watch beats exactly once: the loop starts once the watch has appeared (2.5s + 0.5s
-   appear) and ends at 4.6s, just before the watch group fades out (92% of 5.2s = 4.78s). The heart
-   line holds undrawn until then. Row speed scales every timing here together. */
+/* The Solution watch beats exactly once, starting as soon as it has appeared. The heart line
+   holds undrawn until then. Row speed scales every timing here together. */
 @media (prefers-reduced-motion: no-preference) {
   [data-story-motion]:not([data-story-motion='off']) li .sa-solution-watch :is(.sa-watch, .sa-beat) {
-    animation-delay: calc(var(--i, 0) * 0.35s + 3s);
+    animation-delay: calc(var(--i, 0) * 0.35s + var(--beat-at, 3s));
+    animation-duration: var(--beat, 1.6s);
     animation-iteration-count: 1;
     animation-fill-mode: both;
   }
 }
 @keyframes story-solution-watch {
-  0%, 92% { opacity: 1; }
-  100% { opacity: 0; }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 @keyframes story-solution-phone {
   0%, 99.9% { opacity: 0; }
@@ -1475,6 +1476,12 @@ html[data-case-snap] .case__group > * {
 .persona__float {
   --float-cycle: calc(var(--float-pace, 3.2s) * 4);
   position: absolute;
+  pointer-events: none;
+  animation: persona-bob calc(4s + var(--i) * 0.5s) calc(var(--i) * -1.1s) ease-in-out infinite;
+}
+/* Pointer push (persona › float › push) lives here as a JS-driven transform, separate from the
+   bob (`translate`) and entrance (`transform`) animations above so all three compose. */
+.persona__float-push {
   box-sizing: border-box;
   display: grid;
   justify-items: start;
@@ -1487,9 +1494,9 @@ html[data-case-snap] .case__group > * {
   backdrop-filter: blur(12px);
   box-shadow: 0 16px 36px -14px rgb(23 23 23 / 0.3);
   pointer-events: auto;
-  animation: persona-bob calc(4s + var(--i) * 0.5s) calc(var(--i) * -1.1s) ease-in-out infinite;
+  will-change: transform;
 }
-.persona__floats .persona__float > * {
+.persona__floats .persona__float-push > * {
   grid-area: auto;
 }
 .persona__float-scene {
@@ -2078,8 +2085,10 @@ html[data-case-snap] .case__group > * {
   }
   .persona__float {
     position: static;
-    width: auto;
     animation: none !important;
+  }
+  .persona__float-push {
+    width: auto;
   }
   .case__persona[data-profile-layout='3 top / 3 bottom'] .persona__tags {
     grid-template-columns: repeat(2, max-content);
