@@ -999,25 +999,24 @@
       "spread": -6
     },
     "momoLogo": {
-      "x": 57,
+      "x": -234,
       "y": 32,
-      "scale": 0.4,
+      "scale": 0.5,
       "outline": 5.2,
-      "color": "#a4cbed"
+      "color": "#5B8DEF"
     },
     "momoText": {
-      "x": -25,
-      "y": 30,
-      "scale": 0.61,
-      "color": "#a4cbed"
+      "x": -290,
+      "y": 29,
+      "scale": 0.85,
+      "color": "#0F1222"
     },
     "icons": {
       "circleColor": "#4caaf7",
-      "titleGap": 13
+      "titleGap": 22
     },
     "text": {
-      "titles": "#159DD2",
-      "labels": "#159DD2"
+      "titles": "#8A93A6"
     },
     "stepHold": {
       "youShare": 0.5,

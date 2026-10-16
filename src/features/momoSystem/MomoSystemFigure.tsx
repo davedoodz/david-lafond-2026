@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { MomoMark } from '../momoIntro/MomoMark'
 import { mountMomoSystem, TIP_ANIMATIONS, type TipAnimation, type MomoSystemHandle } from './mountMomoSystem'
 import { cardSurface, GRADIENT_PALETTES, publishSystemBase, type GradientDials } from './systemSurface'
 import { useTuningController } from '../../tuning/useTuning'
+import { RestartButton } from '../playback/VideoPlayback'
 
 type Tuple = [number, number, number, number]
 type SequenceDials = {
@@ -14,12 +15,12 @@ type SequenceDials = {
   shadow: { show: boolean; color: string; opacity: number; x: number; y: number; blur: number; spread: number }
   momoLogo: { x: number; y: number; scale: number; outline: number; smile: number; color: string }
   momoText: { x: number; y: number; scale: number; color: string }
-  icons: { circleColor: string; titleGap: number }
+  icons: { circleColor: string; circleStyle: 'glass' | 'flat'; glassTint: number; titleGap: number }
   system: { scale: number }
   stepHold: { youShare: number; dataIn: number; answersOut: number; backToYou: number }
   arrowTips: { animation: TipAnimation }
   labels: { size: number }
-  text: { titles: string; labels: string; icons: string }
+  text: { titles: string; labels: string; icons: string; arrows: string }
   entrance: { preset: EntrancePreset; duration: number; distance: number; delay: number; stagger: number }
 } & Record<`${NodeIcon}Icon`, { x: number; y: number; scale: number }>
 
@@ -120,7 +121,7 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
     spread: [0, -60, 60, 1] as Tuple,
   },
   momoLogo: {
-    x: [0, -200, 200, 1] as Tuple,
+    x: [0, -400, 400, 1] as Tuple,
     y: [0, -160, 160, 1] as Tuple,
     scale: [1, 0.4, 2, 0.01] as Tuple,
     /** Stroke widths in the mark's viewBox units (MomoMark defaults). */
@@ -129,21 +130,26 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
     color: { type: 'color' as const, default: '#159DD2' },
   },
   momoText: {
-    x: [0, -200, 200, 1] as Tuple,
+    x: [0, -400, 400, 1] as Tuple,
     y: [0, -160, 160, 1] as Tuple,
     scale: [1, 0.4, 2, 0.01] as Tuple,
     color: { type: 'color' as const, default: '#159DD2' },
   },
   icons: {
     circleColor: { type: 'color' as const, default: '#FFFFFF' },
+    /** Glass: a frosted white disc tinted by circleColor, with a white rim and soft shadow. Flat: the old tinted circle. */
+    circleStyle: { type: 'select' as const, options: ['glass', 'flat'], default: 'glass' },
+    /** Glass only: how much circleColor tints the disc's lower corner. */
+    glassTint: [0.18, 0, 0.6, 0.01] as Tuple,
     /** Px between each blue node icon and its title (studio "Title gap"). */
     titleGap: [14, 0, 48, 1] as Tuple,
   },
-  /** Diagram text colours: node titles (WATCH, USER…), arrow label text, and the label icons once lit. */
+  /** Diagram colours: node titles (WATCH, USER…), arrow label text, label icons once lit, and the arrows. */
   text: {
-    titles: { type: 'color' as const, default: '#171717' },
-    labels: { type: 'color' as const, default: '#171717' },
-    icons: { type: 'color' as const, default: '#159DD2' },
+    titles: { type: 'color' as const, default: '#3E4A63' },
+    labels: { type: 'color' as const, default: '#3E4A63' },
+    icons: { type: 'color' as const, default: '#5B8DEF' },
+    arrows: { type: 'color' as const, default: '#5B8DEF' },
   },
   system: {
     scale: [1, 0.5, 1.5, 0.01] as Tuple,
@@ -239,6 +245,8 @@ export function MomoSystemFigure() {
     '--system-title-color': speed.text.titles,
     '--system-label-color': speed.text.labels,
     '--system-label-icon': speed.text.icons,
+    '--system-arrow-color': speed.text.arrows,
+    '--system-glass-tint': `${Math.round(speed.icons.glassTint * 100)}%`,
     '--system-diagram-scale': speed.system.scale,
     ...Object.fromEntries(NODE_ICONS.flatMap((n) => [
       [`--system-${n}-x`, `${speed[`${n}Icon`].x}px`],
@@ -273,12 +281,31 @@ export function MomoSystemFigure() {
   }, [youShare, dataIn, answersOut, backToYou])
   const inViewRef = useRef(false)
   const tipRef = useRef(speed.arrowTips.animation)
+  // The replay button shows only once the walkthrough has fully finished ('momosystem:done' from the
+  // diagram); every start or rewind hides it again until the next finish.
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    const card = cardRef.current
+    if (!card) return
+    const onDone = () => setDone(true)
+    card.addEventListener('momosystem:done', onDone)
+    return () => card.removeEventListener('momosystem:done', onDone)
+  }, [])
   useEffect(() => {
     if (tipRef.current === speed.arrowTips.animation) return
     tipRef.current = speed.arrowTips.animation
     handleRef.current?.setTipAnimation(speed.arrowTips.animation)
-    if (inViewRef.current) handleRef.current?.start()
+    if (inViewRef.current) {
+      setDone(false)
+      handleRef.current?.start()
+    }
   }, [speed.arrowTips.animation])
+
+  // Replay button: start() already resets every held animation and begins again from step 01.
+  const handleReplay = useCallback(() => {
+    setDone(false)
+    handleRef.current?.start()
+  }, [])
 
   // Card entrance: built paused on its first frame (so the card never flashes in before it plays),
   // played once 15% of the card is in view, and re-armed only once the card has fully left the
@@ -322,14 +349,17 @@ export function MomoSystemFigure() {
       if (cancelled) return mounted.destroy()
       handle = handleRef.current = mounted
       inViewRef.current = false
+      setDone(false)
       // Entering restarts from step 01; the run then rests on the full loop. Once fully off screen it is
       // rewound to step 01's first frame, so scrolling back shows the start, never the old end state.
       observer = new IntersectionObserver(([entry]) => {
         if (entry.intersectionRatio >= 0.35 && !inViewRef.current) {
           inViewRef.current = true
+          setDone(false)
           mounted.start()
         } else if (!entry.isIntersecting) {
           inViewRef.current = false
+          setDone(false)
           mounted.rewind()
         }
       }, { threshold: [0, 0.35] })
@@ -345,12 +375,13 @@ export function MomoSystemFigure() {
   }, [narrow, speed.sequenceSpeed, speed.motionSpeed, speed.labels.size])
 
   return (
-    <div ref={cardRef} className="case__figure momo-system" style={style}>
+    <div ref={cardRef} className="case__figure momo-system" style={style} data-done={done} data-circles={speed.icons.circleStyle}>
       <div className="momo-system__brand" aria-label="Momo">
         <MomoMark className="momo-system__mark" color="var(--system-logo-color)" outline={speed.momoLogo.outline} smile={speed.momoLogo.smile} />
         <span className="momo-system__type" aria-hidden="true" />
       </div>
       <div ref={ref} className="momo-system__diagram" />
+      <RestartButton onRestart={handleReplay} label="Replay diagram" />
     </div>
   )
 }

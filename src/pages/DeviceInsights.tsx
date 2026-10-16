@@ -167,6 +167,7 @@ export function DeviceInsights({ copy, edit }: Props) {
       <div ref={stage} className="mc-stage" style={{ '--mc-scale': scale } as CSSProperties} role="img" aria-label="Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?">
         <div className="mc-devices" aria-hidden="true">
           <div className="mc-watch">
+            <div className="mc-watch__screen-fill" aria-hidden="true" />
             <div className="mc-watch__screen"><Screens step={id} render={watchScreen} /></div>
             <img className="mc-watch__img" src="/work/momo/devices/watch-starlight.png" alt="" />
           </div>

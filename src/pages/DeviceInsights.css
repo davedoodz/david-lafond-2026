@@ -28,6 +28,10 @@
 .mc-watch::before, .mc-watch::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
 .mc-watch::before { z-index: 3; background: var(--mc-watch-strap, #d6ccc4); -webkit-mask: url('/work/momo/devices/watch-strap-mask.png') center / 100% 100% no-repeat; mask: url('/work/momo/devices/watch-strap-mask.png') center / 100% 100% no-repeat; }
 .mc-watch::after { z-index: 4; background: url('/work/momo/devices/watch-strap-shading.png') center / 100% 100% no-repeat; }
+/* Backing box: larger than the screen content box, running up under the opaque bezel so no gap
+   shows between the black screen and the frame photo at any edge or corner (measured against
+   the frame PNG's actual transparent hole: x 72–467, y 188–671 in 540×860 base px, +margin). */
+.mc-watch__screen-fill { position: absolute; z-index: 0; left: calc(68px * var(--k)); top: calc(184px * var(--k)); width: calc(403px * var(--k)); height: calc(491px * var(--k)); background: #000; }
 .mc-watch__screen { position: absolute; z-index: 1; left: calc(72px * var(--k)); top: calc(193px * var(--k)); width: calc(396px * var(--k)); height: calc(479px * var(--k)); border-radius: 22% / 18%; background: #000; overflow: hidden; color: #fff; font-size: 11px; line-height: 1.3; }
 
 /* Left slot: structural wrapper for a scene's left device (e.g. a physical sample). Same
