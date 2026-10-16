@@ -120,6 +120,7 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
     blur: [64, 0, 200, 1] as Tuple,
     spread: [0, -60, 60, 1] as Tuple,
   },
+  /** x/y are px on the full-size (1040px) card; the lockup scales with the card below that. */
   momoLogo: {
     x: [0, -400, 400, 1] as Tuple,
     y: [0, -160, 160, 1] as Tuple,
@@ -233,12 +234,12 @@ export function MomoSystemFigure() {
     '--system-card-shadow': speed.card.show && speed.shadow.show
       ? `${speed.shadow.x}px ${speed.shadow.y}px ${speed.shadow.blur}px ${speed.shadow.spread}px color-mix(in srgb, ${speed.shadow.color} ${Math.round(speed.shadow.opacity * 100)}%, transparent)`
       : '0 0 #0000',
-    '--system-logo-x': `${speed.momoLogo.x}px`,
-    '--system-logo-y': `${speed.momoLogo.y}px`,
+    '--system-logo-x': speed.momoLogo.x,
+    '--system-logo-y': speed.momoLogo.y,
     '--system-logo-scale': speed.momoLogo.scale,
     '--system-logo-color': speed.momoLogo.color,
-    '--system-text-x': `${speed.momoText.x}px`,
-    '--system-text-y': `${speed.momoText.y}px`,
+    '--system-text-x': speed.momoText.x,
+    '--system-text-y': speed.momoText.y,
     '--system-text-scale': speed.momoText.scale,
     '--system-text-color': speed.momoText.color,
     '--system-icon-circle': speed.icons.circleColor,
