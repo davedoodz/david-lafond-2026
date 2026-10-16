@@ -956,8 +956,14 @@
       "fadeOut": 1.65
     },
     "momo": {
-      "size": 60,
+      "size": 71,
       "y": 4
+    },
+    "logo": {
+      "size": 12.6,
+      "y": 0.5,
+      "outlineStroke": 6.1,
+      "smileStroke": 3.6
     }
   },
   "Momo system sequence": {
