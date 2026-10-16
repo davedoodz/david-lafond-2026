@@ -1,0 +1,128 @@
+import { useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { useTuning } from '../../tuning/useTuning'
+import './filoQuoteArt.css'
+
+type Tuple = [number, number, number, number]
+
+/** Dials for one card's illustration; scale and x/y adjust it from its base spot (see ART). */
+const placement = () => ({
+  /** Size, from the art's bottom-right corner (1 = base size). */
+  scale: [1, 0.3, 2.5, 0.01] as Tuple,
+  /** Move from the base spot (px): positive x goes right, positive y goes down. */
+  x: [0, -400, 300, 1] as Tuple,
+  y: [0, -250, 200, 1] as Tuple,
+  opacity: [1, 0, 1, 0.01] as Tuple,
+})
+
+const CONFIG = {
+  /** The whole sliding strip: cards, text, art and shadow scale together, and the page reflows. */
+  strip: {
+    /** Off freezes the marquee where it is; on resumes it from there. */
+    play: true,
+    scale: [1, 0.5, 1.6, 0.01] as Tuple,
+  },
+  /** Shared by every Filo quote card, so they are all the same size. */
+  card: {
+    width: [640, 420, 900, 1] as Tuple,
+    height: [260, 160, 420, 1] as Tuple,
+    /** Text column (% of the card); the art lives in the rest. */
+    text: [54, 35, 80, 1] as Tuple,
+    /** Phones (≤720 px): the art sits under the text, so the card is taller. */
+    mobileHeight: [400, 240, 600, 1] as Tuple,
+    /** Card fill: the warm off-white of the card mockups. */
+    fill: { type: 'color' as const, default: '#FBF8F6' },
+  },
+  /** Drop shadow under every card. The strip clips its overflow, so it gets room for the shadow. */
+  shadow: {
+    show: true,
+    /** Small drop and little tuck, so the shadow shows above and beside the card as well as below. */
+    y: [8, 0, 60, 1] as Tuple,
+    blur: [40, 0, 120, 1] as Tuple,
+    spread: [-8, -60, 20, 1] as Tuple,
+    opacity: [0.2, 0, 0.6, 0.01] as Tuple,
+    color: { type: 'color' as const, default: '#171717' },
+  },
+  'Technical designer, BlueSTEM': placement(),
+  'Designer, Stella McCartney': placement(),
+  'Product lead, O’Neill': placement(),
+  'Merchandiser, Calvin Klein': placement(),
+}
+type Card = Exclude<keyof typeof CONFIG, 'strip' | 'card' | 'shadow'>
+
+/** `#rrggbb` + opacity → `rgb(r g b / a)`. */
+function rgba(hex: string, alpha: number) {
+  const n = Number.parseInt(hex.replace('#', '').slice(0, 6), 16)
+  return `rgb(${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255} / ${alpha})`
+}
+
+/**
+ * Persona quote index → illustration (trimmed, transparent). `base` is where it sits at scale 1, x/y 0:
+ * width as % of the card, inset (px) from the card's right and bottom edges.
+ */
+type Art = { card: Card; src: string; width: number; height: number; base: { width: number; right: number; bottom: number } }
+const ART: Partial<Record<number, Art>> = {
+  0: { card: 'Technical designer, BlueSTEM', src: '/work/filo/studio/quote-art-technical-designer.webp', width: 900, height: 672, base: { width: 46, right: 16, bottom: 10 } },
+  1: { card: 'Designer, Stella McCartney', src: '/work/filo/studio/quote-art-designer.webp', width: 900, height: 543, base: { width: 48, right: 16, bottom: 12 } },
+  2: { card: 'Product lead, O’Neill', src: '/work/filo/studio/quote-art-product-lead.webp', width: 900, height: 522, base: { width: 46, right: 16, bottom: 12 } },
+  3: { card: 'Merchandiser, Calvin Klein', src: '/work/filo/studio/quote-art-merchandiser.webp', width: 900, height: 453, base: { width: 52, right: 14, bottom: 18 } },
+}
+
+/**
+ * Lays out a Filo persona quote card as a wide card: quote on the left, illustration bottom-right.
+ * Rendered for every card (an empty marker for cards without art) so all cards share one size.
+ */
+export function FiloQuoteArt({ index }: { index: number }) {
+  const dials = useTuning('Filo quote art', CONFIG)
+  const markerRef = useRef<HTMLSpanElement & HTMLImageElement>(null)
+  const { width, height, text, mobileHeight, fill } = dials.card
+  const s = dials.shadow
+  const shadow = s.show ? `0 ${s.y}px ${s.blur}px ${s.spread}px ${rgba(s.color, s.opacity)}` : 'none'
+  const { scale: stripScale, play } = dials.strip
+  // Room the clipped strip needs above and below the cards so the (scaled) shadow is not cut off.
+  const shadowPad = s.show ? Math.max(0, s.y + s.blur + s.spread) * stripScale : 0
+
+  // The card's dials go on the card itself (this element's parent).
+  useLayoutEffect(() => {
+    const card = markerRef.current?.parentElement
+    if (!card) return
+    card.dataset.filoQuote = ''
+    card.style.setProperty('--qa-card-w', `${width}px`)
+    card.style.setProperty('--qa-card-h', `${height}px`)
+    card.style.setProperty('--qa-card-h-m', `${mobileHeight}px`)
+    card.style.setProperty('--qa-text', `${text}%`)
+    card.style.setProperty('--qa-card-fill', fill)
+    card.style.setProperty('--qa-card-shadow', shadow)
+    const strip = card.closest<HTMLElement>('.persona__quotes')
+    strip?.style.setProperty('--qa-shadow-pad', `${shadowPad}px`)
+    strip?.style.setProperty('--qa-strip-scale', `${stripScale}`)
+    strip?.toggleAttribute('data-qa-paused', !play)
+  }, [width, height, text, mobileHeight, fill, shadow, shadowPad, stripScale, play])
+
+  const art = ART[index]
+  if (!art) return <span ref={markerRef} hidden />
+  const t = dials[art.card]
+  return (
+    <img
+      ref={markerRef}
+      className="filo-quote-art"
+      src={art.src}
+      width={art.width}
+      height={art.height}
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+      draggable={false}
+      style={
+        {
+          '--qa-w': `${art.base.width}%`,
+          '--qa-right': `${art.base.right}px`,
+          '--qa-bottom': `${art.base.bottom}px`,
+          '--qa-scale': t.scale,
+          '--qa-x': `${t.x}px`,
+          '--qa-y': `${t.y}px`,
+          '--qa-opacity': t.opacity,
+        } as CSSProperties
+      }
+    />
+  )
+}

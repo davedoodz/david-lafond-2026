@@ -1,0 +1,64 @@
+/* Filo quote cards: one shared size (dials on the card), quote on the left, art bottom-right. */
+[data-quotes] .persona__quote-item[data-filo-quote] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  width: var(--qa-card-w, 640px);
+  height: var(--qa-card-h, 260px);
+  background: var(--qa-card-fill, #fbf8f6);
+  box-shadow: var(--qa-card-shadow, 0 8px 40px -8px rgb(23 23 23 / 0.2));
+}
+/* Filo: the strip opens the persona section, between the research video and the persona copy.
+   The strip clips its overflow, and so does the persona section (overflow: clip), so the strip is
+   padded for the cards' shadow; that padding is taken back out of the layout above and below.
+   Equal 110px of space on both sides: above, the previous section already leaves ~71px under its
+   video (bottom padding, measured), so the cards rise 71px into this section's 110px top padding;
+   below, 110px to the copy (32px of it is the intro grid gap). */
+[data-quotes] .persona__quotes:has([data-filo-quote]) {
+  order: -1;
+  grid-column: 1 / -1;
+  padding-block: var(--qa-shadow-pad, 0px);
+  margin-top: calc(-71px - var(--qa-shadow-pad, 0px));
+  margin-bottom: calc(110px - 32px - var(--qa-shadow-pad, 0px));
+}
+/* Strip play dial off: freeze the marquee in place. */
+.persona__quotes[data-qa-paused] .persona__marquee-track {
+  animation-play-state: paused;
+}
+/* Strip scale dial: zoom (not transform) so the section's height follows the cards. */
+.persona__quotes:has([data-filo-quote]) .persona__marquee-track {
+  zoom: var(--qa-strip-scale, 1);
+}
+[data-quotes] .persona__quote-item[data-filo-quote] > :not(.filo-quote-art) {
+  position: relative;
+  max-width: var(--qa-text, 54%);
+}
+.filo-quote-art {
+  position: absolute;
+  right: var(--qa-right, 16px);
+  bottom: var(--qa-bottom, 10px);
+  z-index: -1;
+  width: var(--qa-w, 48%);
+  transform: translate(var(--qa-x, 0px), var(--qa-y, 0px)) scale(var(--qa-scale, 1));
+  transform-origin: 100% 100%;
+  height: auto;
+  max-width: none;
+  opacity: var(--qa-opacity, 1);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 720px) {
+  /* Too narrow for two columns: the quote spans the card and the art sits under it. */
+  [data-quotes] .persona__quote-item[data-filo-quote] {
+    width: min(var(--qa-card-w, 640px), 82vw);
+    height: var(--qa-card-h-m, 400px);
+    align-content: start;
+  }
+  [data-quotes] .persona__quote-item[data-filo-quote] > :not(.filo-quote-art) {
+    max-width: none;
+  }
+  .filo-quote-art {
+    width: calc(var(--qa-w, 48%) * 1.6);
+  }
+}

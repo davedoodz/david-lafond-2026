@@ -865,6 +865,7 @@
       "sectionReveal": "still"
     },
     "hero": {
+      "title": "Taking New Materials \nfrom Sample to Production",
       "spacing": {
         "top": 106,
         "bottom": 62,
@@ -910,7 +911,18 @@
       }
     },
     "persona": {
+      "title": "The technical designer prioritizing performance over hype.",
+      "body": "They turn designs into something a factory can reliably make. Unfamiliar materials add constraints that must be resolved before production.\n",
+      "moments": {
+        "m2Quote": "“From what I've seen, we can’t use heat or solvent on these.”",
+        "m3Quote": "“We look at performance, then at how to do it in the most responsible way.”",
+        "m2Role": "Designer, Solano Studio"
+      },
       "float": {
+        "quotes": "marquee",
+        "pace": 3.6,
+        "cardWidth": 280,
+        "spread": 154,
         "entrance": {
           "duration": 0.3,
           "distance": 6,
@@ -922,6 +934,9 @@
           "floatStagger": 0.11
         }
       }
+    },
+    "evidence": {
+      "eyebrow": "OBSERVE → RESOLVE"
     }
   },
   "Momo welcome": {
@@ -1184,6 +1199,41 @@
       "color": "#ffffff",
       "outlineStroke": 4.2,
       "textGapX": 3.8
+    }
+  },
+  "Filo persona loop": {
+    "fade": 0.39,
+    "blur": 7
+  },
+  "Filo quote art": {
+    "strip": {
+      "scale": 1.06
+    },
+    "card": {
+      "width": 593
+    },
+    "shadow": {
+      "y": 14,
+      "blur": 36,
+      "spread": -18,
+      "opacity": 0.22
+    },
+    "Technical designer, BlueSTEM": {
+      "scale": 1.1
+    },
+    "Designer, Stella McCartney": {
+      "scale": 1.17,
+      "x": 2,
+      "y": -3
+    },
+    "Product lead, O’Neill": {
+      "scale": 1.28,
+      "x": 57,
+      "y": -5
+    },
+    "Merchandiser, Calvin Klein": {
+      "scale": 1.36,
+      "x": 77
     }
   }
 }

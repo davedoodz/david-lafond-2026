@@ -87,7 +87,13 @@ export const FLOAT_DIALS = {
   imageReveal: { type: 'select' as const, options: [...ENTRANCES], default: 'scale' },
   /** one/two at a time: cards fade in and out in turn · pop: springy entrance · drift: all stay up · still: no motion (easiest to edit). */
   preset: { type: 'select' as const, options: ['one at a time', 'two at a time', 'pop', 'drift', 'still'], default: 'one at a time' },
-  content: { type: 'select' as const, options: ['quote + tag', 'quote', 'title + quote', 'full'], default: 'quote + tag' },
+  content: { type: 'select' as const, options: ['quote + tag', 'quote + role', 'quote', 'title + quote', 'full'], default: 'quote + tag' },
+  /**
+   * How the quotes are shown. floating: cards around the portrait (preset sets their motion) ·
+   * transcript: call-notes rows under it · wall: 2×2 cards under it · spotlight: one large quote at a
+   * time, cycling every `pace` seconds · marquee: a slow sliding row under it.
+   */
+  quotes: { type: 'select' as const, options: ['floating', 'transcript', 'wall', 'spotlight', 'marquee'], default: 'floating' },
   /** Seconds between one card and the next. */
   pace: [3.2, 1.5, 8, 0.1] as Tuple,
   cardWidth: [250, 160, 360, 5] as Tuple,
@@ -147,6 +153,7 @@ export type Float = {
   imageReveal: (typeof ENTRANCES)[number]
   preset: string
   content: string
+  quotes: string
   pace: number
   cardWidth: number
   spread: number
@@ -287,8 +294,62 @@ function Icon({ name }: { name: string }) {
   )
 }
 
-/** `visual` replaces the Momo portrait (Filo's sample-bench still life); it fills the `.persona__photo` box. */
-export function PersonaSection({ p, edit, selectable = false, visual }: { p: Persona; edit: Edit; selectable?: boolean; visual?: ReactNode }) {
+/**
+ * One large quote at a time under the portrait. Advances every `pace` seconds while the section is on
+ * screen (not under reduced motion); the dots jump to a quote and stop the auto-advance.
+ */
+function QuoteSpotlight({ count, pace, live, label, render }: { count: number; pace: number; live: boolean; label: string; render: (i: number) => ReactNode }) {
+  const [active, setActive] = useState(0)
+  const [held, setHeld] = useState(false)
+  useEffect(() => {
+    if (!live || held || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const timer = window.setInterval(() => setActive((i) => (i + 1) % count), pace * 1000)
+    return () => window.clearInterval(timer)
+  }, [live, held, pace, count])
+  return (
+    <div className="persona__quotes" role="group" aria-roledescription="carousel" aria-label={label}>
+      <div className="persona__spotlight-stage">
+        {Array.from({ length: count }, (_, i) => (
+          <div key={i} className="persona__quote-item" data-active={i === active || undefined} aria-hidden={i !== active}>
+            {render(i)}
+          </div>
+        ))}
+      </div>
+      <div className="persona__spotlight-dots">
+        {Array.from({ length: count }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Quote ${i + 1} of ${count}`}
+            aria-current={i === active || undefined}
+            onClick={() => {
+              setActive(i)
+              setHeld(true)
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * `visual` replaces the Momo portrait (Filo's desk loop, FiloPersonaLoop); it fills the `.persona__photo` box.
+ * `quoteArt` adds an illustration behind quote card `i` (Filo's FiloQuoteArt); it renders nothing for cards without one.
+ */
+export function PersonaSection({
+  p,
+  edit,
+  selectable = false,
+  visual,
+  quoteArt,
+}: {
+  p: Persona
+  edit: Edit
+  selectable?: boolean
+  visual?: ReactNode
+  quoteArt?: (i: number) => ReactNode
+}) {
   const look = { ...(PERSONA_PRESETS[p.preset] ?? p), image: p.image }
   const ref = useRef<HTMLElement>(null)
   const wasLive = useRef(false)
@@ -333,6 +394,38 @@ export function PersonaSection({ p, edit, selectable = false, visual }: { p: Per
   const floatsIn = float?.preset === 'drift' && ent ? ent.floatStagger * (SCENES.length - 1) + DRIFT_IN_DURATION : (ent?.duration ?? 0)
   const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0, fromAbove, floatsIn) : null
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
+  const quotesLayout = float?.quotes ?? 'floating'
+  /** One quote's content, shared by every quote layout; `copy` renders plain text (marquee's repeat). */
+  const quoteParts = (i: number, copy = false) => {
+    const n = `m${i + 1}`
+    const TagIcon = FLOAT_TAG_ICONS[i]
+    const field = (as: 'p' | 'h3' | 'span', className: string | undefined, label: string, key: string) =>
+      copy ? (
+        as === 'span' ? <span className={className}>{m[key]}</span> : as === 'h3' ? <h3 className={className}>{m[key]}</h3> : <p className={className}>{m[key]}</p>
+      ) : (
+        <EditableText as={as} className={className} label={label} value={m[key]} onChange={edit(`persona.moments.${key}`)} />
+      )
+    return (
+      <>
+        {quoteArt?.(i)}
+        {shows('full') && (
+          <svg className="persona__float-scene" viewBox="0 0 120 80" aria-hidden="true">
+            {SCENES[i]}
+          </svg>
+        )}
+        {shows('title + quote', 'full') && field('h3', 'persona__moment-title', `Context ${i + 1} title`, `${n}Title`)}
+        {field('p', 'persona__quote', `Context ${i + 1} quote`, `${n}Quote`)}
+        {shows('quote + role') && field('p', 'persona__role', `Context ${i + 1} role`, `${n}Role`)}
+        {shows('quote + tag', 'full') && (
+          <p className="persona__tag">
+            <TagIcon size={14} strokeWidth={1.8} aria-hidden="true" />
+            {field('span', undefined, `Context ${i + 1} tag`, `${n}Tag`)}
+          </p>
+        )}
+      </>
+    )
+  }
+  const quoteIndexes = SCENES.map((_, i) => i)
   const traitList = (group: 'driven' | 'challenges', items: [string, string][]) => (
     <div className="persona__traits-group">
       <EditableText as="h3" className="eyebrow" label={`${group} heading`} value={p[group].title} onChange={edit(`persona.${group}.title`)} />
@@ -359,6 +452,7 @@ export function PersonaSection({ p, edit, selectable = false, visual }: { p: Per
       data-persona-contexts={look.contexts}
       data-persona-motion={look.motion}
       data-float={float?.preset}
+      data-quotes={float ? quotesLayout : undefined}
       data-profile-layout={float?.profileLayout}
       data-live={live || undefined}
       style={
@@ -433,33 +527,48 @@ export function PersonaSection({ p, edit, selectable = false, visual }: { p: Per
                 decoding="async"
               />
             )}
-            {float && (
+            {float && quotesLayout === 'floating' && (
               <ul key={floatCycle} className="persona__floats" aria-label={m.title}>
-                {SCENES.map((scene, i) => {
-                  const n = `m${i + 1}`
-                  const TagIcon = FLOAT_TAG_ICONS[i]
-                  return (
-                    <li key={n} className="persona__float" data-slot={i} style={{ '--i': i } as CSSProperties}>
-                      {shows('full') && (
-                        <svg className="persona__float-scene" viewBox="0 0 120 80" aria-hidden="true">
-                          {scene}
-                        </svg>
-                      )}
-                      {shows('title + quote', 'full') && (
-                        <EditableText as="h3" className="persona__moment-title" label={`Context ${i + 1} title`} value={m[`${n}Title`]} onChange={edit(`persona.moments.${n}Title`)} />
-                      )}
-                      <EditableText as="p" className="persona__quote" label={`Context ${i + 1} quote`} value={m[`${n}Quote`]} onChange={edit(`persona.moments.${n}Quote`)} />
-                      {shows('quote + tag', 'full') && (
-                        <p className="persona__tag">
-                          <TagIcon size={14} strokeWidth={1.8} aria-hidden="true" />
-                          <EditableText as="span" label={`Context ${i + 1} tag`} value={m[`${n}Tag`]} onChange={edit(`persona.moments.${n}Tag`)} />
-                        </p>
-                      )}
-                    </li>
-                  )
-                })}
+                {quoteIndexes.map((i) => (
+                  <li key={i} className="persona__float" data-slot={i} style={{ '--i': i } as CSSProperties}>
+                    {quoteParts(i)}
+                  </li>
+                ))}
               </ul>
             )}
+          </div>
+        )}
+        {float && quotesLayout === 'spotlight' && (
+          <QuoteSpotlight key={floatCycle} count={quoteIndexes.length} pace={float.pace} live={live} label={m.title} render={quoteParts} />
+        )}
+        {float && (quotesLayout === 'transcript' || quotesLayout === 'wall') && (
+          <ul key={floatCycle} className="persona__quotes" aria-label={m.title}>
+            {quoteIndexes.map((i) => (
+              <li key={i} className="persona__quote-item" style={{ '--i': i } as CSSProperties}>
+                {quoteParts(i)}
+              </li>
+            ))}
+          </ul>
+        )}
+        {float && quotesLayout === 'marquee' && (
+          <div key={floatCycle} className="persona__quotes" style={{ '--quote-loop': `${float.pace * quoteIndexes.length * 2.5}s` } as CSSProperties}>
+            <div className="persona__marquee-track">
+              <ul aria-label={m.title}>
+                {quoteIndexes.map((i) => (
+                  <li key={i} className="persona__quote-item">
+                    {quoteParts(i)}
+                  </li>
+                ))}
+              </ul>
+              {/* Second copy makes the -50% slide seamless; hidden from assistive tech. */}
+              <ul aria-hidden="true">
+                {quoteIndexes.map((i) => (
+                  <li key={i} className="persona__quote-item">
+                    {quoteParts(i, true)}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
       </div>
