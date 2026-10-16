@@ -87,17 +87,22 @@ type MomoProps = {
   size: string
   x: string
   y: string
+  /** Hold the clip on its current frame (a viewer pause); playback resumes where it stopped. */
+  paused?: boolean
 }
 
 /**
  * Momo filling its positioned parent. Clip alignment and the hand-over blend always come
  * from the 'Momo mascot' dials, so every Momo on the site lines up and blends the same way.
  */
-export function Momo({ mode, size, x, y }: MomoProps) {
+export function Momo({ mode, size, x, y, paused = false }: MomoProps) {
   const { values: t, setValue } = useTuningController('Momo mascot', CONFIG)
   const hostRef = useRef<HTMLDivElement>(null)
   const videos = useRef<Record<Clip, HTMLVideoElement | null>>({ listening: null, floating: null })
   const canvases = useRef<Record<Clip, HTMLCanvasElement | null>>({ listening: null, floating: null })
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
+  const controls = useRef<{ pause: () => void; play: () => void } | null>(null)
 
   useEffect(() => {
     const stops = CLIPS.map((c) => {
@@ -154,7 +159,7 @@ export function Momo({ mode, size, x, y }: MomoProps) {
     }
     const play = () => {
       const v = videos.current[order[active]]
-      if (!v || reduced || !visible) return
+      if (!v || reduced || !visible || pausedRef.current) return
       void v.play().catch(() => {})
       if (order.length > 1 && !frame) frame = requestAnimationFrame(tick)
     }
@@ -205,14 +210,21 @@ export function Momo({ mode, size, x, y }: MomoProps) {
       else pauseAll()
     })
     observer.observe(host)
+    controls.current = { pause: pauseAll, play }
 
     return () => {
+      controls.current = null
       observer.disconnect()
       listeners.forEach((v) => v?.removeEventListener('ended', onEnded))
       window.clearTimeout(settle)
       pauseAll()
     }
   }, [mode])
+
+  useEffect(() => {
+    if (paused) controls.current?.pause()
+    else controls.current?.play()
+  }, [paused])
 
   return (
     <div

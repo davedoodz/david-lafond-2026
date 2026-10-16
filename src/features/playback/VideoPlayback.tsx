@@ -14,8 +14,8 @@ const PLAYBACK_CONFIG = {
 type ToggleProps = {
   /** Element containing the videos; the toggle covers it. */
   host: RefObject<HTMLElement | null>
-  /** Which videos inside `host` the toggle drives. */
-  videoSelector: string
+  /** Which videos inside `host` the toggle drives. Omit when the owner pauses everything via `onUserToggle`. */
+  videoSelector?: string
   reducedMotion: boolean
   /** Also freeze running CSS/Web animations inside `host` while paused (playground cards). */
   pauseAnimations?: boolean
@@ -26,6 +26,8 @@ type ToggleProps = {
   feedbackOnMediaEvents?: boolean
   /** Told about every click, so the owner can keep a user pause from being undone. */
   onUserToggle?: (paused: boolean) => void
+  /** What the button names in its label: "Pause <subject>" / "Play <subject>". */
+  subject?: string
 }
 
 /**
@@ -40,6 +42,7 @@ export function PlaybackToggle({
   pauseAnimations = false,
   feedbackOnMediaEvents = true,
   onUserToggle,
+  subject = 'video',
 }: ToggleProps) {
   const t = useTuning('Playground playback', PLAYBACK_CONFIG)
   const [paused, setPaused] = useState(false)
@@ -48,7 +51,7 @@ export function PlaybackToggle({
 
   useEffect(() => {
     const root = host.current
-    if (!root) return
+    if (!root || !videoSelector) return
     const first = root.querySelector<HTMLVideoElement>(videoSelector)
     if (first) setPaused(first.paused)
     const sync = (event: Event) => {
@@ -76,7 +79,7 @@ export function PlaybackToggle({
     <button
       type="button"
       className="playback-toggle"
-      aria-label={paused ? 'Play video' : 'Pause video'}
+      aria-label={paused ? `Play ${subject}` : `Pause ${subject}`}
       onClick={() => {
         const root = host.current
         if (!root) return
@@ -84,7 +87,7 @@ export function PlaybackToggle({
         setPaused(willPause)
         setFeedback(willPause ? 'pause' : 'play')
         onUserToggle?.(willPause)
-        const videos = root.querySelectorAll<HTMLVideoElement>(videoSelector)
+        const videos = videoSelector ? root.querySelectorAll<HTMLVideoElement>(videoSelector) : []
         if (willPause) {
           if (pauseAnimations) {
             pausedAnimations.current = root.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running')
