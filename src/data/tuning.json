@@ -999,16 +999,15 @@
       "spread": -6
     },
     "momoLogo": {
-      "x": -234,
-      "y": 32,
-      "scale": 0.5,
+      "x": -263,
+      "y": 3,
+      "scale": 0.4,
       "outline": 5.2,
       "color": "#5B8DEF"
     },
     "momoText": {
-      "x": -290,
-      "y": 29,
-      "scale": 0.85,
+      "x": -329,
+      "scale": 0.8,
       "color": "#0F1222"
     },
     "icons": {
