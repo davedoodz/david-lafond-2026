@@ -888,7 +888,10 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     }
 
     const SVGNS = 'http://www.w3.org/2000/svg'
-    svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter></defs>')
+    // story-glass / story-glass-shadow: the case-study card's glassy node discs (stop colours come from CSS).
+    svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter>'
+      + '<linearGradient id="story-glass" x1="0" y1="0" x2="1" y2="1"><stop class="glass-stop-a" offset="0"/><stop class="glass-stop-b" offset="1"/></linearGradient>'
+      + '<filter id="story-glass-shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2a5976" flood-opacity="0.12"/></filter></defs>')
     // The embed waits for start() (its host calls it once the figure is in view).
     let step = 0, playing = studio && !reduceMotion, started = 0, flows = [], labels = [], feel = FEELS.breathe
     // rewind() holds step 1 at its first instant (clock at -1, reveals paused) until start().
@@ -903,13 +906,13 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
 
     /** Arrow-tip entrance, timed to the moment its line finishes drawing. `fade` is the studio original. */
     function playTip(head, paint, op, pts, delay, draw) {
-      const blue = { [paint]: BLUE }
+      // Colour comes from CSS (.edge.is-blue → --momo), so the tip is the same blue while it enters as at rest.
       if (tipAnimation === 'fade' || !TIP_ANIMATIONS.includes(tipAnimation) || !pts) {
-        head.animate([{ opacity: 0, ...blue }, { opacity: 0, ...blue, offset: 0.85 }, { opacity: op, ...blue }], { duration: draw, delay, fill: 'backwards' })
+        head.animate([{ opacity: 0 }, { opacity: 0, offset: 0.85 }, { opacity: op }], { duration: draw, delay, fill: 'backwards' })
         return
       }
       if (tipAnimation === 'instant') {
-        head.animate([{ opacity: 0, ...blue }, { opacity: op, ...blue }], { duration: 1, delay: delay + draw, fill: 'backwards' })
+        head.animate([{ opacity: 0 }, { opacity: op }], { duration: 1, delay: delay + draw, fill: 'backwards' })
         return
       }
       // Scale and slide around the tip point, along the arrow's final run.
@@ -924,7 +927,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         slide: [{ opacity: 0, transform: T(1, 16) }, { opacity: op, transform: T(1) }],
         bounce: [{ opacity: 0, transform: T(0) }, { opacity: op, transform: T(1.35), offset: 0.4 }, { opacity: op, transform: T(0.85), offset: 0.65 }, { opacity: op, transform: T(1.08), offset: 0.85 }, { opacity: op, transform: T(1) }],
       }[tipAnimation]
-      head.animate(frames.map((f) => ({ ...f, ...blue })), {
+      head.animate(frames, {
         duration: (tipAnimation === 'bounce' ? 620 : 380) / motionSpeed,
         delay: delay + draw * 0.9,
         easing: 'cubic-bezier(.2,.8,.2,1)',
@@ -973,10 +976,10 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
           const full = lines[e].getTotalLength()
           lines[e].getAnimations().forEach((a) => a.cancel())
           lines[e].animate(
-            [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full, stroke: BLUE }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0, stroke: BLUE }],
+            [{ strokeDasharray: `${full} ${full}`, strokeDashoffset: full }, { strokeDasharray: `${full} ${full}`, strokeDashoffset: 0 }],
             { duration: draw, delay, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' },
           )
-          // Line and head grow in blue and stay blue (CSS .is-blue) for the step and after it.
+          // Line and head grow in their resting colour (CSS .is-blue → --momo) and keep it after the step.
           const tipPts = edgePts.get(lines[e].parentNode)
           lines[e].parentNode.querySelectorAll(':scope > path:not(.edge__line)').forEach((head) => {
             const paint = head.getAttribute('fill') === 'none' ? 'stroke' : 'fill'
@@ -1113,10 +1116,24 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       section.style.setProperty('--progress', String(Math.max(0, Math.min(1, t / dur))))
       // The case study plays the walkthrough once and rests on the full loop; its host restarts it on re-entry.
       if (playing && t > dur) {
-        if (sequence && step === STORY.length - 1) setPlaying(false)
-        else show(step + 1)
+        if (sequence && step === STORY.length - 1) {
+          setPlaying(false)
+          announceDone()
+        } else show(step + 1)
       }
       if (!destroyed) requestAnimationFrame(frame)
+    }
+
+    // Sequence mode: tells the host (event 'momosystem:done', bubbling) once the walkthrough rests on its last
+    // step and every finite animation has settled. start() and rewind() void any pending announcement.
+    let doneRun = 0
+    function announceDone() {
+      const run = ++doneRun
+      const pending = section.getAnimations({ subtree: true })
+        .filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime))
+      Promise.allSettled(pending.map((a) => a.finished)).then(() => {
+        if (run === doneRun && !rewound && !destroyed) section.dispatchEvent(new CustomEvent('momosystem:done', { bubbles: true }))
+      })
     }
 
     const timingInputs = [...section.querySelectorAll('[data-t]')]
@@ -1424,9 +1441,11 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         held.forEach((a) => a.cancel())
         held = []
         rewound = false
+        doneRun++
         if (reduceMotion) {
           setPlaying(false)
           show(STORY.length - 1)
+          announceDone()
           return
         }
         setPlaying(true)
@@ -1442,6 +1461,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         setPlaying(false)
         held.forEach((a) => a.cancel())
         rewound = true
+        doneRun++
         show(0)
         held = section.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition))
         held.forEach((a) => a.pause())

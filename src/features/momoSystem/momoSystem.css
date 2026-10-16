@@ -20,6 +20,9 @@
   display: grid;
   gap: clamp(12px, 2vw, 28px);
   justify-self: center;
+  /* Lockup units: 1 at the full-size card (928px content box), shrinking with it, so the brand's
+     tuned offsets keep the same place on the card at every width. */
+  container-type: inline-size;
   --ink-900: var(--system-card-ink, #fff);
   --stone-600: var(--system-card-muted, rgb(255 255 255 / 0.68));
   --stone-400: var(--system-card-muted, rgb(255 255 255 / 0.68));
@@ -49,31 +52,90 @@
   /* Static blur (never animated) so the blooms have no visible box edge outside the card. */
   filter: blur(48px);
 }
+/* Pressed seal (case study "seal" dials): sits in the visible card's bottom-right corner, sized and
+   offset in card units like the lockup. One tone slightly darker than the card; a white lip below-right
+   and a soft shade above-left read as letters pressed into the paper. */
+.momo-system > .momo-seal {
+  --u: min(1px, 100cqw / 928);
+  position: absolute;
+  z-index: 0;
+  right: calc(var(--system-card-inset-x, 0px) + 14 * var(--u) - var(--system-seal-x, 0) * var(--u));
+  bottom: calc(var(--system-card-inset-y, 0px) + 22 * var(--u) - var(--system-seal-y, 0) * var(--u));
+  width: calc(190 * var(--u) * var(--system-seal-scale, 1));
+  height: auto;
+  aspect-ratio: 1;
+  pointer-events: none;
+  color: rgb(96 104 122 / 0.16);
+  filter: drop-shadow(0.6px 0.8px 0 rgb(255 255 255 / 0.95)) drop-shadow(-0.5px -0.6px 0.4px rgb(40 48 66 / 0.16));
+  user-select: none;
+}
+.momo-seal__line,
+.momo-seal__mark line,
+.momo-seal__snake { fill: none; stroke: currentColor; }
+.momo-seal__line { stroke-width: 1.4; }
+.momo-seal__rim { stroke-width: 2.6; }
+.momo-seal__mark line { stroke-width: 3.2; stroke-linecap: round; }
+.momo-seal__snake { stroke-width: 2.6; stroke-linecap: round; }
+.momo-seal__dot,
+.momo-seal__mark circle,
+.momo-seal__mark path:not(.momo-seal__snake) { fill: currentColor; }
+.momo-seal__text {
+  fill: currentColor;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+/* The replay button sits in the visible card's corner (the card is inset by the scale dials), at the
+   playground cards' transparency (Playground > restart: 0.3 / 0.6 on hover). It stays hidden until the
+   walkthrough has fully finished (data-done, set by MomoSystemFigure), then fades in; it hides at once. */
+.momo-system > .playback-restart {
+  --pg-restart-opacity: 0.3;
+  --pg-restart-hover-opacity: 0.6;
+  top: calc(var(--system-card-inset-y, 0px) + 16px);
+  right: calc(var(--system-card-inset-x, 0px) + 16px);
+  transition: opacity 0.6s ease, background-color 0.2s ease;
+  /* The card under it is a flat glass surface with its own backdrop-filter; blurring that again made
+     the circle band and flicker grey as the cursor moved nearby. Nothing behind it needs blurring. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.momo-system:not([data-done='true']) > .playback-restart {
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
 .momo-system__brand {
   position: relative;
   z-index: 1;
-  width: min(38%, 300px);
-  min-width: 170px;
+  --u: min(1px, 100cqw / 928);
+  width: max(170px, calc(300 * var(--u)));
   margin-inline: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: calc(10 * var(--u));
 }
 .momo-system__mark {
   width: 31%;
   height: auto;
   flex: none;
-  translate: var(--system-logo-x, 0) var(--system-logo-y, 0);
+  translate: calc(var(--system-logo-x, 0) * var(--u)) calc(var(--system-logo-y, 0) * var(--u));
   scale: var(--system-logo-scale, 1);
   transform-origin: center;
+}
+/* Phone-size cards: the lockup's 170px floor no longer fits the tuned offsets, so it sits centred,
+   each half nudged inward by what its scale took off so the mark and wordmark keep their gap. */
+@container (max-width: 600px) {
+  .momo-system .momo-system__mark { translate: calc((1 - var(--system-logo-scale, 1)) * 50%) 0; }
+  .momo-system .momo-system__type { translate: calc((var(--system-text-scale, 1) - 1) * 50%) 0; }
 }
 .momo-system__type {
   width: 62%;
   aspect-ratio: 509 / 154;
   flex: none;
   background: var(--system-text-color, var(--system-card-accent, #fff));
-  translate: var(--system-text-x, 0) var(--system-text-y, 0);
+  translate: calc(var(--system-text-x, 0) * var(--u)) calc(var(--system-text-y, 0) * var(--u));
   scale: var(--system-text-scale, 1);
   transform-origin: center;
   -webkit-mask: url('/work/momo/hero/momo-type.png') center / contain no-repeat;
@@ -87,9 +149,22 @@
 }
 .momo-system__diagram, .momo-system .story { width: 100%; }
 .momo-system .story text { fill: var(--system-card-ink); }
-.momo-system .story .edge__line { stroke: var(--system-card-ink); }
-.momo-system .story .edge > path:not(.edge__line):not([fill='none']) { fill: var(--system-card-ink); }
+/* Arrows (case study "text > arrows"): resting lines and heads, and every highlight that used the accent. */
+.momo-system .story { --momo: var(--system-arrow-color, var(--system-card-accent, #fff)); }
+.momo-system .story .edge__line { stroke: var(--system-arrow-color, var(--system-card-ink)); }
+.momo-system .story .edge > path:not(.edge__line):not([fill='none']) { fill: var(--system-arrow-color, var(--system-card-ink)); }
 .momo-system .story .node__halo { fill: var(--system-icon-circle, #fff); }
+/* Glass discs ("icons > circleStyle: glass"): frosted white, tinted toward circleColor at the lower
+   corner, white rim, soft shadow. Shown fully once a node is on; the flat style keeps --halo-op. */
+.momo-system[data-circles='glass'] .story .glass-stop-a { stop-color: #fff; stop-opacity: 0.96; }
+.momo-system[data-circles='glass'] .story .glass-stop-b { stop-color: color-mix(in srgb, var(--system-icon-circle, #fff) var(--system-glass-tint, 18%), #fff); stop-opacity: 0.9; }
+.momo-system[data-circles='glass'] .story .node__halo {
+  fill: url(#story-glass);
+  stroke: rgb(255 255 255 / 0.95);
+  stroke-width: 1.5;
+  filter: url(#story-glass-shadow);
+}
+.momo-system[data-circles='glass'] .story .node.is-on .node__halo { opacity: 1; }
 /* Text colour dials (case study "text" group): node titles, arrow label text, lit label icons. */
 .momo-system .story .node text { fill: var(--system-title-color, var(--system-card-ink)); }
 .momo-system .story .lbl-row text { fill: var(--system-label-color, var(--system-card-ink)); }

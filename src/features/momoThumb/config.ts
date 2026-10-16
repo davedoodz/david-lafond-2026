@@ -112,8 +112,15 @@ export const MOMO_THUMB_CONFIG = {
     },
     states: { awake: state(90), asleep: state(90), output: state(90) },
   },
-  /** Vertical nudge of each label inside its pill (px, + is down). */
-  pillText: { inputs: nudges(INPUT_LABELS), outputs: nudges(OUTPUT_LABELS) },
+  /** Vertical nudge of each label inside its pill (px, + is down). "Pill text" shifts every label
+   * (and, with "Icon y", every icon) on top of each label's own nudge below; both default to 0 so
+   * nothing moves until dragged. */
+  pillText: {
+    textY: [0, -6, 6, 0.25] as Tuple,
+    iconY: [0, -6, 6, 0.25] as Tuple,
+    inputs: nudges(INPUT_LABELS),
+    outputs: nudges(OUTPUT_LABELS),
+  },
   /** The Momo logo at the top left of the Watch screen (Watch px, before the card's Watch scale). */
   watchLogo: {
     scale: [1, 0.5, 2.5, 0.01] as Tuple,

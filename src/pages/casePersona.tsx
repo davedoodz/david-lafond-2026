@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Brain, Briefcase, Building2, CalendarDays, CalendarCheck, MessageCircle, RefreshCw, RotateCcw, Sparkles, Watch, type LucideIcon } from 'lucide-react'
 import { EditableText } from '../components/EditableText'
+import { usePushBubbles } from '../features/pushBubbles/usePushBubbles'
 import type { SectionSpacing } from './caseStudyContent'
 
 type Tuple = [number, number, number, number]
@@ -38,7 +39,11 @@ export const PERSONA_DIALS = {
   showTags: { type: 'boolean' as const, default: true },
   showQuotes: { type: 'boolean' as const, default: true },
   imageWidth: [480, 280, 720, 5] as Tuple,
+  /** Corners of the portrait image (inside the sticker card when Float → Sticker is on). */
   imageRadius: [28, 0, 60, 1] as Tuple,
+  /** Sticker card (Float → Sticker on): outer corners, and the white margin between card edge and image. */
+  cardRadius: [6, 0, 80, 1] as Tuple,
+  cardGap: [10, 0, 60, 1] as Tuple,
   titleScale: [1, 0.6, 1.6, 0.01] as Tuple,
   blockGap: [96, 32, 200, 1] as Tuple,
   driven: {
@@ -103,18 +108,19 @@ export const FLOAT_DIALS = {
   bob: [6, 0, 20, 1] as Tuple,
   /** Profile chip arrangement. */
   profileLayout: { type: 'select' as const, options: ['wrapped', '3 top / 3 bottom'], default: 'wrapped' },
+  /** Where the profile pills sit: between the text and the portrait, or under the portrait. */
+  pillsPosition: { type: 'select' as const, options: ['under text', 'under image'], default: 'under text' },
   /** Vertical distance between the eyebrow and title (px). */
   eyebrowGap: [14, 0, 80, 1] as Tuple,
   /** Vertical distance between the title and body (px). */
   titleGap: [14, 0, 120, 1] as Tuple,
-  /** Vertical distance between the body and profile chips (px). */
-  bodyGap: [14, 0, 120, 1] as Tuple,
-  /** Extra distance after the profile chips before the portrait (px). */
-  tagsGap: [10, 0, 100, 1] as Tuple,
+  /** Below the text block to the next section: the pills, or the portrait when the pills sit under it (px). */
+  bodyGap: [16, 0, 200, 1] as Tuple,
+  /** Between the pills and the portrait, above or below it (px). */
+  tagsGap: [72, 0, 300, 1] as Tuple,
   /**
-   * Entrance, replayed each time the section comes into view. Scrolling down: text block, profile
-   * pills, portrait, then floating cards. Scrolling up: portrait, floating cards, text block,
-   * then profile pills. Seconds; distance in px.
+   * Entrance, replayed each time the section comes into view: portrait, floating cards, then once
+   * the cards have settled, the text block top to bottom and the profile pills. Seconds; distance in px.
    */
   entrance: {
     text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
@@ -127,16 +133,80 @@ export const FLOAT_DIALS = {
     pillStagger: [0.02, 0, 0.4, 0.01] as Tuple,
     /** Pause after the text block before the first pill. */
     pillsGap: [0.02, 0, 1.5, 0.01] as Tuple,
-    /** Pause after the last pill before the portrait. */
-    imageGap: [0.02, 0, 1.5, 0.01] as Tuple,
-    /** From the portrait starting to appear to the first floating bubble (either scroll direction). */
+    /** Pause after the last bubble settles before the text block starts. */
+    textGap: [0.1, 0, 1.5, 0.01] as Tuple,
+    /** From the portrait landing to the first floating bubble. */
     floatsDelay: [0.35, 0, 4, 0.05] as Tuple,
     /** Between one floating bubble and the next (drift). */
     floatStagger: [0.18, 0, 1.5, 0.01] as Tuple,
     _collapsed: false,
   },
+  /** Pointer push: the cursor shoves floating cards the way it is moving, then they spring back to rest. */
+  push: {
+    enabled: { type: 'boolean' as const, default: true },
+    /** Px outside a card's edge where the cursor starts to touch it. */
+    reach: [36, 0, 160, 1] as Tuple,
+    /** How hard the cursor pushes; the final offset is still clamped to maxOffset. */
+    strength: [1, 0, 3, 0.05] as Tuple,
+    /** How much the cursor's direction of travel steers the push (0 = straight away from the cursor). */
+    carry: [0.7, 0, 1, 0.05] as Tuple,
+    /** Max px a card can be pushed from its resting position. */
+    maxOffset: [16, 0, 40, 1] as Tuple,
+    /** How hard a pushed card pulls back toward rest. */
+    stiffness: [140, 40, 400, 2] as Tuple,
+    /** How quickly the pull-back settles; higher is less bouncy. */
+    damping: [24, 4, 60, 0.5] as Tuple,
+    /** Max rotation (deg) while pushed, proportional to the horizontal offset. */
+    tilt: [3, 0, 20, 0.5] as Tuple,
+    _collapsed: true,
+  },
+  /**
+   * The portrait as a sticker: stamped onto the page from above (replaces Image Reveal), tilted, on a
+   * white card (corners and margin: Persona → Image Radius, Card Radius, Card Gap).
+   * Seconds; lift in px; scale is the size it starts at.
+   */
+  sticker: {
+    show: true,
+    tilt: [-3, -12, 12, 0.5] as Tuple,
+    stamp: [0.6, 0.15, 2, 0.05] as Tuple,
+    lift: [160, 0, 600, 5] as Tuple,
+    scale: [1.35, 1, 3, 0.05] as Tuple,
+    _collapsed: true,
+  },
+  /**
+   * Floating bubbles. glass: white bubbles with glass tag pills, turned in perspective toward the
+   * portrait · card: the flat white cards. Bubbles arrive once the sticker lands.
+   * pills (glass look): frost: flat frosted glass · clear: barely-there glass, hairline edge ·
+   * tint: flat light-blue fill · outline: hairline only · raised: glossy 3D (highlight, under-shade, drop shadow).
+   * tint and blur tune the pills' glass.
+   */
+  bubbles: {
+    look: { type: 'select' as const, options: ['glass', 'card'], default: 'glass' },
+    pills: { type: 'select' as const, options: ['frost', 'clear', 'tint', 'outline', 'raised'], default: 'frost' },
+    tint: [0.08, 0, 0.4, 0.01] as Tuple,
+    blur: [16, 0, 40, 1] as Tuple,
+    radius: [30, 8, 48, 1] as Tuple,
+    /** Turn toward the portrait (deg); the outer edge comes forward. */
+    turn: [14, 0, 45, 0.5] as Tuple,
+    /** In-plane tilt (deg): left bubbles rise to the right, right bubbles dip. */
+    roll: [3, 0, 12, 0.5] as Tuple,
+    perspective: [900, 200, 3000, 10] as Tuple,
+    _collapsed: true,
+  },
   _collapsed: false,
 }
+type Push = {
+  enabled: boolean
+  reach: number
+  strength: number
+  carry: number
+  maxOffset: number
+  stiffness: number
+  damping: number
+  tilt: number
+}
+/** Falls back to the dial defaults for presets (Filo) that don't spread the `push` folder. */
+const DEFAULT_PUSH: Push = { enabled: true, reach: 36, strength: 1, carry: 0.7, maxOffset: 16, stiffness: 140, damping: 24, tilt: 3 }
 type Entrance = {
   text: string
   pills: string
@@ -145,7 +215,7 @@ type Entrance = {
   textStagger: number
   pillStagger: number
   pillsGap: number
-  imageGap: number
+  textGap: number
   floatsDelay: number
   floatStagger: number
 }
@@ -159,36 +229,51 @@ export type Float = {
   spread: number
   bob: number
   profileLayout: string
+  pillsPosition: string
   eyebrowGap: number
   titleGap: number
   bodyGap: number
   tagsGap: number
   entrance?: Entrance
+  push?: Push
+  sticker?: { show: boolean; tilt: number; stamp: number; lift: number; scale: number }
+  bubbles?: { look: string; pills: string; tint: number; blur: number; radius: number; turn: number; roll: number; perspective: number }
 }
+
+/**
+ * One CSS `rotate` (axis + angle) that turns a bubble `turn`° about Y, then rolls it `roll`° in
+ * plane. The individual `rotate` property keeps clear of the entrance `transform`, the bob
+ * `translate` and the pointer push, so all four compose.
+ */
+function bubbleRotate(turn: number, roll: number) {
+  const y = (turn * Math.PI) / 360
+  const z = (roll * Math.PI) / 360
+  // Quaternion product (roll ∘ turn).
+  const w = Math.cos(z) * Math.cos(y)
+  const v = [-Math.sin(z) * Math.sin(y), Math.cos(z) * Math.sin(y), Math.sin(z) * Math.cos(y)]
+  const s = Math.sqrt(Math.max(0, 1 - w * w))
+  if (s < 1e-6) return 'none'
+  return `${v.map((c) => (c / s).toFixed(4)).join(' ')} ${((2 * Math.acos(w) * 180) / Math.PI).toFixed(3)}deg`
+}
+/** Bubble slots 0/2 sit left of the portrait, 1/3 right; the lower pair rolls a little less. */
+const SLOT_SIDE = [1, -1, 1, -1]
+const SLOT_ROLL = [1, 1, 0.7, 1]
 
 /** Preset name → keyframes name in CaseStudyPage.css (`pe-*`). */
 const kf = (preset: string) => (preset === 'none' ? 'none' : `pe-${preset}`)
 const DRIFT_IN_DURATION = 0.65
 
 /**
- * Entrance timeline (seconds). Scrolling down: text rows, pills, portrait, floating cards.
- * Scrolling up (`reverse`): portrait, all floating cards, text from eyebrow to body, then pills.
+ * Entrance timeline (seconds): portrait, floating cards, then text from eyebrow to body, then pills.
+ * `imageIn` is how long the portrait takes to settle (the sticker stamp) before the cards may start;
  * `floatsIn` is how long the cards take to finish arriving before the text follows.
  * Returns per-element delays (text in eyebrow/title/body order, pills in DOM order).
  */
-function entranceTimeline(e: Entrance, pills: number, reverse: boolean, floatsIn: number) {
+function entranceTimeline(e: Entrance, pills: number, floatsIn: number, imageIn = 0) {
   const step = (start: number, n: number, stagger: number) => Array.from({ length: n }, (_, i) => start + i * stagger)
-  if (!reverse) {
-    const text = step(0, 3, e.textStagger)
-    const pillsStart = text[2] + e.duration + e.pillsGap
-    const pill = step(pillsStart, pills, e.pillStagger)
-    const image = (pills ? pill[pills - 1] + e.duration : pillsStart) + e.imageGap
-    return { text, pill, image, floats: image + e.floatsDelay }
-  }
   const image = 0
-  const floats = image + e.floatsDelay
-  const textStart = floats + floatsIn + e.pillsGap
-  const text = step(textStart, 3, e.textStagger)
+  const floats = image + imageIn + e.floatsDelay
+  const text = step(floats + floatsIn + e.textGap, 3, e.textStagger)
   const pillsStart = text[2] + e.duration + e.pillsGap
   const pill = step(pillsStart, pills, e.pillStagger)
   return { text, pill, image, floats }
@@ -208,6 +293,8 @@ export type Persona = {
   showQuotes: boolean
   imageWidth: number
   imageRadius: number
+  cardRadius: number
+  cardGap: number
   titleScale: number
   blockGap: number
   spacing: SectionSpacing
@@ -355,8 +442,6 @@ export function PersonaSection({
   const wasLive = useRef(false)
   const [live, setLive] = useState(false)
   const [floatCycle, setFloatCycle] = useState(0)
-  // True when the section will be entered scrolling up (it arrives bottom first).
-  const [fromAbove, setFromAbove] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -371,7 +456,6 @@ export function PersonaSection({
         entrance().forEach((a) => { a.currentTime = 0; a.play() })
         setLive(true)
       } else if (!e.isIntersecting) {
-        setFromAbove(e.boundingClientRect.top < 0)
         if (!wasLive.current) return
         wasLive.current = false
         entrance().forEach((a) => { a.pause(); a.currentTime = 0 })
@@ -388,13 +472,33 @@ export function PersonaSection({
     .filter(Boolean)
   const m = p.moments
   const float = p.float
-  // Entrance order follows scroll direction (see entranceTimeline).
+  // Portrait, then bubbles, then text (see entranceTimeline).
   const ent = float?.entrance
   // Wait for the last drift card to finish arriving; the looping presets show one card per beat.
   const floatsIn = float?.preset === 'drift' && ent ? ent.floatStagger * (SCENES.length - 1) + DRIFT_IN_DURATION : (ent?.duration ?? 0)
-  const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0, fromAbove, floatsIn) : null
+  // The sticker stamps down; the bubbles wait for it to land.
+  const sticker = float?.sticker?.show ? float.sticker : null
+  const glass = float?.bubbles?.look === 'glass' ? float.bubbles : null
+  const imageIn = sticker?.stamp ?? 0
+  const timeline = ent ? entranceTimeline(ent, p.showTags ? tags.length : 0, floatsIn, imageIn) : null
+  // Profile pills: inside the text block (under the body) or as their own row under the portrait.
+  const pillsUnderImage = float?.pillsPosition === 'under image' && look.image !== 'none'
+  const tagList = p.showTags && tags.length > 0 && (
+    <ul className="persona__tags" aria-label="Profile">
+      {tags.map((t, i) => {
+        const TagIcon = PROFILE_TAG_ICONS[i]
+        return (
+          <li key={t} style={{ '--pe-delay': `${timeline?.pill[i] ?? 0}s` } as CSSProperties}>
+            {TagIcon && <TagIcon className="persona__tag-icon" size={14} strokeWidth={1.8} aria-hidden="true" />}
+            {t}
+          </li>
+        )
+      })}
+    </ul>
+  )
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const quotesLayout = float?.quotes ?? 'floating'
+  const setFloatPushRef = usePushBubbles(SCENES.length, float?.push ?? DEFAULT_PUSH)
   /** One quote's content, shared by every quote layout; `copy` renders plain text (marquee's repeat). */
   const quoteParts = (i: number, copy = false) => {
     const n = `m${i + 1}`
@@ -454,6 +558,9 @@ export function PersonaSection({
       data-float={float?.preset}
       data-quotes={float ? quotesLayout : undefined}
       data-profile-layout={float?.profileLayout}
+      data-pills-position={float ? (pillsUnderImage ? 'under image' : 'under text') : undefined}
+      data-bubbles={float?.bubbles?.look}
+      data-pills={float?.bubbles?.pills}
       data-live={live || undefined}
       style={
         {
@@ -478,6 +585,8 @@ export function PersonaSection({
             : {}),
           '--persona-img-w': `${p.imageWidth}px`,
           '--persona-img-r': `${p.imageRadius}px`,
+          '--sticker-r': `${p.cardRadius}px`,
+          '--sticker-border': `${p.cardGap}px`,
           '--persona-title': p.titleScale,
           '--persona-gap': `${p.blockGap}px`,
           ...(float
@@ -492,6 +601,22 @@ export function PersonaSection({
                 '--float-bob': `${float.bob}px`,
               }
             : {}),
+          ...(sticker
+            ? {
+                '--sticker-tilt': `${sticker.tilt}deg`,
+                '--sticker-dur': `${sticker.stamp}s`,
+                '--sticker-lift': `${sticker.lift}px`,
+                '--sticker-scale': sticker.scale,
+              }
+            : {}),
+          ...(glass
+            ? {
+                '--bubble-tint': glass.tint,
+                '--bubble-blur': `${glass.blur}px`,
+                '--bubble-r': `${glass.radius}px`,
+                '--bubble-perspective': `${glass.perspective}px`,
+              }
+            : {}),
         } as CSSProperties
       }
     >
@@ -500,44 +625,45 @@ export function PersonaSection({
           <EditableText as="p" className="eyebrow" label="Persona eyebrow" value={p.eyebrow} onChange={edit('persona.eyebrow')} />
           <EditableText as="h2" className="persona__title" label="Persona title" value={p.title} onChange={edit('persona.title')} selectable={selectable} />
           <EditableText className="persona__body" label="Persona body" value={p.body} onChange={edit('persona.body')} selectable={selectable} />
-          {p.showTags && tags.length > 0 && (
-            <ul className="persona__tags" aria-label="Profile">
-              {tags.map((t, i) => {
-                const TagIcon = PROFILE_TAG_ICONS[i]
-                return (
-                  <li key={t} style={{ '--pe-delay': `${timeline?.pill[i] ?? 0}s` } as CSSProperties}>
-                    {TagIcon && <TagIcon className="persona__tag-icon" size={14} strokeWidth={1.8} aria-hidden="true" />}
-                    {t}
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+          {!pillsUnderImage && tagList}
         </div>
         {look.image !== 'none' && (
           <div className="persona__stage">
-            {visual ?? (
-              <img
-                className="persona__photo"
-                src="/work/momo/persona/overthinker.jpg"
-                alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
-                width={1374}
-                height={1145}
-                loading="lazy"
-                decoding="async"
-              />
-            )}
+            <div className={sticker ? 'persona__sticker' : 'persona__portrait'}>
+              {visual ?? (
+                <img
+                  className="persona__photo"
+                  src="/work/momo/persona/overthinker.jpg"
+                  alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
+                  width={1374}
+                  height={1145}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </div>
             {float && quotesLayout === 'floating' && (
               <ul key={floatCycle} className="persona__floats" aria-label={m.title}>
                 {quoteIndexes.map((i) => (
-                  <li key={i} className="persona__float" data-slot={i} style={{ '--i': i } as CSSProperties}>
-                    {quoteParts(i)}
+                  <li
+                    key={i}
+                    className="persona__float"
+                    data-slot={i}
+                    style={{
+                      '--i': i,
+                      ...(glass ? { rotate: bubbleRotate(glass.turn * SLOT_SIDE[i], -glass.roll * SLOT_SIDE[i] * SLOT_ROLL[i]) } : {}),
+                    } as CSSProperties}
+                  >
+                    <div className="persona__float-push" ref={setFloatPushRef[i]}>
+                      {quoteParts(i)}
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
         )}
+        {pillsUnderImage && <div className="persona__pills case__section-copy">{tagList}</div>}
         {float && quotesLayout === 'spotlight' && (
           <QuoteSpotlight key={floatCycle} count={quoteIndexes.length} pace={float.pace} live={live} label={m.title} render={quoteParts} />
         )}

@@ -568,8 +568,11 @@ export const FILO_CONFIG = {
       spread: [169, -40, 200, 1] as Tuple,
       bob: [20, 0, 20, 1] as Tuple,
       eyebrowGap: [17, 0, 80, 1] as Tuple,
-      bodyGap: [22, 0, 120, 1] as Tuple,
-      tagsGap: [40, 0, 100, 1] as Tuple,
+      bodyGap: [16, 0, 200, 1] as Tuple,
+      tagsGap: [72, 0, 300, 1] as Tuple,
+      // Sticker and glass bubbles are Momo's; Filo keeps its plain portrait and cards.
+      sticker: { ...FLOAT_DIALS.sticker, show: false },
+      bubbles: { ...FLOAT_DIALS.bubbles, look: { ...FLOAT_DIALS.bubbles.look, default: 'card' } },
     },
   },
   source: sectionDials({

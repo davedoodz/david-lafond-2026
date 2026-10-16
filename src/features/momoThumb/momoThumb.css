@@ -210,9 +210,10 @@
 .mt-pill__out { opacity: 0; filter: blur(4px); translate: 0 0.4em; }
 .p-out .mt-pill__in { opacity: 0; filter: blur(4px); translate: 0 -0.4em; }
 .p-out .mt-pill__out { opacity: 1; filter: none; translate: none; }
-.mt-pill .mt-ico { width: 1.2em; height: 1.2em; }
-/* Each label's vertical nudge (default 1px low, optically centred) is set inline from the
-   "Pill text y" sliders; icons stay put. */
+.mt-pill .mt-ico { width: 1.2em; height: 1.2em; translate: 0 var(--pill-icon-y, 0px); }
+/* Each label's vertical nudge (default 1px low, optically centred) is set inline, plus the global
+   "Pill text › textY" offset from DialKit; icons share a global "Pill text › iconY" offset via
+   --pill-icon-y above. */
 .mt-pill > span > span { position: relative; }
 .mt-pill__in .mt-ico { color: var(--accent); }
 .mt-pill__out .mt-ico { color: #0a7bd6; }
