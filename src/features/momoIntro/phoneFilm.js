@@ -223,11 +223,15 @@ function transcript(c, tokens, t) {
 function controls(c, t, mode, recAt) {
   c.save()
   const y = 790
-  // The prototype's `.mode-pill` lists Inter first but never loads it, so it renders in SF Pro.
-  const PILL_FONT = '500 15px system-ui, sans-serif'
-  c.font = PILL_FONT; const pw = 22 + c.measureText(mode).width + 8 + 12 + 19
-  glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.42)', 6)
-  c.font = PILL_FONT; c.fillStyle = '#1f1f1f'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(mode, 44, y)
+  // The prototype's `.mode-pill` lists Inter first but never loads it, so it renders in SF Pro, where
+  // "Freeform" is 64px. Canvas system fonts vary by browser (David's Chrome drew it ~53px), so the
+  // label is held at the prototype's 64px with letter-spacing and the pill keeps its proportions.
+  const PILL_FONT = '500 15px system-ui, sans-serif', LABEL_W = 64
+  c.font = PILL_FONT; const ls = (LABEL_W - c.measureText(mode).width) / mode.length, pw = 22 + LABEL_W + 8 + 12 + 19
+  // 0.42 white over the prototype's pale backdrop; the film's glow is deeper blue under the bar, so
+  // 0.74 lands on the prototype's composite (≈ rgb 230,243,253).
+  glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.74)', 6)
+  c.font = PILL_FONT; c.fillStyle = '#1f1f1f'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.letterSpacing = `${ls}px`; c.fillText(mode, 44, y); c.letterSpacing = '0px'
   // Prototype Chevron: 12px box, path M3.5 5 6 7.5 8.5 5, stroke #666 1.4, round caps.
   c.strokeStyle = '#666'; c.lineWidth = 1.4; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); const cx = 22 + pw - 25; c.moveTo(cx - 2.5, y - 1); c.lineTo(cx, y + 1.5); c.lineTo(cx + 2.5, y - 1); c.stroke()
   const btn = (x, fill) => { glass(c, x - 23, y - 23, 46, 46, 23, fill, fill === '#292931' ? 14 : 6) }
