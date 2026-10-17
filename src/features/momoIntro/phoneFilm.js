@@ -20,6 +20,13 @@ let LAUNCH = { duration: 0.7, spring: 9, face: 0.15, press: 0.05, zoom: 0.05, bl
 export function setAppLaunch(dials) { LAUNCH = dials }
 /** Momo intro › Momo asleep: size and centre of asleep Momo when the app opens, until the record tap (screen units). */
 export function setMomoAsleep({ size, y }) { D.momo.talkS = size; D.momo.talkY = y }
+/** Freeform pill label dials (Momo intro › Freeform pill), in screen px: letter-spacing (the pill grows
+ *  with it, so the chevron keeps its gap) and an x/y nudge of the text inside the pill. */
+let PILL_TEXT = { letterSpacing: 0, x: 0, y: 0 }
+export function setPillText(dials) { PILL_TEXT = dials }
+/** Pause icon dials (Momo intro › Pause icon): corner radius of the two 3×14 bars, in screen px (1.5 = capsule). */
+let PAUSE_ICON = { radius: 0 }
+export function setPauseIcon(dials) { PAUSE_ICON = dials }
 const COPY = {"luck":{"title":"Good luck with the presentation 🍀","body":"Deep breaths before you walk in.\nYou totally got this! 😌"},"nudge":{"title":"Wanna debrief? ☁️","body":"I noticed your body’s still a little stressed from that presentation. I'm here if you wanna yap about it 👀"}}
 const MEET = {"title":"Design Pitch - Internal Team","now":"2:00 – 2:45 PM · now","ended":"Ended 2:45 PM"}
 const CHECKS = [{"kind":"hr","text":"Heart rate up ~30 BPM in 2 min","state":"ok"},{"kind":"base","text":"Unusual for you at this hour","state":"ok"}]
@@ -223,24 +230,18 @@ function transcript(c, tokens, t) {
 function controls(c, t, mode, recAt) {
   c.save()
   const y = 790
-  // The prototype's `.mode-pill` lists Inter first but never loads it, so it renders in SF Pro, where
-  // "Freeform" is 64px. Canvas system fonts vary by browser (David's Chrome drew it ~53px), so the
-  // label is held at the prototype's 64px with letter-spacing and the pill keeps its proportions.
-  const PILL_FONT = '500 15px system-ui, sans-serif', LABEL_W = 64
-  c.font = PILL_FONT; const ls = (LABEL_W - c.measureText(mode).width) / mode.length, pw = 22 + LABEL_W + 8 + 12 + 19
-  // 0.42 white over the prototype's pale backdrop; the film's glow is deeper blue under the bar, so
-  // 0.74 lands on the prototype's composite (≈ rgb 230,243,253).
-  glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.74)', 6)
-  c.font = PILL_FONT; c.fillStyle = '#1f1f1f'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.letterSpacing = `${ls}px`; c.fillText(mode, 44, y); c.letterSpacing = '0px'
-  // Prototype Chevron: 12px box, path M3.5 5 6 7.5 8.5 5, stroke #666 1.4, round caps.
-  c.strokeStyle = '#666'; c.lineWidth = 1.4; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); const cx = 22 + pw - 25; c.moveTo(cx - 2.5, y - 1); c.lineTo(cx, y + 1.5); c.lineTo(cx + 2.5, y - 1); c.stroke()
+  const P = PILL_TEXT
+  c.font = `500 15px ${UI}`; c.letterSpacing = `${P.letterSpacing}px`; const pw = 22 + c.measureText(mode).width + 8 + 12 + 19; c.letterSpacing = '0px'
+  glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.55)', 6)
+  tx(c, mode, 44 + P.x, y + P.y, 15, { w: 500, ls: P.letterSpacing })
+  c.strokeStyle = '#666'; c.lineWidth = 1.4; c.beginPath(); const cx = 22 + pw - 25; c.moveTo(cx - 3.5, y - 1.5); c.lineTo(cx, y + 2); c.lineTo(cx + 3.5, y - 1.5); c.stroke()
   const btn = (x, fill) => { glass(c, x - 23, y - 23, 46, 46, 23, fill, fill === '#292931' ? 14 : 6) }
   // Lucide icons (24-grid, stroke 2) at 20 px: rotate-ccw and pause.
   const lucide = (x, d) => { c.save(); c.translate(x - 10, y - 10); c.scale(20 / 24, 20 / 24); c.strokeStyle = '#1f1f1f'; c.lineWidth = 2; c.lineCap = 'round'; c.lineJoin = 'round'; d.forEach((p) => c.stroke(new Path2D(p))); c.restore() }
   const pause = () => {
     const P = OPT.pause
     c.fillStyle = '#1f1f1f'
-    if (P === 'bars') { c.fillRect(282.5, y - 7, 3, 14); c.fillRect(288.5, y - 7, 3, 14) }
+    if (P === 'bars') { c.beginPath(); c.roundRect(282.5, y - 7, 3, 14, PAUSE_ICON.radius); c.roundRect(288.5, y - 7, 3, 14, PAUSE_ICON.radius); c.fill() }
     else if (P === 'rounded') { c.beginPath(); c.roundRect(281.5, y - 7.5, 4, 15, 2); c.roundRect(288.5, y - 7.5, 4, 15, 2); c.fill() }
     else if (P === 'filled') { c.save(); c.translate(277, y - 10); c.scale(20 / 24, 20 / 24); c.beginPath(); c.roundRect(6, 4, 4, 16, 1); c.roundRect(14, 4, 4, 16, 1); c.fill(); c.restore() }
     else if (P === 'circle') lucide(287, ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M10 15V9', 'M14 15V9'])

@@ -843,6 +843,12 @@
     "appLaunch": {
       "duration": 1.8
     },
+    "freeformPill": {
+      "letterSpacing": -0.29
+    },
+    "pauseIcon": {
+      "radius": 1.4
+    },
     "timingSeconds": {
       "meetingNotice": 1.2,
       "goodLuckNotice": 1.95,
