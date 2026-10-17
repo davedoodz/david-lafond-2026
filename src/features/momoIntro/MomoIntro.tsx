@@ -274,12 +274,14 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       locked = on
       setFloor(on ? Math.min(window.scrollY, landingY) : 0)
     }
-    // While the film plays (until its own handoff glide), the page can't go down: Skip intro is the
-    // only way past. The ceiling ratchets down with any upward scroll (Replay's glide), and every
-    // downward input is cancelled before it scrolls; programmatic scrolls (skip, handoff) run after
-    // the hold ends, so they pass.
-    let ceil = Infinity
-    const holding = () => playing && handoffY === null
+    // From mount until the film has loaded, and then while it plays (until its own handoff glide), the
+    // page can't go down: Skip intro is the only way past. Holding during the load matters: a quick
+    // scroll right after a refresh used to slip under the stage before the film could start. The
+    // ceiling ratchets down with any upward scroll (Replay's glide), and every downward input is
+    // cancelled before it scrolls; programmatic scrolls (skip, handoff) run after the hold ends.
+    let loading = true
+    let ceil = window.scrollY
+    const holding = () => (loading || playing) && handoffY === null
     const holdFloor = () => {
       const y = window.scrollY
       if (holding()) {
@@ -582,13 +584,14 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     measure()
     void loadPhoneFilm().then(() => {
       if (disposed) return
-      ready = true
+      ready = true; loading = false
       if (progress() > tRef.current.startAt) start()
       else { setReplayable(true); completeHandoff() }
       wake()
     }).catch((error) => {
       if (disposed) return
       console.error('Momo intro assets could not load', error)
+      loading = false
       window.scrollTo({ top: stageH, behavior: 'instant' })
       completeHandoff()
     })

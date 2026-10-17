@@ -617,8 +617,7 @@
       "placement": "below meta",
       "height": 39,
       "gap": 27,
-      "offset": 28,
-      "hoverColor": "#53bffe"
+      "offset": 28
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
@@ -647,7 +646,7 @@
       },
       "spacing": {
         "top": 233,
-        "bottom": 210,
+        "bottom": 0,
         "contentGap": 383
       },
       "artText": {
@@ -672,6 +671,7 @@
         "m4Quote": "“It's happening tomorrow again...”"
       },
       "spacing": {
+        "top": 30,
         "bottom": 0
       },
       "float": {
@@ -691,8 +691,9 @@
           "distance": 6,
           "textStagger": 0.12,
           "pillStagger": 0.12,
-          "pillsGap": 0.05,
+          "pillsGap": -1.45,
           "pillsAfter": "title",
+          "textGap": -0.9,
           "floatsDelay": 0.2,
           "floatStagger": 0.11
         },
@@ -723,7 +724,7 @@
       "body": "Your reflections become a record of your experiences \nand a way to turn insight into action.",
       "phoneScale": 1.04,
       "spacing": {
-        "top": 85,
+        "top": 34,
         "contentGap": 75
       }
     },
@@ -745,6 +746,7 @@
         "strapColor": "#96b6d4"
       },
       "spacing": {
+        "top": 71,
         "contentGap": 46
       },
       "deviceEntrance": {
@@ -795,8 +797,8 @@
     "frame": 2738590
   },
   "Momo case study · order": {
-    "section": "system",
-    "order": "story, persona, moment, overview, notification, system, flows, dynamic, howItWorks, guided, context, tracking, outcomes",
+    "section": "persona",
+    "order": "story, system, persona, moment, overview, notification, flows, dynamic, howItWorks, guided, context, tracking, outcomes",
     "max": 13,
     "keep": {
       "Overview": "hide",
@@ -952,14 +954,13 @@
         "spread": 154,
         "entrance": {
           "duration": 0.3,
+          "textDuration": 0.3,
           "distance": 6,
           "textStagger": 0.02,
           "pillStagger": 0.01,
           "pillsGap": 0.05,
-          "imageGap": 0.06,
           "floatsDelay": 0.2,
-          "floatStagger": 0.11,
-          "textDuration": 0.3
+          "floatStagger": 0.11
         }
       }
     },
@@ -975,7 +976,7 @@
       "shadeAt": 0,
       "shadeIn": 1,
       "shadeOut": 4,
-      "momoAt": 0.55,
+      "momoAt": -0.65,
       "logoAt": 0.55,
       "buttonsAt": 0.65,
       "legalAt": 0.8,

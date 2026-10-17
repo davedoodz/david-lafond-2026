@@ -31,7 +31,7 @@ export function HarvardMitPage() {
     <main ref={mainRef} className="project" data-surface="dark">
       <Nav route="harvard-mit" />
       <BackLink className="project__back" />
-      <h1 className="visually-hidden">The Design Portfolio that Got Me Into Harvard &amp; MIT</h1>
+      <h1 className="visually-hidden">The Architecture Portfolio that Got Me Into Harvard &amp; MIT</h1>
       <BookViewer />
       <ContactCta />
     </main>

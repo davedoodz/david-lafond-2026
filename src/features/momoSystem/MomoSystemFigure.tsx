@@ -86,8 +86,9 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
   const d = e.distance
   const timing = (i = 0, extra: KeyframeAnimationOptions = {}): KeyframeAnimationOptions =>
     ({ duration: e.duration * 1000, delay: (e.delay + i * e.stagger) * 1000, easing: EASE_OUT, fill: 'backwards', ...extra })
-  // The Momo lockup and the seal are printed on the card: they move with the surface, frame for frame.
-  const fixtures = ['.momo-system__brand', '.momo-system__lockup-glass', '.momo-seal'].map((s) => card.querySelector<HTMLElement>(s))
+  // The Momo lockup is printed on the card: it moves with the surface, frame for frame. The seal is not:
+  // it stamps down once the walkthrough is done (momoSystem.css, [data-done='true']).
+  const fixtures = ['.momo-system__brand', '.momo-system__lockup-glass'].map((s) => card.querySelector<HTMLElement>(s))
     .filter((el): el is HTMLElement => !!el)
   const diagram = card.querySelector<HTMLElement>('.momo-system__diagram')
   // A lone keyframe defaults to offset 1 (an exit); offset 0 makes it the start, settling to the CSS value.
@@ -106,7 +107,7 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
     case 'rise': return whole({ opacity: 0, transform: `translateY(${d}px)` })
     case 'scale': return whole({ opacity: 0, transform: `scale(${1 - d / 1000})` })
     case 'tilt': return whole({ opacity: 0, transform: `perspective(1600px) translateY(${d}px) rotateX(${Math.min(30, d / 4)}deg)` })
-    // Surface (with its lockup and seal) first, then the diagram.
+    // Surface (with its lockup) first, then the diagram.
     case 'cascade': {
       const rise = from({ opacity: 0, transform: `translateY(${d}px)` })
       return [
@@ -116,7 +117,7 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
         ...content(),
       ]
     }
-    // The surface opens from its top edge, carrying its lockup and seal; the diagram fades up inside it.
+    // The surface opens from its top edge, carrying its lockup; the diagram fades up inside it.
     case 'unfold': {
       const open: Keyframe[] = [{ offset: 0, opacity: 0, transform: 'scaleY(0.4)' }, { offset: 1 }]
       return [

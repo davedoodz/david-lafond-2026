@@ -736,7 +736,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       glyph.getAnimations({ subtree: true }).forEach((a) => a.cancel())
       if (!motion || reduceMotion) return delay
       const duration = timing.spot * 0.85
-      const repeats = 2
+      const repeats = 1
       if (motion === 'stack') {
         // Lowest layer first: each drops a little and fades in, then the next lands on top.
         const layers = [...glyph.querySelectorAll('path, polyline, rect, circle')].sort((a, b) => b.getBBox().y - a.getBBox().y)
