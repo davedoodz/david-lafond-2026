@@ -5,10 +5,12 @@ export type AppLaunch = { duration: number; spring: number; face: number; press:
 export function setAppLaunch(dials: AppLaunch): void
 /** Size and centre Momo settles to once asleep, in the phone screen's 390-wide units. */
 export function setMomoAsleep(dials: { size: number; y: number }): void
-/** Freeform pill label: letter-spacing and x/y nudge, in screen px. */
-export function setPillText(dials: { letterSpacing: number; x: number; y: number }): void
+/** Freeform pill: label letter-spacing and x/y nudge, and the pill's corner radius, in screen px. */
+export function setPillText(dials: { letterSpacing: number; x: number; y: number; radius: number }): void
 /** Pause icon: corner radius of the two bars, in screen px. */
 export function setPauseIcon(dials: { radius: number }): void
+/** Status icon gaps in pt: signal → Wi-Fi and Wi-Fi → battery fill. */
+export function setStatusGaps(dials: { wifi: number; battery: number }): void
 /** VoiceBeam host: the phone screen's rect in film px (960×540), whether the voice is live, and its level 0–1.
  *  `rt` is the braid's phase clock this frame, for the page band to carry on from. */
 export type PhoneBeam = { x: number; y: number; w: number; h: number; active: boolean; level: number; rt: number }

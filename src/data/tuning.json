@@ -839,15 +839,19 @@
     "mobileHeight": 193
   },
   "Momo intro": {
-    "speed": 1.3,
+    "speed": 1.25,
     "appLaunch": {
-      "duration": 1.8
+      "duration": 2
     },
     "freeformPill": {
       "letterSpacing": -0.29
     },
     "pauseIcon": {
       "radius": 1.4
+    },
+    "statusIcons": {
+      "wifi": 6.1,
+      "battery": 7.4
     },
     "timingSeconds": {
       "meetingNotice": 1.2,
