@@ -53,7 +53,10 @@
   filter: blur(48px);
 }
 /* Pressed seal artwork (case study "seal" dials: style, scale, x, y): sits in the visible card's
-   bottom-right corner, sized and offset in card units like the lockup so it keeps its spot at every width. */
+   bottom-right corner, sized and offset in card units like the lockup so it keeps its spot at every width.
+   Hidden until the walkthrough is done (cards, arrows and icons settled: 'momosystem:done' sets
+   data-done), then stamped down: it drops in large and tilted, presses past its size, and settles.
+   Rewinding off screen clears data-done, so every replay stamps it again. */
 .momo-system > .momo-seal {
   --u: min(1px, 100cqw / 928);
   position: absolute;
@@ -64,6 +67,24 @@
   height: auto;
   pointer-events: none;
   user-select: none;
+  opacity: 0;
+}
+/* `backwards`, not `both`: the last frame equals the resting style, and an animation that keeps filling
+   keeps the seal on its own compositor layer, which splits the card's content into an extra overlap
+   layer that re-rasters (text shimmer) while the card push-tilts. */
+.momo-system[data-done='true'] > .momo-seal {
+  opacity: 1;
+  animation: momo-seal-stamp 620ms backwards;
+}
+@keyframes momo-seal-stamp {
+  0% { opacity: 0; transform: translateY(-14%) scale(1.6) rotate(-10deg); animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45); }
+  25% { opacity: 1; }
+  55% { transform: scale(0.94) rotate(0deg); filter: brightness(1.08); animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+  78% { transform: scale(1.015); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .momo-system[data-done='true'] > .momo-seal { animation: none; }
 }
 .momo-system__brand {
   position: relative;

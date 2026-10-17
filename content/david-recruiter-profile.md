@@ -8,7 +8,7 @@ David Lafond is a product designer with training in architecture, product manage
 
 His public biography traces a path from pre-med to architecture to product design. The disciplines changed; the recurring question did not: how people use what gets built.
 
-David has worked across smart-city design, an MIT Media Lab product team, the MIT Senseable City Lab, and an early-stage parking product. His portfolio is led by Momo, a multimodal reflection system for behavioral change; Filo, an agentic workflow for biomaterial adoption in fashion; and the design portfolio that helped him gain admission to both Harvard and MIT.
+David has worked across smart-city design, an MIT Media Lab product team, the MIT Senseable City Lab, and an early-stage parking product. His portfolio is led by Momo, a multimodal reflection system for behavioral change; Filo, an agentic workflow for biomaterial adoption in fashion; and the architecture portfolio that helped him gain admission to both Harvard and MIT.
 
 His record is not limited to polished interface work. He has conducted field research, reframed products after interviews disproved an initial idea, facilitated design sprints, built interactive prototypes, collaborated with engineers and domain experts, and translated complex systems into stories that non-specialists can understand.
 
@@ -134,7 +134,7 @@ He also co-built Tekuma Intelligence, an internal AI-powered brand-design tool f
 
 Recruiter signal: design leadership, high-stakes delivery, international collaboration, visual communication, and practical internal AI tooling.
 
-### Harvard and MIT design portfolio
+### Harvard and MIT architecture portfolio
 
 David’s portfolio includes the design book he used when applying to Harvard and MIT, where he was admitted to both. The interactive case study presents the work as a video, a page-turning book, and a grid of spreads.
 

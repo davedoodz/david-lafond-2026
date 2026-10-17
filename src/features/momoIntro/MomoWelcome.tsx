@@ -39,7 +39,8 @@ const CONFIG = {
     shadeAt: [0.6, 0, 6, 0.1] as Tuple,
     shadeIn: [1.2, 0, 4, 0.1] as Tuple,
     shadeOut: [0.96, 0, 4, 0.05] as Tuple,
-    momoAt: [2, 0, 10, 0.05] as Tuple,
+    /** Below 0, Momo starts before the phone lands, while it is still rising. */
+    momoAt: [2, -3, 10, 0.05] as Tuple,
     logoAt: [3.1, 0, 10, 0.05] as Tuple,
     buttonsAt: [4, 0, 10, 0.05] as Tuple,
     legalAt: [4.7, 0, 10, 0.05] as Tuple,
@@ -114,6 +115,8 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
   const legal = useRef<HTMLParagraphElement>(null)
   const mountRef = useRef<ShaderMount | null>(null)
   const loopRef = useRef<Animation[]>([])
+  /** Timeline time (ms) the phone lands; the welcome loop is scheduled from it, so cues may start mid-rise. */
+  const landAt = useRef(0)
   const [visible, setVisible] = useState(false)
   const [phase, setPhaseState] = useState<Phase>('waiting')
   const phaseRef = useRef<Phase>('waiting')
@@ -169,6 +172,7 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
       el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: Math.max(1, fade * 1000), delay: delay * 1000, easing: 'ease-out', fill: 'backwards' }),
     ]
     setPhase('rising')
+    landAt.current = (document.timeline.currentTime as number) + delay * 1000 + Math.max(parseFloat(motion.duration) * 1000, fade * 1000)
     let cancelled = false
     void Promise.all(anims.map(a => a.finished)).then(() => { if (!cancelled) setPhase('landed') }, () => {})
     return () => {
@@ -178,34 +182,43 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
     }
   }, [active, visible, reduced, riseKey, distance, delay, fade, springKey])
 
-  // Welcome loop on one shared clock, rebuilt whenever a timing dial moves.
+  // Welcome loop on one shared clock, rebuilt whenever a timing dial moves. It is scheduled as soon as the
+  // rise starts, timed from the landing, so a negative start (Momo) appears while the phone is still rising.
   const T = t.timing
+  const started = phase !== 'waiting'
   useEffect(() => {
-    if (phase !== 'landed' || reduced) return
+    if (!started || reduced) return
     const timeScale = T.fullLoopDuration / 12
     const loop = T.fullLoopDuration * 1000
     const s = (authoredSeconds: number) => authoredSeconds * timeScale * 1000
     const hidden = { opacity: 0, transform: `translateY(${T.lift}px)` }
     const shown = { opacity: 1, transform: 'none' }
-    const element = (el: HTMLElement, at: number) =>
-      el.animate(loopFrames(loop, s(at), s(T.fadeIn), s(T.holdUntil), s(T.fadeOut), hidden, shown, ENTER_EASE), { duration: loop, iterations: Infinity })
-    const anims = [
-      shade.current!.animate(loopFrames(loop, s(T.shadeAt), s(T.shadeIn), loop - s(T.shadeOut), s(T.shadeOut), { opacity: 0 }, { opacity: t.blackOverlay }, 'ease-in-out'), { duration: loop, iterations: Infinity }),
+    // A negative start shifts that element's whole loop earlier and holds it longer, so every element
+    // still fades out together at holdUntil.
+    const element = (el: HTMLElement, at: number): [Animation, number] => {
+      const lead = Math.min(0, s(at))
+      return [el.animate(loopFrames(loop, s(at) - lead, s(T.fadeIn), s(T.holdUntil) - lead, s(T.fadeOut), hidden, shown, ENTER_EASE), { duration: loop, iterations: Infinity, fill: 'backwards' }), lead]
+    }
+    const anims: [Animation, number][] = [
+      [shade.current!.animate(loopFrames(loop, s(T.shadeAt), s(T.shadeIn), loop - s(T.shadeOut), s(T.shadeOut), { opacity: 0 }, { opacity: t.blackOverlay }, 'ease-in-out'), { duration: loop, iterations: Infinity, fill: 'backwards' }), 0],
       element(mascot.current!, T.momoAt),
       element(brand.current!, T.logoAt),
       // Each button fades itself: an animating parent's opacity would cut the glass blur off from the shader behind it.
       ...Array.from(actions.current!.children as HTMLCollectionOf<HTMLElement>, el => element(el, T.buttonsAt)),
       element(legal.current!, T.legalAt),
     ]
-    const start = document.timeline.currentTime
-    for (const a of anims) a.startTime = start
-    loopRef.current = anims
-    return () => { anims.forEach(a => a.cancel()); loopRef.current = [] }
-  }, [phase, reduced, loopKey, t.blackOverlay, T.fullLoopDuration, T.shadeAt, T.shadeIn, T.shadeOut, T.momoAt, T.logoAt, T.buttonsAt, T.legalAt, T.fadeIn, T.lift, T.holdUntil, T.fadeOut])
+    // Mid-rise: start at the landing. Landed (dial edits, Restart loop): start now, late enough that the
+    // earliest (negative) cue still begins hidden.
+    const start = Math.max((document.timeline.currentTime as number) - Math.min(0, ...anims.map(([, lead]) => lead)), landAt.current)
+    for (const [a, lead] of anims) a.startTime = start + lead
+    loopRef.current = anims.map(([a]) => a)
+    return () => { anims.forEach(([a]) => a.cancel()); loopRef.current = [] }
+  }, [started, reduced, loopKey, t.blackOverlay, T.fullLoopDuration, T.shadeAt, T.shadeIn, T.shadeOut, T.momoAt, T.logoAt, T.buttonsAt, T.legalAt, T.fadeIn, T.lift, T.holdUntil, T.fadeOut])
 
   // Off screen: hold the loop where it is.
   useEffect(() => {
-    for (const a of loopRef.current) visible ? a.play() : a.pause()
+    // play() would rewind a cue still scheduled for the landing, so only resume what was paused.
+    for (const a of loopRef.current) visible ? a.playState === 'paused' && a.play() : a.pause()
   }, [visible, phase])
 
   const style = {

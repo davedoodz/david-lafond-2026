@@ -53,7 +53,7 @@ function useIdle() {
 const TITLES = {
   work: 'David Lafond — Architect × Product Designer',
   about: 'About — David Lafond',
-  'harvard-mit': 'The Design Portfolio that Got Me Into Harvard & MIT — David Lafond',
+  'harvard-mit': 'The Architecture Portfolio that Got Me Into Harvard & MIT — David Lafond',
   momo: 'Momo — David Lafond',
   filo: 'Filo — David Lafond',
 }

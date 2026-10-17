@@ -25,12 +25,12 @@ function savedMobileHeight(): number {
 }
 
 const CARD = {
-  desktop: { width: 867, ratio: 493 / 867, radius: 25, title: 'The Design Portfolio that Got Me Into Harvard & MIT', titleSize: 20, inset: [45, 35] },
+  desktop: { width: 867, ratio: 493 / 867, radius: 25, title: 'The Architecture Portfolio that Got Me Into Harvard & MIT', titleSize: 20, inset: [45, 35] },
   mobile: {
     width: 300,
     ratio: savedMobileHeight() / 100,
     radius: 11,
-    title: 'Harvard & MIT Design Portfolio',
+    title: 'Harvard & MIT Architecture Portfolio',
     titleSize: 16,
     inset: [16, 16],
   },

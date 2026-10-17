@@ -137,12 +137,12 @@ export const FLOAT_DIALS = {
     textStagger: [0.05, 0, 0.6, 0.01] as Tuple,
     /** Between one pill and the next. */
     pillStagger: [0.02, 0, 0.4, 0.01] as Tuple,
-    /** Pause after the text block (see pillsAfter) before the first pill. */
-    pillsGap: [0.02, 0, 1.5, 0.01] as Tuple,
+    /** Pause after the text block (see pillsAfter) before the first pill; below 0 the pills overlap it. */
+    pillsGap: [0.02, -3, 1.5, 0.01] as Tuple,
     /** Which text line the pills wait for: the title (pills arrive under the copy right after it) or the body. */
     pillsAfter: { type: 'select' as const, options: ['title', 'body'], default: 'body' },
-    /** Pause after the last bubble settles before the text block starts. */
-    textGap: [0.1, 0, 1.5, 0.01] as Tuple,
+    /** Pause after the last bubble settles before the text block starts; below 0 the text overlaps the bubbles. */
+    textGap: [0.1, -3, 1.5, 0.01] as Tuple,
     /** From the portrait landing to the first floating bubble. */
     floatsDelay: [0.35, 0, 4, 0.05] as Tuple,
     /** Between one floating bubble and the next (drift). */
@@ -493,26 +493,56 @@ export function PersonaSection({
     const el = ref.current
     if (!el) return
     // The intro entrance (text, pills, portrait) is played from script, so the CSS pause no longer
-    // holds it; pause it here. It is rewound to frame one only once the section is fully off screen,
-    // so a return shows the start of the entrance, never the settled section snapping back.
+    // holds it; pause it here. It starts as soon as the whole portrait is on screen (top and bottom
+    // edges inside the view), or if a fast scroll carries it past the middle between frames, and is
+    // rewound to frame one only once the section is fully off screen, so a return shows the start of
+    // the entrance, never the settled section snapping back.
     const entrance = () =>
       el.getAnimations({ subtree: true }).filter((a) => a instanceof CSSAnimation && a.animationName.startsWith('pe-'))
-    const observer = new IntersectionObserver(([e]) => {
-      if (e.intersectionRatio >= 0.1 && !wasLive.current) {
+    const anchor = el.querySelector<HTMLElement>('.persona__portrait, .persona__sticker') ?? el
+    let lastSide = 0
+    let frame = 0
+    const check = () => {
+      frame = 0
+      if (wasLive.current) return
+      // Settled layout box from the offset chain, not the animated one: the paused first frame of the
+      // stamp is scaled and lifted, which would fire the trigger early.
+      let top = -scrollY
+      for (let n: HTMLElement | null = anchor; n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop
+      const h = anchor.offsetHeight, bottom = top + h
+      const side = Math.sign(top + h / 2 - innerHeight / 2)
+      if ((top >= 0 && bottom <= innerHeight) || (lastSide !== 0 && side !== lastSide)) {
         wasLive.current = true
         entrance().forEach((a) => { a.currentTime = 0; a.play() })
         setLive(true)
-      } else if (!e.isIntersecting) {
-        if (!wasLive.current) return
-        wasLive.current = false
-        entrance().forEach((a) => { a.pause(); a.currentTime = 0 })
-        setFloatCycle((cycle) => cycle + 1)
-        setPressed(new Set())
-        setLive(false)
       }
-    }, { threshold: [0, 0.1] })
+      lastSide = side
+    }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(check) }
+    const observer = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) {
+        lastSide = 0
+        addEventListener('scroll', onScroll, { passive: true })
+        addEventListener('resize', onScroll)
+        check()
+        return
+      }
+      removeEventListener('scroll', onScroll)
+      removeEventListener('resize', onScroll)
+      if (!wasLive.current) return
+      wasLive.current = false
+      entrance().forEach((a) => { a.pause(); a.currentTime = 0 })
+      setFloatCycle((cycle) => cycle + 1)
+      setPressed(new Set())
+      setLive(false)
+    })
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      removeEventListener('scroll', onScroll)
+      removeEventListener('resize', onScroll)
+      cancelAnimationFrame(frame)
+    }
   }, [])
   const tags = p.tags
     .split(',')

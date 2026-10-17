@@ -502,7 +502,7 @@ export function BookViewer() {
   } as CSSProperties
 
   return (
-    <section className="viewer" data-mode={mode} data-layout={t.bookGridOnly ? 'book-grid' : 'tabs'} style={style} aria-label="Harvard & MIT design portfolio">
+    <section className="viewer" data-mode={mode} data-layout={t.bookGridOnly ? 'book-grid' : 'tabs'} style={style} aria-label="Harvard & MIT architecture portfolio">
       <ViewSwitch
         items={[
           ...(!t.bookGridOnly ? [{ key: 'video', label: 'Video', icon: <YouTubeIcon /> }] : []),

@@ -28,8 +28,8 @@ export const WORKS: Work[] = [
   },
   {
     id: 'harvard-mit',
-    title: 'The Design Portfolio that Got Me Into Harvard & MIT',
-    shortTitle: 'Harvard & MIT Design Portfolio',
+    title: 'The Architecture Portfolio that Got Me Into Harvard & MIT',
+    shortTitle: 'Harvard & MIT Architecture Portfolio',
     surface: 'dark',
     route: 'harvard-mit',
   },
