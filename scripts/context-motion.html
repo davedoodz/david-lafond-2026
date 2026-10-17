@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Momo story · context icons and peak entrances</title>
+<!--
+  Preview for the Momo story art. Same Lucide markup and keyframes as CaseStudyPage.css
+  (story-ctx-*, story-peak-*). Pick in DialKit → Momo case study → story:
+  icons → contextIcon / contextSpeed, and peakEntrance / peakOutline.
+-->
+<style>
+  :root {
+    --blue: #53bffe;
+    --ink: #171717;
+    --stone: #8a8580;
+    --ctx-speed: 1;
+    --peak-outline: 1.8;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+    color: var(--ink);
+    background: #f4f4f4;
+  }
+  body { margin: 0; padding: 48px clamp(20px, 5vw, 64px) 80px; }
+  h1 { margin: 0 0 6px; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+  h2.section { margin: 44px 0 16px; font-size: 15px; font-weight: 500; }
+  p.lede { margin: 0 0 28px; color: var(--stone); font-size: 14px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 24px; align-items: end; margin: 0 0 16px; font-size: 13px; color: var(--stone); }
+  .controls label { display: grid; gap: 6px; min-width: 200px; }
+  .controls output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .controls button { font: inherit; padding: 8px 14px; border-radius: 999px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+  .tile { display: grid; justify-items: center; gap: 12px; padding: 32px 14px 18px; border-radius: 20px; background: #fff; box-shadow: 0 1px 2px rgb(23 23 23 / 0.04), 0 8px 24px -12px rgb(23 23 23 / 0.12); }
+  .tile svg { width: 72px; height: 72px; overflow: visible; }
+  .tile h3 { margin: 0; font-size: 14px; font-weight: 500; }
+  .tile p { margin: -6px 0 0; font-size: 12px; color: var(--stone); text-align: center; line-height: 1.4; }
+  svg.lucide { fill: none; stroke: var(--blue); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Context build: mirrors CaseStudyPage.css (story-ctx-*). */
+  .ctx { --ctx-dx: 0px; --ctx-dy: -6px; }
+  .ctx[data-icon='file-stack'] { --ctx-dx: 3px; --ctx-dy: -3px; }
+  .ctx[data-icon='database'] { --ctx-dy: -5px; }
+  .ctx[data-icon='messages-square'] { --ctx-dy: 4px; }
+  .ctx[data-icon='blocks'] { --ctx-dy: -9px; }
+  .ctx svg > * { transform-box: fill-box; transform-origin: center; animation: ctx-k0 calc(3.6s / var(--ctx-speed)) cubic-bezier(0.34, 1.4, 0.64, 1) infinite; }
+  .ctx:is([data-icon='layers'], [data-icon='file-stack'], [data-icon='messages-square'], [data-icon='blocks']) svg > :nth-child(2),
+  .ctx[data-icon='layers-2'] svg > :nth-child(1),
+  .ctx:is([data-icon='database'], [data-icon='library-big']) svg > :nth-child(3) { animation-name: ctx-k1; }
+  .ctx:is([data-icon='layers'], [data-icon='database'], [data-icon='file-stack']) svg > :nth-child(1) { animation-name: ctx-k2; }
+  @keyframes ctx-k0 { 0% { opacity: 0; transform: translate(var(--ctx-dx), var(--ctx-dy)); } 12%, 82% { opacity: 1; transform: none; } 92%, 100% { opacity: 0; transform: none; } }
+  @keyframes ctx-k1 { 0%, 16% { opacity: 0; transform: translate(var(--ctx-dx), var(--ctx-dy)); } 28%, 82% { opacity: 1; transform: none; } 92%, 100% { opacity: 0; transform: none; } }
+  @keyframes ctx-k2 { 0%, 32% { opacity: 0; transform: translate(var(--ctx-dx), var(--ctx-dy)); } 44%, 82% { opacity: 1; transform: none; } 92%, 100% { opacity: 0; transform: none; } }
+
+  /* Peak entrances: mirrors CaseStudyPage.css (story-peak-*). The octagon is the icon's last piece. */
+  .peak .wrap > :last-child { stroke-width: var(--peak-outline); }
+  .peak .wrap, .peak .ring { transform-box: fill-box; transform-origin: center; }
+  .peak .ring { opacity: 0; }
+  .peak[data-e='slam'] .wrap { animation: peak-slam 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .peak[data-e='shake'] .wrap { animation: peak-shake 0.8s linear both; }
+  .peak[data-e='flash'] .wrap { animation: peak-flash 0.9s steps(1, end) both; }
+  .peak:is([data-e='siren'], [data-e='ping']) .wrap { animation: peak-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .peak[data-e='ping'] .ring { animation: peak-ring 0.9s ease-out both; }
+  .peak[data-e='siren'] .ring { animation: peak-ring 0.6s ease-out 3 both; }
+  .peak[data-e='none'] .wrap { animation: peak-fade 0.5s ease-out both; }
+  @keyframes peak-slam { 0% { opacity: 0; transform: translateY(-14px) scale(1.9); } 35% { opacity: 1; transform: translateY(0) scale(0.92); } 48% { transform: scale(1.06) rotate(-7deg); } 60% { transform: scale(1) rotate(6deg); } 72% { transform: rotate(-4deg); } 84% { transform: rotate(2deg); } 100% { opacity: 1; transform: none; } }
+  @keyframes peak-shake { 0% { opacity: 0; transform: none; } 8% { opacity: 1; transform: translateX(-4px); } 20% { transform: translateX(4px); } 32% { transform: translateX(-3.5px); } 44% { transform: translateX(3px); } 56% { transform: translateX(-2px); } 68% { transform: translateX(1.5px); } 80% { transform: translateX(-0.5px); } 100% { opacity: 1; transform: none; } }
+  @keyframes peak-flash { 0% { opacity: 0; } 12% { opacity: 1; } 28% { opacity: 0.1; } 44% { opacity: 1; } 60% { opacity: 0.1; } 76%, 100% { opacity: 1; } }
+  @keyframes peak-pop { 0% { opacity: 0; transform: scale(0.3); } 100% { opacity: 1; transform: none; } }
+  @keyframes peak-fade { 0% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes peak-ring { 0% { opacity: 0.8; transform: scale(0.9); } 100% { opacity: 0; transform: scale(2.2); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+  <h1>Momo story · context icons and peak entrances</h1>
+  <p class="lede">Names match DialKit → Momo case study → story. Icons are Lucide (lucide.dev/icons).</p>
+
+  <h2 class="section">Context icon (icons → contextIcon), in place of the star in the Opportunity row</h2>
+  <div class="controls">
+    <label>Build speed (contextSpeed) <input id="speed" type="range" min="0.25" max="3" step="0.05" value="1" /> <output for="speed">1.00×</output></label>
+  </div>
+  <div class="grid" id="ctx"></div>
+
+  <h2 class="section">Peak icon entrance (peakEntrance) and octagon outline (peakOutline)</h2>
+  <div class="controls">
+    <label>Octagon outline (peakOutline) <input id="outline" type="range" min="0.5" max="4" step="0.1" value="1.8" /> <output for="outline">1.8</output></label>
+    <button id="replay" type="button">Replay entrances</button>
+  </div>
+  <div class="grid" id="peak"></div>
+
+  <script>
+    // Lucide icon markup (lucide-react 0.x source, unchanged).
+    const LUCIDE = {
+      layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
+      'layers-2': '<path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/>',
+      'file-stack': '<path d="M11 21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1"/><path d="M16 16a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1"/><path d="M21 6a2 2 0 0 0-.586-1.414l-2-2A2 2 0 0 0 17 2h-3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1z"/>',
+      database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+      'library-big': '<rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/><path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"/>',
+      'messages-square': '<path d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/><path d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"/>',
+      blocks: '<path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"/><rect x="14" y="2" width="8" height="8" rx="1"/>',
+    };
+    const OCTAGON_ALERT = '<path d="M12 16h.01"/><path d="M12 8v4"/><path d="M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z"/>';
+
+    const CONTEXT = [
+      ['layers', 'Layers pile up from the bottom.'],
+      ['layers-2', 'Two layers: base, then top.'],
+      ['file-stack', 'Files land back to front.'],
+      ['database', 'Body, then a level, then the lid.'],
+      ['library-big', 'A book is shelved beside the first.'],
+      ['messages-square', 'Messages arrive one after another.'],
+      ['blocks', 'A block drops onto the stack.'],
+    ];
+    const ENTRANCES = [
+      ['slam', 'Drops in hard and shudders.'],
+      ['shake', 'Buzzes side to side.'],
+      ['flash', 'Blinks like a warning light.'],
+      ['siren', 'Pops in with three alarm rings.'],
+      ['ping', 'Pops in with one expanding ring.'],
+      ['none', 'Fades in, as before.'],
+    ];
+
+    const tile = (cls, name, note, svg, attrs) => {
+      const el = document.createElement('div');
+      el.className = `tile ${cls}`;
+      Object.assign(el.dataset, attrs);
+      el.innerHTML = `${svg}<h3>${name}</h3><p>${note}</p>`;
+      return el;
+    };
+    const ctx = document.getElementById('ctx');
+    for (const [name, note] of CONTEXT) {
+      ctx.append(tile('ctx', name, note, `<svg class="lucide" viewBox="0 0 24 24">${LUCIDE[name]}</svg>`, { icon: name }));
+    }
+    const peak = document.getElementById('peak');
+    for (const [name, note] of ENTRANCES) {
+      const svg = `<svg class="lucide" viewBox="-6 -6 36 36"><circle class="ring" cx="12" cy="12" r="12" stroke-width="1.4"/><g class="wrap">${OCTAGON_ALERT}</g></svg>`;
+      peak.append(tile('peak', name, note, svg, { e: name }));
+    }
+
+    const replay = () => {
+      for (const el of document.querySelectorAll('.peak .wrap, .peak .ring')) {
+        el.style.animation = 'none';
+        void el.getBoundingClientRect();
+        el.style.animation = '';
+      }
+    };
+    document.getElementById('replay').addEventListener('click', replay);
+    setInterval(replay, 3000);
+
+    const bind = (id, prop, fmt) => {
+      const input = document.getElementById(id);
+      const out = document.querySelector(`output[for="${id}"]`);
+      input.addEventListener('input', () => {
+        document.documentElement.style.setProperty(prop, input.value);
+        out.textContent = fmt(Number(input.value));
+      });
+    };
+    bind('speed', '--ctx-speed', (v) => `${v.toFixed(2)}×`);
+    bind('outline', '--peak-outline', (v) => v.toFixed(1));
+  </script>
+</body>
+</html>

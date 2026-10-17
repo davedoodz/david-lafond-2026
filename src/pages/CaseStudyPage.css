@@ -767,12 +767,9 @@ html[data-case-snap] .case__moment {
 [data-story-motion='off'] .sa-ping {
   animation: none;
 }
-[data-story-motion='pulse'] .sa-spark {
-  animation: story-breathe 2.4s ease-in-out infinite;
-}
 /* Icons loop whenever motion is on (transform and opacity only):
-   watch beats like a pulse, phone buzzes, voice bars speak, spark twinkles. */
-.case__story :is(.sa-icon, .sa-bars line, .sa-spark) {
+   watch beats like a pulse, phone buzzes, voice bars speak, the context icon builds itself. */
+.case__story :is(.sa-icon, .sa-bars line, .sa-context svg > *) {
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -785,8 +782,108 @@ html[data-case-snap] .case__moment {
 [data-story-motion]:not([data-story-motion='off']) .sa-bars line {
   animation: story-speak 1.1s calc(var(--i, 0) * -0.17s) ease-in-out infinite;
 }
-[data-story-motion='draw'] .sa-spark {
-  animation: story-twinkle 3s ease-in-out infinite;
+/* Context icon (story → icons → contextIcon): its Lucide pieces land one by one (k0 → k1 → k2), hold,
+   clear together and loop. --ctx-dx/--ctx-dy is where each piece comes from (icon units, 24 grid);
+   --ctx-speed is the contextSpeed dial. Preview all: scripts/context-motion.html. */
+.case__story .sa-context { --ctx-dx: 0px; --ctx-dy: -6px; }
+.case__story .sa-context[data-icon='file-stack'] { --ctx-dx: 3px; --ctx-dy: -3px; }
+.case__story .sa-context[data-icon='database'] { --ctx-dy: -5px; }
+.case__story .sa-context[data-icon='messages-square'] { --ctx-dy: 4px; }
+.case__story .sa-context[data-icon='blocks'] { --ctx-dy: -9px; }
+[data-story-motion]:not([data-story-motion='off']) .sa-context svg > * {
+  animation: story-ctx-k0 calc(3.6s / var(--ctx-speed, 1)) cubic-bezier(0.34, 1.4, 0.64, 1) infinite;
+}
+/* Build order (child order follows each Lucide icon's source). Unlisted pieces land first (k0):
+   layers' bottom layer, the back file, database's body, the first book, message or block. */
+[data-story-motion]:not([data-story-motion='off']) .sa-context:is([data-icon='layers'], [data-icon='file-stack'], [data-icon='messages-square'], [data-icon='blocks']) svg > :nth-child(2),
+[data-story-motion]:not([data-story-motion='off']) .sa-context[data-icon='layers-2'] svg > :nth-child(1),
+[data-story-motion]:not([data-story-motion='off']) .sa-context:is([data-icon='database'], [data-icon='library-big']) svg > :nth-child(3) {
+  animation-name: story-ctx-k1;
+}
+[data-story-motion]:not([data-story-motion='off']) .sa-context:is([data-icon='layers'], [data-icon='database'], [data-icon='file-stack']) svg > :nth-child(1) {
+  animation-name: story-ctx-k2;
+}
+@keyframes story-ctx-k0 {
+  0% { opacity: 0; transform: translate(var(--ctx-dx), var(--ctx-dy)); }
+  12%, 82% { opacity: 1; transform: none; }
+  92%, 100% { opacity: 0; transform: none; }
+}
+@keyframes story-ctx-k1 {
+  0%, 16% { opacity: 0; transform: translate(var(--ctx-dx), var(--ctx-dy)); }
+  28%, 82% { opacity: 1; transform: none; }
+  92%, 100% { opacity: 0; transform: none; }
+}
+@keyframes story-ctx-k2 {
+  0%, 32% { opacity: 0; transform: translate(var(--ctx-dx), var(--ctx-dy)); }
+  44%, 82% { opacity: 1; transform: none; }
+  92%, 100% { opacity: 0; transform: none; }
+}
+/* Peak icon outline (story → peakOutline): the octagon only; octagon-alert's "!" keeps its own stroke. */
+.case__story .sa-stress[data-icon='octagon-alert'] svg > :last-child {
+  stroke-width: var(--peak-outline, 1.8);
+}
+/* Peak icon urgent entrance (story → peakEntrance), replacing the plain appear at the same moment. */
+.case__story .sa-peak-ring {
+  display: none;
+}
+.case__story[data-story-motion='draw']:is([data-peak-entrance='siren'], [data-peak-entrance='ping']) .sa-peak-ring {
+  display: inline;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: story-peak-ring 0.9s calc(var(--i, 0) * 0.35s + var(--at, 0s)) ease-out both;
+}
+.case__story[data-story-motion='draw'][data-peak-entrance='siren'] .sa-peak-ring {
+  animation-iteration-count: 3;
+  animation-duration: 0.6s;
+}
+.case__story[data-story-motion='draw'][data-peak-entrance='slam'] .sa-peak {
+  animation: story-peak-slam 0.9s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.case__story[data-story-motion='draw'][data-peak-entrance='shake'] .sa-peak {
+  animation: story-peak-shake 0.8s calc(var(--i, 0) * 0.35s + var(--at, 0s)) linear both;
+}
+.case__story[data-story-motion='draw'][data-peak-entrance='flash'] .sa-peak {
+  animation: story-peak-flash 0.9s calc(var(--i, 0) * 0.35s + var(--at, 0s)) steps(1, end) both;
+}
+.case__story[data-story-motion='draw']:is([data-peak-entrance='siren'], [data-peak-entrance='ping']) .sa-peak {
+  animation: story-peak-pop 0.5s calc(var(--i, 0) * 0.35s + var(--at, 0s)) cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes story-peak-slam {
+  0% { opacity: 0; transform: translateY(-14px) scale(1.9); }
+  35% { opacity: 1; transform: translateY(0) scale(0.92); }
+  48% { transform: scale(1.06) rotate(-7deg); }
+  60% { transform: scale(1) rotate(6deg); }
+  72% { transform: rotate(-4deg); }
+  84% { transform: rotate(2deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes story-peak-shake {
+  0% { opacity: 0; transform: none; }
+  8% { opacity: 1; transform: translateX(-4px); }
+  20% { transform: translateX(4px); }
+  32% { transform: translateX(-3.5px); }
+  44% { transform: translateX(3px); }
+  56% { transform: translateX(-2px); }
+  68% { transform: translateX(1.5px); }
+  80% { transform: translateX(-0.5px); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes story-peak-flash {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  28% { opacity: 0.1; }
+  44% { opacity: 1; }
+  60% { opacity: 0.1; }
+  76%, 100% { opacity: 1; }
+}
+@keyframes story-peak-pop {
+  0% { opacity: 0; transform: scale(0.3); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes story-peak-ring {
+  0% { opacity: 0.8; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(2.2); }
 }
 /* The watch's heart line redraws left to right on each beat, while the watch grows. */
 [data-story-motion]:not([data-story-motion='off']) li .sa-beat {
@@ -798,22 +895,6 @@ html[data-case-snap] .case__moment {
   30% { stroke-dashoffset: 0; }
   85% { stroke-dashoffset: 0; opacity: 1; }
   100% { stroke-dashoffset: 0; opacity: 0; }
-}
-/* A small star sparkles at the main star's top right as it grows. */
-.case__story .sa-spark-mini {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-[data-story-motion='draw'] .sa-spark-mini {
-  animation: story-sparkle 3s ease-in-out infinite;
-}
-[data-story-motion='pulse'] .sa-spark-mini {
-  animation: story-sparkle 2.4s ease-in-out infinite;
-}
-@keyframes story-sparkle {
-  0%, 25%, 100% { transform: scale(0.85); opacity: 1; }
-  50% { transform: scale(1.2); opacity: 1; }
-  65% { transform: scale(1); opacity: 1; }
 }
 /* Stress at the peak: still, then a short tense jolt. */
 [data-story-motion]:not([data-story-motion='off']) .sa-stress {
@@ -843,10 +924,6 @@ html[data-case-snap] .case__moment {
 @keyframes story-speak {
   0%, 100% { transform: scaleY(1); }
   50% { transform: scaleY(0.45); }
-}
-@keyframes story-twinkle {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.18); opacity: 0.85; }
 }
 /* Draw motion sequencing: dots, dotted lines and devices wait for the curve (see storyArt Wipe).
    --at is seconds after the row's curve starts; the row's --i stagger is added the same way as .sa-draw. */
@@ -899,31 +976,34 @@ html[data-case-snap] .case__moment {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.25); }
 }
-/* Solution handoff: wrist signal, then spoken reflection near the peak. Times come from
-   storyArt (--fade-at, --fade, --beat-at, --beat, --show-at). Still/reduced-motion shows the final phone state. */
-.sa-solution-watch { opacity: 0; }
+/* Solution handoff: wrist signal at the peak (the watch and its line stay once they appear), then spoken
+   reflection on the phone. Times come from storyArt (--beat-at, --beat, --show-at). Still/reduced-motion
+   shows the final state: watch and phone together. */
 .sa-solution-phone { opacity: 1; }
 @media (prefers-reduced-motion: no-preference) {
-  [data-story-motion]:not([data-story-motion='off']) .sa-solution-watch {
-    animation: story-solution-watch var(--fade, 0.42s) calc(var(--i, 0) * 0.35s + var(--fade-at, 4.78s)) linear both;
-  }
   [data-story-motion]:not([data-story-motion='off']) .sa-solution-phone {
     animation: story-solution-phone var(--show-at, 5.2s) calc(var(--i, 0) * 0.35s) linear both;
   }
 }
-/* The Solution watch beats exactly once, starting as soon as it has appeared. The heart line
-   holds undrawn until then. Row speed scales every timing here together. */
+/* The Solution watch starts beating as soon as it has appeared and keeps beating. Its heart line
+   holds undrawn until then, draws in, stays, and on each beat sweeps out to the right and redraws
+   (story-solution-beat: undrawn at both ends of the loop, so it has no seam). Row speed scales it. */
 @media (prefers-reduced-motion: no-preference) {
   [data-story-motion]:not([data-story-motion='off']) li .sa-solution-watch :is(.sa-watch, .sa-beat) {
     animation-delay: calc(var(--i, 0) * 0.35s + var(--beat-at, 3s));
     animation-duration: var(--beat, 1.6s);
-    animation-iteration-count: 1;
+    animation-iteration-count: infinite;
     animation-fill-mode: both;
   }
+  [data-story-motion]:not([data-story-motion='off']) li .sa-solution-watch .sa-beat {
+    animation-name: story-solution-beat;
+    animation-timing-function: linear;
+  }
 }
-@keyframes story-solution-watch {
-  from { opacity: 1; }
-  to { opacity: 0; }
+@keyframes story-solution-beat {
+  0% { stroke-dashoffset: 1; }
+  25%, 88% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
 }
 @keyframes story-solution-phone {
   0%, 99.9% { opacity: 0; }

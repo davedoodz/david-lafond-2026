@@ -632,6 +632,12 @@
       "textAlign": "center",
       "art": "line",
       "peakIcon": "octagon-alert",
+      "peakX": 1,
+      "peakY": -4,
+      "peakScale": 1.18,
+      "icons": {
+        "heartX": -1
+      },
       "opportunityArt": "converge",
       "reveal": "cascade",
       "speed": {

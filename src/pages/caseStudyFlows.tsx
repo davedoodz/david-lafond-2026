@@ -74,6 +74,35 @@ export type Story = {
   textAlign?: 'left' | 'center'
   /** Momo: icon on the Problem curve's peak (see PEAK_ICONS). */
   peakIcon?: string
+  /** Momo: colour of that peak icon. */
+  peakColor?: string
+  /** Momo: peak icon offset (art units) and size. */
+  peakX?: number
+  peakY?: number
+  peakScale?: number
+  /** Momo: urgent entrance for the peak icon, and the octagon outline's stroke width. */
+  peakEntrance?: string
+  peakOutline?: number
+  /** Momo: heartbeat placement inside the watch, and the animated context icon in the Opportunity art. */
+  icons?: StoryIcons
+}
+
+type StoryIcons = {
+  heartX: number
+  heartY: number
+  heartScale: number
+  contextIcon: string
+  contextSpeed: number
+}
+/** Icon dials as CSS variables on the story root (consumed by storyArt Watch and the context build keyframes). */
+function iconVars(i: StoryIcons | undefined): CSSProperties | undefined {
+  if (!i) return undefined
+  return {
+    '--hb-x': i.heartX,
+    '--hb-y': i.heartY,
+    '--hb-s': i.heartScale,
+    '--ctx-speed': i.contextSpeed,
+  } as CSSProperties
 }
 
 type StoryGlass = Required<GlassDials> & { glowBlur: number; radius: number; padding: number }
@@ -112,8 +141,8 @@ export function StoryRow({ s, edit, selectable = false }: { s: Story; edit: Edit
   const look = { ...(STORY_PRESETS[s.preset] ?? s), layout: s.layout }
   const glassVars = useStoryGlass(s.glass)
   const rows = [
-    ['problem', s.problemLabel, s.problemTitle, s.problemBody, <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} timing={s.timing?.problem} />],
-    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} text={s.artText} timing={s.timing?.opportunity} />],
+    ['problem', s.problemLabel, s.problemTitle, s.problemBody, <ProblemArt key="p" text={s.artText} peakIcon={s.peakIcon} peakColor={s.peakColor} peak={{ x: s.peakX ?? 0, y: s.peakY ?? 0, scale: s.peakScale ?? 1 }} timing={s.timing?.problem} />],
+    ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody, <OpportunityArt key="o" variant={look.opportunityArt} contextIcon={s.icons?.contextIcon} text={s.artText} timing={s.timing?.opportunity} />],
     ['solution', s.solutionLabel, s.solutionTitle, s.solutionBody, <SolutionArt key="s" text={s.artText} timing={s.timing?.solution} />],
   ] as const
   return (
@@ -127,8 +156,9 @@ export function StoryRow({ s, edit, selectable = false }: { s: Story; edit: Edit
       data-story-art={look.art}
       data-story-motion={look.motion}
       data-story-reveal={look.reveal}
+      data-peak-entrance={s.peakEntrance}
       aria-label="Problem, opportunity and solution"
-      style={{ ...glassVars, '--story-art-w': `${s.artWidth}px`, '--section-pad-top': `${s.spacing.top}px`, '--section-pad-bottom': `${s.spacing.bottom}px`, '--section-content-gap': `${s.spacing.contentGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
+      style={{ ...glassVars, ...iconVars(s.icons), ...(s.peakOutline != null && { '--peak-outline': s.peakOutline }), '--story-art-w': `${s.artWidth}px`, '--section-pad-top': `${s.spacing.top}px`, '--section-pad-bottom': `${s.spacing.bottom}px`, '--section-content-gap': `${s.spacing.contentGap}px`, '--story-title': s.titleScale, '--story-text-w': `${s.textWidth}px` } as CSSProperties}
     >
       <ol className="case__story-cols">
         {rows.map(([k, label, title, body, art]) => (
