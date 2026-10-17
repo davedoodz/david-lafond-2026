@@ -138,3 +138,16 @@ export const MOMO_THUMB_CONFIG = {
 }
 
 export type MomoThumbValues = ResolvedValues<typeof MOMO_THUMB_CONFIG>
+
+/** The Watch logo's CSS variables (read by .mc-logo in DeviceInsights.css). The thumbnail and the case
+ *  study's Watch both apply these, so the two lockups stay identical. */
+export const watchLogoVars = (l: MomoThumbValues['watchLogo']) => ({
+  '--logo-scale': String(l.scale),
+  '--logo-x': `${l.x}px`,
+  '--logo-y': `${l.y}px`,
+  '--logo-color': l.color,
+  '--logo-outline': String(l.outlineStroke),
+  '--logo-smile': String(l.smileStroke),
+  '--logo-gap': `${l.textGapX}px`,
+  '--logo-text-y': `${l.textY}px`,
+})

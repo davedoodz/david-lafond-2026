@@ -25,7 +25,7 @@ import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { stackedAlpha } from '../../lib/stackedAlpha'
 import { MomoMark } from '../momoIntro/MomoMark'
-import { WATCH_LINES } from './config'
+import { WATCH_LINES, watchLogoVars } from './config'
 import './momoThumb.css'
 
 const DEV = '/work/momo/devices'
@@ -753,16 +753,7 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
       root.style.setProperty('--pill-icon-y', `${v.pillText.iconY}px`)
     }
     if (changed((d) => d.watchLogo)) {
-      const s = root.style
-      const l = v.watchLogo
-      s.setProperty('--logo-scale', String(l.scale))
-      s.setProperty('--logo-x', `${l.x}px`)
-      s.setProperty('--logo-y', `${l.y}px`)
-      s.setProperty('--logo-color', l.color)
-      s.setProperty('--logo-outline', String(l.outlineStroke))
-      s.setProperty('--logo-smile', String(l.smileStroke))
-      s.setProperty('--logo-gap', `${l.textGapX}px`)
-      s.setProperty('--logo-text-y', `${l.textY}px`)
+      for (const [name, value] of Object.entries(watchLogoVars(v.watchLogo))) root.style.setProperty(name, value)
     }
     prev = v
   }

@@ -679,13 +679,22 @@
         "bodyGap": 58,
         "tagsGap": 77,
         "entrance": {
+          "text": "fade",
           "duration": 0.3,
+          "textDuration": 1.4,
           "distance": 6,
           "textStagger": 0.02,
-          "pillStagger": 0.01,
+          "pillStagger": 0.12,
           "pillsGap": 0.05,
           "floatsDelay": 0.2,
           "floatStagger": 0.11
+        },
+        "bubbles": {
+          "frost": {
+            "to": "#a575f3",
+            "strength": 0.14,
+            "highlight": 0.64
+          }
         }
       }
     },
@@ -724,7 +733,7 @@
     "dynamic": {
       "eyebrow": "CROSS-DEVICE",
       "title": "Catch it on your wrist. \nUnpack it on your phone.",
-      "body": "A timely nudge becomes a deeper reflection when you're ready to talk.",
+      "body": "A timely nudge to reflect whenever you're ready to talk.",
       "align": "center",
       "watch": {
         "strapColor": "#96b6d4"
@@ -739,6 +748,7 @@
     },
     "outcomes": {
       "eyebrow": "USER OUTCOMES",
+      "body": "Guided reflection produced nearly twice as many action plans, \nand participants put more of them into practice in daily life.",
       "align": "center"
     }
   },
@@ -935,7 +945,8 @@
           "pillsGap": 0.05,
           "imageGap": 0.06,
           "floatsDelay": 0.2,
-          "floatStagger": 0.11
+          "floatStagger": 0.11,
+          "textDuration": 0.3
         }
       }
     },
@@ -974,8 +985,10 @@
     "sequenceSpeed": 3,
     "motionSpeed": 1.5,
     "card": {
+      "finish": "blue-photo-logo",
+      "tone": "#ffffff",
       "radius": 35,
-      "fill": "#f5f5f5",
+      "fill": "#ffffff",
       "scaleX": 0.78,
       "scaleY": 0.87
     },
@@ -1021,11 +1034,17 @@
       "color": "#0F1222"
     },
     "icons": {
-      "circleColor": "#4caaf7",
-      "titleGap": 22
+      "circleColor": "#5B8DEF",
+      "circleStyle": "none",
+      "glassTint": 0.29,
+      "titleGap": 21
     },
     "text": {
       "titles": "#8A93A6"
+    },
+    "seal": {
+      "style": "round",
+      "scale": 0.61
     },
     "stepHold": {
       "youShare": 0.5,
@@ -1040,29 +1059,33 @@
       "size": 1.1
     },
     "entrance": {
-      "preset": "cascade",
       "duration": 2.05,
       "distance": 132
     },
     "userIcon": {
       "y": -4,
-      "scale": 0.89
+      "scale": 1.21,
+      "saturation": 0.8
     },
     "watchIcon": {
       "x": -1,
       "y": -1,
-      "scale": 0.93
+      "scale": 1.17,
+      "saturation": 0.8
     },
     "phoneIcon": {
       "x": -1,
-      "scale": 1.03
+      "scale": 1.37,
+      "saturation": 0.8
     },
     "momoIcon": {
-      "scale": 0.94
+      "scale": 1.15,
+      "brightness": 1.01
     },
     "expertsIcon": {
       "y": -4,
-      "scale": 0.89
+      "scale": 1.16,
+      "saturation": 0.8
     }
   },
   "Momo paper": {
@@ -1185,20 +1208,24 @@
     },
     "pillText": {
       "inputs": {
-        "Movement": 0.75,
-        "HRV": 0.75,
-        "Breathing": 0.5,
-        "Sleep": 0.5,
-        "Voice": 0.25,
-        "Journal": 0.25
+        "Heart rate": 0,
+        "Movement": 0,
+        "HRV": 0,
+        "Breathing": 0,
+        "Sleep": 0,
+        "Temperature": 0,
+        "Voice": 0,
+        "Journal": 0
       },
       "outputs": {
-        "Nudge": 0.5,
-        "Check-in": 0.75,
-        "Reflection": 0.75,
-        "Insights": 0.75,
-        "Goals": 0.5,
-        "Tracking": 0.5
+        "Nudge": 0,
+        "Check-in": 0,
+        "Reflection": 0,
+        "Insights": 0,
+        "Patterns": 0,
+        "Plans": 0,
+        "Goals": 0,
+        "Tracking": 0
       }
     },
     "watchLogo": {

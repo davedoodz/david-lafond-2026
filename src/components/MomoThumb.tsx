@@ -20,7 +20,10 @@ const subscribeMobile = (onChange: () => void) => {
 }
 
 export function MomoThumb() {
-  const values = useTuning('MomoThumbnail', MOMO_THUMB_CONFIG)
+  // The panel's Replay and Pause / Play buttons drive the mounted loop.
+  const values = useTuning('MomoThumbnail', MOMO_THUMB_CONFIG, {
+    onAction: (action) => (action === 'replay' ? thumbRef.current?.replay() : action === 'pause' ? thumbRef.current?.togglePause() : undefined),
+  })
   const mobile = useSyncExternalStore(subscribeMobile, () => window.matchMedia(MOBILE_QUERY).matches, () => false)
   const hostRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<Thumb | null>(null)

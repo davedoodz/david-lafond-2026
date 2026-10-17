@@ -4,7 +4,6 @@ import { Momo, type MomoMode } from '../../components/MomoCard'
 import { releaseShader } from '../../lib/releaseShader'
 import { useTuningController } from '../../tuning/useTuning'
 import { toCssTiming } from '../pageTransition/cssTiming'
-import { PlaybackToggle } from '../playback/VideoPlayback'
 import { MomoMark } from './MomoMark'
 import './momoWelcome.css'
 
@@ -120,10 +119,6 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
   const [riseKey, setRiseKey] = useState(0)
   const [loopKey, setLoopKey] = useState(0)
   const [reduced, setReduced] = useState(() => matchMedia('(prefers-reduced-motion: reduce)').matches)
-  // Viewer pause from the screen toggle: freezes the shader, the loop and the mascot together.
-  const [paused, setPaused] = useState(false)
-  const pausedRef = useRef(false)
-  pausedRef.current = paused
   const { values: t } = useTuningController('Momo welcome', CONFIG, {
     onAction: (action) => {
       if (action === 'rise.replay') { setPhase('waiting'); setRiseKey(k => k + 1) }
@@ -151,11 +146,11 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
   }, [])
 
   useEffect(() => {
-    const update = () => mountRef.current?.setSpeed(visible && !paused && !document.hidden && !reduced ? 1 : 0)
+    const update = () => mountRef.current?.setSpeed(visible && !document.hidden && !reduced ? 1 : 0)
     update()
     document.addEventListener('visibilitychange', update)
     return () => document.removeEventListener('visibilitychange', update)
-  }, [visible, paused, reduced])
+  }, [visible, reduced])
 
   // Rise: starts once the intro is done and the phone is on screen; the loop begins when it lands.
   // Replaying the intro (active → false) hides the phone again so it rises once more at the handoff.
@@ -202,18 +197,14 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
     ]
     const start = document.timeline.currentTime
     for (const a of anims) a.startTime = start
-    if (pausedRef.current) anims.forEach(a => a.pause())
     loopRef.current = anims
     return () => { anims.forEach(a => a.cancel()); loopRef.current = [] }
   }, [phase, reduced, loopKey, t.blackOverlay, T.fullLoopDuration, T.shadeAt, T.shadeIn, T.shadeOut, T.momoAt, T.logoAt, T.buttonsAt, T.legalAt, T.fadeIn, T.lift, T.holdUntil, T.fadeOut])
 
-  // Off screen or paused by the viewer: hold the loop where it is.
+  // Off screen: hold the loop where it is.
   useEffect(() => {
-    for (const a of loopRef.current) visible && !paused ? a.play() : a.pause()
-  }, [visible, phase, paused])
-
-  // Replaying the intro hides the toggle; the next landing starts playing again.
-  useEffect(() => { if (phase !== 'landed') setPaused(false) }, [phase])
+    for (const a of loopRef.current) visible ? a.play() : a.pause()
+  }, [visible, phase])
 
   const style = {
     '--welcome-width': `${t.prototypeWidth}px`,
@@ -236,7 +227,7 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
         <div className="momo-welcome__shade" ref={shade} aria-hidden="true" />
         <div className="momo-welcome__content" role="img" aria-label="Animated Momo welcome screen">
           <div className="momo-welcome__mascot momo-welcome__enter" ref={mascot}>
-            {reduced ? <img src="/work/momo/intro/momo-open.webp" alt="" /> : <Momo mode={t.momo.mode as MomoMode} size={`${t.momo.size}%`} x={`${t.momo.x}%`} y={`${t.momo.y}%`} paused={paused} />}
+            {reduced ? <img src="/work/momo/intro/momo-open.webp" alt="" /> : <Momo mode={t.momo.mode as MomoMode} size={`${t.momo.size}%`} x={`${t.momo.x}%`} y={`${t.momo.y}%`} />}
           </div>
           <div className="momo-welcome__brand momo-welcome__enter" ref={brand}>
             <MomoMark className="momo-welcome__mark" outline={t.logo.outlineStroke} smile={t.logo.smileStroke} />
@@ -250,9 +241,6 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
             By continuing, you agree to Momo’s<br /><u>Terms of Service</u> and <u>Privacy Policy</u>
           </p>
         </div>
-        {phase === 'landed' && !reduced && (
-          <PlaybackToggle host={shader} reducedMotion={reduced} feedbackOnMediaEvents={false} onUserToggle={setPaused} subject="animation" />
-        )}
       </div>
       <img className="momo-welcome__frame" src="/work/momo/hero/phone-frame.png" width={1312} height={2672} alt="" draggable={false} />
     </div>

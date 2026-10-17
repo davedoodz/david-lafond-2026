@@ -1,6 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Activity, Footprints, Heart } from 'lucide-react'
 import { EditableText } from '../components/EditableText'
+import { MomoMark } from '../features/momoIntro/MomoMark'
+import { MOMO_THUMB_CONFIG, watchLogoVars } from '../features/momoThumb/config'
+import { useTuning } from '../tuning/useTuning'
 import './DeviceInsights.css'
 import type { SectionSpacing, TextReveal } from './caseStudyContent'
 
@@ -21,17 +24,24 @@ const BASE_W = 750
 const NUDGE = { title: 'Something on your mind?', body: 'Things seem a little more tense than usual. Want to talk it out?', yes: 'Yes, let’s talk it out', no: 'Not now' }
 const TRACE = 'M 0 60 H 56 L 62 60 L 67 34 L 74 88 L 80 50 L 85 60 H 150'
 const SIGNALS = [
-  [Heart, 'Heart rate up · 40 min'],
+  [Heart, 'Heart rate up for 40 min'],
   [Footprints, 'Sitting still, no workout'],
   [Activity, 'HRV below your usual'],
 ] as const
 
-const head = (time: string) => <><span className="mc-time mc-time--left">Momo</span><span className="mc-time">{time}</span></>
+// The status row (Momo logo, the same lockup and values as the Selected Works thumbnail's Watch, and
+// the time) sits outside the crossfading screens, so it stays put while only the content changes.
+const watchHead = (
+  <div className="mc-watch__head">
+    <span className="mc-logo" role="img" aria-label="Momo"><MomoMark className="mc-logo__mark" color="currentColor" /><span className="mc-logo__word" /></span>
+    <span className="mc-time">9:41</span>
+  </div>
+)
 
 function watchScreen(id: StepId) {
   if (id === 'sense')
     return (
-      <div className="mc-w mc-w--center">{head('9:41')}
+      <div className="mc-w mc-w--center">
         <div className="mc-momo mc-momo--sm"><img src={MOMO} alt="" /><span className="mc-heart"><Heart size={9} strokeWidth={2.4} /></span></div>
         <div className="mc-title">Momo noticed</div>
         <div className="mc-signals">{SIGNALS.map(([Icon, text], i) => <div key={text} style={{ '--i': i } as CSSProperties}><Icon size={10} strokeWidth={2.2} />{text}</div>)}</div>
@@ -39,7 +49,7 @@ function watchScreen(id: StepId) {
     )
   if (id === 'send')
     return (
-      <div className="mc-w mc-w--center">{head('9:41')}
+      <div className="mc-w mc-w--center">
         <div className="mc-momo mc-fly"><img src={MOMO} alt="" /></div>
         <div className="mc-trail"><i /><i /><i /></div>
         <div className="mc-title">Off to your iPhone</div>
@@ -47,7 +57,7 @@ function watchScreen(id: StepId) {
       </div>
     )
   return (
-    <div className="mc-w mc-w--center">{head('9:41')}
+    <div className="mc-w mc-w--center">
       <div className="mc-bubble">I’m on your iPhone when you want to talk.</div>
       <img className="mc-small" src={MOMO} alt="" />
     </div>
@@ -96,9 +106,14 @@ export function DeviceInsights({ copy, edit }: Props) {
   const [reduced, setReduced] = useState(false)
   const [step, setStep] = useState(0)
   const [scale, setScale] = useState(SCALE)
+  // Heartbeat exit: once the iPhone has the nudge, the pulse finishes its current run, then the line
+  // draws itself out left to right (data-out, see .mc-trace in DeviceInsights.css).
+  const pulse = useRef<SVGPathElement>(null)
+  const [traceOut, setTraceOut] = useState(false)
   const entrance = copy.deviceEntrance ?? { preset: 'still', duration: 0.8, stagger: 0.18 }
   const textReveal = copy.textReveal ?? { preset: 'still', duration: 0.7, stagger: 0.1 }
   const strapColor = copy.watch?.strapColor ?? '#d6ccc4'
+  const watchLogo = useTuning('MomoThumbnail', MOMO_THUMB_CONFIG).watchLogo
   const steps = STEPS
   useEffect(() => {
     const el = ref.current
@@ -157,6 +172,14 @@ export function DeviceInsights({ copy, edit }: Props) {
     return () => clearTimeout(timer)
   }, [visible, reduced, step])
   const id = steps[step].id
+  useEffect(() => {
+    setTraceOut(false)
+    const live = pulse.current
+    if (id !== 'nudge' || !live) return
+    const finish = () => setTraceOut(true)
+    live.addEventListener('animationiteration', finish, { once: true })
+    return () => live.removeEventListener('animationiteration', finish)
+  }, [id])
   return (
     <section ref={ref} className="case__section insights" data-section="dynamic" data-layout="insights" data-copy-align={copy.align} data-device-reveal={entrance.preset} data-text-reveal={textReveal.preset} aria-labelledby="case-insights" style={{ '--section-pad-top': `${copy.spacing.top}px`, '--section-pad-bottom': `${copy.spacing.bottom}px`, '--section-content-gap': `${copy.spacing.contentGap}px`, '--mc-watch-strap': strapColor, '--mc-reveal-duration': `${entrance.duration}s`, '--mc-reveal-stagger': `${entrance.stagger}s`, '--text-reveal-duration': `${textReveal.duration}s`, '--text-reveal-stagger': `${textReveal.stagger}s` } as CSSProperties}>
       <header className="insights__heading case__section-copy">
@@ -166,13 +189,13 @@ export function DeviceInsights({ copy, edit }: Props) {
       </header>
       <div ref={stage} className="mc-stage" style={{ '--mc-scale': scale } as CSSProperties} role="img" aria-label="Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?">
         <div className="mc-devices" aria-hidden="true">
-          <div className="mc-watch">
+          <div className="mc-watch" style={watchLogoVars(watchLogo) as CSSProperties}>
             <div className="mc-watch__screen-fill" aria-hidden="true" />
-            <div className="mc-watch__screen"><Screens step={id} render={watchScreen} /></div>
+            <div className="mc-watch__screen"><Screens step={id} render={watchScreen} />{watchHead}</div>
             <img className="mc-watch__img" src="/work/momo/devices/watch-starlight.png" alt="" />
           </div>
-          <div className="mc-link" data-state={id}>
-            <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
+          <div className="mc-link" data-state={id} data-out={traceOut || undefined}>
+            <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path ref={pulse} className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
           </div>
           <div className="mc-phone">
             <div className="mc-phone__screen"><Screens step={id} render={phoneScreen} /></div>

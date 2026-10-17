@@ -26,8 +26,6 @@ type ToggleProps = {
   feedbackOnMediaEvents?: boolean
   /** Told about every click, so the owner can keep a user pause from being undone. */
   onUserToggle?: (paused: boolean) => void
-  /** What the button names in its label: "Pause <subject>" / "Play <subject>". */
-  subject?: string
 }
 
 /**
@@ -42,7 +40,6 @@ export function PlaybackToggle({
   pauseAnimations = false,
   feedbackOnMediaEvents = true,
   onUserToggle,
-  subject = 'video',
 }: ToggleProps) {
   const t = useTuning('Playground playback', PLAYBACK_CONFIG)
   const [paused, setPaused] = useState(false)
@@ -79,7 +76,7 @@ export function PlaybackToggle({
     <button
       type="button"
       className="playback-toggle"
-      aria-label={paused ? `Play ${subject}` : `Pause ${subject}`}
+      aria-label={paused ? 'Play video' : 'Pause video'}
       onClick={() => {
         const root = host.current
         if (!root) return
