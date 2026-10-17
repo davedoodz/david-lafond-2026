@@ -223,10 +223,13 @@ function transcript(c, tokens, t) {
 function controls(c, t, mode, recAt) {
   c.save()
   const y = 790
-  c.font = `500 15px ${UI}`; const pw = 22 + c.measureText(mode).width + 8 + 12 + 19
-  glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.55)', 6)
-  tx(c, mode, 44, y, 15, { w: 500 })
-  c.strokeStyle = '#666'; c.lineWidth = 1.4; c.beginPath(); const cx = 22 + pw - 25; c.moveTo(cx - 3.5, y - 1.5); c.lineTo(cx, y + 2); c.lineTo(cx + 3.5, y - 1.5); c.stroke()
+  // The prototype's `.mode-pill` lists Inter first but never loads it, so it renders in SF Pro.
+  const PILL_FONT = '500 15px system-ui, sans-serif'
+  c.font = PILL_FONT; const pw = 22 + c.measureText(mode).width + 8 + 12 + 19
+  glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.42)', 6)
+  c.font = PILL_FONT; c.fillStyle = '#1f1f1f'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(mode, 44, y)
+  // Prototype Chevron: 12px box, path M3.5 5 6 7.5 8.5 5, stroke #666 1.4, round caps.
+  c.strokeStyle = '#666'; c.lineWidth = 1.4; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); const cx = 22 + pw - 25; c.moveTo(cx - 2.5, y - 1); c.lineTo(cx, y + 1.5); c.lineTo(cx + 2.5, y - 1); c.stroke()
   const btn = (x, fill) => { glass(c, x - 23, y - 23, 46, 46, 23, fill, fill === '#292931' ? 14 : 6) }
   // Lucide icons (24-grid, stroke 2) at 20 px: rotate-ccw and pause.
   const lucide = (x, d) => { c.save(); c.translate(x - 10, y - 10); c.scale(20 / 24, 20 / 24); c.strokeStyle = '#1f1f1f'; c.lineWidth = 2; c.lineCap = 'round'; c.lineJoin = 'round'; d.forEach((p) => c.stroke(new Path2D(p))); c.restore() }
