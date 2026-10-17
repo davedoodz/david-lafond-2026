@@ -2576,7 +2576,8 @@ html[data-case-snap] .case__group > * {
 }
 .case__section-copy :is(.case__body, .persona__body) {
   font-size: calc(var(--text-body) * var(--case-copy-scale));
-  line-height: 1.3;
+  /* Same leading as the story body (.case__story-body). */
+  line-height: 1.4;
   color: var(--stone-600);
   text-wrap: pretty;
 }

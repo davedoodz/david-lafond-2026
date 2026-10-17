@@ -685,15 +685,16 @@
         "bodyGap": 58,
         "tagsGap": 77,
         "entrance": {
+          "order": "text first",
           "text": "jitter",
           "duration": 0.3,
           "textDuration": 1.2,
           "distance": 6,
           "textStagger": 0.12,
           "pillStagger": 0.12,
-          "pillsGap": -1.45,
+          "pillsGap": 0,
           "pillsAfter": "title",
-          "textGap": -0.9,
+          "textGap": -0.5,
           "floatsDelay": 0.2,
           "floatStagger": 0.11
         },
@@ -1105,7 +1106,8 @@
       "saturation": 0.8
     },
     "momoIcon": {
-      "scale": 1.18,
+      "y": 5,
+      "scale": 1.23,
       "brightness": 1.01
     },
     "expertsIcon": {
