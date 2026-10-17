@@ -87,7 +87,7 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
   const timing = (i = 0, extra: KeyframeAnimationOptions = {}): KeyframeAnimationOptions =>
     ({ duration: e.duration * 1000, delay: (e.delay + i * e.stagger) * 1000, easing: EASE_OUT, fill: 'backwards', ...extra })
   // The Momo lockup is printed on the card: it moves with the surface, frame for frame. The seal is not:
-  // it stamps down once the walkthrough is done (momoSystem.css, [data-done='true']).
+  // it stamps down 0.75s before the walkthrough settles (momoSystem.css, [data-sealed='true']).
   const fixtures = ['.momo-system__brand', '.momo-system__lockup-glass'].map((s) => card.querySelector<HTMLElement>(s))
     .filter((el): el is HTMLElement => !!el)
   const diagram = card.querySelector<HTMLElement>('.momo-system__diagram')
@@ -391,22 +391,22 @@ export function MomoSystemFigure() {
   }, [youShare, dataIn, answersOut, backToYou])
   const inViewRef = useRef(false)
   const tipRef = useRef(speed.arrowTips.animation)
-  // The replay button shows only once the walkthrough has fully finished ('momosystem:done' from the
-  // diagram); every start or rewind hides it again until the next finish.
-  const [done, setDone] = useState(false)
+  // The seal stamps down on 'momosystem:seal' from the diagram (0.75s before the walkthrough settles);
+  // every start or rewind lifts it again until the next run.
+  const [sealed, setSealed] = useState(false)
   useEffect(() => {
     const card = cardRef.current
     if (!card) return
-    const onDone = () => setDone(true)
-    card.addEventListener('momosystem:done', onDone)
-    return () => card.removeEventListener('momosystem:done', onDone)
+    const onSeal = () => setSealed(true)
+    card.addEventListener('momosystem:seal', onSeal)
+    return () => card.removeEventListener('momosystem:seal', onSeal)
   }, [])
   useEffect(() => {
     if (tipRef.current === speed.arrowTips.animation) return
     tipRef.current = speed.arrowTips.animation
     handleRef.current?.setTipAnimation(speed.arrowTips.animation)
     if (inViewRef.current) {
-      setDone(false)
+      setSealed(false)
       handleRef.current?.start()
     }
   }, [speed.arrowTips.animation])
@@ -453,17 +453,17 @@ export function MomoSystemFigure() {
       if (cancelled) return mounted.destroy()
       handle = handleRef.current = mounted
       inViewRef.current = false
-      setDone(false)
+      setSealed(false)
       // Entering restarts from step 01; the run then rests on the full loop. Once fully off screen it is
       // rewound to step 01's first frame, so scrolling back shows the start, never the old end state.
       observer = new IntersectionObserver(([entry]) => {
         if (entry.intersectionRatio >= 0.35 && !inViewRef.current) {
           inViewRef.current = true
-          setDone(false)
+          setSealed(false)
           mounted.start()
         } else if (!entry.isIntersecting) {
           inViewRef.current = false
-          setDone(false)
+          setSealed(false)
           mounted.rewind()
         }
       }, { threshold: [0, 0.35] })
@@ -479,7 +479,7 @@ export function MomoSystemFigure() {
   }, [narrow, speed.sequenceSpeed, speed.motionSpeed, speed.labels.size])
 
   return (
-    <div ref={cardRef} className="case__figure momo-system" style={style} data-done={done} data-circles={speed.icons.circleStyle}>
+    <div ref={cardRef} className="case__figure momo-system" style={style} data-sealed={sealed} data-circles={speed.icons.circleStyle}>
       {/* Photo finishes already carry the seal (and, for logo photos, the lockup); the lockup keeps its space
           so the diagram doesn't shift. A cropped photo (phone layout) loses its lockup, so the card shows its
           own; it also drops the baked seal (an extreme crop ratio would blow it up), showing its own seal too.

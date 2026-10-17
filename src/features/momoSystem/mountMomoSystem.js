@@ -1143,24 +1143,28 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       section.style.setProperty('--progress', String(Math.max(0, Math.min(1, t / dur))))
       // The case study plays the walkthrough once and rests on the full loop; its host restarts it on re-entry.
       if (playing && t > dur) {
-        if (sequence && step === STORY.length - 1) {
-          setPlaying(false)
-          announceDone()
-        } else show(step + 1)
+        if (sequence && step === STORY.length - 1) setPlaying(false)
+        else show(step + 1)
       }
+      // Fresh clock: show() above may have just started the last step, which makes `t` and `dur` stale.
+      if (!rewound) sealDue(now - started, dur)
       if (!destroyed) requestAnimationFrame(frame)
     }
 
-    // Sequence mode: tells the host (event 'momosystem:done', bubbling) once the walkthrough rests on its last
-    // step and every finite animation has settled. start() and rewind() void any pending announcement.
-    let doneRun = 0
-    function announceDone() {
-      const run = ++doneRun
-      const pending = section.getAnimations({ subtree: true })
+    // Sequence mode: tells the host (event 'momosystem:seal', bubbling) SEAL_LEAD ms before the walkthrough
+    // settles, i.e. before the later of the last step's end and its last finite animation's end, so the seal
+    // stamps down as the walkthrough lands. start() and rewind() re-arm it.
+    const SEAL_LEAD = 750
+    let sealed = false
+    function sealDue(t, dur) {
+      // The step's CSS animations only exist a frame or two after show(); judging earlier would see none.
+      if (sealed || rewound || destroyed || !sequence || step !== STORY.length - 1 || t < 100) return
+      const left = Math.max(dur - t, ...section.getAnimations({ subtree: true })
         .filter((a) => a.playState === 'running' && Number.isFinite(a.effect?.getComputedTiming().endTime))
-      Promise.allSettled(pending.map((a) => a.finished)).then(() => {
-        if (run === doneRun && !rewound && !destroyed) section.dispatchEvent(new CustomEvent('momosystem:done', { bubbles: true }))
-      })
+        .map((a) => (a.effect.getComputedTiming().endTime - a.currentTime) / Math.abs(a.playbackRate || 1)))
+      if (left > SEAL_LEAD) return
+      sealed = true
+      section.dispatchEvent(new CustomEvent('momosystem:seal', { bubbles: true }))
     }
 
     const timingInputs = [...section.querySelectorAll('[data-t]')]
@@ -1514,11 +1518,10 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         held.forEach((a) => a.cancel())
         held = []
         rewound = false
-        doneRun++
+        sealed = false
         if (reduceMotion) {
           setPlaying(false)
           show(STORY.length - 1)
-          announceDone()
           return
         }
         setPlaying(true)
@@ -1534,7 +1537,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         setPlaying(false)
         held.forEach((a) => a.cancel())
         rewound = true
-        doneRun++
+        sealed = false
         show(0)
         held = section.getAnimations({ subtree: true }).filter((a) => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition))
         held.forEach((a) => a.pause())

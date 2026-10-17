@@ -1517,6 +1517,8 @@ html[data-case-snap] .case__group > * {
   line-height: 1.45;
   color: var(--stone-600);
   text-wrap: pretty;
+  /* Line breaks typed into the copy (tuning.json) start a new line. */
+  white-space: pre-line;
 }
 
 .persona__tags {
