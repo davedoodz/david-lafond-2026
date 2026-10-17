@@ -1,5 +1,5 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { AlarmClock, Annoyed, BatteryWarning, BellRing, Bomb, CloudHail, CloudRainWind, Gauge, HeartCrack, Megaphone, OctagonAlert, ThermometerSun, Wind, type LucideIcon } from "lucide-react";
+import { AlarmClock, Annoyed, BatteryWarning, BellRing, Blocks, Bomb, CloudHail, CloudRainWind, Database, FileStack, Gauge, HeartCrack, Layers, Layers2, LibraryBig, Megaphone, MessagesSquare, OctagonAlert, ThermometerSun, Wind, type LucideIcon } from "lucide-react";
 
 /** Icon at the Problem curve's peak (DialKit story → peakIcon). `bolt` is the custom bolt with tension marks. */
 export const PEAK_ICONS: Record<string, LucideIcon | null> = {
@@ -50,13 +50,13 @@ export type StoryTiming = {
   problem: { curve: number; icon: number; line: number; phone: number };
   /** `stagger`: gap between the three converging lines starting. */
   opportunity: { lines: number; stagger: number; dot: number };
-  /** `beat`: the watch's one heartbeat · `hold`: watch on screen after it appears · `fade`: watch leaving. */
-  solution: { curve: number; dot: number; line: number; watch: number; beat: number; hold: number; fade: number; phoneLine: number; phone: number };
+  /** `beat`: the watch's one heartbeat · `hold`: watch on screen before the phone's line starts. */
+  solution: { curve: number; dot: number; line: number; watch: number; beat: number; hold: number; phoneLine: number; phone: number };
 };
 export const STORY_TIMING: StoryTiming = {
   problem: { curve: 1.6, icon: 0.5, line: 0.6, phone: 0.7 },
   opportunity: { lines: 1.6, stagger: 0.35, dot: 0.5 },
-  solution: { curve: 1.6, dot: 0.4, line: 0.5, watch: 0.5, beat: 1.6, hold: 1.78, fade: 0.42, phoneLine: 0.6, phone: 0.7 },
+  solution: { curve: 1.6, dot: 0.4, line: 0.5, watch: 0.5, beat: 1.6, hold: 1.78, phoneLine: 0.6, phone: 0.7 },
 };
 
 /** `--at` (start) and `--dur` for one step. */
@@ -99,13 +99,16 @@ function Watch({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
       <g className="sa-icon sa-watch">
         <path d="M-9 -15 l2 -8 h14 l2 8 M-9 15 l2 8 h14 l2 -8" />
         <rect x={-14} y={-15} width={28} height={30} rx={8} />
-        <path
-          className="sa-b sa-draw sa-beat"
-          pathLength={1}
-          d="M-9 1 h5 l2 -5 l3 9 l3 -10 l2 5 h4"
-          stroke={BLUE}
-          strokeWidth={1.8}
-        />
+        {/* Story → icons → heart x/y/scale: moves the line inside the face (origin = the face's centre). */}
+        <g style={{ transform: "translate(calc(var(--hb-x, 0) * 1px), calc(var(--hb-y, 0) * 1px)) scale(var(--hb-s, 1))" }}>
+          <path
+            className="sa-b sa-draw sa-beat"
+            pathLength={1}
+            d="M-9 1 h5 l2 -5 l3 9 l3 -10 l2 5 h4"
+            stroke={BLUE}
+            strokeWidth={1.8}
+          />
+        </g>
       </g>
     </g>
   );
@@ -150,48 +153,47 @@ function Voice({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
     </g>
   );
 }
-function Spark({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+/**
+ * Context icons for the Opportunity row (DialKit story → icons → contextIcon). Each builds itself piece by
+ * piece (CSS: .sa-context[data-icon] sets the pieces' build order), e.g. `layers` piles up from the bottom.
+ * Preview: scripts/context-motion.html.
+ */
+export const CONTEXT_ICONS: Record<string, LucideIcon> = {
+  layers: Layers,
+  "layers-2": Layers2,
+  "file-stack": FileStack,
+  database: Database,
+  "library-big": LibraryBig,
+  "messages-square": MessagesSquare,
+  blocks: Blocks,
+};
+function Context({ x, y, s = 1, icon = "layers" }: { x: number; y: number; s?: number; icon?: string }) {
+  const Lucide = CONTEXT_ICONS[icon] ?? Layers;
   return (
-    // Transform on a wrapper: the pulse animation sets `transform` on the path itself.
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <path
-        className="sa-b sa-spark"
-        d="M0 -20C0.6 -7 2 -1.4 20 0C2 1.4 0.6 7 0 20C-0.6 7 -2 1.4 -20 0C-2 -1.4 -0.6 -7 0 -20Z"
-        fill="none"
-        stroke={BLUE}
-        strokeWidth={2.2}
-        strokeLinejoin="round"
-      />
-      {/* Small companion star, top right: sparkles in as the main star grows. */}
-      <g transform="translate(17 -17) scale(0.38)">
-        <path
-          className="sa-b sa-spark-mini"
-          d="M0 -20C0.6 -7 2 -1.4 20 0C2 1.4 0.6 7 0 20C-0.6 7 -2 1.4 -20 0C-2 -1.4 -0.6 -7 0 -20Z"
-          fill="none"
-          stroke={BLUE}
-          strokeWidth={4}
-          strokeLinejoin="round"
-        />
+      {/* 40 units across, like the other technology icons; absoluteStrokeWidth keeps the stroke at 2.2 units. */}
+      <g className="sa-context" data-icon={icon}>
+        <Lucide x={-20} y={-20} size={40} color={BLUE} strokeWidth={2.2} absoluteStrokeWidth />
       </g>
     </g>
   );
 }
 /** Stress spike on the curve's peak: the custom bolt with tension marks, or a Lucide icon (24px grid). */
-function Stress({ x, y, s = 1, icon = "bolt" }: { x: number; y: number; s?: number; icon?: string }) {
+function Stress({ x, y, s = 1, icon = "bolt", color = INK }: { x: number; y: number; s?: number; icon?: string; color?: string }) {
   if (icon === "none") return null;
   const Lucide = PEAK_ICONS[icon];
   return (
     <g
       transform={`translate(${x} ${y}) scale(${s})`}
       fill="none"
-      stroke={INK}
+      stroke={color}
       strokeWidth={1.8}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <g className="sa-icon sa-stress">
+      <g className="sa-icon sa-stress" data-icon={icon}>
         {Lucide ? (
-          <Lucide x={-11} y={-11} width={22} height={22} color={INK} strokeWidth={1.8} />
+          <Lucide x={-11} y={-11} width={22} height={22} color={color} strokeWidth={1.8} />
         ) : (
           <>
             <path d="M2 -10 L-5 1 H1 L-2 10 L6 -2 H0 Z" />
@@ -221,7 +223,7 @@ function Wipe({ box: [x, y, w, h], from, at, dur, children }: { box: [number, nu
 }
 
 /** Problem: the feeling peaks, and the app only opens after it has faded. */
-export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt", timing = STORY_TIMING.problem }: { text?: StoryArtText; peakIcon?: string; timing?: StoryTiming["problem"] }) {
+export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt", peakColor = INK, peak = { x: 0, y: 0, scale: 1 }, timing = STORY_TIMING.problem }: { text?: StoryArtText; peakIcon?: string; peakColor?: string; peak?: { x: number; y: number; scale: number }; timing?: StoryTiming["problem"] }) {
   const t = timing;
   const iconAt = t.curve;
   const lineAt = iconAt + t.icon;
@@ -244,8 +246,10 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt", timing = 
         strokeLinecap="round"
       />
       {label(88, 20, text.problemMoment, STONE, "end")}
-      <g className="sa-after" style={step(iconAt, t.icon)}>
-        <Stress x={104} y={16} icon={peakIcon} />
+      {/* Urgent entrance (story → peakEntrance, CSS story-peak-*); the ring only shows for siren and ping. */}
+      <g className="sa-after sa-peak" style={step(iconAt, t.icon)}>
+        <circle className="sa-peak-ring" cx={104 + peak.x} cy={16 + peak.y} r={12 * peak.scale} fill="none" stroke={peakColor} strokeWidth={1.4} />
+        <Stress x={104 + peak.x} y={16 + peak.y} s={peak.scale} icon={peakIcon} color={peakColor} />
       </g>
       {/* After the curve: the peak icon pops, then the dotted line draws up, then the phone appears. */}
       <Wipe box={[194, 58, 12, 74]} from="up" at={lineAt} dur={t.line}>
@@ -265,15 +269,17 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt", timing = 
   );
 }
 
-/** Solution: the same curve, met at its peak by a check-in on the wrist. */
+/**
+ * Solution: the same curve, met at its peak by a check-in on the wrist. The watch rises straight up from
+ * the peak dot and stays, with its dotted line, once it appears; the phone follows to its right.
+ */
 export function SolutionArt({ text = STORY_ART_TEXT, timing = STORY_TIMING.solution }: { text?: StoryArtText; timing?: StoryTiming["solution"] }) {
   const t = timing;
   const dotAt = t.curve;
   const lineAt = dotAt + t.dot;
   const watchAt = lineAt + t.line;
   const beatAt = watchAt + t.watch;
-  const fadeAt = beatAt + t.hold;
-  const phoneLineAt = fadeAt + t.fade;
+  const phoneLineAt = beatAt + t.hold;
   const phoneAt = phoneLineAt + t.phoneLine;
   return (
     <svg
@@ -292,7 +298,7 @@ export function SolutionArt({ text = STORY_ART_TEXT, timing = STORY_TIMING.solut
         strokeWidth={2.4}
         strokeLinecap="round"
       />
-      {/* After the curve: the peak dot, then the dotted line draws left to right, then the watch. */}
+      {/* After the curve: the peak dot, then the dotted line draws straight up, then the watch above it. */}
       <g className="sa-after" style={step(dotAt, t.dot)}>
         <circle
           className="sa-b sa-ping"
@@ -304,19 +310,12 @@ export function SolutionArt({ text = STORY_ART_TEXT, timing = STORY_TIMING.solut
         />
         <circle className="sa-b" cx={104} cy={34} r={5} fill={BLUE} />
       </g>
-      <g className="sa-solution-watch" style={{ "--fade-at": `${fadeAt}s`, "--fade": `${t.fade}s`, "--beat-at": `${beatAt}s`, "--beat": `${t.beat}s` } as CSSProperties}>
-      <Wipe box={[110, 32, 44, 30]} from="right" at={lineAt} dur={t.line}>
-        <path
-          d="M150 58 Q128 44 114 38"
-          fill="none"
-          stroke={INK}
-          strokeWidth={1.4}
-          strokeDasharray="2 4"
-          strokeLinecap="round"
-        />
+      <g className="sa-solution-watch" style={{ "--beat-at": `${beatAt}s`, "--beat": `${t.beat}s` } as CSSProperties}>
+      <Wipe box={[98, 6, 12, 18]} from="up" at={lineAt} dur={t.line}>
+        <path d="M104 21 V9" stroke={INK} strokeWidth={1.4} strokeDasharray="2 4" strokeLinecap="round" />
       </Wipe>
-      <g className="sa-after" style={step(watchAt, t.watch)}>
-        <Watch x={164} y={64} s={0.75} />
+      <g className="sa-after sa-after--rise" style={step(watchAt, t.watch)}>
+        <Watch x={104} y={-12} s={0.75} />
       </g>
       </g>
       <g className="sa-solution-phone" style={{ "--show-at": `${phoneLineAt}s` } as CSSProperties}>
@@ -335,7 +334,7 @@ export function SolutionArt({ text = STORY_ART_TEXT, timing = STORY_TIMING.solut
 }
 
 /** Opportunity: the three technologies, either as three tiles or converging on the moment. */
-export function OpportunityArt({ variant, text = STORY_ART_TEXT, timing = STORY_TIMING.opportunity }: { variant: string; text?: StoryArtText; timing?: StoryTiming["opportunity"] }) {
+export function OpportunityArt({ variant, contextIcon = "layers", text = STORY_ART_TEXT, timing = STORY_TIMING.opportunity }: { variant: string; contextIcon?: string; text?: StoryArtText; timing?: StoryTiming["opportunity"] }) {
   const t = timing;
   if (variant === "converge")
     return (
@@ -346,7 +345,7 @@ export function OpportunityArt({ variant, text = STORY_ART_TEXT, timing = STORY_
       >
         <Watch x={30} y={30} s={0.85} />
         <Voice x={30} y={80} s={0.85} />
-        <Spark x={30} y={130} s={0.85} />
+        <Context x={30} y={130} s={0.85} icon={contextIcon} />
         {[30, 80, 130].map((y, i) => (
           <path
             key={y}
@@ -384,7 +383,7 @@ export function OpportunityArt({ variant, text = STORY_ART_TEXT, timing = STORY_
       >
         <Watch x={60} y={70} s={1.3} />
         <Voice x={120} y={70} s={1.1} />
-        <Spark x={180} y={70} s={1.2} />
+        <Context x={180} y={70} s={1.2} icon={contextIcon} />
         {label(60, 130, "wearables", INK)}
         {label(120, 130, "voice", INK)}
         {label(180, 130, "realtime AI", INK)}
@@ -399,7 +398,7 @@ export function OpportunityArt({ variant, text = STORY_ART_TEXT, timing = STORY_
         [
           "realtime AI",
           "connects both",
-          <Spark key="s" x={40} y={40} s={1.15} />,
+          <Context key="c" x={40} y={40} s={1.15} icon={contextIcon} />,
         ],
       ].map(([name, line, art]) => (
         <figure key={name as string} className="story-art__tile">

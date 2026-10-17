@@ -5,7 +5,7 @@
  * in dev and autosaves to tuning.json, like the About story.
  */
 import { FLOAT_DIALS, PERSONA_DIALS } from './casePersona'
-import { PEAK_ICONS, STORY_ART_TEXT, STORY_TIMING, type StoryArtText } from './storyArt'
+import { CONTEXT_ICONS, PEAK_ICONS, STORY_ART_TEXT, STORY_TIMING, type StoryArtText } from './storyArt'
 
 type Tuple = [number, number, number, number]
 
@@ -287,6 +287,36 @@ export const MOMO_CONFIG = {
     art: { type: 'select' as const, options: ['glass', 'card', 'line', 'outline', 'none'], default: 'glass' },
     /** Icon on the Problem curve's peak: the custom bolt, a Lucide icon, or none. */
     peakIcon: { type: 'select' as const, options: Object.keys(PEAK_ICONS), default: 'bolt' },
+    /** Colour of the peak icon; the story art's blue (voice bars, context icon, curves). */
+    peakColor: { type: 'color' as const, default: '#53BFFE' },
+    /**
+     * How the peak icon arrives (urgent): slam drops in hard and shudders · shake buzzes side to side ·
+     * flash blinks like a warning light · siren pops in with an alarm ring · ping pops in with an expanding ring ·
+     * none fades in as before.
+     */
+    peakEntrance: { type: 'select' as const, options: ['slam', 'shake', 'flash', 'siren', 'ping', 'none'], default: 'slam' },
+    /** Stroke width of the octagon outline only (octagon-alert); the "!" keeps the icon's own stroke. */
+    peakOutline: [1.8, 0.5, 4, 0.1] as Tuple,
+    /** Peak icon placement: offset from its spot above the peak (art units; the art is 240 × 160), and size. */
+    peakX: [0, -60, 60, 1] as Tuple,
+    peakY: [0, -40, 40, 1] as Tuple,
+    peakScale: [1, 0.5, 2, 0.01] as Tuple,
+    /** Icon motion in the art: where the heartbeat sits inside the watch, and the animated context icon. */
+    icons: {
+      /** Heartbeat line offset inside the watch face (watch units; the face is 28 × 30). */
+      heartX: [0, -8, 8, 0.5] as Tuple,
+      heartY: [0, -10, 10, 0.5] as Tuple,
+      heartScale: [1, 0.5, 1.4, 0.01] as Tuple,
+      /**
+       * Opportunity row's context icon (Lucide). Each builds itself piece by piece, holds, clears and loops:
+       * layers / layers-2 pile up from the bottom · file-stack: files land front to back · database: fills up ·
+       * library-big: books shelved · messages-square: messages arrive · blocks: a block drops onto the stack.
+       * Preview all: scripts/context-motion.html.
+       */
+      contextIcon: { type: 'select' as const, options: Object.keys(CONTEXT_ICONS), default: 'layers' },
+      /** Build speed: 1 = as designed, 0.5 = half speed, 2 = twice as fast. */
+      contextSpeed: [1, 0.25, 3, 0.05] as Tuple,
+    },
     /**
      * Glass for the three art cards. Colours come from the system card (Momo system sequence →
      * card fill / gradient); these dials start from the system card's glass, scaled to the cards'
