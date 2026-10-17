@@ -30,7 +30,7 @@ export function setPauseIcon(dials) { PAUSE_ICON = dials }
 /** Status icon gaps (Momo intro › Status icons), in pt: signal → Wi-Fi and Wi-Fi → battery fill. */
 let STATUS_GAPS = { wifi: 4.2, battery: 5.8 }
 export function setStatusGaps(dials) { STATUS_GAPS = dials }
-const COPY = {"luck":{"title":"Good luck with the presentation 🍀","body":"Deep breaths before you walk in.\nYou totally got this! 😌"},"nudge":{"title":"Wanna debrief? ☁️","body":"I noticed your body’s still a little stressed from that presentation. I'm here if you wanna yap about it 👀"}}
+const COPY = {"luck":{"title":"Good luck today 🍀","body":"Deep breaths before you walk in.\nYou totally got this!"},"nudge":{"title":"Wanna debrief?","body":"I noticed your body’s still a little stressed from that presentation. I'm here if you wanna yap about it 👀"}}
 const MEET = {"title":"Design Pitch - Internal Team","now":"2:00 – 2:45 PM · now","ended":"Ended 2:45 PM"}
 const CHECKS = [{"kind":"hr","text":"Heart rate up ~30 BPM in 2 min","state":"ok"},{"kind":"base","text":"Unusual for you at this hour","state":"ok"}]
 const shownChecks = () => CHECKS
