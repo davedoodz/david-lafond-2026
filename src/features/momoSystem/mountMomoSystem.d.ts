@@ -25,7 +25,7 @@ export function mountMomoSystem(
   options?: {
     /** 'studio': every tuning surface; 'embed': walkthrough with chrome; 'sequence': autoplay only. */
     mode?: 'studio' | 'embed' | 'sequence'
-    /** Embed/sequence only: with layout 'auto', a narrow frame uses the diamond layout. */
+    /** Embed/sequence only: with layout 'auto', a narrow frame uses the phone layout. */
     narrow?: boolean
     /** Multiplier for each step's hold duration. */
     sequenceSpeed?: number

@@ -108,15 +108,17 @@
    line draws itself out the way it came in, left to right. It resets (undrawn) only while hidden. */
 .mc-trace { opacity: 0; transition: opacity 0.45s ease; }
 .mc-trace path { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-/* The line itself is always the soft 45% blue (never solid); only the short pulse runs at full blue. */
+/* The line itself is always the soft 45% blue (never solid); only the short pulse runs at full blue.
+   Story-art blue (storyArt.tsx BLUE), so the heartbeat matches the story section's icons and curves. */
+.mc-trace { --beat: #53bffe; }
 .mc-trace__base {
-  stroke: rgb(79 156 249 / 0.45);
+  stroke: rgb(83 191 254 / 0.45);
   stroke-dasharray: 100 100;
   stroke-dashoffset: 100;
   transition: stroke-dashoffset 0s 0.45s;
-  filter: drop-shadow(0 0 4px rgb(79 156 249 / 0.45));
+  filter: drop-shadow(0 0 4px rgb(83 191 254 / 0.45));
 }
-.mc-trace__live { stroke: var(--accent); stroke-width: 2.6; stroke-dasharray: 8 92; opacity: 0; filter: drop-shadow(0 0 6px var(--accent)); }
+.mc-trace__live { stroke: var(--beat); stroke-width: 2.6; stroke-dasharray: 8 92; opacity: 0; filter: drop-shadow(0 0 6px var(--beat)); }
 .mc-link:is([data-state='send'], [data-state='nudge']) .mc-trace { opacity: 1; }
 .mc-link:is([data-state='send'], [data-state='nudge']) .mc-trace__base {
   stroke-dashoffset: 0;
@@ -203,18 +205,33 @@
    screen clips it to the exact pixels. The notification matches the case study's .lock__note; cqw are of the full mockup. */
 .mc-lock { position: absolute; left: calc(-46px * var(--k)); top: calc(-39px * var(--k)); width: calc(874px * var(--k)); height: calc(1780px * var(--k)); container-type: inline-size; }
 .mc-lock__bg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.mc-lock::after { content: ''; position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
-/* Screen off (fully black) until the nudge wakes it. */
-.mc-lock[data-dim]::after { opacity: 1; }
-.mc-note { position: absolute; left: 8.15%; right: 8.15%; top: 36%; display: grid; grid-template-columns: 7.8cqw 1fr; column-gap: 2.7cqw; padding: 3.3cqw 3.5cqw 3.4cqw 2.7cqw; border-radius: 5cqw; background: rgb(245 245 247 / .62); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); color: #111; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; font-size: 3.6cqw; line-height: 1.25; letter-spacing: -0.01em; animation: mc-note-in .7s .3s cubic-bezier(.22,1,.36,1) both; }
+/* Notification glass, matching the intro's lock-screen cards (phoneFilm.js `frost`): blurred wallpaper under a
+   pale sky tint and a soft diagonal sheen; ::after is a faint frosted bevel, ::before a hairline rim whose light
+   gathers at the top-left and bottom-right corners and nearly vanishes along the long edges. */
+.mc-note { position: absolute; left: 8.15%; right: 8.15%; top: 36%; display: grid; grid-template-columns: 7.8cqw 1fr; column-gap: 2.7cqw; padding: 3.3cqw 3.5cqw 3.4cqw 2.7cqw; border-radius: 5cqw; background: linear-gradient(120deg, transparent 35%, rgb(255 255 255 / .22) 52%, transparent 70%), linear-gradient(135deg, rgb(226 243 255 / .74), rgb(208 231 252 / .66) 55%, rgb(214 240 255 / .74)); box-shadow: 0 1.5cqw 5.5cqw rgb(10 60 120 / .16); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); color: #10243a; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; font-size: 3.6cqw; line-height: 1.25; letter-spacing: -0.01em; animation: mc-note-in .7s .3s cubic-bezier(.22,1,.36,1) both; }
+.mc-note::before, .mc-note::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.mc-note::before {
+  padding: .26cqw;
+  background: conic-gradient(from 90deg,
+    rgb(255 255 255 / .06) 0%, rgb(255 255 255 / .12) 4%, rgb(255 255 255 / .42) 7%, rgb(255 255 255 / .14) 11%, rgb(255 255 255 / .04) 25%,
+    rgb(255 255 255 / .06) 39.5%, rgb(255 255 255 / .2) 43%, rgb(255 255 255 / .16) 50%, rgb(255 255 255 / .2) 53.5%, rgb(255 255 255 / .55) 57%,
+    rgb(255 255 255 / .18) 62%, rgb(255 255 255 / .05) 75%, rgb(255 255 255 / .06) 90%, rgb(255 255 255 / .26) 93%, rgb(255 255 255 / .08) 97%, rgb(255 255 255 / .06) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.mc-note::after {
+  box-shadow: inset 0 0 1.6cqw .3cqw rgb(255 255 255 / .42);
+  -webkit-mask: linear-gradient(135deg, #000, rgb(0 0 0 / .15) 35%, rgb(0 0 0 / .1) 70%, rgb(0 0 0 / .6));
+  mask: linear-gradient(135deg, #000, rgb(0 0 0 / .15) 35%, rgb(0 0 0 / .1) 70%, rgb(0 0 0 / .6));
+}
 @keyframes mc-note-in { from { opacity: 0; translate: 0 -24px; scale: .96; } }
-.mc-note__icon { grid-row: 1 / 3; width: 7.8cqw; height: 7.8cqw; border-radius: 1.75cqw; background: #eaf5ff url('/work/momo/intro/momo-open.webp') var(--momo-x) var(--momo-y) / var(--momo-size) no-repeat; }
+.mc-note__icon { grid-row: 1 / 3; width: 7.8cqw; height: 7.8cqw; border-radius: 2.1cqw; background: url('/work/momo/intro/momo-open.webp') var(--momo-x) var(--momo-y) / var(--momo-size) no-repeat, linear-gradient(#fff, #e2eefa); box-shadow: 0 .25cqw 1.5cqw rgb(20 70 130 / .1); }
 .mc-note__row { display: flex; align-items: baseline; gap: 1.5cqw; }
-.mc-note__app { font-weight: 600; color: rgb(17 17 17 / .55); }
-.mc-note__time { margin-left: auto; color: rgb(17 17 17 / .45); }
+.mc-note__app { font-weight: 600; color: #4d6a88; }
+.mc-note__time { margin-left: auto; color: #6d87a3; }
 .mc-note__copy { grid-column: 2; }
-.mc-note__title { margin: .15cqw 0 0; font-size: 4.05cqw; font-weight: 600; }
-.mc-note__text { margin: .2cqw 0 0; }
+.mc-note__title { margin: .15cqw 0 0; font-size: 4.05cqw; font-weight: 700; }
+.mc-note__text { margin: .2cqw 0 0; color: #41617f; }
 /* Nudge timeline: note in .3s → buttons open 1.4s → touch arrives 2.4s → press ≈2.95s → fades by 3.6s, when the sequence restarts. */
 .mc-note__actions { grid-column: 1 / -1; display: grid; gap: 1.6cqw; max-height: 0; margin-top: 0; overflow: hidden; animation: mc-note-open .6s 1.4s cubic-bezier(.22,1,.36,1) forwards; }
 @keyframes mc-note-open { to { max-height: 30cqw; margin-top: 3cqw; } }

@@ -165,30 +165,39 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         { points: [[620, 800], [620, 700]], label: { x: 644, y: 750, anchor: 'start' } },
       ],
     },
-    // Portrait: user on top, watch and phone on either side, the AI below, experts at the base.
-    // Narrow enough that labels stay ≈10px on a 390px phone.
-    diamond: {
-      name: 'Symmetric · diamond (phone)',
-      W: 760, H: 1240, type: { labelSize: 20, titleSize: 17 },
-      nodes: { user: [380, 120], watch: [130, 440], phone: [630, 440], ai: [380, 780], experts: [380, 1100] },
+    // Phone: the same watch/user/phone row, Momo and experts as userTop, in the same order top to
+    // bottom — not rearranged, just narrower, with smaller icons (type.R / nodeSize). The row's two
+    // lanes stay the compact pair userTop draws between each pair of icons, but at this width there's
+    // no room beside them for inline text, so their labels float to a band above the row (outbound) or
+    // below the row's titles (return) instead, centred over the gap they describe; they may run over
+    // the halo columns since neither band crosses the icons. The watch/phone ↔ Momo lanes and the
+    // experts ↔ Momo line keep userTop's own lane shapes, just scaled down, but every label here is
+    // given an explicit `fixed: true` (see centerLabels()'s `dataset.fixed` check): centerLabels()
+    // otherwise re-centres a label on whichever segment of its (possibly bent) line it judges nearest,
+    // which for this geometry doesn't land where the label needs to sit. type.wrap lets any label wrap
+    // to a second line, keeping the same words, if it doesn't fit.
+    phone: {
+      name: 'Symmetric · phone (stacked)',
+      W: 480, H: 820, type: { labelSize: 24, titleSize: 26, nodeSize: 100, R: 56, wrap: 160 },
+      nodes: { watch: [70, 160], user: [240, 160], phone: [410, 160], ai: [240, 420], experts: [240, 690] },
       edges: [
-        { points: [[302, 104], [114, 104], [114, 362]], label: { x: 36, y: 56, anchor: 'start' } },
-        { points: [[146, 362], [146, 136], [302, 136]], label: { x: 160, y: 210, anchor: 'start' } },
-        { points: [[458, 104], [646, 104], [646, 362]], label: { x: 724, y: 80, anchor: 'end' } },
-        { points: [[614, 362], [614, 136], [458, 136]], label: { x: 600, y: 210, anchor: 'end' } },
-        { points: [[114, 520], [114, 796], [302, 796]], label: { x: 120, y: 830, anchor: 'start' } },
-        { points: [[302, 764], [146, 764], [146, 520]], label: { x: 160, y: 690, anchor: 'start' } },
-        { points: [[646, 520], [646, 796], [458, 796]], label: { x: 640, y: 830, anchor: 'end' } },
-        { points: [[458, 764], [614, 764], [614, 520]], label: { x: 600, y: 690, anchor: 'end' } },
-        { points: [[380, 1020], [380, 925]], label: { x: 404, y: 975, anchor: 'start' } },
+        { points: [[190, 150], [120, 150]], label: { x: 130, y: 60, anchor: 'mid', fixed: 'xy' } },
+        { points: [[120, 170], [190, 170]], label: { x: 130, y: 345, anchor: 'mid', fixed: 'xy' } },
+        { points: [[290, 150], [360, 150]], label: { x: 350, y: 60, anchor: 'mid', fixed: 'xy' } },
+        { points: [[360, 170], [290, 170]], label: { x: 350, y: 345, anchor: 'mid', fixed: 'xy' } },
+        { points: [[61, 228], [61, 458], [195, 458]], label: { x: 48, y: 488, anchor: 'start', fixed: 'x' } },
+        { points: [[195, 440], [79, 440], [79, 228]], label: { x: 48, y: 437, anchor: 'start', fixed: 'x' } },
+        { points: [[419, 228], [419, 458], [285, 458]], label: { x: 432, y: 488, anchor: 'end', fixed: 'x' } },
+        { points: [[285, 440], [401, 440], [401, 228]], label: { x: 432, y: 437, anchor: 'end', fixed: 'x' } },
+        { points: [[240, 620], [240, 490]], label: { x: 200, y: 555, anchor: 'start' } },
       ],
     },
   }
-  // Saved choice, or 'auto': wide frames get "user on top", narrow ones (phones) get the diamond.
+  // Saved choice, or 'auto': wide frames get "user on top", narrow ones (phones) get the phone layout.
   // The studio follows screen orientation (and reloads when it flips); the embed's host passes `narrow`.
   const LAYOUT_CHOICE = LAYOUTS[settings.layout] ? settings.layout : 'auto'
   const portrait = matchMedia('(orientation: portrait)')
-  const LAYOUT_KEY = LAYOUT_CHOICE === 'auto' ? ((studio ? portrait.matches : narrow) ? 'diamond' : 'userTop') : LAYOUT_CHOICE
+  const LAYOUT_KEY = LAYOUT_CHOICE === 'auto' ? ((studio ? portrait.matches : narrow) ? 'phone' : 'userTop') : LAYOUT_CHOICE
   if (studio && LAYOUT_CHOICE === 'auto') portrait.addEventListener('change', () => location.reload())
   const LAYOUT = LAYOUTS[LAYOUT_KEY]
   // Spacing: shrink the gap between the devices row and Momo, and between Momo and the experts
@@ -367,8 +376,9 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     const lh = o.labelSize * 1.3 // base; the story's Line spacing slider shifts rows from here
     const out = []
     let y = l.y
+    const wrapBudget = l.wrap ?? o.wrap
     const text = (content, x, anchor, y) =>
-      `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${o.labelSize}" fill="${o.label}">${content}</text>`
+      `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${o.labelSize}" fill="${o.label}"${wrapBudget ? ` data-wrap="${wrapBudget}"` : ''}>${content}</text>`
     const row = (inner, cls = '') => `<g class="lbl-row${cls}"><g class="lbl-shift">${inner}</g></g>`
     if (l.lines) for (const line of l.lines) (out.push(row(text(esc(line), l.x, l.anchor, y))), (y += lh))
     if (l.items) {
@@ -376,11 +386,12 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         out.push(row(text(esc(l.head), l.x, l.anchor, y), ' lbl-head'))
         y += lh
       }
-      // Bullets hang from a shared left edge. Right-aligned blocks start at a rough width guess and are
-      // wrapped in .lbl-end so alignEndLabels() can measure the real text and pin the right edge to x.
+      // Bullets hang from a shared left edge. Right- or centre-aligned blocks start at a rough width
+      // guess and are wrapped in .lbl-end so alignEndLabels() can measure the real text and pin the
+      // right edge (or centre, for the compact layout's full-width shelves) to x.
       const width = Math.max(...[l.head ?? '', ...l.items].map((s) => s.length)) * o.labelSize * 0.5 + (l.head ? 0 : o.labelSize + 16)
-      const left = l.anchor === 'end' ? l.x - width : l.x
-      if (l.anchor === 'end') out.push(`<g class="lbl-end" data-x="${l.x}">`)
+      const left = l.anchor === 'end' ? l.x - width : l.anchor === 'mid' ? l.x - width / 2 : l.x
+      if (l.anchor === 'end' || l.anchor === 'mid') out.push(`<g class="lbl-end" data-x="${l.x}" data-align="${l.anchor}">`)
       for (const item of l.items) {
         const size = o.labelSize
         const glyph = POINT_ICONS[item].node.map(([tag, attrs]) =>
@@ -393,25 +404,28 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         ))
         y += lh
       }
-      if (l.anchor === 'end') out.push('</g>')
+      if (l.anchor === 'end' || l.anchor === 'mid') out.push('</g>')
     }
     return out.join('')
   }
 
-  /** Pins every right-aligned bullet block's measured right edge to its anchor x. Call after insert. */
+  /** Pins every right- or centre-aligned bullet block's measured edge (or centre) to its anchor x. */
   function alignEndLabels(root) {
     root.querySelectorAll('.lbl-end').forEach((g) => {
       g.removeAttribute('transform')
       const b = g.getBBox()
-      if (b.width) g.setAttribute('transform', `translate(${(+g.dataset.x - (b.x + b.width)).toFixed(2)} 0)`)
+      if (!b.width) return
+      const x = +g.dataset.x
+      const shift = g.dataset.align === 'mid' ? x - (b.x + b.width / 2) : x - (b.x + b.width)
+      g.setAttribute('transform', `translate(${shift.toFixed(2)} 0)`)
     })
   }
 
 
   function titleText(node, o) {
     const title = node.title.map((line, i) =>
-      `<text x="${node.x}" y="${titleBaseline(node, o, 78, 14, i)}" text-anchor="middle" font-size="${o.titleSize}" font-weight="${o.titleWeight}" letter-spacing="${o.titleTrack ?? 0.04}em" fill="${INK}">${esc(line)}</text>`)
-    if (node.sub) title.push(`<text x="${node.x}" y="${titleBaseline(node, o, 78, 14, node.title.length)}" text-anchor="middle" font-size="${o.titleSize + 1}" fill="${STONE}">${esc(node.sub)}</text>`)
+      `<text x="${node.x}" y="${titleBaseline(node, o, o.R ?? 78, 14, i)}" text-anchor="middle" font-size="${o.titleSize}" font-weight="${o.titleWeight}" letter-spacing="${o.titleTrack ?? 0.04}em" fill="${INK}">${esc(line)}</text>`)
+    if (node.sub) title.push(`<text x="${node.x}" y="${titleBaseline(node, o, o.R ?? 78, 14, node.title.length)}" text-anchor="middle" font-size="${o.titleSize + 1}" fill="${STONE}">${esc(node.sub)}</text>`)
     return title.join('')
   }
 
@@ -427,20 +441,20 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       const dash = o.presetDash ?? kind.dash ?? o.dash
       const cls = o.animate ? 'edge__line flow' : 'edge__line'
       parts.push(`<g class="edge" data-edge="${index}">`)
-      const pts = fitEdge(e, o)
+      const pts = fitEdge(e, o, o.R ?? 78)
       parts.push(
         `<path class="${cls}" d="${path(pts, o.radius)}" fill="none" stroke="${color}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round"${dash ? ` stroke-dasharray="${dash}"` : ''} />`,
       )
       parts.push(arrowHead(pts, o, kind.color ?? o.arrowColor ?? color, o.stroke))
       if (o.dots) parts.push(`<circle cx="${e.points[0][0]}" cy="${e.points[0][1]}" r="3.5" fill="${o.arrowColor ?? INK}" />`)
-      parts.push(`<g class="edge__label">${e.label ? label(e.label, o) : ''}</g></g>`)
+      parts.push(`<g class="edge__label"${e.label?.fixed ? ` data-fixed="${e.label.fixed}"` : ''}>${e.label ? label(e.label, o) : ''}</g></g>`)
     })
 
     for (const [key, node] of Object.entries(NODES)) {
       parts.push(`<g class="node" data-node="${key}">`)
-      if (o.story) parts.push(`<circle class="node__halo" cx="${node.x}" cy="${node.y}" r="78" fill="${BLUE}" />`)
+      if (o.story) parts.push(`<circle class="node__halo" cx="${node.x}" cy="${node.y}" r="${o.R ?? 78}" fill="${BLUE}" />`)
       if (o.disc) parts.push(`<circle cx="${node.x}" cy="${node.y}" r="${o.disc}" fill="#fff" filter="url(#shadow-${o.id})" />`)
-      const size = o.disc ? 112 : 142
+      const size = o.disc ? 112 : (o.nodeSize ?? 142)
       if (node.icon === 'momo') {
         // Momo, open eyes (still). Studio controls nudge and scale it inside its halo.
         const still = size * 1.18
@@ -1241,7 +1255,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     // Arrow tips keep the same gap to every halo edge; they follow Halo size and Arrow gap live.
     const look = {}
     const retarget = () => {
-      const R = 78 * look.haloScale
+      const R = (o.R ?? 78) * look.haloScale
       svg.querySelectorAll('.edge').forEach((g) => {
         const pts = fitEdge(EDGES[+g.dataset.edge], o, R, look.arrowGap, look.titleGap)
         edgePts.set(g, pts)
@@ -1302,15 +1316,21 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
         if (!best.horiz) return lbl.setAttribute('transform', `translate(0 ${(best.mid - cy).toFixed(2)})`)
         // Beside a horizontal run, every block keeps the same gap to its line, whatever its line count:
         // above, the last baseline sits `labelGap` over the line; below, the first cap top sits `labelGap` under it.
+        // Fixed-position labels (phone layout) skip an axis they were given an explicit value for: the row's
+        // floating bands (anchor 'mid') skip both, since they don't hug any line; the Momo lanes only skip x
+        // (their matched segment, after trimming, isn't a reliable centre for this geometry) and keep the
+        // normal y hug, which already accounts for whichever item EDGE_INFO shows.
+        const fixed = lbl.dataset.fixed ?? ''
         let dy = 0
-        if (baselines.length) {
+        if (baselines.length && !fixed.includes('y')) {
           const top = Math.min(...baselines.map((r) => r.base - r.cap)), bottom = Math.max(...baselines.map((r) => r.base))
           dy = cy < best.lineY ? best.lineY - look.labelGap - bottom : best.lineY + look.labelGap - top
         }
-        lbl.setAttribute('transform', `translate(${(best.mid - cx).toFixed(2)} ${dy.toFixed(2)})`)
+        const xShift = fixed.includes('x') ? 0 : best.mid - cx
+        lbl.setAttribute('transform', `translate(${xShift.toFixed(2)} ${dy.toFixed(2)})`)
       })
     }
-    document.fonts.ready.then(() => { alignEndLabels(svg); centerLabels() })
+    document.fonts.ready.then(() => { applyWrap(); alignEndLabels(svg); centerLabels() })
     const geometry = ['haloScale', 'arrowGap', 'titleGap', 'tipScale', 'labelGap']
     lookInputs.forEach((inp) => {
       const k = inp.dataset.look
@@ -1351,11 +1371,50 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
     const nodeLines = [...svg.querySelectorAll('.node')].flatMap((g) =>
       [...g.querySelectorAll('text')].map((t, i) => ({ key: `node:${g.dataset.node}:${i}`, t, original: t.textContent })))
     // An empty override removes the line; the rows below close the gap (edit mode shows it faded).
+    // Long labels (compact layout only, via type.wrap): if a row's text is wider than the shelf it
+    // sits on, break it onto a second line at the best space, keeping the same words. Re-measured
+    // whenever text changes and again once the real font has loaded (fallback-font widths lie).
+    const applyWrap = () => {
+      const ns = 'http://www.w3.org/2000/svg'
+      labelRows.forEach(({ r }) => {
+        const t = rowText(r)
+        const full = t.dataset.full
+        const wrap = Number(t.dataset.wrap)
+        if (!full || !wrap) return
+        t.textContent = full
+        const words = full.split(' ')
+        if (words.length < 2 || t.getBBox().width <= wrap) return
+        let best = -1, bestScore = Infinity
+        for (let i = 1; i < words.length; i++) {
+          t.textContent = words.slice(0, i).join(' ')
+          const w1 = t.getBBox().width
+          t.textContent = words.slice(i).join(' ')
+          const w2 = t.getBBox().width
+          const score = (Math.max(0, w1 - wrap) + Math.max(0, w2 - wrap)) * 1000 + Math.max(w1, w2)
+          if (score < bestScore) { bestScore = score; best = i }
+        }
+        if (best < 0) { t.textContent = full; return }
+        const x = t.getAttribute('x')
+        const fs = parseFloat(t.getAttribute('font-size'))
+        const line1 = words.slice(0, best).join(' '), line2 = words.slice(best).join(' ')
+        while (t.firstChild) t.removeChild(t.firstChild)
+        const mk = (str, dy) => {
+          const ts = document.createElementNS(ns, 'tspan')
+          ts.setAttribute('x', x)
+          ts.setAttribute('dy', dy)
+          ts.textContent = str
+          return ts
+        }
+        t.append(mk(line1, 0), mk(line2, fs * 1.08))
+      })
+    }
     const applyLabels = () => {
       labelRows.forEach(({ key, r, original }) => {
         const v = settings.labels[key]
         r.classList.toggle('is-gone', v === '')
-        rowText(r).textContent = v ? v : original
+        const text = v ? v : original
+        rowText(r).textContent = text
+        rowText(r).dataset.full = text
       })
       nodeLines.forEach(({ key, t, original }) => {
         const v = settings.labels[key]
@@ -1368,6 +1427,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       })
       retarget()
       applyLineSpacing(look.lineSp)
+      applyWrap()
       alignEndLabels(svg)
       centerLabels()
     }
@@ -1386,7 +1446,7 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
       const hit = labelRows.find(({ r }) => r.contains(e.target)) ?? nodeLines.find(({ t }) => t === e.target)
       if (!hit) return
       const el = hit.r ?? hit.t
-      const current = hit.r ? rowText(hit.r).textContent : hit.t.textContent
+      const current = hit.r ? (rowText(hit.r).dataset.full ?? rowText(hit.r).textContent) : hit.t.textContent
       const next = window.prompt('Text (leave empty to remove this line)', el.classList.contains('is-gone') ? hit.original : current)
       if (next === null) return
       if (next === hit.original) delete settings.labels[hit.key]

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useTuningController } from '../../tuning/useTuning'
 import { drawBraid, setRT } from './braid'
 import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE } from './phoneFilm'
+import { BEAM_SCREEN, MomoVoiceBeam } from './MomoVoiceBeam'
 import { stackedAlpha } from '../../lib/stackedAlpha'
 import { ArrowDownIcon } from '../../components/icons'
 import './momoIntro.css'
@@ -22,8 +23,7 @@ const SEQUENCES = [
   { key: 'bodySignals', end: PHONE_TIMELINE.risen },
   { key: 'signalChecks', end: PHONE_TIMELINE.buzz },
   { key: 'momoNudge', end: PHONE_TIMELINE.press },
-  { key: 'openApp', end: PHONE_TIMELINE.ask },
-  { key: 'reflectionChoice', end: PHONE_TIMELINE.pick },
+  { key: 'openApp', end: PHONE_TIMELINE.voice },
   { key: 'momoEntrance', end: PHONE_TIMELINE.talk },
   { key: 'voiceReflection', end: PHONE_TIMELINE.calm },
   { key: 'heroHandoff', end: PHONE_TIMELINE.hero },
@@ -45,7 +45,6 @@ const CONFIG = {
   phonePosition: {
     lockScreenY: [24, -120, 120, 1] as Tuple,
     signalCheckY: [0, -120, 120, 1] as Tuple,
-    reflectionChoiceY: [0, -120, 120, 1] as Tuple,
     voiceReflectionY: [0, -120, 120, 1] as Tuple,
     _collapsed: false,
   },
@@ -152,6 +151,12 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   const skipBtnRef = useRef<HTMLButtonElement>(null)
   const momoVideos = useRef<Record<string, HTMLVideoElement | null>>({})
   const momoCanvases = useRef<Record<string, HTMLCanvasElement | null>>({})
+  // The prototype's VoiceBeam over the film's phone screen: placed per frame, fed the film's voice level.
+  const beamRef = useRef<HTMLDivElement>(null)
+  const topRef = useRef<HTMLCanvasElement>(null)
+  const beamLevel = useRef(0)
+  const readBeamLevel = useRef(() => beamLevel.current).current
+  const [beamActive, setBeamActive] = useState(false)
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const { values: t } = useTuningController('Momo intro', CONFIG, {
     onAction: (action) => { if (action === 'replay') replayRef.current() },
@@ -185,6 +190,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const canvas = canvasRef.current!, stage = stageRef.current!
     const ctx = canvas.getContext('2d')!
     const filmCanvas = document.createElement('canvas'), filmCtx = filmCanvas.getContext('2d')!
+    const topCanvas = topRef.current!, topCtx = topCanvas.getContext('2d')!
     const root = document.documentElement
     let vw = 0, vh = 0, dpr = 1, filmDpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
     let ready = false, disposed = false, playing = false
@@ -285,6 +291,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       // extra pixels during the scroll handoff; the heavier offscreen film stays at 1×.
       filmDpr = 1
       canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr)
+      topCanvas.width = canvas.width; topCanvas.height = canvas.height
       filmCanvas.width = Math.round(vw * filmDpr); filmCanvas.height = Math.round(vh * filmDpr)
       stageH = stage.offsetHeight || vh
       const box = document.querySelector('.case__section--hero .case__braid-slot')?.getBoundingClientRect()
@@ -362,20 +369,35 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const ending = playing ? smooth(clamp((time - PHONE_TIMELINE.hero + .35) / .35)) : 1
       const filmAlpha = playing ? (handoffY !== null && !handoffCancelled ? 1 : smooth(p)) : 0
-      syncMomo(playing && !document.hidden && filmAlpha > .001 && time >= PHONE_TIMELINE.ask && time < PHONE_TIMELINE.calm + 1)
+      syncMomo(playing && !document.hidden && filmAlpha > .001 && time >= PHONE_TIMELINE.voice - .2 && time < PHONE_TIMELINE.calm + 1)
       momoFrames.awake = videos[0].readyState >= 2 && canvases[0].width > 1 ? canvases[0] : undefined
       momoFrames.asleep = videos[1].readyState >= 2 && canvases[1].width > 1 ? canvases[1] : undefined
       if (filmAlpha > .001) {
         const scale = Math.min(vw / (vw < 700 ? 480 : 960), vh / 540)
+        const ox = (vw - 960 * scale) / 2, oy = (vh - 540 * scale) / 2
         filmCtx.setTransform(1, 0, 0, 1, 0, 0); filmCtx.clearRect(0, 0, filmCanvas.width, filmCanvas.height)
-        drawPhoneFilm(filmCtx, time, [scale * filmDpr, (vw - 960 * scale) / 2 * filmDpr, (vh - 540 * scale) / 2 * filmDpr], {
+        topCtx.setTransform(1, 0, 0, 1, 0, 0); topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height)
+        const beam = drawPhoneFilm(filmCtx, time, [scale * filmDpr, ox * filmDpr, oy * filmDpr], {
           x: (slotX - vw / 2) / scale + 480,
           y: (slotY - window.scrollY - vh / 2) / scale + 270,
           width: Math.min(s.hero.width, vw * .72) / scale,
-        }, s.phonePosition, momoFrames)
+        }, s.phonePosition, momoFrames, topCtx, [scale * dpr, ox * dpr, oy * dpr])
+        topCanvas.style.opacity = String(filmAlpha)
         ctx.globalAlpha = filmAlpha
         ctx.drawImage(filmCanvas, 0, 0, canvas.width, canvas.height)
         ctx.globalAlpha = 1
+        beamLevel.current = beam.level
+        setBeamActive(beam.active)
+        const el = beamRef.current
+        if (el) {
+          el.style.transform = `translate(${ox + beam.x * scale}px, ${oy + beam.y * scale}px) scale(${(beam.w * scale) / BEAM_SCREEN.w})`
+          el.style.opacity = String(filmAlpha)
+        }
+      } else {
+        beamLevel.current = 0
+        setBeamActive(false)
+        if (beamRef.current) beamRef.current.style.opacity = '0'
+        topCanvas.style.opacity = '0'
       }
       const ay = slotY - window.scrollY
       swell += ((hovering ? 1 : 0) - swell) * (1 - Math.exp(-dt / s.speed * 10))
@@ -491,6 +513,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   return <>
     <div ref={stageRef} className="momo-stage" aria-hidden="true" />
     <canvas ref={canvasRef} className="momo-intro" aria-hidden="true" />
+    <MomoVoiceBeam ref={beamRef} active={beamActive} level={readBeamLevel} />
+    {/* The phone's bottom controls and tap cursor, above the beam. */}
+    <canvas ref={topRef} className="momo-intro" aria-hidden="true" />
     {t.skip.enabled && <button
       ref={skipBtnRef}
       type="button"

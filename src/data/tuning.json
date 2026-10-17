@@ -618,7 +618,7 @@
       "height": 39,
       "gap": 27,
       "offset": 28,
-      "hoverColor": "#6f8f69"
+      "hoverColor": "#53bffe"
     },
     "story": {
       "problemTitle": "Support usually comes too late.",
@@ -685,19 +685,19 @@
         "bodyGap": 58,
         "tagsGap": 77,
         "entrance": {
-          "text": "fade",
+          "text": "jitter",
           "duration": 0.3,
-          "textDuration": 1.4,
+          "textDuration": 1.2,
           "distance": 6,
-          "textStagger": 0.02,
+          "textStagger": 0.12,
           "pillStagger": 0.12,
           "pillsGap": 0.05,
+          "pillsAfter": "title",
           "floatsDelay": 0.2,
           "floatStagger": 0.11
         },
         "bubbles": {
           "frost": {
-            "to": "#a575f3",
             "strength": 0.14,
             "highlight": 0.64
           }
@@ -847,7 +847,6 @@
       "bodySignals": 1.6,
       "signalChecks": 2.65,
       "momoNudge": 2.4,
-      "reflectionChoice": 2,
       "momoEntrance": 1.75,
       "voiceReflection": 4.75,
       "heroHandoff": 1.6,
@@ -961,7 +960,7 @@
     }
   },
   "Momo welcome": {
-    "blackOverlay": 0.16,
+    "blackOverlay": 0,
     "prototypeWidth": 305,
     "timing": {
       "fullLoopDuration": 10,
@@ -991,10 +990,10 @@
     "sequenceSpeed": 3,
     "motionSpeed": 1.5,
     "card": {
-      "finish": "blue-photo-logo",
-      "tone": "#ffffff",
+      "finish": "glass-marks",
+      "tone": "#EBF2F7",
       "radius": 35,
-      "fill": "#ffffff",
+      "fill": "#EBF2F7",
       "scaleX": 0.78,
       "scaleY": 0.87
     },
@@ -1043,13 +1042,15 @@
       "circleColor": "#5B8DEF",
       "circleStyle": "none",
       "glassTint": 0.29,
-      "titleGap": 21
+      "titleGap": 3
     },
     "text": {
-      "titles": "#8A93A6"
+      "titles": "#8A93A6",
+      "icons": "#55ACF0",
+      "arrows": "#55ACF0"
     },
     "seal": {
-      "style": "round",
+      "style": "glass",
       "scale": 0.61
     },
     "stepHold": {
@@ -1070,27 +1071,27 @@
     },
     "userIcon": {
       "y": -4,
-      "scale": 1.21,
+      "scale": 1.12,
       "saturation": 0.8
     },
     "watchIcon": {
       "x": -1,
       "y": -1,
-      "scale": 1.17,
+      "scale": 1.09,
       "saturation": 0.8
     },
     "phoneIcon": {
       "x": -1,
-      "scale": 1.37,
+      "scale": 1.25,
       "saturation": 0.8
     },
     "momoIcon": {
-      "scale": 1.15,
+      "scale": 1.18,
       "brightness": 1.01
     },
     "expertsIcon": {
-      "y": -4,
-      "scale": 1.16,
+      "y": -10,
+      "scale": 1.12,
       "saturation": 0.8
     }
   },

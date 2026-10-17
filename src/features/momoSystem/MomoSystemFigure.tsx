@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { MomoMark } from '../momoIntro/MomoMark'
 import { mountMomoSystem, TIP_ANIMATIONS, type TipAnimation, type MomoSystemHandle } from './mountMomoSystem'
 import { cardSurface, GRADIENT_PALETTES, MATERIAL_FINISHES, materialSurface, PHOTO_FINISHES, publishSystemBase, type GradientDials, type MaterialFinish } from './systemSurface'
 import { useTuningController } from '../../tuning/useTuning'
-import { RestartButton } from '../playback/VideoPlayback'
 import { MomoSeal, SEAL_STYLES, type SealStyle } from './MomoSeal'
 import { usePushTilt } from '../pushBubbles/usePushTilt'
 
@@ -18,6 +17,7 @@ type SequenceDials = {
   shadow: { show: boolean; color: string; opacity: number; x: number; y: number; blur: number; spread: number }
   momoLogo: { x: number; y: number; scale: number; outline: number; smile: number; color: string }
   momoText: { x: number; y: number; scale: number; color: string }
+  lockupGlass: { x: number; y: number; scale: number }
   icons: { circleColor: string; circleStyle: 'glass' | 'flat' | 'embossed' | 'debossed' | 'ring' | 'pearl' | 'ring-art' | 'none'; glassTint: number; titleGap: number }
   system: { scale: number }
   stepHold: { youShare: number; dataIn: number; answersOut: number; backToYou: number }
@@ -87,7 +87,7 @@ function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): An
   const timing = (i = 0, extra: KeyframeAnimationOptions = {}): KeyframeAnimationOptions =>
     ({ duration: e.duration * 1000, delay: (e.delay + i * e.stagger) * 1000, easing: EASE_OUT, fill: 'backwards', ...extra })
   // The Momo lockup and the seal are printed on the card: they move with the surface, frame for frame.
-  const fixtures = [card.querySelector<HTMLElement>('.momo-system__brand'), card.querySelector<HTMLElement>('.momo-seal')]
+  const fixtures = ['.momo-system__brand', '.momo-system__lockup-glass', '.momo-seal'].map((s) => card.querySelector<HTMLElement>(s))
     .filter((el): el is HTMLElement => !!el)
   const diagram = card.querySelector<HTMLElement>('.momo-system__diagram')
   // A lone keyframe defaults to offset 1 (an exit); offset 0 makes it the start, settling to the CSS value.
@@ -208,6 +208,13 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
     scale: [1, 0.4, 2, 0.01] as Tuple,
     color: { type: 'color' as const, default: '#159DD2' },
   },
+  /** glass-marks only: position/scale for the single pre-composed lockup image, independent of the
+   *  SVG mark + wordmark's own momoLogo/momoText dials (that pair's tuning doesn't fit one image). */
+  lockupGlass: {
+    x: [0, -400, 400, 1] as Tuple,
+    y: [0, -160, 160, 1] as Tuple,
+    scale: [1, 0.4, 2, 0.01] as Tuple,
+  },
   icons: {
     circleColor: { type: 'color' as const, default: '#FFFFFF' },
     /** Glass: a frosted white disc tinted by circleColor, with a white rim and soft shadow. Flat: the old tinted circle.
@@ -268,8 +275,8 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
   expertsIcon: iconDials(),
 }
 
-/** Below this width the diagram switches to the diamond layout. */
-const NARROW = '(max-width: 720px)'
+/** Below this width the diagram switches to the compact phone layout. */
+const NARROW = '(max-width: 768px)'
 
 /** Light fills use blue/ink artwork; saturated or dark fills use white. */
 function cardColors(fill: string) {
@@ -301,10 +308,14 @@ export function MomoSystemFigure() {
   const photo = material ? PHOTO_FINISHES[material] ?? null : null
   // Phone layout: the diagram is taller than wide, so a photo can't set the card's shape; it crops instead.
   const photoShaped = !!photo && !narrow
+  // Cropped: the card's own scale dials are tuned for the shaped desktop card and don't describe a
+  // crop, so narrow instead takes the full figure — the card's own lockup and seal (not baked into
+  // the crop) are drawn to that same full box and never sit outside it.
+  const cropped = !!photo && narrow
   const photoInset = usePhotoShape(cardRef, photoShaped ? photo.aspect : null, speed.card.scaleY)
   const glass = speed.card.show && speed.glass.show && !material ? speed.glass : null
   const colors = cardColors(speed.card.show ? (material ? speed.card.tone : speed.card.fill) : '#F5F5F5')
-  const surface = material ? materialSurface(material, speed.card.tone, !!photo && narrow) : cardSurface(speed.card.fill, speed.gradient, glass)
+  const surface = material ? materialSurface(material, speed.card.tone, cropped) : cardSurface(speed.card.fill, speed.gradient, glass)
   // The story art cards take this fill + gradient and apply their own glass (see systemSurface.ts).
   useEffect(() => publishSystemBase({ fill: speed.card.fill, gradient: speed.gradient }))
   usePushTilt(cardRef, visibleCardRect, speed.pushTilt)
@@ -317,9 +328,10 @@ export function MomoSystemFigure() {
     '--system-card-opacity': speed.card.show ? 1 : 0,
     // Card size comes from insets (not a transform), so radius and shadow stay undistorted.
     '--system-card-radius': `${speed.card.radius}px`,
-    // A shaped photo finish overrides the card scale dials with the artwork's own proportions.
-    '--system-card-inset-x': photoInset ? `${photoInset.x.toFixed(3)}%` : `${((1 - speed.card.scaleX) * 50).toFixed(3)}%`,
-    '--system-card-inset-y': photoInset ? `${photoInset.y.toFixed(3)}%` : `${((1 - speed.card.scaleY) * 50).toFixed(3)}%`,
+    // A shaped photo finish overrides the card scale dials with the artwork's own proportions. On
+    // phones (narrow) the card fills its column: the scale dials are a desktop composition choice.
+    '--system-card-inset-x': photoInset ? `${photoInset.x.toFixed(3)}%` : cropped || narrow ? '0%' : `${((1 - speed.card.scaleX) * 50).toFixed(3)}%`,
+    '--system-card-inset-y': photoInset ? `${photoInset.y.toFixed(3)}%` : cropped || narrow ? '0%' : `${((1 - speed.card.scaleY) * 50).toFixed(3)}%`,
     '--system-card-shadow': speed.card.show && speed.shadow.show
       ? `${speed.shadow.x}px ${speed.shadow.y}px ${speed.shadow.blur}px ${speed.shadow.spread}px color-mix(in srgb, ${speed.shadow.color} ${Math.round(speed.shadow.opacity * 100)}%, transparent)`
       : '0 0 #0000',
@@ -331,6 +343,9 @@ export function MomoSystemFigure() {
     '--system-text-y': speed.momoText.y,
     '--system-text-scale': speed.momoText.scale,
     '--system-text-color': speed.momoText.color,
+    '--system-lockup-x': speed.lockupGlass.x,
+    '--system-lockup-y': speed.lockupGlass.y,
+    '--system-lockup-scale': speed.lockupGlass.scale,
     '--system-seal-scale': speed.seal.scale,
     '--system-seal-x': speed.seal.x,
     '--system-seal-y': speed.seal.y,
@@ -394,12 +409,6 @@ export function MomoSystemFigure() {
       handleRef.current?.start()
     }
   }, [speed.arrowTips.animation])
-
-  // Replay button: start() already resets every held animation and begins again from step 01.
-  const handleReplay = useCallback(() => {
-    setDone(false)
-    handleRef.current?.start()
-  }, [])
 
   // Card entrance: built paused on its first frame (so the card never flashes in before it plays),
   // played once 15% of the card is in view, and re-armed only once the card has fully left the
@@ -471,14 +480,23 @@ export function MomoSystemFigure() {
   return (
     <div ref={cardRef} className="case__figure momo-system" style={style} data-done={done} data-circles={speed.icons.circleStyle}>
       {/* Photo finishes already carry the seal (and, for logo photos, the lockup); the lockup keeps its space
-          so the diagram doesn't shift. A cropped photo (phone layout) loses its lockup, so the card shows its own. */}
-      <div className="momo-system__brand" aria-label="Momo" style={photo?.logo && photoShaped ? { visibility: 'hidden' } : undefined}>
-        <MomoMark className="momo-system__mark" color="var(--system-logo-color)" outline={speed.momoLogo.outline} smile={speed.momoLogo.smile} />
-        <span className="momo-system__type" aria-hidden="true" />
+          so the diagram doesn't shift. A cropped photo (phone layout) loses its lockup, so the card shows its
+          own; it also drops the baked seal (an extreme crop ratio would blow it up), showing its own seal too.
+          glass-marks: the brand slot stays as an empty spacer and the glass lockup image is pinned to the
+          card's top-left corner like the seal is to the bottom-right. */}
+      <div className="momo-system__brand" aria-label={material === 'glass-marks' ? undefined : 'Momo'} style={photo?.logo && photoShaped ? { visibility: 'hidden' } : undefined}>
+        {material !== 'glass-marks' && (
+          <>
+            <MomoMark className="momo-system__mark" color="var(--system-logo-color)" outline={speed.momoLogo.outline} smile={speed.momoLogo.smile} />
+            <span className="momo-system__type" aria-hidden="true" />
+          </>
+        )}
       </div>
+      {material === 'glass-marks' && (
+        <img className="momo-system__lockup-glass" src="/work/momo/seal/lockup-glass.webp" width={1200} height={298} alt="Momo" loading="eager" decoding="sync" />
+      )}
       <div ref={ref} className="momo-system__diagram" />
-      {!photo && <MomoSeal style={speed.seal.style} />}
-      <RestartButton onRestart={handleReplay} label="Replay diagram" />
+      {(!photo || cropped) && <MomoSeal style={speed.seal.style} />}
     </div>
   )
 }

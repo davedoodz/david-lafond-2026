@@ -75,14 +75,29 @@ function NotificationDemo({ media }: { media: Media }) {
   )
 }
 
+/** feColorMatrix that maps black to `hex` and white to white, keeping alpha, so antialiased edges tint too. */
+function tintMatrix(hex: string) {
+  const n = parseInt(hex.replace('#', '').padEnd(6, '0').slice(0, 6), 16)
+  return [n >> 16, (n >> 8) & 255, n & 255]
+    .map((v) => { const c = v / 255, k = 1 - c; return `${k * 0.2126} ${k * 0.7152} ${k * 0.0722} 0 ${c}` })
+    .concat('0 0 0 1 0')
+    .join(' ')
+}
+
 /** Partner logo row for the hero; placement and size come from the "logos" dials. */
 function LogoRow({ l, id }: { l: Logos; id: Id }) {
+  const tint = `case-logo-tint-${id}`
   return (
     <div
       className="case__logos"
       data-placement={l.placement}
-      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, '--logo-hover-color': l.hoverColor, '--logo-hover-opacity': l.hoverOpacity, opacity: l.opacity } as CSSProperties}
+      style={{ '--logo-h': `${l.height}px`, '--logo-gap': `${l.gap}px`, '--logo-offset': `${l.offset}px`, '--logo-x': `${l.x}px`, '--logo-hover-color': l.hoverColor, '--logo-hover-opacity': l.hoverOpacity, '--logo-opacity': l.opacity, '--logo-tint': `url(#${tint})` } as CSSProperties}
     >
+      <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: 'absolute' }}>
+        <filter id={tint} colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values={tintMatrix(l.hoverColor)} />
+        </filter>
+      </svg>
       {LOGOS[id].map((logo) => (
         <a
           key={logo.src}
@@ -90,7 +105,7 @@ function LogoRow({ l, id }: { l: Logos; id: Id }) {
           target="_blank"
           rel="noreferrer"
           aria-label={`Visit ${logo.alt} website (opens in a new tab)`}
-          style={{ '--logo-mask': `url("${logo.src}")` } as CSSProperties}
+          style={{ '--logo-src': `url("${logo.src}")` } as CSSProperties}
         >
           <img src={logo.src} alt="" style={{ height: `calc(var(--logo-h) * ${logo.harvard ? l.harvardScale : (logo.scale ?? 1)})` }} />
         </a>

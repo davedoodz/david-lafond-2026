@@ -64,9 +64,14 @@ function watchScreen(id: StepId) {
   )
 }
 
-const phoneScreen = (id: StepId) => (
-  <div className="mc-lock" data-dim={id !== 'nudge' || undefined}>
+/* The lock screen is on from the start and stays put; only the notification comes and goes. */
+const phoneLock = (
+  <div className="mc-lock">
     <img className="mc-lock__bg" src="/work/momo/flows/lockscreen.webp" alt="" />
+  </div>
+)
+const phoneScreen = (id: StepId) => (
+  <div className="mc-lock">
     {id === 'nudge' && (
       <div className="mc-note">
         <span className="mc-note__icon" />
@@ -198,7 +203,7 @@ export function DeviceInsights({ copy, edit }: Props) {
             <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path ref={pulse} className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
           </div>
           <div className="mc-phone">
-            <div className="mc-phone__screen"><Screens step={id} render={phoneScreen} /></div>
+            <div className="mc-phone__screen">{phoneLock}<Screens step={id} render={phoneScreen} /></div>
             <img className="mc-phone__img" src="/work/momo/devices/iphone-silver.png" alt="" />
           </div>
         </div>

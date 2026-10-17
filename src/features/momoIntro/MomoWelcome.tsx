@@ -10,11 +10,12 @@ import './momoWelcome.css'
 type Tuple = [number, number, number, number]
 
 const CONFIG = {
-  blackOverlay: [0.34, 0, 0.85, 0.01] as Tuple,
+  /** Dark shade over the shader; 0 keeps the app's airy light blue. */
+  blackOverlay: [0, 0, 0.85, 0.01] as Tuple,
   prototypeWidth: [380, 180, 600, 5] as Tuple,
-  /** Button look. flat: the original fills · glass: clear Liquid Glass · tinted: blue glass primary · frosted: heavier frost · prominent: white primary. */
+  /** Button look. app: the Momo app's own (glossy blue primary, frosted secondary) · flat: the original fills · glass: clear Liquid Glass · tinted: blue glass primary · frosted: heavier frost · prominent: white primary. */
   buttons: {
-    style: { type: 'select' as const, options: ['flat', 'glass', 'tinted', 'frosted', 'prominent'], default: 'flat' },
+    style: { type: 'select' as const, options: ['app', 'flat', 'glass', 'tinted', 'frosted', 'prominent'], default: 'app' },
     primaryColor: { type: 'color' as const, default: '#3cb7f3' },
     secondaryColor: { type: 'color' as const, default: '#ffffff' },
     /** White stroke inside the Get started button. */
@@ -75,8 +76,9 @@ const CONFIG = {
 }
 
 // Paper file 01M2EBW39E793RGX29545TP971, shader 3K9-0; same package/version as the card shader.
+// Colours lifted toward the app's welcome screen: pale airy top, clear sky blue, cyan corner.
 const UNIFORMS = {
-  u_colors: ['#E9EEF8', '#CBEFFE', '#53BFFE', '#00D0FF'].map(getShaderColorFromString),
+  u_colors: ['#EEF5FC', '#C6E8FB', '#6CC3F7', '#3BC4F0'].map(getShaderColorFromString),
   u_colorsCount: 4, u_distortion: 0.8, u_swirl: 0.1, u_grainMixer: 0, u_grainOverlay: 0,
   u_fit: ShaderFitOptions.contain, u_scale: 1, u_rotation: 0, u_offsetX: 0, u_offsetY: 0,
   u_originX: 0.5, u_originY: 0.5, u_worldWidth: 0, u_worldHeight: 0,
@@ -228,6 +230,14 @@ export function MomoWelcome({ active = true }: { active?: boolean }) {
         <div className="momo-welcome__content" role="img" aria-label="Animated Momo welcome screen">
           <div className="momo-welcome__mascot momo-welcome__enter" ref={mascot}>
             {reduced ? <img src="/work/momo/intro/momo-open.webp" alt="" /> : <Momo mode={t.momo.mode as MomoMode} size={`${t.momo.size}%`} x={`${t.momo.x}%`} y={`${t.momo.y}%`} />}
+            {/* The app's sparkles around Momo: two four-point stars and three soft dots. */}
+            <svg className="momo-welcome__sparkles" viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M73 9 Q73.6 14.4 79 15 Q73.6 15.6 73 21 Q72.4 15.6 67 15 Q72.4 14.4 73 9Z" style={{ '--d': '0s' } as CSSProperties} />
+              <path d="M24 66 Q24.4 69.6 28 70 Q24.4 70.4 24 74 Q23.6 70.4 20 70 Q23.6 69.6 24 66Z" style={{ '--d': '1.1s' } as CSSProperties} />
+              <circle cx="28" cy="27" r="1.9" style={{ '--d': '.5s' } as CSSProperties} />
+              <circle cx="84" cy="28" r="2.1" style={{ '--d': '1.6s' } as CSSProperties} />
+              <circle cx="38" cy="83" r="1.6" style={{ '--d': '2.2s' } as CSSProperties} />
+            </svg>
           </div>
           <div className="momo-welcome__brand momo-welcome__enter" ref={brand}>
             <MomoMark className="momo-welcome__mark" outline={t.logo.outlineStroke} smile={t.logo.smileStroke} />
