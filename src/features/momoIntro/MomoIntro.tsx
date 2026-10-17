@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useTuningController } from '../../tuning/useTuning'
 import { drawBraid, setRT } from './braid'
-import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE, setAppLaunch, setMomoAsleep } from './phoneFilm'
+import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE, setAppLaunch, setMomoAsleep, setPauseIcon, setPillText } from './phoneFilm'
 import { BEAM_SCREEN, MomoVoiceBeam } from './MomoVoiceBeam'
 import { stackedAlpha } from '../../lib/stackedAlpha'
 import { ArrowDownIcon } from '../../components/icons'
@@ -67,6 +67,19 @@ const CONFIG = {
   momoAsleep: {
     size: [150, 80, 320, 1] as Tuple,
     y: [250, 150, 600, 1] as Tuple,
+    _collapsed: false,
+  },
+  /** Freeform pill label in the voice screen's bottom bar, in screen px; live. Letter-spacing widens
+   *  the pill with it; x/y nudge the text inside the pill. */
+  freeformPill: {
+    letterSpacing: [0, -1, 2, 0.01] as Tuple,
+    x: [0, -12, 12, 0.25] as Tuple,
+    y: [0, -6, 6, 0.25] as Tuple,
+    _collapsed: false,
+  },
+  /** Pause icon in the bottom bar: corner radius of its two 3×14 bars, in screen px (1.5 = capsule); live. */
+  pauseIcon: {
+    radius: [0, 0, 1.5, 0.05] as Tuple,
     _collapsed: false,
   },
   /** Seconds at speed 1. Applied on the next Replay intro, so edits never jump mid-scene. */
@@ -472,7 +485,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         const ox = (vw - 960 * scale) / 2, oy = (vh - 540 * scale) / 2
         filmCtx.setTransform(1, 0, 0, 1, 0, 0); filmCtx.clearRect(0, 0, filmCanvas.width, filmCanvas.height)
         topCtx.setTransform(1, 0, 0, 1, 0, 0); topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height)
-        setAppLaunch(s.appLaunch); setMomoAsleep(s.momoAsleep)
+        setAppLaunch(s.appLaunch); setMomoAsleep(s.momoAsleep); setPillText(s.freeformPill); setPauseIcon(s.pauseIcon)
         const beam = drawPhoneFilm(filmCtx, time, [scale * filmDpr, ox * filmDpr, oy * filmDpr], {
           x: (slotX - vw / 2) / scale + 480,
           y: (slotY - window.scrollY - vh / 2) / scale + 270,
