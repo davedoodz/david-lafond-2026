@@ -10,8 +10,16 @@ const UI = 'Inter, system-ui, sans-serif'
 const PHONE = { w:874,h:1780,sx:46,sy:39,sw:784,sh:1702,r:113 }, SH = PHONE.sh / PHONE.sw * 390
 const BRAID_W = 2 * 320 * .87
 const braidOff = Object.assign(document.createElement('canvas'), {width:600,height:260})
-const D = {"island":{"pad":4,"dur":0.6,"bounce":0.35,"w":366,"hgt":196,"r":44,"zoom":0.45},"status":{"sigX":0,"sigY":0,"wifiX":3,"wifiY":0,"batX":0,"batY":0},"notif":{"y":3,"x":0,"size":38},"seq":{"meet":0.4,"meetToLuck":1.2,"luckHold":1.8,"fade":0.6,"hold3":0.9,"hold5":0.2,"toIsland":0.3,"nudgeRead":2.4,"toRecord":2.4,"recordToTalk":1.5,"word":0.227,"afterTalk":0.4,"handoff":1.6,"endHold":1.4},"signal":{"rise":1.85,"gap":0.6,"row":0.85,"hold":1.2},"momo":{"grow":1.1,"eyesAt":0,"eyes":0.35,"settle":0.6,"openY":383,"openS":230,"talkY":333,"talkS":160},"braid":{"x":0,"y":0,"scale":1.3,"len":1},"cursor":{"size":23,"press":0.18,"fill":0.42}}
+const D = {"island":{"pad":4,"dur":1.1,"bounce":0.2,"close":0.9,"w":366,"hgt":196,"r":44,"zoom":0.45},"status":{"sigX":0,"sigY":0,"wifiX":3,"wifiY":0,"batX":0,"batY":0},"notif":{"y":3,"x":0,"size":38},"seq":{"meet":0.4,"meetToLuck":1.2,"luckHold":1.8,"fade":0.6,"hold3":0.9,"hold5":0.2,"toIsland":0.3,"nudgeRead":2.4,"toRecord":3.4,"recordToTalk":1.9,"word":0.32,"afterTalk":0.4,"handoff":2.2,"endHold":1.4},"signal":{"rise":1.85,"gap":0.6,"row":0.85,"hold":1.8},"momo":{"grow":1.1,"eyesAt":0,"eyes":0.8,"settle":1.1,"openY":383,"openS":230,"talkY":250,"talkS":150},"braid":{"x":0,"y":-16,"scale":1.3,"len":1},"cursor":{"size":23,"press":0.18,"fill":0.42}}
 const OPT = {pause:'bars',bg:'paper',copy:'nudge',handoff:'dissolve',eyes:'fade',mease:'smooth'}
+/** App-launch dials (Momo intro › App launch), pushed in by MomoIntro every frame. Film seconds:
+ *  `duration` of the window growing out of the notification, `spring` its stiffness (higher = more of
+ *  the move up front), `face` the notification → app cross-fade, `press` the tap dip, and how far the
+ *  lock screen behind `zoom`s, `blur`s (px) and `dim`s. */
+let LAUNCH = { duration: 0.7, spring: 9, face: 0.15, press: 0.05, zoom: 0.05, blur: 6, dim: 0.22 }
+export function setAppLaunch(dials) { LAUNCH = dials }
+/** Momo intro › Momo asleep: size and centre of asleep Momo when the app opens, until the record tap (screen units). */
+export function setMomoAsleep({ size, y }) { D.momo.talkS = size; D.momo.talkY = y }
 const COPY = {"luck":{"title":"Good luck with the presentation 🍀","body":"Deep breaths before you walk in.\nYou totally got this! 😌"},"nudge":{"title":"Wanna debrief? ☁️","body":"I noticed your body’s still a little stressed from that presentation. I'm here if you wanna yap about it 👀"}}
 const MEET = {"title":"Design Pitch - Internal Team","now":"2:00 – 2:45 PM · now","ended":"Ended 2:45 PM"}
 const CHECKS = [{"kind":"hr","text":"Heart rate up ~30 BPM in 2 min","state":"ok"},{"kind":"base","text":"Unusual for you at this hour","state":"ok"}]
@@ -25,9 +33,9 @@ const checkIn = (t, T, i) => S(t, checkAt(T, i), checkAt(T, i) + Math.min(0.35, 
  *  to hold them just ahead of that fade, so it never waits with an empty band and rows never overhang it. */
 const rowsIn = (t, T) => S(t, checkAt(T, 0) - 0.35, checkAt(T, 0))
 const islandGrow = (t, T) => S(t, checkAt(T, 0) - 0.8, checkAt(T, 0) - 0.3)
-// The full take keeps going under the handoff; the cut lands just after "froze." (see `timeline`).
-const words = () => "Sarah kept pushing back on my concept in front of everyone, and I just… froze. I knew what to say but damn… I don't know why I just kept my opinions to myself…".trim().split(/\s+/)
-const CUT_AFTER = 'froze.', CUT_LEAD = 2
+// The full take keeps going under the handoff; the cut lands just after "shit…" (see `timeline`).
+const words = () => "Sarah kept pushing back on my concept in front of everyone, and I just… froze. I knew what to say but shit… I don't know why I just kept my opinions to myself…".trim().split(/\s+/)
+const CUT_AFTER = 'shit…', CUT_LEAD = 0
 const THEMES = {paper:{lockInk:'#9CF6FF',dateInk:'#9CF6FF',glass:'rgba(255,255,255,0.62)',statusInk:'#ffffff',rounded:true,buttons:true}}
 const IMG = Object.fromEntries(Object.entries({lockwall:'lockwall',phone:'iphone',momo:'momo',momoOpen:'momo-open',recDot:'rec-dot',recSquare:'rec-square'}).map(([key,file]) => { const image = new Image(); image.src = '/work/momo/intro/'+file+'.webp'; return [key,image] }))
 let loaded
@@ -42,6 +50,8 @@ function rounded(c,text,x,y,size) {
   for (const char of text) { const glyph = glyphs[char]; c.fill(glyph.path); c.translate(glyph.advance,0) }
   c.restore()
 }
+/** Width of `text` set in the lock-screen rounded face at `size`. */
+const roundedW = (text, size) => [...text].reduce((w, ch) => w + glyphs[ch].advance, 0) * size / LOCK_FONT.upm
 // In-app screens are the prototypes' flat #fafafa; the voice glow is the real VoiceBeam, layered
 // over the film by MomoIntro (see drawPhoneFilm's return value).
 function screenBg(c,t,app) {
@@ -96,10 +106,11 @@ function glass(c, x, y, w, h, r, fill = 'rgba(255,255,255,0.72)', shadow = 30) {
   c.shadowColor = 'transparent'; c.strokeStyle = 'rgba(0,0,0,0.05)'; c.lineWidth = 1; c.stroke()
   c.restore()
 }
-/** Glass looks for `frost`: the pale notification glass and the dark navy glass of the heart-rate card. */
+/** Glass looks for `frost`: the pale notification glass, and the heart-rate card, which is solid
+ *  Dynamic Island black (opaque tint, no sheen, bevel or rim). */
 const FROST = {
   light: { shadow: 'rgba(10,60,120,0.16)', base: 'rgba(205,232,252,0.5)', blur: 16, tint: [[0, 'rgba(226,243,255,0.80)'], [0.55, 'rgba(208,231,252,0.74)'], [1, 'rgba(214,240,255,0.80)']], sheen: 0.22, bevel: 1, rim: 1 },
-  dark: { shadow: 'rgba(0,6,16,0.42)', base: 'rgba(8,10,14,0.84)', blur: 22, tint: [[0, 'rgba(28,33,41,0.88)'], [0.4, 'rgba(14,17,22,0.93)'], [1, 'rgba(7,9,12,0.95)']], sheen: 0.03, bevel: 0.24, rim: 0.4 },
+  dark: { shadow: 'rgba(0,6,16,0.42)', base: '#000', blur: 22, tint: [[0, '#000'], [1, '#000']], sheen: 0, bevel: 0, rim: 0 },
 }
 /**
  * Lock-screen glass, as in the Momo app mocks: the wallpaper behind it blurred, a tint, a soft
@@ -148,6 +159,18 @@ const NINK = { title: '#10243a', app: '#4d6a88', time: '#6d87a3', body: '#41617f
 function momo(c, x, y, size, t, listen = 0, img = IMG.momo) {
   const sq = 1 + 0.02 * listen * Math.sin(t * 2.6), bob = Math.sin(t * 1.3) * 3
   c.drawImage(img, x - (size * sq) / 2, y - size / 2 + bob - size * 0.03, size * sq, size / sq)
+}
+/** Asleep Momo's body is framed ~7% larger than awake Momo's (clips and stills alike: 0.644 vs 0.601
+ *  of the frame height), so it is drawn at this scale to stay the same size. */
+const ASLEEP_K = 0.933
+const probe = Object.assign(document.createElement('canvas'), { width: 96, height: 96 }), probeCtx = probe.getContext('2d', { willReadFrequently: true })
+/** Vertical centre of Momo's body in a frame, as a fraction of the frame height (alpha bounds on a 96px probe). */
+function bodyY(img) {
+  probeCtx.clearRect(0, 0, 96, 96); probeCtx.drawImage(img, 0, 0, 96, 96)
+  const d = probeCtx.getImageData(0, 0, 96, 96).data
+  let y0 = -1, y1 = -1
+  for (let y = 0; y < 96; y++) for (let x = 0; x < 96; x++) if (d[(y * 96 + x) * 4 + 3] > 128) { if (y0 < 0) y0 = y; y1 = y; break }
+  return y0 < 0 ? 0.5 : (y0 + y1 + 1) / 192
 }
 
 /**
@@ -241,7 +264,7 @@ function controls(c, t, mode, recAt) {
   c.restore()
 }
 /** `lock` 1 = lock screen (carrier at top left, as on iOS), 0 = in app (time). */
-function statusBar(c, back = 1, ink = '#1f1f1f', lock = 0) {
+function statusBar(c, ink = '#1f1f1f', lock = 0) {
   if (lock < 0.99) { c.save(); c.globalAlpha *= 1 - lock; tx(c, '9:41', 52, 30, 16, { w: 600, color: ink }); c.restore() }
   if (lock > 0.01) { c.save(); c.globalAlpha *= lock; tx(c, 'AT&T', 40, 30, 15, { w: 600, color: ink }); c.restore() }
   const B = D.status
@@ -250,18 +273,35 @@ function statusBar(c, back = 1, ink = '#1f1f1f', lock = 0) {
   for (const [r0, r1] of [[9.6, 12.6], [5.6, 8.6]]) { c.beginPath(); c.arc(wx, wy, r1, -Math.PI * 0.75, -Math.PI * 0.25); c.arc(wx, wy, r0, -Math.PI * 0.25, -Math.PI * 0.75, true); c.closePath(); c.fill() }
   c.beginPath(); c.moveTo(wx, wy); c.arc(wx, wy, 4.6, -Math.PI * 0.75, -Math.PI * 0.25); c.closePath(); c.fill()
   c.beginPath(); c.roundRect(323 + B.batX, 24 + B.batY, 23, 12, 3.5); c.lineWidth = 1; c.strokeStyle = 'rgba(31,31,31,0.4)'; c.stroke(); c.beginPath(); c.roundRect(325 + B.batX, 26 + B.batY, 19, 8, 2); c.fill()
-  if (back <= 0.01) return
-  c.save(); c.globalAlpha *= back
+}
+/** The app's glass back button, top left. */
+function backButton(c) {
   glass(c, 22, 62, 44, 44, 22, 'rgba(255,255,255,0.55)', 4)
   c.strokeStyle = '#1f1f1f'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(47, 77); c.lineTo(40, 84); c.lineTo(47, 91); c.stroke()
-  c.restore()
 }
+
+const NOTE = { x: 16, y: 300, w: 358, r: 26, cx: 195, cy: 340 }
+const noticeLines = (c, n) => n.body.split('\n').flatMap((para) => wrap(c, para, 262, 14))
+const noticeH = (c, n) => 70 + noticeLines(c, n).length * 19
+/**
+ * The launching app window, iOS-style: at `k` 0 it is the (pressed, scaled by `press`) notification,
+ * at 1 the full screen with corner radius `rFull`. The app's frame sits inside it at aspect-fill
+ * scale `s`, centred, so it grows with the window rather than being revealed by it.
+ */
+function launchWin(k, nh, press, rFull) {
+  const nx = NOTE.cx + (NOTE.x - NOTE.cx) * press, ny = NOTE.cy + (NOTE.y - NOTE.cy) * press
+  const x = lerp(nx, 0, k), y = lerp(ny, 0, k), w = lerp(NOTE.w * press, 390, k), h = lerp(nh * press, SH, k), r = lerp(NOTE.r * press, rFull, k)
+  const s = Math.max(w / 390, h / SH)
+  return { x, y, w, h, r, s, ox: x + w / 2 - 195 * s, oy: y + h / 2 - (SH / 2) * s }
+}
+/** Clip to the launch window and map the full-screen app frame into it. */
+const enterWin = (c, W) => { c.beginPath(); c.roundRect(W.x, W.y, W.w, W.h, W.r); c.clip(); c.translate(W.ox, W.oy); c.scale(W.s, W.s) }
 
 function notice(c, y, al, n) {
   if (al <= 0.01) return
-  const lines = n.body.split('\n').flatMap((para) => wrap(c, para, 262, 14)), h = 70 + lines.length * 19
+  const lines = noticeLines(c, n), h = 70 + lines.length * 19
   c.save(); c.globalAlpha *= al
-  frost(c, 16, y, 358, h, 26)
+  frost(c, NOTE.x, y, NOTE.w, h, NOTE.r)
   tile(c, 28, y + 14, 44)
   { const N = D.notif; c.drawImage(IMG.momoOpen, 50 - N.size / 2 + N.x, y + 36 - N.size / 2 + N.y, N.size, N.size) }
   tx(c, 'Momo', 84, y + 24, 13, { w: 600, color: NINK.app }); tx(c, 'now', 356, y + 24, 13, { color: NINK.time, align: 'right' })
@@ -351,9 +391,10 @@ function readout(c, t, T, V) {
   sf(c, 'heart', 27, 26.5, 16 * (1 + 0.14 * pulse(t * hr / 60)), HRC); tx(c, 'Heart rate', 45, 26.5, 13, { w: 450, color: HINK.label })
   const [label, ink] = V.status?.(m, hr, still) ?? (!still ? ['Moving · expected', MOVEC] : high ? [`+${Math.round(hr - mid)} vs your usual`, HINK.pink] : ['Your usual range', HINK.dim])
   tx(c, label, 331, 26.5, 13, { w: 450, color: ink, align: 'right' }); chevron(c, 341, 26.5)
-  const v = String(Math.round(hr)); tx(c, v, 19, 71.5, 47, { w: 600, color: rgb([238, 243, 248], [245, 139, 153], clamp((hr - V.base[1]) / 14)), ls: -1.6 })
-  c.font = `600 47px ${UI}`; c.letterSpacing = '-1.6px'; const nw = c.measureText(v).width; c.letterSpacing = '0px'
-  tx(c, 'BPM', 19 + nw + 9, 85.5, 12, { w: 450, color: HINK.dim })
+  // The number is set in the lock-screen clock's rounded face, so the card and the clock match.
+  const v = String(Math.round(hr)), nw = roundedW(v, 50)
+  c.fillStyle = rgb([238, 243, 248], [245, 139, 153], clamp((hr - V.base[1]) / 14)); rounded(c, v, 19 + nw / 2, 71.5, 50)
+  tx(c, 'BPM', 19 + nw + 8, 85.5, 12, { w: 450, color: HINK.dim })
   hrDay(c, 168, 341, 51, 91, m, V)
   c.fillStyle = 'rgba(255,255,255,0.09)'; c.fillRect(16, 116.5, 330, 1)
   metricTile(c, 16, 159, (x, y) => motionIcon(c, x, y, !still, t), still ? 'Still' : 'Walking', still ? `${Math.max(1, Math.round(m - V.stillSince))} min` : 'now')
@@ -392,22 +433,80 @@ function readout(c, t, T, V) {
     c.restore()
   }
 }
-/** The heart-rate card springs out of the Dynamic Island: the black pill stretches down into the glass
- *  card, the readout fades in, and the card grows as the check rows arrive. It folds back up into the
- *  island before the nudge, content fading first so it never sits empty. */
+/** The Dynamic Island pill in screen units (drawn by the phone frame, on top of the screen). */
+const PILL = { y: 11, w: 124, h: 36 }
+const smoothstep = (a, b, x) => { const k = clamp((x - a) / (b - a)); return k * k * (3 - 2 * k) }
+/**
+ * The liquid bridge between the island pill and the card's black blob (card rect `by`, `bw`, `br`,
+ * centred). Each side leaves the pill along its outline, narrows to a waist and flares back out along
+ * the blob's outline, so the two read as one drop of ink. `n` 1 = fully joined; as it falls the waist
+ * pinches, and below 0.3 the neck has snapped and both tips draw back into their shapes.
+ */
+function neck(c, n, by, bw, br) {
+  if (n <= 0.002) return
+  const cx = 195, pr = PILL.h / 2, py = PILL.y + pr, pb = PILL.y + PILL.h, ps = PILL.w / 2 - pr, bs = Math.max(0, bw / 2 - br)
+  // Point on the pill's lower-left outline at half-width a, and the outline's direction there (heading inward).
+  const onPill = (a) => { if (a <= ps) return [cx - a, pb, 1, 0]; const co = (a - ps) / pr, si = Math.sqrt(1 - co * co); return [cx - ps - pr * co, py + pr * si, si, co] }
+  // Point on the blob's upper-left outline at half-width a, and the outline's direction there (heading outward).
+  const onBlob = (a) => { if (a <= bs) return [cx - a, by, -1, 0]; const co = Math.min(1, (a - bs) / br), si = Math.sqrt(1 - co * co); return [cx - bs - br * co, by + br - br * si, -si, co] }
+  // Attachments slide in from each shape's edge as the neck thins. On the blob it lands at most a fillet's
+  // width past the island, on the top edge, so a wide card meets the island in a curve, not a corner.
+  const reach = Math.sqrt(n), FILLET = 22
+  const [x0, y0, dx0, dy0] = onPill((PILL.w / 2) * reach), [x3, y3, dx3, dy3] = onBlob(Math.min(bw / 2, PILL.w / 2 + FILLET) * reach)
+  const ym = (y0 + y3) / 2, snap = 1 - clamp(n / 0.3)
+  const wn = Math.min(cx - x0, cx - x3) * smoothstep(0.3, 1, n)
+  const yt = lerp(ym, pb - 3, snap), yb = lerp(ym, by + 3, snap)
+  // Handles: vertical at the waist, along the outline at each attachment, sized like a round fillet.
+  const vT = Math.max(0, yt - y0), vB = Math.max(0, y3 - yb)
+  const hT = 0.55 * Math.max(vT, Math.abs(cx - wn - x0)), hB = 0.55 * Math.max(vB, Math.abs(cx - wn - x3)), wT = 0.55 * vT, wB = 0.55 * vB
+  const down = (sx) => { c.moveTo(cx + sx * (cx - x0), y0); c.bezierCurveTo(cx + sx * (cx - x0 - dx0 * hT), y0 + dy0 * hT, cx + sx * wn, yt - wT, cx + sx * wn, yt) }
+  const up = (sx) => { c.bezierCurveTo(cx + sx * wn, yt - wT, cx + sx * (cx - x0 - dx0 * hT), y0 + dy0 * hT, cx + sx * (cx - x0), y0) }
+  const toBlob = (sx) => c.bezierCurveTo(cx + sx * wn, yb + wB, cx + sx * (cx - x3 + dx3 * hB), y3 - dy3 * hB, cx + sx * (cx - x3), y3)
+  const fromBlob = (sx) => c.bezierCurveTo(cx + sx * (cx - x3 + dx3 * hB), y3 - dy3 * hB, cx + sx * wn, yb + wB, cx + sx * wn, yb)
+  c.beginPath()
+  if (snap <= 0) {
+    // Joined: one outline, pill → waist → blob on the left, back up on the right; the chords run inside both shapes.
+    down(-1); toBlob(-1); c.lineTo(cx + (cx - x3), y3); fromBlob(1); up(1); c.closePath()
+  } else {
+    // Snapped: a drip hanging from the pill and a bead rising from the blob, both drawing back in.
+    down(-1); c.lineTo(cx + wn, yt); up(1); c.closePath()
+    c.moveTo(cx - wn, yb); toBlob(-1); c.lineTo(cx + (cx - x3), y3); fromBlob(1); c.closePath()
+  }
+  c.fill()
+}
+/** The heart-rate card pours out of the Dynamic Island like ink: a black drop the size of the island
+ *  slides down out of it, joined by a liquid neck while it widens into the card, the neck pinches and
+ *  snaps, and only then does the drop clear into dark glass and show the readout. It grows as the
+ *  check rows arrive. Before the nudge it plays the same morph in reverse: the readout fades, the glass
+ *  turns back to ink, and the drop rises, rejoins the island and is drawn back into it. */
 function island(c, t, T, V) {
   const d = D.island, C = CARD_HR, H = C.h0 + extraOf(V) * (V.checks ? islandGrow(t, T) : 1)
-  const open = springy(seg(t, T.det, T.det + d.dur), d.bounce), fade = 1 - S(t, T.buzz - 0.5, T.buzz - 0.32), shut = S(t, T.buzz - 0.4, T.buzz - 0.05)
+  // Open: a spring with a slow start (x^1.6), so the drop hangs a moment before it falls.
+  const open = springy(seg(t, T.det, T.det + d.dur) ** 1.6, d.bounce)
+  // Close: one even ease over `close` seconds, ending as the nudge arrives.
+  const c1 = T.buzz + 0.1, c0 = c1 - d.close, shut = S(t, c0, c1)
   const e = open * (1 - shut)
   if (e <= 0.003) return
-  // The spring bounces the height; width overshoots only slightly so the card never runs off the screen.
-  const ew = e > 1 ? 1 + (e - 1) * 0.25 : e
-  const w = lerp(124, C.w, ew), h = lerp(36, H, e), x = 195 - w / 2, y = lerp(11, C.y, Math.min(e, 1)), r = Math.min(lerp(18, C.r, e), h / 2)
-  // Black pill → dark glass over the first part of the stretch.
-  const g = clamp(e * 1.6)
-  if (g < 1) { c.save(); c.globalAlpha *= 1 - g; c.fillStyle = '#000'; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill(); c.restore() }
-  if (g > 0) { c.save(); c.globalAlpha *= g; frost(c, x, y, w, h, r, FROST.dark); c.restore() }
-  const full = clamp((open - 0.6) / 0.4) * fade
+  // The neck: pinches once the drop has nearly arrived, and rejoins early in the close, as the drop nears the island.
+  const pinch = T.det + d.dur * 0.68
+  const n = t < c0 ? 1 - S(t, T.det + d.dur * 0.42, pinch) : S(t, c0 + d.close * 0.08, c0 + d.close * 0.32)
+  // Ink → dark glass after the snap; glass → ink before the close. The readout follows the glass.
+  const g = Math.min(S(t, pinch - 0.1, pinch + 0.3), 1 - S(t, c0 - 0.3, c0 + 0.02))
+  const full = Math.min(S(t, pinch, pinch + 0.3), 1 - S(t, c0 - 0.5, c0 - 0.28))
+  // The drop keeps the island's width for its first moments, then widens; the spring's overshoot is
+  // mostly in the height, so the card never runs off the screen.
+  const ew = e > 1 ? 1 + (e - 1) * 0.25 : smoothstep(0.2, 1, e)
+  const w = lerp(PILL.w, C.w, ew), h = lerp(PILL.h, H, e), x = 195 - w / 2, y = lerp(PILL.y, C.y, Math.min(e, 1)), r = Math.min(lerp(PILL.h / 2, C.r, e), h / 2)
+  // The glass is opaque (it paints its own blurred wallpaper), so it goes down first at full strength
+  // and the ink fades off it; cross-fading the two would let the lock screen show through mid-way.
+  // Only the glass's shadow fades in with it.
+  if (g > 0) frost(c, x, y, w, h, r, g < 1 ? { ...FROST.dark, shadow: `rgba(0,6,16,${(0.42 * g).toFixed(3)})` } : FROST.dark)
+  if (g < 1) {
+    c.save(); c.globalAlpha *= 1 - g; c.fillStyle = '#000'
+    c.beginPath(); c.roundRect(x, y, w, h, r); c.fill()
+    neck(c, n, y, w, r)
+    c.restore()
+  }
   if (full <= 0.01) return
   const k = Math.min(1, w / C.w)
   c.save(); c.beginPath(); c.roundRect(x, y, w, h, r); c.clip(); c.globalAlpha *= full
@@ -428,7 +527,7 @@ function island(c, t, T, V) {
   // Freeform opens with only the mode pill and the record orb; the tap starts the take and the
   // flat voice line; the first word follows.
   T.rec = T.voice + Q.toRecord; T.talk = T.rec + Q.recordToTalk
-  // Cut while they're still talking: the handoff starts two words past "froze.", mid-sentence.
+  // Cut while they're still talking: the handoff starts right after "shit…", mid-sentence.
   let t = T.talk + (words().indexOf(CUT_AFTER) + 1 + CUT_LEAD) * Q.word
   // No stop tap, no reflection: the recording keeps going while the film settles into the hero.
   T.stop = T.proc = T.cards = T.check = 1e9
@@ -440,14 +539,17 @@ function film(V) {
   const T = timeline(), tokens = words().map((w,i) => ({text:w,at:T.talk+i*D.seq.word}))
   const live = (x) => S(x, T.talk - .1, T.talk + .6)
   const speakEnd = T.talk + tokens.length * D.seq.word
-  /** The prototype's simulated voice (recorder.jsx useRecorder): each word swells like a syllable, with jitter. */
+  /** The prototype's simulated voice (recorder.jsx useRecorder): each word swells like a syllable. The
+   *  jitter is a slow, shallow drift rather than the prototype's 170 ms flicker, so the take reads calm and even. */
   const voiceLevel = (x) => {
     const i = Math.floor((x - T.talk) / D.seq.word)
     if (i < 0 || i >= tokens.length) return 0
     const syllable = Math.pow(Math.sin(Math.PI * ((x - tokens[i].at) / D.seq.word)), 0.7)
-    return (0.35 + 0.65 * syllable) * (1 - 0.7 * (0.5 + 0.5 * Math.sin(i * 12.9898 + x * 1000 / 170)))
+    return (0.45 + 0.4 * syllable) * (0.9 + 0.1 * Math.sin(x * 2.1))
   }
-  const voiceClock = clockTable(T.dur, x => lerp(.25, lerp(2.3, .45, S(x, T.talk, T.calm + .6)), live(x)))
+  // The band's phase clock: slow before the take, quick while they talk, easing back to real time (rate 1,
+  // the page band's clock) by the hero, so the page band can pick the phase up without a jump.
+  const voiceClock = clockTable(T.dur, x => lerp(.25, lerp(lerp(1.4, .45, S(x, T.talk, T.calm + .6)), 1, S(x, T.calm, T.hero)), live(x)))
   const heartClock = clockTable(T.dur, x => lerp(1.9, .9, S(x, T.talk, T.calm)))
   const meta = V.meta
   const F = {
@@ -456,7 +558,22 @@ function film(V) {
       const t = a.t
       const calm = S(t, T.talk + 0.6, T.calm + 0.5)
       const talking = Math.min(S(t, T.talk - 0.2, T.talk + 0.2), 1 - S(t, T.stop - 0.2, T.stop + 0.3))
-      const app = S(t, T.unlock, T.unlock + 0.45)
+      // Tapping the nudge launches Momo the iOS way: the app window springs out of the pressed
+      // notification to fill the screen, with the app's first frame scaled inside it, while the lock
+      // screen behind zooms in a touch, blurs and dims. `launch` drives the window, `app` the cross-fade
+      // from the notification's glass face to the app's frame inside it.
+      // The window follows a critically damped spring (no overshoot), normalised to land exactly at
+      // `duration`. All of it is tuned live from Momo intro › App launch (see setAppLaunch).
+      const L = LAUNCH, crit = (x) => 1 - (1 + L.spring * x) * Math.exp(-L.spring * x)
+      const launch = clamp(crit(clamp(t - T.unlock, 0, L.duration)) / crit(L.duration)), launched = t >= T.unlock + L.duration, launching = t >= T.unlock && !launched
+      const app = S(t, T.unlock, T.unlock + L.face)
+      const down = bump(t, T.press - 0.08, T.press + 0.3), pressK = 1 - L.press * down
+      const recede = (c) => {
+        if (!launching) return
+        const z = 1 + L.zoom * launch, b = blurPx(c, L.blur * launch)
+        c.translate(195, SH / 2); c.scale(z, z); c.translate(-195, -SH / 2)
+        if (b > 0.3) c.filter = `blur(${b}px)`
+      }
 
       // Warm flush from the moment the body reacts, cooling as they talk.
       a.under((c) => {
@@ -481,7 +598,7 @@ function film(V) {
       const u = scr.w / 390
 
       // Camera: lean in on the lock screen (to the island for that variant), the transcript, then the reflection.
-      const inLock = S(t, 0.5, 1.3) * (1 - S(t, T.unlock - 0.2, T.unlock + 0.5))
+      const inLock = S(t, 0.5, 1.3) * (1 - S(t, T.unlock - 0.2, T.unlock + 0.7 * LAUNCH.duration))
       // The lock-screen zoom eases out as Momo opens and the talk zoom eases in before the first word,
       // so the record tap reads on the whole screen and the shot never snaps.
       const inTalk = S(t, T.talk - 0.9, T.talk + 1.0) * (1 - S(t, T.calm - 0.4, T.hero))
@@ -502,14 +619,17 @@ function film(V) {
       const hb = pulse(heartClock(t)) * (1 - calm)
       const B = D.braid
       let p = { x: 480 + B.x * u, y: scr.y + scr.h * 0.9 + B.y * u, len: scr.w * 0.8 * B.len * B.scale, sc: 0.3 * B.scale }
-      if (HO === 'fade' || HO === 'dissolve') p = mix(p, { x: 480, y: 290, len: 640, sc: 1 }, S(t, T.calm, T.calm + 0.9))
       const target = a.braidTarget ?? { x: 480, y: 45.3, width: 187 }
-      // Move as soon as the handoff begins. The former +0.6s offset read as a stall,
-      // then forced the full trip into the shortened remainder of the transition.
-      p = mix(p, { x: (target.x - 480) / z + fx, y: (target.y - 270 - offsetY) / z + fy, len: target.width / z, sc: .336 }, S(t, T.calm, T.hero))
-      // The band swells with the same voice level that drives the glow, as in the prototype.
-      const speech = Math.min(1.4, voiceLevel(t))
-      const bAlpha = S(t, T.rec - 0.1, T.rec + 0.5) * (1-S(t,T.hero-.35,T.hero)), flat = lerp(0.1, 1, live(t)), env = lerp(0, lerp(lerp(0.85 + 0.15 * hb, 0.12, calm), speech, talking * 0.8), live(t))
+      // Straight from the phone to its place at the top of the page as soon as the handoff begins: no
+      // detour through a big centred band, and no stall before it moves. It never dips below its slot,
+      // so as the page scrolls the title up it rides above the title instead of crossing it.
+      const rest = { x: (target.x - 480) / z + fx, y: (target.y - 270 - offsetY) / z + fy, len: target.width / z, sc: .336 }
+      p = mix(p, rest, S(t, T.calm, T.hero)); p.y = Math.min(p.y, rest.y)
+      // The band swells with the same voice level that drives the glow, as in the prototype; on the way
+      // up it settles to the page band's idle energy, so the cross-fade at the end swaps like for like.
+      const speech = Math.min(1.4, voiceLevel(t)), settleUp = S(t, T.calm, T.hero - 0.4)
+      const bAlpha = S(t, T.rec - 0.1, T.rec + 0.5) * (1-S(t,T.hero-.35,T.hero)), flat = lerp(0.1, 1, live(t))
+      const env = lerp(lerp(0, lerp(lerp(0.85 + 0.15 * hb, 0.12, calm), speech, talking * 0.8), live(t)), target.env ?? 0.15, settleUp)
       a.draw((c) => {
         if (bAlpha <= 0.01) return
         // Compose the film transform (canvas px per film px) with the band's own scene transform.
@@ -523,7 +643,7 @@ function film(V) {
       a.under((c) => {
         if (ph <= 0.01) return
         c.save(); view(c); handT(c); c.globalAlpha = ph; c.beginPath(); c.roundRect(scr.x - 3, scr.y - 3, scr.w + 6, scr.h + 6, scr.r + 6); c.clip()
-        c.translate(scr.x, scr.y); c.scale(u, u); screenBg(c, t, app)
+        c.translate(scr.x, scr.y); c.scale(u, u); recede(c); screenBg(c, t, launched ? 1 : 0)
         c.restore()
       })
       a.draw((c) => {
@@ -532,12 +652,11 @@ function film(V) {
         c.save(); view(c); handT(c); c.globalAlpha = ph
         c.translate(480, py); c.scale(lift, lift); c.translate(-480, -py)
         c.save(); c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip(); c.translate(scr.x, scr.y); c.scale(u, u)
-        statusBar(c, app, app > 0.5 ? '#1f1f1f' : th.statusInk ?? '#1f1f1f', 1 - app)
+        const winAt = () => launchWin(launch, noticeH(c, COPY[OPT.copy]), pressK, scr.r / u)
 
         // Lock screen: the good-luck note, the afternoon passing, the Watch noticing, Momo's nudge.
-        const lock = 1 - app
-        if (lock > 0.01) {
-          c.save(); c.globalAlpha *= lock
+        if (!launched) {
+          c.save(); recede(c)
           const RND = "'SF Pro Rounded', ui-rounded, Inter, system-ui, sans-serif"
           c.font = `500 17px ${th.rounded ? RND : UI}`; c.fillStyle = th.dateInk; c.textAlign = 'center'; c.textBaseline = 'middle'; rounded(c, 'Wednesday, October 1', 195, 104, 17)
           c.font = th.rounded ? `500 88px ${RND}` : `300 84px ${UI}`; c.letterSpacing = th.rounded ? '0px' : '-2px'; c.fillStyle = th.lockInk; c.textAlign = 'center'
@@ -571,35 +690,61 @@ function film(V) {
             })
           }
           notice(c, 300 - (1 - S(t, T.luck, T.luck + 0.5)) * 24, Math.min(S(t, T.luck, T.luck + 0.5), 1 - S(t, T.luckOut, T.luckOut + 0.4)), COPY.luck)
-          const nk = S(t, T.buzz, T.buzz + 0.45), down = bump(t, T.press - 0.08, T.press + 0.3), press = 1 - 0.05 * down
-          c.save(); c.translate(195, 340); c.scale(press, press); c.translate(-195, -340)
-          const nh = notice(c, 300 - (1 - nk) * 24, nk, COPY[OPT.copy])
-          if (nh && down > 0.01) { c.fillStyle = `rgba(20,40,60,${0.1 * down})`; c.beginPath(); c.roundRect(16, 300, 358, nh, 26); c.fill() }
-          c.restore()
+          const nk = S(t, T.buzz, T.buzz + 0.45)
+          if (t < T.unlock) {
+            c.save(); c.translate(NOTE.cx, NOTE.cy); c.scale(pressK, pressK); c.translate(-NOTE.cx, -NOTE.cy)
+            const nh = notice(c, NOTE.y - (1 - nk) * 24, nk, COPY[OPT.copy])
+            if (nh && down > 0.01) { c.fillStyle = `rgba(20,40,60,${0.1 * down})`; c.beginPath(); c.roundRect(NOTE.x, NOTE.y, NOTE.w, nh, NOTE.r); c.fill() }
+            c.restore()
+          }
           c.restore()
         }
         island(c, t, T, V)
 
+        // The app window: dim the lock screen, then the notification's face gives way to the app's
+        // flat background inside the growing window.
+        const W = winAt()
+        if (launching) {
+          c.save(); c.fillStyle = `rgba(0,0,0,${L.dim * launch})`; c.fillRect(0, 0, 390, SH)
+          c.beginPath(); c.roundRect(W.x, W.y, W.w, W.h, W.r); c.clip()
+          if (app < 0.99) {
+            c.save(); c.globalAlpha *= 1 - app; frost(c, W.x, W.y, W.w, W.h, W.r)
+            const k = W.w / NOTE.w; c.translate(W.x, W.y); c.scale(k, k); c.translate(-NOTE.x, -NOTE.y); notice(c, NOTE.y, 1, COPY[OPT.copy])
+            c.restore()
+          }
+          c.globalAlpha *= app; c.fillStyle = '#fafafa'; c.fillRect(W.x, W.y, W.w, W.h)
+          c.restore()
+        }
         const voiceIn = S(t, T.voice - 0.05, T.voice + 0.7)
 
+        // Inside Momo, drawn into the launch window until it fills the screen.
+        c.save(); if (launching) enterWin(c, W)
+        if (app > 0.01) { c.save(); c.globalAlpha *= app; backButton(c); c.restore() }
+
         // Inside Momo: the voice screen, the question, the reflection.
-        // One Momo across the cut: grows to the centre with eyes open, then settles and closes its eyes at the first word.
+        // One Momo across the cut: asleep and small near the top when the app opens; the record tap wakes
+        // it, and it glides down to the centre and grows while its eyes open, staying awake as they talk.
         const M = D.momo, EZ = { smooth: (x) => x * x * (3 - 2 * x), spring: (x) => springy(x, 0.25), float: (x) => (x < 0.5 ? 16 * x ** 5 : 1 - (-2 * x + 2) ** 5 / 2) }[OPT.mease]
-        // Momo fades in with the app at the centre, grows slightly, then settles at the first word.
-        const grow = EZ(seg(t, T.voice - 0.2, T.voice - 0.2 + M.grow)), settle = EZ(seg(t, T.talk + M.eyesAt, T.talk + M.eyesAt + M.settle))
-        const e0 = T.talk + M.eyesAt
-        const shut = OPT.eyes === 'blink' ? S(t, e0 + M.eyes * 0.45, e0 + M.eyes * 0.55) : OPT.eyes === 'dissolve' ? S(t, e0, e0 + M.eyes * 2.2) : S(t, e0, e0 + M.eyes)
-        const squint = OPT.eyes === 'blink' ? 1 - 0.1 * bump(t, e0, e0 + M.eyes) : 1
-        const mx = 195, my = lerp(M.openY, M.talkY, settle), ms = lerp(M.openS * lerp(0.82, 1, grow), M.talkS, settle)
+        const w0 = T.rec + 0.1 + M.eyesAt
+        const grow = EZ(seg(t, T.voice - 0.2, T.voice - 0.2 + M.grow)), wake = EZ(seg(t, w0, w0 + M.settle))
+        const shut = 1 - (OPT.eyes === 'blink' ? S(t, w0 + M.eyes * 0.45, w0 + M.eyes * 0.55) : OPT.eyes === 'dissolve' ? S(t, w0, w0 + M.eyes * 2.2) : S(t, w0, w0 + M.eyes))
+        const squint = OPT.eyes === 'blink' ? 1 - 0.1 * bump(t, w0, w0 + M.eyes) : 1
+        const mx = 195, my = lerp(M.talkY, M.openY, wake), ms = lerp(M.talkS * lerp(0.88, 1, grow), M.openS, wake)
         const mA = ph * app * S(t, T.voice - 0.2, T.voice + 0.4) * (1 - S(t, T.cards - 0.4, T.cards))
         c.save(); c.translate(mx, my); c.scale(1, squint); c.translate(-mx, -my)
-        const soft = OPT.eyes === 'dissolve' ? 3 * Math.sin(Math.PI * shut) : 0
-        if (soft > 0.2) c.filter = `blur(${soft}px)`
-        c.globalAlpha = mA * (1 - shut); momo(c, mx, my, ms, t, 0, a.momoFrames.awake ?? IMG.momoOpen)
-        c.globalAlpha = mA * shut; momo(c, mx, my, ms, t, talking, a.momoFrames.asleep ?? IMG.momo)
+        // Asleep → awake: the asleep clip is drawn at awake Momo's body size, and through the cross-fade
+        // both frames glide between the two bodies' positions, under a soft blur, so the body never jumps.
+        const awake = a.momoFrames.awake ?? IMG.momoOpen, asleep = a.momoFrames.asleep ?? IMG.momo
+        const dy = shut > 0.001 && shut < 0.999 && mA > 0.01 ? (bodyY(awake) - 0.5) * ms - (bodyY(asleep) - 0.5) * ms * ASLEEP_K : 0
+        const soft = OPT.eyes === 'blink' ? 0 : 1.6 * Math.sin(Math.PI * shut)
+        if (soft > 0.2) c.filter = `blur(${blurPx(c, soft)}px)`
+        c.globalAlpha = mA * (1 - shut); momo(c, mx, my - dy * shut, ms, t, talking, awake)
+        c.globalAlpha = mA * shut; momo(c, mx, my + dy * (1 - shut), ms * ASLEEP_K, t, 0, asleep)
         c.restore()
         c.globalAlpha = ph * voiceIn
         transcript(c, tokens, t)
+        c.restore()
+        c.globalAlpha = ph; statusBar(c, launch > 0.5 ? '#1f1f1f' : th.statusInk ?? '#1f1f1f', 1 - launch)
         c.restore()
         c.globalAlpha = ph; c.drawImage(IMG.phone, 480 - pw / 2, py - 250, pw, 500)
 
@@ -613,13 +758,16 @@ function film(V) {
         view(c); handT(c); c.globalAlpha = ph * voiceIn
         c.translate(480, py); c.scale(lift, lift); c.translate(-480, -py)
         c.beginPath(); c.roundRect(scr.x, scr.y, scr.w, scr.h, scr.r); c.clip(); c.translate(scr.x, scr.y); c.scale(u, u)
+        if (launching) enterWin(c, launchWin(launch, noticeH(c, COPY[OPT.copy]), pressK, scr.r / u))
+        // The bar slides up from below the screen's bottom edge as the app window finishes filling the screen.
+        c.translate(0, 110 * (1 - OUT(seg(t, T.unlock + 0.45, T.unlock + 1.3))))
         controls(c, t, 'Freeform', T.rec)
       })
       const sx = (x) => cx(scr.x + x * u), sy = (y) => cy(scr.y + y * u)
       // Glass cursor (prototype .nx-cursor): glides in, presses (shrinks, darkens), lifts away.
-      // `lead`: how long before the press the cursor appears; the record button gets the same slow approach.
+      // `lead`: how long before the press the cursor appears; the record button gets a slower, longer approach.
       // `ox`/`oy`: where it lifts to; the record button sits in the corner, so that cursor lifts back up.
-      const TAPS = [[T.press, 195, 340, 250, 520, 1.1, 40, 60], [T.rec, 345, 790, 250, 680, 1.1, -40, -60]]
+      const TAPS = [[T.press, 195, 340, 250, 520, 1.1, 40, 60], [T.rec, 345, 790, 250, 680, 1.6, -40, -60]]
       for (const [at, x, y, x0, y0, lead, ox, oy] of TAPS) {
         const vis = Math.min(S(t, at - lead, at - lead + 0.3), 1 - S(t, at + 0.45, at + 0.8))
         if (vis <= 0.01) continue
@@ -635,7 +783,7 @@ function film(V) {
       }
       // The VoiceBeam host: the screen's rect after the camera, in film px. It glows from the first
       // word until the last one ends (the prototype's `active`), then fades out on its own.
-      a.beam = { x: cx(scr.x), y: cy(scr.y), w: scr.w * z, h: scr.h * z, active: ph > 0.5 && t >= T.talk && t < speakEnd + 0.25, level: voiceLevel(t) }
+      a.beam = { x: cx(scr.x), y: cy(scr.y), w: scr.w * z, h: scr.h * z, active: ph > 0.5 && t >= T.talk && t < speakEnd + 0.25, level: voiceLevel(t), rt }
     },
   }
   return F

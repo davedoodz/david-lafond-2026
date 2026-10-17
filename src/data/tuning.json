@@ -838,6 +838,9 @@
   },
   "Momo intro": {
     "speed": 1.3,
+    "appLaunch": {
+      "duration": 1.8
+    },
     "timingSeconds": {
       "meetingNotice": 1.2,
       "goodLuckNotice": 1.95,
@@ -851,6 +854,11 @@
       "voiceReflection": 4.75,
       "heroHandoff": 1.6,
       "heroHold": 1.45
+    },
+    "sequenceSpeed": {
+      "openApp": 0.75,
+      "momoEntrance": 0.7,
+      "voiceReflection": 1.15
     },
     "hero": {
       "width": 280,
