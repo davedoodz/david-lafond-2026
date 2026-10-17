@@ -13,7 +13,8 @@ import type { SectionSpacing, TextReveal } from './caseStudyContent'
 const MOMO = '/work/momo/devices/momo-open.webp'
 const STEPS = [
   { id: 'sense', label: 'The Watch senses', ms: 2800 },
-  { id: 'send', label: 'Watch to iPhone', ms: 2800 },
+  // Long enough for the iPhone's Dynamic Island beat (.mc-island): Momo arrives, then drops out before the nudge.
+  { id: 'send', label: 'Watch to iPhone', ms: 3400 },
   { id: 'nudge', label: 'A gentle nudge', ms: 3600 },
 ] as const
 type StepId = typeof STEPS[number]['id']
@@ -28,6 +29,8 @@ const SIGNALS = [
   [Footprints, 'Sitting still, no workout'],
   [Activity, 'HRV below your usual'],
 ] as const
+/* Momo's slot inside the open Dynamic Island, in mockup px from the island's top-left (scripts/momo-island.html). */
+const ISLAND_CONFIG = { x: [20, -10, 120, 1] as [number, number, number, number], y: [17, -20, 40, 1] as [number, number, number, number] }
 
 // The status row (Momo logo, the same lockup and values as the Selected Works thumbnail's Watch, and
 // the time) sits outside the crossfading screens, so it stays put while only the content changes.
@@ -119,6 +122,7 @@ export function DeviceInsights({ copy, edit }: Props) {
   const textReveal = copy.textReveal ?? { preset: 'still', duration: 0.7, stagger: 0.1 }
   const strapColor = copy.watch?.strapColor ?? '#d6ccc4'
   const watchLogo = useTuning('MomoThumbnail', MOMO_THUMB_CONFIG).watchLogo
+  const island = useTuning('MomoIsland', ISLAND_CONFIG)
   const steps = STEPS
   useEffect(() => {
     const el = ref.current
@@ -205,6 +209,8 @@ export function DeviceInsights({ copy, edit }: Props) {
           <div className="mc-phone">
             <div className="mc-phone__screen">{phoneLock}<Screens step={id} render={phoneScreen} /></div>
             <img className="mc-phone__img" src="/work/momo/devices/iphone-silver.png" alt="" />
+            <div className="mc-island" data-state={id} style={{ '--island-x': `${island.x}px`, '--island-y': `${island.y}px` } as CSSProperties}><div className="mc-island__momo"><img src={MOMO} alt="" /></div></div>
+            <div className="mc-island__lens" />
           </div>
         </div>
       </div>

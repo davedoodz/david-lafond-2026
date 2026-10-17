@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Momo · Dynamic Island handoff (prototype)</title>
+<style>
+  /* Prototype for the case study's cross-device phone (DeviceInsights). Assets come from the dev server. */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { display: grid; grid-template-rows: 1fr auto; place-items: center; background: #f4f4f3; font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; color: #2a2a2a; }
+
+  /* Device in mockup units (874 × 1780, same as iphone-silver.png and lockscreen.webp), scaled to fit. */
+  .stage { width: calc(874px * var(--s)); height: calc(1780px * var(--s)); --s: min(0.42, calc((100vh - 120px) / 1780px)); filter: drop-shadow(0 24px 40px rgb(0 0 0 / .16)); }
+  .device { position: relative; width: 874px; height: 1780px; transform: scale(var(--s)); transform-origin: 0 0; }
+  .screen { position: absolute; inset: 0; container-type: inline-size; overflow: hidden; border-radius: 120px; }
+  .screen > img.bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 9; pointer-events: none; }
+
+  /* Dynamic Island, measured from iphone-silver.png, which has its own island and lens drawn into the frame:
+     250 × 74 at (313, 61), lens centred at (526, 98). These layers sit above the frame (z 9) so that the
+     frame's island can't cover Momo; the idle size matches the frame's island exactly.
+     Momo lives inside the island, which clips it: it is never drawn over the wallpaper. */
+  .island { position: absolute; z-index: 10; left: 437.5px; top: 61px; width: 250px; height: 74px; margin-left: -125px; border-radius: 37px; background: #000; overflow: hidden; }
+  .lens { position: absolute; z-index: 11; left: 515px; top: 87px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 40% 38%, #2b3350 0 18%, #0d1020 40%, #050608 70%); box-shadow: inset 0 0 0 2px #0b0c12; }
+
+  /* Momo in the island's leading slot. --mx/--my are the X/Y controls (mockup px from the island's top-left). */
+  .momo { position: absolute; left: var(--mx); top: var(--my); width: 56px; height: 56px; opacity: 0; will-change: transform, opacity; }
+  .momo img { width: 100%; height: 100%; object-fit: contain; animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { translate: 0 -3px; } }
+
+  /* Notification, same styles as DeviceInsights.css .mc-note (cqw of the 874px mockup). */
+  .note { position: absolute; z-index: 4; left: 8.15%; right: 8.15%; top: 36%; display: grid; grid-template-columns: 7.8cqw 1fr; column-gap: 2.7cqw; padding: 3.3cqw 3.5cqw 3.4cqw 2.7cqw; border-radius: 5cqw; background: linear-gradient(120deg, transparent 35%, rgb(255 255 255 / .22) 52%, transparent 70%), linear-gradient(135deg, rgb(226 243 255 / .74), rgb(208 231 252 / .66) 55%, rgb(214 240 255 / .74)); box-shadow: 0 1.5cqw 5.5cqw rgb(10 60 120 / .16); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); color: #10243a; font-size: 3.6cqw; line-height: 1.25; letter-spacing: -0.01em; opacity: 0; }
+  .note::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 1.6cqw .3cqw rgb(255 255 255 / .42); -webkit-mask: linear-gradient(135deg, #000, rgb(0 0 0 / .15) 35%, rgb(0 0 0 / .1) 70%, rgb(0 0 0 / .6)); mask: linear-gradient(135deg, #000, rgb(0 0 0 / .15) 35%, rgb(0 0 0 / .1) 70%, rgb(0 0 0 / .6)); }
+  .note__icon { grid-row: 1 / 3; width: 7.8cqw; height: 7.8cqw; border-radius: 2.1cqw; background: linear-gradient(#fff, #e2eefa); box-shadow: 0 .25cqw 1.5cqw rgb(20 70 130 / .1); display: grid; place-items: center; overflow: hidden; }
+  .note__icon img { width: 82%; height: 82%; object-fit: contain; }
+  .note__row { display: flex; align-items: baseline; gap: 1.5cqw; }
+  .note__app { font-weight: 600; color: #4d6a88; }
+  .note__time { margin-left: auto; color: #6d87a3; }
+  .note__copy { grid-column: 2; }
+  .note__title { margin: .15cqw 0 0; font-size: 4.05cqw; font-weight: 700; }
+  .note__text { margin: .2cqw 0 0; color: #41617f; }
+  .note__actions { grid-column: 1 / -1; display: grid; gap: 1.6cqw; max-height: 0; margin-top: 0; overflow: hidden; }
+  .note__actions span { padding: 2.4cqw; border-radius: 3.6cqw; background: rgb(255 255 255 / .7); text-align: center; font-weight: 500; }
+  .note__actions span:first-child { color: #0a7bd6; }
+
+  .bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 14px; align-items: center; padding: 14px 0 22px; }
+  .bar button { font: inherit; padding: 7px 14px; border-radius: 999px; border: 1px solid #d8d8d6; background: #fff; cursor: pointer; }
+  .bar button[aria-pressed='true'] { background: #1f1f1f; color: #fff; border-color: #1f1f1f; }
+  .bar label { display: flex; gap: 8px; align-items: center; color: #555; }
+  .bar output { min-width: 2.5em; font-variant-numeric: tabular-nums; color: #222; }
+  .phase { min-width: 220px; color: #777; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="device">
+      <div class="screen">
+        <img class="bg" src="http://localhost:5391/work/momo/flows/lockscreen.webp" alt="">
+        <div class="island"><div class="momo"><img src="http://localhost:5391/work/momo/devices/momo-open.webp" alt=""></div></div>
+        <div class="lens"></div>
+        <div class="note">
+          <span class="note__icon"><img src="http://localhost:5391/work/momo/devices/momo-open.webp" alt=""></span>
+          <div class="note__copy">
+            <div class="note__row"><span class="note__app">Momo</span><span class="note__time">now</span></div>
+            <p class="note__title">Something on your mind?</p>
+            <p class="note__text">Things seem a little more tense than usual. Want to talk it out?</p>
+          </div>
+          <div class="note__actions"><span>Yes, let’s talk it out</span><span>Not now</span></div>
+        </div>
+      </div>
+      <img class="frame" src="http://localhost:5391/work/momo/devices/iphone-silver.png" alt="">
+    </div>
+  </div>
+  <div class="bar">
+    <button id="replay">Replay</button>
+    <button id="slow" aria-pressed="false">Slow motion</button>
+    <label>Momo X <input id="mx" type="range" min="-10" max="120" step="1" value="16"><output for="mx"></output></label>
+    <label>Momo Y <input id="my" type="range" min="-20" max="40" step="1" value="11"><output for="my"></output></label>
+    <button id="hold" aria-pressed="false">Hold in island</button>
+    <span class="phase" id="phase"></span>
+  </div>
+
+<script>
+/* Timeline (seconds, at 1×):
+   0.4  island widens slightly into a Live Activity; Momo pops into the leading slot
+   3.0  Momo lifts, then drops through the island's lower edge, clipped by it; the island closes behind it
+   3.7  Momo is gone; the notification slides in; 4.75 its buttons open
+   8    loop */
+const $ = (s) => document.querySelector(s)
+const island = $('.island'), momo = $('.momo'), note = $('.note'), actions = $('.note__actions'), phase = $('#phase')
+const SPRING = 'cubic-bezier(.34,1.45,.5,1)', EASE = 'cubic-bezier(.22,1,.36,1)', FALL = 'cubic-bezier(.55,0,.85,.35)'
+const LOOP = 8
+let anims = [], timers = [], rate = 1
+
+// Island geometry (mockup px). Idle matches the frame's island. The Live Activity stays modest (290 × 78):
+// it grows 34px left and 6px right, keeping clear of the clock and leaving the lens on the trailing side.
+const IDLE = { w: 250, h: 74, x: 437.5, y: 61 }
+const OPEN = { w: 290, h: 78, x: 562.5 + 6 - 145, y: 59 }
+
+function play(el, frames, start, dur, easing = EASE) {
+  // `forwards`, not `both`: an element gets several animations, and a later one filling backwards would
+  // show its first frame before its start (the island open, Momo visible) from t = 0.
+  const a = el.animate(frames, { duration: dur * 1000, delay: start * 1000, easing, fill: 'forwards' })
+  a.playbackRate = rate
+  anims.push(a)
+}
+function at(t, fn) { timers.push(setTimeout(fn, (t * 1000) / rate)) }
+const box = (g) => ({ width: `${g.w}px`, height: `${g.h}px`, left: `${g.x}px`, top: `${g.y}px`, marginLeft: `${-g.w / 2}px`, borderRadius: `${g.h / 2}px` })
+
+function run() {
+  anims.forEach((a) => a.cancel()); timers.forEach(clearTimeout); anims = []; timers = []
+
+  at(0, () => (phase.textContent = 'Lock screen'))
+  at(0.4, () => (phase.textContent = 'Momo appears in the Dynamic Island'))
+  play(island, [box(IDLE), box(OPEN)], 0.4, 0.55, SPRING)
+  play(momo, [{ opacity: 0, transform: 'scale(.3)' }, { opacity: 1, transform: 'scale(1)' }], 0.55, 0.5, SPRING)
+
+  // A small lift, then gravity: Momo drops through the island's lower edge. The island clips it, so Momo
+  // never shows over the wallpaper; it only disappears into the edge. The island closes once Momo is out.
+  at(3.0, () => (phase.textContent = 'Momo drops out of the island'))
+  play(momo, [
+    { transform: 'translateY(0) scale(1)', offset: 0, easing: 'cubic-bezier(.3,.7,.4,1)' },
+    { transform: 'translateY(-6px) scale(1.05, .96)', offset: 0.3, easing: FALL },
+    { transform: `translateY(${OPEN.h + 10}px) scale(.96, 1.06)`, offset: 1 },
+  ], 3.0, 0.6, 'linear')
+  play(island, [box(OPEN), box(IDLE)], 3.5, 0.5, SPRING)
+
+  at(3.7, () => (phase.textContent = 'Notification arrives'))
+  play(note, [{ opacity: 0, translate: '0 -24px', scale: '.96' }, { opacity: 1, translate: '0 0', scale: '1' }], 3.7, 0.7)
+  play(actions, [{ maxHeight: '0', marginTop: '0' }, { maxHeight: '30cqw', marginTop: '3cqw' }], 4.75, 0.6)
+
+  // Reset for the loop: the note fades, the island is idle again.
+  play(note, [{ opacity: 1 }, { opacity: 0 }], LOOP - 0.5, 0.4)
+  at(LOOP, run)
+}
+
+// "Hold in island" freezes the film with Momo settled in the open island, for tuning X/Y.
+const hold = $('#hold')
+function setHold(on) {
+  hold.setAttribute('aria-pressed', String(on))
+  run()
+  if (!on) return
+  timers.forEach(clearTimeout); timers = []
+  anims.forEach((a) => { a.pause(); a.currentTime = 2000 })
+  phase.textContent = 'Held: Momo in the island'
+}
+hold.addEventListener('click', () => setHold(hold.getAttribute('aria-pressed') !== 'true'))
+
+// X/Y controls move Momo's slot inside the island live, without restarting the film.
+for (const id of ['mx', 'my']) {
+  const input = $(`#${id}`), out = input.nextElementSibling
+  const apply = () => { momo.style.setProperty(`--${id}`, `${input.value}px`); out.value = input.value }
+  input.addEventListener('input', apply)
+  apply()
+}
+
+$('#replay').addEventListener('click', () => setHold(false))
+$('#slow').addEventListener('click', (e) => {
+  rate = rate === 1 ? 0.35 : 1
+  e.currentTarget.setAttribute('aria-pressed', String(rate !== 1))
+  setHold(false)
+})
+Promise.all([...document.images].map((i) => i.decode().catch(() => {}))).then(run)
+</script>
+</body>
+</html>
