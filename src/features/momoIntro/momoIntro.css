@@ -12,6 +12,17 @@
   height: 100svh;
   pointer-events: none;
 }
+/* The prototype's VoiceBeam, a 390px screen moved and scaled onto the film's phone each frame.
+   Above the canvas like the prototype's beam layers sit above its screen content. */
+.momo-intro__beam {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
+}
 /* Keep video decoders in the DOM for Safari; only their composited pixels appear in the film. */
 .momo-intro__decoders {
   position: fixed;

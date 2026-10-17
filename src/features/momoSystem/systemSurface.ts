@@ -76,9 +76,11 @@ export function cardSurface(fill: string, gradient: GradientDials, glass: GlassD
 /**
  * Card-only material finishes, matched to the seal artwork (an embossed, matte, cool-white stock).
  * The photo finishes are photographed stock with the seal (and, for `-logo`, the Momo lockup) already
- * embossed in; the card hides its own seal / lockup for them (MomoSystemFigure).
+ * embossed in; the card hides its own seal / lockup for them (MomoSystemFigure). `glass-marks` is a
+ * plain flat fill with no texture: the glossy lockup and seal artwork sit on top as separate images
+ * (MomoSystemFigure), so the card itself stays a simple colour.
  */
-export const MATERIAL_FINISHES = ['paper', 'satin', 'pewter', 'metal', 'paper-photo', 'paper-photo-logo', 'satin-photo-logo', 'white-photo-logo', 'blue-photo-logo'] as const
+export const MATERIAL_FINISHES = ['paper', 'satin', 'pewter', 'metal', 'glass-marks', 'paper-photo', 'paper-photo-logo', 'satin-photo-logo', 'white-photo-logo', 'blue-photo-logo'] as const
 export type MaterialFinish = (typeof MATERIAL_FINISHES)[number]
 /** `tone`: the paper's own colour (median of the artwork's centre), used as the card fill so the node discs match it. */
 export type PhotoFinish = { src: string; /** width / height of the artwork */ aspect: number; logo: boolean; tone: string }
@@ -101,8 +103,9 @@ const PAPER_GRAIN = `url("data:image/svg+xml,${encodeURIComponent(
  * satin: smooth pearl coating, a wide soft sheen and no grain.
  * pewter: a darker matte metal so the bright seal reads as a pressed medallion.
  * metal: brushed grey plate with a diagonal sheen band and horizontal brushing.
- * Photo finishes fill the card exactly (the card is shaped to the artwork). With `crop` (phone layout,
- * where the card can't take that shape) the artwork covers the card from its right edge, keeping the seal.
+ * Photo finishes fill the card exactly (the card is shaped to the artwork). On a phone layout the
+ * card is much taller than the artwork, so a crop can't keep the seal at a sane size; `crop` instead
+ * falls back to the plain paper finish (the card draws its own seal and lockup over that).
  */
 export function materialSurface(finish: MaterialFinish, tone: string, crop = false): Surface {
   const lift = (k: number) => `color-mix(in srgb, ${tone}, white ${k}%)`
@@ -149,10 +152,11 @@ export function materialSurface(finish: MaterialFinish, tone: string, crop = fal
     },
   }
   const photo = PHOTO_FINISHES[finish]
-  if (photo) {
-    const fit = crop ? 'right center / cover' : 'center / 100% 100%'
-    return { fill: photo.tone, gradient: `url("${photo.src}") ${fit} no-repeat`, backdrop: 'none', edge: lip(0.6, 0.05), glow: 'none' }
+  if (photo && !crop) {
+    return { fill: photo.tone, gradient: `url("${photo.src}") center / 100% 100% no-repeat`, backdrop: 'none', edge: lip(0.6, 0.05), glow: 'none' }
   }
+  // Plain flat fill: no texture or gradient, so the glossy lockup/seal artwork reads clean on top.
+  if (finish === 'glass-marks') return { fill: tone, gradient: 'none', backdrop: 'none', edge: lip(0.95, 0.08), glow: 'none' }
   const l = layers[finish as keyof typeof layers] ?? layers.paper
   return { fill: l.fill, gradient: l.gradient.join(', '), backdrop: 'none', edge: l.edge, glow: 'none' }
 }

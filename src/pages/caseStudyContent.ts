@@ -251,9 +251,11 @@ export const MOMO_CONFIG = {
     /** Space between the row and the text (px). */
     offset: [24, 0, 160, 1] as Tuple,
     x: [0, -400, 400, 1] as Tuple,
+    /** Resting opacity of each logo (the hover colour is always full strength on top of it). */
     opacity: [0.85, 0.2, 1, 0.05] as Tuple,
     hoverColor: { type: 'color' as const, default: '#53bffe' },
-    hoverOpacity: [0.85, 0, 1, 0.05] as Tuple,
+    /** Opacity of the hover tint; below 1 the colour softens into the page. */
+    hoverOpacity: [0.7, 0, 1, 0.05] as Tuple,
     /** Harvard's shield reads smaller; scale it against the others. */
     harvardScale: [1, 0.5, 2, 0.05] as Tuple,
     _collapsed: false,

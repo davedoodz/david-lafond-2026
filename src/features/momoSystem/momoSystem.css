@@ -62,28 +62,8 @@
   bottom: calc(var(--system-card-inset-y, 0px) + 22 * var(--u) - var(--system-seal-y, 0) * var(--u));
   width: calc(190 * var(--u) * var(--system-seal-scale, 1));
   height: auto;
-  aspect-ratio: 1;
   pointer-events: none;
   user-select: none;
-}
-/* The replay button sits in the visible card's corner (the card is inset by the scale dials), at the
-   playground cards' transparency (Playground > restart: 0.3 / 0.6 on hover). It stays hidden until the
-   walkthrough has fully finished (data-done, set by MomoSystemFigure), then fades in; it hides at once. */
-.momo-system > .playback-restart {
-  --pg-restart-opacity: 0.3;
-  --pg-restart-hover-opacity: 0.6;
-  top: calc(var(--system-card-inset-y, 0px) + 16px);
-  right: calc(var(--system-card-inset-x, 0px) + 16px);
-  transition: opacity 0.6s ease, background-color 0.2s ease;
-  /* The card under it is a flat glass surface with its own backdrop-filter; blurring that again made
-     the circle band and flicker grey as the cursor moved nearby. Nothing behind it needs blurring. */
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-.momo-system:not([data-done='true']) > .playback-restart {
-  opacity: 0;
-  pointer-events: none;
-  transition: none;
 }
 .momo-system__brand {
   position: relative;
@@ -121,6 +101,28 @@
   -webkit-mask: url('/work/momo/hero/momo-type.png') center / contain no-repeat;
   mask: url('/work/momo/hero/momo-type.png') center / contain no-repeat;
 }
+/* glass-marks finish: the brand slot stays empty (a spacer keeping the diagram where it was) and the
+   pre-composed glass lockup is pinned to the visible card's top-left corner, mirroring the seal, in card
+   units so it holds the corner at every width. Moved/scaled by its own dial (lockupGlass). */
+.momo-system__brand:empty { aspect-ratio: 1200 / 298; }
+.momo-system > .momo-system__lockup-glass {
+  --u: min(1px, 100cqw / 928);
+  position: absolute;
+  z-index: 0;
+  left: calc(var(--system-card-inset-x, 0px) + 34 * var(--u) + var(--system-lockup-x, 0) * var(--u));
+  top: calc(var(--system-card-inset-y, 0px) + 30 * var(--u) + var(--system-lockup-y, 0) * var(--u));
+  width: max(96px, calc(230 * var(--u) * var(--system-lockup-scale, 1)));
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+/* Phone widths (the diagram's compact layout, MomoSystemFigure's NARROW query): the lockup's
+   170px floor is too big for a card this narrow, crowding the diagram below it. */
+@media (max-width: 768px) {
+  .momo-system { padding: 18px 14px 20px; }
+  .momo-system__brand { width: max(118px, calc(300 * var(--u))); }
+}
+
 .momo-system__diagram {
   position: relative;
   z-index: 1;

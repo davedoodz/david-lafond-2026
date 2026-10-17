@@ -87,8 +87,8 @@ export const PERSONA_DIALS = {
   _collapsed: true,
 }
 /** Key-context cards floating around the portrait. Text stays in `moments`. */
-/** Persona entrance presets: transform and opacity only. */
-const ENTRANCES = ['rise', 'fade', 'scale', 'pop', 'slide', 'focus', 'wipe', 'none'] as const
+/** Persona entrance presets: transform, opacity and blur only. `jitter`: a nervous, shaky arrival (the overthinker). */
+const ENTRANCES = ['rise', 'fade', 'scale', 'pop', 'slide', 'focus', 'wipe', 'jitter', 'none'] as const
 /** Portrait swap presets (float › swap); each is a CSS transition keyed on data-swap. */
 const SWAP_TRANSITIONS = ['crossfade', 'blur', 'zoom', 'wipe', 'iris', 'rise', 'none'] as const
 export const FLOAT_DIALS = {
@@ -137,8 +137,10 @@ export const FLOAT_DIALS = {
     textStagger: [0.05, 0, 0.6, 0.01] as Tuple,
     /** Between one pill and the next. */
     pillStagger: [0.02, 0, 0.4, 0.01] as Tuple,
-    /** Pause after the text block before the first pill. */
+    /** Pause after the text block (see pillsAfter) before the first pill. */
     pillsGap: [0.02, 0, 1.5, 0.01] as Tuple,
+    /** Which text line the pills wait for: the title (pills arrive under the copy right after it) or the body. */
+    pillsAfter: { type: 'select' as const, options: ['title', 'body'], default: 'body' },
     /** Pause after the last bubble settles before the text block starts. */
     textGap: [0.1, 0, 1.5, 0.01] as Tuple,
     /** From the portrait landing to the first floating bubble. */
@@ -251,6 +253,7 @@ type Entrance = {
   textStagger: number
   pillStagger: number
   pillsGap: number
+  pillsAfter?: string
   textGap: number
   floatsDelay: number
   floatStagger: number
@@ -307,6 +310,7 @@ const DRIFT_IN_DURATION = 0.65
  * Entrance timeline (seconds): portrait, floating cards, then text from eyebrow to body, then pills.
  * `imageIn` is how long the portrait takes to settle (the sticker stamp) before the cards may start;
  * `floatsIn` is how long the cards take to finish arriving before the text follows.
+ * Pills start once the title (pillsAfter 'title') or the body has finished arriving.
  * Returns per-element delays (text in eyebrow/title/body order, pills in DOM order).
  */
 function entranceTimeline(e: Entrance, pills: number, floatsIn: number, imageIn = 0) {
@@ -314,7 +318,7 @@ function entranceTimeline(e: Entrance, pills: number, floatsIn: number, imageIn 
   const image = 0
   const floats = image + imageIn + e.floatsDelay
   const text = step(floats + floatsIn + e.textGap, 3, e.textStagger)
-  const pillsStart = text[2] + e.textDuration + e.pillsGap
+  const pillsStart = text[e.pillsAfter === 'title' ? 1 : 2] + e.textDuration + e.pillsGap
   const pill = step(pillsStart, pills, e.pillStagger)
   return { text, pill, image, floats }
 }

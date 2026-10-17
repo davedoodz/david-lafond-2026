@@ -46,10 +46,15 @@ export function usePushTilt(ref: RefObject<HTMLElement | null>, bounds: (el: HTM
     let frame = 0
     let last = 0
 
+    // Never exactly flat: at an identity 3D transform Chrome draws the layer pixel-snapped, and the moment
+    // it tilts it switches to unsnapped sampling, so every hover start/stop nudged the text by a fraction
+    // of a pixel (the "jitter"). A 0.001° floor keeps the card in the tilted path at rest; invisible.
+    const deg = (v: number) => (Math.abs(v) < 0.001 ? 0.001 : v).toFixed(3)
     const write = () => {
       const scale = 1 - (1 - press) * pos.s
-      el.style.transform = `perspective(${perspective}px) rotateX(${pos.x.toFixed(3)}deg) rotateY(${pos.y.toFixed(3)}deg) scale(${scale.toFixed(4)})`
+      el.style.transform = `perspective(${perspective}px) rotateX(${deg(pos.x)}deg) rotateY(${deg(pos.y)}deg) scale(${scale.toFixed(4)})`
     }
+    write()
     const step = (now: number) => {
       const dt = Math.min(DT_MAX, (now - last) / 1000 || 1 / 60)
       last = now
