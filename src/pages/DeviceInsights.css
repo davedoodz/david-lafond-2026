@@ -44,6 +44,33 @@
 .mc-phone__screen { position: absolute; z-index: 1; left: calc(46px * var(--k)); top: calc(39px * var(--k)); width: calc(784px * var(--k)); height: calc(1702px * var(--k)); border-radius: calc(113px * var(--k)); overflow: hidden; background: #000; font-size: 11px; isolation: isolate; color: #1f2a2e; }
 /* The mockup's screen hole has tighter corners than the screen's radius; a black backing under the frame fills the slivers. */
 .mc-phone::before { content: ''; position: absolute; z-index: 0; left: calc(40px * var(--k)); top: calc(33px * var(--k)); width: calc(794px * var(--k)); height: calc(1714px * var(--k)); border-radius: calc(120px * var(--k)); background: #000; }
+/* Dynamic Island beat (scripts/momo-island.html). iphone-silver.png draws its own island (250 × 74 at 313, 61;
+   lens centred at 526, 98), so these layers sit above the frame and match it exactly at rest. During "send" the
+   island widens a little, Momo pops into its leading slot, then drops through the island's lower edge (the island
+   clips it, so Momo never shows over the wallpaper) and the island closes just as the nudge arrives. The same
+   animation spans "send" and "nudge", so the step change does not restart it. Timeline from "send": open .4s,
+   Momo .55s, drop 3–3.6s, close 3.5–4s; the note lands 3.7s (send 3.4s + its .3s delay). */
+.mc-island { position: absolute; z-index: 4; left: calc(437.5px * var(--k)); top: calc(61px * var(--k)); width: calc(250px * var(--k)); height: calc(74px * var(--k)); margin-left: calc(-125px * var(--k)); border-radius: calc(37px * var(--k)); background: #000; overflow: hidden; pointer-events: none; }
+.mc-island__lens { position: absolute; z-index: 5; left: calc(515px * var(--k)); top: calc(87px * var(--k)); width: calc(22px * var(--k)); height: calc(22px * var(--k)); border-radius: 50%; background: radial-gradient(circle at 40% 38%, #2b3350 0 18%, #0d1020 40%, #050608 70%); box-shadow: inset 0 0 0 calc(2px * var(--k)) #0b0c12; pointer-events: none; }
+.mc-island__momo { position: absolute; left: calc(var(--island-x) * var(--k)); top: calc(var(--island-y) * var(--k)); width: calc(56px * var(--k)); height: calc(56px * var(--k)); opacity: 0; }
+.mc-island__momo img { width: 100%; height: 100%; object-fit: contain; animation: mc-island-bob 2.4s ease-in-out infinite; }
+@keyframes mc-island-bob { 50% { translate: 0 calc(-3px * var(--k)); } }
+.mc-island:is([data-state='send'], [data-state='nudge']) { animation: mc-island 4s linear both; }
+.mc-island:is([data-state='send'], [data-state='nudge']) .mc-island__momo { animation: mc-island-momo 4s linear both; }
+@keyframes mc-island {
+  0%, 10% { left: calc(437.5px * var(--k)); top: calc(61px * var(--k)); width: calc(250px * var(--k)); height: calc(74px * var(--k)); margin-left: calc(-125px * var(--k)); border-radius: calc(37px * var(--k)); }
+  10% { animation-timing-function: cubic-bezier(.34,1.45,.5,1); }
+  23.75%, 87.5% { left: calc(423.5px * var(--k)); top: calc(59px * var(--k)); width: calc(290px * var(--k)); height: calc(78px * var(--k)); margin-left: calc(-145px * var(--k)); border-radius: calc(39px * var(--k)); }
+  87.5% { animation-timing-function: cubic-bezier(.34,1.45,.5,1); }
+  100% { left: calc(437.5px * var(--k)); top: calc(61px * var(--k)); width: calc(250px * var(--k)); height: calc(74px * var(--k)); margin-left: calc(-125px * var(--k)); border-radius: calc(37px * var(--k)); }
+}
+@keyframes mc-island-momo {
+  0%, 13.75% { opacity: 0; transform: scale(.3); animation-timing-function: cubic-bezier(.34,1.45,.5,1); }
+  26.25%, 75% { opacity: 1; transform: translateY(0) scale(1); }
+  75% { animation-timing-function: cubic-bezier(.3,.7,.4,1); }
+  79.5% { opacity: 1; transform: translateY(calc(-6px * var(--k))) scale(1.05, .96); animation-timing-function: cubic-bezier(.55,0,.85,.35); }
+  90%, 100% { opacity: 1; transform: translateY(calc(88px * var(--k))) scale(.96, 1.06); }
+}
 
 /* Device entrance presets. The Watch, connector and phone form one semantic handoff, so every
    option uses the same ease-out duration; only the spatial metaphor and optional stagger change. */
