@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useTuningController } from '../../tuning/useTuning'
 import { drawBraid, setRT } from './braid'
-import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE, setAppLaunch, setMomoAsleep, setPauseIcon, setPillText } from './phoneFilm'
+import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE, setAppLaunch, setMomoAsleep, setPauseIcon, setPillText, setStatusGaps } from './phoneFilm'
 import { BEAM_SCREEN, MomoVoiceBeam } from './MomoVoiceBeam'
 import { stackedAlpha } from '../../lib/stackedAlpha'
 import { ArrowDownIcon } from '../../components/icons'
@@ -75,11 +75,19 @@ const CONFIG = {
     letterSpacing: [0, -1, 2, 0.01] as Tuple,
     x: [0, -12, 12, 0.25] as Tuple,
     y: [0, -6, 6, 0.25] as Tuple,
+    /** Corner radius of the pill; 23 = fully round ends (pill is 46 tall). */
+    radius: [23, 0, 23, 0.5] as Tuple,
     _collapsed: false,
   },
   /** Pause icon in the bottom bar: corner radius of its two 3×14 bars, in screen px (1.5 = capsule); live. */
   pauseIcon: {
     radius: [0, 0, 1.5, 0.05] as Tuple,
+    _collapsed: false,
+  },
+  /** Gaps between the status bar icons, in pt; live. The battery stays put, the others move. */
+  statusIcons: {
+    wifi: [4.2, 0, 12, 0.1] as Tuple,
+    battery: [5.8, 0, 12, 0.1] as Tuple,
     _collapsed: false,
   },
   /** Seconds at speed 1. Applied on the next Replay intro, so edits never jump mid-scene. */
@@ -233,6 +241,24 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     lastPlayhead.current = to
     seekRef.current(to)
   }, [t.playhead.time])
+  // Freeform pill, pause icon and status icon dials preview live: a change holds the film (paused; the
+  // frame loop redraws with the new values every frame) on a moment that shows what the dial moves.
+  // Status icons: just after the app opens, with the whole phone in frame. Pill and pause: the voice
+  // screen while recording. Already paused inside that window? It stays on that frame.
+  const barDials = JSON.stringify([t.freeformPill, t.pauseIcon])
+  const statusDials = JSON.stringify(t.statusIcons)
+  const lastDials = useRef({ bar: barDials, status: statusDials })
+  useEffect(() => {
+    const last = lastDials.current
+    const T = PHONE_TIMELINE
+    const span: [number, number, number] | null = statusDials !== last.status ? [T.voice + 0.8, T.voice + 1.6, T.voice + 1.2]
+      : barDials !== last.bar ? [T.talk, T.calm, T.talk + 0.5] : null
+    lastDials.current = { bar: barDials, status: statusDials }
+    if (!span) return
+    const [from, until, at] = span, now = timeRef.current(), to = round2(now >= from && now < until ? now : at)
+    lastPlayhead.current = to; tuning.setValue('playhead.time', to)
+    seekRef.current(to)
+  }, [barDials, statusDials, tuning])
   const tRef = useRef(t)
   tRef.current = t
   const cbRef = useRef({ onDone, onStart })
@@ -485,7 +511,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         const ox = (vw - 960 * scale) / 2, oy = (vh - 540 * scale) / 2
         filmCtx.setTransform(1, 0, 0, 1, 0, 0); filmCtx.clearRect(0, 0, filmCanvas.width, filmCanvas.height)
         topCtx.setTransform(1, 0, 0, 1, 0, 0); topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height)
-        setAppLaunch(s.appLaunch); setMomoAsleep(s.momoAsleep); setPillText(s.freeformPill); setPauseIcon(s.pauseIcon)
+        setAppLaunch(s.appLaunch); setMomoAsleep(s.momoAsleep); setPillText(s.freeformPill); setPauseIcon(s.pauseIcon); setStatusGaps(s.statusIcons)
         const beam = drawPhoneFilm(filmCtx, time, [scale * filmDpr, ox * filmDpr, oy * filmDpr], {
           x: (slotX - vw / 2) / scale + 480,
           y: (slotY - window.scrollY - vh / 2) / scale + 270,

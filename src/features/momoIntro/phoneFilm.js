@@ -20,13 +20,16 @@ let LAUNCH = { duration: 0.7, spring: 9, face: 0.15, press: 0.05, zoom: 0.05, bl
 export function setAppLaunch(dials) { LAUNCH = dials }
 /** Momo intro › Momo asleep: size and centre of asleep Momo when the app opens, until the record tap (screen units). */
 export function setMomoAsleep({ size, y }) { D.momo.talkS = size; D.momo.talkY = y }
-/** Freeform pill label dials (Momo intro › Freeform pill), in screen px: letter-spacing (the pill grows
- *  with it, so the chevron keeps its gap) and an x/y nudge of the text inside the pill. */
-let PILL_TEXT = { letterSpacing: 0, x: 0, y: 0 }
+/** Freeform pill dials (Momo intro › Freeform pill), in screen px: label letter-spacing (the pill grows
+ *  with it, so the chevron keeps its gap), an x/y nudge of the text, and the pill's corner radius. */
+let PILL_TEXT = { letterSpacing: 0, x: 0, y: 0, radius: 23 }
 export function setPillText(dials) { PILL_TEXT = dials }
 /** Pause icon dials (Momo intro › Pause icon): corner radius of the two 3×14 bars, in screen px (1.5 = capsule). */
 let PAUSE_ICON = { radius: 0 }
 export function setPauseIcon(dials) { PAUSE_ICON = dials }
+/** Status icon gaps (Momo intro › Status icons), in pt: signal → Wi-Fi and Wi-Fi → battery fill. */
+let STATUS_GAPS = { wifi: 4.2, battery: 5.8 }
+export function setStatusGaps(dials) { STATUS_GAPS = dials }
 const COPY = {"luck":{"title":"Good luck with the presentation 🍀","body":"Deep breaths before you walk in.\nYou totally got this! 😌"},"nudge":{"title":"Wanna debrief? ☁️","body":"I noticed your body’s still a little stressed from that presentation. I'm here if you wanna yap about it 👀"}}
 const MEET = {"title":"Design Pitch - Internal Team","now":"2:00 – 2:45 PM · now","ended":"Ended 2:45 PM"}
 const CHECKS = [{"kind":"hr","text":"Heart rate up ~30 BPM in 2 min","state":"ok"},{"kind":"base","text":"Unusual for you at this hour","state":"ok"}]
@@ -232,7 +235,7 @@ function controls(c, t, mode, recAt) {
   const y = 790
   const P = PILL_TEXT
   c.font = `500 15px ${UI}`; c.letterSpacing = `${P.letterSpacing}px`; const pw = 22 + c.measureText(mode).width + 8 + 12 + 19; c.letterSpacing = '0px'
-  glass(c, 22, y - 23, pw, 46, 23, 'rgba(255,255,255,0.55)', 6)
+  glass(c, 22, y - 23, pw, 46, P.radius, 'rgba(255,255,255,0.55)', 6)
   tx(c, mode, 44 + P.x, y + P.y, 15, { w: 500, ls: P.letterSpacing })
   c.strokeStyle = '#666'; c.lineWidth = 1.4; c.beginPath(); const cx = 22 + pw - 25; c.moveTo(cx - 3.5, y - 1.5); c.lineTo(cx, y + 2); c.lineTo(cx + 3.5, y - 1.5); c.stroke()
   const btn = (x, fill) => { glass(c, x - 23, y - 23, 46, 46, 23, fill, fill === '#292931' ? 14 : 6) }
@@ -276,11 +279,24 @@ function statusBar(c, ink = '#1f1f1f', lock = 0) {
   if (lock < 0.99) { c.save(); c.globalAlpha *= 1 - lock; tx(c, '9:41', 52, 30, 16, { w: 600, color: ink }); c.restore() }
   if (lock > 0.01) { c.save(); c.globalAlpha *= lock; tx(c, 'AT&T', 40, 30, 15, { w: 600, color: ink }); c.restore() }
   const B = D.status
-  c.fillStyle = ink; [0, 1, 2, 3].forEach((i) => c.fillRect(278 + B.sigX + i * 5, 34 + B.sigY - (i + 1) * 2.6, 3, (i + 1) * 2.6))
-  const wx = 306 + B.wifiX, wy = 35 + B.wifiY
-  for (const [r0, r1] of [[9.6, 12.6], [5.6, 8.6]]) { c.beginPath(); c.arc(wx, wy, r1, -Math.PI * 0.75, -Math.PI * 0.25); c.arc(wx, wy, r0, -Math.PI * 0.25, -Math.PI * 0.75, true); c.closePath(); c.fill() }
-  c.beginPath(); c.moveTo(wx, wy); c.arc(wx, wy, 4.6, -Math.PI * 0.75, -Math.PI * 0.25); c.closePath(); c.fill()
-  c.beginPath(); c.roundRect(323 + B.batX, 24 + B.batY, 23, 12, 3.5); c.lineWidth = 1; c.strokeStyle = 'rgba(31,31,31,0.4)'; c.stroke(); c.beginPath(); c.roundRect(325 + B.batX, 26 + B.batY, 19, 8, 2); c.fill()
+  // iOS status icons, measured from David's reference (pt, bars' bottom at y 34). Signal: four 3.3-wide
+  // rounded bars, 4.93 apart. Wi-Fi: two round-capped arcs and a rounded wedge, 17 wide. Battery:
+  // 20×11 outline, 17.3×8.4 fill, side nub. Gaps (Momo intro › Status icons, pt): `wifi` signal → Wi-Fi
+  // (4.2 measured) and `battery` Wi-Fi → battery fill (5.8). The battery stays put; wider gaps push the
+  // icons to its left outward. Wi-Fi's base x leaves room for the saved `D.status.wifiX` (3) nudge.
+  const dB = STATUS_GAPS.battery - 5.8, dW = dB + STATUS_GAPS.wifi - 4.2
+  c.fillStyle = ink; c.beginPath()
+  ;[4.3, 5.9, 8.4, 10.7].forEach((h, i) => c.roundRect(281.7 - dW + B.sigX + i * 4.93, 34 + B.sigY - h, 3.3, h, 1.1))
+  c.fill()
+  const wx = 309.3 - dB + B.wifiX, wy = 34.5 + B.wifiY, A = 0.233 * Math.PI
+  c.save(); c.strokeStyle = ink; c.lineCap = 'round'; c.lineWidth = 2.35
+  for (const r of [11.1, 6.95]) { c.beginPath(); c.arc(wx, wy, r, -Math.PI / 2 - A, -Math.PI / 2 + A); c.stroke() }
+  c.lineWidth = 1.3; c.lineJoin = 'round'; c.beginPath(); c.moveTo(wx, wy - 0.7); c.arc(wx, wy - 0.7, 2.7, -Math.PI / 2 - A, -Math.PI / 2 + A); c.closePath(); c.fill(); c.stroke()
+  c.restore()
+  const bx = 325.05 + B.batX, by = 23.7 + B.batY
+  c.save(); c.globalAlpha *= 0.4; c.strokeStyle = ink; c.lineWidth = 1; c.beginPath(); c.roundRect(bx, by, 20, 11, 4); c.stroke()
+  c.beginPath(); c.roundRect(bx + 21.2, by + 3.75, 1.4, 3.5, [0, 0.7, 0.7, 0]); c.fill(); c.restore()
+  c.beginPath(); c.roundRect(bx + 1.35, by + 1.3, 17.3, 8.4, 2.5); c.fill()
 }
 /** The app's glass back button, top left. */
 function backButton(c) {
