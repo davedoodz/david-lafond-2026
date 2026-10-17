@@ -123,10 +123,12 @@ export const FLOAT_DIALS = {
   /** Between the pills and the portrait, above or below it (px). */
   tagsGap: [72, 0, 300, 1] as Tuple,
   /**
-   * Entrance, replayed each time the section comes into view: portrait, floating cards, then once
-   * the cards have settled, the text block top to bottom and the profile pills. Seconds; distance in px.
+   * Entrance, replayed each time the section comes into view. `order` 'image first': portrait, floating
+   * cards, then the text block top to bottom and the pills. 'text first': the text block, then the portrait,
+   * the pills under it, and the cards around it. Seconds; distance in px.
    */
   entrance: {
+    order: { type: 'select' as const, options: ['image first', 'text first'], default: 'image first' },
     text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
     pills: { type: 'select' as const, options: [...ENTRANCES], default: 'pop' },
     duration: [0.5, 0.2, 2, 0.05] as Tuple,
@@ -137,13 +139,16 @@ export const FLOAT_DIALS = {
     textStagger: [0.05, 0, 0.6, 0.01] as Tuple,
     /** Between one pill and the next. */
     pillStagger: [0.02, 0, 0.4, 0.01] as Tuple,
-    /** Pause after the text block (see pillsAfter) before the first pill; below 0 the pills overlap it. */
+    /** Image first: pause after the text block (see pillsAfter) before the first pill. Text first: pause after
+     *  the portrait lands before the first pill. Below 0 the pills overlap. */
     pillsGap: [0.02, -3, 1.5, 0.01] as Tuple,
-    /** Which text line the pills wait for: the title (pills arrive under the copy right after it) or the body. */
+    /** Image first only: which text line the pills wait for, the title or the body. */
     pillsAfter: { type: 'select' as const, options: ['title', 'body'], default: 'body' },
-    /** Pause after the last bubble settles before the text block starts; below 0 the text overlaps the bubbles. */
-    textGap: [0.1, -3, 1.5, 0.01] as Tuple,
-    /** From the portrait landing to the first floating bubble. */
+    /** Image first: pause after the last bubble settles before the text block. Text first: pause after the
+     *  body finishes before the portrait. Below 0 they overlap. */
+    textGap: [0.1, -3, 4, 0.01] as Tuple,
+    /** Image first: from the portrait landing to the first floating bubble. Text first: from the last pill
+     *  landing to the first bubble. */
     floatsDelay: [0.35, 0, 4, 0.05] as Tuple,
     /** Between one floating bubble and the next (drift). */
     floatStagger: [0.18, 0, 1.5, 0.01] as Tuple,
@@ -245,6 +250,8 @@ type Push = {
 /** Falls back to the dial defaults for presets (Filo) that don't spread the `push` folder. */
 const DEFAULT_PUSH: Push = { enabled: true, reach: 36, strength: 1, carry: 0.7, maxOffset: 16, stiffness: 140, damping: 24, tilt: 3 }
 type Entrance = {
+  /** 'image first' (default) or 'text first'; older presets omit it. */
+  order?: string
   text: string
   pills: string
   duration: number
@@ -307,14 +314,22 @@ const kf = (preset: string) => (preset === 'none' ? 'none' : `pe-${preset}`)
 const DRIFT_IN_DURATION = 0.65
 
 /**
- * Entrance timeline (seconds): portrait, floating cards, then text from eyebrow to body, then pills.
- * `imageIn` is how long the portrait takes to settle (the sticker stamp) before the cards may start;
- * `floatsIn` is how long the cards take to finish arriving before the text follows.
- * Pills start once the title (pillsAfter 'title') or the body has finished arriving.
+ * Entrance timeline (seconds). 'image first': portrait, floating cards, then text from eyebrow to body,
+ * then pills (once the title or body, per pillsAfter, has arrived). 'text first': text from eyebrow to
+ * body, then the portrait, the pills once it has landed, and the cards once the last pill has landed.
+ * `imageIn` is how long the portrait takes to settle (the sticker stamp);
+ * `floatsIn` is how long the cards take to finish arriving.
  * Returns per-element delays (text in eyebrow/title/body order, pills in DOM order).
  */
 function entranceTimeline(e: Entrance, pills: number, floatsIn: number, imageIn = 0) {
   const step = (start: number, n: number, stagger: number) => Array.from({ length: n }, (_, i) => start + i * stagger)
+  if (e.order === 'text first') {
+    const text = step(0, 3, e.textStagger)
+    const image = Math.max(0, text[2] + e.textDuration + e.textGap)
+    const pill = step(Math.max(0, image + imageIn + e.pillsGap), pills, e.pillStagger)
+    const pillsIn = pill.length ? pill[pill.length - 1] + e.duration : image + imageIn
+    return { text, image, pill, floats: pillsIn + e.floatsDelay }
+  }
   const image = 0
   const floats = image + imageIn + e.floatsDelay
   const text = step(floats + floatsIn + e.textGap, 3, e.textStagger)
