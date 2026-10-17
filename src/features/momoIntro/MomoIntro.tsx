@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useTuningController } from '../../tuning/useTuning'
 import { drawBraid, setRT } from './braid'
-import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE } from './phoneFilm'
+import { drawPhoneFilm, loadPhoneFilm, PHONE_TIMELINE, setAppLaunch, setMomoAsleep } from './phoneFilm'
 import { BEAM_SCREEN, MomoVoiceBeam } from './MomoVoiceBeam'
 import { stackedAlpha } from '../../lib/stackedAlpha'
 import { ArrowDownIcon } from '../../components/icons'
@@ -35,12 +35,45 @@ type SequenceKey = (typeof SEQUENCES)[number]['key']
 const TIMING = Object.fromEntries(SEQUENCES.map((sequence, i) => [
   sequence.key, [sequence.end - (i ? SEQUENCES[i - 1].end : 0), 0.05, 30, 0.05],
 ])) as Record<SequenceKey, Tuple>
+const SPEEDS = Object.fromEntries(SEQUENCES.map(sequence => [sequence.key, [1, 0.25, 3, 0.05]])) as Record<SequenceKey, Tuple>
 const CONFIG = {
   enabled: true,
   replay: { type: 'action' as const, label: 'Replay intro' },
+  /** Freezes the film on the current frame (clock, scroll, Momo videos); press again to resume. Not saved. */
+  pause: { type: 'action' as const, label: 'Pause / play intro' },
+  /** Scrub the film: dragging `time` (film seconds) jumps there and pauses; the step buttons move
+   *  one `step` either way. Pausing writes the current time back here. Session-only, never saved. */
+  playhead: {
+    time: [0, 0, +PHONE_TIMELINE.dur.toFixed(2), 0.01] as Tuple,
+    step: [0.03, 0.01, 1, 0.01] as Tuple,
+    back: { type: 'action' as const, label: '◀ Step back' },
+    forward: { type: 'action' as const, label: 'Step forward ▶' },
+    _collapsed: false,
+  },
   speed: [1, 0.1, 1.5, 0.05] as Tuple,
+  /** Tap the nudge → Momo opens: the app window grows out of the notification. Film seconds; live. */
+  appLaunch: {
+    duration: [0.7, 0.2, 2.5, 0.05] as Tuple,
+    spring: [9, 3, 20, 0.5] as Tuple,
+    face: [0.15, 0.05, 1, 0.01] as Tuple,
+    press: [0.05, 0, 0.15, 0.005] as Tuple,
+    zoom: [0.05, 0, 0.2, 0.005] as Tuple,
+    blur: [6, 0, 20, 0.5] as Tuple,
+    dim: [0.22, 0, 0.6, 0.01] as Tuple,
+    _collapsed: false,
+  },
+  /** Momo asleep, from the app opening until the record tap wakes it: body size and centre, in the
+   *  phone screen's 390-wide units. Awake Momo is 230 at 383; asleep matches awake's body size at equal `size`. */
+  momoAsleep: {
+    size: [150, 80, 320, 1] as Tuple,
+    y: [250, 150, 600, 1] as Tuple,
+    _collapsed: false,
+  },
   /** Seconds at speed 1. Applied on the next Replay intro, so edits never jump mid-scene. */
   timingSeconds: { ...TIMING, _collapsed: false },
+  /** Playback speed of each screen sequence (2 = twice as fast), on top of `speed`. Live: changes
+   *  apply mid-scene without a jump. */
+  sequenceSpeed: { ...SPEEDS, _collapsed: false },
   /** Vertical offsets in the film's 960×540 coordinates. Positive moves down; updates live. */
   phonePosition: {
     lockScreenY: [24, -120, 120, 1] as Tuple,
@@ -141,6 +174,9 @@ const CONFIG = {
   },
   _collapsed: false,
 }
+/** The playhead is a dev scrubber, never a tuned value. */
+const SESSION_ONLY = ['playhead'] as const
+const round2 = (v: number) => Math.round(v * 100) / 100
 
 /** Approved phone film on the stage; its final voice band hands off to the live hero. */
 export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: () => void }) {
@@ -148,6 +184,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   const stageRef = useRef<HTMLDivElement>(null)
   const replayRef = useRef<() => void>(() => {})
   const skipRef = useRef<() => void>(() => {})
+  const pauseRef = useRef<() => boolean>(() => false)
+  const seekRef = useRef<(to: number) => void>(() => {})
+  const timeRef = useRef<() => number>(() => 0)
   const skipBtnRef = useRef<HTMLButtonElement>(null)
   const momoVideos = useRef<Record<string, HTMLVideoElement | null>>({})
   const momoCanvases = useRef<Record<string, HTMLCanvasElement | null>>({})
@@ -158,9 +197,29 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   const readBeamLevel = useRef(() => beamLevel.current).current
   const [beamActive, setBeamActive] = useState(false)
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-  const { values: t } = useTuningController('Momo intro', CONFIG, {
-    onAction: (action) => { if (action === 'replay') replayRef.current() },
+  const lastPlayhead = useRef(0)
+  const tuning = useTuningController('Momo intro', CONFIG, {
+    sessionOnly: SESSION_ONLY,
+    onAction: (action) => {
+      // Sync the playhead slider without it seeking again (see the playhead effect below).
+      const setPlayhead = (to: number) => { lastPlayhead.current = to; tuning.setValue('playhead.time', to) }
+      if (action === 'replay') replayRef.current()
+      if (action === 'pause' && pauseRef.current()) setPlayhead(round2(timeRef.current()))
+      if (action === 'playhead.back' || action === 'playhead.forward') {
+        const step = tRef.current.playhead.step * (action === 'playhead.back' ? -1 : 1)
+        const to = round2(clamp((timeRef.current() + step) / PHONE_TIMELINE.dur) * PHONE_TIMELINE.dur)
+        setPlayhead(to); seekRef.current(to)
+      }
+    },
   })
+  const t = tuning.values
+  // Dragging the playhead slider seeks; values written by setPlayhead are already in place.
+  useEffect(() => {
+    const to = t.playhead.time
+    if (Math.abs(to - lastPlayhead.current) < 1e-6) return
+    lastPlayhead.current = to
+    seekRef.current(to)
+  }, [t.playhead.time])
   const tRef = useRef(t)
   tRef.current = t
   const cbRef = useRef({ onDone, onStart })
@@ -193,11 +252,15 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const topCanvas = topRef.current!, topCtx = topCanvas.getContext('2d')!
     const root = document.documentElement
     let vw = 0, vh = 0, dpr = 1, filmDpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
-    let ready = false, disposed = false, playing = false
+    let ready = false, disposed = false, playing = false, paused = false
     let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
     let interrupted = false, enteredStage = false, handedOff = false, handoffCancelled = false, handoffSettled = false
-    let sequenceIndex = 0, sequenceTime = 0
+    // `sequenceProgress` is 0–1 through the current sequence, so a speed dial can change mid-scene
+    // without the film jumping.
+    let sequenceIndex = 0, sequenceProgress = 0
     let sequenceDurations = tRef.current.timingSeconds
+    /** Real seconds the sequence takes at speed 1: its authored seconds over its live speed dial. */
+    const sequenceSeconds = (i: number) => sequenceDurations[SEQUENCES[i].key] / (tRef.current.sequenceSpeed[SEQUENCES[i].key] || 1)
     // Once the film has handed off to the hero, the stage above is closed: the page can't scroll back
     // up into it (only clicking the band replays). The floor ratchets up to the landing position, so a
     // visitor who scrolled past the stage short of the landing isn't yanked; they just can't go back up.
@@ -211,21 +274,47 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       locked = on
       setFloor(on ? Math.min(window.scrollY, landingY) : 0)
     }
+    // While the film plays (until its own handoff glide), the page can't go down: Skip intro is the
+    // only way past. The ceiling ratchets down with any upward scroll (Replay's glide), and every
+    // downward input is cancelled before it scrolls; programmatic scrolls (skip, handoff) run after
+    // the hold ends, so they pass.
+    let ceil = Infinity
+    const holding = () => playing && handoffY === null
     const holdFloor = () => {
-      if (!locked) return
       const y = window.scrollY
+      if (holding()) {
+        if (y < ceil) ceil = y
+        else if (y > ceil + 1) { window.scrollTo({ top: ceil, behavior: 'instant' }); return }
+      }
+      if (!locked) return
       if (y > floor && floor < landingY) setFloor(Math.min(y, landingY))
       else if (y < floor - 1) window.scrollTo({ top: floor, behavior: 'instant' })
     }
-    // Stop upward wheel/touch at the floor before anything scrolls (capture phase, so the site's
-    // ControlledScroll sees defaultPrevented and doesn't glide).
-    const blockWheelUp = (e: WheelEvent) => {
-      if (locked && e.deltaY < 0 && window.scrollY <= floor + 1) e.preventDefault()
+    // Input that starts inside something that scrolls on its own (the DialKit panel, any overflow
+    // list) belongs to that element, never to the page, so the locks below leave it alone.
+    const ownScroller = (target: EventTarget | null) => {
+      for (let el = target instanceof Element ? target : null; el && el !== document.body && el !== root; el = el.parentElement) {
+        const y = getComputedStyle(el).overflowY
+        if ((y === 'auto' || y === 'scroll') && el.scrollHeight > el.clientHeight + 1) return true
+      }
+      return false
+    }
+    // Stop wheel/touch before anything scrolls (capture phase, so the site's ControlledScroll sees
+    // defaultPrevented and doesn't glide): down while the film plays, up at the floor once handed off.
+    const blockWheel = (e: WheelEvent) => {
+      if (((holding() && e.deltaY > 0) || (locked && e.deltaY < 0 && window.scrollY <= floor + 1)) && !ownScroller(e.target)) e.preventDefault()
     }
     let touchY = 0
     const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0 }
-    const blockTouchUp = (e: TouchEvent) => {
-      if (locked && (e.touches[0]?.clientY ?? 0) > touchY && window.scrollY <= floor + 1) e.preventDefault()
+    const blockTouch = (e: TouchEvent) => {
+      const y = e.touches[0]?.clientY ?? 0
+      if (((holding() && y < touchY) || (locked && y > touchY && window.scrollY <= floor + 1)) && !ownScroller(e.target)) e.preventDefault()
+    }
+    const DOWN_KEYS = new Set([' ', 'PageDown', 'ArrowDown', 'End'])
+    const blockKeys = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null
+      if (!holding() || !DOWN_KEYS.has(e.key) || el?.isContentEditable || el?.closest('input, textarea, select, button') || ownScroller(el)) return
+      e.preventDefault()
     }
     const completeHandoff = () => {
       if (handedOff) return
@@ -307,8 +396,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     }
     const start = () => {
       if (!ready) return
-      playing = true; time = 0; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
-      sequenceIndex = 0; sequenceTime = 0
+      playing = true; paused = false; time = 0; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
+      ceil = window.scrollY
+      sequenceIndex = 0; sequenceProgress = 0
       for (const video of videos) video.currentTime = 0
       sequenceDurations = { ...tRef.current.timingSeconds }
       enteredStage = progress() > .03
@@ -326,7 +416,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       if (disposed) return
       const s = tRef.current
       const realDt = last && !document.hidden ? Math.min(0.1, (now - last) / 1000) : 0
-      const dt = realDt * s.speed
+      const dt = paused ? 0 : realDt * s.speed
       last = now; rt += dt
       let p = progress()
       if (playing && p > .03) enteredStage = true
@@ -338,16 +428,17 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         completeHandoff()
       }
       if (playing) {
-        sequenceTime += dt
-        while (sequenceIndex < SEQUENCES.length && sequenceTime >= sequenceDurations[SEQUENCES[sequenceIndex].key]) {
-          sequenceTime -= sequenceDurations[SEQUENCES[sequenceIndex].key]
+        sequenceProgress += dt / sequenceSeconds(sequenceIndex)
+        while (sequenceIndex < SEQUENCES.length && sequenceProgress >= 1) {
+          const spill = (sequenceProgress - 1) * sequenceSeconds(sequenceIndex)
           sequenceIndex++
+          sequenceProgress = sequenceIndex < SEQUENCES.length ? spill / sequenceSeconds(sequenceIndex) : 0
         }
         if (sequenceIndex === SEQUENCES.length) time = PHONE_TIMELINE.dur
         else {
           const sequence = SEQUENCES[sequenceIndex]
           const from = sequenceIndex ? SEQUENCES[sequenceIndex - 1].end : 0
-          time = from + (sequence.end - from) * sequenceTime / sequenceDurations[sequence.key]
+          time = from + (sequence.end - from) * sequenceProgress
         }
         // Drive the scroll from the film clock, in this same frame, before drawing. The canvas
         // then reads the exact scrollY the page will paint with: braid and page move as one.
@@ -369,19 +460,25 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const ending = playing ? smooth(clamp((time - PHONE_TIMELINE.hero + .35) / .35)) : 1
       const filmAlpha = playing ? (handoffY !== null && !handoffCancelled ? 1 : smooth(p)) : 0
-      syncMomo(playing && !document.hidden && filmAlpha > .001 && time >= PHONE_TIMELINE.voice - .2 && time < PHONE_TIMELINE.calm + 1)
-      momoFrames.awake = videos[0].readyState >= 2 && canvases[0].width > 1 ? canvases[0] : undefined
-      momoFrames.asleep = videos[1].readyState >= 2 && canvases[1].width > 1 ? canvases[1] : undefined
+      syncMomo(playing && !paused && !document.hidden && filmAlpha > .001 && time >= PHONE_TIMELINE.voice - .2 && time < PHONE_TIMELINE.calm + 1)
+      // A painted clip canvas keeps its last frame (preserveDrawingBuffer), so use it even while the
+      // video seeks at its loop point: falling back to the still for that frame read as a glitch.
+      momoFrames.awake = canvases[0].width > 1 ? canvases[0] : undefined
+      momoFrames.asleep = canvases[1].width > 1 ? canvases[1] : undefined
       if (filmAlpha > .001) {
         const scale = Math.min(vw / (vw < 700 ? 480 : 960), vh / 540)
         const ox = (vw - 960 * scale) / 2, oy = (vh - 540 * scale) / 2
         filmCtx.setTransform(1, 0, 0, 1, 0, 0); filmCtx.clearRect(0, 0, filmCanvas.width, filmCanvas.height)
         topCtx.setTransform(1, 0, 0, 1, 0, 0); topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height)
+        setAppLaunch(s.appLaunch); setMomoAsleep(s.momoAsleep)
         const beam = drawPhoneFilm(filmCtx, time, [scale * filmDpr, ox * filmDpr, oy * filmDpr], {
           x: (slotX - vw / 2) / scale + 480,
           y: (slotY - window.scrollY - vh / 2) / scale + 270,
           width: Math.min(s.hero.width, vw * .72) / scale,
+          env: s.hero.energy,
         }, s.phonePosition, momoFrames, topCtx, [scale * dpr, ox * dpr, oy * dpr])
+        // The page band carries on from the film band's phase, so the hand-off cross-fade lines up.
+        rt = beam.rt
         topCanvas.style.opacity = String(filmAlpha)
         ctx.globalAlpha = filmAlpha
         ctx.drawImage(filmCanvas, 0, 0, canvas.width, canvas.height)
@@ -435,6 +532,30 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       else last = 0
     }
     function wake() { if (!raf && !disposed) raf = requestAnimationFrame(frame) }
+    // DialKit "Pause / play intro": freeze or resume the film where it is. Replay always starts playing.
+    // Returns whether the film is now paused, so the playhead slider can pick up the current time.
+    pauseRef.current = () => { paused = !paused; wake(); return paused }
+    timeRef.current = () => time
+    // DialKit playhead: hold the film at `to` (film seconds), paused. If the film has ended or handed
+    // off, or the scrub goes back before the hand-off, the stage reopens first, as Replay does but
+    // without the glide; from there the film clock drives the scroll as usual.
+    seekRef.current = (to: number) => {
+      if (!ready) return
+      to = clamp(to / PHONE_TIMELINE.dur) * PHONE_TIMELINE.dur
+      if (!playing || handedOff || (handoffY !== null && to < PHONE_TIMELINE.calm)) {
+        lock(false); start()
+        window.scrollTo({ top: 0, behavior: 'instant' })
+      }
+      paused = true; enteredStage = true
+      let i = SEQUENCES.findIndex(sequence => to < sequence.end)
+      if (i < 0) i = SEQUENCES.length - 1
+      const from = i ? SEQUENCES[i - 1].end : 0, sequence = SEQUENCES[i]
+      sequenceIndex = i; sequenceProgress = (to - from) / (sequence.end - from)
+      time = to
+      // Momo's clips loop from the moment Momo appears; put them where plain playback would be.
+      for (const video of videos) if (video.duration) video.currentTime = Math.max(0, to - (PHONE_TIMELINE.voice - .2)) % video.duration
+      wake()
+    }
     // Replay (clicking the band is the only way back): reopen the stage, glide up, play from frame one.
     replayRef.current = () => {
       if (!ready) return
@@ -448,7 +569,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       if (!playing || handoffY !== null) return
       const s = tRef.current
       if (s.skip.ending === 'handoff' && s.returnToHero) {
-        sequenceIndex = HANDOFF_INDEX; sequenceTime = 0; time = PHONE_TIMELINE.calm
+        sequenceIndex = HANDOFF_INDEX; sequenceProgress = 0; time = PHONE_TIMELINE.calm
         enteredStage = true; interrupted = false; handoffCancelled = false; handoffSettled = false
       } else {
         playing = false; handoffSettled = true
@@ -479,9 +600,10 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     document.addEventListener('click', onClick)
     window.addEventListener('scroll', wake, { passive: true })
     window.addEventListener('scroll', holdFloor, { passive: true })
-    window.addEventListener('wheel', blockWheelUp, { passive: false, capture: true })
+    window.addEventListener('wheel', blockWheel, { passive: false, capture: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
-    window.addEventListener('touchmove', blockTouchUp, { passive: false })
+    window.addEventListener('touchmove', blockTouch, { passive: false })
+    window.addEventListener('keydown', blockKeys, { capture: true })
     window.addEventListener('resize', measure)
     window.addEventListener(MOMO_BRAID_LAYOUT_EVENT, measure)
     window.addEventListener('wheel', interrupt, { passive: true })
@@ -496,13 +618,14 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       disposed = true; cancelAnimationFrame(raf); ro.disconnect()
       syncMomo(false); stopDecoders.forEach(stop => stop())
       window.removeEventListener('scroll', wake); window.removeEventListener('resize', measure)
-      window.removeEventListener('scroll', holdFloor); window.removeEventListener('wheel', blockWheelUp, { capture: true })
-      window.removeEventListener('touchstart', onTouchStart); window.removeEventListener('touchmove', blockTouchUp)
+      window.removeEventListener('scroll', holdFloor); window.removeEventListener('wheel', blockWheel, { capture: true })
+      window.removeEventListener('touchstart', onTouchStart); window.removeEventListener('touchmove', blockTouch)
+      window.removeEventListener('keydown', blockKeys, { capture: true })
       lock(false); slotBtn()?.removeAttribute('data-hint')
       window.removeEventListener(MOMO_BRAID_LAYOUT_EVENT, measure)
       window.removeEventListener('wheel', interrupt); window.removeEventListener('touchstart', interrupt)
       window.removeEventListener('keydown', interrupt); document.removeEventListener('visibilitychange', visibility)
-      root.removeAttribute('data-momo-stage'); replayRef.current = () => {}; skipRef.current = () => {}; showSkip(false)
+      root.removeAttribute('data-momo-stage'); replayRef.current = () => {}; skipRef.current = () => {}; pauseRef.current = () => false; seekRef.current = () => {}; timeRef.current = () => 0; showSkip(false)
       document.removeEventListener('pointerover', onOver); document.removeEventListener('pointerout', onOut)
       document.removeEventListener('focusin', onOver); document.removeEventListener('focusout', onOut)
       document.removeEventListener('click', onClick); setReplayable(false)
