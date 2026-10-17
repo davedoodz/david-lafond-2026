@@ -31,8 +31,6 @@
 .momo-welcome__shader canvas { display: block; width: 100%; height: 100%; }
 .momo-welcome__shade { background: #000; opacity: 0; pointer-events: none; }
 .momo-welcome__frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-/* The welcome is decorative (pointer-events: none) except for its screen-sized pause toggle. */
-.momo-welcome .playback-toggle { pointer-events: auto; }
 .momo-welcome__mascot {
   position: absolute;
   top: 16%;

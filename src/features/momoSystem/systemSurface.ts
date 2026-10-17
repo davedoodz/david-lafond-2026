@@ -73,6 +73,90 @@ export function cardSurface(fill: string, gradient: GradientDials, glass: GlassD
   }
 }
 
+/**
+ * Card-only material finishes, matched to the seal artwork (an embossed, matte, cool-white stock).
+ * The photo finishes are photographed stock with the seal (and, for `-logo`, the Momo lockup) already
+ * embossed in; the card hides its own seal / lockup for them (MomoSystemFigure).
+ */
+export const MATERIAL_FINISHES = ['paper', 'satin', 'pewter', 'metal', 'paper-photo', 'paper-photo-logo', 'satin-photo-logo', 'white-photo-logo', 'blue-photo-logo'] as const
+export type MaterialFinish = (typeof MATERIAL_FINISHES)[number]
+/** `tone`: the paper's own colour (median of the artwork's centre), used as the card fill so the node discs match it. */
+export type PhotoFinish = { src: string; /** width / height of the artwork */ aspect: number; logo: boolean; tone: string }
+/** Artwork in public/work/momo/seal. The card takes the artwork's shape so it shows whole, never squashed. */
+export const PHOTO_FINISHES: Partial<Record<MaterialFinish, PhotoFinish>> = {
+  'paper-photo': { src: '/work/momo/seal/card-seal.webp', aspect: 1315 / 1197, logo: false, tone: '#F7F6F5' },
+  'paper-photo-logo': { src: '/work/momo/seal/card-logo.webp', aspect: 1315 / 1197, logo: true, tone: '#F0F0EF' },
+  'satin-photo-logo': { src: '/work/momo/seal/card-satin-logo.webp', aspect: 1315 / 1197, logo: true, tone: '#EBECED' },
+  'white-photo-logo': { src: '/work/momo/seal/card-white-logo.webp', aspect: 1315 / 1197, logo: true, tone: '#F2F4F5' },
+  'blue-photo-logo': { src: '/work/momo/seal/card-blue-logo.webp', aspect: 1315 / 1196, logo: true, tone: '#F2F6FB' },
+}
+
+// Fine paper tooth: monochrome fractal noise, tiled, kept faint so it reads as texture, not dirt.
+const PAPER_GRAIN = `url("data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.16 0 0 0 0 0.18 0 0 0 0 0.22 0 0 0 0.09 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>',
+)}")`
+
+/**
+ * paper: matte cotton stock like the seal itself, fine tooth and a soft light, no shine.
+ * satin: smooth pearl coating, a wide soft sheen and no grain.
+ * pewter: a darker matte metal so the bright seal reads as a pressed medallion.
+ * metal: brushed grey plate with a diagonal sheen band and horizontal brushing.
+ * Photo finishes fill the card exactly (the card is shaped to the artwork). With `crop` (phone layout,
+ * where the card can't take that shape) the artwork covers the card from its right edge, keeping the seal.
+ */
+export function materialSurface(finish: MaterialFinish, tone: string, crop = false): Surface {
+  const lift = (k: number) => `color-mix(in srgb, ${tone}, white ${k}%)`
+  const sink = (k: number) => `color-mix(in srgb, ${tone}, #2a2f38 ${k}%)`
+  const lip = (top: number, bottom: number) =>
+    `inset 0 1.5px 0 rgb(255 255 255 / ${top}), inset 0 0 0 1px rgb(255 255 255 / 0.5), inset 0 -1.5px 0 rgb(40 46 56 / ${bottom})`
+  const layers: Record<'paper' | 'satin' | 'pewter' | 'metal', { fill: string; gradient: string[]; edge: string }> = {
+    paper: {
+      fill: lift(25),
+      gradient: [
+        PAPER_GRAIN,
+        `radial-gradient(130% 100% at 20% 0%, ${lift(70)} 0%, ${lift(25)} 60%)`,
+        `linear-gradient(180deg, ${lift(35)} 0%, ${lift(20)} 55%, ${tone} 100%)`,
+      ],
+      edge: lip(0.9, 0.06),
+    },
+    satin: {
+      fill: lift(15),
+      gradient: [
+        'linear-gradient(160deg, rgb(255 255 255 / 0) 18%, rgb(255 255 255 / 0.5) 42%, rgb(255 255 255 / 0) 70%)',
+        `radial-gradient(90% 70% at 85% 100%, ${sink(5)} 0%, ${lift(15)} 70%)`,
+        `linear-gradient(180deg, ${lift(45)} 0%, ${lift(15)} 50%, ${tone} 100%)`,
+      ],
+      edge: lip(0.95, 0.08),
+    },
+    pewter: {
+      fill: sink(14),
+      gradient: [
+        PAPER_GRAIN,
+        `radial-gradient(120% 90% at 18% 0%, ${sink(2)} 0%, ${sink(14)} 70%)`,
+        `linear-gradient(180deg, ${sink(6)} 0%, ${sink(14)} 50%, ${sink(22)} 100%)`,
+      ],
+      edge: lip(0.7, 0.14),
+    },
+    metal: {
+      fill: tone,
+      gradient: [
+        'repeating-linear-gradient(0deg, rgb(255 255 255 / 0.05) 0 1px, rgb(0 0 0 / 0.018) 1px 2px, rgb(255 255 255 / 0) 2px 3px)',
+        'linear-gradient(118deg, rgb(255 255 255 / 0) 22%, rgb(255 255 255 / 0.42) 38%, rgb(255 255 255 / 0) 54%, rgb(255 255 255 / 0.22) 72%, rgb(255 255 255 / 0) 86%)',
+        `radial-gradient(120% 90% at 18% 0%, ${lift(55)} 0%, ${lift(0)} 70%)`,
+        `linear-gradient(180deg, ${lift(20)} 0%, ${tone} 45%, ${sink(8)} 100%)`,
+      ],
+      edge: lip(0.95, 0.1),
+    },
+  }
+  const photo = PHOTO_FINISHES[finish]
+  if (photo) {
+    const fit = crop ? 'right center / cover' : 'center / 100% 100%'
+    return { fill: photo.tone, gradient: `url("${photo.src}") ${fit} no-repeat`, backdrop: 'none', edge: lip(0.6, 0.05), glow: 'none' }
+  }
+  const l = layers[finish as keyof typeof layers] ?? layers.paper
+  return { fill: l.fill, gradient: l.gradient.join(', '), backdrop: 'none', edge: l.edge, glow: 'none' }
+}
+
 /** The system card's colour base (fill + gradient), shared with the story art cards. */
 export type SystemBase = { fill: string; gradient: GradientDials }
 let base: SystemBase | null = null

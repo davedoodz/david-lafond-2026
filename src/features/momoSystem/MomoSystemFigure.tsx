@@ -1,30 +1,32 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { MomoMark } from '../momoIntro/MomoMark'
 import { mountMomoSystem, TIP_ANIMATIONS, type TipAnimation, type MomoSystemHandle } from './mountMomoSystem'
-import { cardSurface, GRADIENT_PALETTES, publishSystemBase, type GradientDials } from './systemSurface'
+import { cardSurface, GRADIENT_PALETTES, MATERIAL_FINISHES, materialSurface, PHOTO_FINISHES, publishSystemBase, type GradientDials, type MaterialFinish } from './systemSurface'
 import { useTuningController } from '../../tuning/useTuning'
 import { RestartButton } from '../playback/VideoPlayback'
-import { MomoSeal } from './MomoSeal'
+import { MomoSeal, SEAL_STYLES, type SealStyle } from './MomoSeal'
+import { usePushTilt } from '../pushBubbles/usePushTilt'
 
 type Tuple = [number, number, number, number]
 type SequenceDials = {
   sequenceSpeed: number
   motionSpeed: number
-  card: { show: boolean; radius: number; fill: string; scaleX: number; scaleY: number }
+  card: { show: boolean; finish: 'surface' | MaterialFinish; tone: string; radius: number; fill: string; scaleX: number; scaleY: number }
+  pushTilt: { enabled: boolean; tilt: number; press: number; stiffness: number; damping: number; perspective: number }
   gradient: GradientDials
   glass: { show: boolean; tint: number; blur: number; saturate: number; edge: number; sheen: number; sheenAngle: number; glow: number }
   shadow: { show: boolean; color: string; opacity: number; x: number; y: number; blur: number; spread: number }
   momoLogo: { x: number; y: number; scale: number; outline: number; smile: number; color: string }
   momoText: { x: number; y: number; scale: number; color: string }
-  icons: { circleColor: string; circleStyle: 'glass' | 'flat'; glassTint: number; titleGap: number }
+  icons: { circleColor: string; circleStyle: 'glass' | 'flat' | 'embossed' | 'debossed' | 'ring' | 'pearl' | 'ring-art' | 'none'; glassTint: number; titleGap: number }
   system: { scale: number }
   stepHold: { youShare: number; dataIn: number; answersOut: number; backToYou: number }
   arrowTips: { animation: TipAnimation }
   labels: { size: number }
   text: { titles: string; labels: string; icons: string; arrows: string }
-  seal: { scale: number; x: number; y: number }
+  seal: { style: SealStyle; scale: number; x: number; y: number }
   entrance: { preset: EntrancePreset; duration: number; distance: number; delay: number; stagger: number }
-} & Record<`${NodeIcon}Icon`, { x: number; y: number; scale: number }>
+} & Record<`${NodeIcon}Icon`, { x: number; y: number; scale: number; saturation: number; brightness: number; contrast: number }>
 
 /** Blue node illustrations with their own dials; `momo` is the runtime's `ai` node (see momoSystem.css). */
 const NODE_ICONS = ['user', 'watch', 'phone', 'momo', 'experts'] as const
@@ -34,6 +36,10 @@ const iconDials = () => ({
   x: [0, -60, 60, 1] as Tuple,
   y: [0, -60, 60, 1] as Tuple,
   scale: [1, 0.5, 1.6, 0.01] as Tuple,
+  /** Colour of the blue illustration: 1 is the artwork as drawn. */
+  saturation: [1, 0, 2.5, 0.01] as Tuple,
+  brightness: [1, 0.4, 1.8, 0.01] as Tuple,
+  contrast: [1, 0.4, 2, 0.01] as Tuple,
 })
 
 /** How the whole card arrives. Transform and opacity only; each frame is a "from" state that settles to the CSS value. */
@@ -41,34 +47,85 @@ const ENTRANCES = ['none', 'fade', 'rise', 'scale', 'tilt', 'cascade', 'unfold']
 type EntrancePreset = (typeof ENTRANCES)[number]
 const EASE_OUT = 'cubic-bezier(.2,.8,.2,1)'
 
+/** The visible card inside `.momo-system`, which is inset by the card scale dials. */
+function visibleCardRect(el: HTMLElement): DOMRect {
+  const r = el.getBoundingClientRect()
+  const cs = getComputedStyle(el)
+  const ix = (r.width * (parseFloat(cs.getPropertyValue('--system-card-inset-x')) || 0)) / 100
+  const iy = (r.height * (parseFloat(cs.getPropertyValue('--system-card-inset-y')) || 0)) / 100
+  return new DOMRect(r.left + ix, r.top + iy, r.width - 2 * ix, r.height - 2 * iy)
+}
+
+/**
+ * Card insets (% of the figure, like the scale dials) that give the visible card the artwork's `aspect`:
+ * the card keeps the height from `scaleY` and takes the matching width, or, if that is wider than the
+ * figure, the full width and the matching height. Null when no artwork shapes the card.
+ */
+function usePhotoShape(ref: RefObject<HTMLElement | null>, aspect: number | null, scaleY: number) {
+  const [inset, setInset] = useState<{ x: number; y: number } | null>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !aspect) return setInset(null)
+    const measure = () => {
+      const w = el.offsetWidth, h = el.offsetHeight
+      if (!w || !h) return
+      const width = Math.min(w, h * scaleY * aspect)
+      const height = width / aspect
+      setInset({ x: (1 - width / w) * 50, y: (1 - height / h) * 50 })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [ref, aspect, scaleY])
+  return aspect ? inset : null
+}
+
 /** Builds paused entrance animations at their first frame; the host plays them when the card is in view. */
 function entranceAnimations(card: HTMLElement, e: SequenceDials['entrance']): Animation[] {
   const d = e.distance
   const timing = (i = 0, extra: KeyframeAnimationOptions = {}): KeyframeAnimationOptions =>
     ({ duration: e.duration * 1000, delay: (e.delay + i * e.stagger) * 1000, easing: EASE_OUT, fill: 'backwards', ...extra })
-  const parts = [card.querySelector<HTMLElement>('.momo-system__brand'), card.querySelector<HTMLElement>('.momo-system__diagram')]
+  // The Momo lockup and the seal are printed on the card: they move with the surface, frame for frame.
+  const fixtures = [card.querySelector<HTMLElement>('.momo-system__brand'), card.querySelector<HTMLElement>('.momo-seal')]
     .filter((el): el is HTMLElement => !!el)
+  const diagram = card.querySelector<HTMLElement>('.momo-system__diagram')
   // A lone keyframe defaults to offset 1 (an exit); offset 0 makes it the start, settling to the CSS value.
   const from = (frame: Keyframe): Keyframe[] => [{ ...frame, offset: 0 }]
   const whole = (frame: Keyframe) => [card.animate(from(frame), timing())]
-  const content = () => parts.map((el, i) => el.animate(from({ opacity: 0, transform: `translateY(${d / 2}px)` }), timing(i + 1)))
+  const content = () => (diagram ? [diagram.animate(from({ opacity: 0, transform: `translateY(${d / 2}px)` }), timing(1))] : [])
+  // The surface's own frames, replayed on each fixture. `origin` is the surface's transform origin,
+  // given as a y in card px, re-expressed in the fixture's own box so a scale pivots on the same line.
+  const withSurface = (frames: Keyframe[], originY?: number) => fixtures.map((el) => el.animate(
+    originY == null ? frames : frames.map((f) => ({ ...f, transformOrigin: `center ${originY - el.offsetTop}px` })),
+    timing(0),
+  ))
+  const surfaceTop = () => card.offsetHeight * (parseFloat(getComputedStyle(card).getPropertyValue('--system-card-inset-y')) || 0) / 100
   switch (e.preset) {
     case 'fade': return whole({ opacity: 0 })
     case 'rise': return whole({ opacity: 0, transform: `translateY(${d}px)` })
     case 'scale': return whole({ opacity: 0, transform: `scale(${1 - d / 1000})` })
     case 'tilt': return whole({ opacity: 0, transform: `perspective(1600px) translateY(${d}px) rotateX(${Math.min(30, d / 4)}deg)` })
-    // Surface first, then the Momo lockup, then the diagram.
-    case 'cascade': return [
-      card.animate(from({ opacity: 0, transform: `translateY(${d}px)` }), timing(0, { pseudoElement: '::before' })),
-      card.animate(from({ opacity: 0 }), timing(0, { pseudoElement: '::after' })),
-      ...content(),
-    ]
-    // The surface opens from its top edge; the content fades up inside it.
-    case 'unfold': return [
-      card.animate([{ offset: 0, opacity: 0, transform: 'scaleY(0.4)', transformOrigin: 'top center' }, { offset: 1, transformOrigin: 'top center' }], timing(0, { pseudoElement: '::before' })),
-      card.animate(from({ opacity: 0 }), timing(0, { pseudoElement: '::after' })),
-      ...content(),
-    ]
+    // Surface (with its lockup and seal) first, then the diagram.
+    case 'cascade': {
+      const rise = from({ opacity: 0, transform: `translateY(${d}px)` })
+      return [
+        card.animate(rise, timing(0, { pseudoElement: '::before' })),
+        card.animate(from({ opacity: 0 }), timing(0, { pseudoElement: '::after' })),
+        ...withSurface(rise),
+        ...content(),
+      ]
+    }
+    // The surface opens from its top edge, carrying its lockup and seal; the diagram fades up inside it.
+    case 'unfold': {
+      const open: Keyframe[] = [{ offset: 0, opacity: 0, transform: 'scaleY(0.4)' }, { offset: 1 }]
+      return [
+        card.animate(open.map((f) => ({ ...f, transformOrigin: 'top center' })), timing(0, { pseudoElement: '::before' })),
+        card.animate(from({ opacity: 0 }), timing(0, { pseudoElement: '::after' })),
+        ...withSurface(open, surfaceTop()),
+        ...content(),
+      ]
+    }
     default: return []
   }
 }
@@ -80,10 +137,23 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
   motionSpeed: [1, 0.25, 3, 0.05] as Tuple,
   card: {
     show: true,
+    /** surface: the fill + gradient + glass dials below (shared with the story cards). paper / satin /
+     *  pewter / metal: a material in `tone`, matched to the seal artwork, on this card only (systemSurface.ts). */
+    finish: { type: 'select' as const, options: ['surface', ...MATERIAL_FINISHES], default: 'paper' },
+    tone: { type: 'color' as const, default: '#E3E4E6' },
     radius: [48, 0, 160, 1] as Tuple,
     fill: { type: 'color' as const, default: '#53BFFE' },
     scaleX: [1, 0.5, 1.5, 0.01] as Tuple,
     scaleY: [1, 0.5, 1.5, 0.01] as Tuple,
+  },
+  /** The whole card tilts under the cursor as if pressed at that point, then springs back flat. */
+  pushTilt: {
+    enabled: true,
+    tilt: [2.5, 0, 10, 0.1] as Tuple,
+    press: [0.99, 0.94, 1, 0.001] as Tuple,
+    stiffness: [120, 20, 400, 1] as Tuple,
+    damping: [18, 2, 60, 1] as Tuple,
+    perspective: [1600, 400, 4000, 10] as Tuple,
   },
   /** Mesh gradient over the fill. Palette presets set the four colours; pick `custom` to use the colour dials. */
   gradient: {
@@ -140,8 +210,10 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
   },
   icons: {
     circleColor: { type: 'color' as const, default: '#FFFFFF' },
-    /** Glass: a frosted white disc tinted by circleColor, with a white rim and soft shadow. Flat: the old tinted circle. */
-    circleStyle: { type: 'select' as const, options: ['glass', 'flat'], default: 'glass' },
+    /** Glass: a frosted white disc tinted by circleColor, with a white rim and soft shadow. Flat: the old tinted circle.
+     *  Embossed / debossed / ring / pearl: discs in the card's own tone (raised, pressed in, a pressed line, matte).
+     *  Ring art: the moulded ring artwork (public/work/momo/seal/ring.webp). None: no circle behind the icons. */
+    circleStyle: { type: 'select' as const, options: ['glass', 'flat', 'embossed', 'debossed', 'ring', 'pearl', 'ring-art', 'none'], default: 'glass' },
     /** Glass only: how much circleColor tints the disc's lower corner. */
     glassTint: [0.18, 0, 0.6, 0.01] as Tuple,
     /** Px between each blue node icon and its title (studio "Title gap"). */
@@ -154,9 +226,10 @@ export const MOMO_SYSTEM_SEQUENCE_CONFIG = {
     icons: { type: 'color' as const, default: '#5B8DEF' },
     arrows: { type: 'color' as const, default: '#5B8DEF' },
   },
-  /** Pressed "Clinically informed · Mental health" seal in the card's bottom-right corner. x/y are px on the
-   *  full-size card (+x right, +y down) from its default spot; scale 1 is 190px across. */
+  /** Pressed "Clinically informed · Wellness" seal in the card's bottom-right corner: scalloped or round
+   *  artwork. x/y are px on the full-size card (+x right, +y down) from its default spot; scale 1 is 190px across. */
   seal: {
+    style: { type: 'select' as const, options: [...SEAL_STYLES], default: 'scalloped' },
     scale: [1, 0.4, 2, 0.01] as Tuple,
     x: [0, -400, 200, 1] as Tuple,
     y: [0, -400, 200, 1] as Tuple,
@@ -224,11 +297,17 @@ export function MomoSystemFigure() {
     onAction: (action) => { if (action === 'entrance.replay') setEntranceKey((k) => k + 1) },
   })
   const speed = values as unknown as SequenceDials
-  const glass = speed.card.show && speed.glass.show ? speed.glass : null
-  const colors = cardColors(speed.card.show ? speed.card.fill : '#F5F5F5')
-  const surface = cardSurface(speed.card.fill, speed.gradient, glass)
+  const material = speed.card.show && speed.card.finish !== 'surface' ? speed.card.finish : null
+  const photo = material ? PHOTO_FINISHES[material] ?? null : null
+  // Phone layout: the diagram is taller than wide, so a photo can't set the card's shape; it crops instead.
+  const photoShaped = !!photo && !narrow
+  const photoInset = usePhotoShape(cardRef, photoShaped ? photo.aspect : null, speed.card.scaleY)
+  const glass = speed.card.show && speed.glass.show && !material ? speed.glass : null
+  const colors = cardColors(speed.card.show ? (material ? speed.card.tone : speed.card.fill) : '#F5F5F5')
+  const surface = material ? materialSurface(material, speed.card.tone, !!photo && narrow) : cardSurface(speed.card.fill, speed.gradient, glass)
   // The story art cards take this fill + gradient and apply their own glass (see systemSurface.ts).
   useEffect(() => publishSystemBase({ fill: speed.card.fill, gradient: speed.gradient }))
+  usePushTilt(cardRef, visibleCardRect, speed.pushTilt)
   const style = {
     '--system-card-fill': surface.fill,
     '--system-card-gradient': surface.gradient,
@@ -238,8 +317,9 @@ export function MomoSystemFigure() {
     '--system-card-opacity': speed.card.show ? 1 : 0,
     // Card size comes from insets (not a transform), so radius and shadow stay undistorted.
     '--system-card-radius': `${speed.card.radius}px`,
-    '--system-card-inset-x': `${((1 - speed.card.scaleX) * 50).toFixed(3)}%`,
-    '--system-card-inset-y': `${((1 - speed.card.scaleY) * 50).toFixed(3)}%`,
+    // A shaped photo finish overrides the card scale dials with the artwork's own proportions.
+    '--system-card-inset-x': photoInset ? `${photoInset.x.toFixed(3)}%` : `${((1 - speed.card.scaleX) * 50).toFixed(3)}%`,
+    '--system-card-inset-y': photoInset ? `${photoInset.y.toFixed(3)}%` : `${((1 - speed.card.scaleY) * 50).toFixed(3)}%`,
     '--system-card-shadow': speed.card.show && speed.shadow.show
       ? `${speed.shadow.x}px ${speed.shadow.y}px ${speed.shadow.blur}px ${speed.shadow.spread}px color-mix(in srgb, ${speed.shadow.color} ${Math.round(speed.shadow.opacity * 100)}%, transparent)`
       : '0 0 #0000',
@@ -265,6 +345,7 @@ export function MomoSystemFigure() {
       [`--system-${n}-x`, `${speed[`${n}Icon`].x}px`],
       [`--system-${n}-y`, `${speed[`${n}Icon`].y}px`],
       [`--system-${n}-scale`, speed[`${n}Icon`].scale],
+      [`--system-${n}-filter`, `saturate(${speed[`${n}Icon`].saturation}) brightness(${speed[`${n}Icon`].brightness}) contrast(${speed[`${n}Icon`].contrast})`],
     ])),
     '--system-card-ink': colors.ink,
     '--system-card-accent': colors.accent,
@@ -389,12 +470,14 @@ export function MomoSystemFigure() {
 
   return (
     <div ref={cardRef} className="case__figure momo-system" style={style} data-done={done} data-circles={speed.icons.circleStyle}>
-      <div className="momo-system__brand" aria-label="Momo">
+      {/* Photo finishes already carry the seal (and, for logo photos, the lockup); the lockup keeps its space
+          so the diagram doesn't shift. A cropped photo (phone layout) loses its lockup, so the card shows its own. */}
+      <div className="momo-system__brand" aria-label="Momo" style={photo?.logo && photoShaped ? { visibility: 'hidden' } : undefined}>
         <MomoMark className="momo-system__mark" color="var(--system-logo-color)" outline={speed.momoLogo.outline} smile={speed.momoLogo.smile} />
         <span className="momo-system__type" aria-hidden="true" />
       </div>
       <div ref={ref} className="momo-system__diagram" />
-      <MomoSeal />
+      {!photo && <MomoSeal style={speed.seal.style} />}
       <RestartButton onRestart={handleReplay} label="Replay diagram" />
     </div>
   )

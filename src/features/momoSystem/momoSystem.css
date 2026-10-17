@@ -52,9 +52,8 @@
   /* Static blur (never animated) so the blooms have no visible box edge outside the card. */
   filter: blur(48px);
 }
-/* Pressed seal (case study "seal" dials): sits in the visible card's bottom-right corner, sized and
-   offset in card units like the lockup. One tone slightly darker than the card; a white lip below-right
-   and a soft shade above-left read as letters pressed into the paper. */
+/* Pressed seal artwork (case study "seal" dials: style, scale, x, y): sits in the visible card's
+   bottom-right corner, sized and offset in card units like the lockup so it keeps its spot at every width. */
 .momo-system > .momo-seal {
   --u: min(1px, 100cqw / 928);
   position: absolute;
@@ -65,26 +64,7 @@
   height: auto;
   aspect-ratio: 1;
   pointer-events: none;
-  color: rgb(96 104 122 / 0.16);
-  filter: drop-shadow(0.6px 0.8px 0 rgb(255 255 255 / 0.95)) drop-shadow(-0.5px -0.6px 0.4px rgb(40 48 66 / 0.16));
   user-select: none;
-}
-.momo-seal__line,
-.momo-seal__mark line,
-.momo-seal__snake { fill: none; stroke: currentColor; }
-.momo-seal__line { stroke-width: 1.4; }
-.momo-seal__rim { stroke-width: 2.6; }
-.momo-seal__mark line { stroke-width: 3.2; stroke-linecap: round; }
-.momo-seal__snake { stroke-width: 2.6; stroke-linecap: round; }
-.momo-seal__dot,
-.momo-seal__mark circle,
-.momo-seal__mark path:not(.momo-seal__snake) { fill: currentColor; }
-.momo-seal__text {
-  fill: currentColor;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
 }
 /* The replay button sits in the visible card's corner (the card is inset by the scale dials), at the
    playground cards' transparency (Playground > restart: 0.3 / 0.6 on hover). It stays hidden until the
@@ -165,6 +145,32 @@
   filter: url(#story-glass-shadow);
 }
 .momo-system[data-circles='glass'] .story .node.is-on .node__halo { opacity: 1; }
+/* Paper discs (circleStyle: embossed / debossed / ring / pearl): drawn in the card's own tone so the
+   icons sit on the same pressed stock as the lockup and seal. All shown fully once a node is on. */
+.momo-system:is([data-circles='embossed'], [data-circles='debossed'], [data-circles='ring'], [data-circles='pearl'], [data-circles='ring-art']) .story .node.is-on .node__halo { opacity: 1; }
+/* Ring art (circleStyle: ring-art): the moulded ring artwork (public/work/momo/seal/ring.webp) fills each disc's box. */
+.momo-system[data-circles='ring-art'] .story .node__halo { fill: url(#story-ring-art); }
+/* No circle (circleStyle: none): the icons sit straight on the card. */
+.momo-system[data-circles='none'] .story .node__halo { display: none; }
+.momo-system[data-circles='embossed'] .story .node__halo {
+  fill: color-mix(in srgb, var(--system-card-fill, #f2f2f2), white 35%);
+  filter: url(#story-raise);
+}
+.momo-system[data-circles='debossed'] .story .node__halo {
+  fill: color-mix(in srgb, var(--system-card-fill, #f2f2f2), #8a90a0 6%);
+  filter: url(#story-press);
+}
+.momo-system[data-circles='ring'] .story .node__halo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--system-card-fill, #f2f2f2), #6a7080 22%);
+  stroke-width: 1.4;
+  filter: url(#story-rim);
+}
+.momo-system[data-circles='pearl'] .story .node__halo {
+  fill: color-mix(in srgb, var(--system-card-fill, #f2f2f2), white 55%);
+  stroke: color-mix(in srgb, var(--system-card-fill, #f2f2f2), #6a7080 12%);
+  stroke-width: 1;
+}
 /* Text colour dials (case study "text" group): node titles, arrow label text, lit label icons. */
 .momo-system .story .node text { fill: var(--system-title-color, var(--system-card-ink)); }
 .momo-system .story .lbl-row text { fill: var(--system-label-color, var(--system-card-ink)); }
@@ -194,11 +200,13 @@
    baked studio icon size (and Momo's baked position). Offsets are in diagram units. */
 .momo-system .story .node image { transform: translate(var(--n-x, 0px), var(--n-y, 0px)) scale(calc(var(--icon-scale, 1) * var(--n-scale, 1))); }
 .momo-system .story .node .momo-still { transform: translate(calc(var(--momo-x, 0) * 1px + var(--n-x, 0px)), calc(var(--momo-y, 0) * 1px + var(--n-y, 0px))) scale(calc(var(--icon-scale, 1) * var(--momo-scale, 1) * var(--n-scale, 1))); }
-.momo-system .story .node[data-node='user'] { --n-x: var(--system-user-x); --n-y: var(--system-user-y); --n-scale: var(--system-user-scale); }
-.momo-system .story .node[data-node='watch'] { --n-x: var(--system-watch-x); --n-y: var(--system-watch-y); --n-scale: var(--system-watch-scale); }
-.momo-system .story .node[data-node='phone'] { --n-x: var(--system-phone-x); --n-y: var(--system-phone-y); --n-scale: var(--system-phone-scale); }
-.momo-system .story .node[data-node='ai'] { --n-x: var(--system-momo-x); --n-y: var(--system-momo-y); --n-scale: var(--system-momo-scale); }
-.momo-system .story .node[data-node='experts'] { --n-x: var(--system-experts-x); --n-y: var(--system-experts-y); --n-scale: var(--system-experts-scale); }
+.momo-system .story .node[data-node='user'] { --n-x: var(--system-user-x); --n-y: var(--system-user-y); --n-scale: var(--system-user-scale); --n-filter: var(--system-user-filter); }
+.momo-system .story .node[data-node='watch'] { --n-x: var(--system-watch-x); --n-y: var(--system-watch-y); --n-scale: var(--system-watch-scale); --n-filter: var(--system-watch-filter); }
+.momo-system .story .node[data-node='phone'] { --n-x: var(--system-phone-x); --n-y: var(--system-phone-y); --n-scale: var(--system-phone-scale); --n-filter: var(--system-phone-filter); }
+.momo-system .story .node[data-node='ai'] { --n-x: var(--system-momo-x); --n-y: var(--system-momo-y); --n-scale: var(--system-momo-scale); --n-filter: var(--system-momo-filter); }
+.momo-system .story .node[data-node='experts'] { --n-x: var(--system-experts-x); --n-y: var(--system-experts-y); --n-scale: var(--system-experts-scale); --n-filter: var(--system-experts-filter); }
+/* Per-illustration colour (…Icon › saturation / brightness / contrast). */
+.momo-system .story .node image { filter: var(--n-filter, none); }
 .story .node.is-on .node__halo { opacity: var(--halo-op, 0.1); }
 .story[data-halo='off'] .node__halo { display: none; }
 .story .lbl-row { transform-box: fill-box; transform-origin: left center; }

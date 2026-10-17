@@ -889,9 +889,22 @@ export async function mountMomoSystem(root, { mode = 'embed', narrow = false, se
 
     const SVGNS = 'http://www.w3.org/2000/svg'
     // story-glass / story-glass-shadow: the case-study card's glassy node discs (stop colours come from CSS).
+    // story-raise / story-press / story-rim: embossed, debossed and ring discs that match a pressed-paper card.
     svg.insertAdjacentHTML('afterbegin', '<defs><filter id="story-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="story-braid" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.2"/></filter>'
       + '<linearGradient id="story-glass" x1="0" y1="0" x2="1" y2="1"><stop class="glass-stop-a" offset="0"/><stop class="glass-stop-b" offset="1"/></linearGradient>'
-      + '<filter id="story-glass-shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2a5976" flood-opacity="0.12"/></filter></defs>')
+      + '<filter id="story-glass-shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#2a5976" flood-opacity="0.12"/></filter>'
+      // Raised: white light up-left, soft grey shade down-right.
+      + '<filter id="story-raise" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="-3" dy="-3" stdDeviation="3" flood-color="#fff" flood-opacity="0.95"/><feDropShadow dx="4" dy="5" stdDeviation="5" flood-color="#5a6070" flood-opacity="0.22"/></filter>'
+      // Pressed: inner shade along the top-left inside edge, inner light along the bottom-right.
+      + '<filter id="story-press" x="-20%" y="-20%" width="140%" height="140%">'
+      + '<feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>'
+      + '<feOffset in="inv" dx="3" dy="4" result="o1"/><feGaussianBlur in="o1" stdDeviation="3.5" result="b1"/><feFlood flood-color="#4a5060" flood-opacity="0.32"/><feComposite in2="b1" operator="in"/><feComposite in2="SourceAlpha" operator="in" result="shade"/>'
+      + '<feOffset in="inv" dx="-3" dy="-3" result="o2"/><feGaussianBlur in="o2" stdDeviation="2.5" result="b2"/><feFlood flood-color="#fff" flood-opacity="0.9"/><feComposite in2="b2" operator="in"/><feComposite in2="SourceAlpha" operator="in" result="light"/>'
+      + '<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="shade"/><feMergeNode in="light"/></feMerge></filter>'
+      // Ring: a thin pressed line, light below-right and shade above-left (like the seal's rings).
+      + '<filter id="story-rim" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0.8" dy="1" stdDeviation="0.4" flood-color="#fff" flood-opacity="1"/><feDropShadow dx="-0.6" dy="-0.8" stdDeviation="0.5" flood-color="#3a4050" flood-opacity="0.25"/></filter>'
+      // Ring art: the moulded ring artwork stretched over each disc's own box (circleStyle: ring-art).
+      + '<pattern id="story-ring-art" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="/work/momo/seal/ring.webp" width="1" height="1" preserveAspectRatio="none"/></pattern></defs>')
     // The embed waits for start() (its host calls it once the figure is in view).
     let step = 0, playing = studio && !reduceMotion, started = 0, flows = [], labels = [], feel = FEELS.breathe
     // rewind() holds step 1 at its first instant (clock at -1, reveals paused) until start().

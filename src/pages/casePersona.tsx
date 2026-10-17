@@ -16,6 +16,8 @@ const text = (d: string) => ({ type: 'text' as const, default: d })
 
 const PROFILE_TAG_ICONS: LucideIcon[] = [CalendarDays, Briefcase, Watch, Brain, Sparkles, Building2]
 const FLOAT_TAG_ICONS: LucideIcon[] = [MessageCircle, RotateCcw, RefreshCw, CalendarCheck]
+/** Hover loop per pill icon (see .persona__tag-icon[data-motion] in CaseStudyPage.css). */
+const FLOAT_TAG_MOTION = ['talk', 'loop', 'reset', 'plan'] as const
 
 export const PERSONA_DIALS = {
   eyebrow: text('User persona'),
@@ -87,6 +89,8 @@ export const PERSONA_DIALS = {
 /** Key-context cards floating around the portrait. Text stays in `moments`. */
 /** Persona entrance presets: transform and opacity only. */
 const ENTRANCES = ['rise', 'fade', 'scale', 'pop', 'slide', 'focus', 'wipe', 'none'] as const
+/** Portrait swap presets (float › swap); each is a CSS transition keyed on data-swap. */
+const SWAP_TRANSITIONS = ['crossfade', 'blur', 'zoom', 'wipe', 'iris', 'rise', 'none'] as const
 export const FLOAT_DIALS = {
   /** Portrait entrance, replayed whenever the Persona section re-enters the viewport. */
   imageReveal: { type: 'select' as const, options: [...ENTRANCES], default: 'scale' },
@@ -126,6 +130,8 @@ export const FLOAT_DIALS = {
     text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
     pills: { type: 'select' as const, options: [...ENTRANCES], default: 'pop' },
     duration: [0.5, 0.2, 2, 0.05] as Tuple,
+    /** The text block's own duration (eyebrow, title, body); `duration` covers the pills and portrait. */
+    textDuration: [0.5, 0.2, 3, 0.05] as Tuple,
     distance: [24, 0, 120, 1] as Tuple,
     /** Between eyebrow, title and body. */
     textStagger: [0.05, 0, 0.6, 0.01] as Tuple,
@@ -177,20 +183,49 @@ export const FLOAT_DIALS = {
    * Floating bubbles. glass: white bubbles with glass tag pills, turned in perspective toward the
    * portrait · card: the flat white cards. Bubbles arrive once the sticker lands.
    * pills (glass look): frost: flat frosted glass · clear: barely-there glass, hairline edge ·
-   * tint: flat light-blue fill · outline: hairline only · raised: glossy 3D (highlight, under-shade, drop shadow).
-   * tint and blur tune the pills' glass.
+   * tint: flat light-blue fill · outline: hairline only · raised: glossy 3D (highlight, under-shade, drop shadow) ·
+   * thumb: the Momo thumbnail's glass pill (white glass, navy sentence-case text, blue icon).
+   * tint and blur tune the pills' glass; `frost` tunes the frost pill's two-colour gradient and glass.
    */
   bubbles: {
     look: { type: 'select' as const, options: ['glass', 'card'], default: 'glass' },
-    pills: { type: 'select' as const, options: ['frost', 'clear', 'tint', 'outline', 'raised'], default: 'frost' },
+    pills: { type: 'select' as const, options: ['frost', 'clear', 'tint', 'outline', 'raised', 'thumb'], default: 'frost' },
     tint: [0.08, 0, 0.4, 0.01] as Tuple,
     blur: [16, 0, 40, 1] as Tuple,
     radius: [30, 8, 48, 1] as Tuple,
+    /**
+     * Frost pill: a two-colour gradient (from → to at `angle`, `strength` its opacity), under a white
+     * `sheen` (milkiness). Glass: `saturate` (colour pulled through the blur), top `highlight`,
+     * `edge` (hairline opacity). Defaults keep the original single-blue frost.
+     */
+    frost: {
+      from: { type: 'color' as const, default: '#78AFFF' },
+      to: { type: 'color' as const, default: '#78AFFF' },
+      angle: [135, 0, 360, 1] as Tuple,
+      strength: [0.13, 0, 1, 0.01] as Tuple,
+      sheen: [0.35, 0, 1, 0.01] as Tuple,
+      saturate: [1.5, 0, 3, 0.05] as Tuple,
+      highlight: [0.7, 0, 1, 0.01] as Tuple,
+      edge: [0.22, 0, 1, 0.01] as Tuple,
+      _collapsed: true,
+    },
     /** Turn toward the portrait (deg); the outer edge comes forward. */
     turn: [14, 0, 45, 0.5] as Tuple,
     /** In-plane tilt (deg): left bubbles rise to the right, right bubbles dip. */
     roll: [3, 0, 12, 0.5] as Tuple,
     perspective: [900, 200, 3000, 10] as Tuple,
+    _collapsed: true,
+  },
+  /**
+   * Clicking a bubble's pill swaps the portrait to the calm version (overthinker-calm.jpg). A clicked
+   * pill stays pressed until the section scrolls fully off screen or the page reloads.
+   * crossfade: plain fade · blur: fades in out of focus · zoom: settles from slightly larger ·
+   * wipe: reveals left to right · iris: grows from the centre as a circle · rise: reveals bottom to top ·
+   * none: instant.
+   */
+  swap: {
+    transition: { type: 'select' as const, options: [...SWAP_TRANSITIONS], default: 'crossfade' },
+    duration: [0.9, 0.1, 3, 0.05] as Tuple,
     _collapsed: true,
   },
   _collapsed: false,
@@ -211,6 +246,7 @@ type Entrance = {
   text: string
   pills: string
   duration: number
+  textDuration: number
   distance: number
   textStagger: number
   pillStagger: number
@@ -237,7 +273,11 @@ export type Float = {
   entrance?: Entrance
   push?: Push
   sticker?: { show: boolean; tilt: number; stamp: number; lift: number; scale: number }
-  bubbles?: { look: string; pills: string; tint: number; blur: number; radius: number; turn: number; roll: number; perspective: number }
+  bubbles?: {
+    look: string; pills: string; tint: number; blur: number; radius: number; turn: number; roll: number; perspective: number
+    frost?: { from: string; to: string; angle: number; strength: number; sheen: number; saturate: number; highlight: number; edge: number }
+  }
+  swap?: { transition: (typeof SWAP_TRANSITIONS)[number]; duration: number }
 }
 
 /**
@@ -274,7 +314,7 @@ function entranceTimeline(e: Entrance, pills: number, floatsIn: number, imageIn 
   const image = 0
   const floats = image + imageIn + e.floatsDelay
   const text = step(floats + floatsIn + e.textGap, 3, e.textStagger)
-  const pillsStart = text[2] + e.duration + e.pillsGap
+  const pillsStart = text[2] + e.textDuration + e.pillsGap
   const pill = step(pillsStart, pills, e.pillStagger)
   return { text, pill, image, floats }
 }
@@ -442,6 +482,9 @@ export function PersonaSection({
   const wasLive = useRef(false)
   const [live, setLive] = useState(false)
   const [floatCycle, setFloatCycle] = useState(0)
+  // Bubble pills clicked this visit (float › swap). Any press swaps the portrait to the calm version;
+  // presses hold until the section leaves the viewport (or the page reloads).
+  const [pressed, setPressed] = useState<ReadonlySet<number>>(() => new Set())
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -460,6 +503,7 @@ export function PersonaSection({
         wasLive.current = false
         entrance().forEach((a) => { a.pause(); a.currentTime = 0 })
         setFloatCycle((cycle) => cycle + 1)
+        setPressed(new Set())
         setLive(false)
       }
     }, { threshold: [0, 0.1] })
@@ -498,6 +542,9 @@ export function PersonaSection({
   )
   const shows = (...modes: string[]) => float !== undefined && modes.includes(float.content)
   const quotesLayout = float?.quotes ?? 'floating'
+  // Only the built-in Momo portrait has a calm version to swap to; a custom `visual` (Filo) does not.
+  const swap = !visual && quotesLayout === 'floating' && float?.swap ? float.swap : null
+  const press = (i: number) => setPressed((prev) => (prev.has(i) ? prev : new Set(prev).add(i)))
   const setFloatPushRef = usePushBubbles(SCENES.length, float?.push ?? DEFAULT_PUSH)
   /** One quote's content, shared by every quote layout; `copy` renders plain text (marquee's repeat). */
   const quoteParts = (i: number, copy = false) => {
@@ -520,12 +567,29 @@ export function PersonaSection({
         {shows('title + quote', 'full') && field('h3', 'persona__moment-title', `Context ${i + 1} title`, `${n}Title`)}
         {field('p', 'persona__quote', `Context ${i + 1} quote`, `${n}Quote`)}
         {shows('quote + role') && field('p', 'persona__role', `Context ${i + 1} role`, `${n}Role`)}
-        {shows('quote + tag', 'full') && (
-          <p className="persona__tag">
-            <TagIcon size={14} strokeWidth={1.8} aria-hidden="true" />
-            {field('span', undefined, `Context ${i + 1} tag`, `${n}Tag`)}
-          </p>
-        )}
+        {shows('quote + tag', 'full') &&
+          (swap && !copy ? (
+            <p
+              className="persona__tag"
+              role="button"
+              tabIndex={0}
+              aria-pressed={pressed.has(i)}
+              onClick={() => press(i)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return
+                e.preventDefault()
+                press(i)
+              }}
+            >
+              <TagIcon className="persona__tag-icon" data-motion={FLOAT_TAG_MOTION[i]} size={14} strokeWidth={1.8} aria-hidden="true" />
+              {field('span', undefined, `Context ${i + 1} tag`, `${n}Tag`)}
+            </p>
+          ) : (
+            <p className="persona__tag">
+              <TagIcon className="persona__tag-icon" data-motion={FLOAT_TAG_MOTION[i]} size={14} strokeWidth={1.8} aria-hidden="true" />
+              {field('span', undefined, `Context ${i + 1} tag`, `${n}Tag`)}
+            </p>
+          ))}
       </>
     )
   }
@@ -562,9 +626,12 @@ export function PersonaSection({
       data-bubbles={float?.bubbles?.look}
       data-pills={float?.bubbles?.pills}
       data-live={live || undefined}
+      data-swap={swap?.transition}
+      data-swapped={pressed.size > 0 || undefined}
       style={
         {
           '--section-pad-top': `${p.spacing.top}px`,
+          ...(swap ? { '--swap-dur': `${swap.duration}s` } : {}),
           '--section-pad-bottom': `${p.spacing.bottom}px`,
           '--section-content-gap': `${p.spacing.contentGap}px`,
           ...(ent && timeline
@@ -573,6 +640,7 @@ export function PersonaSection({
                 '--pe-pills-kf': kf(ent.pills),
                 '--pe-image-kf': kf(float.imageReveal),
                 '--pe-dur': `${ent.duration}s`,
+                '--pe-text-dur': `${ent.textDuration}s`,
                 '--pe-dist': `${ent.distance}px`,
                 '--pe-text-0': `${timeline.text[0]}s`,
                 '--pe-text-1': `${timeline.text[1]}s`,
@@ -615,6 +683,18 @@ export function PersonaSection({
                 '--bubble-blur': `${glass.blur}px`,
                 '--bubble-r': `${glass.radius}px`,
                 '--bubble-perspective': `${glass.perspective}px`,
+                ...(glass.frost
+                  ? {
+                      '--frost-from': glass.frost.from,
+                      '--frost-to': glass.frost.to,
+                      '--frost-angle': `${glass.frost.angle}deg`,
+                      '--frost-strength': `${glass.frost.strength * 100}%`,
+                      '--frost-sheen': glass.frost.sheen,
+                      '--frost-saturate': glass.frost.saturate,
+                      '--frost-highlight': glass.frost.highlight,
+                      '--frost-edge': glass.frost.edge,
+                    }
+                  : {}),
               }
             : {}),
         } as CSSProperties
@@ -631,15 +711,29 @@ export function PersonaSection({
           <div className="persona__stage">
             <div className={sticker ? 'persona__sticker' : 'persona__portrait'}>
               {visual ?? (
-                <img
-                  className="persona__photo"
-                  src="/work/momo/persona/overthinker.jpg"
-                  alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
-                  width={1374}
-                  height={1145}
-                  loading="lazy"
-                  decoding="async"
-                />
+                <>
+                  <img
+                    className="persona__photo"
+                    src="/work/momo/persona/overthinker.jpg"
+                    alt="Illustration: a young woman at her desk, chin on hand, wearing a smartwatch, with a small worried cloud beside her"
+                    width={1374}
+                    height={1144}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  {swap && (
+                    <img
+                      className="persona__photo-alt"
+                      src="/work/momo/persona/overthinker-calm.jpg"
+                      alt={pressed.size > 0 ? 'Illustration: the same young woman, now smiling and at ease, with a confident cloud beside her' : ''}
+                      aria-hidden={pressed.size === 0}
+                      width={1374}
+                      height={1144}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                </>
               )}
             </div>
             {float && quotesLayout === 'floating' && (

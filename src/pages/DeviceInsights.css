@@ -101,12 +101,36 @@
    the phone 2.4px left of its frame: the trace runs under both devices so its ends meet the hardware. */
 .mc-link { position: relative; z-index: 1; width: 190px; height: 120px; flex-shrink: 0; }
 .mc-trace { position: absolute; top: 0; left: -20px; width: calc(100% + 26px); max-width: none; height: 100%; overflow: visible; }
+/* Same behaviour and glow as the Selected Works thumbnail's heartbeat (momoThumb.css .mt-hb), in the
+   accent blue for the light page: hidden while the Watch senses; on "send" it draws from the Watch
+   to the iPhone, then a glowing pulse runs along it over a dimmed line. Once the iPhone has the
+   nudge, the pulse finishes its run (DeviceInsights sets data-out on its next iteration) and the
+   line draws itself out the way it came in, left to right. It resets (undrawn) only while hidden. */
+.mc-trace { opacity: 0; transition: opacity 0.45s ease; }
 .mc-trace path { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.mc-trace__base { stroke: #d4d1ce; }
-.mc-trace__live { stroke: var(--accent); stroke-width: 2.4; stroke-dasharray: 30 130; stroke-dashoffset: 30; opacity: 0; }
-.mc-link[data-state='send'] .mc-trace__live { opacity: 1; animation: mc-trace 1.15s linear infinite; }
-.mc-link[data-state='nudge'] .mc-trace__live { opacity: 1; stroke-dasharray: 100 0; stroke-dashoffset: 0; }
-@keyframes mc-trace { from { stroke-dashoffset: 30; } to { stroke-dashoffset: -100; } }
+/* The line itself is always the soft 45% blue (never solid); only the short pulse runs at full blue. */
+.mc-trace__base {
+  stroke: rgb(79 156 249 / 0.45);
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 0s 0.45s;
+  filter: drop-shadow(0 0 4px rgb(79 156 249 / 0.45));
+}
+.mc-trace__live { stroke: var(--accent); stroke-width: 2.6; stroke-dasharray: 8 92; opacity: 0; filter: drop-shadow(0 0 6px var(--accent)); }
+.mc-link:is([data-state='send'], [data-state='nudge']) .mc-trace { opacity: 1; }
+.mc-link:is([data-state='send'], [data-state='nudge']) .mc-trace__base {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.3s cubic-bezier(0.45, 0, 0.25, 1) 0.1s;
+}
+.mc-link:is([data-state='send'], [data-state='nudge']) .mc-trace__live { opacity: 1; transition: opacity 0.3s 1.4s; animation: mc-trace 1.6s linear 1.4s infinite; }
+/* Exit: no further pulse; the line's tail runs from the Watch to the iPhone until nothing is left. */
+.mc-link[data-out] .mc-trace__live { opacity: 0; transition: none; animation: none; }
+.mc-link[data-out] .mc-trace__base { stroke-dashoffset: -100; transition: stroke-dashoffset 1.3s cubic-bezier(0.45, 0, 0.25, 1); }
+@keyframes mc-trace { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .mc-trace { opacity: 1; }
+  .mc-trace__base { stroke-dashoffset: 0; }
+}
 
 /* Screens + transitions */
 .mc-screen { position: absolute; inset: 0; }
@@ -114,6 +138,8 @@
 .mc-screen--leaving { z-index: 0; pointer-events: none; animation: mc-screen-out var(--tt) ease both; }
 @keyframes mc-screen-in { from { opacity: 0; filter: blur(8px); transform: translateY(10px) scale(.985); } }
 @keyframes mc-screen-out { to { opacity: 0; filter: blur(6px); } }
+/* The Watch switches screens three times as fast as the iPhone. */
+.mc-watch { --tt: 233ms; }
 @keyframes mc-fade-in { from { opacity: 0; } }
 @keyframes mc-rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes mc-beat { 50% { scale: 1.35; } }
@@ -122,7 +148,36 @@
 .mc-w { position: relative; padding: 30px 14px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; height: 100%; }
 .mc-w--center { justify-content: center; padding-top: 22px; }
 .mc-time { position: absolute; top: 13px; right: 20px; font-size: 11px; font-weight: 600; color: #fff; }
-.mc-time--left { right: auto; left: 22px; color: var(--accent); }
+/* Case study Watch: the status row sits above the crossfading screens and never animates. */
+.mc-watch__head { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+/* Momo logo as the Watch's app label, shared by the case study and the Selected Works thumbnail: the
+   case study's lockup (MomoWelcome) at its proportions — mark 19.8 : gap 2.4 : wordmark 37.8 (widths).
+   Scale, position, colour and stroke widths come from DialKit › MomoThumbnail › watchLogo (--logo-*,
+   set by watchLogoVars); x/y are Watch-screen px before any card scale. */
+.mc-logo {
+  position: absolute;
+  left: var(--logo-x, 22px);
+  top: var(--logo-y, 13px);
+  display: flex;
+  align-items: center;
+  gap: var(--logo-gap, calc(19px * 2.4 / 19.8));
+  color: var(--logo-color, #fff);
+  scale: var(--logo-scale, 1);
+  transform-origin: 0 50%;
+  line-height: 1;
+}
+.mc-logo__mark { width: 19px; height: auto; flex: none; }
+.mc-logo__mark > path { stroke-width: var(--logo-outline, 4.5); }
+.mc-logo__mark g > path:last-child { stroke-width: var(--logo-smile, 3.4); }
+/* The wordmark is the case study's image (hero/momo-type.png, 423 × 174), masked so it takes the colour. */
+.mc-logo__word {
+  width: calc(19px * 37.8 / 19.8);
+  aspect-ratio: 423 / 174;
+  flex: none;
+  translate: 0 var(--logo-text-y, 0px);
+  background: currentColor;
+  mask: url('/work/momo/hero/momo-type.png') center / contain no-repeat;
+}
 .mc-title { font-weight: 600; font-size: 14px; line-height: 1.15; margin-top: 6px; text-wrap: balance; }
 .mc-body { color: #b0b0b5; font-size: 10.5px; margin-top: 3px; line-height: 1.3; text-wrap: balance; }
 .mc-momo { position: relative; width: 64px; height: 64px; }
@@ -135,7 +190,7 @@
 .mc-signals div { display: flex; gap: 6px; align-items: center; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; animation: mc-fade-in .5s both; animation-delay: calc(var(--i) * 450ms + 400ms); }
 .mc-signals svg { color: var(--accent); flex-shrink: 0; }
 .mc-signals div:first-child svg { color: #ff6b81; }
-.mc-fly img { animation: mc-fly 2.8s .3s cubic-bezier(.6,0,.3,1) both; }
+.mc-fly img { animation: mc-fly 0.93s .1s cubic-bezier(.6,0,.3,1) both; }
 @keyframes mc-fly { 45% { translate: 0 -6px; scale: 1.05; } 100% { translate: 160% -30%; scale: .5; opacity: 0; } }
 .mc-trail { display: flex; gap: 5px; margin: -8px 0 4px; }
 .mc-trail i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); animation: mc-fade-in .5s both alternate infinite; }
@@ -149,7 +204,8 @@
 .mc-lock { position: absolute; left: calc(-46px * var(--k)); top: calc(-39px * var(--k)); width: calc(874px * var(--k)); height: calc(1780px * var(--k)); container-type: inline-size; }
 .mc-lock__bg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mc-lock::after { content: ''; position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
-.mc-lock[data-dim]::after { opacity: .62; }
+/* Screen off (fully black) until the nudge wakes it. */
+.mc-lock[data-dim]::after { opacity: 1; }
 .mc-note { position: absolute; left: 8.15%; right: 8.15%; top: 36%; display: grid; grid-template-columns: 7.8cqw 1fr; column-gap: 2.7cqw; padding: 3.3cqw 3.5cqw 3.4cqw 2.7cqw; border-radius: 5cqw; background: rgb(245 245 247 / .62); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); color: #111; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; font-size: 3.6cqw; line-height: 1.25; letter-spacing: -0.01em; animation: mc-note-in .7s .3s cubic-bezier(.22,1,.36,1) both; }
 @keyframes mc-note-in { from { opacity: 0; translate: 0 -24px; scale: .96; } }
 .mc-note__icon { grid-row: 1 / 3; width: 7.8cqw; height: 7.8cqw; border-radius: 1.75cqw; background: #eaf5ff url('/work/momo/intro/momo-open.webp') var(--momo-x) var(--momo-y) / var(--momo-size) no-repeat; }
