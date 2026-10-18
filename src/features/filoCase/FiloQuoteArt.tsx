@@ -33,6 +33,8 @@ const CONFIG = {
     mobileHeight: [400, 240, 600, 1] as Tuple,
     /** Card fill: the warm off-white of the card mockups. */
     fill: { type: 'color' as const, default: '#FBF8F6' },
+    /** Quote and role typeface: the case study's Beatrice, or Inter (Inter has no italic, so the quote's slant is synthesized). */
+    font: { type: 'select' as const, options: ['Beatrice', 'Inter'], default: 'Beatrice' },
   },
   /** Drop shadow under every card. The strip clips its overflow, so it gets room for the shadow. */
   shadow: {
@@ -76,7 +78,7 @@ const ART: Partial<Record<number, Art>> = {
 export function FiloQuoteArt({ index }: { index: number }) {
   const dials = useTuning('Filo quote art', CONFIG)
   const markerRef = useRef<HTMLSpanElement & HTMLImageElement>(null)
-  const { width, height, gap, text, mobileHeight, fill } = dials.card
+  const { width, height, gap, text, mobileHeight, fill, font } = dials.card
   const s = dials.shadow
   const shadow = s.show ? `0 ${s.y}px ${s.blur}px ${s.spread}px ${rgba(s.color, s.opacity)}` : 'none'
   const { scale: stripScale, play } = dials.strip
@@ -93,13 +95,14 @@ export function FiloQuoteArt({ index }: { index: number }) {
     card.style.setProperty('--qa-card-h-m', `${mobileHeight}px`)
     card.style.setProperty('--qa-text', `${text}%`)
     card.style.setProperty('--qa-card-fill', fill)
+    card.dataset.qaFont = font
     card.style.setProperty('--qa-card-shadow', shadow)
     const strip = card.closest<HTMLElement>('.persona__quotes')
     strip?.style.setProperty('--qa-shadow-pad', `${shadowPad}px`)
     strip?.style.setProperty('--qa-strip-scale', `${stripScale}`)
     strip?.style.setProperty('--qa-gap', `${gap}px`)
     strip?.toggleAttribute('data-qa-paused', !play)
-  }, [width, height, gap, text, mobileHeight, fill, shadow, shadowPad, stripScale, play])
+  }, [width, height, gap, text, mobileHeight, fill, font, shadow, shadowPad, stripScale, play])
 
   const art = ART[index]
   if (!art) return <span ref={markerRef} hidden />
