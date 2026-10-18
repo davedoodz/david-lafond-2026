@@ -30,7 +30,8 @@
   max-width: var(--column);
   margin-top: 40px;
   font-size: var(--story-size-d, var(--text-body));
-  line-height: 1.2;
+  /* Same leading as the Work page intro (Hero › spacing › introLineHeight, 1.56). */
+  line-height: 1.56;
   color: var(--stone-600);
   white-space: pre-wrap;
 }
