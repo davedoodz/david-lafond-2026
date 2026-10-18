@@ -15,6 +15,18 @@
 [data-quotes] .persona__quote-item[data-filo-quote][data-qa-font='Inter'] * {
   font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif;
 }
+/* Quote type dials (Filo quote art › quoteType); the defaults match the marquee quote. */
+[data-quotes] .persona__quote-item[data-filo-quote] .persona__quote {
+  font-size: var(--qa-quote-size, 22px);
+  font-weight: var(--qa-quote-weight, 400);
+  letter-spacing: var(--qa-quote-spacing, -0.64px);
+  line-height: var(--qa-quote-leading, 1.3);
+}
+@media (max-width: 640px) {
+  [data-quotes] .persona__quote-item[data-filo-quote] .persona__quote {
+    font-size: var(--qa-quote-size-m, 15.4px);
+  }
+}
 /* Filo: the strip opens the persona section, between the research video and the persona copy.
    The strip clips its overflow, and so does the persona section (overflow: clip), so the strip is
    padded for the cards' shadow; that padding is taken back out of the layout above and below.
