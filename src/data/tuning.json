@@ -481,7 +481,7 @@
   },
   "About": {
     "heading": "Wanna hear my short story?",
-    "story": "I’ve always felt like a bit of a misfit.\n\nNever quite fitting in, and often feeling like an imposter\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nFrom working in Canadian hospitals as a pre-med to working as an architect across continents, and eventually pitching prototypes to labs at MIT.\n\nI’ve changed \"career\" directions more than once, but it's usually because I found some new skill I couldn’t stop obsessing about.\n\nNow, that new skill is something called \"product design\". \n\nAnd I'm loving it.\n\nI'm still learning, still experimenting, and definitely still figuring things out.\n\nThe world is moving fast, and the future can feel uncertain.\n\nYet I've never felt more empowered to learn and create.\n\nAnd maybe that's the beauty of being a misfit. \n\nYou learn to find your way through the unknown.\n\nAnd right now, the possibilities truly feel endless.\n\nMan, what a time to be alive.\n\nTo designing the future,\n\n- DL",
+    "story": "I’ve always felt like a bit of a misfit.\n\nNever quite fitting in, and often feeling like an imposter\n\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nFrom working in Canadian hospitals as a pre-med to working as an architect across continents, and eventually pitching prototypes to labs at MIT.\n\nI’ve changed \"career\" directions more than once, but it's usually because I found some new skill I couldn’t stop obsessing about.\n\nNow, that new skill is something called \"product design\". \n\nAnd I'm loving it.\n\nI'm still learning, still experimenting, and definitely still figuring things out.\n\nThe world is moving fast, and the future can feel uncertain.\n\nYet I've never felt more empowered to learn and create.\n\nAnd maybe that's the beauty of being a misfit. \n\nYou learn to find your way through the unknown.\n\nAnd right now, the possibilities truly feel endless.\n\nMan, what a time to be alive.\n\nTo designing the future,\n\n- DL",
     "sheet": {
       "travel": 1.5,
       "depth": 2
@@ -528,6 +528,7 @@
       "yDesktop": 42
     },
     "cards": {
+      "xDesktop": 23,
       "yDesktop": -36
     },
     "text": {
