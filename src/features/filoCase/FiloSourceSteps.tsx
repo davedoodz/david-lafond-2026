@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useTuning } from '../../tuning/useTuning'
 import './filoSourceSteps.css'
 
 /**
@@ -29,15 +30,20 @@ const OPEN_CHECKS = ['Heat tolerance', 'Seam performance', 'Pilling']
 
 const Logo = () => <img className="fss-logo" src="/work/filo/filo-mark.webp" width={990} height={466} alt="Filo" />
 
-const StatusBar = () => <div className="fss-status" aria-hidden="true">
-  <span>9:41</span>
-  <svg viewBox="0 0 46 12" fill="currentColor">
-    <rect x="0" y="7.5" width="3" height="4.5" rx=".8" /><rect x="4.5" y="5.5" width="3" height="6.5" rx=".8" /><rect x="9" y="3" width="3" height="9" rx=".8" /><rect x="13.5" y=".5" width="3" height="11.5" rx=".8" />
-    <path d="M24.5 3.6a7.6 7.6 0 0 1 9.8 0l-1.3 1.4a5.7 5.7 0 0 0-7.2 0zm2.2 2.4a4.3 4.3 0 0 1 5.4 0l-2.7 3z" />
-    <rect x="37.5" y="1.5" width="7" height="9" rx="2.2" transform="rotate(90 41 6)" fill="none" stroke="currentColor" opacity=".45" />
-    <rect x="37.4" y="3.4" width="7.2" height="5.2" rx="1.2" />
-  </svg>
-</div>
+/**
+ * The Momo case study's in-app status bar (phoneFilm.js `statusBar`, with its saved Status icons gaps:
+ * Wi-Fi 6.1pt, battery 7.4pt), drawn in the same 390pt screen units so it scales with the phone and
+ * sits level with the frame's Dynamic Island.
+ */
+const StatusBar = () => <svg className="fss-status" viewBox="0 0 390 54" aria-hidden="true">
+  <text x="52" y="30" dominantBaseline="middle">9:41</text>
+  {[4.3, 5.9, 8.4, 10.7].map((h, i) => <rect key={i} x={278.2 + i * 4.93} y={34 - h} width="3.3" height={h} rx="1.1" />)}
+  <path className="fss-status__wifi" d="M303.28 26.25A11.1 11.1 0 0 1 318.12 26.25M306.05 29.33A6.95 6.95 0 0 1 315.35 29.33" />
+  <path className="fss-status__wedge" d="M310.7 33.8L308.9 31.79A2.7 2.7 0 0 1 312.5 31.79Z" />
+  <rect className="fss-status__cell" x="325.05" y="23.7" width="20" height="11" rx="4" />
+  <path opacity=".4" d="M346.25 27.45h.7a.7.7 0 0 1 .7.7v2.1a.7.7 0 0 1-.7.7h-.7z" />
+  <rect x="326.4" y="25" width="17.3" height="8.4" rx="2.5" />
+</svg>
 
 function ScanLayer() {
   return <div className="fss-layer fss-layer--scan">
@@ -109,11 +115,37 @@ function TapPhone() {
   </div>
 }
 
+/**
+ * Step 1: the innovator's desktop app, cross-fading through its screens on the same on-screen clock
+ * as the phone. Each frame holds, then fades into the next; the last fades back into the first.
+ */
+const APP_FRAMES = [
+  ['app-materials', 'Filo materials library: Bacterial Cellulose saved as a draft beside published materials, with its summary and properties.'],
+  ['app-add-material', 'Add a new material: the innovator uploads a datasheet, lab report, OEKO-TEX certificate and material photos.'],
+  ['app-extracting', 'Extracting information: Filo reads the documents into a draft record, each value linked to its source document.'],
+  ['app-review', 'Review and confirm: Bacterial Cellulose is ready to publish, every property traced to a page of its source document.'],
+] as const
+
+function AppDeck() {
+  return <div className="fss-app">
+    {APP_FRAMES.map(([file, alt], i) => <img
+      key={file}
+      className="fss-app__frame"
+      src={`/work/filo/steps/${file}.webp`}
+      width={1536}
+      height={1024}
+      loading="lazy"
+      decoding="async"
+      alt={alt}
+      style={{ '--i': i } as CSSProperties}
+    />)}
+  </div>
+}
+
 const STEPS: { title: string; visual: ReactNode }[] = [
   {
     title: 'Material innovator\nprovides initial data.',
-    visual: <img className="fss-crop fss-crop--card" src="/work/filo/steps/data-card.webp" width={450} height={530} loading="lazy" decoding="async"
-      alt="Initial data card: 100% bacterial cellulose, 120 gsm, 145 cm wide, care max 60°C, OEKO-TEX pending, spec sheet and lab report." />,
+    visual: <AppDeck />,
   },
   {
     title: 'Sample arrives\nwith a Filo tag.',
@@ -126,27 +158,55 @@ const STEPS: { title: string; visual: ReactNode }[] = [
   },
 ]
 
+type Tuple = [number, number, number, number]
+const CONFIG = {
+  /** Step 1's desktop app loop. */
+  app: {
+    /** How long each of the four screens stays up, fade included (s). */
+    seconds: [3.5, 1.5, 8, 0.1] as Tuple,
+  },
+  /** Step 3's phone and tag, as one group. Defaults centre the group under its number and title. */
+  phone: {
+    /** Size of the phone and tag together (1 = the 272px phone). */
+    scale: [0.8, 0.5, 1.2, 0.01] as Tuple,
+    /** Move from the centred spot (px): positive x goes right, positive y goes down. */
+    x: [0, -200, 200, 1] as Tuple,
+    y: [0, -200, 200, 1] as Tuple,
+  },
+}
+
 export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: number } }) {
-  const ref = useRef<HTMLElement>(null)
-  // The phone loop runs only while the section is on screen, so it always starts on "scanning".
+  const dials = useTuning('Filo source steps', CONFIG)
+  const ref = useRef<HTMLOListElement>(null)
+  // Each step's loop runs only while that step is on screen, so the app starts on its first screen
+  // and the phone on "scanning" when the reader reaches them.
   useEffect(() => {
-    const section = ref.current
-    if (!section) return
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) section.dataset.playing = ''
-      else delete section.dataset.playing
+    const steps = ref.current?.children
+    if (!steps) return
+    const observer = new IntersectionObserver(entries => {
+      for (const { target, isIntersecting } of entries) {
+        const step = target as HTMLElement
+        if (isIntersecting) step.dataset.playing = ''
+        else delete step.dataset.playing
+      }
     }, { threshold: 0.2 })
-    observer.observe(section)
+    for (const step of steps) observer.observe(step)
     return () => observer.disconnect()
   }, [])
   return <section
-    ref={ref}
     className="case__section filo-steps"
     data-section="source"
     aria-label="From initial material data to an open Technical File"
-    style={{ '--section-pad-top': `${spacing.top}px`, '--section-pad-bottom': `${spacing.bottom}px` } as CSSProperties}
+    style={{
+      '--section-pad-top': `${spacing.top}px`,
+      '--section-pad-bottom': `${spacing.bottom}px`,
+      '--fss-app-cycle': `${dials.app.seconds * APP_FRAMES.length}s`,
+      '--fss-phone-scale': dials.phone.scale,
+      '--fss-phone-x': `${dials.phone.x}px`,
+      '--fss-phone-y': `${dials.phone.y}px`,
+    } as CSSProperties}
   >
-    <ol className="fss-steps">
+    <ol ref={ref} className="fss-steps">
       {STEPS.map((step, i) => <li key={i} className="fss-step">
         <span className="fss-num case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')}</span>
         <h3 className="fss-title">{step.title}</h3>
