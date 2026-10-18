@@ -38,7 +38,6 @@
 .filo-film--phone { max-width: 350px; }
 .filo-film--detail { max-width: 310px; }
 .filo-film--upper { max-width: 350px; }
-.filo-films--source .filo-film:last-child { align-self: start; margin-top: 62px; }
 .filo-films--evidence .filo-films__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 64px; }
 .filo-films--evidence .filo-film { grid-column: span 2; }
 .filo-films--evidence .filo-film:nth-child(n+4) { grid-column: span 3; }

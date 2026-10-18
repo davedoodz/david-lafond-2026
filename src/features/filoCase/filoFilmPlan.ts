@@ -1,5 +1,5 @@
 export type FilmCrop = 'phone' | 'detail' | 'upper'
-export type FilmGroup = 'source' | 'evidence' | 'scale' | 'handoff'
+export type FilmGroup = 'evidence' | 'scale' | 'handoff'
 export type FiloFilm = { id: string; label: string; crop: FilmCrop; posterScene: number }
 
 /** Coordinates on the studio's 720 × 1040 transparent film canvas. */
@@ -27,9 +27,10 @@ export const FILO_FILMS: Record<string, FiloFilm> = {
   'flow-15': { id: 'flow-15', label: 'Carry the learning into the next collection', crop: 'upper', posterScene: 2 },
 }
 
-/** Thirteen studio flows, each once (flow-01 and flow-04 left with the hero, now the hang tag). The lifecycle reel remains reserved for the intro. */
+/** Ten studio flows, each once. flow-01 and flow-04 left with the hero (flow-04 now plays in the Proposal);
+    flow-02, flow-03 and flow-12 left with the source section, now the four-step FiloSourceSteps.
+    The lifecycle reel remains reserved for the intro. */
 export const FILM_GROUPS: Record<FilmGroup, string[]> = {
-  source: ['flow-02', 'flow-03', 'flow-12'],
   evidence: ['flow-05', 'flow-06', 'flow-09', 'flow-08', 'flow-10'],
   scale: ['flow-07', 'flow-13'],
   handoff: ['flow-11', 'flow-14', 'flow-15'],

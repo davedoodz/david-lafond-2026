@@ -10,20 +10,32 @@ type StoryCopy = Pick<Story, 'problemLabel' | 'problemTitle' | 'problemBody' | '
 export type FiloStorySettings = StoryCopy & {
   textReveal: TextReveal
   gapImage: { scale: number; x: number; y: number }
-  proposalImage: { scale: number; x: number; y: number }
+  proposalImage: { image: string; scale: number; x: number; y: number }
   products: { show: boolean; size: number; spread: number; spin: number }
 }
 
-/** The 1127 × 1396 photo of a phone over the Filo tag and swatches; its screen was blue, now transparent. */
+/** The 1127 × 1396 photos of a phone over the Filo tag and swatches; their screens were blue, now transparent. */
 const OPPORTUNITY_PHOTO = { width: 1127, height: 1396 }
 /** The screen inside the bezel of the 920 × 1844 phone films (studio 'phone' crop at 2×). */
 const FILM_SCREEN = { x: 65, y: 63, width: 792, height: 1715 }
 /**
- * Projects FILM_SCREEN onto the photo's screen. Fitted to the four straight edges of the blue screen
- * and pushed 3px past them, so the bezel hides the seam and no gap can show at the edges. The
- * photo's and the film's Dynamic Islands land within 2px of each other.
+ * Per photo (DialKit › story › proposalImage › image): the keyed photo, its screen mask, and the warp
+ * projecting FILM_SCREEN onto its screen. Each warp is fitted to the four straight edges of that photo's
+ * blue screen and pushed 3px past them, so the bezel hides the seam and no gap can show at the edges.
+ * Both photos' Dynamic Islands land within 5px of the film's.
  */
-const SCREEN_WARP = 'matrix3d(0.518932, -0.113517, 0, 2.29135e-06, 0.174382, 0.315426, 0, -5.46061e-05, 0, 0, 1, 0, 239.982, 103.016, 0, 1)'
+const OPPORTUNITY_PHOTOS: Record<string, { phone: string; mask: string; warp: string }> = {
+  'Green swatches': {
+    phone: '/work/filo/story/opportunity-phone.webp',
+    mask: '/work/filo/story/opportunity-screen-mask.webp',
+    warp: 'matrix3d(0.518932, -0.113517, 0, 2.29135e-06, 0.174382, 0.315426, 0, -5.46061e-05, 0, 0, 1, 0, 239.982, 103.016, 0, 1)',
+  },
+  'Orange swatches': {
+    phone: '/work/filo/story/opportunity-phone-2.webp',
+    mask: '/work/filo/story/opportunity-screen-mask-2.webp',
+    warp: 'matrix3d(0.521914, -0.111371, 0, 9.46491e-06, 0.174494, 0.318496, 0, -5.03511e-05, 0, 0, 1, 0, 239.6, 100.902, 0, 1)',
+  },
+}
 
 /** Products made with new materials, turning beside the proposal image. Each sheet is 36 transparent
     views in a 6 × 6 grid, row by row; `view` is the sheet's own px per view. */
@@ -160,7 +172,8 @@ function ProposalProducts({ spin }: { spin: number }) {
 }
 
 /** The tag-to-record prototype (flow-04) playing on the photographed phone, under its bezel. */
-function Opportunity({ productSpin }: { productSpin: number | null }) {
+function Opportunity({ image, productSpin }: { image: string; productSpin: number | null }) {
+  const photo = OPPORTUNITY_PHOTOS[image] ?? OPPORTUNITY_PHOTOS['Green swatches']
   const hostRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   useEffect(() => {
@@ -199,15 +212,15 @@ function Opportunity({ productSpin }: { productSpin: number | null }) {
   return <>
   <div className="fs-opp" ref={hostRef}>
     <div className="fs-opp-stage" style={{ width: OPPORTUNITY_PHOTO.width, height: OPPORTUNITY_PHOTO.height }}>
-      <div className="fs-opp-screen">
-        <div className="fs-opp-warp" style={{ width: FILM_SCREEN.width, height: FILM_SCREEN.height, transform: SCREEN_WARP }}>
+      <div className="fs-opp-screen" style={{ '--fs-opp-mask': `url(${photo.mask})` } as CSSProperties}>
+        <div className="fs-opp-warp" style={{ width: FILM_SCREEN.width, height: FILM_SCREEN.height, transform: photo.warp }}>
           <video ref={videoRef} width={920} height={1844} style={{ left: -FILM_SCREEN.x, top: -FILM_SCREEN.y }} poster="/work/filo/films/flow-04.webp" muted loop playsInline preload="none" disablePictureInPicture>
             <source data-src="/work/filo/films/flow-04.mov" type={'video/quicktime; codecs="hvc1"'} />
             <source data-src="/work/filo/films/flow-04.webm" type="video/webm" />
           </video>
         </div>
       </div>
-      <img className="fs-opp-phone" src="/work/filo/story/opportunity-phone.webp" width={OPPORTUNITY_PHOTO.width} height={OPPORTUNITY_PHOTO.height} alt="" loading="lazy" decoding="async" draggable={false} />
+      <img className="fs-opp-phone" src={photo.phone} width={OPPORTUNITY_PHOTO.width} height={OPPORTUNITY_PHOTO.height} alt="" loading="lazy" decoding="async" draggable={false} />
     </div>
   </div>
   {productSpin !== null && <ProposalProducts spin={productSpin} />}
@@ -251,7 +264,7 @@ export function FiloStory({ s, edit }: { s: FiloStorySettings; edit: (path: stri
     ['problem', s.problemLabel, s.problemTitle, s.problemBody,
       'A technical designer at her desk calls a supplier, sketches, sews a sample, checks a swatch and types up the result.', <FiloPersonaLoop key="gap" alt="" />],
     ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody,
-      'A phone held over a Filo tag on fabric swatches plays the prototype: tap the sample and its Technical File opens.', <Opportunity key="opportunity" productSpin={s.products.show ? s.products.spin : null} />],
+      'A phone held over a Filo tag on fabric swatches plays the prototype: tap the sample and its Technical File opens.', <Opportunity key="opportunity" image={s.proposalImage.image} productSpin={s.products.show ? s.products.spin : null} />],
   ] as const
   return <section
     id="filo-story"

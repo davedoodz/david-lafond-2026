@@ -956,8 +956,8 @@
       "offset": 28
     },
     "story": {
-      "problemTitle": "Tagged fabric swatches can open data.\nYet they still don't move the work forward.",
-      "problemBody": "Fashion & apparel teams must test, document and approve every new material before a factory can use it. That information remains split across samples, inboxes, spreadsheets, lab reports and PLMs.",
+      "problemTitle": "Tagged swatches can identify a material.\nThey can’t tell you if it’s production-ready.\n",
+      "problemBody": "Technical designers still have to verify supplier claims, test unknowns and document constraints across emails, spreadsheets, lab reports and PLMs before a factory can use it.",
       "opportunityTitle": "Turn the swatch into \nan active material record.",
       "opportunityBody": "One tap connects each physical sample to a living Technical File, bringing its evidence, constraints and next actions.\n",
       "gapImage": {
@@ -965,6 +965,7 @@
         "y": 20
       },
       "proposalImage": {
+        "image": "Orange swatches",
         "y": 50
       },
       "spacing": {

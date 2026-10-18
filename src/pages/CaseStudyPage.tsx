@@ -21,6 +21,7 @@ import { PersonaSection, QuoteMarquee, type Persona } from './casePersona'
 import { DeviceInsights } from './DeviceInsights'
 import { FiloStory, type FiloStorySettings } from './filoStoryArt'
 import { FiloFilms } from '../features/filoCase/FiloFilms'
+import { FiloSourceSteps } from '../features/filoCase/FiloSourceSteps'
 import type { FilmGroup } from '../features/filoCase/filoFilmPlan'
 import { FiloNext } from '../features/filoCase/FiloNext'
 import { FiloResearchFigure, type FiloResearchSettings } from '../features/filoCase/FiloResearch'
@@ -538,7 +539,8 @@ export function CaseStudyPage({ id }: Props) {
           quoteArt={filo ? (i) => <FiloQuoteArt index={i} /> : undefined}
         />
       )
-    const hasFilms = filo && ['source', 'evidence', 'scale', 'handoff'].includes(key)
+    if (filo && key === 'source') return <FiloSourceSteps key={key} spacing={s.spacing} />
+    const hasFilms = filo && ['evidence', 'scale', 'handoff'].includes(key)
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />
     const hasDemo = s.media.figure === 'notification'

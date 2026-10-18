@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filo · “Tag detected” — 10 variants</title>
+<style>
+/* Same screen as the case study's step 3 (src/features/filoCase/FiloSourceSteps.tsx › TagScreen,
+   filoSourceSteps.css): 240 × 480, Inter 400, ink #171717, text #666, moss #4f6b4a, mint #e3efd9,
+   halo rgb(196 224 160), the flat tag peeking out on the right. Only the symbol changes. */
+@font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+:root {
+  --ink: #171717; --text: #666; --line: #ececea; --moss: #4f6b4a; --mint: #e3efd9;
+  --halo: 196 224 160; --tag: #e6dbc6; --cord: #b4592f; --page: #f6f6f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif; letter-spacing: -0.2px; }
+header { max-width: 1400px; margin: 0 auto; padding: 56px 40px 8px; display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+header h1 { margin: 0; font-size: 22px; font-weight: 500; }
+header p { margin: 6px 0 0; color: var(--text); font-size: 15px; max-width: 640px; line-height: 1.5; }
+button.replay { font: inherit; font-size: 14px; padding: 9px 16px; border: 1px solid #d6d6d3; border-radius: 999px; background: #fff; color: var(--ink); cursor: pointer; }
+button.replay:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+main { max-width: 1400px; margin: 0 auto; padding: 24px 40px 96px; display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 56px 32px; }
+figure { margin: 0; }
+figcaption { margin-bottom: 18px; }
+figcaption b { display: block; font-size: 15px; font-weight: 500; }
+figcaption b span { color: #9a9a97; font-weight: 400; margin-right: 8px; font-variant-numeric: tabular-nums; }
+figcaption small { display: block; margin-top: 4px; color: var(--text); font-size: 13.5px; line-height: 1.45; max-width: 380px; }
+
+/* The case study's screen + peeking tag. */
+.tap { position: relative; width: 240px; }
+/* The crop is whitened, not cut out: multiply lets the page show through, as in the case study. */
+.tap > img.flat { position: absolute; z-index: 0; top: 18px; left: calc(100% - 6px); width: 188px; height: auto; mix-blend-mode: multiply; }
+.screen {
+  position: relative; z-index: 1; width: 240px; height: 480px; padding: 18px 14px;
+  border: 1px solid #dcdcda; border-radius: 30px; background: #fbfbfa;
+  box-shadow: 0 18px 40px -22px rgb(23 23 23 / .22); overflow: hidden;
+  font-size: 15px; line-height: 24px; color: var(--text);
+}
+.screen p { margin: 0; }
+.logo { display: block; height: 19px; width: auto; }
+.home { position: absolute; left: 50%; bottom: 9px; width: 34%; height: 4px; border-radius: 2px; background: var(--ink); translate: -50% 0; opacity: .85; }
+.detect { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
+.title { color: var(--ink); font-size: 16px; }
+.sym { display: grid; place-items: center; margin-bottom: 30px; }
+svg { overflow: visible; }
+
+/* Shared motion: everything plays once on load / Replay; reduced motion shows the end state. */
+.play .in { animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+.play .in2 { animation: rise .5s .35s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes rise { from { opacity: 0; translate: 0 6px; } }
+.draw { stroke-dasharray: var(--len, 40); stroke-dashoffset: 0; }
+.play .draw { animation: draw .55s var(--d, .25s) cubic-bezier(.6,0,.2,1) both; }
+@keyframes draw { from { stroke-dashoffset: var(--len, 40); } }
+
+/* 00 current — reference */
+.v0 .disc { width: 60px; height: 60px; border-radius: 50%; background: #fff; color: var(--ink); display: grid; place-items: center;
+  box-shadow: 0 0 0 1px #eef3e6, 0 0 0 24px rgb(var(--halo) / .22), 0 0 64px 36px rgb(var(--halo) / .35); margin-bottom: 42px; }
+
+/* 01 NFC waves */
+.v1 .waves path { stroke: var(--moss); }
+.play .v1 .waves path { animation: wave 1.6s ease-out both; }
+.play .v1 .waves path:nth-child(2) { animation-delay: .15s; }
+.play .v1 .waves path:nth-child(3) { animation-delay: .3s; }
+@keyframes wave { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 1; } }
+
+/* 02 tag silhouette */
+.v2 .tagicon { filter: drop-shadow(0 10px 18px rgb(23 23 23 / .12)); }
+.play .v2 .tagicon { animation: swing 1.2s cubic-bezier(.3,1.4,.4,1) both; transform-origin: 50% 8px; }
+@keyframes swing { 0% { rotate: -14deg; opacity: 0; } 25% { opacity: 1; } 100% { rotate: 0deg; } }
+
+/* 03 infinity */
+.v3 .ring { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: var(--mint); }
+
+/* 04 pinked swatch */
+.v4 .badge { position: absolute; right: -4px; bottom: -2px; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 3px #fbfbfa; }
+.play .v4 .badge { animation: pop .4s .7s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes pop { from { scale: 0; } }
+
+/* 05 scan brackets */
+.v5 .frame { position: relative; width: 108px; height: 108px; display: grid; place-items: center; }
+.v5 .frame i { position: absolute; width: 18px; height: 18px; border: 1.6px solid var(--ink); }
+.v5 .frame i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
+.v5 .frame i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 8px; }
+.v5 .frame i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 8px; }
+.v5 .frame i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 8px; }
+.play .v5 .frame i { animation: lock .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes lock { from { inset: -10px; opacity: 0; } }
+.v5 .scanline { position: absolute; left: 14px; right: 14px; height: 1.5px; background: var(--moss); border-radius: 1px; top: 50%; opacity: 0; }
+.play .v5 .scanline { animation: scan .9s .3s ease-in-out both; }
+@keyframes scan { 0% { top: 16%; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { top: 84%; opacity: 0; } }
+.v5 .mini { width: 38px; height: 62px; border-radius: 6px; background: var(--tag); position: relative; box-shadow: inset 0 0 0 1px #d8cbb1; }
+.v5 .mini::before { content: ''; position: absolute; left: 50%; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: #fbfbfa; translate: -50% 0; box-shadow: inset 0 0 0 1px #d0c2a7; }
+.v5 .ok { position: absolute; right: -6px; bottom: -6px; width: 26px; height: 26px; border-radius: 50%; background: var(--moss); color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 3px #fbfbfa; }
+.play .v5 .ok { animation: pop .4s 1.15s cubic-bezier(.3,1.6,.5,1) both; }
+
+/* 06 progress ring */
+.v6 .track { stroke: var(--line); }
+.v6 .arc { stroke: var(--moss); --len: 214; }
+.play .v6 .arc { animation-duration: 1.3s; animation-timing-function: cubic-bezier(.5,0,.2,1); --d: .1s; }
+
+/* 07 tag → record */
+.v7 .pair { display: flex; align-items: center; gap: 10px; }
+.v7 .chip { width: 48px; height: 60px; border-radius: 10px; display: grid; place-items: center; }
+.v7 .chip.tag { background: var(--tag); box-shadow: inset 0 0 0 1px #d8cbb1; }
+.v7 .chip.rec { background: #fff; box-shadow: inset 0 0 0 1px #e2e2df, 0 8px 18px -10px rgb(23 23 23 / .25); }
+.v7 .link { width: 34px; height: 2px; background: repeating-linear-gradient(90deg, var(--moss) 0 4px, transparent 4px 8px); }
+.play .v7 .link { animation: flow .6s linear 3 both; }
+@keyframes flow { from { background-position: -16px 0; } }
+.play .v7 .chip.rec { animation: rise .5s .9s cubic-bezier(.2,.7,.2,1) both; }
+
+/* 08 cord loop */
+.v8 .cordring { --len: 250; }
+
+/* 09 quiet pill */
+.v9 .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 10px; border-radius: 999px; background: var(--mint); color: var(--moss); font-size: 14px; }
+.v9 .dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--moss); }
+.v9 .dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--moss); }
+.play .v9 .dot::after { animation: ping 1.4s ease-out 2; }
+@keyframes ping { to { scale: 3; opacity: 0; } }
+.v9 .id { margin-top: 26px; color: var(--ink); font-size: 26px; line-height: 30px; letter-spacing: -0.6px; }
+.v9 .bar { width: 120px; height: 3px; border-radius: 2px; background: var(--line); margin: 26px auto 0; overflow: hidden; }
+.v9 .bar i { display: block; height: 100%; width: 100%; background: var(--ink); transform-origin: 0 50%; }
+.play .v9 .bar i { animation: fill 1.6s .3s cubic-bezier(.5,0,.2,1) both; }
+@keyframes fill { from { scale: 0 1; } }
+
+/* 10 material chip */
+.v10 .photo { position: relative; width: 88px; height: 88px; }
+.v10 .photo img { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 0 0 4px #fff, 0 0 0 5px #e7ebe1, 0 12px 26px -12px rgb(23 23 23 / .35); }
+.v10 .photo .badge { position: absolute; right: -2px; bottom: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--moss); color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 3px #fbfbfa; }
+.play .v10 .photo .badge { animation: pop .4s .6s cubic-bezier(.3,1.6,.5,1) both; }
+.v10 .meta { margin-top: 4px; font-size: 13px; color: #8a8a87; }
+
+@media (prefers-reduced-motion: reduce) { .play * , .play *::before, .play *::after { animation: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>“Tag detected” — 10 variants</h1>
+    <p>Step 3 of the Filo source section. Same screen, type and copy as the case study; only the detection symbol changes. 00 is what’s live now.</p>
+  </div>
+  <button class="replay" type="button">Replay</button>
+</header>
+<main class="play">
+</main>
+
+<template id="screen">
+  <div class="tap">
+    <img class="flat" src="/work/filo/steps/flat-tag.webp" width="236" height="420" alt="">
+    <div class="screen">
+      <img class="logo" src="/work/filo/filo-mark.webp" width="990" height="466" alt="Filo">
+      <div class="detect"><div class="sym"></div><p class="title in2">Tag detected</p><p class="in2">Opening material record…</p></div>
+      <span class="home"></span>
+    </div>
+  </div>
+</template>
+
+<script type="module">
+/** The case study's check stroke, as a bare <path> (for use inside another SVG) or a standalone icon. */
+const CHECK_PATH = (stroke = 1.8, color = 'currentColor', delay) =>
+  `<path class="draw" style="--len:18;${delay ? `--d:${delay}s` : ''}" d="M6.5 12.5l3.6 3.6L17.5 8.5" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"/>`
+const CHECK = (size = 28, stroke = 1.8, color = 'currentColor', delay) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24">${CHECK_PATH(stroke, color, delay)}</svg>`
+const INFINITY = 'M12 12c-2-2.6-3.6-4-5.4-4a4 4 0 0 0 0 8c1.8 0 3.4-1.4 5.4-4s3.6-4 5.4-4a4 4 0 0 1 0 8c-1.8 0-3.4-1.4-5.4-4z'
+
+/** Pinking-shear circle: a zigzag edge like the swatches. */
+function pinked(r, teeth, depth) {
+  let d = ''
+  for (let i = 0; i <= teeth * 2; i++) {
+    const a = (i / (teeth * 2)) * Math.PI * 2
+    const rr = i % 2 ? r - depth : r
+    d += `${i ? 'L' : 'M'}${(50 + rr * Math.cos(a)).toFixed(2)} ${(50 + rr * Math.sin(a)).toFixed(2)}`
+  }
+  return d + 'Z'
+}
+
+const VARIANTS = [
+  ['Current', 'Live today: a check in a white disc on a soft green halo. Generic success state; nothing says “tag”.',
+    `<div class="disc in">${CHECK()}</div>`],
+  ['NFC waves', 'The tap itself: three waves leave a dot, the way phones show contactless reads. Reads instantly as “scanned”.',
+    `<svg class="waves in" width="84" height="84" viewBox="0 0 84 84" fill="none" stroke-width="2" stroke-linecap="round">
+      <circle cx="22" cy="42" r="5" fill="var(--moss)" stroke="none"/>
+      <path d="M36 28a20 20 0 0 1 0 28"/><path d="M47 19a32 32 0 0 1 0 46"/><path d="M58 10a44 44 0 0 1 0 64"/></svg>`],
+  ['The tag itself', 'A miniature of the physical Filo tag, cord and all, swinging in with a check. The object you just tapped, on screen.',
+    `<svg class="tagicon" width="84" height="120" viewBox="0 0 84 120">
+      <path d="M42 27C38 16 33 8 25 2M42 27c4-11 9-19 17-25" fill="none" stroke="var(--cord)" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="14" y="16" width="56" height="96" rx="9" fill="var(--tag)" stroke="#d3c5aa"/>
+      <circle cx="42" cy="27" r="4.5" fill="#fbfbfa" stroke="#cfc1a5"/>
+      <g transform="translate(26 50) scale(1.35)">${CHECK_PATH(2, 'var(--ink)', .5)}</g>
+      <path d="${INFINITY}" transform="translate(33 88) scale(.75)" fill="none" stroke="#bfae8e" stroke-width="1.6"/></svg>`],
+  ['Infinity mark', 'The ∞ embossed on every tag draws itself in moss, inside a mint disc. Brand-led: detection becomes the mark.',
+    `<div class="ring in"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="1.4" stroke-linecap="round"><path class="draw" style="--len:46;--d:.2s" d="${INFINITY}"/></svg></div>`],
+  ['Pinked swatch', 'A swatch with pinking-shear edges, the material language of the samples, with a check badge pinned on.',
+    `<div class="in" style="position:relative"><svg width="96" height="96" viewBox="0 0 100 100"><path d="${pinked(48, 26, 4)}" fill="var(--tag)" stroke="#d6c9ae"/><path d="${pinked(38, 22, 0)}" fill="none" stroke="#cdbd9e" stroke-dasharray="2 3"/></svg><span class="badge">${CHECK(16, 2.2)}</span></div>`],
+  ['Scan frame', 'Camera-style corner brackets lock onto a mini tag, a moss line passes over it, then a check. Shows the read happening.',
+    `<div class="frame"><i></i><i></i><i></i><i></i><span class="mini"></span><span class="scanline"></span><span class="ok">${CHECK(15, 2.4)}</span></div>`],
+  ['Progress ring', 'A thin moss ring closes around the check, so the screen also says “opening…”, not only “found”.',
+    `<svg width="76" height="76" viewBox="0 0 76 76" fill="none" stroke-width="2"><circle class="track" cx="38" cy="38" r="34"/><circle class="arc draw" cx="38" cy="38" r="34" stroke-linecap="round" transform="rotate(-90 38 38)"/><g transform="translate(22 22) scale(1.33)">${CHECK_PATH(1.6, 'var(--ink)', 1.2)}</g></svg>`],
+  ['Tag → record', 'Two chips joined by a moving dotted link: the tag hands off to its Technical File. Explains what Filo does in one glance.',
+    `<div class="pair in"><span class="chip tag"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9c8a68" stroke-width="1.5" stroke-linecap="round"><path d="${INFINITY}"/></svg></span><span class="link"></span><span class="chip rec"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round"><path d="M7 4h7l4 4v12H7z"/><path d="M10 12h5M10 15.5h5"/></svg></span></div>`],
+  ['Cord loop', 'The tag’s orange cord draws a loop around the check. Warm, tactile, and pulled straight from the hero image.',
+    `<svg width="96" height="96" viewBox="0 0 96 96" fill="none" stroke-linecap="round"><path class="cordring draw" style="--d:.1s" d="M48 10c22 0 38 16 38 38S70 86 48 86 10 70 10 48c0-13 6-24 16-31 4-3 9 0 7 4-2 3-6 2-7-1" stroke="var(--cord)" stroke-width="3.2"/><g transform="translate(30 30) scale(1.5)">${CHECK_PATH(1.5, 'var(--ink)', .8)}</g></svg>`],
+  ['Quiet status', 'No big symbol: a pulsing moss status pill, the record’s ID large, and a loading bar. Calm, product-UI tone.',
+    `<div class="in"><span class="pill"><span class="dot"></span>Filo tag read</span><p class="id">BC-001</p><div class="bar"><i></i></div></div>`],
+  ['Material chip', 'The material’s own photo in a round chip with a check: you see what was detected before the file opens.',
+    `<div class="photo in"><img src="/work/filo/studio/cellulose.webp" alt=""><span class="badge">${CHECK(16, 2.2)}</span></div><p class="meta in2">Bacterial Cellulose · BC-001</p>`],
+]
+
+const main = document.querySelector('main')
+const tpl = document.querySelector('#screen')
+VARIANTS.forEach(([name, note, symbol], i) => {
+  const fig = document.createElement('figure')
+  fig.className = `v${i}`
+  fig.innerHTML = `<figcaption><b><span>${String(i).padStart(2, '0')}</span>${name}</b><small>${note}</small></figcaption>`
+  const screen = tpl.content.cloneNode(true)
+  screen.querySelector('.sym').innerHTML = symbol
+  // The current design spaces its own title; the rest share one gap.
+  if (i === 0) screen.querySelector('.sym').style.marginBottom = '0'
+  fig.append(screen)
+  main.append(fig)
+})
+// The progress ring's dash length must match its circumference.
+document.querySelectorAll('.v6 .arc').forEach((c) => c.style.setProperty('--len', String(c.getTotalLength())))
+document.querySelectorAll('.v8 .cordring').forEach((c) => c.style.setProperty('--len', String(c.getTotalLength())))
+document.querySelector('.replay').addEventListener('click', () => {
+  main.classList.remove('play'); void main.offsetWidth; main.classList.add('play')
+})
+</script>
+</body>
+</html>

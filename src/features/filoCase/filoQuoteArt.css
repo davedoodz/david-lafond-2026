@@ -1,3 +1,6 @@
+/* Card font dial › Inter: the same file the step screens use. */
+@font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+
 /* Filo quote cards: one shared size (dials on the card), quote on the left, art bottom-right. */
 [data-quotes] .persona__quote-item[data-filo-quote] {
   position: relative;
@@ -7,6 +10,10 @@
   height: var(--qa-card-h, 260px);
   background: var(--qa-card-fill, #fbf8f6);
   box-shadow: var(--qa-card-shadow, 0 8px 40px -8px rgb(23 23 23 / 0.2));
+}
+[data-quotes] .persona__quote-item[data-filo-quote][data-qa-font='Inter'],
+[data-quotes] .persona__quote-item[data-filo-quote][data-qa-font='Inter'] * {
+  font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif;
 }
 /* Filo: the strip opens the persona section, between the research video and the persona copy.
    The strip clips its overflow, and so does the persona section (overflow: clip), so the strip is
