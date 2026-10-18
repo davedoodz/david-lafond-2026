@@ -593,7 +593,7 @@
     "hero": {
       "title": "A Novel Multimodal AI Reflection System for Behavioral Change",
       "spacing": {
-        "top": 106,
+        "top": 113,
         "bottom": 62,
         "contentGap": 99
       },
@@ -604,13 +604,14 @@
       "team": "2 developers, 2 designers, 2 therapists"
     },
     "heroSpacing": {
-      "logosToTitle": 54,
-      "titleToMeta": 20,
+      "logosToTitle": 28,
+      "titleToMeta": 29,
+      "metaToPhone": 67,
       "y": {
         "braid": -42,
         "title": -24,
         "meta": -23,
-        "logos": -17
+        "logos": -5
       }
     },
     "logos": {
@@ -647,7 +648,7 @@
       "spacing": {
         "top": 233,
         "bottom": 0,
-        "contentGap": 383
+        "contentGap": 280
       },
       "artText": {
         "problemMoment": "",
@@ -660,19 +661,20 @@
       "body": "Generally independent and capable, but prone to stress and rumination. \nThey want a private, low-friction emotional outlet.",
       "align": "center",
       "image": "bottom",
-      "imageWidth": 535,
+      "imageWidth": 485,
       "imageRadius": 24,
       "cardRadius": 27,
-      "titleScale": 0.98,
-      "blockGap": 102,
+      "cardGap": 14,
+      "titleScale": 1.01,
+      "blockGap": 101,
       "moments": {
         "m2Quote": "“Argh, why did I say that?”",
         "m3Quote": "“There's always so much to do…”",
         "m4Quote": "“It's happening tomorrow again...”"
       },
       "spacing": {
-        "top": 30,
-        "bottom": 0
+        "top": 197,
+        "bottom": 151
       },
       "float": {
         "preset": "drift",
@@ -682,19 +684,20 @@
         "bob": 20,
         "pillsPosition": "under image",
         "eyebrowGap": 17,
-        "bodyGap": 58,
-        "tagsGap": 77,
+        "titleGap": 17,
+        "bodyGap": 78,
+        "tagsGap": 101,
         "entrance": {
           "order": "text first",
-          "text": "jitter",
+          "text": "cascade",
           "duration": 0.3,
-          "textDuration": 1.2,
+          "textDuration": 0.7,
           "distance": 6,
-          "textStagger": 0.12,
+          "textStagger": 0.1,
           "pillStagger": 0.12,
           "pillsGap": 0,
           "pillsAfter": "title",
-          "textGap": -0.5,
+          "textGap": -0.46,
           "floatsDelay": 0.2,
           "floatStagger": 0.11
         },
@@ -723,7 +726,7 @@
     "flows": {
       "title": "Look back. Talk it out. Move forward.",
       "body": "Your reflections become a record of your experiences \nand a way to turn insight into action.",
-      "phoneScale": 1.04,
+      "phoneScale": 1.25,
       "spacing": {
         "top": 34,
         "contentGap": 75
@@ -734,6 +737,7 @@
       "body": "Choose from evidence-based reflection mental models. \nMomo guides you through it, one question at a time.",
       "woopLabel": "",
       "modelsLabel": "",
+      "pickScale": 1.08,
       "spacing": {
         "contentGap": 56
       }
@@ -797,12 +801,18 @@
   "Momo shader": {
     "frame": 2738590
   },
+  "Filo case study · order": {
+    "keep": {
+      "Persona": "hide"
+    }
+  },
   "Momo case study · order": {
     "section": "persona",
-    "order": "story, system, persona, moment, overview, notification, flows, dynamic, howItWorks, guided, context, tracking, outcomes",
+    "order": "story, system, persona, moment, overview, notification, dynamic, flows, howItWorks, guided, context, tracking, outcomes",
     "max": 13,
     "keep": {
       "Overview": "hide",
+      "System design": "hide",
       "The notification": "hide",
       "How it works": "hide",
       "The moment": "hide",
@@ -855,16 +865,11 @@
       "battery": 7.4
     },
     "timingSeconds": {
-      "meetingNotice": 1.2,
-      "goodLuckNotice": 1.95,
-      "threePm": 1.5,
-      "fivePm": 0.8,
-      "evening": 0.9,
       "bodySignals": 1.6,
       "signalChecks": 2.65,
       "momoNudge": 2.4,
       "momoEntrance": 1.75,
-      "voiceReflection": 4.75,
+      "voiceReflection": 3.25,
       "heroHandoff": 1.6,
       "heroHold": 1.45
     },
@@ -902,14 +907,15 @@
   "Filo case study": {
     "page": {
       "snap": "off",
+      "showSections": false,
       "sectionReveal": "still"
     },
     "hero": {
       "title": "Taking New Materials \nfrom Sample to Production",
       "spacing": {
-        "top": 106,
-        "bottom": 62,
-        "contentGap": 99
+        "top": 46,
+        "bottom": 53,
+        "contentGap": 111
       },
       "media": {
         "radius": 21
@@ -922,22 +928,45 @@
       "team": "1 engineer,  1 designer"
     },
     "heroSpacing": {
-      "logosToTitle": 54,
-      "titleToMeta": 20,
+      "logosToTitle": 18,
+      "titleToMeta": 31,
+      "metaToPhone": 0,
       "y": {
         "braid": -42,
         "title": -24,
-        "meta": -23,
-        "logos": -17
+        "meta": -25,
+        "logos": -1
       }
+    },
+    "mark": {
+      "scale": 0.99
     },
     "logos": {
       "placement": "below meta",
-      "height": 39,
+      "height": 41,
       "gap": 27,
       "offset": 28
     },
+    "story": {
+      "problemTitle": "Tagged fabric swatches can open data.\nYet they still don't move the work forward.",
+      "problemBody": "Fashion & apparel teams must test, document and approve every new material before a factory can use it. That information remains split across samples, inboxes, spreadsheets, lab reports and PLMs.",
+      "opportunityTitle": "Turn the swatch into \nan active material record.",
+      "opportunityBody": "One tap connects each physical sample to a living Technical File, bringing its evidence, constraints and next actions.\n",
+      "gapImage": {
+        "scale": 0.66,
+        "y": 20
+      },
+      "proposalImage": {
+        "y": 50
+      },
+      "spacing": {
+        "top": 0
+      }
+    },
     "research": {
+      "eyebrow": "PRIMARY MARKET RESEARCH",
+      "title": "Validating performance was the biggest pain point.",
+      "body": "We interviewed industry experts to see where biomaterials stall. \nThe bottleneck was proving they could survive testing, production, and scale.",
       "primaryVisual": "video",
       "miroVideo": {
         "speed": 2,
@@ -953,10 +982,10 @@
     "persona": {
       "title": "The technical designer prioritizing performance over hype.",
       "body": "They turn designs into something a factory can reliably make. Unfamiliar materials add constraints that must be resolved before production.\n",
+      "imageRadius": 27,
       "moments": {
         "m2Quote": "“From what I've seen, we can’t use heat or solvent on these.”",
-        "m3Quote": "“We look at performance, then at how to do it in the most responsible way.”",
-        "m2Role": "Designer, Solano Studio"
+        "m3Quote": "“We look at performance, then at how to do it in the most responsible way.”"
       },
       "float": {
         "quotes": "marquee",
@@ -965,9 +994,7 @@
         "spread": 154,
         "entrance": {
           "duration": 0.3,
-          "textDuration": 0.3,
           "distance": 6,
-          "textStagger": 0.02,
           "pillStagger": 0.01,
           "pillsGap": 0.05,
           "floatsDelay": 0.2,
@@ -980,10 +1007,12 @@
     }
   },
   "Momo welcome": {
-    "blackOverlay": 0,
     "prototypeWidth": 305,
+    "rise": {
+      "delay": 0.1
+    },
     "timing": {
-      "fullLoopDuration": 10,
+      "fullLoopDuration": 7.5,
       "shadeAt": 0,
       "shadeIn": 1,
       "shadeOut": 4,
@@ -1284,7 +1313,7 @@
     "Technical designer, BlueSTEM": {
       "scale": 1.1
     },
-    "Designer, Stella McCartney": {
+    "Designer, Gap": {
       "scale": 1.17,
       "x": 2,
       "y": -3

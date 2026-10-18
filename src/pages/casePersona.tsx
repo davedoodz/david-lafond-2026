@@ -129,7 +129,8 @@ export const FLOAT_DIALS = {
    */
   entrance: {
     order: { type: 'select' as const, options: ['image first', 'text first'], default: 'image first' },
-    text: { type: 'select' as const, options: [...ENTRANCES], default: 'rise' },
+    /** `cascade`: the other sections' text reveal (text-reveal-rise on its expo ease), so the persona copy arrives like theirs. */
+    text: { type: 'select' as const, options: [...ENTRANCES, 'cascade'], default: 'rise' },
     pills: { type: 'select' as const, options: [...ENTRANCES], default: 'pop' },
     duration: [0.5, 0.2, 2, 0.05] as Tuple,
     /** The text block's own duration (eyebrow, title, body); `duration` covers the pills and portrait. */
@@ -310,7 +311,9 @@ const SLOT_SIDE = [1, -1, 1, -1]
 const SLOT_ROLL = [1, 1, 0.7, 1]
 
 /** Preset name → keyframes name in CaseStudyPage.css (`pe-*`). */
-const kf = (preset: string) => (preset === 'none' ? 'none' : `pe-${preset}`)
+const kf = (preset: string) => (preset === 'none' ? 'none' : preset === 'cascade' ? 'text-reveal-rise' : `pe-${preset}`)
+/** The sections' text-reveal ease (CaseStudyPage.css `cascade`), else the persona's own. */
+const SECTION_TEXT_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
 const DRIFT_IN_DURATION = 0.65
 
 /**
@@ -480,6 +483,35 @@ function QuoteSpotlight({ count, pace, live, label, render }: { count: number; p
 }
 
 /**
+ * Sliding row of quote cards (float › quotes: marquee). `loop` is one full pass in seconds; `render(i, copy)`
+ * draws card `i`, with `copy` true for the second, hidden pass that makes the -50% slide seamless.
+ * Also placed under Filo's primary-research video.
+ */
+export function QuoteMarquee({ count, loop, label, render }: { count: number; loop: number; label: string; render: (i: number, copy: boolean) => ReactNode }) {
+  const items = Array.from({ length: count }, (_, i) => i)
+  return (
+    <div className="persona__quotes" style={{ '--quote-loop': `${loop}s` } as CSSProperties}>
+      <div className="persona__marquee-track">
+        <ul aria-label={label}>
+          {items.map((i) => (
+            <li key={i} className="persona__quote-item">
+              {render(i, false)}
+            </li>
+          ))}
+        </ul>
+        <ul aria-hidden="true">
+          {items.map((i) => (
+            <li key={i} className="persona__quote-item">
+              {render(i, true)}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/**
  * `visual` replaces the Momo portrait (Filo's desk loop, FiloPersonaLoop); it fills the `.persona__photo` box.
  * `quoteArt` adds an illustration behind quote card `i` (Filo's FiloQuoteArt); it renders nothing for cards without one.
  */
@@ -500,6 +532,9 @@ export function PersonaSection({
   const ref = useRef<HTMLElement>(null)
   const wasLive = useRef(false)
   const [live, setLive] = useState(false)
+  // The floating bubbles wait for the title to scroll up past the page's Back link (see `crossed`).
+  const floatsLive = useRef(false)
+  const [bubblesIn, setBubblesIn] = useState(false)
   const [floatCycle, setFloatCycle] = useState(0)
   // Bubble pills clicked this visit (float › swap). Any press swaps the portrait to the calm version;
   // presses hold until the section leaves the viewport (or the page reloads).
@@ -508,27 +543,66 @@ export function PersonaSection({
     const el = ref.current
     if (!el) return
     // The intro entrance (text, pills, portrait) is played from script, so the CSS pause no longer
-    // holds it; pause it here. It starts as soon as the whole portrait is on screen (top and bottom
-    // edges inside the view), or if a fast scroll carries it past the middle between frames, and is
-    // rewound to frame one only once the section is fully off screen, so a return shows the start of
-    // the entrance, never the settled section snapping back.
+    // holds it; pause it here. It starts as soon as its anchor is wholly on screen (top and bottom edges
+    // inside the view), or if a fast scroll carries it past the middle between frames, and is rewound to
+    // frame one only once the section is fully off screen, so a return shows the start of the entrance,
+    // never the settled section snapping back. The anchor is the portrait, or the title when the text
+    // leads (order › text first), so the copy plays as it arrives, like the other sections' text.
     const entrance = () =>
-      el.getAnimations({ subtree: true }).filter((a) => a instanceof CSSAnimation && a.animationName.startsWith('pe-'))
-    const anchor = el.querySelector<HTMLElement>('.persona__portrait, .persona__sticker') ?? el
+      el.getAnimations({ subtree: true }).filter((a) => a instanceof CSSAnimation && (a.animationName.startsWith('pe-') || a.animationName === 'text-reveal-rise') && !isFloat(a))
+    const anchorOf = () =>
+      (el.dataset.peOrder === 'text first' ? el.querySelector<HTMLElement>('.persona__title') : null) ??
+      el.querySelector<HTMLElement>('.persona__portrait, .persona__sticker') ?? el
     let lastSide = 0
     let frame = 0
+    // The bubbles (and the quotes layout) run on their own clock, so the entrance never plays them.
+    const isFloat = (a: Animation) => a instanceof CSSAnimation && a.effect instanceof KeyframeEffect && !!(a.effect.target as Element | null)?.closest('.persona__floats, .persona__quotes')
+    const floatAnims = () => el.getAnimations({ subtree: true }).filter(isFloat)
+    // Floating bubbles enter once the profile pills under the portrait have settled (`pillsSettled`) and the
+    // title's middle has scrolled up to the Back link's (the fixed one at the top left). The quotes layouts
+    // (transcript, wall, spotlight, marquee) sit below the portrait and enter as soon as they are in frame.
+    let pillsSettled = false
+    let entranceRun = 0
+    const crossed = () => {
+      if (floatsLive.current) return
+      const strip = el.querySelector<HTMLElement>('.persona__quotes')
+      if (strip) {
+        const r = strip.getBoundingClientRect()
+        if (r.top >= innerHeight || r.bottom <= 0) return
+      } else {
+        if (!pillsSettled) return
+        const title = el.querySelector<HTMLElement>('.persona__title')
+        const back = document.querySelector<HTMLElement>('.case__back:not(.case__back--inline)')
+        if (!title) return
+        const t = title.getBoundingClientRect(), b = back?.getBoundingClientRect()
+        const line = b && b.height > 0 ? b.top + b.height / 2 : 90
+        if (t.top + t.height / 2 > line) return
+      }
+      floatsLive.current = true
+      floatAnims().forEach((a) => { a.currentTime = 0; a.play() })
+      setBubblesIn(true)
+    }
     const check = () => {
       frame = 0
+      crossed()
       if (wasLive.current) return
       // Settled layout box from the offset chain, not the animated one: the paused first frame of the
       // stamp is scaled and lifted, which would fire the trigger early.
       let top = -scrollY
+      const anchor = anchorOf()
       for (let n: HTMLElement | null = anchor; n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop
       const h = anchor.offsetHeight, bottom = top + h
       const side = Math.sign(top + h / 2 - innerHeight / 2)
       if ((top >= 0 && bottom <= innerHeight) || (lastSide !== 0 && side !== lastSide)) {
         wasLive.current = true
         entrance().forEach((a) => { a.currentTime = 0; a.play() })
+        const run = ++entranceRun
+        const pills = entrance().filter((a) => !!((a.effect as KeyframeEffect | null)?.target as Element | null)?.closest('.persona__tags'))
+        void Promise.all(pills.map((a) => a.finished)).then(() => {
+          if (run !== entranceRun) return
+          pillsSettled = true
+          crossed()
+        }, () => {})
         setLive(true)
       }
       lastSide = side
@@ -544,8 +618,15 @@ export function PersonaSection({
       }
       removeEventListener('scroll', onScroll)
       removeEventListener('resize', onScroll)
+      if (floatsLive.current) {
+        floatsLive.current = false
+        floatAnims().forEach((a) => { a.pause(); a.currentTime = 0 })
+        setBubblesIn(false)
+      }
       if (!wasLive.current) return
       wasLive.current = false
+      pillsSettled = false
+      entranceRun++
       entrance().forEach((a) => { a.pause(); a.currentTime = 0 })
       setFloatCycle((cycle) => cycle + 1)
       setPressed(new Set())
@@ -675,6 +756,8 @@ export function PersonaSection({
       data-bubbles={float?.bubbles?.look}
       data-pills={float?.bubbles?.pills}
       data-live={live || undefined}
+      data-floats-in={bubblesIn || undefined}
+      data-pe-order={ent?.order}
       data-swap={swap?.transition}
       data-swapped={pressed.size > 0 || undefined}
       style={
@@ -686,6 +769,7 @@ export function PersonaSection({
           ...(ent && timeline
             ? {
                 '--pe-text-kf': kf(ent.text),
+                ...(ent.text === 'cascade' ? { '--pe-text-ease': SECTION_TEXT_EASE } : {}),
                 '--pe-pills-kf': kf(ent.pills),
                 '--pe-image-kf': kf(float.imageReveal),
                 '--pe-dur': `${ent.duration}s`,
@@ -820,25 +904,7 @@ export function PersonaSection({
           </ul>
         )}
         {float && quotesLayout === 'marquee' && (
-          <div key={floatCycle} className="persona__quotes" style={{ '--quote-loop': `${float.pace * quoteIndexes.length * 2.5}s` } as CSSProperties}>
-            <div className="persona__marquee-track">
-              <ul aria-label={m.title}>
-                {quoteIndexes.map((i) => (
-                  <li key={i} className="persona__quote-item">
-                    {quoteParts(i)}
-                  </li>
-                ))}
-              </ul>
-              {/* Second copy makes the -50% slide seamless; hidden from assistive tech. */}
-              <ul aria-hidden="true">
-                {quoteIndexes.map((i) => (
-                  <li key={i} className="persona__quote-item">
-                    {quoteParts(i, true)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <QuoteMarquee key={floatCycle} count={quoteIndexes.length} loop={float.pace * quoteIndexes.length * 2.5} label={m.title} render={quoteParts} />
         )}
       </div>
 

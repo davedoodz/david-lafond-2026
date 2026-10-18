@@ -6,136 +6,71 @@
   gap: var(--fs-chapter-gap, 100px);
   padding-block: var(--section-pad-top, 90px) var(--section-pad-bottom, 70px);
   color: #283128;
-  --fs-travel: 20px;
-  --fs-tilt: 4deg;
-  --fs-scatter: 45px;
-  --fs-scale: .94;
 }
 .fs-chapter { width: min(100%, 800px); margin-inline: auto; }
 .fs-copy { max-width: var(--fs-copy-width, 590px); margin-inline: auto; text-align: center; }
 .fs-copy .eyebrow { color: #777c72; font-size: 12px; letter-spacing: .06em; margin: 0 0 14px; }
 .fs-copy h2 { font-size: clamp(27px, 3vw, 37px); font-weight: 400; line-height: 1.15; letter-spacing: -.04em; text-wrap: balance; margin: 0; white-space: pre-line; }
+/* A title written with line breaks keeps one line per break: it may run past the copy width, up to the
+   chapter's 800px (and the viewport on phones, where a long line still wraps). */
+.fs-copy h2.fs-lines { margin-inline: calc(50% - min(400px, 50vw - 24px)); text-wrap: wrap; }
 .fs-copy > p:not(.eyebrow) { font-size: clamp(16px, 1.45vw, 18px); line-height: 1.5; color: #72776d; margin: 18px auto 0; text-wrap: pretty; }
 .fs-film { position: relative; width: 100%; aspect-ratio: 800 / 440; margin: 30px auto 0; overflow: clip; isolation: isolate; }
-.fs-film--solution { aspect-ratio: 800 / 540; }
+/* Market gap: the persona's desk loop (FiloPersonaLoop), at its own frame ratio. Scale resizes the
+   frame itself (so the section's height follows), centred on the column; x/y only shift it. */
+.fs-film--problem {
+  aspect-ratio: 1352 / 948;
+  width: calc(100% * var(--fs-gap-scale, 1));
+  margin-inline: calc(50% - 50% * var(--fs-gap-scale, 1));
+  translate: var(--fs-gap-x, 0px) var(--fs-gap-y, 0px);
+  overflow: visible;
+}
 .fs-stage { position: absolute; inset: 0; }
 .fs-stage img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.fs-material-image { user-select: none; }
-.fs-move, .fs-symbol { position: absolute; }
-.fs-move > .fs-material-image { object-fit: cover; border-radius: 14px; }
-.fs-symbol { mix-blend-mode: multiply; object-fit: contain; pointer-events: none; }
-.fs-product { aspect-ratio: 1; }
-.fs-turntable { width: 100%; height: 100%; background-size: 600% 600%; background-position: 0 0; background-repeat: no-repeat; }
-/* Detached physical objects, with a tag opening information but not joining the work. */
-.fs-gap-material { width: 39%; height: 57%; left: 30.5%; top: 20%; rotate: -4deg; }
-.fs-gap-material > img { position: absolute; inset: 0; }
-.fs-gap-tag { opacity: 0; }
-.fs-gap-library { width: 22%; height: 28%; left: 69%; top: 5%; rotate: 8deg; }
-.fs-gap-bag { width: 30%; left: 0; top: 42%; rotate: -9deg; }
-.fs-gap-garment { width: 32%; left: 70%; top: 38%; rotate: 9deg; }
-.fs-stage .fs-gap-nfc { width: 13%; height: 24%; left: 19%; top: 10%; opacity: 0; }
-/* One continuous material-to-record connection, with actual imagery instead of UI cards. */
-.fs-thread { position: absolute; inset: 0; width: 100%; height: 100%; color: #bdcf71; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.fs-opportunity-material { width: 26%; height: 49%; left: 6%; top: 27%; rotate: -5deg; }
-.fs-opportunity-record { width: 24%; height: 90%; left: 38%; top: 4%; }
-.fs-opportunity-garment { width: 33%; left: 64%; top: 20%; }
-.fs-stage .fs-opportunity-nfc { width: 12%; height: 22%; left: 26%; top: 14%; }
-/* The product lives below Meet Filo; only its real screen content changes. */
-.fs-solution-phone { width: 34%; height: 97%; left: 33%; top: 1%; }
-.fs-phone-frame { position: absolute; inset: 0; opacity: 0; }
-.fs-phone-frame:first-child { opacity: 1; }
-.fs-solution-material { width: 22%; height: 42%; left: 6%; top: 29%; rotate: -7deg; }
-.fs-solution-garment { width: 34%; left: 67%; top: 23%; }
-.fs-stage .fs-solution-warning { width: 15%; height: 23%; left: 71%; top: 65%; opacity: 0; }
-/* One shared cycle for each film. No frame-by-frame React renders or idle timers. */
-.fs-film[data-live='true'] .fs-move { animation: fs-material-drift var(--fs-duration) ease-in-out infinite; }
-/* Each object has its own spin speed; the column step stays six times the row step so all 36 views play in order. */
-.fs-film[data-live='true'] .fs-turntable {
-  --fs-turn: calc(var(--fs-duration) / 2 / var(--fs-spin, 1));
-  animation: fs-turn-x calc(var(--fs-turn) / 6) steps(6) infinite, fs-turn-y var(--fs-turn) steps(6) infinite;
-}
-.fs-film[data-live='true'] .fs-gap-photo { animation: fs-photo-out var(--fs-duration) ease-in-out infinite; }
-.fs-film[data-live='true'] .fs-gap-tag { animation: fs-tag-in var(--fs-duration) ease-in-out infinite; }
-.fs-film[data-live='true'] .fs-gap-library { animation-name: fs-fragment-right; }
-.fs-film[data-live='true'] .fs-gap-bag { animation-name: fs-fragment-left; }
-.fs-film[data-live='true'] .fs-gap-garment { animation-name: fs-fragment-right; }
-.fs-film[data-live='true'] .fs-gap-nfc { animation: fs-nfc-reveal var(--fs-duration) ease-in-out infinite; }
-.fs-film[data-live='true'] .fs-thread path { stroke-dasharray: 1; animation: fs-thread-connect var(--fs-duration) ease-in-out infinite; }
-.fs-film[data-live='true'] .fs-opportunity-material { animation-name: fs-join-left; }
-.fs-film[data-live='true'] .fs-opportunity-record { animation-name: fs-record-arrives; }
-.fs-film[data-live='true'] .fs-opportunity-garment { animation-name: fs-join-right; }
-.fs-film[data-live='true'] .fs-opportunity-nfc { animation: fs-nfc-reveal var(--fs-duration) ease-in-out infinite; }
-.fs-film[data-live='true'] .fs-phone-frame { animation: fs-phone-scene var(--fs-duration) ease-in-out infinite; animation-delay: calc(var(--fs-duration) * var(--phase)); }
-.fs-film[data-live='true'] .fs-solution-warning { animation: fs-context-reveal var(--fs-duration) ease-in-out infinite; }
 .fs-film[data-paused='true'] .fs-stage * { animation-play-state: paused; }
-/* Presets alter displacement, rotation and composition, not just playback speed. */
-.filo-story[data-preset='quiet dissolve'] { --fs-travel: 0px; --fs-tilt: 0deg; --fs-scatter: 0px; --fs-scale: 1; }
-.filo-story[data-preset='quiet dissolve'] .fs-move { rotate: 0deg; }
-.filo-story[data-preset='exploded assembly'] { --fs-travel: 38px; --fs-tilt: 10deg; --fs-scatter: 60px; --fs-scale: .85; }
-.filo-story[data-preset='exploded assembly'] .fs-film[data-live='true'] .fs-solution-material { animation-name: fs-join-left; }
-.filo-story[data-preset='exploded assembly'] .fs-film[data-live='true'] .fs-solution-garment { animation-name: fs-join-right; }
-@keyframes fs-material-drift {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  50% { transform: translateY(calc(var(--fs-travel) * -1)) rotate(var(--fs-tilt)); }
+/* Proposal: the flow-04 prototype on the photographed phone. The stage is the photo at 1:1, scaled
+   to the frame by --fs-opp-scale. The film's screen is projected onto the phone's screen (SCREEN_WARP),
+   clipped to the screen mask, and the photo, with its screen cut out, sits on top as the bezel.
+   DialKit › story › proposalImage: scale resizes the frame (centred, section height follows); x/y shift it. */
+.fs-film--opportunity {
+  --fs-opp-w: calc(min(100%, 460px) * var(--fs-prop-scale, 1));
+  aspect-ratio: 1127 / 1396;
+  width: var(--fs-opp-w);
+  margin-inline: calc((100% - var(--fs-opp-w)) / 2);
+  translate: var(--fs-prop-x, 0px) var(--fs-prop-y, 0px);
+  overflow: visible;
 }
-@keyframes fs-fragment-left {
-  0%, 100% { opacity: .65; transform: translateX(0); }
-  35%, 70% { opacity: 1; transform: translateX(calc(var(--fs-scatter) * -.45)) rotate(calc(var(--fs-tilt) * -1)); }
+/* Products turning beside the proposal image, each drawn on a canvas by Turntable (filoStoryArt.tsx).
+   DialKit › story › products. */
+.fs-stage .fs-product {
+  position: absolute;
+  width: var(--fs-product-size, 200px);
+  aspect-ratio: 1;
+  pointer-events: none;
 }
-@keyframes fs-fragment-right {
-  0%, 100% { opacity: .65; transform: translate(0, 0); }
-  35%, 70% { opacity: 1; transform: translate(calc(var(--fs-scatter) * .35), calc(var(--fs-travel) * -.5)) rotate(var(--fs-tilt)); }
+.fs-product[data-place$='left'] { right: calc(100% + var(--fs-product-spread, 40px)); }
+.fs-product[data-place$='right'] { left: calc(100% + var(--fs-product-spread, 40px)); }
+.fs-product[data-place^='top'] { top: 4%; }
+.fs-product[data-place^='bottom'] { bottom: 6%; }
+.fs-turntable { display: block; width: 100%; height: 100%; }
+/* Beside a 460px image the products need about 1000px of width; below that they would overflow. */
+@media (max-width: 980px) { .fs-stage .fs-product { display: none; } }
+.fs-opp, .fs-opp-stage, .fs-opp-screen, .fs-opp-warp, .fs-stage .fs-opp-phone { position: absolute; left: 0; top: 0; }
+.fs-opp { width: 100%; height: 100%; }
+.fs-opp-stage { transform-origin: 0 0; scale: var(--fs-opp-scale, .4); }
+.fs-opp-screen, .fs-stage .fs-opp-phone { width: 100%; height: 100%; }
+.fs-opp-screen {
+  -webkit-mask: url(/work/filo/story/opportunity-screen-mask.webp) 0 0 / 100% 100% no-repeat;
+  mask: url(/work/filo/story/opportunity-screen-mask.webp) 0 0 / 100% 100% no-repeat;
 }
-@keyframes fs-photo-out { 0%, 20%, 90%, 100% { opacity: 1; } 35%, 78% { opacity: 0; } }
-@keyframes fs-tag-in { 0%, 20%, 90%, 100% { opacity: 0; } 35%, 78% { opacity: 1; } }
-@keyframes fs-nfc-reveal {
-  0%, 12%, 75%, 100% { opacity: 0; transform: scale(var(--fs-scale)); }
-  25%, 58% { opacity: 1; transform: scale(1); }
-}
-@keyframes fs-thread-connect { 0%, 12%, 100% { stroke-dashoffset: 1; opacity: 0; } 20% { opacity: 1; } 60%, 85% { stroke-dashoffset: 0; opacity: 1; } 96% { stroke-dashoffset: 0; opacity: 0; } }
-@keyframes fs-join-left {
-  0%, 100% { transform: translateX(calc(var(--fs-scatter) * -.5)) rotate(calc(var(--fs-tilt) * -1)); }
-  38%, 80% { transform: translateX(0) rotate(0); }
-}
-@keyframes fs-join-right {
-  0%, 100% { opacity: .35; transform: translateX(calc(var(--fs-scatter) * .5)) rotate(var(--fs-tilt)); }
-  55%, 82% { opacity: 1; transform: translateX(0) rotate(0); }
-}
-@keyframes fs-record-arrives {
-  0%, 8%, 100% { opacity: .25; transform: translateY(var(--fs-travel)) scale(var(--fs-scale)); }
-  30%, 85% { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes fs-phone-scene {
-  0%, 16% { opacity: 1; transform: translateY(0); }
-  20%, 96% { opacity: 0; transform: translateY(calc(var(--fs-travel) * .4)); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-@keyframes fs-context-reveal { 0%, 56%, 80%, 100% { opacity: 0; transform: scale(var(--fs-scale)); } 62%, 74% { opacity: 1; transform: scale(1); } }
-@keyframes fs-turn-x { from { background-position-x: 0%; } to { background-position-x: 120%; } }
-@keyframes fs-turn-y { from { background-position-y: 0%; } to { background-position-y: 120%; } }
+.fs-opp-warp { overflow: hidden; transform-origin: 0 0; }
+.fs-opp-warp video { position: absolute; width: 920px; height: 1844px; max-width: none; }
 @media (max-width: 700px) {
   .case__section.filo-story { padding-inline: 22px; gap: min(var(--fs-chapter-gap, 100px), 90px); }
   .fs-film { aspect-ratio: 1.35; margin-top: 24px; }
-  .fs-film--solution { aspect-ratio: 1 / 1.2; }
-  .fs-gap-material { width: 48%; left: 26%; height: 48%; top: 21%; }
-  .fs-gap-library { width: 24%; height: 23%; left: 72%; top: 8%; }
-  .fs-gap-bag { width: 37%; left: -4%; top: 55%; }
-  .fs-gap-garment { width: 38%; left: 66%; top: 53%; }
-  .fs-opportunity-record { width: 33%; left: 33.5%; height: 96%; top: 2%; }
-  .fs-opportunity-material { width: 25%; height: 36%; left: 5%; top: 32%; rotate: 0deg; }
-  .fs-opportunity-garment { width: 38%; left: 66%; top: 33%; }
-  .fs-stage .fs-opportunity-nfc { top: 8%; left: 18%; width: 17%; }
-  .fs-solution-phone { width: 58%; left: 21%; height: 96%; }
-  .fs-solution-material { width: 19%; left: 5%; height: 25%; top: 34%; rotate: 0deg; }
-  .fs-solution-garment { width: 29%; left: 74%; top: 35%; }
-  .fs-stage .fs-solution-warning { left: 81%; top: 63%; width: 17%; height: 18%; }
-  .fs-move > .fs-material-image { border-radius: 8px; }
-  .filo-story[data-preset='exploded assembly'] { --fs-travel: 18px; --fs-scatter: 30px; }
+  .fs-film--problem { aspect-ratio: 1352 / 948; }
+  .fs-film--opportunity { aspect-ratio: 1127 / 1396; }
 }
 @media (prefers-reduced-motion: reduce) {
   .filo-story .fs-stage * { animation: none; transition: none; }
-  .fs-phone-frame, .fs-phone-frame:first-child { opacity: 0; }
-  .fs-phone-frame:nth-child(2) { opacity: 1; }
-  .fs-gap-photo { opacity: 0; }
-  .fs-gap-tag { opacity: 1; }
 }

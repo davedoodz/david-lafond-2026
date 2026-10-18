@@ -437,6 +437,8 @@ export const MOMO_CONFIG = {
     reveal: { type: 'select' as const, options: ['rise', 'cascade', 'focus', 'from sides', 'wipe', 'still'], default: 'rise' },
     woopLabel: { type: 'text' as const, default: 'WOOP · plan for next time' },
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
+    /** Size of the Gross model loop (mode pill, picker and info card) next to the WOOP phone; scales in place. */
+    pickScale: [1, 0.5, 2, 0.01] as [number, number, number, number],
     spacing: sectionSpacingDials(96, 64, 72),
     textReveal: textRevealDials('focus'),
     _collapsed: true,
@@ -499,7 +501,7 @@ const NO_VIDEO = ['none']
  * Copy source: textura-exchange/CASE-STUDY-SPINE.md and the interview notes.
  */
 export const FILO_CONFIG = {
-  page: pageDials,
+  page: { ...pageDials, showSections: true },
   hero: heroDials({
     eyebrow: '',
     title: 'An Agentic Sample Room for Biomaterial Adoption in Fashion',
@@ -513,26 +515,41 @@ export const FILO_CONFIG = {
     team: '1 engineer, 2 fashion designers, 1 product designer',
   }, NO_VIDEO),
   heroSpacing: MOMO_CONFIG.heroSpacing,
+  /** The Filo mark above the hero title (public/work/filo): `logo` picks the drawing (Loop f = filo-mark.webp,
+   *  Tall l = filo-mark-2.webp); x / y move it (px), scale sizes it from its center. */
+  mark: {
+    show: true,
+    logo: { type: 'select' as const, options: ['Loop f', 'Tall l'], default: 'Loop f' },
+    x: [0, -400, 400, 1] as Tuple,
+    y: [0, -200, 200, 1] as Tuple,
+    scale: [1, 0.2, 3, 0.01] as Tuple,
+    _collapsed: false,
+  },
+  /** Hang-tag image in the hero: size (× its 420px base) and offset from its centred spot (px). */
+  heroTag: {
+    scale: [1, 0.3, 2.5, 0.01] as Tuple,
+    x: [0, -500, 500, 1] as Tuple,
+    y: [0, -500, 500, 1] as Tuple,
+    _collapsed: false,
+  },
   /** Partner logos in the hero (public/work/filo/logos). */
   logos: { ...MOMO_CONFIG.logos, hoverColor: { type: 'color' as const, default: '#6f8f69' } },
-  /** Physical sample → connected evidence → product in action. */
+  /** Market gap (the desk loop) → proposal (the tag-to-record prototype on a phone). */
   story: {
     problemLabel: txt('Market gap'),
-    opportunityLabel: txt('Opportunity'),
-    solutionLabel: txt('Solution'),
-    problemTitle: txt('Tagged swatches can open data.\nThey still don’t move the work forward.'),
-    problemBody: txt('Material data, test evidence and supplier decisions still split across physical samples, inboxes, spreadsheets and PLMs. A tag can identify the material—but the work around it remains fragmented.'),
+    opportunityLabel: txt('Proposal'),
+    problemTitle: txt('A tag can identify the material.\nYet it still doesn’t move the work forward.'),
+    problemBody: txt('Fashion teams must test, document and approve every new material before a factory can use it. That information remains split across samples, inboxes, spreadsheets, lab reports and PLMs.'),
     opportunityTitle: txt('Turn the swatch into an active material record.'),
     opportunityBody: txt('One tap can connect the material in your hand to its evidence, constraints and next actions.'),
-    solutionTitle: txt('Meet Filo'),
-    solutionBody: txt('A sample-room agent that turns each material into a living Technical File—and moves it from first swatch to production.'),
-    animationPreset: { type: 'select' as const, options: ['quiet dissolve', 'material drift', 'exploded assembly'], default: 'material drift' },
-    loopSeconds: [18, 10, 30, 1] as Tuple,
-    playbackSpeed: [1, 0.5, 2, 0.1] as Tuple,
-    toteSpin: [1, 0.1, 3, 0.05] as Tuple,
-    parkaSpin: [1, 0.1, 3, 0.05] as Tuple,
-    blouseSpin: [1, 0.1, 3, 0.05] as Tuple,
-    windbreakerSpin: [1, 0.1, 3, 0.05] as Tuple,
+    /** Each chapter's copy (label, title, body) enters like the other sections' text. */
+    textReveal: textRevealDials(),
+    /** Market gap's desk image: size relative to the 800px column, and offset (px). */
+    gapImage: { scale: [1, 0.3, 2, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
+    /** Proposal's phone-over-tag image: size relative to its 460px base, and offset (px). */
+    proposalImage: { scale: [1, 0.3, 2.5, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
+    /** Cream products turning beside the proposal image: size (px), gap from the image (px), seconds per turn. */
+    products: { show: true, size: [190, 80, 360, 1] as Tuple, spread: [30, -200, 300, 1] as Tuple, spin: [9, 3, 30, 0.5] as Tuple, _collapsed: false },
     spacing: sectionSpacingDials(90, 70, 100),
     textWidth: [590, 280, 720, 10] as Tuple,
     _collapsed: true,
@@ -548,7 +565,7 @@ export const FILO_CONFIG = {
       gap: 36,
     }, NO_VIDEO),
     spacing: sectionSpacingDials(88, 64, 36),
-    textReveal: textRevealDials('fade'),
+    textReveal: textRevealDials(),
     primaryVisual: { type: 'select' as const, options: ['image', 'video'], default: 'image' },
     miroVideo: {
       speed: [1, 0.25, 4, 0.05] as Tuple,
@@ -570,6 +587,7 @@ export const FILO_CONFIG = {
     title: txt('The technical designer handed an unfamiliar material.'),
     body: txt('She turns a design and material choice into something a factory can reliably make.\nWith an unfamiliar material, every new constraint has to be understood before production.'),
     tags: txt('Brand of 10–200 people, 2–4 collections a year, Lives in PLM and Excel, Fittings all afternoon, Emails Asia at 7 AM, Carries the technical risk if it fails'),
+    showTags: false,
     align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     image: { type: 'select' as const, options: ['bottom', 'top', 'none'], default: 'bottom' },
     blockGap: [100, 32, 200, 1] as Tuple,
@@ -581,7 +599,7 @@ export const FILO_CONFIG = {
       m1Role: txt('Technical designer, BlueSTEM'),
       m1Tag: txt('Know before you cut'),
       m2Quote: txt('“We can’t use heat or solvent on this.”'),
-      m2Role: txt('Designer, Stella McCartney'),
+      m2Role: txt('Designer, Gap'),
       m2Tag: txt('Catch it at the bench'),
       m3Quote: txt('“First we look at performance, then at how to do it in the most responsible way.”'),
       m3Role: txt('Product lead, O’Neill'),
@@ -605,32 +623,41 @@ export const FILO_CONFIG = {
       // Sticker and glass bubbles are Momo's; Filo keeps its plain portrait and cards.
       sticker: { ...FLOAT_DIALS.sticker, show: false },
       bubbles: { ...FLOAT_DIALS.bubbles, look: { ...FLOAT_DIALS.bubbles.look, default: 'card' } },
+      // Copy arrives first, with the shared section cascade (same keyframe, ease, duration and stagger as
+      // Momo's text); the desk portrait follows.
+      entrance: {
+        ...FLOAT_DIALS.entrance,
+        order: { ...FLOAT_DIALS.entrance.order, default: 'text first' },
+        text: { ...FLOAT_DIALS.entrance.text, default: 'cascade' },
+        textDuration: [0.7, 0.2, 3, 0.05] as Tuple,
+        textStagger: [0.1, 0, 0.6, 0.01] as Tuple,
+      },
     },
   },
-  source: sectionDials({
+  source: { ...sectionDials({
     eyebrow: 'Source → approve',
     title: 'The work is prepared.\nThe decision stays yours.',
     body: 'Compare suppliers, approve samples, and review what changes.',
     align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO),
-  evidence: sectionDials({
+  }, NO_VIDEO), textReveal: textRevealDials() },
+  evidence: { ...sectionDials({
     eyebrow: 'Observe → resolve',
     title: 'Evidence belongs\nwhere the work happens.',
     body: 'Capture the test. Surface the conflict. Keep what is still unknown in view.',
     align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO),
-  scale: sectionDials({
+  }, NO_VIDEO), textReveal: textRevealDials() },
+  scale: { ...sectionDials({
     eyebrow: 'Scale → decide',
     title: 'The same material.\nA bigger question.',
     body: 'Can we make 10,000? Confirm the capacity, see the gap, then choose the next move.',
     align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO),
-  handoff: sectionDials({
+  }, NO_VIDEO), textReveal: textRevealDials() },
+  handoff: { ...sectionDials({
     eyebrow: 'Share → reuse',
     title: 'The record moves forward.\nThe context stays with it.',
     body: 'Share the evidence, export a traceable file, and carry the learning into the next collection.',
     align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO),
+  }, NO_VIDEO), textReveal: textRevealDials() },
   outcomes: {
     ...sectionDials({
       eyebrow: 'What’s next',

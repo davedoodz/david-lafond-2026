@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { Activity, Footprints, Heart } from 'lucide-react'
 import { EditableText } from '../components/EditableText'
 import { MomoMark } from '../features/momoIntro/MomoMark'
+import { PlaybackToggle, RestartButton } from '../features/playback/VideoPlayback'
 import { MOMO_THUMB_CONFIG, watchLogoVars } from '../features/momoThumb/config'
 import { useTuning } from '../tuning/useTuning'
 import './DeviceInsights.css'
@@ -113,6 +114,15 @@ export function DeviceInsights({ copy, edit }: Props) {
   const [visible, setVisible] = useState(false)
   const [reduced, setReduced] = useState(false)
   const [step, setStep] = useState(0)
+  // Bumped by the phone's replay circle: restarts the step clock even when the sequence is already on step 0.
+  const [run, setRun] = useState(0)
+  // Click pause (the shared playback toggle on the phone): the step clock stops and the stage's running
+  // animations freeze. `progress` keeps the time already spent in the current step so a resume finishes
+  // it instead of starting it over; `toggleKey` remounts the toggle so a replay or a scroll-away clears it.
+  const [paused, setPaused] = useState(false)
+  const [toggleKey, setToggleKey] = useState(0)
+  const frozen = useRef<Animation[]>([])
+  const progress = useRef({ key: '', elapsed: 0 })
   const [scale, setScale] = useState(SCALE)
   // Heartbeat exit: once the iPhone has the nudge, the pulse finishes its current run, then the line
   // draws itself out left to right (data-out, see .mc-trace in DeviceInsights.css).
@@ -157,6 +167,8 @@ export function DeviceInsights({ copy, edit }: Props) {
         if (!('revealReady' in el.dataset)) arm(false)
         el.dataset.seen = ''
       } else if (!entry.isIntersecting) {
+        resume()
+        setToggleKey((n) => n + 1)
         setStep(0)
         arm(entry.boundingClientRect.top < 0)
       }
@@ -176,10 +188,33 @@ export function DeviceInsights({ copy, edit }: Props) {
   }, [])
   /* Loops: the sequence restarts right after "Yes, let's talk it out" is tapped. */
   useEffect(() => {
-    if (!visible || reduced) return
-    const timer = setTimeout(() => setStep((step + 1) % steps.length), steps[step].ms)
-    return () => clearTimeout(timer)
-  }, [visible, reduced, step])
+    if (!visible || reduced || paused) return
+    const key = `${step}:${run}`
+    if (progress.current.key !== key) progress.current = { key, elapsed: 0 }
+    const started = performance.now()
+    const timer = setTimeout(() => setStep((step + 1) % steps.length), Math.max(0, steps[step].ms - progress.current.elapsed))
+    return () => {
+      clearTimeout(timer)
+      progress.current.elapsed += performance.now() - started
+    }
+  }, [visible, reduced, step, run, paused])
+  function resume() {
+    frozen.current.forEach((a) => { if (a.playState === 'paused') a.play() })
+    frozen.current = []
+    setPaused(false)
+  }
+  const togglePause = (pause: boolean) => {
+    if (!pause) return resume()
+    frozen.current = stage.current?.getAnimations({ subtree: true }).filter((a) => a.playState === 'running') ?? []
+    frozen.current.forEach((a) => a.pause())
+    setPaused(true)
+  }
+  const replay = () => {
+    resume()
+    setToggleKey((n) => n + 1)
+    setStep(0)
+    setRun((n) => n + 1)
+  }
   const id = steps[step].id
   useEffect(() => {
     setTraceOut(false)
@@ -196,21 +231,27 @@ export function DeviceInsights({ copy, edit }: Props) {
         <EditableText as="h2" id="case-insights" className="case__title" label="Insights title" value={copy.title} onChange={edit('dynamic.title')} selectable />
         <EditableText className="case__body" label="Insights body" value={copy.body} onChange={edit('dynamic.body')} selectable />
       </header>
-      <div ref={stage} className="mc-stage" style={{ '--mc-scale': scale } as CSSProperties} role="img" aria-label="Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?">
-        <div className="mc-devices" aria-hidden="true">
-          <div className="mc-watch" style={watchLogoVars(watchLogo) as CSSProperties}>
+      <div ref={stage} className="mc-stage" style={{ '--mc-scale': scale } as CSSProperties}>
+        <div className="mc-devices" role="group" aria-label="Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?">
+          <div className="mc-watch" aria-hidden="true" style={watchLogoVars(watchLogo) as CSSProperties}>
             <div className="mc-watch__screen-fill" aria-hidden="true" />
             <div className="mc-watch__screen"><Screens step={id} render={watchScreen} />{watchHead}</div>
             <img className="mc-watch__img" src="/work/momo/devices/watch-starlight.png" alt="" />
           </div>
-          <div className="mc-link" data-state={id} data-out={traceOut || undefined}>
+          <div className="mc-link" aria-hidden="true" data-state={id} data-out={traceOut || undefined}>
             <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path ref={pulse} className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
           </div>
           <div className="mc-phone">
-            <div className="mc-phone__screen">{phoneLock}<Screens step={id} render={phoneScreen} /></div>
+            <div className="mc-phone__screen" aria-hidden="true">{phoneLock}<Screens step={id} render={phoneScreen} /></div>
             <img className="mc-phone__img" src="/work/momo/devices/iphone-silver.png" alt="" />
-            <div className="mc-island" data-state={id} style={{ '--island-x': `${island.x}px`, '--island-y': `${island.y}px` } as CSSProperties}><div className="mc-island__momo"><img src={MOMO} alt="" /></div></div>
-            <div className="mc-island__lens" />
+            <div className="mc-island" aria-hidden="true" data-state={id} style={{ '--island-x': `${island.x}px`, '--island-y': `${island.y}px` } as CSSProperties}><div className="mc-island__momo"><img src={MOMO} alt="" /></div></div>
+            <div className="mc-island__lens" aria-hidden="true" />
+            {!reduced && (
+              <>
+                <PlaybackToggle key={toggleKey} host={stage} reducedMotion={reduced} onUserToggle={togglePause} />
+                <RestartButton onRestart={replay} label="Replay prototype" />
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -24,8 +24,11 @@
 .filo-research__overview {
   width: min(var(--research-miro-width, 100%), 94vw);
 }
+.filo-research__interviews {
+  width: min(var(--research-interview-width, 100%), 94vw);
+}
 .filo-research__overview,
-.filo-research__primary > figure {
+.filo-research__interviews {
   position: relative;
   left: 50%;
   justify-self: start;
@@ -63,45 +66,20 @@
 .filo-research__media {
   position: relative;
 }
-
-
-.filo-research__primary {
-  display: grid;
-  justify-items: center;
-  gap: 28px;
-  width: 100%;
+/* Interview quote carousel between the two videos: full-bleed up to 1240px, centred on the column. The
+   wrapper claims no minimum width (min-width: 0), so the wide strip breaks out with negative margins instead
+   of widening the 900px column (which pushed the videos sideways and scrolled the page horizontally).
+   Also resets the persona placement from filoQuoteArt.css (order, margins tuned to the persona section). */
+.filo-research__quotes {
+  justify-self: stretch;
+  min-width: 0;
 }
-.filo-research__primary > figure {
-  width: min(var(--research-interview-width, 100%), 94vw);
-}
-
-.filo-research__copy {
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  width: min(100%, 650px);
-  text-align: center;
-}
-
-.filo-research__copy :is(p, h3) {
-  margin: 0;
-}
-
-.filo-research__copy h3 {
-  color: var(--ink-950);
-  font-size: clamp(24px, 3vw, 36px);
-  font-weight: 400;
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
-}
-
-.filo-research__copy > p:last-child {
-  max-width: 58ch;
-  color: var(--stone-600);
-  font-size: 16px;
-  line-height: 1.4;
-  text-wrap: pretty;
+.filo-research .filo-research__quotes .persona__quotes,
+.filo-research .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
+  order: 0;
+  width: min(1240px, 100vw);
+  margin: 0 calc(50% - min(620px, 50vw));
+  animation: none;
 }
 
 @media (max-width: 640px) {
@@ -118,19 +96,5 @@
 
   .filo-research__frame {
     border-radius: 12px;
-  }
-
-
-  .filo-research__primary {
-    gap: 22px;
-  }
-
-  .filo-research__copy h3 {
-    font-size: 25px;
-  }
-
-  .filo-research__copy > p:last-child {
-    padding-inline: 8px;
-    font-size: 14px;
   }
 }

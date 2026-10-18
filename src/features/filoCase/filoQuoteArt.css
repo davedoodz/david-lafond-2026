@@ -29,6 +29,11 @@
 .persona__quotes:has([data-filo-quote]) .persona__marquee-track {
   zoom: var(--qa-strip-scale, 1);
 }
+/* Card gap dial. The trailing padding equals the gap, so the two copies of the list still loop seamlessly. */
+.persona__quotes:has([data-filo-quote]) .persona__marquee-track ul {
+  gap: var(--qa-gap, 16px);
+  padding-right: var(--qa-gap, 16px);
+}
 [data-quotes] .persona__quote-item[data-filo-quote] > :not(.filo-quote-art) {
   position: relative;
   max-width: var(--qa-text, 54%);

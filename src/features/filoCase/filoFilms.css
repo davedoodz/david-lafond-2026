@@ -11,6 +11,15 @@
   max-height: none;
   overflow: visible;
 }
+/* Hero: the Filo hang tag (transparent, so it sits on the page). DialKit › heroTag scales it and moves it
+   in X/Y without changing the layout around it. */
+.filo-hero-tag {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  margin-inline: auto;
+  transform: translate(var(--tag-x, 0px), var(--tag-y, 0px)) scale(var(--tag-scale, 1));
+}
 .case__section.filo-film-section {
   height: auto;
   min-height: 100svh;
@@ -29,9 +38,6 @@
 .filo-film--phone { max-width: 350px; }
 .filo-film--detail { max-width: 310px; }
 .filo-film--upper { max-width: 350px; }
-.filo-films--hero .filo-films__grid { grid-template-columns: 1.05fr .95fr; gap: clamp(30px, 5vw, 90px); max-width: 620px; margin: auto; }
-.filo-films--hero .filo-film--phone { max-width: 300px; }
-.filo-films--hero .filo-film--detail { max-width: 255px; translate: 0 32px; }
 .filo-films--source .filo-film:last-child { align-self: start; margin-top: 62px; }
 .filo-films--evidence .filo-films__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 64px; }
 .filo-films--evidence .filo-film { grid-column: span 2; }
@@ -49,13 +55,10 @@
 @media (max-width: 700px) {
   .case__section.filo-film-section { padding-inline: 22px; min-height: 0; }
   .case[data-work='filo'] .case__section--hero .case__devices { width: 100%; }
-  .filo-films__grid, .filo-films--hero .filo-films__grid, .filo-films--scale .filo-films__grid, .filo-films--evidence .filo-films__grid { grid-template-columns: minmax(0, 1fr); gap: 52px; }
+  .filo-films__grid, .filo-films--scale .filo-films__grid, .filo-films--evidence .filo-films__grid { grid-template-columns: minmax(0, 1fr); gap: 52px; }
   .filo-films .filo-film { grid-column: auto; justify-self: center; margin-block: 0; align-self: center; translate: none; }
   .filo-films--evidence .filo-film:nth-child(n) { grid-column: auto; justify-self: center; }
   .filo-films .filo-film--phone { max-width: min(82%, 320px); }
   .filo-films .filo-film--detail { max-width: min(86%, 310px); }
   .filo-films .filo-film--upper { max-width: min(92%, 350px); }
-  .filo-films--hero .filo-films__grid { grid-template-columns: 1.1fr .9fr; gap: 18px; }
-  .filo-films--hero .filo-film { max-width: 100%; }
-  .filo-films--hero .filo-film--detail { translate: 0 15px; }
 }

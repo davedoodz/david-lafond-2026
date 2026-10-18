@@ -47,16 +47,18 @@ export const STORY_ART_TEXT: StoryArtText = {
  * one after another, so lengthening one pushes every later step back. Row speed still scales all.
  */
 export type StoryTiming = {
-  problem: { curve: number; icon: number; line: number; phone: number };
+  /** `peakLead`: the peak icon shows this long before the curve finishes, as the line crests. */
+  problem: { curve: number; peakLead: number; icon: number; line: number; phone: number };
   /** `stagger`: gap between the three converging lines starting. */
   opportunity: { lines: number; stagger: number; dot: number };
-  /** `beat`: the watch's one heartbeat · `hold`: watch on screen before the phone's line starts. */
-  solution: { curve: number; dot: number; line: number; watch: number; beat: number; hold: number; phoneLine: number; phone: number };
+  /** `peakLead`: the peak dot (and the watch after it) start this long before the curve finishes ·
+   *  `beat`: the watch's one heartbeat · `hold`: watch on screen before the phone's line starts. */
+  solution: { curve: number; peakLead: number; dot: number; line: number; watch: number; beat: number; hold: number; phoneLine: number; phone: number };
 };
 export const STORY_TIMING: StoryTiming = {
-  problem: { curve: 1.6, icon: 0.5, line: 0.6, phone: 0.7 },
+  problem: { curve: 1.6, peakLead: 1, icon: 0.5, line: 0.6, phone: 0.7 },
   opportunity: { lines: 1.6, stagger: 0.35, dot: 0.5 },
-  solution: { curve: 1.6, dot: 0.4, line: 0.5, watch: 0.5, beat: 1.6, hold: 1.78, phoneLine: 0.6, phone: 0.7 },
+  solution: { curve: 1.6, peakLead: 1, dot: 0.4, line: 0.5, watch: 0.5, beat: 1.6, hold: 0.78, phoneLine: 0.6, phone: 0.7 },
 };
 
 /** `--at` (start) and `--dur` for one step. */
@@ -225,8 +227,8 @@ function Wipe({ box: [x, y, w, h], from, at, dur, children }: { box: [number, nu
 /** Problem: the feeling peaks, and the app only opens after it has faded. */
 export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt", peakColor = INK, peak = { x: 0, y: 0, scale: 1 }, timing = STORY_TIMING.problem }: { text?: StoryArtText; peakIcon?: string; peakColor?: string; peak?: { x: number; y: number; scale: number }; timing?: StoryTiming["problem"] }) {
   const t = timing;
-  const iconAt = t.curve;
-  const lineAt = iconAt + t.icon;
+  const iconAt = Math.max(0, t.curve - t.peakLead);
+  const lineAt = t.curve + t.icon;
   const phoneAt = lineAt + t.line;
   return (
     <svg
@@ -275,7 +277,7 @@ export function ProblemArt({ text = STORY_ART_TEXT, peakIcon = "bolt", peakColor
  */
 export function SolutionArt({ text = STORY_ART_TEXT, timing = STORY_TIMING.solution }: { text?: StoryArtText; timing?: StoryTiming["solution"] }) {
   const t = timing;
-  const dotAt = t.curve;
+  const dotAt = Math.max(0, t.curve - t.peakLead);
   const lineAt = dotAt + t.dot;
   const watchAt = lineAt + t.line;
   const beatAt = watchAt + t.watch;

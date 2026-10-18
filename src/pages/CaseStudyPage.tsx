@@ -17,7 +17,7 @@ import { useTuningController } from '../tuning/useTuning'
 import type { DialConfig } from 'dialkit'
 import { FILO_CONFIG, PROTO_VIDEOS, RECRUITER_COPY, MOMO_CONFIG, type ProtoVideo, type SectionSpacing, type TextReveal } from './caseStudyContent'
 import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } from './caseStudyFlows'
-import { PersonaSection, type Persona } from './casePersona'
+import { PersonaSection, QuoteMarquee, type Persona } from './casePersona'
 import { DeviceInsights } from './DeviceInsights'
 import { FiloStory, type FiloStorySettings } from './filoStoryArt'
 import { FiloFilms } from '../features/filoCase/FiloFilms'
@@ -134,9 +134,21 @@ const WRIST_FRAMES: WristFrame[] = Array.from({ length: WRIST_COUNT }, (_, k) =>
 })
 type HeroField = 'role' | 'timeline' | 'extra' | 'team'
 type Hero = Section & Record<HeroField | `${HeroField}Label`, string>
+/** Filo's hero hang-tag dials (FILO_CONFIG.heroTag); Momo has none. */
+type HeroTag = { scale: number; x: number; y: number }
+const isHeroTag = (v: unknown): v is HeroTag =>
+  !!v && typeof v === 'object' &&
+  'scale' in v && typeof v.scale === 'number' &&
+  'x' in v && typeof v.x === 'number' &&
+  'y' in v && typeof v.y === 'number'
+
+/** The persona's interview quotes (`persona.moments.m{n}Quote` / `m{n}Role`) and its float pace. */
+type QuoteCopy = { moments: Record<string, string>; float?: { pace: number } }
+const isQuoteCopy = (v: unknown): v is QuoteCopy =>
+  !!v && typeof v === 'object' && 'moments' in v && !!v.moments && typeof v.moments === 'object'
 
 /** Story sections (everything except page-level folders and the hero), in config order. */
-const NON_SECTIONS = new Set(['page', 'hero', 'logos', 'heroSpacing', 'recruiter'])
+const NON_SECTIONS = new Set(['page', 'hero', 'logos', 'heroSpacing', 'heroTag', 'recruiter', 'mark'])
 const SECTION_KEYS = Object.fromEntries(
   Object.entries(PANELS).map(([k, p]) => [k, Object.keys(p.config).filter((s) => !NON_SECTIONS.has(s))]),
 ) as Record<keyof typeof PANELS, string[]>
@@ -372,6 +384,9 @@ export function CaseStudyPage({ id }: Props) {
     }
   ).heroSpacing
   const logos = (all as unknown as { logos?: Logos }).logos
+  const mark = (all as unknown as { mark?: { show: boolean; logo: 'Loop f' | 'Tall l'; x: number; y: number; scale: number } }).mark
+  const rawTag: unknown = all.heroTag
+  const heroTag = isHeroTag(rawTag) ? rawTag : undefined
   // The intro draws the braid on a fixed canvas and caches the slot coordinates.
   // A translated slot does not trigger ResizeObserver, so tell it to remeasure after this dial moves.
   useLayoutEffect(() => {
@@ -431,6 +446,8 @@ export function CaseStudyPage({ id }: Props) {
       observer.observe(s)
       revealObserver.observe(s)
     })
+    // Text blocks inside tall sections (Filo story chapters, primary research) reveal on their own entry.
+    main.querySelectorAll<HTMLElement>('[data-text-block]').forEach((b) => revealObserver.observe(b))
     const dark = main.querySelector('.case__dark')
     const darkObserver = new IntersectionObserver(([entry]) => setOnDark(entry.isIntersecting), { rootMargin: '0px 0px -60% 0px' })
     if (dark) darkObserver.observe(dark)
@@ -448,6 +465,38 @@ export function CaseStudyPage({ id }: Props) {
   }
 
   const edit = (path: string) => (next: string) => setValue(recruiter && hasPath(RECRUITER_COPY, path) ? `recruiter.${path}` : path, next)
+
+  /** Filo: the persona's four interview quotes as a sliding carousel under the primary-research video.
+      Same copy and illustrations as the persona cards; on-page edits save to `persona.moments`. */
+  const researchQuotes = () => {
+    const raw: unknown = all.persona
+    if (!isQuoteCopy(raw)) return undefined
+    const m = raw.moments
+    const count = Object.keys(m).filter((k) => /^m\d+Quote$/.test(k)).length
+    const line = (i: number, field: 'Quote' | 'Role', copy: boolean) => {
+      const key = `m${i + 1}${field}`
+      const className = field === 'Quote' ? 'persona__quote' : 'persona__role'
+      return copy ? (
+        <p className={className}>{m[key]}</p>
+      ) : (
+        <EditableText as="p" className={className} label={`Interview quote ${i + 1}${field === 'Role' ? ' role' : ''}`} value={m[key]} onChange={edit(`persona.moments.${key}`)} />
+      )
+    }
+    return (
+      <QuoteMarquee
+        count={count}
+        loop={(raw.float?.pace ?? 4.9) * count * 2.5}
+        label="What industry experts told us"
+        render={(i, copy) => (
+          <>
+            <FiloQuoteArt index={i} />
+            {line(i, 'Quote', copy)}
+            {line(i, 'Role', copy)}
+          </>
+        )}
+      />
+    )
+  }
 
   const renderMoment = (key: string, m: Moment) => (
     <WristSequence
@@ -533,6 +582,16 @@ export function CaseStudyPage({ id }: Props) {
         <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
           {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} id={id} />}
+          {isHero && mark?.show && (
+            <img
+              className="case__hero-mark"
+              src={mark.logo === 'Tall l' ? '/work/filo/filo-mark-2.webp' : '/work/filo/filo-mark.webp'}
+              alt=""
+              width={mark.logo === 'Tall l' ? 1090 : 990}
+              height={mark.logo === 'Tall l' ? 564 : 466}
+              style={{ '--mark-x': `${mark.x}px`, '--mark-y': `${mark.y}px`, '--mark-scale': mark.scale } as CSSProperties}
+            />
+          )}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} id={id} />
           ) : isHero && id === 'momo' ? (
@@ -577,7 +636,21 @@ export function CaseStudyPage({ id }: Props) {
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} id={id} />}
         </div>
         {isHero ? (
-          <div className="case__devices">{id === 'momo' ? <MomoWelcome active={!intro} /> : <FiloFilms group="hero" />}</div>
+          <div className="case__devices">
+            {id === 'momo' ? (
+              <MomoWelcome active={!intro} />
+            ) : (
+              <img
+                className="filo-hero-tag"
+                style={heroTag && ({ '--tag-scale': heroTag.scale, '--tag-x': `${heroTag.x}px`, '--tag-y': `${heroTag.y}px` } as CSSProperties)}
+                src="/work/filo/hero-tag.webp"
+                width={1024}
+                height={1536}
+                alt="A recycled-paper Filo hang tag embossed with an infinity mark, on a copper cord."
+                fetchPriority="high"
+              />
+            )}
+          </div>
         ) : hasFilms ? <FiloFilms group={key as FilmGroup} /> : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} id={id} />}
         {hasDemo && <NotificationDemo media={s.media} />}
@@ -585,7 +658,10 @@ export function CaseStudyPage({ id }: Props) {
           (s.media.figure === 'system' ? (
             <MomoSystemFigure />
           ) : s.media.figure === 'research' ? (
-            <FiloResearchFigure settings={s as unknown as FiloResearchSettings} />
+            <FiloResearchFigure
+              settings={s as unknown as FiloResearchSettings}
+              quotes={id === 'filo' ? researchQuotes() : undefined}
+            />
           ) : s.media.figure === 'next' ? (
             <FiloNext />
           ) : s.media.figure === 'paper' ? (
@@ -618,7 +694,7 @@ export function CaseStudyPage({ id }: Props) {
                 {keys.map((key) => (
                   <li key={key}>
                     <button type="button" aria-current={active === key ? 'true' : undefined} onClick={() => jump(key)}>
-                      {key === 'story' ? (recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
+                      {key === 'story' ? (id === 'filo' ? 'Problem · Proposal' : recruiter ? 'Problem · Opportunity' : 'Problem · Solution') : key === 'persona' && !recruiter ? 'Persona' : all[key].eyebrow}
                     </button>
                   </li>
                 ))}
