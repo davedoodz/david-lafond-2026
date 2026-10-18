@@ -287,7 +287,9 @@
   justify-self: center;
   width: 120px;
   height: auto;
-  margin: 0 auto 18px;
+  /* The space to the title is set here, not by an eyebrow (none renders under the mark): with the
+     mark's y nudge this gives the hero its even 40px rhythm (mark → title → meta → logos). */
+  margin: 0 auto 51px;
   translate: var(--mark-x, 0px) var(--mark-y, 0px);
   scale: var(--mark-scale, 1);
   pointer-events: none;
@@ -373,10 +375,9 @@ html[data-case-snap] .case .footer {
     grid-template-columns: repeat(2, auto);
     gap: 24px 36px;
   }
-  /* The two-row meta shifts the hero's rhythm; 8px more under the mark keeps mark → title → meta →
-     logos at even gaps (~41px) on phones, as on desktop (40px). */
+  /* The two-row meta shifts the hero's rhythm; more room under the mark keeps the gaps even on phones. */
   .case__hero-mark {
-    margin-bottom: 26px;
+    margin-bottom: 54px;
   }
 }
 
