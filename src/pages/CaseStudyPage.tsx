@@ -608,7 +608,9 @@ export function CaseStudyPage({ id }: Props) {
                 Replay intro
               </span>
             </button>
-          ) : (
+          ) : isHero && mark?.show && !s.eyebrow ? null : (
+            // Under the Filo mark an empty eyebrow renders nothing: in dev an empty editable still takes a
+            // line (production collapses it), which made dev and the live hero space differently.
             <EditableText className="case__eyebrow eyebrow" label={`${key} eyebrow`} value={s.eyebrow} onChange={edit(`${key}.eyebrow`)} />
           )}
           <EditableText
