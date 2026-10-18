@@ -36,6 +36,19 @@ const CONFIG = {
     /** Quote and role typeface: the case study's Beatrice, or Inter (Inter has no italic, so the quote's slant is synthesized). */
     font: { type: 'select' as const, options: ['Beatrice', 'Inter'], default: 'Beatrice' },
   },
+  /**
+   * Quote text on every card. Defaults are the current look. Inter is variable (any weight);
+   * Beatrice ships 400 and 500 only, so with it weights snap to the nearest of those.
+   */
+  quoteType: {
+    /** Font size (px). Phones (≤640 px) have their own, as the site's body size drops there. */
+    size: [22, 12, 40, 0.5] as Tuple,
+    sizeMobile: [15.4, 10, 30, 0.1] as Tuple,
+    weight: [400, 300, 700, 10] as Tuple,
+    /** Letter spacing (px; negative = tighter). */
+    spacing: [-0.64, -3, 3, 0.02] as Tuple,
+    lineHeight: [1.3, 0.9, 2, 0.01] as Tuple,
+  },
   /** Drop shadow under every card. The strip clips its overflow, so it gets room for the shadow. */
   shadow: {
     show: true,
@@ -51,7 +64,7 @@ const CONFIG = {
   'Product lead, O’Neill': placement(),
   'Merchandiser, Calvin Klein': placement(),
 }
-type Card = Exclude<keyof typeof CONFIG, 'strip' | 'card' | 'shadow'>
+type Card = Exclude<keyof typeof CONFIG, 'strip' | 'card' | 'quoteType' | 'shadow'>
 
 /** `#rrggbb` + opacity → `rgb(r g b / a)`. */
 function rgba(hex: string, alpha: number) {
@@ -79,6 +92,7 @@ export function FiloQuoteArt({ index }: { index: number }) {
   const dials = useTuning('Filo quote art', CONFIG)
   const markerRef = useRef<HTMLSpanElement & HTMLImageElement>(null)
   const { width, height, gap, text, mobileHeight, fill, font } = dials.card
+  const { size: quoteSize, sizeMobile: quoteSizeMobile, weight: quoteWeight, spacing: quoteSpacing, lineHeight: quoteLineHeight } = dials.quoteType
   const s = dials.shadow
   const shadow = s.show ? `0 ${s.y}px ${s.blur}px ${s.spread}px ${rgba(s.color, s.opacity)}` : 'none'
   const { scale: stripScale, play } = dials.strip
@@ -96,13 +110,18 @@ export function FiloQuoteArt({ index }: { index: number }) {
     card.style.setProperty('--qa-text', `${text}%`)
     card.style.setProperty('--qa-card-fill', fill)
     card.dataset.qaFont = font
+    card.style.setProperty('--qa-quote-size', `${quoteSize}px`)
+    card.style.setProperty('--qa-quote-size-m', `${quoteSizeMobile}px`)
+    card.style.setProperty('--qa-quote-weight', `${quoteWeight}`)
+    card.style.setProperty('--qa-quote-spacing', `${quoteSpacing}px`)
+    card.style.setProperty('--qa-quote-leading', `${quoteLineHeight}`)
     card.style.setProperty('--qa-card-shadow', shadow)
     const strip = card.closest<HTMLElement>('.persona__quotes')
     strip?.style.setProperty('--qa-shadow-pad', `${shadowPad}px`)
     strip?.style.setProperty('--qa-strip-scale', `${stripScale}`)
     strip?.style.setProperty('--qa-gap', `${gap}px`)
     strip?.toggleAttribute('data-qa-paused', !play)
-  }, [width, height, gap, text, mobileHeight, fill, font, shadow, shadowPad, stripScale, play])
+  }, [width, height, gap, text, mobileHeight, fill, font, quoteSize, quoteSizeMobile, quoteWeight, quoteSpacing, quoteLineHeight, shadow, shadowPad, stripScale, play])
 
   const art = ART[index]
   if (!art) return <span ref={markerRef} hidden />

@@ -1313,32 +1313,41 @@
       "scale": 0.86
     },
     "card": {
-      "width": 427,
+      "width": 531,
+      "height": 281,
+      "text": 55,
       "font": "Inter"
+    },
+    "quoteType": {
+      "size": 22.5,
+      "weight": 540,
+      "spacing": -1.04,
+      "lineHeight": 1.21
     },
     "shadow": {
       "y": 14,
       "blur": 36,
       "spread": -18,
-      "opacity": 0.22
+      "opacity": 0.21
     },
     "Technical designer, BlueSTEM": {
-      "scale": 1.1,
-      "x": -13
+      "scale": 1.24,
+      "x": 19,
+      "y": -18
     },
     "Designer, Gap": {
-      "scale": 1.17,
-      "x": 2,
+      "scale": 1.37,
       "y": -3
     },
     "Product lead, O’Neill": {
-      "scale": 1.28,
+      "scale": 1.43,
       "x": 57,
       "y": -5
     },
     "Merchandiser, Calvin Klein": {
-      "scale": 1.36,
-      "x": 77
+      "scale": 1.46,
+      "x": 77,
+      "y": -24
     }
   }
 }
