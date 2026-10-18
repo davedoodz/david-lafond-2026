@@ -1310,10 +1310,11 @@
   },
   "Filo quote art": {
     "strip": {
-      "scale": 1.06
+      "scale": 0.86
     },
     "card": {
-      "width": 593
+      "width": 427,
+      "font": "Inter"
     },
     "shadow": {
       "y": 14,
@@ -1322,7 +1323,8 @@
       "opacity": 0.22
     },
     "Technical designer, BlueSTEM": {
-      "scale": 1.1
+      "scale": 1.1,
+      "x": -13
     },
     "Designer, Gap": {
       "scale": 1.17,
