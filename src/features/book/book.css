@@ -169,10 +169,16 @@
 /*
  * Flat, not preserve-3d: the only child (.book__shift) is 2D anyway, and a 3D
  * rendering context makes Chrome rasterize the pages at low resolution (blurry text).
+ *
+ * .book__tilt (the rotateX tilt layer, set in FlipBook.tsx's rAF loop) gets
+ * no `will-change: transform` for the same reason: combined with the resting
+ * rotateX tilt (a real 3D transform under `.book`'s perspective), that hint
+ * makes Chrome pick a composited-layer raster scale that ignores
+ * devicePixelRatio, so every page image renders soft/blocky even though the
+ * source is plenty sharp. Setting the transform directly every frame while
+ * it moves is enough: the browser still promotes it to its own layer
+ * exactly when needed.
  */
-.book__tilt {
-  will-change: transform;
-}
 
 .book__shift {
   transition: translate var(--flip-ms, 700ms) cubic-bezier(0.22, 1, 0.36, 1);

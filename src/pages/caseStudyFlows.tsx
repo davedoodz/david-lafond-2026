@@ -1,12 +1,24 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
 import { PlaybackToggle, RestartButton } from '../features/playback/VideoPlayback'
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText, type StoryTiming } from './storyArt'
 import type { SectionSpacing, TextReveal } from './caseStudyContent'
 import { cardSurface, useSystemBase, type GlassDials } from '../features/momoSystem/systemSurface'
 
-/** Phone-only recordings (public/work/momo/flows): 1060×2160 (2x), the phone cropped to its own frame. */
-const flow = (name: string) => ({ src: `/work/momo/flows/${name}.mp4`, poster: `/work/momo/flows/${name}.webp` })
+/** Phone-only recordings (public/work/momo/flows): `<name>.mp4` is the 2x master (1060 wide for the phones),
+ *  `<name>-<width>.mp4` the same recording scaled down (lanczos). The tilted phones are drawn in 3D, where the
+ *  browser samples the video without smoothing: a video much larger than its on-screen pixels turns small text
+ *  jagged, so each phone loads the smallest size that still covers its pixels. */
+const FLOW_WIDTHS = [360, 540, 720]
+const flow = (name: string, width: number | null) => ({ src: `/work/momo/flows/${name}${width ? `-${width}` : ''}.mp4`, poster: `/work/momo/flows/${name}.webp` })
+
+/** The encoded width for a phone this size on this screen (null: the master). */
+function flowWidth(host: HTMLElement) {
+  const r = host.getBoundingClientRect()
+  // A tilted phone's projected width runs short of its face; its height doesn't.
+  const px = Math.max(r.width, r.height * (host.offsetWidth / (host.offsetHeight || 1))) * window.devicePixelRatio
+  return FLOW_WIDTHS.find((w) => w >= px) ?? null
+}
 
 /** A phone recording that plays only while on screen (and not for reduced motion). It rewinds once fully off screen, so each return starts from the beginning without a visible jump. `controls`: clicking the phone pauses and plays it (the shared playback toggle), and hovering it shows the replay circle, which plays the recording again from the start. */
 export function PhoneVideo({ name, className = '', controls = true }: { name: string; className?: string; controls?: boolean }) {
@@ -42,11 +54,20 @@ export function PhoneVideo({ name, className = '', controls = true }: { name: st
     video.currentTime = 0
     void video.play().catch(() => {})
   }
-  const { src, poster } = flow(name)
+  const [width, setWidth] = useState<number | null | undefined>(undefined)
+  useLayoutEffect(() => {
+    const el = host.current
+    if (!el) return
+    const update = () => setWidth(flowWidth(el))
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  const { src, poster } = flow(name, width ?? null)
   // The wrapper carries size and shadow; the video is clipped to the phone outline (see .case__phone-video).
   return (
     <span ref={host} className={`case__phone ${className}`.trim()}>
-      <video ref={ref} className="case__phone-video" src={src} poster={poster} muted loop playsInline preload="metadata" aria-hidden="true" />
+      <video ref={ref} className="case__phone-video" src={width === undefined ? undefined : src} poster={poster} muted loop playsInline preload="metadata" aria-hidden="true" />
       {controls && (
         <>
           <PlaybackToggle host={host} videoSelector="video" reducedMotion={reduced} feedbackOnMediaEvents={false} onUserToggle={(paused) => { userPaused.current = paused }} />
