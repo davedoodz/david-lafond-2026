@@ -8,12 +8,18 @@
   padding-bottom: var(--story-gap-d);
 }
 
+/* Cards and text › x/y: left/top on already-relative boxes, so layout, the entrance transforms
+   and the stack's fixed cursor caption are untouched. */
 .about__stack {
   margin-inline: auto;
+  left: var(--cards-x-d, 0px);
+  top: var(--cards-y-d, 0px);
 }
 
 .about__story {
   margin-top: var(--stack-gap-d);
+  left: var(--text-x-d, 0px);
+  top: var(--text-y-d, 0px);
 }
 
 .about__heading {
@@ -80,8 +86,14 @@
   .about__light {
     padding-bottom: var(--story-gap-m);
   }
+  .about__stack {
+    left: var(--cards-x-m, 0px);
+    top: var(--cards-y-m, 0px);
+  }
   .about__story {
     margin-top: var(--stack-gap-m);
+    left: var(--text-x-m, 0px);
+    top: var(--text-y-m, 0px);
   }
   .about__heading {
     width: auto;
@@ -111,6 +123,41 @@
 .about__story {
   position: relative;
   z-index: 1;
+}
+
+/* Bottom fade (About › fade): a band fixed to the screen's bottom edge, over the story only.
+   Script sets --fade-p (0–1). The band itself stays fully opaque: opacity on it would make it a
+   backdrop root and the blur would have nothing behind it to blur. */
+.about__fade {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 2;
+  height: var(--fade-h-d, 160px);
+  pointer-events: none;
+}
+.about__fade::before,
+.about__fade::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+/* Blur, masked so it is strongest at the bottom and thins to nothing at the top. */
+.about__fade::before {
+  opacity: var(--fade-p, 0);
+  -webkit-backdrop-filter: blur(var(--fade-blur, 6px));
+  backdrop-filter: blur(var(--fade-blur, 6px));
+  -webkit-mask-image: linear-gradient(to top, #000 var(--fade-solid, 15%), transparent);
+  mask-image: linear-gradient(to top, #000 var(--fade-solid, 15%), transparent);
+}
+.about__fade::after {
+  opacity: calc(var(--fade-p, 0) * var(--fade-strength, 0.9));
+  background: linear-gradient(to top, var(--fade-color, #fff) var(--fade-solid, 15%), transparent);
+}
+@media (max-width: 640px) {
+  .about__fade {
+    height: var(--fade-h-m, 120px);
+  }
 }
 
 .about__dark {
