@@ -1,12 +1,14 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import { useTuning } from '../../tuning/useTuning'
 import './filoSourceSteps.css'
 
 /**
  * Filo "source" section: three steps from the innovator's first data to the open Technical File.
- * The data card, the sample box and the flat tag are crops of David's reference (public/work/filo/steps,
- * whitened so the page shows through via multiply, shadows kept). Step 3 is one realistic phone whose
- * screen loops scanning → tag detected → Technical File, rebuilt in HTML.
+ * Step 1 is the desktop app as a looping prototype. The sample box and the flat tag are crops of
+ * David's reference (public/work/filo/steps, whitened so the page shows through via multiply, shadows
+ * kept). Step 3 is one realistic phone whose screen loops scanning → tag detected → Technical File,
+ * rebuilt in HTML.
  */
 
 const ICON = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
@@ -115,37 +117,88 @@ function TapPhone() {
   </div>
 }
 
-/**
- * Step 1: the innovator's desktop app, cross-fading through its screens on the same on-screen clock
- * as the phone. Each frame holds, then fades into the next; the last fades back into the first.
- */
-const APP_FRAMES = [
-  ['app-materials', 'Filo materials library: Bacterial Cellulose saved as a draft beside published materials, with its summary and properties.'],
-  ['app-add-material', 'Add a new material: the innovator uploads a datasheet, lab report, OEKO-TEX certificate and material photos.'],
-  ['app-extracting', 'Extracting information: Filo reads the documents into a draft record, each value linked to its source document.'],
-  ['app-review', 'Review and confirm: Bacterial Cellulose is ready to publish, every property traced to a page of its source document.'],
-] as const
+type FlowCommand = 'play' | 'pause' | 'restart'
+type FlowState = { visible: boolean; userPaused: boolean }
+const tellFlow = (frame: HTMLIFrameElement | null, command: FlowCommand) =>
+  frame?.contentWindow?.postMessage({ filoAppFlow: command }, window.location.origin)
+/** Plays while in view, unless the reader paused it. */
+const syncFlow = (frame: HTMLIFrameElement | null, state: FlowState) =>
+  tellFlow(frame, state.visible && !state.userPaused ? 'play' : 'pause')
 
-function AppDeck() {
-  return <div className="fss-app">
-    {APP_FRAMES.map(([file, alt], i) => <img
-      key={file}
+/**
+ * Step 1: the innovator's desktop app as a prototype (public/work/filo/filo-app-flow.html): a cursor
+ * adds a material, from the library through upload and extraction to review and publish, then loops.
+ * It runs in its own document so the app's generic class names (.card, .btn, .nav) never meet the
+ * page's. Playback matches the Momo prototype: it plays while in view, clicking it pauses or plays,
+ * the top-right button replays it, and once fully off screen it rewinds (clearing a pause) so the
+ * next visit starts on the first screen.
+ */
+function AppFlow() {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const frameRef = useRef<HTMLIFrameElement>(null)
+  const live = useRef<FlowState>({ visible: false, userPaused: false })
+  const [toggleKey, setToggleKey] = useState(0)
+  const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    // The prototype says it's ready once its type has loaded; anything sent before that is dropped.
+    const onMessage = (event: MessageEvent) => {
+      if (event.source === frameRef.current?.contentWindow && event.data?.filoAppFlow === 'ready') syncFlow(frameRef.current, live.current)
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.intersectionRatio >= 0.2) {
+        live.current.visible = true
+        syncFlow(frameRef.current, live.current)
+      } else if (!entry.isIntersecting) {
+        live.current = { visible: false, userPaused: false }
+        setToggleKey((n) => n + 1)
+        tellFlow(frameRef.current, 'restart')
+      }
+    }, { threshold: [0, 0.2] })
+    window.addEventListener('message', onMessage)
+    observer.observe(host)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('message', onMessage)
+    }
+  }, [])
+
+  const replay = () => {
+    live.current.userPaused = false
+    setToggleKey((n) => n + 1)
+    tellFlow(frameRef.current, 'restart')
+    syncFlow(frameRef.current, live.current)
+  }
+  return <div ref={hostRef} className="fss-app">
+    <iframe
+      ref={frameRef}
       className="fss-app__frame"
-      src={`/work/filo/steps/${file}.webp`}
-      width={1536}
-      height={1024}
+      src="/work/filo/filo-app-flow.html"
+      title="Filo desktop app: a cursor adds Bacterial Cellulose, from the materials library through document upload and extraction to review and publish."
       loading="lazy"
-      decoding="async"
-      alt={alt}
-      style={{ '--i': i } as CSSProperties}
-    />)}
+      tabIndex={-1}
+    />
+    {!reduced && <>
+      <PlaybackToggle
+        key={toggleKey}
+        host={hostRef}
+        reducedMotion={reduced}
+        onUserToggle={(paused) => {
+          live.current.userPaused = paused
+          syncFlow(frameRef.current, live.current)
+        }}
+      />
+      <RestartButton onRestart={replay} label="Replay prototype" />
+    </>}
   </div>
 }
 
 const STEPS: { title: string; visual: ReactNode }[] = [
   {
     title: 'Material innovator\nprovides initial data.',
-    visual: <AppDeck />,
+    visual: <AppFlow />,
   },
   {
     title: 'Sample arrives\nwith a Filo tag.',
@@ -160,11 +213,6 @@ const STEPS: { title: string; visual: ReactNode }[] = [
 
 type Tuple = [number, number, number, number]
 const CONFIG = {
-  /** Step 1's desktop app loop. */
-  app: {
-    /** How long each of the four screens stays up, fade included (s). */
-    seconds: [3.5, 1.5, 8, 0.1] as Tuple,
-  },
   /** Step 3's phone and tag, as one group. Defaults centre the group under its number and title. */
   phone: {
     /** Size of the phone and tag together (1 = the 272px phone). */
@@ -178,8 +226,8 @@ const CONFIG = {
 export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: number } }) {
   const dials = useTuning('Filo source steps', CONFIG)
   const ref = useRef<HTMLOListElement>(null)
-  // Each step's loop runs only while that step is on screen, so the app starts on its first screen
-  // and the phone on "scanning" when the reader reaches them.
+  // The phone's CSS loop runs only while its step is on screen, so it starts on "scanning" when the
+  // reader reaches it. Step 1's prototype watches itself (AppFlow).
   useEffect(() => {
     const steps = ref.current?.children
     if (!steps) return
@@ -200,7 +248,6 @@ export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: n
     style={{
       '--section-pad-top': `${spacing.top}px`,
       '--section-pad-bottom': `${spacing.bottom}px`,
-      '--fss-app-cycle': `${dials.app.seconds * APP_FRAMES.length}s`,
       '--fss-phone-scale': dials.phone.scale,
       '--fss-phone-x': `${dials.phone.x}px`,
       '--fss-phone-y': `${dials.phone.y}px`,

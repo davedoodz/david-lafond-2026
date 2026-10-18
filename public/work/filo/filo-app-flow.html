@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo · adding a material (prototype)</title>
+<style>
+  /* The app's interface type (Satoshi variable, Fontshare, free licence), kept local so the page works offline. */
+  @font-face { font-family: Satoshi; src: url('filo-app-flow/Satoshi-Variable.woff2') format('woff2'); font-weight: 300 900; font-display: block; }
+
+  :root {
+    --ink: #141414;
+    --text: #232323;
+    --muted: #6f6f71;
+    --faint: #98989b;
+    --line: #ececec;
+    --card: #fcfcfc;
+    --card-line: #ebebeb;
+    --well: #f4f4f4;
+    --app: #f9f9f9;
+    --side: #f5f5f5;
+    --btn-dark: #181818;
+    --btn-dark-hover: #333;
+    --hover: #f1f1f1;
+    --green: #1f7a32;
+    --green-bg: #e7f3e8;
+    --amber: #dc961f;
+    --amber-bg: #fcf0d8;
+    --blue: #3d91f4;
+    --ease-out: cubic-bezier(.23, 1, .32, 1);
+    --ease-move: cubic-bezier(.65, 0, .35, 1);
+  }
+  * { box-sizing: border-box; }
+  /* The page is the window: built at its source size (1536 × 1024) and scaled to fill the frame. */
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--app); -webkit-font-smoothing: antialiased; }
+  .stage { position: absolute; top: 0; left: 0; width: 1536px; height: 1024px; transform-origin: 0 0; }
+  .window {
+    position: absolute; inset: 0; overflow: hidden; background: var(--app);
+    font-family: Satoshi, system-ui, sans-serif; font-weight: 450; color: var(--text); font-size: 15px; letter-spacing: -.005em;
+    cursor: default; user-select: none;
+  }
+  .window img { display: block; }
+  /* Zero specificity, so every button class below wins over this reset. */
+  :where(.window) button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; }
+  .ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Title bar and sidebar: shared by every screen. */
+  .titlebar { position: absolute; top: 0; left: 0; right: 0; height: 48px; background: #f1f1f1; border-bottom: 1px solid #ebebeb; z-index: 2; }
+  .lights { position: absolute; left: 19px; top: 18px; display: flex; gap: 9px; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; background: #fe5f57; }
+  .lights i:nth-child(2) { background: #febc2e; }
+  .lights i:nth-child(3) { background: #28c840; }
+  .sidebar { position: absolute; top: 48px; bottom: 0; left: 0; width: 226px; background: var(--side); border-right: 1px solid #efefef; }
+  .sidebar .logo { position: absolute; left: 37px; top: 42px; height: 30px; width: auto; }
+  .nav { position: absolute; top: 112px; left: 20px; right: 18px; display: grid; gap: 8px; }
+  .nav a { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 18px; border-radius: 10px; color: #545456; font-size: 15.5px; text-decoration: none; transition: background-color .15s ease, color .15s ease; }
+  .nav a[aria-current] { background: #ececec; color: var(--ink); font-weight: 520; }
+  .nav a:hover, .nav a.is-hover { background: #eeeeee; color: var(--ink); }
+  .account { position: absolute; left: 28px; right: 16px; bottom: 46px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 6px; margin-left: -6px; border-radius: 10px; font-size: 13.5px; color: #2b2b2b; white-space: nowrap; transition: background-color .15s ease; }
+  .account:hover { background: #eeeeee; }
+  .avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #e7e7e7; font-size: 13px; font-weight: 550; color: #333; }
+  .account .ic { width: 16px; height: 16px; margin-left: auto; color: #555; }
+
+  /* Main area: the four screens stack here; only the active one shows. */
+  .main { position: absolute; top: 48px; left: 226px; right: 0; bottom: 0; }
+  /* A screen's box spans the window from its left edge, so it passes the pointer through to the sidebar. */
+  .screen { position: absolute; inset: 0; opacity: 0; visibility: hidden; translate: 0 10px; pointer-events: none; transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), visibility 0s linear .32s; }
+  .screen > * { pointer-events: auto; }
+  .screen.is-active { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .38s var(--ease-out) .06s, translate .38s var(--ease-out) .06s, visibility 0s; }
+  /* Screen 1's positions are window px; screens 2–4 are main-area px (window y − 48). */
+  .abs { position: absolute; }
+
+  /* Shared parts. */
+  .h1 { margin: 0; font-size: 34px; font-weight: 620; letter-spacing: -.025em; color: #0d0d0d; line-height: 1.1; }
+  .sub { margin: 0; color: #8a8a8d; font-size: 18.5px; letter-spacing: -.01em; }
+  .crumbs { display: flex; align-items: center; gap: 10px; font-size: 14.5px; color: #8d8f95; }
+  .crumbs .ic { width: 14px; height: 14px; color: #8d8f95; }
+  .crumbs b { font-weight: 450; color: #2a2a2a; }
+  .card { background: var(--card); border: 1px solid var(--card-line); border-radius: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / .02); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 0 22px; border-radius: 10px; border: 1px solid #e3e3e3; background: #fff; font-size: 15.5px; font-weight: 520; color: #151515; transition: background-color .15s ease, border-color .15s ease, scale .12s ease, box-shadow .15s ease, opacity .2s ease; box-shadow: 0 1px 2px rgb(0 0 0 / .03); }
+  .btn:hover, .btn.is-hover { background: #f4f4f4; border-color: #d6d6d6; }
+  .btn--dark { background: var(--btn-dark); border-color: var(--btn-dark); color: #fff; }
+  .btn--dark:hover, .btn--dark.is-hover { background: var(--btn-dark-hover); border-color: var(--btn-dark-hover); }
+  .btn:active, .btn.is-press { scale: .97; }
+  .btn[disabled] { opacity: .35; pointer-events: none; }
+  .btn .ic { width: 18px; height: 18px; }
+  .icon-btn { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; color: #444; transition: background-color .15s ease; }
+  .icon-btn:hover, .icon-btn.is-hover { background: #efefef; }
+  .icon-btn .ic { width: 18px; height: 18px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; height: 26px; padding: 0 11px; border-radius: 8px; font-size: 14px; font-weight: 480; white-space: nowrap; }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .pill--draft { background: var(--amber-bg); color: #3a2c12; }
+  .pill--draft::before { background: var(--amber); }
+  .pill--pub { background: var(--green-bg); color: #0f3f17; }
+  .pill--pub::before { background: #16852b; }
+  .pill--grey { background: #f0f0f0; color: #4a4a4a; }
+  .pill--grey::before { background: #8a8a8a; }
+  .pill--ready { background: var(--green-bg); color: #145c20; height: 30px; padding: 0 13px; font-size: 15px; }
+  .pill--ready::before { background: #138021; }
+  .tag { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 13px; background: #f0f1f2; font-size: 13.5px; color: #444; }
+  .well { background: var(--well); border-radius: 12px; }
+  .chev { width: 18px; height: 18px; color: #777; }
+  .thumb { border-radius: 9px; object-fit: cover; }
+  .doc-thumb { border-radius: 6px; object-fit: cover; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .05), 0 4px 10px -4px rgb(0 0 0 / .18); }
+  .count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px; background: #efefef; font-size: 12.5px; color: #555; }
+
+  /* ───────── Screen 1 · Materials ───────── */
+  .s1-head { left: 264px; top: 90px; }
+  .s1-head .sub { margin-top: 5px; font-size: 16.5px; }
+  .s1 .h1 { font-size: 33px; }
+  .s1-add { left: 858px; top: 92px; height: 42px; padding: 0 18px 0 16px; font-size: 15.5px; }
+  .filters { left: 264px; top: 198px; display: flex; align-items: center; gap: 14px; font-size: 14px; color: #69686a; }
+  .filters button { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 11px; border-radius: 9px; transition: background-color .15s ease, color .15s ease; }
+  .filters button:hover, .filters button.is-hover { background: #f1f1f1; color: #222; }
+  .filters button[aria-pressed='true'] { background: #ececec; color: #111; font-weight: 520; }
+  .filters .count { min-width: 20px; background: #f1f1f1; }
+  .sort { left: 796px; top: 198px; height: 34px; display: flex; align-items: center; gap: 12px; font-size: 14.5px; color: #7a7a7c; }
+  .sort b { font-weight: 470; color: #222; display: inline-flex; align-items: center; gap: 14px; padding: 6px 4px 6px 0; border-radius: 8px; }
+  .sort .ic { width: 16px; height: 16px; color: #555; }
+  .list { left: 247px; top: 268px; width: 777px; }
+  .row { position: relative; display: grid; grid-template-columns: 119px 225px 177px 95px 1fr 30px; align-items: center; height: 126px; padding: 0 0 0 24px; border-radius: 14px; transition: background-color .15s ease; }
+  .row + .row::before { content: ''; position: absolute; left: 17px; right: 20px; top: -1px; height: 1px; background: var(--line); }
+  .row:hover, .row.is-hover, .row.is-selected { background: #f3f3f3; }
+  .row:hover::before, .row.is-hover::before, .row.is-selected::before, .row:hover + .row::before, .row.is-hover + .row::before, .row.is-selected + .row::before { opacity: 0; }
+  .row img { width: 93px; height: 93px; }
+  .row .name { display: grid; gap: 6px; justify-items: start; }
+  .row .name strong { font-size: 17px; font-weight: 600; color: #111; letter-spacing: -.01em; }
+  .row .name small { font-size: 13.5px; color: #8b8a8c; }
+  .row .pill { height: 26px; font-size: 13.5px; }
+  .kv { display: grid; gap: 8px; font-size: 13.5px; color: #1f1f1f; }
+  .kv small { font-size: 13px; color: #8a8a8c; }
+  .row > .ic { width: 18px; height: 18px; color: #777; justify-self: start; transition: translate .2s ease; }
+  .row:hover > .ic, .row.is-hover > .ic { translate: 3px 0; }
+
+  .search { left: 1068px; top: 72px; width: 430px; height: 41px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border: 1px solid #ebebeb; border-radius: 10px; background: #f9f9f9; color: #999; font-size: 14.5px; transition: border-color .15s ease, background-color .15s ease; }
+  .search:hover { border-color: #d9d9d9; background: #fbfbfb; }
+  .search .ic { width: 18px; height: 18px; color: #666; }
+  .detail { left: 1060px; top: 136px; width: 456px; height: 855px; border-radius: 18px 0 0 18px; border-right: 0; }
+  .detail .hero { position: absolute; left: 19px; top: 25px; width: 278px; height: 148px; }
+  .detail .edit { position: absolute; left: 313px; top: 26px; height: 40px; padding: 0 16px; font-size: 15px; gap: 8px; }
+  .detail .edit .ic { width: 17px; height: 17px; }
+  .detail .more { position: absolute; left: 402px; top: 26px; width: 36px; height: 40px; border: 1px solid #e5e5e5; border-radius: 9px; background: #fff; }
+  .detail h2 { position: absolute; left: 19px; top: 186px; margin: 0; font-size: 24px; font-weight: 620; letter-spacing: -.02em; color: #0d0d0d; }
+  .detail .pill { position: absolute; left: 18px; top: 223px; }
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid #e8e8e8; font-size: 15px; color: #6c6c6e; }
+  .tabs button { position: relative; height: 40px; padding: 0 2px; margin-right: 30px; border: 0; background: none; display: inline-flex; align-items: center; gap: 10px; transition: color .15s ease; }
+  .tabs button:hover, .tabs button.is-hover { color: #111; }
+  .tabs button[aria-selected='true'] { color: #0d0d0d; font-weight: 540; }
+  .tabs button[aria-selected='true']::after { content: ''; position: absolute; left: -4px; right: -4px; bottom: -1px; height: 2px; border-radius: 2px; background: #111; }
+  .detail .tabs { position: absolute; left: 19px; right: 19px; top: 262px; }
+  .detail .tabs button { margin-right: 32px; padding: 0 4px; }
+  .summary { position: absolute; left: 19px; right: 19px; top: 320px; padding: 14px 17px 13px; }
+  .summary strong { display: block; font-size: 14.5px; font-weight: 600; color: #141414; }
+  .summary p { max-width: 330px; margin: 4px 0 0; font-size: 14.5px; line-height: 20px; color: #7b7b7d; }
+  .props { position: absolute; left: 19px; right: 19px; top: 420px; margin: 0; }
+  .props div { display: grid; grid-template-columns: 30px 147px 1fr 22px 18px; align-items: center; height: 35.5px; border-bottom: 1px solid #efefef; font-size: 14px; }
+  /* The source's rows open up toward the bottom. */
+  .props div:nth-child(6) { height: 38px; }
+  .props div:nth-child(n + 7) { height: 41px; }
+  .props div:last-child { border-bottom: 0; }
+  .props dt { display: contents; color: #727274; }
+  .props dt .ic, .src .ic { width: 16px; height: 16px; color: #666; }
+  .props dd { margin: 0; color: #1d1d1d; }
+  .props .n { color: #555; font-size: 13.5px; text-align: center; }
+  .props .ic--doc { width: 15px; height: 15px; color: #666; justify-self: end; }
+  /* The sparkle sits level with the title line, not centred on the block. */
+  .more-found { position: absolute; left: 19px; right: 19px; top: 735px; height: 92px; display: grid; grid-template-columns: 58px 1fr 30px; align-items: start; padding: 14px 14px 0 0; border-radius: 14px; transition: background-color .15s ease; }
+  .more-found:hover, .more-found.is-hover { background: #efefef; }
+  .more-found > .ic { justify-self: center; width: 20px; height: 20px; margin-top: 1px; color: #222; }
+  .more-found > .chev { align-self: center; margin-top: -14px; }
+  .more-found strong { display: block; font-size: 14.5px; font-weight: 600; color: #151515; }
+  .more-found p { margin: 3px 0 0; font-size: 13.5px; line-height: 21px; color: #7f7f81; }
+
+  /* ───────── Screen 2 · Add a new material ───────── */
+  .crumbs.abs { left: 272px; top: 33px; }
+  .s2-head { left: 272px; top: 92px; }
+  .s2-head .sub { margin-top: 5px; }
+  .s2-save { left: 1344px; top: 53px; width: 150px; height: 47px; }
+  .upload { left: 272px; top: 203px; width: 716px; height: 716px; }
+  .card-head { position: absolute; display: flex; align-items: center; gap: 15px; }
+  .card-head .badge { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #f1f1f1; color: #222; }
+  .card-head .badge .ic { width: 21px; height: 21px; }
+  .card-head strong { display: block; font-size: 18.5px; font-weight: 600; color: #121212; letter-spacing: -.01em; }
+  .card-head small { display: block; margin-top: 3px; font-size: 14.5px; color: #8a8a8c; }
+  .upload .card-head { left: 25px; top: 28px; }
+  .drop { position: absolute; left: 26px; top: 103px; width: 668px; height: 268px; border-radius: 12px; display: grid; justify-items: center; align-content: start; padding-top: 42px; text-align: center; background: #faf9f9; transition: background-color .2s ease, scale .2s var(--ease-out); }
+  .drop svg.dash { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .drop svg.dash rect { width: calc(100% - 1.2px); height: calc(100% - 1.2px); fill: none; stroke: #d7d7d7; stroke-width: 1.2; stroke-dasharray: 5 5; transition: stroke .2s ease; }
+  .drop .file-ic { width: 52px; height: 64px; color: #444; transition: translate .25s var(--ease-out); }
+  .drop strong { margin-top: 18px; font-size: 17.5px; font-weight: 530; color: #121212; }
+  .drop small { margin-top: 5px; font-size: 14.5px; color: #929295; }
+  .drop .btn { margin-top: 21px; height: 47px; width: 142px; font-weight: 500; }
+  .drop.is-over { background: #f2f6f1; scale: 1.01; }
+  .drop.is-over svg.dash rect { stroke: #6b9a6b; stroke-dasharray: 0; }
+  .drop.is-over .file-ic { translate: 0 -4px; }
+  .drop .over-label { position: absolute; inset: 0; display: grid; place-content: center; font-size: 17.5px; font-weight: 530; color: #2f5d34; opacity: 0; transition: opacity .2s ease; }
+  .drop.is-over .over-label { opacity: 1; }
+  .drop.is-over > :not(.over-label, .dash) { opacity: 0; transition: opacity .15s ease; }
+  .files { position: absolute; left: 26px; top: 381px; width: 668px; margin: 0; padding: 0; list-style: none; }
+  .files li { position: relative; display: grid; grid-template-columns: 68px 1fr 40px; align-items: center; height: 70px; padding-left: 13px; border-radius: 10px; transition: background-color .15s ease; }
+  .files li + li::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--line); }
+  .files li:hover, .files li.is-hover { background: #f4f4f4; }
+  .files .ftype { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 9px; background: #f9ebe7; color: #d1462f; }
+  .files .ftype--img { background: #e4f0e4; color: #3c8a48; }
+  .files .ftype .ic { width: 24px; height: 24px; stroke-width: 1.5; }
+  .files strong { display: block; font-size: 15px; font-weight: 470; color: #1b1b1b; }
+  .files small { display: block; margin-top: 4px; font-size: 14px; color: #929295; }
+  .files .x { justify-self: center; width: 32px; height: 32px; color: #666; }
+  .files .x .ic { width: 16px; height: 16px; }
+  .upbar { position: absolute; left: 81px; right: 60px; bottom: 9px; height: 3px; border-radius: 2px; background: #eeeeee; overflow: hidden; }
+  .upbar i { display: block; height: 100%; width: 100%; background: #2b2b2b; transform-origin: left; scale: 0 1; }
+
+  .preview { left: 1011px; top: 203px; width: 483px; height: 716px; overflow: hidden; }
+  .preview .card-head { left: 18px; top: 22px; gap: 11px; }
+  .preview .card-head .badge { width: 44px; height: 44px; }
+  .preview .card-head .badge .ic { width: 19px; height: 19px; }
+  .preview .card-head strong { font-size: 18.5px; }
+  .docs { position: absolute; left: 12px; right: 22px; top: 84px; margin: 0; padding: 0; list-style: none; }
+  .docs li { position: relative; display: grid; grid-template-columns: 112px 1fr auto; align-items: center; height: 120px; padding: 0; border-radius: 12px; transition: background-color .15s ease; }
+  .docs li + li::before { content: ''; position: absolute; left: 112px; right: 0; top: 0; height: 1px; background: var(--line); }
+  .docs li:hover, .docs li.is-hover, .docs li.is-linked { background: #f3f3f3; }
+  .docs li.is-linked { box-shadow: inset 0 0 0 1.5px #c8d9c9; background: #f3f8f3; }
+  .docs .doc-thumb { width: 80px; height: 96px; margin-left: 12px; }
+  .docs strong { display: block; font-size: 15.5px; font-weight: 470; color: #1a1a1a; }
+  .docs small { display: block; margin: 2px 0 11px; font-size: 14.5px; color: #929295; }
+  .docs .meta-dot::before { content: '·'; margin: 0 6px; }
+  .preview .empty { position: absolute; left: 23px; right: 22px; top: 84px; height: 466px; display: grid; place-content: center; justify-items: center; gap: 10px; border-radius: 12px; background: #f6f6f6; color: #9a9a9c; font-size: 14.5px; transition: opacity .25s ease; }
+  .preview .empty .ic { width: 26px; height: 26px; color: #b5b5b7; }
+  .preview.has-files .empty { opacity: 0; }
+  .preview-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 146px; border-top: 1px solid var(--line); }
+  .preview-foot .btn { position: absolute; left: 23px; right: 22px; top: 20px; height: 48px; font-size: 16px; font-weight: 520; gap: 14px; }
+  .preview-foot .btn .ic { width: 20px; height: 20px; }
+  .preview-foot p { position: absolute; left: 62px; right: 40px; top: 84px; margin: 0; font-size: 13.5px; line-height: 21px; color: #8e8e91; }
+  .preview-foot p .ic { position: absolute; left: -26px; top: 2px; width: 18px; height: 18px; color: #555; }
+
+  /* ───────── Screen 3 · Extracting information ───────── */
+  .s3 .crumbs.abs { left: 274px; top: 28px; }
+  .s3-head { left: 274px; top: 78px; }
+  .s3-head .sub { margin-top: 4px; }
+  .s3-cancel { left: 1350px; top: 76px; width: 141px; height: 44px; }
+  .progress { left: 274px; top: 176px; width: 1217px; height: 63px; display: flex; align-items: center; gap: 16px; padding: 0 25px 0 21px; border-radius: 13px; font-size: 14.5px; color: #262626; }
+  .spin { width: 24px; height: 24px; border-radius: 50%; border: 2.4px solid #dce9fb; border-top-color: var(--blue); animation: spin 1s linear infinite; flex: none; }
+  .progress.is-done .spin { animation: none; border-color: #25a246; background: #25a246 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 12.5 3.2 3.2L17 9'/%3E%3C/svg%3E") center / 16px no-repeat; }
+  @keyframes spin { to { rotate: 360deg; } }
+  .progress .label { flex: none; white-space: nowrap; }
+  .bar { flex: 1; height: 6px; border-radius: 3px; background: #f0f1f3; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 100%; border-radius: 3px; background: var(--blue); transform-origin: left; scale: var(--p, 0) 1; }
+  .progress.is-done .bar i { background: #25a246; transition: background-color .3s ease; }
+  .progress .pct { width: 72px; text-align: right; color: #707072; font-variant-numeric: tabular-nums; }
+  .record { left: 274px; top: 260px; width: 659px; height: 666px; }
+  .record .photo { position: absolute; left: 21px; top: 21px; width: 193px; height: 147px; }
+  .record h2 { position: absolute; left: 246px; top: 41px; margin: 0; font-size: 23.5px; font-weight: 620; letter-spacing: -.02em; color: #0d0d0d; }
+  .record .pill { position: absolute; left: 246px; top: 80px; height: 26px; font-size: 13.5px; }
+  .record .desc { position: absolute; left: 246px; top: 113px; margin: 0; width: 380px; font-size: 15px; line-height: 22px; color: #8a8a8d; }
+  .ptable { position: absolute; left: 21px; right: 21px; top: 188px; margin: 0; border-top: 1px solid #eeeeee; }
+  .ptable div { display: grid; grid-template-columns: 45px 183px 1fr 30px 20px; align-items: center; height: 43px; border-bottom: 1px solid #eeeeee; font-size: 15px; }
+  .ptable div:nth-child(5) { height: 45px; }
+  .ptable div:nth-child(n + 6) { height: 46px; }
+  .ptable div:last-child { border-bottom: 0; }
+  .ptable dt { display: contents; color: #6d6e71; }
+  .ptable dt .ic { width: 18px; height: 18px; color: #666; justify-self: center; }
+  .ptable dd { margin: 0; color: #1d1d1d; position: relative; }
+  .ptable .n { color: #666; font-size: 14px; }
+  .ptable .ic--doc { width: 16px; height: 16px; color: #666; }
+  .ptable dd span, .ptable .n, .ptable .ic--doc { transition: opacity .35s ease; }
+  .ptable .skel { position: absolute; left: 0; top: 50%; height: 10px; margin-top: -5px; border-radius: 5px; background: linear-gradient(90deg, #eeeeee 0%, #f8f8f8 50%, #eeeeee 100%) 0 0 / 200% 100%; animation: shimmer 1.2s linear infinite; transition: opacity .25s ease; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .ptable div:not(.is-in) dd span, .ptable div:not(.is-in) .n, .ptable div:not(.is-in) .ic--doc { opacity: 0; }
+  .ptable div.is-in .skel { opacity: 0; }
+  .record .more-found { left: 21px; right: 21px; top: 562px; height: 81px; grid-template-columns: 58px 1fr 40px; background: #f4f4f4; }
+  .record .more-found:hover { background: #ededed; }
+  .record .more-found strong { font-size: 15px; }
+  .record .more-found p { font-size: 14px; }
+  .record .more-found.is-hidden { opacity: 0; translate: 0 6px; }
+  .record .more-found { transition: opacity .4s ease, translate .4s var(--ease-out), background-color .15s ease; }
+  .sources { left: 953px; top: 260px; width: 538px; height: 666px; }
+  .sources .card-head { left: 21px; top: 25px; gap: 11px; }
+  .sources .card-head .badge { width: 40px; height: 40px; border-radius: 9px; background: #efefef; }
+  .sources .card-head .badge .ic { width: 18px; height: 18px; }
+  .sources .card-head strong { font-size: 18px; }
+  .sources .add-more { position: absolute; left: 397px; top: 26px; height: 40px; padding: 0 14px; gap: 8px; font-size: 14px; }
+  .sources .add-more .ic { width: 16px; height: 16px; }
+  .sdocs { position: absolute; left: 21px; right: 21px; top: 86px; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+  .sdocs li { position: relative; display: grid; grid-template-columns: 106px 1fr 40px; align-items: center; height: 117px; border-bottom: 1px solid var(--line); transition: background-color .15s ease; }
+  .sdocs li:last-child { border-bottom: 0; }
+  .sdocs li:hover, .sdocs li.is-hover { background: #f5f5f5; }
+  .sdocs .doc-thumb { width: 84px; height: 96px; }
+  .sdocs strong { display: block; font-size: 15.5px; font-weight: 470; color: #1a1a1a; }
+  .sdocs small { display: block; margin: 2px 0 10px; font-size: 14.5px; color: #929295; }
+  .status { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px 0 9px; border-radius: 8px; font-size: 13.5px; background: #f0f0f0; color: #666; transition: background-color .3s ease, color .3s ease; }
+  .status i { width: 15px; height: 15px; border-radius: 50%; border: 2px solid #d4d4d4; border-top-color: #888; animation: spin .9s linear infinite; }
+  .status.is-done { background: #e6f4ea; color: #1e7a3a; }
+  .status.is-done i { animation: none; border: 0; background: #25a246 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 12.5 3.2 3.2L17 9'/%3E%3C/svg%3E") center / 10px no-repeat; }
+  .sdocs .icon-btn { justify-self: end; color: #666; }
+  .note { position: absolute; left: 21px; right: 21px; top: 565px; height: 75px; display: grid; grid-template-columns: 62px 1fr; align-items: center; border-radius: 10px; background: #eef3f8; }
+  .note > i { justify-self: center; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #3d91f4; color: #fff; font: italic 600 13px Georgia, serif; }
+  .note strong { display: block; font-size: 14.5px; font-weight: 560; color: #151515; }
+  .note p { margin: 3px 0 0; font-size: 14px; color: #85868a; }
+
+  /* ───────── Screen 4 · Review and confirm ───────── */
+  .s4 .crumbs.abs { left: 270px; top: 24px; }
+  .s4-head { left: 270px; top: 81px; display: flex; align-items: center; gap: 20px; }
+  .s4-sub { left: 270px; top: 126px; }
+  .s4-save { left: 1196px; top: 62px; width: 126px; height: 41px; }
+  .s4-publish { left: 1337px; top: 62px; width: 158px; height: 41px; }
+  .s4-publish .done { display: none; }
+  .s4-publish.is-done { background: #1f7a32; border-color: #1f7a32; }
+  .s4-publish.is-done .label { display: none; }
+  .s4-publish.is-done .done { display: inline-flex; align-items: center; gap: 8px; }
+  .s4 .tabs.abs { left: 270px; top: 172px; width: 800px; border-bottom: 0; font-size: 16px; }
+  .s4 .tabs button { margin-right: 37px; height: 44px; padding: 0 5px; }
+  .s4 .tabs .count { font-size: 13px; }
+  .form { left: 270px; top: 234px; width: 800px; height: 710px; }
+  .form .head { position: absolute; left: 31px; top: 23px; }
+  .form .head strong { font-size: 17.5px; font-weight: 600; color: #121212; }
+  .form .head p { margin: 5px 0 0; font-size: 14.5px; color: #8a8a8c; }
+  .autofill { position: absolute; left: 588px; top: 26px; height: 40px; padding: 0 13px; gap: 9px; font-size: 14px; font-weight: 480; }
+  .autofill .ic { width: 16px; height: 16px; }
+  .fields { position: absolute; left: 31px; right: 28px; top: 93px; margin: 0; }
+  .fields > div { position: relative; display: grid; grid-template-columns: 40px 134px 262px 1fr; align-items: center; height: 60.5px; }
+  .fields dt { display: contents; color: #707072; font-size: 15px; }
+  .fields dd { margin: 0; }
+  .fields dt .ic { width: 19px; height: 19px; color: #444; }
+  .input { display: grid; grid-template-columns: 1fr auto; align-items: stretch; height: 40px; }
+  .input span { display: flex; align-items: center; padding: 0 12px; border: 1px solid #e4e4e4; border-radius: 8px; background: #fff; color: #1a1a1a; font-size: 15px; transition: border-color .15s ease, box-shadow .15s ease; }
+  .input em { display: flex; align-items: center; width: 64px; padding: 0 14px; font-style: normal; font-size: 15px; color: #222; }
+  .input--select span { justify-content: space-between; }
+  .input--select .ic { width: 16px; height: 16px; color: #444; }
+  .fields > div:hover .input span, .fields > div.is-hover .input span { border-color: #cfcfcf; }
+  .fields > div.is-focus .input span { border-color: #2a2a2a; box-shadow: 0 0 0 3px rgb(20 20 20 / .07); }
+  .caret { display: inline-block; width: 1.5px; height: 18px; margin-left: 1px; background: #111; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .src { display: grid; grid-template-columns: 26px 1fr 50px 24px; align-items: center; height: 40px; margin-left: 40px; padding: 0 6px 0 6px; border-radius: 8px; font-size: 14px; color: #6a6b70; transition: background-color .15s ease, color .15s ease; }
+  .src .pg { color: #6a6b70; }
+  .src .chev { width: 16px; height: 16px; color: #444; }
+  .fields > div:hover .src, .fields > div.is-hover .src, .fields > div.is-focus .src { background: #f2f2f2; color: #222; }
+  .form .more-found { left: 28px; right: 28px; top: 599px; height: 82px; background: #f1f6f9; grid-template-columns: 58px 1fr; }
+  .form .more-found:hover, .form .more-found.is-hover { background: #e9f1f7; }
+  .form .more-found > .ic { color: #3a6fb0; }
+  .form .more-found strong { font-size: 16px; }
+  .form .more-found p { font-size: 14.5px; }
+  .side { left: 1097px; top: 173px; width: 406px; height: 771px; }
+  .side .photo { position: absolute; left: 25px; top: 24px; width: 165px; height: 107px; }
+  .side .edit { position: absolute; left: 305px; top: 24px; height: 40px; padding: 0 14px; gap: 8px; font-size: 15px; }
+  .side .edit .ic { width: 17px; height: 17px; }
+  .side h2 { position: absolute; left: 25px; top: 150px; margin: 0; font-size: 23px; font-weight: 620; letter-spacing: -.02em; color: #0d0d0d; }
+  .side .pill { position: absolute; left: 25px; top: 186px; height: 28px; font-size: 14px; }
+  .side .desc { position: absolute; left: 25px; top: 226px; width: 350px; margin: 0; font-size: 15px; line-height: 22px; color: #85868a; }
+  .side hr { position: absolute; left: 25px; right: 25px; top: 290px; margin: 0; border: 0; border-top: 1px solid var(--line); }
+  .side .ds-head { position: absolute; left: 25px; right: 25px; top: 309px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 560; color: #121212; }
+  .side .ds-head a { font-weight: 470; font-size: 14px; color: #111; text-decoration: underline; text-underline-offset: 3px; }
+  .side .docs { left: 25px; right: 18px; top: 338px; }
+  .side .docs li { grid-template-columns: 94px 1fr 36px; height: 106px; }
+  .side .docs li + li::before { left: 0; }
+  .side .docs .doc-thumb { width: 78px; height: 84px; margin-left: 0; }
+  .side .docs strong { font-size: 14.5px; }
+  .side .docs small { margin: 2px 0 8px; font-size: 14px; }
+  .side .docs .tag { height: 24px; font-size: 13px; }
+  .side .docs .icon-btn { width: 32px; height: 32px; color: #555; }
+
+  .toast { position: absolute; left: 50%; bottom: 40px; translate: -50% 16px; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 20px 0 14px; border-radius: 12px; background: #181818; color: #fff; font-size: 15px; font-weight: 480; opacity: 0; transition: opacity .25s var(--ease-out), translate .3s var(--ease-out); z-index: 5; }
+  .toast i { width: 22px; height: 22px; border-radius: 50%; background: #25a246 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 12.5 3.2 3.2L17 9'/%3E%3C/svg%3E") center / 14px no-repeat; }
+  .toast.is-on { opacity: 1; translate: -50% 0; }
+
+  /* Things that arrive (file rows, preview cards). */
+  .enter { opacity: 0; translate: 0 8px; }
+  .enter.is-in { opacity: 1; translate: 0 0; transition: opacity .35s var(--ease-out), translate .35s var(--ease-out); }
+
+  /* The cursor: a translucent circle. It shrinks while pressed and leaves a ring where it clicks. */
+  .cursor { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 20; pointer-events: none; }
+  .cursor .dot { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; background: rgb(30 30 30 / .2); box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / .55), 0 2px 8px rgb(0 0 0 / .12); backdrop-filter: blur(1.5px); transition: scale .14s var(--ease-out), background-color .14s ease; }
+  .cursor.is-down .dot { scale: .78; background: rgb(30 30 30 / .32); }
+  .cursor.is-hidden { opacity: 0; }
+  .cursor { transition: opacity .3s ease; }
+  .ring { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgb(30 30 30 / .35); pointer-events: none; z-index: 19; animation: ring .5s var(--ease-out) forwards; }
+  @keyframes ring { from { scale: .6; opacity: 1; } to { scale: 1.9; opacity: 0; } }
+  /* Files dragged in from the desktop: a fanned stack with a count, held under the cursor. */
+  .ghost { position: absolute; left: 10px; top: 12px; width: 120px; height: 110px; transition: opacity .2s ease, scale .25s var(--ease-out); transform-origin: 0 0; }
+  .ghost.is-hidden { opacity: 0; scale: .7; }
+  .ghost img, .ghost .g-img { position: absolute; left: 0; top: 0; width: 72px; height: 88px; border-radius: 6px; object-fit: cover; box-shadow: 0 0 0 1px rgb(0 0 0 / .06), 0 10px 22px -8px rgb(0 0 0 / .35); background: #fff; }
+  .ghost > :nth-child(1) { rotate: -8deg; translate: -4px 6px; }
+  .ghost > :nth-child(2) { rotate: -3deg; translate: 6px 2px; }
+  .ghost > :nth-child(3) { rotate: 3deg; translate: 16px 0; }
+  .ghost > :nth-child(4) { rotate: 8deg; translate: 26px 2px; }
+  .ghost b { position: absolute; left: 92px; top: -8px; display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 13px; background: #e5484d; color: #fff; font: 600 13px Satoshi, system-ui, sans-serif; box-shadow: 0 2px 6px rgb(0 0 0 / .2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screen, .screen.is-active, .enter.is-in, .toast, .btn, .drop, .row, .cursor { transition: none; }
+    .spin, .status i, .skel, .caret { animation: none; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="m7.5 4.27 9 5.15"/></symbol>
+    <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h5"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.1" fill="currentColor"/><circle cx="12" cy="12" r="1.1" fill="currentColor"/><circle cx="12" cy="19" r="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+    <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><text x="12" y="16.6" text-anchor="middle" font-family="Satoshi, system-ui, sans-serif" font-size="5.4" font-weight="700" fill="currentColor" stroke="none">PDF</text></symbol>
+    <symbol id="i-file-plus" viewBox="0 0 52 64"><path d="M34 1.5H8A6.5 6.5 0 0 0 1.5 8v48A6.5 6.5 0 0 0 8 62.5h36a6.5 6.5 0 0 0 6.5-6.5V18Z" fill="#fff" stroke="#cfcfcf" stroke-width="1.4"/><path d="M34 1.5V12a6 6 0 0 0 6 6h10.5" fill="none" stroke="#cfcfcf" stroke-width="1.4"/><path d="M19 37h14M26 30v14" stroke="#222" stroke-width="1.8"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-weight" viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"/></symbol>
+    <symbol id="i-width" viewBox="0 0 24 24"><path d="M3 8h18"/><path d="M3 16h18"/><path d="m6 5-3 3 3 3"/><path d="m18 13 3 3-3 3"/></symbol>
+    <symbol id="i-thick" viewBox="0 0 24 24"><path d="M3 5h18"/><path d="M3 19h18"/><path d="M12 8v8"/><path d="m9.5 10.5 2.5-2.5 2.5 2.5"/><path d="m9.5 13.5 2.5 2.5 2.5-2.5"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
+    <symbol id="i-ruler" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5l3.5 2"/></symbol>
+  </defs>
+</svg>
+
+<div class="stage" id="stage">
+  <div class="window" id="window">
+    <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div></div>
+
+    <aside class="sidebar">
+      <img class="logo" src="/work/filo/filo-mark.webp" width="990" height="466" alt="Filo" />
+      <nav class="nav">
+        <a aria-current="page" data-k="nav-materials"><svg class="ic"><use href="#i-box"/></svg>Materials</a>
+        <a><svg class="ic"><use href="#i-package"/></svg>Samples</a>
+        <a><svg class="ic"><use href="#i-file-text"/></svg>Orders</a>
+        <a><svg class="ic"><use href="#i-building"/></svg>Company</a>
+      </nav>
+      <div class="account"><span class="avatar">MS</span>Modern Synthesis<svg class="ic"><use href="#i-chev-d"/></svg></div>
+    </aside>
+
+    <div class="main">
+    <!-- Positions below are in window px; the main area's origin is (226, 48), so each block subtracts it via the wrapper. -->
+
+    <!-- ───────── 1 · Materials ───────── -->
+    <section class="screen s1 is-active" data-screen="0" style="left:-226px;top:-48px">
+      <div class="abs s1-head"><h2 class="h1">Materials</h2><p class="sub">Manage your materials, samples, and documentation.</p></div>
+      <button class="abs btn btn--dark s1-add" data-k="add"><svg class="ic"><use href="#i-plus"/></svg>Add material</button>
+      <div class="abs filters">
+        <button aria-pressed="true">All</button>
+        <button>Drafts <span class="count">3</span></button>
+        <button>Published <span class="count">12</span></button>
+        <button>Archived</button>
+      </div>
+      <div class="abs sort">Sort by <b>Recently updated <svg class="ic"><use href="#i-chev-d"/></svg></b></div>
+      <div class="abs list">
+        <div class="row is-selected" data-k="row-0"><img class="thumb" src="filo-app-flow/thumb-bacterial.webp" alt=""><div class="name"><strong>Bacterial Cellulose</strong><span class="pill pill--draft">Draft</span><small>Updated Oct 18, 2026</small></div><div class="kv">100% bacterial cellulose<small>Composition</small></div><div class="kv">120 gsm<small>Weight</small></div><div class="kv">145 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+        <div class="row" data-k="row-1"><img class="thumb" src="filo-app-flow/thumb-mycelium.webp" alt=""><div class="name"><strong>Mycelium Leather</strong><span class="pill pill--pub">Published</span><small>Updated Oct 12, 2026</small></div><div class="kv">Mycelium + bio-based PU<small>Composition</small></div><div class="kv">450 gsm<small>Weight</small></div><div class="kv">140 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+        <div class="row" data-k="row-2"><img class="thumb" src="filo-app-flow/thumb-algae.webp" alt=""><div class="name"><strong>Algae Textile</strong><span class="pill pill--pub">Published</span><small>Updated Sep 28, 2026</small></div><div class="kv">Algae-based fibres<small>Composition</small></div><div class="kv">220 gsm<small>Weight</small></div><div class="kv">150 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+        <div class="row" data-k="row-3"><img class="thumb" src="filo-app-flow/thumb-pineapple.webp" alt=""><div class="name"><strong>Pineapple Leather</strong><span class="pill pill--grey">Draft</span><small>Updated Sep 21, 2026</small></div><div class="kv">Pineapple leaf fibre<small>Composition</small></div><div class="kv">380 gsm<small>Weight</small></div><div class="kv">140 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+        <div class="row"><img class="thumb" src="filo-app-flow/thumb-recycled.webp" alt=""><div class="name"><strong>Recycled Polyester Blend</strong><span class="pill pill--pub">Published</span><small>Updated Sep 10, 2026</small></div><div class="kv">Recycled PES + bio-based<small>Composition</small></div><div class="kv">160 gsm<small>Weight</small></div><div class="kv">145 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+        <div class="row"><img class="thumb" src="filo-app-flow/thumb-hemp.webp" alt=""><div class="name"><strong>Hemp Textile</strong><span class="pill pill--grey">Draft</span><small>Updated Aug 30, 2026</small></div><div class="kv">Hemp fibre<small>Composition</small></div><div class="kv">310 gsm<small>Weight</small></div><div class="kv">150 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+      </div>
+      <div class="abs search"><svg class="ic"><use href="#i-search"/></svg>Search materials...</div>
+      <div class="abs card detail">
+        <img class="thumb hero" src="filo-app-flow/hero-bacterial.webp" alt="">
+        <button class="btn edit"><svg class="ic"><use href="#i-pencil"/></svg>Edit</button>
+        <button class="icon-btn more" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button>
+        <h2>Bacterial Cellulose</h2>
+        <span class="pill pill--draft">Draft</span>
+        <div class="tabs" role="tablist"><button aria-selected="true">Overview</button><button>Documents</button><button>Photos</button><button>Samples</button></div>
+        <div class="summary well"><strong>Material summary</strong><p>A lightweight, biodegradable material made from bacterial cellulose with a smooth, soft handfeel.</p></div>
+        <dl class="props">
+          <div><dt><svg class="ic"><use href="#i-shield"/></svg>Composition</dt><dd>100% bacterial cellulose</dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-weight"/></svg>Weight</dt><dd>120 gsm</dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-width"/></svg>Width</dt><dd>145 cm</dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-thick"/></svg>Thickness</dt><dd>0.3 mm</dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">2</span></div>
+          <div><dt><svg class="ic"><use href="#i-flame"/></svg>Heat tolerance</dt><dd>Max. 60°C</dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">2</span></div>
+          <div><dt><svg class="ic"><use href="#i-user"/></svg>Supplier</dt><dd style="color:#6f6f71">Modern Synthesis</dd><span></span><span class="n" style="color:#bbb">—</span></div>
+          <div><dt><svg class="ic"><use href="#i-ruler"/></svg>MOQ</dt><dd>1,000 metres</dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-clock"/></svg>Lead time</dt><dd>4–6 weeks</dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+        </dl>
+        <div class="more-found well"><svg class="ic"><use href="#i-sparkles"/></svg><div><strong>6 additional properties found</strong><p>Colour options, care instructions, environmental<br>certifications, and more.</p></div><svg class="ic chev"><use href="#i-chev-r"/></svg></div>
+      </div>
+    </section>
+
+    <!-- ───────── 2 · Add a new material ───────── -->
+    <section class="screen s2" data-screen="1" style="left:-226px;top:0">
+      <div class="abs crumbs">Materials<svg class="ic"><use href="#i-chev-r"/></svg><b>Add new material</b></div>
+      <div class="abs s2-head"><h2 class="h1">Add a new material</h2><p class="sub">Upload existing documentation and let Filo extract the key information.</p></div>
+      <button class="abs btn s2-save">Save and exit</button>
+      <div class="abs card upload">
+        <div class="card-head"><span class="badge"><svg class="ic"><use href="#i-file-text"/></svg></span><div><strong>Upload documents</strong><small>Add datasheets, lab reports, certifications, photos or any relevant files.</small></div></div>
+        <div class="drop" data-k="drop">
+          <svg class="dash"><rect x=".6" y=".6" rx="12" ry="12"/></svg>
+          <svg class="file-ic"><use href="#i-file-plus"/></svg>
+          <strong>Drag and drop files here</strong>
+          <small>PDF, XLSX, images or CSV</small>
+          <button class="btn">Browse files</button>
+          <span class="over-label">Drop to upload 4 files</span>
+        </div>
+        <ul class="files">
+          <li class="enter"><span class="ftype"><svg class="ic"><use href="#i-pdf"/></svg></span><div><strong>Technical datasheet.pdf</strong><small>2.4 MB</small></div><button class="icon-btn x" aria-label="Remove"><svg class="ic"><use href="#i-x"/></svg></button><span class="upbar"><i></i></span></li>
+          <li class="enter"><span class="ftype"><svg class="ic"><use href="#i-pdf"/></svg></span><div><strong>Lab test report.pdf</strong><small>1.8 MB</small></div><button class="icon-btn x" aria-label="Remove"><svg class="ic"><use href="#i-x"/></svg></button><span class="upbar"><i></i></span></li>
+          <li class="enter"><span class="ftype"><svg class="ic"><use href="#i-pdf"/></svg></span><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB</small></div><button class="icon-btn x" aria-label="Remove"><svg class="ic"><use href="#i-x"/></svg></button><span class="upbar"><i></i></span></li>
+          <li class="enter"><span class="ftype ftype--img"><svg class="ic"><use href="#i-image"/></svg></span><div><strong>Material photos.zip</strong><small>12 MB</small></div><button class="icon-btn x" aria-label="Remove"><svg class="ic"><use href="#i-x"/></svg></button><span class="upbar"><i></i></span></li>
+        </ul>
+      </div>
+      <div class="abs card preview">
+        <div class="card-head"><span class="badge"><svg class="ic"><use href="#i-eye"/></svg></span><div><strong>Documents preview</strong><small class="preview-count">No files yet.</small></div></div>
+        <div class="empty"><svg class="ic"><use href="#i-files"/></svg>Files you add appear here.</div>
+        <ul class="docs">
+          <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-datasheet.webp" alt=""><div><strong>Technical datasheet.pdf</strong><small>2.4 MB<span class="meta-dot">12 pages</span></small><span class="tag">Datasheet</span></div></li>
+          <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-lab.webp" alt=""><div><strong>Lab test report.pdf</strong><small>1.8 MB<span class="meta-dot">8 pages</span></small><span class="tag">Test report</span></div></li>
+          <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-oeko.webp" alt=""><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB<span class="meta-dot">3 pages</span></small><span class="tag">Certification</span></div></li>
+          <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-photos.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">24 images</span></small><span class="tag">Images</span></div></li>
+        </ul>
+        <div class="preview-foot">
+          <button class="btn btn--dark" data-k="process" disabled>Process documents<svg class="ic"><use href="#i-arrow"/></svg></button>
+          <p><svg class="ic"><use href="#i-sparkles"/></svg>Filo will extract key information from your documents. You can review and edit everything before publishing.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── 3 · Extracting information ───────── -->
+    <section class="screen s3" data-screen="2" style="left:-226px;top:0">
+      <div class="abs crumbs">Materials<svg class="ic"><use href="#i-chev-r"/></svg>Add new material<svg class="ic"><use href="#i-chev-r"/></svg><b>Processing</b></div>
+      <div class="abs s3-head"><h2 class="h1">Extracting information</h2><p class="sub">Filo is reading your documents and creating a draft material record. This usually takes a few seconds.</p></div>
+      <button class="abs btn s3-cancel">Cancel</button>
+      <div class="abs card progress" data-k="progress"><span class="spin"></span><span class="label">Extracting information...</span><span class="bar"><i></i></span><span class="pct">0%</span></div>
+      <div class="abs card record">
+        <img class="thumb photo" src="filo-app-flow/s3-photo.webp" alt="">
+        <h2>Bacterial Cellulose</h2>
+        <span class="pill pill--draft">Draft</span>
+        <p class="desc">A lightweight, biodegradable material made from bacterial cellulose with a smooth, soft handfeel.</p>
+        <dl class="ptable">
+          <div><dt><svg class="ic"><use href="#i-shield"/></svg>Composition</dt><dd><i class="skel" style="width:160px"></i><span>100% bacterial cellulose</span></dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-weight"/></svg>Weight</dt><dd><i class="skel" style="width:70px"></i><span>120 gsm</span></dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-width"/></svg>Width</dt><dd><i class="skel" style="width:64px"></i><span>145 cm</span></dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-thick"/></svg>Thickness</dt><dd><i class="skel" style="width:58px"></i><span>0.3 mm</span></dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">2</span></div>
+          <div><dt><svg class="ic"><use href="#i-flame"/></svg>Heat tolerance</dt><dd><i class="skel" style="width:82px"></i><span>Max. 60°C</span></dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">2</span></div>
+          <div><dt><svg class="ic"><use href="#i-user"/></svg>Supplier</dt><dd><i class="skel" style="width:120px"></i><span>Modern Synthesis</span></dd><span></span><span class="n" style="color:#bbb">—</span></div>
+          <div><dt><svg class="ic"><use href="#i-ruler"/></svg>MOQ</dt><dd><i class="skel" style="width:90px"></i><span>1,000 metres</span></dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+          <div><dt><svg class="ic"><use href="#i-clock"/></svg>Lead time</dt><dd><i class="skel" style="width:76px"></i><span>4–6 weeks</span></dd><svg class="ic ic--doc"><use href="#i-file"/></svg><span class="n">1</span></div>
+        </dl>
+        <div class="more-found is-hidden"><svg class="ic"><use href="#i-sparkles"/></svg><div><strong>6 additional properties found</strong><p>Colour options, care instructions, environmental certifications, and more.</p></div><svg class="ic chev"><use href="#i-chev-r"/></svg></div>
+      </div>
+      <div class="abs card sources">
+        <div class="card-head"><span class="badge"><svg class="ic"><use href="#i-files"/></svg></span><div><strong>Source documents</strong><small class="sources-count">Processing 4 documents</small></div></div>
+        <button class="btn add-more"><svg class="ic"><use href="#i-plus"/></svg>Add more</button>
+        <ul class="sdocs">
+          <li><img class="doc-thumb" src="filo-app-flow/doc-datasheet.webp" alt=""><div><strong>Technical datasheet.pdf</strong><small>2.4 MB<span class="meta-dot">12 pages</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li data-k="sdoc-1"><img class="doc-thumb" src="filo-app-flow/doc-lab.webp" alt=""><div><strong>Lab test report.pdf</strong><small>1.8 MB<span class="meta-dot">8 pages</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li><img class="doc-thumb" src="filo-app-flow/doc-oeko.webp" alt=""><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB<span class="meta-dot">3 pages</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li><img class="doc-thumb" src="filo-app-flow/doc-photos.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">24 images</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+        </ul>
+        <div class="note"><i>i</i><div><strong>Each value is linked to its source document.</strong><p>You can review, edit or remove any information before publishing.</p></div></div>
+      </div>
+    </section>
+
+    <!-- ───────── 4 · Review and confirm ───────── -->
+    <section class="screen s4" data-screen="3" style="left:-226px;top:0">
+      <div class="abs crumbs">Materials<svg class="ic"><use href="#i-chev-r"/></svg>Add new material<svg class="ic"><use href="#i-chev-r"/></svg><b>Review and confirm</b></div>
+      <div class="abs s4-head"><h2 class="h1">Bacterial Cellulose</h2><span class="pill pill--ready">Ready to publish</span></div>
+      <p class="abs sub s4-sub">Review the extracted information, edit if needed, and add any missing details before publishing.</p>
+      <button class="abs btn s4-save">Save draft</button>
+      <button class="abs btn btn--dark s4-publish" data-k="publish"><span class="label">Publish material</span><span class="done"><svg class="ic"><use href="#i-check"/></svg>Published</span></button>
+      <div class="abs tabs" role="tablist"><button aria-selected="true">Properties</button><button>Documents <span class="count">4</span></button><button>Photos <span class="count">12</span></button><button>Details</button></div>
+      <div class="abs card form">
+        <div class="head"><strong>Material information</strong><p>Key properties extracted from your documents. You can edit any field.</p></div>
+        <button class="btn autofill"><svg class="ic"><use href="#i-sparkles"/></svg>Auto-fill missing fields</button>
+        <dl class="fields">
+          <div data-k="f-0" data-doc="0"><dt><svg class="ic"><use href="#i-shield"/></svg>Composition</dt><dd class="input"><span>100% bacterial cellulose</span></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Technical datasheet.pdf<span class="pg">p. 2</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+          <div data-k="f-1" data-doc="0"><dt><svg class="ic"><use href="#i-weight"/></svg>Weight</dt><dd class="input"><span data-k="weight-input">120</span><em>gsm</em></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Technical datasheet.pdf<span class="pg">p. 3</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+          <div data-k="f-2" data-doc="0"><dt><svg class="ic"><use href="#i-width"/></svg>Width</dt><dd class="input"><span>145</span><em>cm</em></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Technical datasheet.pdf<span class="pg">p. 3</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+          <div data-k="f-3" data-doc="1"><dt><svg class="ic"><use href="#i-thick"/></svg>Thickness</dt><dd class="input"><span>0.3</span><em>mm</em></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Lab test report.pdf<span class="pg">p. 1</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+          <div data-k="f-4" data-doc="1"><dt><svg class="ic"><use href="#i-flame"/></svg>Heat tolerance</dt><dd class="input"><span>Max. 60</span><em>°C</em></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Lab test report.pdf<span class="pg">p. 4</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+          <div data-doc="0"><dt><svg class="ic"><use href="#i-user"/></svg>Supplier</dt><dd class="input input--select"><span>Modern Synthesis<svg class="ic"><use href="#i-chev-d"/></svg></span></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Technical datasheet.pdf<span class="pg">p. 1</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+          <div data-doc="0"><dt><svg class="ic"><use href="#i-ruler"/></svg>MOQ</dt><dd class="input"><span>1,000</span><em>metres</em></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Technical datasheet.pdf<span class="pg">p. 5</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+          <div data-doc="0"><dt><svg class="ic"><use href="#i-clock"/></svg>Lead time</dt><dd class="input"><span>4–6</span><em>weeks</em></dd><span class="src"><svg class="ic"><use href="#i-file"/></svg>Technical datasheet.pdf<span class="pg">p. 5</span><svg class="ic chev"><use href="#i-chev-d"/></svg></span></div>
+        </dl>
+        <div class="more-found"><svg class="ic"><use href="#i-sparkles"/></svg><div><strong>6 additional properties found</strong><p>Colour options, care instructions, environmental certifications, and more.</p></div></div>
+      </div>
+      <div class="abs card side">
+        <img class="thumb photo" src="filo-app-flow/s4-photo.webp" alt="">
+        <button class="btn edit"><svg class="ic"><use href="#i-pencil"/></svg>Edit</button>
+        <h2>Bacterial Cellulose</h2>
+        <span class="pill pill--ready">Ready to publish</span>
+        <p class="desc">A lightweight, biodegradable material made from bacterial cellulose with a smooth, soft handfeel.</p>
+        <hr>
+        <div class="ds-head">Document sources<a>View all</a></div>
+        <ul class="docs">
+          <li data-k="side-doc-0"><img class="doc-thumb" src="filo-app-flow/doc-datasheet.webp" alt=""><div><strong>Technical datasheet.pdf</strong><small>2.4 MB<span class="meta-dot">12 pages</span></small><span class="tag">Datasheet</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li data-k="side-doc-1"><img class="doc-thumb" src="filo-app-flow/doc-lab.webp" alt=""><div><strong>Lab test report.pdf</strong><small>1.8 MB<span class="meta-dot">8 pages</span></small><span class="tag">Test report</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li><img class="doc-thumb" src="filo-app-flow/doc-oeko.webp" alt=""><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB<span class="meta-dot">3 pages</span></small><span class="tag">Certification</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li><img class="doc-thumb" src="filo-app-flow/doc-photos.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">24 images</span></small><span class="tag">Images</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+        </ul>
+      </div>
+    </section>
+    </div>
+    <div class="toast" id="toast"><i></i>Bacterial Cellulose is published</div>
+  </div>
+
+  <div class="cursor is-hidden" id="cursor">
+    <div class="ghost is-hidden" id="ghost">
+      <img src="filo-app-flow/doc-datasheet.webp" alt=""><img src="filo-app-flow/doc-lab.webp" alt=""><img src="filo-app-flow/doc-oeko.webp" alt=""><img src="filo-app-flow/doc-photos.webp" alt=""><b>4</b>
+    </div>
+    <div class="dot"></div>
+  </div>
+</div>
+
+<script type="module">
+const W = 1536, H = 1024
+const $ = (s, r = document) => r.querySelector(s)
+const $$ = (s, r = document) => [...r.querySelectorAll(s)]
+const stage = $('#stage'), cursor = $('#cursor'), ghost = $('#ghost'), toast = $('#toast')
+const screens = $$('.screen')
+const k = name => $(`[data-k="${name}"]`)
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/* Fill the frame with the 1536 × 1024 window. */
+let scale = 1
+function fit() {
+  scale = Math.min(innerWidth / W, innerHeight / H)
+  stage.style.scale = scale
+}
+addEventListener('resize', fit); fit()
+
+/* ── Playback: every wait checks the run token, so a jump or pause stops the script cleanly. ── */
+let token = 0, paused = false, resume = null
+class Stop extends Error {}
+const sleep = (ms, t) => new Promise((ok, no) => {
+  let left = ms, last = performance.now()
+  // performance.now(), not rAF's timestamp: in an iframe Chrome's rAF time can trail it by seconds.
+  const tick = () => {
+    const now = performance.now()
+    if (t !== token) return no(new Stop())
+    if (!paused) left -= now - last
+    last = now
+    left <= 0 ? ok() : requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+})
+
+/* ── Cursor ── */
+let cx = 760, cy = 1120
+const place = (x, y) => { cx = x; cy = y; cursor.style.translate = `${x}px ${y}px` }
+place(cx, cy)
+/** Centre of an element (or a point inside it, as fractions) in window px. */
+function at(el, fx = .5, fy = .5) {
+  const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect()
+  return [(r.left - s.left + r.width * fx) / scale, (r.top - s.top + r.height * fy) / scale]
+}
+async function move(t, [x, y], ms) {
+  const d = Math.hypot(x - cx, y - cy)
+  ms ??= Math.min(1100, 380 + d * .75)
+  const a = cursor.animate([{ translate: `${cx}px ${cy}px` }, { translate: `${x}px ${y}px` }], { duration: ms, easing: 'cubic-bezier(.65, 0, .35, 1)', fill: 'forwards' })
+  const watch = setInterval(() => { if (t !== token) a.cancel(); else if (paused) a.pause(); else if (a.playState === 'paused') a.play() }, 50)
+  try { await a.finished } catch { throw new Stop() } finally { clearInterval(watch) }
+  if (t !== token) throw new Stop()
+  place(x, y); a.cancel()
+}
+let hovered = []
+function hover(...els) { hovered.forEach(e => e.classList.remove('is-hover')); hovered = els.filter(Boolean); hovered.forEach(e => e.classList.add('is-hover')) }
+async function click(t, el) {
+  cursor.classList.add('is-down'); el?.classList.add('is-press')
+  await sleep(130, t)
+  const ring = document.createElement('div'); ring.className = 'ring'; ring.style.translate = `${cx}px ${cy}px`
+  stage.append(ring); ring.addEventListener('animationend', () => ring.remove())
+  cursor.classList.remove('is-down'); el?.classList.remove('is-press')
+  await sleep(90, t)
+}
+
+/* ── Scene state: each scene sets its screen from scratch, so a restart can begin anywhere. ── */
+function show(i) { screens.forEach((s, j) => s.classList.toggle('is-active', j === i)) }
+function reset(i) {
+  hover()
+  $$('.is-hover, .is-press, .is-focus, .is-linked').forEach(e => e.classList.remove('is-hover', 'is-press', 'is-focus', 'is-linked'))
+  cursor.classList.remove('is-down'); ghost.classList.add('is-hidden'); toast.classList.remove('is-on')
+  // Screen 2: empty upload.
+  $('.drop').classList.remove('is-over')
+  $$('.s2 .enter').forEach(e => e.classList.remove('is-in'))
+  $$('.upbar i').forEach(e => { e.getAnimations().forEach(a => a.cancel()); e.style.scale = '0 1' })
+  $$('.upbar').forEach(b => b.style.opacity = '')
+  $('.preview').classList.remove('has-files'); $('.preview-count').textContent = 'No files yet.'
+  k('process').disabled = true
+  // Screen 3: nothing extracted yet.
+  setProgress(0); $('.progress').classList.remove('is-done'); $('.progress .label').textContent = 'Extracting information...'
+  $$('.ptable > div').forEach(r => r.classList.remove('is-in'))
+  $$('.status').forEach(s => { s.classList.remove('is-done'); s.lastElementChild.textContent = 'Processing' })
+  $('.sources-count').textContent = 'Processing 4 documents'
+  $('.record .more-found').classList.add('is-hidden')
+  // Screen 4: nothing published.
+  k('publish').classList.remove('is-done'); $('.caret')?.remove()
+  show(i)
+}
+function setProgress(p) { $('.bar i').style.setProperty('--p', p); $('.pct').textContent = `${Math.round(p * 100)}%` }
+
+/* ── The four scenes. ── */
+async function materials(t) {
+  reset(0)
+  cursor.classList.remove('is-hidden')
+  await move(t, [690, 700], 900)
+  hover(k('row-3')); await sleep(350, t)
+  await move(t, at(k('row-2'), .5, .5), 420); hover(k('row-2')); await sleep(300, t)
+  await move(t, at(k('row-1'), .5, .5), 420); hover(k('row-1')); await sleep(300, t)
+  await move(t, at(k('row-0'), .55, .5), 420); hover(k('row-0')); await sleep(450, t)
+  await move(t, at(k('add'), .6, .55)); hover(k('add')); await sleep(420, t)
+  await click(t, k('add'))
+}
+async function upload(t) {
+  reset(1)
+  await sleep(500, t)
+  // Leave the window at the bottom, pick up four files, and bring them in.
+  hover()
+  await move(t, [1180, 1110], 900)
+  ghost.classList.remove('is-hidden'); cursor.classList.add('is-down')
+  await sleep(250, t)
+  const drop = k('drop')
+  await move(t, at(drop, .62, .62), 1150)
+  drop.classList.add('is-over'); await sleep(250, t)
+  // Release below the "Drop to upload" label, so the files under the cursor never cover it.
+  await move(t, at(drop, .47, .72), 380); await sleep(250, t)
+  cursor.classList.remove('is-down'); ghost.classList.add('is-hidden'); drop.classList.remove('is-over')
+  const files = $$('.files li'), docs = $$('.preview .docs li')
+  $('.preview').classList.add('has-files')
+  for (let i = 0; i < 4; i++) {
+    files[i].classList.add('is-in')
+    const bar = files[i].querySelector('.upbar i'); files[i].querySelector('.upbar').style.opacity = 1
+    bar.animate([{ scale: '0 1' }, { scale: '1 1' }], { duration: 650, easing: 'cubic-bezier(.3, .6, .3, 1)', fill: 'forwards' })
+    await sleep(170, t)
+  }
+  await sleep(500, t)
+  for (let i = 0; i < 4; i++) {
+    files[i].querySelector('.upbar').style.opacity = 0
+    docs[i].classList.add('is-in')
+    $('.preview-count').textContent = `${i + 1} file${i ? 's' : ''} ready to be processed.`
+    await sleep(190, t)
+  }
+  k('process').disabled = false
+  await sleep(450, t)
+  await move(t, at(files[1], .5, .5), 650); hover(files[1]); await sleep(500, t)
+  await move(t, at(docs[1], .55, .5), 700); hover(docs[1]); await sleep(550, t)
+  await move(t, at(k('process'), .56, .55)); hover(k('process')); await sleep(420, t)
+  await click(t, k('process'))
+}
+async function extract(t) {
+  reset(2)
+  hover()
+  const rows = $$('.ptable > div'), stats = $$('.status')
+  const dur = 4200
+  let shown = 0, done = 0, elapsed = 0, glanced = false
+  await move(t, [1080, 640], 900)
+  let last = performance.now()
+  // Progress fills; property values land row by row; each source turns to Processed.
+  while (elapsed < dur) {
+    await sleep(40, t)
+    const now = performance.now(); if (!paused) elapsed += now - last; last = now
+    const p = Math.min(1, elapsed / dur), e = 1 - Math.pow(1 - p, 1.6)
+    setProgress(e)
+    while (shown < rows.length && e > (shown + 1) / (rows.length + 1)) rows[shown++].classList.add('is-in')
+    while (done < stats.length && e > (done + 1) / (stats.length + .6)) {
+      stats[done].classList.add('is-done'); stats[done].lastElementChild.textContent = 'Processed'; done++
+      $('.sources-count').textContent = done === 4 ? '4 documents processed' : `${done} of 4 documents processed`
+    }
+    // Glance at a source while the rest keeps filling: the move runs alongside the loop.
+    if (elapsed > 1400 && !glanced) { glanced = true; move(t, at(k('sdoc-1'), .5, .5), 700).then(() => hover(k('sdoc-1'))).catch(() => {}) }
+  }
+  rows.forEach(r => r.classList.add('is-in'))
+  $('.record .more-found').classList.remove('is-hidden')
+  $('.progress').classList.add('is-done'); $('.progress .label').textContent = 'Extraction complete'
+  hover()
+  await sleep(1300, t)
+}
+async function review(t) {
+  reset(3)
+  await sleep(450, t)
+  // A value, its page in the source, and that document in the sidebar light up together.
+  const f1 = k('f-1')
+  await move(t, at(f1.querySelector('.input span'), .35, .5), 800); hover(f1); await sleep(380, t)
+  await click(t)
+  f1.classList.add('is-focus'); k('weight-input').insertAdjacentHTML('beforeend', '<i class="caret"></i>')
+  k('side-doc-0').classList.add('is-linked')
+  await sleep(1300, t)
+  await move(t, at(k('f-3').querySelector('.src'), .4, .5), 650)
+  f1.classList.remove('is-focus'); $('.caret')?.remove(); k('side-doc-0').classList.remove('is-linked')
+  hover(k('f-3')); k('side-doc-1').classList.add('is-linked'); await sleep(1100, t)
+  k('side-doc-1').classList.remove('is-linked')
+  await move(t, at(k('publish'), .55, .55), 900); hover(k('publish')); await sleep(420, t)
+  await click(t, k('publish'))
+  hover(); k('publish').classList.add('is-done'); toast.classList.add('is-on')
+  await sleep(1700, t)
+  toast.classList.remove('is-on')
+  await sleep(300, t)
+}
+const scenes = [materials, upload, extract, review]
+
+async function run() {
+  const t = ++token
+  try {
+    cursor.classList.remove('is-hidden')
+    for (let i = 0; ; i = (i + 1) % scenes.length) await scenes[i](t)
+  } catch (e) { if (!(e instanceof Stop)) throw e }
+}
+
+/* ── Playback. Opened on its own, the prototype plays and loops. Embedded (the Filo case study), the
+   host page drives it, Momo-style: it posts { filoAppFlow: 'play' | 'pause' | 'restart' } and gets
+   { filoAppFlow: 'ready' } once the type has loaded, so it can send its current state. ── */
+let started = false
+function setPaused(p) {
+  paused = p
+  // Resume only what this pause stopped; finished animations (fill: forwards) stay put.
+  stage.getAnimations({ subtree: true }).forEach(a => p ? a.playState === 'running' && a.pause() : a.playState === 'paused' && a.play())
+}
+function play() {
+  if (reduce) return
+  if (started) return setPaused(false)
+  started = true; paused = false; run()
+}
+/** Back to the first screen with the cursor out of view; the next play starts the flow over. */
+function restart() {
+  setPaused(false)
+  token++; started = false
+  reset(0); place(760, 1120); cursor.classList.add('is-hidden')
+}
+
+await document.fonts.ready
+const embedded = parent !== window
+if (reduce) reset(0)
+else if (!embedded) play()
+else {
+  // The host's play/pause button covers the frame, so nothing in here takes focus.
+  document.body.inert = true
+  addEventListener('message', ({ source, origin, data }) => {
+    if (source !== parent || origin !== location.origin) return
+    if (data?.filoAppFlow === 'play') play()
+    else if (data?.filoAppFlow === 'pause') setPaused(true)
+    else if (data?.filoAppFlow === 'restart') restart()
+  })
+  parent.postMessage({ filoAppFlow: 'ready' }, location.origin)
+}
+</script>
+</body>
+</html>

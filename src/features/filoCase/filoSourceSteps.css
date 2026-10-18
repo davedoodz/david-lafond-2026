@@ -3,7 +3,6 @@
 
 /* Wider than the case column so the desktop app reads at size, still clear of the fixed back link. */
 .case__section.filo-steps {
-  --fss-app-cycle: 14s;
   height: auto;
   min-height: 0;
   overflow: visible;
@@ -35,39 +34,25 @@
 }
 .fss-visual { display: grid; justify-items: center; width: 100%; margin-top: 34px; min-width: 0; }
 
-/* Step 1: the desktop app, a window cross-fading through four screens, every --fss-app-cycle
-   (Filo source steps › app › seconds, times four). Each frame fades in on top of the one before
-   (z-index 2), holds, then drops below the next one (z-index 1) while that one fades in over it, so
-   the swap never dips to the page behind. The delays start the loop already settled on the first
-   screen. The keyframes assume four frames: each owns 25% of the cycle. */
+/* Step 1: the desktop app prototype (AppFlow), framed like a window. The frame clips the cursor where
+   it leaves the app, and its ground matches the app's so nothing flashes while the prototype loads.
+   The playback toggle and replay button (VideoPlayback) sit on top, as on the Momo prototype. */
 .fss-app {
-  --fss-app-slot: calc(var(--fss-app-cycle) / 4);
-  --fss-app-fade: calc(var(--fss-app-cycle) * .05);
   position: relative;
   width: min(100%, 960px);
   aspect-ratio: 1536 / 1024;
   overflow: hidden;
   border-radius: 12px;
-  background: #f3f3f3;
+  background: #f9f9f9;
   box-shadow: 0 0 0 1px rgb(23 23 23 / .06), 0 30px 60px -28px rgb(23 23 23 / .28);
 }
 .fss-app__frame {
   position: absolute;
   inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
-  opacity: 0;
-  user-select: none;
-  animation: fss-app-frame var(--fss-app-cycle) linear infinite;
-  animation-delay: calc(var(--i) * var(--fss-app-slot) - var(--fss-app-cycle) - var(--fss-app-fade));
-}
-@keyframes fss-app-frame {
-  0% { opacity: 0; z-index: 2; animation-timing-function: ease-out; }
-  5% { opacity: 1; z-index: 2; }
-  25% { opacity: 1; z-index: 2; }
-  25.01% { opacity: 1; z-index: 1; }
-  30% { opacity: 1; z-index: 1; }
-  30.01%, 100% { opacity: 0; z-index: 1; }
+  border: 0;
 }
 
 /* Crops of the reference sit on a pure-white ground; multiply drops the white onto the page and keeps
@@ -155,10 +140,9 @@
 @keyframes fss-file-layer { 0%, 55% { opacity: 0; translate: 0 22px; } 61%, 93% { opacity: 1; translate: 0 0; } 97%, 100% { opacity: 0; translate: 0 0; } }
 @keyframes fss-check-pop { 0%, 30% { scale: .55; } 35% { scale: 1.08; } 38%, 100% { scale: 1; } }
 @keyframes fss-tag-tap { 0%, 14% { translate: 0 0; rotate: 0deg; } 24%, 31% { translate: -22px 4px; rotate: -5deg; } 42%, 100% { translate: 0 0; rotate: 0deg; } }
-.fss-step:not([data-playing]) :is(.fss-app__frame, .fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation-play-state: paused; }
+.fss-step:not([data-playing]) :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
-  :is(.fss-app__frame, .fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation: none; }
-  .fss-app__frame:first-child { opacity: 1; }
+  :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation: none; }
   .fss-layer--scan, .fss-layer--detect { opacity: 0; }
   .fss-layer--file { opacity: 1; }
 }
