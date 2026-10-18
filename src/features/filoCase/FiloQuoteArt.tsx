@@ -25,6 +25,8 @@ const CONFIG = {
   card: {
     width: [640, 420, 900, 1] as Tuple,
     height: [260, 160, 420, 1] as Tuple,
+    /** Space between neighbouring cards (px). */
+    gap: [16, 0, 120, 1] as Tuple,
     /** Text column (% of the card); the art lives in the rest. */
     text: [54, 35, 80, 1] as Tuple,
     /** Phones (≤720 px): the art sits under the text, so the card is taller. */
@@ -43,7 +45,7 @@ const CONFIG = {
     color: { type: 'color' as const, default: '#171717' },
   },
   'Technical designer, BlueSTEM': placement(),
-  'Designer, Stella McCartney': placement(),
+  'Designer, Gap': placement(),
   'Product lead, O’Neill': placement(),
   'Merchandiser, Calvin Klein': placement(),
 }
@@ -62,7 +64,7 @@ function rgba(hex: string, alpha: number) {
 type Art = { card: Card; src: string; width: number; height: number; base: { width: number; right: number; bottom: number } }
 const ART: Partial<Record<number, Art>> = {
   0: { card: 'Technical designer, BlueSTEM', src: '/work/filo/studio/quote-art-technical-designer.webp', width: 900, height: 672, base: { width: 46, right: 16, bottom: 10 } },
-  1: { card: 'Designer, Stella McCartney', src: '/work/filo/studio/quote-art-designer.webp', width: 900, height: 543, base: { width: 48, right: 16, bottom: 12 } },
+  1: { card: 'Designer, Gap', src: '/work/filo/studio/quote-art-designer.webp', width: 900, height: 543, base: { width: 48, right: 16, bottom: 12 } },
   2: { card: 'Product lead, O’Neill', src: '/work/filo/studio/quote-art-product-lead.webp', width: 900, height: 522, base: { width: 46, right: 16, bottom: 12 } },
   3: { card: 'Merchandiser, Calvin Klein', src: '/work/filo/studio/quote-art-merchandiser.webp', width: 900, height: 453, base: { width: 52, right: 14, bottom: 18 } },
 }
@@ -74,7 +76,7 @@ const ART: Partial<Record<number, Art>> = {
 export function FiloQuoteArt({ index }: { index: number }) {
   const dials = useTuning('Filo quote art', CONFIG)
   const markerRef = useRef<HTMLSpanElement & HTMLImageElement>(null)
-  const { width, height, text, mobileHeight, fill } = dials.card
+  const { width, height, gap, text, mobileHeight, fill } = dials.card
   const s = dials.shadow
   const shadow = s.show ? `0 ${s.y}px ${s.blur}px ${s.spread}px ${rgba(s.color, s.opacity)}` : 'none'
   const { scale: stripScale, play } = dials.strip
@@ -95,8 +97,9 @@ export function FiloQuoteArt({ index }: { index: number }) {
     const strip = card.closest<HTMLElement>('.persona__quotes')
     strip?.style.setProperty('--qa-shadow-pad', `${shadowPad}px`)
     strip?.style.setProperty('--qa-strip-scale', `${stripScale}`)
+    strip?.style.setProperty('--qa-gap', `${gap}px`)
     strip?.toggleAttribute('data-qa-paused', !play)
-  }, [width, height, text, mobileHeight, fill, shadow, shadowPad, stripScale, play])
+  }, [width, height, gap, text, mobileHeight, fill, shadow, shadowPad, stripScale, play])
 
   const art = ART[index]
   if (!art) return <span ref={markerRef} hidden />

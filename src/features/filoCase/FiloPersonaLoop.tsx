@@ -15,6 +15,8 @@ type Preset = (typeof PRESETS)[number]
 const CONFIG = {
   /** How one scene becomes the next. */
   transition: { type: 'select' as const, options: [...PRESETS], default: 'Cross dissolve' },
+  /** Playback speed: 2 plays the whole loop twice as fast (hold and transition), 0.5 half as fast. */
+  speed: [1, 0.25, 3, 0.05] as Tuple,
   /** Time each scene rests before the transition starts (s). */
   hold: [1.5, 0.3, 6, 0.05] as Tuple,
   /** Transition length (s). Cut ignores it. */
@@ -57,7 +59,7 @@ export function FiloPersonaLoop({ alt }: { alt: string }) {
   /** Set by a dial change: jump to just before the next transition so the change shows at once. */
   const previewRef = useRef(false)
 
-  const dialKey = `${dials.transition}|${dials.hold}|${dials.fade}|${dials.blur}`
+  const dialKey = `${dials.transition}|${dials.speed}|${dials.hold}|${dials.fade}|${dials.blur}`
   const firstKey = useRef(dialKey)
   useEffect(() => {
     if (dialKey !== firstKey.current) previewRef.current = true
@@ -85,10 +87,10 @@ export function FiloPersonaLoop({ alt }: { alt: string }) {
     let cancelled = false
 
     const draw = (now: number) => {
-      const { transition, hold: holdS, fade: fadeS, blur } = dialsRef.current
+      const { transition, speed, hold: holdS, fade: fadeS, blur } = dialsRef.current
       const preset = transition as Preset
-      const hold = holdS * 1000
-      const fade = preset === 'Cut' ? 0 : fadeS * 1000
+      const hold = (holdS * 1000) / speed
+      const fade = preset === 'Cut' ? 0 : (fadeS * 1000) / speed
       if (previewRef.current) {
         previewRef.current = false
         sceneStart = now - Math.max(0, hold - 400)

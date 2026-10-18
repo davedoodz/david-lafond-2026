@@ -13,13 +13,10 @@ const MOMO_CLIPS = ['listening', 'floating'] as const
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 const smooth = (v: number) => v * v * (3 - 2 * v)
 // Ordered authored boundaries. Each dial retimes one whole sequence without changing its poses.
+// The film plays from PHONE_TIMELINE.start, the evening lock screen; the scenes before it are cut.
+const START = PHONE_TIMELINE.start
 const SEQUENCES = [
-  { key: 'phoneArrival', end: PHONE_TIMELINE.meet },
-  { key: 'meetingNotice', end: PHONE_TIMELINE.luck },
-  { key: 'goodLuckNotice', end: PHONE_TIMELINE.skip },
-  { key: 'threePm', end: PHONE_TIMELINE.k[1] },
-  { key: 'fivePm', end: PHONE_TIMELINE.k[2] },
-  { key: 'evening', end: PHONE_TIMELINE.det },
+  { key: 'phoneArrival', end: PHONE_TIMELINE.det },
   { key: 'bodySignals', end: PHONE_TIMELINE.risen },
   { key: 'signalChecks', end: PHONE_TIMELINE.buzz },
   { key: 'momoNudge', end: PHONE_TIMELINE.press },
@@ -29,11 +26,15 @@ const SEQUENCES = [
   { key: 'heroHandoff', end: PHONE_TIMELINE.hero },
   { key: 'heroHold', end: PHONE_TIMELINE.dur },
 ] as const
+/** Film second sequence `i` starts at. */
+const sequenceFrom = (i: number) => (i ? SEQUENCES[i - 1].end : START)
+/** Clamp a film time to the played span, START to the end. */
+const clampFilm = (t: number) => Math.min(PHONE_TIMELINE.dur, Math.max(START, t))
 const HANDOFF_INDEX = SEQUENCES.findIndex(sequence => sequence.key === 'heroHandoff')
 const option = <T extends string>(...pairs: [T, string][]) => pairs.map(([value, label]) => ({ value, label }))
 type SequenceKey = (typeof SEQUENCES)[number]['key']
 const TIMING = Object.fromEntries(SEQUENCES.map((sequence, i) => [
-  sequence.key, [sequence.end - (i ? SEQUENCES[i - 1].end : 0), 0.05, 30, 0.05],
+  sequence.key, [sequence.end - sequenceFrom(i), 0.05, 30, 0.05],
 ])) as Record<SequenceKey, Tuple>
 const SPEEDS = Object.fromEntries(SEQUENCES.map(sequence => [sequence.key, [1, 0.25, 3, 0.05]])) as Record<SequenceKey, Tuple>
 const CONFIG = {
@@ -44,7 +45,7 @@ const CONFIG = {
   /** Scrub the film: dragging `time` (film seconds) jumps there and pauses; the step buttons move
    *  one `step` either way. Pausing writes the current time back here. Session-only, never saved. */
   playhead: {
-    time: [0, 0, +PHONE_TIMELINE.dur.toFixed(2), 0.01] as Tuple,
+    time: [+START.toFixed(2), +START.toFixed(2), +PHONE_TIMELINE.dur.toFixed(2), 0.01] as Tuple,
     step: [0.03, 0.01, 1, 0.01] as Tuple,
     back: { type: 'action' as const, label: '◀ Step back' },
     forward: { type: 'action' as const, label: 'Step forward ▶' },
@@ -228,7 +229,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       if (action === 'pause' && pauseRef.current()) setPlayhead(round2(timeRef.current()))
       if (action === 'playhead.back' || action === 'playhead.forward') {
         const step = tRef.current.playhead.step * (action === 'playhead.back' ? -1 : 1)
-        const to = round2(clamp((timeRef.current() + step) / PHONE_TIMELINE.dur) * PHONE_TIMELINE.dur)
+        const to = round2(clampFilm(timeRef.current() + step))
         setPlayhead(to); seekRef.current(to)
       }
     },
@@ -292,7 +293,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const root = document.documentElement
     let vw = 0, vh = 0, dpr = 1, filmDpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
     let ready = false, disposed = false, playing = false, paused = false
-    let time = 0, rt = 0, raf = 0, last = 0, handoffY: number | null = null
+    let time = START, rt = 0, raf = 0, last = 0, handoffY: number | null = null
     let interrupted = false, enteredStage = false, handedOff = false, handoffCancelled = false, handoffSettled = false
     // `sequenceProgress` is 0–1 through the current sequence, so a speed dial can change mid-scene
     // without the film jumping.
@@ -415,14 +416,16 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const progress = () => 1 - clamp(window.scrollY / stageH)
     const measure = () => {
       if (disposed) return
-      vw = window.innerWidth; vh = window.innerHeight; dpr = Math.min(1.5, window.devicePixelRatio || 1)
-      // Both layers are dominated by soft gradients and source art near CSS-pixel resolution.
-      // Capping the display canvas at 1.5× keeps edges crisp while avoiding a 2× buffer's 78%
-      // extra pixels during the scroll handoff; the heavier offscreen film stays at 1×.
-      filmDpr = 1
+      vw = window.innerWidth; vh = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1)
+      // The camera zooms deep into the phone (the notification fills the screen), so both the
+      // display canvas and the offscreen film render at the device's pixel ratio (up to 2×):
+      // at 1× the zoomed text and glass were upscaled and read soft.
+      filmDpr = dpr
       canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr)
       topCanvas.width = canvas.width; topCanvas.height = canvas.height
       filmCanvas.width = Math.round(vw * filmDpr); filmCanvas.height = Math.round(vh * filmDpr)
+      // Resizing resets context state: the wallpaper and art are scaled up a lot mid-zoom.
+      for (const c of [ctx, filmCtx, topCtx]) c.imageSmoothingQuality = 'high'
       stageH = stage.offsetHeight || vh
       const box = document.querySelector('.case__section--hero .case__braid-slot')?.getBoundingClientRect()
       slotY = box ? box.top + box.height / 2 + window.scrollY : stageH + 120
@@ -437,7 +440,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     }
     const start = () => {
       if (!ready) return
-      playing = true; paused = false; time = 0; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
+      playing = true; paused = false; time = START; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
       ceil = window.scrollY
       sequenceIndex = 0; sequenceProgress = 0
       for (const video of videos) video.currentTime = 0
@@ -478,7 +481,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         if (sequenceIndex === SEQUENCES.length) time = PHONE_TIMELINE.dur
         else {
           const sequence = SEQUENCES[sequenceIndex]
-          const from = sequenceIndex ? SEQUENCES[sequenceIndex - 1].end : 0
+          const from = sequenceFrom(sequenceIndex)
           time = from + (sequence.end - from) * sequenceProgress
         }
         // Drive the scroll from the film clock, in this same frame, before drawing. The canvas
@@ -568,7 +571,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       }
       root.toggleAttribute('data-momo-stage', p > .5)
       showSkip(playing && handoffY === null && time < PHONE_TIMELINE.calm && p > .5)
-      if (skipShown) skipBtnRef.current?.style.setProperty('--momo-skip-p', String(clamp(time / PHONE_TIMELINE.calm)))
+      if (skipShown) skipBtnRef.current?.style.setProperty('--momo-skip-p', String(clamp((time - START) / (PHONE_TIMELINE.calm - START))))
       if (!document.hidden && (playing || (ay > -200 && ay < vh + 200))) raf = requestAnimationFrame(frame)
       else last = 0
     }
@@ -582,7 +585,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     // without the glide; from there the film clock drives the scroll as usual.
     seekRef.current = (to: number) => {
       if (!ready) return
-      to = clamp(to / PHONE_TIMELINE.dur) * PHONE_TIMELINE.dur
+      to = clampFilm(to)
       if (!playing || handedOff || (handoffY !== null && to < PHONE_TIMELINE.calm)) {
         lock(false); start()
         window.scrollTo({ top: 0, behavior: 'instant' })
@@ -590,7 +593,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       paused = true; enteredStage = true
       let i = SEQUENCES.findIndex(sequence => to < sequence.end)
       if (i < 0) i = SEQUENCES.length - 1
-      const from = i ? SEQUENCES[i - 1].end : 0, sequence = SEQUENCES[i]
+      const from = sequenceFrom(i), sequence = SEQUENCES[i]
       sequenceIndex = i; sequenceProgress = (to - from) / (sequence.end - from)
       time = to
       // Momo's clips loop from the moment Momo appears; put them where plain playback would be.

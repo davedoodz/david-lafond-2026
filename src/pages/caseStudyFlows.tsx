@@ -1,24 +1,31 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { EditableText } from '../components/EditableText'
+import { PlaybackToggle, RestartButton } from '../features/playback/VideoPlayback'
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText, type StoryTiming } from './storyArt'
 import type { SectionSpacing, TextReveal } from './caseStudyContent'
 import { cardSurface, useSystemBase, type GlassDials } from '../features/momoSystem/systemSurface'
 
-/** Phone-only recordings (public/work/momo/flows): 530×1080, the phone cropped to its own frame. */
+/** Phone-only recordings (public/work/momo/flows): 1060×2160 (2x), the phone cropped to its own frame. */
 const flow = (name: string) => ({ src: `/work/momo/flows/${name}.mp4`, poster: `/work/momo/flows/${name}.webp` })
 
-/** A phone recording that plays only while on screen (and not for reduced motion). It rewinds once fully off screen, so each return starts from the beginning without a visible jump. */
-export function PhoneVideo({ name, className = '' }: { name: string; className?: string }) {
+/** A phone recording that plays only while on screen (and not for reduced motion). It rewinds once fully off screen, so each return starts from the beginning without a visible jump. `controls`: clicking the phone pauses and plays it (the shared playback toggle), and hovering it shows the replay circle, which plays the recording again from the start. */
+export function PhoneVideo({ name, className = '', controls = true }: { name: string; className?: string; controls?: boolean }) {
+  const host = useRef<HTMLSpanElement>(null)
   const ref = useRef<HTMLVideoElement>(null)
+  const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  // A click pause holds until the phone leaves the screen, so scrolling a little never restarts it.
+  const userPaused = useRef(false)
   useEffect(() => {
     const video = ref.current
-    if (!video || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!video || reduced) return
     // Core flows owns one shared replay clock for its three recordings.
     if (video.closest('.case__flows')) return
     const observer = new IntersectionObserver(
       ([e]) => {
-        if (e.intersectionRatio >= 0.3) void video.play().catch(() => {})
-        else if (!e.isIntersecting) {
+        if (e.intersectionRatio >= 0.3) {
+          if (!userPaused.current) void video.play().catch(() => {})
+        } else if (!e.isIntersecting) {
+          userPaused.current = false
           video.pause()
           video.currentTime = 0
         }
@@ -27,12 +34,25 @@ export function PhoneVideo({ name, className = '' }: { name: string; className?:
     )
     observer.observe(video)
     return () => observer.disconnect()
-  }, [])
+  }, [reduced])
+  const replay = () => {
+    const video = ref.current
+    if (!video) return
+    userPaused.current = false
+    video.currentTime = 0
+    void video.play().catch(() => {})
+  }
   const { src, poster } = flow(name)
   // The wrapper carries size and shadow; the video is clipped to the phone outline (see .case__phone-video).
   return (
-    <span className={`case__phone ${className}`.trim()} aria-hidden="true">
-      <video ref={ref} className="case__phone-video" src={src} poster={poster} muted loop playsInline preload="metadata" />
+    <span ref={host} className={`case__phone ${className}`.trim()}>
+      <video ref={ref} className="case__phone-video" src={src} poster={poster} muted loop playsInline preload="metadata" aria-hidden="true" />
+      {controls && (
+        <>
+          <PlaybackToggle host={host} videoSelector="video" reducedMotion={reduced} feedbackOnMediaEvents={false} onUserToggle={(paused) => { userPaused.current = paused }} />
+          <RestartButton onRestart={replay} label="Replay prototype" />
+        </>
+      )}
     </span>
   )
 }
@@ -311,11 +331,11 @@ export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edi
 
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type GuidedReveal = 'rise' | 'cascade' | 'focus' | 'from sides' | 'wipe' | 'still'
-export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
+export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; pickScale: number; spacing: SectionSpacing; textReveal: TextReveal }
 export function GuidedPair({ g, edit, selectable = false }: { g: Guided; edit: Edit; selectable?: boolean }) {
   const ref = useRiseOnView()
   return (
-    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} data-text-reveal={g.textReveal.preset} aria-labelledby="case-guided" style={{ '--section-pad-top': `${g.spacing.top}px`, '--section-pad-bottom': `${g.spacing.bottom}px`, '--section-content-gap': `${g.spacing.contentGap}px`, '--text-reveal-duration': `${g.textReveal.duration}s`, '--text-reveal-stagger': `${g.textReveal.stagger}s` } as CSSProperties}>
+    <section ref={ref} className="case__section case__guided" data-section="guided" data-layout="guided" data-copy-align={g.align} data-guided-reveal={g.reveal} data-text-reveal={g.textReveal.preset} aria-labelledby="case-guided" style={{ '--pick-scale': g.pickScale, '--section-pad-top': `${g.spacing.top}px`, '--section-pad-bottom': `${g.spacing.bottom}px`, '--section-content-gap': `${g.spacing.contentGap}px`, '--text-reveal-duration': `${g.textReveal.duration}s`, '--text-reveal-stagger': `${g.textReveal.stagger}s` } as CSSProperties}>
       <div className="case__flows-head case__section-copy">
         <EditableText className="case__eyebrow eyebrow" label="guided eyebrow" value={g.eyebrow} onChange={edit('guided.eyebrow')} />
         <EditableText as="h2" id="case-guided" className="case__title" label="guided title" value={g.title} onChange={edit('guided.title')} selectable={selectable} />
@@ -329,7 +349,7 @@ export function GuidedPair({ g, edit, selectable = false }: { g: Guided; edit: E
           ] as const
         ).map(([name, label, field], i) => (
           <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
-            <PhoneVideo name={name} className={name === 'guided-woop-pick' ? 'case__phone--bare' : ''} />
+            <PhoneVideo name={name} className={name === 'guided-woop-pick' ? 'case__phone--bare' : ''} controls={name !== 'guided-woop-pick'} />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}

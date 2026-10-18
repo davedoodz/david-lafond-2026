@@ -1,4 +1,5 @@
-export const PHONE_TIMELINE: { meet: number; luck: number; skip: number; k: [number, number, number]; det: number; risen: number; buzz: number; press: number; voice: number; talk: number; calm: number; hero: number; dur: number }
+/** Film seconds. Playback starts at `start` (the evening lock screen, the phone sliding up). */
+export const PHONE_TIMELINE: { start: number; det: number; risen: number; buzz: number; press: number; voice: number; talk: number; calm: number; hero: number; dur: number }
 export function loadPhoneFilm(): Promise<void>
 /** App-launch dials in film seconds (see phoneFilm.js LAUNCH). */
 export type AppLaunch = { duration: number; spring: number; face: number; press: number; zoom: number; blur: number; dim: number }

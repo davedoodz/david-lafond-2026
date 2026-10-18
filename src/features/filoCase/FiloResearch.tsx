@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import './filoResearch.css'
 
@@ -120,7 +120,8 @@ function ResearchVideo({ src, poster, width, height, label, speed, cropRight = 0
   )
 }
 
-export function FiloResearchFigure({ settings }: { settings?: FiloResearchSettings }) {
+/** `quotes`: the interview quote carousel, placed under the primary-research video. */
+export function FiloResearchFigure({ settings, quotes }: { settings?: FiloResearchSettings; quotes?: ReactNode }) {
   const primaryVisual = settings?.primaryVisual ?? 'image'
   const miroSpeed = settings?.miroVideo?.speed ?? 1
   const miroScale = settings?.miroVideo?.scale ?? 1
@@ -135,6 +136,21 @@ export function FiloResearchFigure({ settings }: { settings?: FiloResearchSettin
 
   return (
     <div className="filo-research">
+      <figure className="filo-research__interviews" style={{ '--research-interview-width': `${interviewScale * 100}%` } as CSSProperties}>
+        <div className="filo-research__frame filo-research__frame--interviews" style={{ borderRadius: `${interviewRadius}px` }}>
+          <ResearchVideo
+            src="/work/filo/research/primary-interviews.mp4"
+            poster="/work/filo/research/primary-interviews.webp"
+            width={1280}
+            height={814}
+            speed={interviewSpeed}
+            label="A screen recording of the primary-market-research outreach tracker used to manage interviews with fashion-industry experts."
+          />
+        </div>
+      </figure>
+
+      {quotes && <div className="filo-research__quotes" data-quotes="marquee">{quotes}</div>}
+
       <figure className="filo-research__overview" style={{ '--research-miro-width': `${miroScale * 100}%` } as CSSProperties}>
         <div
           className="filo-research__frame filo-research__frame--overview"
@@ -165,26 +181,6 @@ export function FiloResearchFigure({ settings }: { settings?: FiloResearchSettin
           )}
         </div>
       </figure>
-
-      <section className="filo-research__primary" aria-labelledby="filo-primary-research-title">
-        <div className="filo-research__copy">
-          <p className="eyebrow">Primary market research</p>
-          <h3 id="filo-primary-research-title">Industry experts made the pain visible.</h3>
-          <p>We interviewed industry experts to understand where biomaterials stall inside real fashion workflows—from sourcing and testing to supplier coordination and scale.</p>
-        </div>
-        <figure style={{ '--research-interview-width': `${interviewScale * 100}%` } as CSSProperties}>
-          <div className="filo-research__frame filo-research__frame--interviews" style={{ borderRadius: `${interviewRadius}px` }}>
-            <ResearchVideo
-              src="/work/filo/research/primary-interviews.mp4"
-              poster="/work/filo/research/primary-interviews.webp"
-              width={1280}
-              height={814}
-              speed={interviewSpeed}
-              label="A screen recording of the primary-market-research outreach tracker used to manage interviews with fashion-industry experts."
-            />
-          </div>
-        </figure>
-      </section>
     </div>
   )
 }

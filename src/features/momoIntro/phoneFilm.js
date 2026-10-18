@@ -30,7 +30,7 @@ export function setPauseIcon(dials) { PAUSE_ICON = dials }
 /** Status icon gaps (Momo intro › Status icons), in pt: signal → Wi-Fi and Wi-Fi → battery fill. */
 let STATUS_GAPS = { wifi: 4.2, battery: 5.8 }
 export function setStatusGaps(dials) { STATUS_GAPS = dials }
-const COPY = {"luck":{"title":"Good luck today 🍀","body":"Deep breaths before you walk in.\nYou totally got this!"},"nudge":{"title":"Wanna debrief?","body":"I noticed your body’s still a little stressed from that presentation. I'm here if you wanna yap about it 👀"}}
+const COPY = {"luck":{"title":"Good luck today 🍀","body":"Deep breaths before you walk in.\nYou totally got this!"},"nudge":{"title":"Wanna debrief?","body":"I noticed your body’s still a little stressed from that presentation. I’m here if you wanna yap about it 👀"}}
 const MEET = {"title":"Design Pitch - Internal Team","now":"2:00 – 2:45 PM · now","ended":"Ended 2:45 PM"}
 const CHECKS = [{"kind":"hr","text":"Heart rate up ~30 BPM in 2 min","state":"ok"},{"kind":"base","text":"Unusual for you at this hour","state":"ok"}]
 const shownChecks = () => CHECKS
@@ -43,9 +43,9 @@ const checkIn = (t, T, i) => S(t, checkAt(T, i), checkAt(T, i) + Math.min(0.35, 
  *  to hold them just ahead of that fade, so it never waits with an empty band and rows never overhang it. */
 const rowsIn = (t, T) => S(t, checkAt(T, 0) - 0.35, checkAt(T, 0))
 const islandGrow = (t, T) => S(t, checkAt(T, 0) - 0.8, checkAt(T, 0) - 0.3)
-// The full take keeps going under the handoff; the cut lands just after "shit…" (see `timeline`).
+// The full take keeps going under the handoff; the cut lands just after "froze." (see `timeline`).
 const words = () => "Sarah kept pushing back on my concept in front of everyone, and I just… froze. I knew what to say but shit… I don't know why I just kept my opinions to myself…".trim().split(/\s+/)
-const CUT_AFTER = 'shit…', CUT_LEAD = 0
+const CUT_AFTER = 'froze.', CUT_LEAD = 0
 const THEMES = {paper:{lockInk:'#9CF6FF',dateInk:'#9CF6FF',glass:'rgba(255,255,255,0.62)',statusInk:'#ffffff',rounded:true,buttons:true}}
 const IMG = Object.fromEntries(Object.entries({lockwall:'lockwall',phone:'iphone',momo:'momo',momoOpen:'momo-open',recDot:'rec-dot',recSquare:'rec-square'}).map(([key,file]) => { const image = new Image(); image.src = '/work/momo/intro/'+file+'.webp'; return [key,image] }))
 let loaded
@@ -119,7 +119,7 @@ function glass(c, x, y, w, h, r, fill = 'rgba(255,255,255,0.72)', shadow = 30) {
 /** Glass looks for `frost`: the pale notification glass, and the heart-rate card, which is solid
  *  Dynamic Island black (opaque tint, no sheen, bevel or rim). */
 const FROST = {
-  light: { shadow: 'rgba(10,60,120,0.16)', base: 'rgba(205,232,252,0.5)', blur: 16, tint: [[0, 'rgba(226,243,255,0.80)'], [0.55, 'rgba(208,231,252,0.74)'], [1, 'rgba(214,240,255,0.80)']], sheen: 0.22, bevel: 1, rim: 1 },
+  light: { shadow: 'rgba(10,60,120,0.14)', base: 'rgba(220,238,252,0.6)', blur: 30, tint: [[0, 'rgba(236,247,255,0.84)'], [0.55, 'rgba(222,238,253,0.8)'], [1, 'rgba(206,224,250,0.82)']], sheen: 0.28, bevel: 1.2, rim: 1.2 },
   dark: { shadow: 'rgba(0,6,16,0.42)', base: '#000', blur: 22, tint: [[0, '#000'], [1, '#000']], sheen: 0, bevel: 0, rim: 0 },
 }
 /**
@@ -538,11 +538,16 @@ function island(c, t, T, V) {
 }
 
       function timeline(rate, win) {
-  const Q = D.seq, G = D.signal, T = { phoneIn: 0.05, meet: Q.meet }
+  const Q = D.seq, G = D.signal, T = { meet: Q.meet }
   T.luck = T.meet + Q.meetToLuck; T.luckOut = T.luck + Q.luckHold; T.skip = T.luckOut + 0.1
   // Hour steps: fade to 3:00, hold, fade to 5:00, hold, fade to the evening reading.
   T.k = [T.skip, T.skip + Q.fade + Q.hold3, T.skip + 2 * Q.fade + Q.hold3 + Q.hold5]
-  T.passEnd = T.k[2] + Q.fade; T.det = T.passEnd + Q.toIsland
+  T.passEnd = T.k[2] + Q.fade
+  // The intro plays from `start`: the evening lock screen (6:38). The meeting card, the good-luck note and
+  // the hours passing before it are cut. The phone slides up from below, and the Watch check's island drop
+  // starts while it is still settling, so the lock screen is never held empty.
+  T.start = T.passEnd; T.phoneIn = T.start
+  T.det = T.phoneIn + 0.3
   T.risen = T.det + 0.3 + G.rise
   T.buzz = T.risen + G.gap + shownChecks().length * G.row + G.hold
   T.press = T.buzz + Q.nudgeRead; T.unlock = T.press + 0.1
@@ -551,7 +556,7 @@ function island(c, t, T, V) {
   // Freeform opens with only the mode pill and the record orb; the tap starts the take and the
   // flat voice line; the first word follows.
   T.rec = T.voice + Q.toRecord; T.talk = T.rec + Q.recordToTalk
-  // Cut while they're still talking: the handoff starts right after "shit…", mid-sentence.
+  // Cut while they're still talking: the handoff starts right after "froze.", mid-thought.
   let t = T.talk + (words().indexOf(CUT_AFTER) + 1 + CUT_LEAD) * Q.word
   // No stop tap, no reflection: the recording keeps going while the film settles into the hero.
   T.stop = T.proc = T.cards = T.check = 1e9
@@ -609,14 +614,16 @@ function film(V) {
       // Phone → hero hand-off (Phone → hero transition dropdown).
       const HO = OPT.handoff, hk = S(t, T.calm - 0.2, T.hero + 0.2)
       const outA = { fade: 1 - S(t, T.calm, T.calm + 0.7), settle: 1 - S(t, T.hero + 0.1, T.hero + 0.6), rise: 1 - S(t, T.calm - 0.1, T.calm + 0.7), dissolve: 1 - S(t, T.calm + 0.1, T.calm + 1.0), pull: 1 - S(t, T.calm + 0.4, T.hero) }[HO] ?? 1
-      const ph = Math.min(S(t, T.phoneIn, T.phoneIn + 0.7), outA)
+      const ph = Math.min(S(t, T.phoneIn, T.phoneIn + 0.3), outA)
       // Extra phone transform about the phone centre: [dx, dy, scale], and blur px.
       const ht = [0, 0, 1]
       // No canvas blur on the dissolve: a 14px Canvas2D blur cost up to 44ms per Retina frame
       // and made the braid handoff stutter. The phone already fades out over the same span.
       const blur = 0
       const pk = 500 / PHONE.h, pw = PHONE.w * pk
-      const py = 280 + (1 - S(t, 0.05, 0.7)) * 50
+      // Slides up from below the frame on an ease-out (cubic), landing at y 280.
+      const rise = 1 - (1 - clamp((t - T.phoneIn) / 0.8)) ** 3
+      const py = 280 + (1 - rise) * 340
       const handT = (c) => { c.translate(480 + ht[0], py + ht[1]); c.scale(ht[2], ht[2]); c.translate(-480, -py); if (blur > 0.3) c.filter = `blur(${blur}px)` }
       const scr = { x: 480 - pw / 2 + PHONE.sx * pk, y: py - 250 + PHONE.sy * pk, w: PHONE.sw * pk, h: PHONE.sh * pk, r: PHONE.r * pk }
       const u = scr.w / 390
@@ -629,7 +636,9 @@ function film(V) {
       const inCards = S(t, T.cards - 0.2, T.cards + 0.8) * (1 - S(t, T.calm - 0.5, T.calm + 0.5))
       const IH = CARD_HR.y - 11 + CARD_HR.h0 + extraOf(V), atIsland = S(t, T.det - 0.2, T.det + 0.4) * (1 - S(t, T.buzz - 0.4, T.buzz + 0.2)), lockY = lerp(300, 11 + IH / 2 + 24, atIsland)
       const z = 1 + lerp(0.6, 0.6 + D.island.zoom * Math.min(1, 196 / (IH - 30)), atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards
-      const wsum = inLock + inTalk + inCards, focus = (scr.y + lockY * u) * inLock + (scr.y + 560 * u) * inTalk + (scr.y + 330 * u) * inCards
+      // The camera frames the phone's resting position, so the slide-up reads instead of being followed.
+      const restY = scr.y - (py - 280)
+      const wsum = inLock + inTalk + inCards, focus = (restY + lockY * u) * inLock + (restY + 560 * u) * inTalk + (restY + 330 * u) * inCards
       const fx = 480, fy = lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
       // One camera offset moves bezel, screen, voice band and taps together. Blend by the
       // existing camera weights, so repeated lock-screen sequences share one framing dial.
