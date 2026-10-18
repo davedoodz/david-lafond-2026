@@ -37,6 +37,11 @@ const CONFIG = {
   xMobile: [0, -200, 200, 1] as Tuple,
   yMobile: [0, -300, 300, 1] as Tuple,
   palette: { type: 'select' as const, options: ['green', 'mono'], default: 'green' },
+  /** Month names above the graph. Default: the site's small text size, in the muted-on-dark grey. */
+  labels: {
+    size: [14, 8, 24, 0.5] as Tuple,
+    color: { type: 'color' as const, default: '#A6A09C' },
+  },
   grass: {
     /** Height of the busiest day's grass, in tiles. */
     height: [1.3, 0.2, 3, 0.05] as Tuple,
@@ -307,6 +312,8 @@ export function ContributionGraph() {
     '--cg-logo-size': `${t.logo.size}px`,
     '--cg-logo-opacity': t.logo.opacity,
     '--cg-logo-y': `${t.logo.y}px`,
+    '--cg-label-size': `${t.labels.size}px`,
+    '--cg-label-color': t.labels.color,
   } as CSSProperties
 
   const span = months === 1 ? 'month' : `${months} months`

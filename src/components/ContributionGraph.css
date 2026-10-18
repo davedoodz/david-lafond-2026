@@ -58,19 +58,20 @@
 
 /* ---------- Grass ---------- */
 
-/* Month names sit above the field, each over its first week's back edge. */
+/* Month names sit above the field, each over its first week's back edge.
+   Size and colour: Contributions › labels. */
 .cg__labels {
   position: relative;
-  height: 10px;
+  height: var(--cg-label-size, 14px);
 }
 
 .cg__labels span,
 .cg__months span {
   overflow: visible;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: var(--cg-label-size, 14px);
   line-height: 1;
-  color: var(--stone-600);
+  color: var(--cg-label-color, var(--stone-400));
 }
 
 .cg__labels span {
