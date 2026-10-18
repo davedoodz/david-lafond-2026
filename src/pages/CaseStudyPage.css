@@ -373,6 +373,11 @@ html[data-case-snap] .case .footer {
     grid-template-columns: repeat(2, auto);
     gap: 24px 36px;
   }
+  /* The two-row meta shifts the hero's rhythm; 8px more under the mark keeps mark → title → meta →
+     logos at even gaps (~41px) on phones, as on desktop (40px). */
+  .case__hero-mark {
+    margin-bottom: 26px;
+  }
 }
 
 /* --- The moment: pinned wrist sequence. Captions ride the stage and follow its phase. */

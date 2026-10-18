@@ -943,10 +943,11 @@
         "braid": -42,
         "title": -24,
         "meta": -25,
-        "logos": -1
+        "logos": -18
       }
     },
     "mark": {
+      "y": -8,
       "scale": 0.99
     },
     "logos": {
@@ -1303,8 +1304,9 @@
     }
   },
   "Filo persona loop": {
-    "fade": 0.39,
-    "blur": 7
+    "speed": 2,
+    "fade": 0.4,
+    "blur": 9.5
   },
   "Filo quote art": {
     "strip": {
