@@ -9,10 +9,13 @@ export function ArrowRightIcon({ className }: IconProps) {
   )
 }
 
+/** Shared with text links built outside React (EditableText's dev editing mode). */
+export const ARROW_UP_RIGHT_PATH = 'M6.4 18 5 16.6 14.6 7H6V5h12v12h-2V8.4z'
+
 export function ArrowUpRightIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="currentColor" d="M6.4 18 5 16.6 14.6 7H6V5h12v12h-2V8.4z" />
+      <path fill="currentColor" d={ARROW_UP_RIGHT_PATH} />
     </svg>
   )
 }

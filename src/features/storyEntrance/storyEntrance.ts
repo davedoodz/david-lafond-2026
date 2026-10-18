@@ -154,7 +154,15 @@ function split(el: HTMLElement, unit: Unit, masked: boolean) {
   const next: Node[] = []
   for (const node of original) {
     if (node.nodeType !== Node.TEXT_NODE) {
-      next.push(node)
+      // An inline element (a text link) rises as one word; <br>s stay put. `original` keeps it,
+      // so `restore` moves it back out of its box.
+      if (node instanceof HTMLElement && node.tagName !== 'BR') {
+        const piece = box(null, 'se-w', masked)
+        piece.firstChild!.appendChild(node)
+        pieces.push(piece)
+        wordOf.push(piece)
+        next.push(piece)
+      } else next.push(node)
       continue
     }
     for (const token of (node.textContent ?? '').split(/(\s+)/)) {

@@ -34,6 +34,11 @@ const CONFIG = {
   /** Heading and story text alignment. */
   align: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
   story: { type: 'text' as const, default: STORY, placeholder: 'Blank lines = paragraph breaks' },
+  /** A phrase in the story that links out (new tab): underlined, with an up-right arrow on hover. */
+  storyLink: {
+    text: { type: 'text' as const, default: 'imposter' },
+    url: { type: 'text' as const, default: 'https://youtu.be/7GkVqdgSZtw' },
+  },
   playgroundLabel: { type: 'text' as const, default: 'My playground' },
   playgroundLabelColor: { type: 'color' as const, default: '#FFFFFF' },
   /** Vertical file-sheet presets for the dark playground panel. */
@@ -107,6 +112,37 @@ const CONFIG = {
     yDesktop: [0, -300, 300, 1] as [number, number, number, number],
     xMobile: [0, -200, 200, 1] as [number, number, number, number],
     yMobile: [0, -300, 300, 1] as [number, number, number, number],
+  },
+  /** Photo cards: x/y nudge (px) without moving the story below them. */
+  cards: {
+    xDesktop: [0, -400, 400, 1] as [number, number, number, number],
+    yDesktop: [0, -300, 300, 1] as [number, number, number, number],
+    xMobile: [0, -200, 200, 1] as [number, number, number, number],
+    yMobile: [0, -300, 300, 1] as [number, number, number, number],
+  },
+  /** Heading + story: x/y nudge (px) without moving the cards or the dark sheet. */
+  text: {
+    xDesktop: [0, -400, 400, 1] as [number, number, number, number],
+    yDesktop: [0, -300, 300, 1] as [number, number, number, number],
+    xMobile: [0, -200, 200, 1] as [number, number, number, number],
+    yMobile: [0, -300, 300, 1] as [number, number, number, number],
+  },
+  /**
+   * White fade + blur fixed to the bottom of the screen, over the story only: it eases in as the
+   * story enters from below and out as its last line rises clear, so it never covers the cards or
+   * the playground sheet.
+   */
+  fade: {
+    show: true,
+    heightDesktop: [160, 40, 480, 1] as [number, number, number, number],
+    heightMobile: [120, 40, 360, 1] as [number, number, number, number],
+    /** Blur at the bottom edge (px); it thins out toward the top of the fade. */
+    blur: [6, 0, 30, 0.5] as [number, number, number, number],
+    color: { type: 'color' as const, default: '#FFFFFF' },
+    /** Colour opacity at the bottom edge. */
+    strength: [0.9, 0, 1, 0.01] as [number, number, number, number],
+    /** Share of the fade that is fully solid at the bottom before it starts thinning (0–0.8). */
+    solid: [0.15, 0, 0.8, 0.01] as [number, number, number, number],
   },
 }
 
@@ -227,6 +263,43 @@ export function AboutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [domeKey])
 
+  // Bottom fade: opacity tracks how much of the story is still below the fade band. It is written
+  // to a variable for the two layers, not to the band itself: opacity on the band would make it a
+  // backdrop root and the blur would see nothing behind it.
+  const fadeRef = useRef<HTMLDivElement>(null)
+  const fadeShow = t.fade.show
+  useEffect(() => {
+    const fade = fadeRef.current
+    const story = storyRef.current
+    if (!fadeShow || !fade || !story) return
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const h = fade.offsetHeight
+      const vh = window.innerHeight
+      const { top, bottom } = story.getBoundingClientRect()
+      const clamp = (v: number) => Math.min(1, Math.max(0, v))
+      // In as the story's first line enters the band; out as its last line clears the band.
+      const p = h > 0 ? Math.min(clamp((vh - top) / h), clamp((bottom - (vh - h)) / h)) : 0
+      fade.style.setProperty('--fade-p', p.toFixed(3))
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    update()
+    const resize = new ResizeObserver(schedule)
+    resize.observe(fade)
+    resize.observe(story)
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      resize.disconnect()
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+    }
+  }, [fadeShow])
+
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
   const snap = t.spacing.snap
   useLayoutEffect(() => {
@@ -326,6 +399,20 @@ export function AboutPage() {
     '--grid-y-m': `${t.grid.yMobile}px`,
     '--dome-peek-d': `${t.dome.peekDesktop}px`,
     '--dome-peek-m': `${t.dome.peekMobile}px`,
+    '--cards-x-d': `${t.cards.xDesktop}px`,
+    '--cards-y-d': `${t.cards.yDesktop}px`,
+    '--cards-x-m': `${t.cards.xMobile}px`,
+    '--cards-y-m': `${t.cards.yMobile}px`,
+    '--text-x-d': `${t.text.xDesktop}px`,
+    '--text-y-d': `${t.text.yDesktop}px`,
+    '--text-x-m': `${t.text.xMobile}px`,
+    '--text-y-m': `${t.text.yMobile}px`,
+    '--fade-h-d': `${t.fade.heightDesktop}px`,
+    '--fade-h-m': `${t.fade.heightMobile}px`,
+    '--fade-blur': `${t.fade.blur}px`,
+    '--fade-color': t.fade.color,
+    '--fade-strength': t.fade.strength,
+    '--fade-solid': `${t.fade.solid * 100}%`,
   } as CSSProperties
 
   return (
@@ -353,8 +440,10 @@ export function AboutPage() {
             value={t.story}
             onChange={(next) => setValue('story', next)}
             selectable
+            links={[{ text: t.storyLink.text, href: t.storyLink.url }]}
           />
         </section>
+        {fadeShow && <div ref={fadeRef} className="about__fade" aria-hidden="true" />}
         <div className="about__peek-stop" aria-hidden="true" />
       </div>
       <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined}>
