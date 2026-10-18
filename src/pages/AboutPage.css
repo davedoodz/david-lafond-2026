@@ -17,8 +17,12 @@
 }
 
 .about__story {
+  /* Room the column has on each side before it would cross the page margin (--column-inset).
+     The X nudge is clamped to it, so on narrow windows the text slides back to centre instead
+     of being cropped. `100%` resolves against the page width where `left` uses it. */
+  --text-slack: max(0px, (100% - var(--column-fit, var(--column))) / 2 - var(--column-inset));
   margin-top: var(--stack-gap-d);
-  left: var(--text-x-d, 0px);
+  left: clamp(-1 * var(--text-slack), var(--text-x-d, 0px), var(--text-slack));
   top: var(--text-y-d, 0px);
 }
 
@@ -92,7 +96,7 @@
   }
   .about__story {
     margin-top: var(--stack-gap-m);
-    left: var(--text-x-m, 0px);
+    left: clamp(-1 * var(--text-slack), var(--text-x-m, 0px), var(--text-slack));
     top: var(--text-y-m, 0px);
   }
   .about__heading {
