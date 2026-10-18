@@ -1,9 +1,9 @@
 /* Interface type for the rebuilt screens: Inter Regular (the variable file, used at 400). */
 @font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 
-/* Wider than the case column so the desktop app reads at size, still clear of the fixed back link. */
+/* Wider than the case column (three steps need 1200px), still clear of the fixed back link. */
 .case__section.filo-steps {
-  --fss-app-cycle: 14s;
+  --fss-gap: 40px;
   height: auto;
   min-height: 0;
   overflow: visible;
@@ -11,16 +11,18 @@
   grid-template-columns: minmax(0, 1fr);
   justify-items: stretch;
 }
-/* The steps stack top to bottom: 01, then 02, then 03. Each centres its number, title and visual. */
+/* Each step is a subgrid (number, title, visual), so the visuals start on one line whatever the
+   title's length. Equal columns keep the middle step on the page's centre line; each step centres its
+   number, title and visual. */
 .fss-steps {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  row-gap: 140px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--fss-gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.fss-step { position: relative; display: grid; justify-items: center; min-width: 0; text-align: center; }
+.fss-step { position: relative; display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; justify-items: center; min-width: 0; text-align: center; }
 /* The step number is the case study's eyebrow, sized like the section-copy eyebrow (“Primary market research”). */
 .fss-num { margin: 0; font-size: var(--text-small); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 .fss-title {
@@ -33,60 +35,22 @@
   white-space: pre-line;
   text-wrap: balance;
 }
-.fss-visual { display: grid; justify-items: center; width: 100%; margin-top: 34px; min-width: 0; }
-
-/* Step 1: the desktop app, a window cross-fading through four screens, every --fss-app-cycle
-   (Filo source steps › app › seconds, times four). Each frame fades in on top of the one before
-   (z-index 2), holds, then drops below the next one (z-index 1) while that one fades in over it, so
-   the swap never dips to the page behind. The delays start the loop already settled on the first
-   screen. The keyframes assume four frames: each owns 25% of the cycle. */
-.fss-app {
-  --fss-app-slot: calc(var(--fss-app-cycle) / 4);
-  --fss-app-fade: calc(var(--fss-app-cycle) * .05);
-  position: relative;
-  width: min(100%, 960px);
-  aspect-ratio: 1536 / 1024;
-  overflow: hidden;
-  border-radius: 12px;
-  background: #f3f3f3;
-  box-shadow: 0 0 0 1px rgb(23 23 23 / .06), 0 30px 60px -28px rgb(23 23 23 / .28);
-}
-.fss-app__frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  user-select: none;
-  animation: fss-app-frame var(--fss-app-cycle) linear infinite;
-  animation-delay: calc(var(--i) * var(--fss-app-slot) - var(--fss-app-cycle) - var(--fss-app-fade));
-}
-@keyframes fss-app-frame {
-  0% { opacity: 0; z-index: 2; animation-timing-function: ease-out; }
-  5% { opacity: 1; z-index: 2; }
-  25% { opacity: 1; z-index: 2; }
-  25.01% { opacity: 1; z-index: 1; }
-  30% { opacity: 1; z-index: 1; }
-  30.01%, 100% { opacity: 0; z-index: 1; }
-}
+.fss-visual { display: grid; justify-items: center; align-items: start; margin-top: 34px; min-width: 0; }
 
 /* Crops of the reference sit on a pure-white ground; multiply drops the white onto the page and keeps
-   the shadows. */
+   the shadows. Each is sized so the object itself, not its margin, fills the column. */
 .fss-crop { display: block; max-width: none; height: auto; mix-blend-mode: multiply; user-select: none; pointer-events: none; }
-/* Capped at about the source's own size; the negative margin takes up the crop's empty top edge. */
-.fss-crop--box { width: min(100%, 320px); margin-top: -16px; translate: -.8% 0; }
+/* Capped at about the source's own size, so a wide column never upscales them; centred even when wider. */
+.fss-crop--card, .fss-crop--box { justify-self: center; }
+.fss-crop--card { width: min(120%, 320px); margin-top: -18px; }
+.fss-crop--box { width: min(114%, 320px); margin-top: -16px; }
 
 /* Step 3: a realistic phone (the Momo frame) whose screen loops, every --fss-cycle:
    scanning → tag detected (the tag tips toward the phone) → the Technical File. The loop runs only while
    the section is on screen ([data-playing]), so it starts on "scanning". */
-/* The phone and the tag scale together (Filo source steps › phone › scale) with zoom, which, unlike a
-   transform, neither isolates the tag's multiply blend nor leaves the layout at full size.
-   The group is centred under its title: the tag starts 14px inside the phone's right edge and its
-   visible part is 76.3% of the crop's width, so the phone moves left by half of what the tag adds.
+/* Shifted left by half of the tag's 174px overhang, so the phone and tag centre together in the column.
    Offset with left, not translate: a transform would isolate the tag's multiply blend from the page. */
-.fss-tap { --fss-cycle: 10s; --fss-tag-w: 188px; position: relative; left: calc((14px - var(--fss-tag-w) * .763) / 2); width: 272px; zoom: var(--fss-phone-scale, .8); }
-/* Phone › x / y: on the step's visual cell, so the nudge is in page px at any scale. */
-.fss-step:nth-child(3) .fss-visual { position: relative; left: var(--fss-phone-x, 0px); top: var(--fss-phone-y, 0px); }
+.fss-tap { --fss-cycle: 10s; position: relative; left: -87px; width: 272px; }
 .fss-phone { position: relative; z-index: 1; width: 100%; aspect-ratio: 1312 / 2672; filter: drop-shadow(0 22px 30px rgb(23 23 23 / .16)); }
 .fss-frame { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; user-select: none; }
 .fss-screen {
@@ -109,12 +73,8 @@
 }
 .fss-screen p, .fss-screen ul, .fss-screen dl, .fss-screen dd { margin: 0; padding: 0; }
 .fss-logo { display: block; width: auto; height: 19px; }
-/* Status bar: Momo's, in 390pt screen units across the screen's full width. */
-.fss-status { position: absolute; z-index: 1; top: 0; left: 0; width: 100%; height: auto; fill: var(--fss-ink); }
-.fss-status text { font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 0; }
-.fss-status__wifi { fill: none; stroke: var(--fss-ink); stroke-width: 2.35; stroke-linecap: round; }
-.fss-status__wedge { stroke: var(--fss-ink); stroke-width: 1.3; stroke-linejoin: round; }
-.fss-status__cell { fill: none; stroke: var(--fss-ink); stroke-width: 1; opacity: .4; }
+.fss-status { position: absolute; z-index: 1; top: 13px; left: 26px; right: 20px; display: flex; align-items: center; justify-content: space-between; color: var(--fss-ink); font-size: 14px; font-weight: 600; line-height: 18px; letter-spacing: -0.2px; }
+.fss-status svg { width: 44px; height: 12px; }
 .fss-layer { position: absolute; inset: 0; padding: 50px 16px 20px; background: #fbfbfa; }
 .fss-center { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
 .fss-center__title { margin-top: 42px !important; color: var(--fss-ink); font-size: 16px; }
@@ -142,7 +102,7 @@
 .fss-check svg { width: 28px; height: 28px; }
 
 /* The flat tag peeks out from behind the phone's right edge. */
-.fss-crop--tag { position: absolute; z-index: 0; top: 34px; left: calc(100% - 14px); width: var(--fss-tag-w); transform-origin: 30% 10%; }
+.fss-crop--tag { position: absolute; z-index: 0; top: 34px; left: calc(100% - 14px); width: 188px; transform-origin: 30% 10%; }
 
 /* The loop. */
 .fss-layer--scan { animation: fss-scan-layer var(--fss-cycle) linear infinite; }
@@ -155,10 +115,9 @@
 @keyframes fss-file-layer { 0%, 55% { opacity: 0; translate: 0 22px; } 61%, 93% { opacity: 1; translate: 0 0; } 97%, 100% { opacity: 0; translate: 0 0; } }
 @keyframes fss-check-pop { 0%, 30% { scale: .55; } 35% { scale: 1.08; } 38%, 100% { scale: 1; } }
 @keyframes fss-tag-tap { 0%, 14% { translate: 0 0; rotate: 0deg; } 24%, 31% { translate: -22px 4px; rotate: -5deg; } 42%, 100% { translate: 0 0; rotate: 0deg; } }
-.fss-step:not([data-playing]) :is(.fss-app__frame, .fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation-play-state: paused; }
+.filo-steps:not([data-playing]) :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
-  :is(.fss-app__frame, .fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation: none; }
-  .fss-app__frame:first-child { opacity: 1; }
+  :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation: none; }
   .fss-layer--scan, .fss-layer--detect { opacity: 0; }
   .fss-layer--file { opacity: 1; }
 }
@@ -195,11 +154,19 @@
 .fss-dot { flex: none; width: 13px; height: 13px; margin-inline: 1.5px; border: 1.3px solid #c8c8c5; border-radius: 50%; }
 .fss-chevron { width: 15px; height: 15px; margin-left: auto; color: #b5b5b2; }
 
+/* Below 1180px: steps 1 and 2 side by side, the phone centred under them; one column on phones. */
+@media (max-width: 1180px) {
+  .case__section.filo-steps { padding-inline: max(24px, calc((100% - 760px) / 2)); }
+  .fss-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fss-step:nth-child(3) { grid-column: 1 / -1; margin-top: 80px; }
+  .fss-step:nth-child(3) .fss-tap { left: -80px; }
+}
 @media (max-width: 640px) {
-  .case__section.filo-steps { padding-inline: 16px; }
-  .fss-steps { row-gap: 88px; }
-  .fss-app { border-radius: 6px; }
-  /* A smaller tag still peeks out; the group re-centres from --fss-tag-w. */
-  .fss-tap { --fss-tag-w: 90px; }
-  .fss-crop--tag { top: 44px; }
+  .case__section.filo-steps { padding-inline: 22px; }
+  .fss-steps { grid-template-columns: minmax(0, 1fr); max-width: 330px; margin-inline: auto; }
+  .fss-step:nth-child(n + 2) { margin-top: 72px; }
+  .fss-visual { justify-items: center; }
+  /* Same 272px phone (the Technical File needs its full screen); a smaller tag still peeks out. */
+  .fss-step:nth-child(3) .fss-tap { left: -36px; }
+  .fss-crop--tag { width: 90px; top: 44px; }
 }
