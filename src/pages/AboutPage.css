@@ -87,6 +87,12 @@
   .about {
     --column-inset: clamp(20px, 14.25vw, 57px);
   }
+  /* The story starts where the Work hero's text and every page's nav start (lib/navAlign, Nav.css),
+     with the same margin on the right; a narrower fitted column keeps that left edge. */
+  .about__story {
+    --column-inset: max(24px, min(50% - var(--nav-half, 166.8px), 100% - 24px - var(--nav-wide, 357.3px)));
+    margin-left: var(--column-inset);
+  }
   .about__light {
     padding-bottom: var(--story-gap-m);
   }
