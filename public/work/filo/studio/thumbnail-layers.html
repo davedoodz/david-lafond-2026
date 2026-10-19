@@ -37,6 +37,26 @@ figcaption b { display: block; font-size: 15px; font-weight: 500; }
 figcaption b span { color: var(--mute); font-weight: 400; margin-right: 8px; font-variant-numeric: tabular-nums; }
 figcaption small { display: block; margin-top: 4px; color: var(--text); font-size: 13.5px; line-height: 1.45; max-width: 640px; }
 
+/* ── Picked layout: the desktop card and the mobile card side by side, with placement controls ── */
+.pick { width: 1199px; margin-left: calc(50% - 600px); }
+.pick figcaption { width: auto; }
+.pick__cards { display: flex; gap: 24px; align-items: flex-start; }
+.pick__cards .card { margin: 0; flex: none; }
+.pick__cards small { display: block; margin-top: 8px; color: var(--mute); font-size: 12px; }
+/* Mobile card: Selected Works below 640px is 100 : 134 with 41px side margins, so 308 × 413 on a 390px phone. */
+.card.card--m { width: 308px; height: 413px; border-radius: 11px; }
+.card.card--m .card-title { left: 16px; right: 16px; bottom: 16px; font-size: 16px; }
+.place { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin-top: 18px; padding: 16px 18px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+.place h4 { margin: 0 0 6px; font-size: 13px; font-weight: 500; }
+.place__group { display: grid; grid-template-columns: 52px 1fr 1fr 1fr; gap: 6px 12px; align-items: center; font-size: 12px; color: var(--text); }
+.place__group > b { font-weight: 500; color: var(--ink); }
+.place label { display: grid; grid-template-columns: 30px 1fr 34px; gap: 6px; align-items: center; }
+.place label span { color: var(--mute); }
+.place label output { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); }
+.place input[type=range] { width: 100%; accent-color: #8a6a55; }
+.place__bar { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--mute); }
+.place__bar button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 6px; background: #e9e9e6; color: var(--ink); }
+
 /* ── The card ── */
 .card { position: relative; width: 867px; height: 493px; margin: 0 auto; border-radius: 24px; overflow: clip; contain: layout paint;
   background: #ece6dc; box-shadow: 0 0 54.5px 16px rgb(23 23 23 / 0.15); }
@@ -216,10 +236,10 @@ const LAYOUTS = [
     fg: '',
   },
   {
-    id: 'triptych', n: '01', name: 'Triptych, bleeding off the edges',
-    note: 'Your brief in Momo’s grammar. The phone runs off the bottom left, the portal off the right, and the tag hangs in the middle on its cord. The cord carries on as a thread from the phone, through the tag, into the portal, with a light running along it.',
+    id: 'triptych', n: '01', name: 'Triptych, bleeding off the edges · picked',
+    note: 'The phone runs off the bottom left, the portal off the right, and the tag hangs in the middle on its cord. No threads. The desktop card and the mobile card side by side; place each layer with the sliders below them.',
     pool: [50, 44, 0.5],
-    fg: thread('M 252 250 C 320 236, 360 214, 433 206 S 528 182, 566 172') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430),
+    pick: true,
   },
   {
     id: 'contained', n: '02', name: 'Triptych, all three in frame',
@@ -275,19 +295,91 @@ controlsEl.addEventListener('click', e => {
 })
 
 const main = document.getElementById('main')
-for (const L of LAYOUTS) {
-  const fig = document.createElement('figure')
+const cardHTML = (L, fg, cls = '') => {
   const [px, py, pool] = L.pool ?? [50, 45, 0]
-  fig.innerHTML = `<figcaption><b><span>${L.n}</span>${L.name}</b><small>${L.note}</small></figcaption>
-    <div class="card" data-layout="${L.id}" ${L.fixed ? 'data-fixed' : ''}>
+  return `<div class="card ${cls}" data-layout="${L.id}" ${L.fixed ? 'data-fixed' : ''}>
       <span class="glow glow--a"></span><span class="glow glow--b"></span>
       <div class="wall"></div>
       <svg class="rings" viewBox="0 0 867 493"><circle/><circle/></svg>
       ${L.fixed ? '' : `<div class="pool" style="--px:${px}%;--py:${py}%;--pool:${pool}"></div>`}
-      <div class="fg">${L.fg}</div>
+      <div class="fg">${fg}</div>
       <div class="card-shade"></div>
       <h3 class="card-title">Filo — Software for Taking New Materials from Sample to Production</h3>
     </div>`
+}
+
+/* Picked layout: each layer's place in the desktop card (d) and the mobile card (m), in card px.
+   Phone and portal: x, y = top-left; size = phone height / portal width. Tag: x = centre, y = top of the tag body,
+   size = body height. Edited with the sliders, kept in localStorage. */
+const PICK_DEFAULT = {
+  d: { phone: { x: 42, y: 116, size: 432 }, tag: { x: 433, y: 98, size: 214 }, desk: { x: 566, y: 56, size: 430 } },
+  m: { phone: { x: 12, y: 150, size: 270 }, tag: { x: 154, y: 38, size: 132 }, desk: { x: 172, y: 150, size: 210 } },
+}
+const PICK_KEY = 'filo-thumb-pick'
+const PICK = JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)
+const PICK_RANGE = {
+  d: { x: [-300, 1100], y: [-300, 700], size: { phone: [150, 800], tag: [60, 420], desk: [200, 900] } },
+  m: { x: [-200, 500], y: [-200, 600], size: { phone: [100, 600], tag: [40, 320], desk: [100, 600] } },
+}
+const LAYER_NAME = { phone: 'Phone', tag: 'Tag', desk: 'Desktop' }
+function place(card, which, p) {
+  const el = card.querySelector(`.fg .${which}`)
+  if (which === 'tag') {
+    const w = p.size * 368 / 653, imgTop = p.y - p.size * 245 / 653
+    el.style.left = `${p.x - w / 2}px`; el.style.top = `${imgTop}px`
+    el.style.setProperty('--tw', `${w}px`); el.style.setProperty('--hang', `${Math.max(0, imgTop + 12)}px`)
+    el.dataset.origin = `${p.x},${p.y + p.size / 2}`
+  } else {
+    el.style.left = `${p.x}px`; el.style.top = `${p.y}px`
+    el.style.setProperty(which === 'phone' ? '--h' : '--w', `${p.size}px`)
+  }
+}
+const placeAll = (card, v) => { for (const k of ['phone', 'tag', 'desk']) place(card, k, PICK[v][k]) }
+
+function buildPick(L) {
+  const fig = document.createElement('figure'); fig.className = 'pick'
+  const layers = phone(0, 0, 100) + tag(0, 0, 100) + desk(0, 0, 100)
+  const group = (v, k) => `<div class="place__group"><b>${LAYER_NAME[k]}</b>${['x', 'y', 'size'].map(a => {
+    const [lo, hi] = a === 'size' ? PICK_RANGE[v].size[k] : PICK_RANGE[v][a]
+    return `<label><span>${a}</span><input type="range" min="${lo}" max="${hi}" step="1" value="${PICK[v][k][a]}" data-v="${v}" data-k="${k}" data-a="${a}"><output>${PICK[v][k][a]}</output></label>`
+  }).join('')}</div>`
+  fig.innerHTML = `<figcaption><b><span>${L.n}</span>${L.name}</b><small>${L.note}</small></figcaption>
+    <div class="pick__cards">
+      <div>${cardHTML(L, layers)}<small>Desktop · 867 × 493</small></div>
+      <div>${cardHTML(L, layers, 'card--m')}<small>Mobile · 308 × 413 (100 : 134, a 390px phone)</small></div>
+    </div>
+    <div class="place">
+      ${['d', 'm'].map(v => `<div><h4>${v === 'd' ? 'Desktop card' : 'Mobile card'}</h4>${['phone', 'tag', 'desk'].map(k => group(v, k)).join('')}</div>`).join('')}
+      <div class="place__bar"><button data-act="copy">Copy values</button><button data-act="reset">Reset</button><span data-out></span></div>
+    </div>`
+  const [cd, cm] = fig.querySelectorAll('.card')
+  const cardOf = { d: cd, m: cm }
+  placeAll(cd, 'd'); placeAll(cm, 'm')
+  fig.querySelector('.place').addEventListener('input', e => {
+    const { v, k, a } = e.target.dataset
+    if (!v) return
+    PICK[v][k][a] = Number(e.target.value)
+    e.target.nextElementSibling.value = e.target.value
+    place(cardOf[v], k, PICK[v][k])
+    localStorage.setItem(PICK_KEY, JSON.stringify(PICK))
+  })
+  fig.querySelector('.place__bar').addEventListener('click', async e => {
+    const act = e.target.dataset?.act
+    const out = fig.querySelector('[data-out]')
+    if (act === 'copy') { await navigator.clipboard.writeText(JSON.stringify(PICK, null, 2)); out.textContent = 'Copied as JSON.' }
+    if (act === 'reset') {
+      Object.assign(PICK, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
+      fig.querySelectorAll('input[type=range]').forEach(i => { i.value = PICK[i.dataset.v][i.dataset.k][i.dataset.a]; i.nextElementSibling.value = i.value })
+      placeAll(cd, 'd'); placeAll(cm, 'm'); out.textContent = 'Back to the defaults.'
+    }
+  })
+  return fig
+}
+
+for (const L of LAYOUTS) {
+  if (L.pick) { main.append(buildPick(L)); continue }
+  const fig = document.createElement('figure')
+  fig.innerHTML = `<figcaption><b><span>${L.n}</span>${L.name}</b><small>${L.note}</small></figcaption>${cardHTML(L, L.fg)}`
   main.append(fig)
 }
 const closeFig = document.createElement('figure')
@@ -472,7 +564,7 @@ class Card {
       this.tiles.push({ el: t, cvs, ctx: cvs.getContext('2d'), product: -1, near: false, key: '' })
     }
     this.lastUsed = new Float64Array(PRODUCTS.length).fill(-Infinity)
-    this.w = 867; this.h = 493
+    this.w = el.offsetWidth; this.h = el.offsetHeight
     this.visible = false
     new IntersectionObserver(([e]) => {
       this.visible = e.isIntersecting
