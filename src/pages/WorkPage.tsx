@@ -31,6 +31,14 @@ const CONFIG = {
     desktop: [20, 12, 40, 1] as [number, number, number, number],
     mobile: [14, 10, 32, 1] as [number, number, number, number],
   },
+  /**
+   * White die-cut outline around the intro stickers. "Per sticker" keeps each face's own width from
+   * the sticker studio; "Same for all" gives every sticker `width` (artwork units: 1 ≈ 0.025em).
+   */
+  stickerOutline: {
+    mode: { type: 'select' as const, options: ['Per sticker', 'Same for all'], default: 'Per sticker' },
+    width: [1, 0, 4, 0.1] as [number, number, number, number],
+  },
   /** Vertical gaps between the hero text elements (px). */
   spacing: {
     /** Line height of the sticker intro lines (× font size). */
@@ -186,6 +194,7 @@ export function WorkPage() {
               '--gap-intro-intro-m': `${t.spacing.introToIntroMobile}px`,
               '--gap-intro-role-m': `${t.spacing.introToRoleMobile}px`,
               '--gap-role-sig-m': `${t.spacing.roleToSignatureMobile}px`,
+              '--ws-outline': t.stickerOutline.mode === 'Same for all' ? String(t.stickerOutline.width) : undefined,
             } as CSSProperties
           }
           aria-labelledby="hero-title"
