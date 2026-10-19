@@ -20,9 +20,7 @@ import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } 
 import { PersonaSection, QuoteMarquee, type Persona } from './casePersona'
 import { DeviceInsights } from './DeviceInsights'
 import { FiloStory, type FiloStorySettings } from './filoStoryArt'
-import { FiloFilms } from '../features/filoCase/FiloFilms'
 import { FiloSourceSteps } from '../features/filoCase/FiloSourceSteps'
-import type { FilmGroup } from '../features/filoCase/filoFilmPlan'
 import { FiloNext } from '../features/filoCase/FiloNext'
 import { FiloResearchFigure, type FiloResearchSettings } from '../features/filoCase/FiloResearch'
 import './CaseStudyPage.css'
@@ -114,7 +112,9 @@ function LogoRow({ l, id }: { l: Logos; id: Id }) {
     </div>
   )
 }
-type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; media: Media; textReveal?: TextReveal }
+/** Filo mark above a section title (FILO_CONFIG.outcomes.mark); the hero has its own page-level mark. */
+type SectionMark = { show: boolean; logo: 'Loop f' | 'Tall l'; scale: number; gap: number }
+type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; media: Media; textReveal?: TextReveal; mark?: SectionMark }
 type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
 
 /**
@@ -539,19 +539,18 @@ export function CaseStudyPage({ id }: Props) {
           quoteArt={filo ? (i) => <FiloQuoteArt index={i} /> : undefined}
         />
       )
-    if (filo && key === 'source') return <FiloSourceSteps key={key} spacing={s.spacing} />
-    const hasFilms = filo && ['evidence', 'scale', 'handoff'].includes(key)
+    if (filo && key === 'source') return <FiloSourceSteps key={key} section={s} />
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />
     const hasDemo = s.media.figure === 'notification'
     const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper', 'research', 'next'].includes(s.media.figure)
-    const hasVideo = !hasFilms && !hasFigure && !hasDemo && s.media.video !== 'none'
+    const hasVideo = !hasFigure && !hasDemo && s.media.video !== 'none'
     return (
       <section
         key={key}
-        className={`case__section${isHero ? ' case__section--hero' : hasFilms ? ' filo-film-section' : ''}`}
+        className={`case__section${isHero ? ' case__section--hero' : ''}`}
         data-section={key}
-        data-layout={isHero || hasFilms || hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
+        data-layout={isHero || hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
         data-copy-align={s.align}
         data-text-reveal={s.textReveal?.preset}
         style={
@@ -594,6 +593,16 @@ export function CaseStudyPage({ id }: Props) {
               style={{ '--mark-x': `${mark.x}px`, '--mark-y': `${mark.y}px`, '--mark-scale': mark.scale } as CSSProperties}
             />
           )}
+          {!isHero && s.mark?.show && (
+            <img
+              className="case__section-mark"
+              src={s.mark.logo === 'Tall l' ? '/work/filo/filo-mark-2.webp' : '/work/filo/filo-mark.webp'}
+              alt=""
+              width={s.mark.logo === 'Tall l' ? 1090 : 990}
+              height={s.mark.logo === 'Tall l' ? 564 : 466}
+              style={{ '--mark-scale': s.mark.scale, '--mark-gap': `${s.mark.gap}px` } as CSSProperties}
+            />
+          )}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} id={id} />
           ) : isHero && id === 'momo' ? (
@@ -608,7 +617,7 @@ export function CaseStudyPage({ id }: Props) {
                 Replay intro
               </span>
             </button>
-          ) : isHero && mark?.show && !s.eyebrow ? null : (
+          ) : (isHero ? mark?.show : s.mark?.show) && !s.eyebrow ? null : (
             // Under the Filo mark an empty eyebrow renders nothing: in dev an empty editable still takes a
             // line (production collapses it), which made dev and the live hero space differently.
             <EditableText className="case__eyebrow eyebrow" label={`${key} eyebrow`} value={s.eyebrow} onChange={edit(`${key}.eyebrow`)} />
@@ -655,7 +664,7 @@ export function CaseStudyPage({ id }: Props) {
               />
             )}
           </div>
-        ) : hasFilms ? <FiloFilms group={key as FilmGroup} /> : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
+        ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} id={id} />}
         {hasDemo && <NotificationDemo media={s.media} />}
         {hasFigure &&

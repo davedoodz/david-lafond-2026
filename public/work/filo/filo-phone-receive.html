@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo · the designer receives a material record (phone prototype)</title>
+<link rel="stylesheet" href="filo-app-flow/app.css" />
+<style>
+  /* Picks up after filo-app-share.html: the email Modern Synthesis sent, open in Priya's Mail, then the shared
+     material record in Safari. The phone is the Momo frame (the same one as step 4's phone), and the stage is
+     that frame in screen points: the 390 × 845 screen sits at 22.5, 19.2.
+     iOS chrome is in the system font; the Filo page and the email's summary card use the portal's type,
+     tokens, icons and pills (app.css), so they read as the same product as the desktop prototypes. */
+  html, body { background: transparent; }
+  .stage { width: 434px; height: 884px; }
+  .frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; user-select: none; }
+  /* The display (not .screen: app.css hides every .screen that isn't the active one). */
+  .display {
+    --sys: -apple-system, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+    --ios-blue: #007aff;
+    --chrome: #000;
+    position: absolute; left: 22.5px; top: 19.2px; width: 390px; height: 845.5px; border-radius: 60px; overflow: hidden;
+    /* White under the apps, so the crossfade from Safari back to Mail never dims. */
+    background: #fff; font-family: var(--sys); color: #000; cursor: default; user-select: none; -webkit-font-smoothing: antialiased;
+  }
+  :where(.display) button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; }
+  :where(.display) p { margin: 0; }
+  .abs { position: absolute; }
+  .ios { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Status bar (the case study's phone status bar, 390pt units) and home indicator: over every screen. */
+  .status { position: absolute; z-index: 5; left: 0; top: 0; width: 390px; height: 54px; fill: var(--chrome); pointer-events: none; }
+  .status text { font: 600 16px var(--sys); }
+  .status .wifi { fill: none; stroke: var(--chrome); stroke-width: 2.35; stroke-linecap: round; }
+  .status .wedge { stroke: var(--chrome); stroke-width: 1.3; stroke-linejoin: round; }
+  .status .cell { fill: none; stroke: var(--chrome); stroke-width: 1; opacity: .4; }
+  .homebar { position: absolute; z-index: 5; left: 50%; bottom: 8px; translate: -50% 0; width: 139px; height: 5px; border-radius: 3px; background: var(--chrome); pointer-events: none; }
+
+  /* ───────── Apps: each zooms up over the last ───────── */
+  .app { position: absolute; inset: 0; background: #fff; opacity: 0; visibility: hidden; scale: .92;
+    transition: opacity .3s var(--ease-out), scale .42s var(--ease-out), visibility 0s linear .42s; }
+  .app.is-active { opacity: 1; visibility: visible; scale: 1; transition: opacity .3s var(--ease-out), scale .42s var(--ease-out), visibility 0s; }
+  .mail { transform-origin: 50% 80%; }
+  .safari { transform-origin: 50% 64%; }
+  .hair { position: absolute; left: 0; right: 0; height: .5px; background: #d1d1d6; }
+
+  /* ───────── Mail ───────── */
+  .m-back { left: 8px; top: 54px; height: 44px; display: flex; align-items: center; gap: 2px; font-size: 17px; color: var(--ios-blue); }
+  .m-back .ios { width: 26px; height: 26px; stroke-width: 2.3; }
+  .m-more { right: 14px; top: 64px; width: 24px; height: 24px; color: var(--ios-blue); }
+  .m-more .ios { width: 24px; height: 24px; }
+  .mail > .hair:first-of-type { top: 98px; }
+  /* The email lands: Mail's bars hold still while the message rises in, a beat apart (--i). */
+  .rise { opacity: 0; translate: 0 16px; }
+  .mail.is-landed .rise { opacity: 1; translate: 0 0; transition: opacity .5s var(--ease-out) calc(var(--i) * 80ms), translate .7s var(--ease-out) calc(var(--i) * 80ms); }
+  .m-from { left: 16px; right: 16px; top: 114px; height: 50px; }
+  .m-avatar { position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: #141414; }
+  .m-avatar img { width: 34px; height: auto; filter: invert(1); }
+  .m-name { position: absolute; left: 62px; top: 4px; font-size: 17px; font-weight: 600; }
+  .m-to { position: absolute; left: 62px; top: 27px; font-size: 15px; color: #8a8a8e; }
+  .m-time { position: absolute; right: 0; top: 5px; font-size: 15px; color: #8a8a8e; }
+  .m-subj { left: 16px; right: 16px; top: 182px; margin: 0; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -.012em; }
+  .m-body { left: 16px; right: 16px; top: 256px; font-size: 17px; line-height: 25px; color: #111; }
+  .m-body p + p { margin-top: 14px; }
+  /* The summary card: the same one the desktop email adds, in the portal's type, with its dark button. */
+  .m-card { left: 16px; right: 16px; top: 418px; height: 156px; border-radius: 14px; background: #f6f6f6; font-family: Satoshi, var(--sys); font-weight: 450; letter-spacing: -.005em; }
+  .m-card img { position: absolute; left: 14px; top: 14px; width: 72px; height: 72px; border-radius: 9px; object-fit: cover; }
+  .m-card strong { position: absolute; left: 100px; top: 24px; font-size: 17px; font-weight: 600; color: #141414; }
+  .m-card small { position: absolute; left: 100px; top: 49px; font-size: 14.5px; color: #7a7a7d; }
+  .meta-dot::before { content: '·'; margin: 0 7px; }
+  .m-view { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 46px; gap: 10px; font-size: 16px; }
+  .m-view .ic { width: 18px; height: 18px; }
+  .m-or { left: 16px; top: 596px; font-size: 15px; color: #8a8a8e; }
+  .m-link { left: 16px; right: 16px; top: 620px; display: flex; align-items: center; font-size: 16px; color: var(--ios-blue); }
+  .m-link .ic { margin-left: auto; width: 21px; height: 21px; stroke-width: 1.7; }
+  .tools { left: 0; right: 0; bottom: 0; height: 83px; display: flex; justify-content: space-around; padding: 11px 10px 0; background: rgb(250 250 250 / .94); color: var(--ios-blue); }
+  .tools > .hair { top: 0; }
+  .tools .ios { width: 25px; height: 25px; stroke-width: 1.6; }
+  .tools .is-off { color: #c4c4c8; }
+
+  /* ───────── Safari: the address bar on top, the toolbar below, the page between ───────── */
+  .s-url { left: 12px; right: 12px; top: 54px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 12px; background: #eeeef0; font-size: 17px; color: #111; overflow: hidden; }
+  .s-aa { position: absolute; left: 14px; font-size: 17px; font-weight: 500; letter-spacing: -.02em; }
+  .s-aa small { font-size: 12px; }
+  .s-url .lock { width: 12px; height: 13px; fill: #111; }
+  .s-url .reload { position: absolute; right: 13px; width: 19px; height: 19px; stroke-width: 1.9; }
+  .s-load { position: absolute; left: 0; bottom: 0; width: 100%; height: 2.5px; background: var(--ios-blue); transform-origin: 0 50%; scale: 0 1; opacity: 0; }
+  .safari > .hair { top: 104px; }
+
+  /* The Filo page: the portal's look on a phone. Header and tabs stick while it scrolls. */
+  .page { left: 0; right: 0; top: 104.5px; bottom: 83px; overflow: hidden; background: #fff; font-family: Satoshi, var(--sys); font-weight: 450; font-size: 15px; letter-spacing: -.005em; color: var(--text); }
+  .w-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; height: 60px; padding: 0 16px; background: #fff; }
+  .w-head img { height: 24px; width: auto; }
+  .w-menu { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 16px; color: #1a1a1a; }
+  .w-menu .ic { width: 22px; height: 22px; }
+  .w-hero { display: block; width: calc(100% - 32px); height: 150px; margin: 2px 16px 0; border-radius: 12px; object-fit: cover; }
+  .w-title { margin: 16px 16px 0; font-size: 28px; line-height: 1.15; font-weight: 620; letter-spacing: -.022em; color: #0d0d0d; }
+  .w-meta { margin: 5px 16px 0; font-size: 15.5px; color: #8a8a8d; }
+  .page .pill { margin: 12px 16px 0; }
+  .page .tabs { position: sticky; top: 60px; z-index: 2; justify-content: space-between; margin: 18px 0 0; padding: 0 16px; background: #fff; font-size: 15.5px; }
+  .page .tabs button { height: 45px; margin: 0; }
+  .panel { display: none; min-height: 553px; padding: 18px 16px 24px; }
+  .panel.is-on { display: block; }
+  .w-h { margin: 0 0 10px; font-size: 16.5px; font-weight: 600; color: #121212; }
+  .w-h span { font-weight: 450; color: #8a8a8d; }
+  .w-sum { padding: 16px 18px; margin-bottom: 22px; }
+  .w-sum strong { font-size: 16px; font-weight: 600; color: #121212; }
+  .w-sum p { margin-top: 6px; font-size: 15px; line-height: 22px; color: #6f6f71; }
+  .rows > div { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; height: 46px; border-bottom: 1px solid #efefef; font-size: 15px; }
+  .rows > div:last-child { border-bottom: 0; }
+  .rows .ic { width: 19px; height: 19px; color: #555; }
+  .rows dt { display: contents; color: #6d6e71; }
+  .rows dd { margin: 0; color: #1a1a1a; }
+  .props > div { grid-template-columns: 34px 124px 1fr; }
+
+  .docs { padding: 4px 14px; margin-bottom: 18px; }
+  .docs > div { display: grid; grid-template-columns: 50px 1fr 20px; align-items: center; height: 66px; border-bottom: 1px solid #efefef; }
+  .docs > div:last-child { border-bottom: 0; }
+  .docs .doc-thumb { width: 34px; height: 42px; border-radius: 4px; }
+  .docs strong { display: block; font-size: 15px; font-weight: 500; color: #1a1a1a; }
+  .docs small { display: block; margin-top: 2px; font-size: 13.5px; color: #8a8a8d; }
+  .ftype { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; background: #e4f0e4; color: #3c8a48; }
+  .ftype .ic { width: 20px; height: 20px; }
+  /* Still needs verification: the portal's blue info card over a list of open checks. */
+  .verify { overflow: hidden; }
+  .verify-head { display: grid; grid-template-columns: 40px 1fr; padding: 16px 16px 14px 14px; background: #edf3fa; }
+  .i-dot { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #2f80ed; color: #fff; font: italic 600 14px Georgia, serif; }
+  .verify-head strong { font-size: 16px; font-weight: 600; color: #141414; }
+  .verify-head p { margin-top: 4px; font-size: 14px; line-height: 20px; color: #5d6168; }
+  .checks { padding: 2px 14px; }
+  .checks > div { grid-template-columns: 34px 1fr auto; }
+  .checks .pill { margin: 0; height: 24px; font-size: 13px; }
+
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 22px; }
+  .shots > * { position: relative; height: 112px; border-radius: 10px; overflow: hidden; }
+  .shots img { width: 100%; height: 100%; object-fit: cover; }
+  .shots .big { grid-column: span 2; height: 196px; }
+  .shots .more { display: grid; place-items: center; color: #fff; font-size: 17px; font-weight: 520; }
+  .shots .more img { position: absolute; inset: 0; filter: brightness(.38); }
+  .shots .more b { position: relative; font-weight: 520; }
+  .supplier { display: grid; grid-template-columns: 56px 1fr 20px; align-items: center; height: 76px; padding: 0 14px; }
+  .supplier .avatar { width: 44px; height: 44px; font-size: 14px; }
+  .supplier strong { display: block; font-size: 15.5px; font-weight: 520; color: #1a1a1a; }
+  .supplier small { display: block; margin-top: 2px; font-size: 13.5px; color: #8a8a8d; }
+
+  .tabs button.is-press { scale: .96; }
+  .m-view.is-press, .btn.is-press { scale: .97; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app, .rise { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Portal icons (the same symbols as filo-app-share.html). -->
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-weight" viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"/></symbol>
+    <symbol id="i-width" viewBox="0 0 24 24"><path d="M3 8h18"/><path d="M3 16h18"/><path d="m6 5-3 3 3 3"/><path d="m18 13 3 3-3 3"/></symbol>
+    <symbol id="i-thick" viewBox="0 0 24 24"><path d="M3 5h18"/><path d="M3 19h18"/><path d="M12 8v8"/><path d="m9.5 10.5 2.5-2.5 2.5 2.5"/><path d="m9.5 13.5 2.5 2.5 2.5-2.5"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="13" height="13" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="i-dots-h" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+    <!-- Open checks: the care mark is step 4's phone's. -->
+    <symbol id="i-seam" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></symbol>
+    <symbol id="i-pilling" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".8" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".8" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+    <symbol id="i-care" viewBox="0 0 24 24"><path d="M3.5 7.5l2.2 10.5h12.6l2.2-10.5"/><path d="M4.4 11.5c1.9 1.3 3.8 1.3 5.2 0 1.4 1.3 3.4 1.3 4.8 0 1.4 1.3 3.3 1.3 5.2 0"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+    <!-- iOS glyphs. -->
+    <symbol id="o-back" viewBox="0 0 24 24"><path d="M15 4.5 7.5 12l7.5 7.5"/></symbol>
+    <symbol id="o-fwd" viewBox="0 0 24 24"><path d="m9 4.5 7.5 7.5L9 19.5"/></symbol>
+    <symbol id="o-share" viewBox="0 0 24 24"><path d="M12 2.5v12"/><path d="m8 6.5 4-4 4 4"/><path d="M8.5 9.5H7a1.5 1.5 0 0 0-1.5 1.5v9A1.5 1.5 0 0 0 7 21.5h10a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 17 9.5h-1.5"/></symbol>
+    <symbol id="o-book" viewBox="0 0 24 24"><path d="M2 4.5h6a4 4 0 0 1 4 4v12.5a3 3 0 0 0-3-3H2z"/><path d="M22 4.5h-6a4 4 0 0 0-4 4v12.5a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="o-tabs" viewBox="0 0 24 24"><rect width="13" height="13" x="8" y="8" rx="2.5"/><path d="M4.5 16A2 2 0 0 1 3 14V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 1.5"/></symbol>
+    <symbol id="o-trash" viewBox="0 0 24 24"><path d="M3.5 6h17"/><path d="M18.5 6v13.5a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2V6"/><path d="M8.5 6V4a1.5 1.5 0 0 1 1.5-1.5h4A1.5 1.5 0 0 1 15.5 4v2"/><path d="M10 10.5v7"/><path d="M14 10.5v7"/></symbol>
+    <symbol id="o-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 9.5h20"/></symbol>
+    <symbol id="o-reply" viewBox="0 0 24 24"><path d="M9.5 17 4 11.5 9.5 6"/><path d="M20.5 19v-2a5.5 5.5 0 0 0-5.5-5.5H4"/></symbol>
+    <symbol id="o-compose" viewBox="0 0 24 24"><path d="M12 3.5H5.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V12"/><path d="M18.4 2.6a1.9 1.9 0 0 1 3 3l-8.6 8.6-3.8 1 1-3.8z"/></symbol>
+  </defs>
+</svg>
+
+<div class="stage" id="stage">
+  <div class="display" data-k="display">
+    <!-- ───────── Mail ───────── -->
+    <section class="app mail" data-k="mail">
+      <div class="abs m-back"><svg class="ios"><use href="#o-back"/></svg>Inbox</div>
+      <span class="abs m-more"><svg class="ios"><use href="#i-dots-h"/></svg></span>
+      <i class="hair"></i>
+      <div class="abs m-from rise" style="--i: 0">
+        <span class="m-avatar"><img src="/work/filo/filo-mark.webp" width="990" height="466" alt=""></span>
+        <span class="m-name">Filo</span>
+        <span class="m-to">to me</span>
+        <span class="m-time">9:41 AM</span>
+      </div>
+      <h1 class="abs m-subj rise" style="--i: 1">New material shared:<br>Bacterial Cellulose (BC-001)</h1>
+      <div class="abs m-body rise" style="--i: 2">
+        <p>Hi Priya,</p>
+        <p>Here’s the technical file for Bacterial Cellulose (BC-001). You can view the full material record, including specs, test reports and certifications, on Filo.</p>
+      </div>
+      <div class="abs m-card rise" style="--i: 3">
+        <img src="filo-app-flow/bc-1.webp" alt="">
+        <strong>Bacterial Cellulose</strong>
+        <small>BC-001<span class="meta-dot">Modern Synthesis</span></small>
+        <button class="btn btn--dark m-view" data-k="view">View material record<svg class="ic"><use href="#i-arrow"/></svg></button>
+      </div>
+      <p class="abs m-or rise" style="--i: 4">Or copy this link:</p>
+      <div class="abs m-link rise" style="--i: 4">https://filo.app/materials/BC-001<svg class="ic"><use href="#i-copy"/></svg></div>
+      <div class="abs tools"><i class="hair"></i>
+        <svg class="ios"><use href="#o-trash"/></svg><svg class="ios"><use href="#o-folder"/></svg><svg class="ios"><use href="#o-reply"/></svg><svg class="ios"><use href="#o-compose"/></svg>
+      </div>
+    </section>
+
+    <!-- ───────── Safari: the shared record ───────── -->
+    <section class="app safari" data-k="safari">
+      <div class="abs s-url">
+        <span class="s-aa"><small>A</small>A</span>
+        <svg class="lock" viewBox="0 0 12 13" aria-hidden="true"><path d="M3 5.6V4a3 3 0 0 1 6 0v1.6" fill="none" stroke="#111" stroke-width="1.5"/><rect y="5.4" width="12" height="7.6" rx="1.8"/></svg>filo.app
+        <svg class="ic reload"><use href="#i-refresh"/></svg>
+        <i class="s-load" data-k="load"></i>
+      </div>
+      <i class="hair"></i>
+      <div class="abs page" data-k="page">
+        <header class="w-head"><img src="/work/filo/filo-mark.webp" width="990" height="466" alt="Filo"><span class="w-menu">Menu<svg class="ic"><use href="#i-menu"/></svg></span></header>
+        <img class="w-hero" src="filo-app-flow/bc-1.webp" alt="">
+        <h1 class="w-title">Bacterial Cellulose</h1>
+        <p class="w-meta">BC-001<span class="meta-dot">Modern Synthesis</span></p>
+        <span class="pill pill--pub">Shared with you</span>
+        <div class="tabs" data-k="tabs" role="tablist">
+          <button aria-selected="true" data-k="t-0">Overview</button>
+          <button data-k="t-1">Documents <span class="count">4</span></button>
+          <button data-k="t-2">Photos <span class="count">8</span></button>
+        </div>
+
+        <div class="panel is-on" data-k="p-0">
+          <div class="card w-sum"><strong>Material summary</strong><p>A lightweight, biodegradable material made from bacterial cellulose with a smooth, soft handfeel.</p></div>
+          <h2 class="w-h">Key properties <span>(from supplier)</span></h2>
+          <dl class="rows props">
+            <div><dt><svg class="ic"><use href="#i-shield"/></svg>Composition</dt><dd>100% bacterial cellulose</dd></div>
+            <div><dt><svg class="ic"><use href="#i-weight"/></svg>Weight</dt><dd>120 gsm</dd></div>
+            <div><dt><svg class="ic"><use href="#i-width"/></svg>Width</dt><dd>145 cm</dd></div>
+            <div><dt><svg class="ic"><use href="#i-thick"/></svg>Thickness</dt><dd>0.3 mm</dd></div>
+            <div><dt><svg class="ic"><use href="#i-flame"/></svg>Heat tolerance</dt><dd>Max. 60°C</dd></div>
+            <div><dt><svg class="ic"><use href="#i-user"/></svg>Supplier</dt><dd>Modern Synthesis</dd></div>
+          </dl>
+        </div>
+
+        <div class="panel" data-k="p-1">
+          <h2 class="w-h">Supplier documents</h2>
+          <div class="card docs">
+            <div><img class="doc-thumb" src="filo-app-flow/doc-datasheet.webp" alt=""><div><strong>Technical datasheet.pdf</strong><small>2.4 MB<span class="meta-dot">12 pages</span></small></div><svg class="ic chev"><use href="#i-chev-r"/></svg></div>
+            <div><img class="doc-thumb" src="filo-app-flow/doc-lab.webp" alt=""><div><strong>Lab test report.pdf</strong><small>1.8 MB<span class="meta-dot">8 pages</span></small></div><svg class="ic chev"><use href="#i-chev-r"/></svg></div>
+            <div><img class="doc-thumb" src="filo-app-flow/doc-oeko.webp" alt=""><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB<span class="meta-dot">3 pages</span></small></div><svg class="ic chev"><use href="#i-chev-r"/></svg></div>
+            <div><span class="ftype"><svg class="ic"><use href="#i-image"/></svg></span><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">8 images</span></small></div><svg class="ic chev"><use href="#i-chev-r"/></svg></div>
+          </div>
+          <div class="card verify" data-k="verify">
+            <div class="verify-head"><i class="i-dot">i</i><div><strong>Still needs verification</strong><p>These details are not yet confirmed and may need to be tested.</p></div></div>
+            <dl class="rows checks">
+              <div><dt><svg class="ic"><use href="#i-seam"/></svg>Seam performance</dt><dd><span class="pill pill--grey">Not tested</span></dd></div>
+              <div><dt><svg class="ic"><use href="#i-pilling"/></svg>Pilling resistance</dt><dd><span class="pill pill--grey">Not tested</span></dd></div>
+              <div><dt><svg class="ic"><use href="#i-palette"/></svg>Colour fastness</dt><dd><span class="pill pill--grey">Not tested</span></dd></div>
+              <div><dt><svg class="ic"><use href="#i-layers"/></svg>Compatibility</dt><dd><span class="pill pill--grey">Not tested</span></dd></div>
+              <div><dt><svg class="ic"><use href="#i-care"/></svg>Care instructions</dt><dd><span class="pill pill--grey">Not tested</span></dd></div>
+              <div><dt><svg class="ic"><use href="#i-leaf"/></svg>End-of-life</dt><dd><span class="pill pill--grey">Not tested</span></dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <div class="panel" data-k="p-2">
+          <h2 class="w-h">Material photos</h2>
+          <!-- Eight photos, as on the portal: four shown, and a tile for the four more. -->
+          <div class="shots">
+            <div class="big"><img src="filo-app-flow/bc-1.webp" alt=""></div>
+            <div><img src="filo-app-flow/bc-2.webp" alt=""></div>
+            <div><img src="filo-app-flow/bc-3.webp" alt=""></div>
+            <div><img src="filo-app-flow/bc-4.webp" alt=""></div>
+            <div class="more"><img src="filo-app-flow/bc-5.webp" alt=""><b>+4</b></div>
+          </div>
+          <h2 class="w-h">About the supplier</h2>
+          <div class="card supplier" data-k="supplier"><span class="avatar">MS</span><div><strong>Modern Synthesis</strong><small>Biomaterials innovator</small></div><svg class="ic chev"><use href="#i-chev-r"/></svg></div>
+        </div>
+      </div>
+      <div class="abs tools"><i class="hair"></i>
+        <svg class="ios"><use href="#o-back"/></svg><svg class="ios is-off"><use href="#o-fwd"/></svg><svg class="ios"><use href="#o-share"/></svg><svg class="ios"><use href="#o-book"/></svg><svg class="ios"><use href="#o-tabs"/></svg>
+      </div>
+    </section>
+
+    <!-- The case study's phone status bar (390pt units), and the home indicator. -->
+    <svg class="status" viewBox="0 0 390 54" aria-hidden="true">
+      <text x="52" y="30" dominant-baseline="middle">9:41</text>
+      <rect x="278.2" y="29.7" width="3.3" height="4.3" rx="1.1"/><rect x="283.13" y="28.1" width="3.3" height="5.9" rx="1.1"/><rect x="288.06" y="25.6" width="3.3" height="8.4" rx="1.1"/><rect x="292.99" y="23.3" width="3.3" height="10.7" rx="1.1"/>
+      <path class="wifi" d="M303.28 26.25A11.1 11.1 0 0 1 318.12 26.25M306.05 29.33A6.95 6.95 0 0 1 315.35 29.33"/>
+      <path class="wedge" d="M310.7 33.8L308.9 31.79A2.7 2.7 0 0 1 312.5 31.79Z"/>
+      <rect class="cell" x="325.05" y="23.7" width="20" height="11" rx="4"/>
+      <path opacity=".4" d="M346.25 27.45h.7a.7.7 0 0 1 .7.7v2.1a.7.7 0 0 1-.7.7h-.7z"/>
+      <rect x="326.4" y="25" width="17.3" height="8.4" rx="2.5"/>
+    </svg>
+    <i class="homebar"></i>
+  </div>
+  <img class="frame" src="/work/momo/hero/phone-frame.png" width="1312" height="2672" alt="" draggable="false">
+  <div class="cursor is-hidden" id="cursor"><div class="dot"></div></div>
+</div>
+
+<script type="module">
+import { $, $$, k, W, H, cursor, reduce, playRate, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
+const page = k('page'), tabs = k('tabs')
+
+/* ── Scene state: each scene sets its screen from scratch, so a restart can begin anywhere. ── */
+function open(app) {
+  for (const a of [k('mail'), k('safari')]) a.classList.toggle('is-active', a === app)
+}
+function pickTab(i) {
+  $$('button', tabs).forEach((b, j) => b.setAttribute('aria-selected', String(j === i)))
+  $$('.panel', page).forEach((p, j) => p.classList.toggle('is-on', j === i))
+}
+function reset() {
+  $$('.is-press').forEach(e => e.classList.remove('is-press'))
+  cursor.classList.remove('is-down')
+  k('mail').classList.remove('is-landed')
+  open(k('mail')); pickTab(0); page.scrollTop = 0
+}
+
+/** Screen px per stage px, for measuring the page while the stage is scaled. */
+const ratio = () => page.getBoundingClientRect().height / page.offsetHeight
+/** Where the tabs stick under the page header (page scroll px). */
+const stuck = () => tabs.offsetTop - $('.w-head', page).offsetHeight
+/** Scrolls `el` from its position to `to` over `ms`, eased like the cursor; holds while paused. */
+async function glide(t, el, to, ms) {
+  const from = el.scrollTop
+  let e = 0, last = performance.now()
+  while (e < ms) {
+    await sleep(0, t)
+    const now = performance.now()
+    e += Math.min(50, now - last) * playRate()
+    last = now
+    const p = Math.min(1, e / ms)
+    el.scrollTop = from + (to - from) * (p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2)
+  }
+}
+/** A finger drag: press at `x, y`, pull the page up by `dy` (it follows the finger), release. */
+async function drag(t, x, y, dy, ms = 800) {
+  const to = Math.max(0, Math.min(page.scrollHeight - page.clientHeight, page.scrollTop + dy))
+  const real = to - page.scrollTop
+  await move(t, [x, y]); cursor.classList.add('is-down'); await sleep(110, t)
+  await Promise.all([move(t, [x, y - real], ms), glide(t, page, to, ms)])
+  cursor.classList.remove('is-down'); await sleep(140, t)
+}
+async function tap(t, el, fx, fy) { await move(t, at(el, fx, fy)); await sleep(160, t); await click(t, el) }
+
+/* ── 01 · The email lands: the message, its summary card, and the link. ── */
+async function email(t) {
+  reset(); chapter(0)
+  await sleep(450, t)
+  k('mail').classList.add('is-landed')
+  await sleep(1500, t)
+  await move(t, at($('.m-body'), .55, .6), 700); await sleep(900, t)
+  await tap(t, k('view'), .5, .5)
+  open(k('safari'))
+  k('load').animate([{ scale: '0 1', opacity: 1 }, { scale: '.8 1', opacity: 1, offset: .7 }, { scale: '1 1', opacity: 0 }], { duration: 900, easing: 'ease-out' })
+}
+
+/* ── 02 · The record in the browser: no app, no sign-in. Scroll to its key properties. ── */
+async function record(t) {
+  chapter(1)
+  await sleep(1300, t)
+  await drag(t, 250, 640, stuck(), 900)
+  await sleep(1500, t)
+}
+
+/* ── 03 · Documents, and what still needs verification. ── */
+async function documents(t) {
+  chapter(2)
+  await tap(t, k('t-1'), .4, .5)
+  pickTab(1); page.scrollTop = stuck()
+  await sleep(1300, t)
+  const v = k('verify').getBoundingClientRect(), b = tabs.getBoundingClientRect()
+  await drag(t, 250, 700, (v.top - b.bottom) / ratio() - 14, 900)
+  await sleep(1800, t)
+}
+
+/* ── 04 · Photos and the supplier. ── */
+async function photos(t) {
+  chapter(3)
+  await tap(t, k('t-2'), .4, .5)
+  pickTab(2); page.scrollTop = stuck()
+  await sleep(1400, t)
+  await drag(t, 250, 690, 200, 800)
+  await sleep(1700, t)
+  // The finger lifts away before the loop goes back to the email.
+  await move(t, [W * .62, H + 60], 700)
+  await sleep(500, t)
+}
+
+boot({ scenes: [email, record, documents, photos], home: () => { reset(); chapter(0); if (reduce) k('mail').classList.add('is-landed') } })
+</script>
+</body>
+</html>

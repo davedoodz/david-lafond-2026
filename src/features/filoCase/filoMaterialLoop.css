@@ -1,0 +1,66 @@
+/* What's next: the Future Fabric products on an infinity loop (FiloMaterialLoop.tsx). Loop › size sets
+   the width, capped to the window and centred even when wider than the section's column. */
+@font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+
+.fnl {
+  --fnl-w: min(calc(100vw - 48px), var(--fnl-size, 880px));
+  position: relative;
+  /* Products set their own z-index (lower = nearer) and the labels 1000; keep those inside the loop so
+     the milestone cards and their zoom (FiloMilestones) still cover the products. */
+  isolation: isolate;
+  width: var(--fnl-w);
+  margin-inline: calc((100% - var(--fnl-w)) / 2);
+  aspect-ratio: var(--fnl-aspect, 2);
+  justify-self: stretch;
+}
+/* Labels hang below the lowest products; leave them room. */
+.fnl:not([data-labels='Hidden']) { margin-bottom: 56px; }
+
+.fnl__item { position: absolute; left: 0; top: 0; width: var(--fnl-item, 12.8%); will-change: transform; }
+.fnl__item canvas { display: block; width: 100%; aspect-ratio: 1; }
+/* Labels share the products' positions in a layer over all of them. */
+.fnl__labels { position: absolute; inset: 0; z-index: 1000; pointer-events: none; }
+/* No canvas in this layer: keep each slot square so labels hang below the product, not over it. */
+.fnl__labels .fnl__item { aspect-ratio: 1; }
+
+/* Labels: Inter only, 9–11px, centred under the product and pulled into the sheet's empty margin. */
+.fnl__label {
+  position: absolute;
+  left: 50%;
+  top: calc(100% - 6px);
+  width: 136px;
+  translate: -50% 0;
+  font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif;
+  font-size: 10px;
+  line-height: 13px;
+  letter-spacing: -0.1px;
+  color: var(--stone-400, #9a9a97);
+  text-align: center;
+  pointer-events: none;
+}
+.fnl__label p { margin: 0; }
+.fnl__name { color: var(--ink-950, #171717); font-weight: 600; font-size: 10.5px; letter-spacing: -0.15px; }
+
+/* Catalog: Future Fabric's code, name and maker, plus the material. */
+.fnl__code { font-size: 9px; line-height: 12px; font-variant-numeric: tabular-nums; }
+.fnl__mat { color: var(--stone-600, #666); }
+/* Made from: the one moss line says the product isn't ordinary. */
+.fnl__made { color: var(--filo-moss, #4f6b4a); margin-top: 2px; }
+/* Eyebrow: the material class in small caps above the name. */
+.fnl__eyebrow { font-size: 8.5px; line-height: 12px; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 1px; }
+/* Chip: the material in an outlined pill. */
+.fnl__chip {
+  display: inline-block;
+  white-space: nowrap;
+  margin-top: 4px;
+  padding: 1px 7px;
+  border: 1px solid color-mix(in srgb, var(--ink-950, #171717) 12%, transparent);
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--stone-600, #666);
+  background: rgb(255 255 255 / 0.6);
+}
+/* Whisper: two quiet lines, the name barely heavier. */
+.fnl[data-labels='Whisper'] .fnl__label { font-size: 10px; line-height: 13px; }
+.fnl[data-labels='Whisper'] .fnl__name { font-weight: 500; font-size: 10px; }

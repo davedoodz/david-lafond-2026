@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About · title and story formats</title>
+<style>
+  /* Site tokens (src/styles/global.css). Only Beatrice 400, 500 and 600 italic are loaded on the site. */
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-SemiboldItalic.woff2') format('woff2'); font-weight: 600; font-style: italic; }
+  :root {
+    --ink-950: #0b0a09; --ink-900: #171717; --stone-600: #6f6b68; --stone-400: #a6a09c; --paper: #f5f5f5;
+    --track: -0.04em; --track-caps: 0.05em; --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Beatrice', system-ui, sans-serif; font-synthesis: none; letter-spacing: var(--track); color: var(--ink-900); background: #e9e9e8; -webkit-font-smoothing: antialiased; }
+  .top { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; padding: 18px 32px; background: rgb(233 233 232 / .92); backdrop-filter: blur(10px); border-bottom: 1px solid #dcdcda; }
+  .top h1 { margin: 0; font-size: 18px; font-weight: 500; }
+  .top p { margin: 0; max-width: 62ch; font-size: 13px; line-height: 1.45; color: var(--stone-600); letter-spacing: -0.01em; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px #dcdcda; }
+  .seg button { padding: 7px 14px; border: 0; border-radius: 999px; background: none; font: inherit; font-size: 13px; letter-spacing: -0.01em; color: var(--stone-600); cursor: pointer; }
+  .seg button[aria-pressed='true'] { background: var(--ink-900); color: #fff; }
+  .jump { display: flex; flex-wrap: wrap; gap: 6px; }
+  .jump a { padding: 5px 9px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px #dcdcda; font-size: 12px; letter-spacing: 0; color: var(--ink-900); text-decoration: none; }
+
+  /* Side-by-side grid: each frame keeps its real page size and is zoomed to fit its cell
+     (zoom, not transform, so the cells take the scaled height). Script sets --zoom. */
+  .grid { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 36px 24px; align-items: start; padding: 32px 24px 120px; }
+  /* Subgrid rows: title, note and frame line up across each row, so frames start level. */
+  .option { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 0; min-width: 0; scroll-margin-top: 130px; }
+  .option .frame { zoom: var(--zoom, 1); }
+  .option header { display: flex; align-items: baseline; gap: 10px; margin: 0 0 6px; }
+  .option header b { font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--stone-600); }
+  .option header h2 { margin: 0; font-size: 17px; font-weight: 500; }
+  .option .why { margin: 0 0 12px; font-size: 13px; line-height: 1.45; letter-spacing: -0.01em; color: var(--stone-600); }
+
+  /* The frame mirrors the About page: paper ground, 747px story column (desktop), 40/20 type. */
+  .frame {
+    --display: 40px; --body: 20px; --small: 14px; --inset: 48px; --column: 747px; --lead: 1.56;
+    width: 1016px; padding: 56px var(--inset) 72px; background: var(--paper); border-radius: 14px; box-shadow: 0 1px 0 #dcdcda, 0 18px 40px rgb(0 0 0 / .06);
+  }
+  body[data-size='mobile'] .frame { --display: 24px; --body: 14px; --small: 12px; --inset: 40px; width: 390px; padding-top: 40px; }
+  .col { max-width: var(--column); margin-inline: auto; }
+
+  /* Shared pieces */
+  .heading { margin: 0; font-size: var(--display); font-weight: 400; line-height: 1.2; color: var(--ink-950); text-wrap: balance; }
+  .eyebrow { display: block; margin: 0; font-size: var(--small); line-height: 1.2; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--stone-400); }
+  .story { margin-top: 40px; font-size: var(--body); line-height: var(--lead); color: var(--stone-600); }
+  body[data-size='mobile'] .story { margin-top: 33px; }
+  .story p { margin: 0; }
+  .story p + p { margin-top: calc(var(--lead) * 1em); }
+  .sign { color: var(--stone-600); }
+  .link { position: relative; color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; transition: color 180ms ease; }
+  .link svg { position: absolute; top: calc(50% - 0.4em); left: calc(100% + 0.2em); width: 0.8em; height: 0.8em; opacity: 0; translate: -3px 0; transition: opacity 180ms ease, translate 220ms var(--ease-out); }
+  .link:hover { color: var(--ink-900); }
+  .link:hover svg { opacity: 1; translate: 0 0; }
+  .meta { margin: 0; font-size: var(--small); line-height: 1.4; letter-spacing: -0.01em; color: var(--stone-400); }
+  .rule { height: 1px; margin: 0; border: 0; background: #e2e1df; }
+
+  /* 1 · Current */
+  .v-current .title { margin: 40px 0 0; font-size: var(--body); line-height: var(--lead); color: var(--stone-600); }
+  .v-current .story { margin-top: calc(var(--lead) * var(--body)); }
+
+  /* 2 · Stanzas: same parts; sentences grouped, line breaks inside a group. */
+  .v-stanzas .title { margin: 40px 0 0; font-size: var(--body); line-height: var(--lead); font-weight: 500; color: var(--ink-900); }
+  .v-stanzas .story { margin-top: calc(var(--lead) * var(--body)); }
+
+  /* 3 · Essay paragraphs */
+  .v-prose .title { margin: 40px 0 0; font-size: var(--body); line-height: var(--lead); font-weight: 500; color: var(--ink-900); }
+  .v-prose .story { margin-top: calc(var(--lead) * var(--body)); }
+  .v-prose .story p + p { margin-top: 0.9em; }
+
+  /* 4 · Kicker: eyebrow over the question, title under it */
+  .v-kicker .eyebrow { margin-bottom: 16px; }
+  .v-kicker .title { margin: 14px 0 0; font-size: var(--body); line-height: var(--lead); color: var(--ink-900); }
+
+  /* 5 · Title as the headline; the question becomes the eyebrow */
+  .v-headline .eyebrow { margin-bottom: 16px; }
+  .v-headline .meta { margin-top: 14px; }
+
+  /* 6 · Standfirst: first group set larger in ink */
+  .v-lead .eyebrow { margin-top: 40px; }
+  .v-lead .story { margin-top: 16px; }
+  .v-lead .story p.standfirst { font-size: calc(var(--body) * 1.4); line-height: 1.35; color: var(--ink-900); }
+  .v-lead .story p.standfirst + p { margin-top: 1.4em; }
+  .v-lead .story p + p { margin-top: 0.9em; }
+
+  /* 7 · Margin title: essay details in a narrow left column */
+  .v-margin .col { max-width: 920px; }
+  .v-margin .body { display: grid; grid-template-columns: 172px 1fr; gap: 0 48px; margin-top: 44px; }
+  .v-margin aside { position: sticky; top: 120px; align-self: start; display: grid; gap: 10px; padding-top: 6px; }
+  .v-margin aside .t { margin: 0; font-size: 16px; line-height: 1.35; font-weight: 500; color: var(--ink-900); }
+  .v-margin .story { margin-top: 0; }
+  body[data-size='mobile'] .v-margin .body { grid-template-columns: 1fr; gap: 24px; margin-top: 28px; }
+  body[data-size='mobile'] .v-margin aside { position: static; }
+
+  /* 8 · Pull line */
+  .v-pull .title { margin: 40px 0 0; font-size: var(--body); line-height: var(--lead); font-weight: 500; color: var(--ink-900); }
+  .v-pull .story { margin-top: calc(var(--lead) * var(--body)); }
+  .v-pull .story p.pull { margin-block: 1.6em; font-size: var(--display); line-height: 1.2; color: var(--ink-950); text-wrap: balance; }
+  .v-pull .story p.pull + p { margin-top: 0; }
+  .v-pull .sign-row { display: flex; align-items: center; gap: 14px; margin-top: calc(var(--lead) * 1em); }
+  .v-pull .sign-row .dash { width: 40px; height: 1px; background: var(--stone-400); }
+
+  /* 9 · Italic title: the site's one italic (Beatrice Semibold Italic) */
+  .v-italic .title { margin: 28px 0 0; font-size: calc(var(--body) * 1.2); line-height: 1.3; font-style: italic; font-weight: 600; letter-spacing: -0.02em; color: var(--ink-900); }
+  .v-italic .rule { margin-top: 28px; width: 56px; background: var(--ink-900); }
+  .v-italic .story { margin-top: 28px; }
+  .v-italic .story p + p { margin-top: 0.9em; }
+  .v-italic .sign { display: block; text-align: right; }
+
+  /* 10 · Numbered movements */
+  .v-numbered .title { margin: 40px 0 0; font-size: var(--body); line-height: var(--lead); font-weight: 500; color: var(--ink-900); }
+  .v-numbered .story { margin-top: 36px; }
+  .v-numbered .move { display: grid; grid-template-columns: 44px 1fr; }
+  .v-numbered .move + .move { margin-top: calc(var(--lead) * 1em); }
+  .v-numbered .move .n { padding-top: 0.42em; font-size: var(--small); line-height: 1; letter-spacing: var(--track-caps); color: var(--stone-400); }
+  body[data-size='mobile'] .v-numbered .move { grid-template-columns: 30px 1fr; }
+</style>
+</head>
+<body data-size="desktop">
+<div class="top">
+  <h1>About · title and story formats</h1>
+  <p>Ten ways to set the heading, the essay title and the story, using only the site’s parts: Beatrice 400/500 (and its one italic), the ink and stone greys, 40/20/14 type, the 747px column and the eyebrow style. The copy is your saved text, unedited.</p>
+  <div class="seg" role="group" aria-label="Size" data-group="size">
+    <button type="button" data-value="desktop" aria-pressed="true">Desktop</button>
+    <button type="button" data-value="mobile" aria-pressed="false">Mobile</button>
+  </div>
+  <div class="seg" role="group" aria-label="Columns" data-group="cols">
+    <button type="button" data-value="2" aria-pressed="false">2 across</button>
+    <button type="button" data-value="3" aria-pressed="true">3 across</button>
+    <button type="button" data-value="4" aria-pressed="false">4 across</button>
+    <button type="button" data-value="5" aria-pressed="false">5 across</button>
+  </div>
+  <nav class="jump" id="jump" aria-label="Options"></nav>
+</div>
+<main class="grid" id="grid"></main>
+
+<script>
+  const HEADING = 'Wanna hear a short story?'
+  const TITLE = 'On the Joy of Not Knowing'
+  const SIGN = '- DL'
+  // Your saved story, grouped where the thought turns. Groups are only used by the options that need them.
+  const GROUPS = [
+    ['I’ve always felt like a bit of a misfit.', 'Never quite fitting in, and often feeling like an imposter', 'Curious, restless, and never quite good at accepting “that’s just how it is.”'],
+    ['From working in Canadian hospitals as a pre-med to working as an architect across continents, and eventually pitching prototypes to labs at MIT.', 'I’ve pivoted "career" directions more than once, but it\'s usually because I learned some new skill I couldn’t stop obsessing about.'],
+    ['Now, that new skill is product design.', 'And I\'m loving it.', 'I’m still learning, still experimenting, and definitely still figuring things out.', 'But that\'s what makes it exciting.'],
+    ['Things are moving so fast it can get scary at times.', 'Yet, I\'ve never felt more empowered to learn and create.'],
+    ['Maybe that\'s the beauty of being a misfit.', 'You get comfortable with the unknown, and learn to find your own way.', 'It really is the best time to be alive.', 'And so maybe being a misfit isn\'t so bad after all.'],
+  ]
+  const SENTENCES = GROUPS.flat()
+  const WORDS = SENTENCES.join(' ').split(/\s+/).length
+  const READ = `${Math.max(1, Math.round(WORDS / 200))} min read`
+
+  const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.4 18 5 16.6 14.6 7H6V5h12v12h-2V8.4z"/></svg>'
+  const link = (s) => s.replace('imposter', `<a class="link" href="https://youtu.be/7GkVqdgSZtw" target="_blank" rel="noopener noreferrer">imposter${ARROW}</a>`)
+  const p = (s, cls = '') => `<p${cls ? ` class="${cls}"` : ''}>${link(s)}</p>`
+  const eachSentence = () => SENTENCES.map((s) => p(s)).join('') + p(SIGN, 'sign')
+  const stanzas = () => GROUPS.map((g) => `<p>${g.map(link).join('<br>')}</p>`).join('') + p(SIGN, 'sign')
+  const prose = (first = '') => GROUPS.map((g, i) => p(g.join(' '), i === 0 ? first : '')).join('') + p(SIGN, 'sign')
+  const heading = (text = HEADING) => `<h3 class="heading">${text}</h3>`
+
+  const OPTIONS = [
+    ['Current', 'What the page does now: the title is a grey quoted line and every sentence is its own paragraph with a blank line between. Airy, but the title reads as body copy and the gaps make 24 short paragraphs.',
+      'v-current', () => `${heading()}<p class="title">"${TITLE}"</p><div class="story">${eachSentence()}</div>`],
+    ['Stanzas', 'Same parts. The title goes ink and medium (500) at body size; sentences are grouped where the thought turns, with line breaks inside a group and a blank line between groups. Keeps the one-line rhythm, half the length.',
+      'v-stanzas', () => `${heading()}<p class="title">${TITLE}</p><div class="story">${stanzas()}</div>`],
+    ['Essay paragraphs', 'Each group flows as a normal paragraph, with tighter paragraph gaps. Reads like an essay, and is the most compact.',
+      'v-prose', () => `${heading()}<p class="title">${TITLE}</p><div class="story">${prose()}</div>`],
+    ['Kicker', 'An eyebrow (the Selected projects / My playground label style) labels the piece; the question stays the headline and the title sits right under it in ink. Stanzas below.',
+      'v-kicker', () => `<span class="eyebrow">A short essay</span>${heading()}<p class="title">${TITLE}</p><div class="story">${stanzas()}</div>`],
+    ['Title as headline', 'Swaps them: the question becomes the eyebrow and the essay title is the 40px headline, with a small meta line (author, read time). Most like an article page.',
+      'v-headline', () => `<span class="eyebrow">${HEADING}</span>${heading(TITLE)}<p class="meta">Essay · David Lafond · ${READ}</p><div class="story">${stanzas()}</div>`],
+    ['Standfirst', 'The title is an eyebrow under the question, and the first group is set larger in ink as a lead-in; the rest stays grey body paragraphs. Gives the page an entry point.',
+      'v-lead', () => `${heading()}<span class="eyebrow">${TITLE}</span><div class="story">${prose('standfirst')}</div>`],
+    ['Margin title', 'Essay details (label, title, read time) sit in a narrow left column that stays put while you read; the story keeps its own column. Uses more width on desktop; stacks on mobile.',
+      'v-margin', () => `${heading()}<div class="body"><aside><span class="eyebrow">Essay</span><p class="t">${TITLE}</p><p class="meta">${READ}</p></aside><div class="story">${stanzas()}</div></div>`],
+    ['Pull line', 'Stanzas, with “Maybe that’s the beauty of being a misfit.” lifted to headline size where the essay turns, and a short rule before the sign-off.',
+      'v-pull', () => {
+        const groups = GROUPS.map((g) => [...g])
+        const pull = groups[4].shift()
+        const body = groups.map((g, i) => (i === 4 ? p(pull, 'pull') : '') + `<p>${g.map(link).join('<br>')}</p>`).join('')
+        return `${heading()}<p class="title">${TITLE}</p><div class="story">${body}<div class="sign-row"><span class="dash"></span><span class="sign">${SIGN}</span></div></div>`
+      }],
+    ['Italic title', 'The title in the site’s one italic (Beatrice Semibold Italic, already loaded), a short ink rule, essay paragraphs, and the sign-off set right like a letter.',
+      'v-italic', () => `${heading()}<p class="title">${TITLE}</p><hr class="rule" /><div class="story">${GROUPS.map((g) => p(g.join(' '))).join('')}<p><span class="sign">${SIGN}</span></p></div>`],
+    ['Numbered movements', 'Each group gets a small 01–05 in the margin, like the numbered steps in the case studies. Makes the arc visible at a glance.',
+      'v-numbered', () => `${heading()}<p class="title">${TITLE}</p><div class="story">${GROUPS.map((g, i) => `<div class="move"><span class="n">${String(i + 1).padStart(2, '0')}</span><p>${g.map(link).join('<br>')}</p></div>`).join('')}<div class="move"><span></span>${p(SIGN, 'sign')}</div></div>`],
+  ]
+
+  const grid = document.getElementById('grid')
+  const jump = document.getElementById('jump')
+  OPTIONS.forEach(([name, why, cls, render], i) => {
+    const id = `o${i + 1}`
+    grid.insertAdjacentHTML('beforeend', `<section class="option" id="${id}"><header><b>${i + 1}</b><h2>${name}</h2></header><p class="why">${why}</p><div class="frame ${cls}"><div class="col">${render()}</div></div></section>`)
+    jump.insertAdjacentHTML('beforeend', `<a href="#${id}">${i + 1} ${name}</a>`)
+  })
+  // Columns: desktop defaults to 3 across, mobile to 5; picking a count overrides it for that size.
+  const cols = { desktop: 3, mobile: 5 }
+  const press = (group, value) => {
+    for (const o of document.querySelectorAll(`[data-group="${group}"] button`)) o.setAttribute('aria-pressed', String(o.dataset.value === String(value)))
+  }
+  const fit = () => {
+    const n = cols[document.body.dataset.size]
+    grid.style.setProperty('--cols', n)
+    press('cols', n)
+    const style = getComputedStyle(grid)
+    const inner = grid.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+    const cell = (inner - parseFloat(style.columnGap) * (n - 1)) / n
+    const frameWidth = document.body.dataset.size === 'mobile' ? 390 : 1016
+    grid.style.setProperty('--zoom', Math.min(1, cell / frameWidth).toFixed(4))
+  }
+  for (const b of document.querySelectorAll('[data-group="size"] button')) {
+    b.onclick = () => {
+      document.body.dataset.size = b.dataset.value
+      press('size', b.dataset.value)
+      fit()
+    }
+  }
+  for (const b of document.querySelectorAll('[data-group="cols"] button')) {
+    b.onclick = () => {
+      cols[document.body.dataset.size] = Number(b.dataset.value)
+      fit()
+    }
+  }
+  addEventListener('resize', fit)
+  fit()
+</script>
+</body>
+</html>

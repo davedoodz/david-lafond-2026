@@ -20,6 +20,8 @@ const CONFIG = {
     /** Off freezes the marquee where it is; on resumes it from there. */
     play: true,
     scale: [1, 0.5, 1.6, 0.01] as Tuple,
+    /** Marquee speed: 1 is the base pace, 2 twice as fast, 0.5 half as fast. */
+    speed: [1, 0.2, 4, 0.05] as Tuple,
   },
   /** Shared by every Filo quote card, so they are all the same size. */
   card: {
@@ -59,12 +61,39 @@ const CONFIG = {
     opacity: [0.2, 0, 0.6, 0.01] as Tuple,
     color: { type: 'color' as const, default: '#171717' },
   },
+  /** Shows each card as a thick tag: a solid edge under the face, in a darker shade of the card fill. */
+  thickness: {
+    show: false,
+    /** Edge depth (px) before the strip's scale. */
+    depth: [6, 1, 16, 1] as Tuple,
+    /** How much darker the edge is than the face (%). */
+    shade: [14, 4, 40, 1] as Tuple,
+  },
   'Technical designer, BlueSTEM': placement(),
-  'Designer, Gap': placement(),
+  'Sourcing lead, Gap': placement(),
   'Product lead, O’Neill': placement(),
   'Merchandiser, Calvin Klein': placement(),
 }
-type Card = Exclude<keyof typeof CONFIG, 'strip' | 'card' | 'quoteType' | 'shadow'>
+type Card = Exclude<keyof typeof CONFIG, 'strip' | 'card' | 'quoteType' | 'shadow' | 'thickness'>
+
+/**
+ * The card's box-shadow: with thickness on, a stack of 1px hard shadows forms the tag's edge, darker
+ * toward the bottom and following the card's rounded corners, with a light catch on the top edge;
+ * the drop shadow then falls from the bottom of that edge.
+ */
+function cardShadow(drop: { show: boolean; y: number; blur: number; spread: number; color: string; opacity: number }, thick: { show: boolean; depth: number; shade: number }) {
+  const depth = thick.show ? thick.depth : 0
+  const layers: string[] = []
+  if (thick.show) {
+    layers.push('inset 0 1px 0 rgb(255 255 255 / .7)')
+    for (let i = 1; i <= depth; i++) {
+      const dark = thick.shade * (0.6 + 0.4 * (i / depth))
+      layers.push(`0 ${i}px 0 color-mix(in srgb, var(--qa-card-fill, #fbf8f6) ${(100 - dark).toFixed(1)}%, #5f5446)`)
+    }
+  }
+  if (drop.show) layers.push(`0 ${drop.y + depth}px ${drop.blur}px ${drop.spread}px ${rgba(drop.color, drop.opacity)}`)
+  return { shadow: layers.length ? layers.join(', ') : 'none', depth }
+}
 
 /** `#rrggbb` + opacity → `rgb(r g b / a)`. */
 function rgba(hex: string, alpha: number) {
@@ -79,7 +108,7 @@ function rgba(hex: string, alpha: number) {
 type Art = { card: Card; src: string; width: number; height: number; base: { width: number; right: number; bottom: number } }
 const ART: Partial<Record<number, Art>> = {
   0: { card: 'Technical designer, BlueSTEM', src: '/work/filo/studio/quote-art-technical-designer.webp', width: 900, height: 672, base: { width: 46, right: 16, bottom: 10 } },
-  1: { card: 'Designer, Gap', src: '/work/filo/studio/quote-art-designer.webp', width: 900, height: 543, base: { width: 48, right: 16, bottom: 12 } },
+  1: { card: 'Sourcing lead, Gap', src: '/work/filo/studio/quote-art-designer.webp', width: 900, height: 543, base: { width: 48, right: 16, bottom: 12 } },
   2: { card: 'Product lead, O’Neill', src: '/work/filo/studio/quote-art-product-lead.webp', width: 900, height: 522, base: { width: 46, right: 16, bottom: 12 } },
   3: { card: 'Merchandiser, Calvin Klein', src: '/work/filo/studio/quote-art-merchandiser.webp', width: 900, height: 453, base: { width: 52, right: 14, bottom: 18 } },
 }
@@ -94,10 +123,10 @@ export function FiloQuoteArt({ index }: { index: number }) {
   const { width, height, gap, text, mobileHeight, fill, font } = dials.card
   const { size: quoteSize, sizeMobile: quoteSizeMobile, weight: quoteWeight, spacing: quoteSpacing, lineHeight: quoteLineHeight } = dials.quoteType
   const s = dials.shadow
-  const shadow = s.show ? `0 ${s.y}px ${s.blur}px ${s.spread}px ${rgba(s.color, s.opacity)}` : 'none'
-  const { scale: stripScale, play } = dials.strip
+  const { shadow, depth } = cardShadow(s, dials.thickness)
+  const { scale: stripScale, play, speed } = dials.strip
   // Room the clipped strip needs above and below the cards so the (scaled) shadow is not cut off.
-  const shadowPad = s.show ? Math.max(0, s.y + s.blur + s.spread) * stripScale : 0
+  const shadowPad = (s.show ? Math.max(0, s.y + depth + s.blur + s.spread) : depth) * stripScale
 
   // The card's dials go on the card itself (this element's parent).
   useLayoutEffect(() => {
@@ -119,9 +148,10 @@ export function FiloQuoteArt({ index }: { index: number }) {
     const strip = card.closest<HTMLElement>('.persona__quotes')
     strip?.style.setProperty('--qa-shadow-pad', `${shadowPad}px`)
     strip?.style.setProperty('--qa-strip-scale', `${stripScale}`)
+    strip?.style.setProperty('--qa-speed', `${speed}`)
     strip?.style.setProperty('--qa-gap', `${gap}px`)
     strip?.toggleAttribute('data-qa-paused', !play)
-  }, [width, height, gap, text, mobileHeight, fill, font, quoteSize, quoteSizeMobile, quoteWeight, quoteSpacing, quoteLineHeight, shadow, shadowPad, stripScale, play])
+  }, [width, height, gap, text, mobileHeight, fill, font, quoteSize, quoteSizeMobile, quoteWeight, quoteSpacing, quoteLineHeight, shadow, shadowPad, stripScale, play, speed])
 
   const art = ART[index]
   if (!art) return <span ref={markerRef} hidden />

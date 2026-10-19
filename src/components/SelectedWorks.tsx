@@ -31,6 +31,10 @@ import './SelectedWorks.css'
 type Tuple = [number, number, number, number]
 
 const CONFIG = {
+  /** Which case study leads the list; the rest keep their order. */
+  order: {
+    first: { type: 'select' as const, options: ['Momo', 'Filo'], default: 'Momo' },
+  },
   cards: {
     momo: { type: 'color' as const, default: '#57BFFF' },
     filo: { type: 'color' as const, default: '#ECE6DC' },
@@ -387,7 +391,7 @@ export function SelectedWorks() {
           {t.label.arrow === 'down-right' && <ArrowDownRightIcon />}
         </h2>
         <ul ref={listRef} className="works__list" data-focus={t.focus.mode}>
-          {WORKS.map((work) => {
+          {(t.order.first === 'Filo' ? [...WORKS].sort((a, b) => Number(b.id === 'filo') - Number(a.id === 'filo')) : WORKS).map((work) => {
             const [desktopKey, mobileKey] = TITLE_KEYS[work.id]
             return (
               <li key={work.id}>

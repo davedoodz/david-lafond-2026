@@ -1012,8 +1012,21 @@
         }
       }
     },
-    "evidence": {
-      "eyebrow": "OBSERVE → RESOLVE"
+    "outcomes": {
+      "eyebrow": "",
+      "title": "A circular future for new materials.",
+      "body": "",
+      "spacing": {
+        "top": 147,
+        "bottom": 240,
+        "contentGap": 99
+      },
+      "media": {
+        "size": 64
+      },
+      "mark": {
+        "gap": 31
+      }
     }
   },
   "Momo welcome": {
@@ -1310,12 +1323,14 @@
   },
   "Filo quote art": {
     "strip": {
-      "scale": 0.86
+      "scale": 0.87,
+      "speed": 2.25
     },
     "card": {
-      "width": 531,
+      "width": 516,
       "height": 281,
       "text": 55,
+      "fill": "#f2ebe4",
       "font": "Inter"
     },
     "quoteType": {
@@ -1330,14 +1345,20 @@
       "spread": -18,
       "opacity": 0.21
     },
+    "thickness": {
+      "show": true,
+      "depth": 8,
+      "shade": 19
+    },
     "Technical designer, BlueSTEM": {
       "scale": 1.24,
-      "x": 19,
-      "y": -18
+      "x": 20,
+      "y": -23
     },
-    "Designer, Gap": {
+    "Sourcing lead, Gap": {
       "scale": 1.37,
-      "y": -3
+      "x": 25,
+      "y": -17
     },
     "Product lead, O’Neill": {
       "scale": 1.43,
@@ -1348,6 +1369,35 @@
       "scale": 1.46,
       "x": 77,
       "y": -24
+    }
+  },
+  "Filo source steps": {
+    "titles": {
+      "step1": "Material innovator creates the record.",
+      "step2": "Designer receives it before the sample.",
+      "step3": "The physical sample arrives with its tag.",
+      "step4": "Designer taps the sample to continue its Technical File."
+    },
+    "bodies": {
+      "step2": "A shared link lets them review the data and what still needs verification.",
+      "step4": "Filo surfaces what still needs verification so new observations \nand test results can move the material toward production."
+    },
+    "box": {
+      "scale": 1.33,
+      "speed": 1.4,
+      "x": 30,
+      "y": 54
+    },
+    "inbox": {
+      "x": 34,
+      "y": 42,
+      "gap": 72
+    }
+  },
+  "Filo next loop": {
+    "loop": {
+      "size": 950,
+      "productScale": 0.97
     }
   }
 }

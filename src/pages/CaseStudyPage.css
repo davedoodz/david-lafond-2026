@@ -281,6 +281,32 @@
 .case__section--hero .case__meta {
   translate: 0 var(--hero-meta-y, 0px);
 }
+/* Filo: moss persona tags, and a hero that grows to fit the hang tag. */
+.case[data-work='filo'] { --filo-moss: #4f6b4a; }
+.case[data-work='filo'] .persona__tag { color: var(--filo-moss); }
+.case[data-work='filo'] .case__section--hero {
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+}
+.case[data-work='filo'] .case__section--hero .case__devices {
+  width: min(100%, 750px);
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+@media (max-width: 700px) {
+  .case[data-work='filo'] .case__section--hero .case__devices { width: 100%; }
+}
+/* The Filo hang tag in the hero (transparent, so it sits on the page). heroTag › scale sizes it and
+   x / y move it without changing the layout around it. */
+.filo-hero-tag {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  margin-inline: auto;
+  transform: translate(var(--tag-x, 0px), var(--tag-y, 0px)) scale(var(--tag-scale, 1));
+}
 /* The Filo mark above the hero title (mark › x, y, scale): moves and sizes visually only. */
 .case__hero-mark {
   display: block;
@@ -292,6 +318,17 @@
   margin: 0 auto 51px;
   translate: var(--mark-x, 0px) var(--mark-y, 0px);
   scale: var(--mark-scale, 1);
+  pointer-events: none;
+  user-select: none;
+}
+/* The Filo mark above a section title (section › mark): scale sizes it in layout, so gap is the true
+   space from the mark to the title. */
+.case__section-mark {
+  display: block;
+  justify-self: center;
+  width: calc(120px * var(--mark-scale, 1));
+  height: auto;
+  margin: 0 auto var(--mark-gap, 32px);
   pointer-events: none;
   user-select: none;
 }
@@ -1060,37 +1097,46 @@ html[data-case-snap] .case__moment {
   object-fit: contain;
   filter: drop-shadow(0 30px 40px rgb(23 23 23 / 0.12));
 }
-/* Replay circle (shared .playback-restart) on the phone prototypes, here and on the cross-device phone:
-   inside the screen's top-right corner, squared to the frame's antenna lines. Its left edge sits on the
-   top edge's line (78% across both frames: x 414/530 in the recordings, 681/874 on the mockup) and its
-   bottom edge on the right side's line (10.9% down: y 117.5/1080, 194/1780). Shown while the phone is
-   hovered or the button has keyboard focus; touch screens can't hover, so it stays visible there. */
-:is(.case__phone, .mc-phone) > .playback-restart {
+/* Replay circle (shared .playback-restart) on the phone prototypes: Momo's flow phones, its cross-device
+   phone and Filo's step 3 and 4 phones (.fss-app--phone and .fss-app--scene, the same frame drawn by their documents). Inside the
+   screen's top-right corner, squared to the frame's antenna lines. Its left edge sits on the top edge's
+   line (78% across: x 414/530 in the recordings, 681/874 on the mockup, 1023/1312 on phone-frame.png)
+   and its bottom edge on the right side's line (10.9% down: y 117.5/1080, 194/1780, 291/2672). Shown on
+   hover like every replay circle (videoPlayback.css). */
+:is(.case__phone, .mc-phone, .fss-app--phone, .fss-app--scene) > .playback-restart {
   top: calc(10.9% - 32px);
   left: 78%;
   right: auto;
   z-index: 6;
   width: 32px;
   height: 32px;
-  opacity: 0;
-  transition: opacity 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+/* Step 4's phone sits in a wider scene: the stage is 900 high, fills the host's height (100cqh) and is
+   centred across it, and its phone's box is 390.6 × 795.6 at x 524.7 (of 1440), y 52.2. The same 78% / 10.9%
+   spots, in stage px: x 524.7 + 304.7 = 720 + 109.4, y 52.2 + 86.7 = 138.9. */
+.fss-app--scene { container-type: size; }
+.fss-app--scene > .playback-restart {
+  top: calc(138.9cqh / 9 - 32px);
+  left: calc(50% + 109.4cqh / 9);
 }
 /* Click-to-pause surface (shared .playback-toggle): over the screen, under the replay circle. */
 .mc-phone > .playback-toggle {
   z-index: 5;
 }
-:is(.case__phone, .mc-phone) > .playback-restart svg {
+:is(.case__phone, .mc-phone, .fss-app--phone, .fss-app--scene) > .playback-restart svg {
   width: 17px;
   height: 17px;
 }
-:is(.case__phone, .mc-phone):hover > .playback-restart,
-:is(.case__phone, .mc-phone) > .playback-restart:focus-visible {
-  opacity: 1;
-}
-@media (hover: none) {
-  :is(.case__phone, .mc-phone) > .playback-restart {
-    opacity: 1;
+/* Step 4's phone is only part of its scene, so its circle shows only while the pointer is over the phone
+   (data-phone-hover, from AppFlow), and is gone while the phone is off stage (the scene posts data-phone). */
+@media (hover: hover) {
+  .fss-app--scene:not([data-phone-hover]) > .playback-restart:not(:focus-visible) {
+    opacity: 0;
   }
+}
+.fss-app--scene:not([data-phone]) > .playback-restart {
+  opacity: 0;
+  pointer-events: none;
 }
 /* The recordings have the page colour in the four corners outside the phone frame. A mask traced
    from the frame (flows/phone-mask.png, same 530×1080 size) hides them, so the wrapper's

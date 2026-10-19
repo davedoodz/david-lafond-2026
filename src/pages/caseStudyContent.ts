@@ -546,8 +546,9 @@ export const FILO_CONFIG = {
     textReveal: textRevealDials(),
     /** Market gap's desk image: size relative to the 800px column, and offset (px). */
     gapImage: { scale: [1, 0.3, 2, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
-    /** Proposal's phone-over-tag image: which photo, size relative to its 460px base, and offset (px). */
-    proposalImage: { image: { type: 'select' as const, options: ['Green swatches', 'Orange swatches'], default: 'Green swatches' }, scale: [1, 0.3, 2.5, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
+    /** Proposal's phone-over-tag image: which photo, size relative to its 460px base, and offset (px).
+        accent Olive recolours the orange swatch (Orange swatches photo) and the turning windbreaker olive. */
+    proposalImage: { image: { type: 'select' as const, options: ['Green swatches', 'Orange swatches'], default: 'Green swatches' }, accent: { type: 'select' as const, options: ['Orange', 'Olive'], default: 'Orange' }, scale: [1, 0.3, 2.5, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
     /** Cream products turning beside the proposal image: size (px), gap from the image (px), seconds per turn. */
     products: { show: true, size: [190, 80, 360, 1] as Tuple, spread: [30, -200, 300, 1] as Tuple, spin: [9, 3, 30, 0.5] as Tuple, _collapsed: false },
     spacing: sectionSpacingDials(90, 70, 100),
@@ -599,7 +600,7 @@ export const FILO_CONFIG = {
       m1Role: txt('Technical designer, BlueSTEM'),
       m1Tag: txt('Know before you cut'),
       m2Quote: txt('“We can’t use heat or solvent on this.”'),
-      m2Role: txt('Designer, Gap'),
+      m2Role: txt('Sourcing lead, Gap'),
       m2Tag: txt('Catch it at the bench'),
       m3Quote: txt('“First we look at performance, then at how to do it in the most responsible way.”'),
       m3Role: txt('Product lead, O’Neill'),
@@ -640,24 +641,6 @@ export const FILO_CONFIG = {
     body: 'Compare suppliers, approve samples, and review what changes.',
     align: 'center', layout: 'bottom', gap: 64,
   }, NO_VIDEO), textReveal: textRevealDials() },
-  evidence: { ...sectionDials({
-    eyebrow: 'Observe → resolve',
-    title: 'Evidence belongs\nwhere the work happens.',
-    body: 'Capture the test. Surface the conflict. Keep what is still unknown in view.',
-    align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO), textReveal: textRevealDials() },
-  scale: { ...sectionDials({
-    eyebrow: 'Scale → decide',
-    title: 'The same material.\nA bigger question.',
-    body: 'Can we make 10,000? Confirm the capacity, see the gap, then choose the next move.',
-    align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO), textReveal: textRevealDials() },
-  handoff: { ...sectionDials({
-    eyebrow: 'Share → reuse',
-    title: 'The record moves forward.\nThe context stays with it.',
-    body: 'Share the evidence, export a traceable file, and carry the learning into the next collection.',
-    align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO), textReveal: textRevealDials() },
   outcomes: {
     ...sectionDials({
       eyebrow: 'What’s next',
@@ -668,6 +651,16 @@ export const FILO_CONFIG = {
       figure: 'next',
       gap: 48,
     }, NO_VIDEO),
+    /** Open by default: contentGap is the space between the title and the product loop (px). */
+    spacing: { ...sectionSpacingDials(96, 64, 48), _collapsed: false },
     textReveal: textRevealDials(),
+    /** The Filo mark above the title: which drawing, size (× its 120px base) and space to the title (px). */
+    mark: {
+      show: true,
+      logo: { type: 'select' as const, options: ['Loop f', 'Tall l'], default: 'Loop f' },
+      scale: [1, 0.2, 3, 0.01] as Tuple,
+      gap: [32, 0, 200, 1] as Tuple,
+      _collapsed: false,
+    },
   },
 }

@@ -33,7 +33,9 @@
 }
 
 /* Opacity dials live on the playground root (Playground → restart); elsewhere the defaults match the
-   playground's saved values (0.3 / 0.6 on hover), so every replay button reads the same. */
+   playground's saved values (0.3 / 0.6 on hover), so every replay button reads the same. Each button sits
+   in its media (video, prototype or phone), and shows only while that media is hovered or the button has
+   keyboard focus; touch screens can't hover, so there it stays visible. */
 .playback-restart {
   position: absolute;
   top: 16px;
@@ -51,7 +53,12 @@
   -webkit-backdrop-filter: blur(12px);
   color: var(--paper);
   cursor: pointer;
-  transition: background 0.2s var(--ease-out);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+:hover > .playback-restart,
+.playback-restart:focus-visible {
+  opacity: 1;
 }
 .playback-restart:hover,
 .playback-restart:focus-visible {
@@ -60,6 +67,11 @@
 .playback-restart svg {
   width: 20px;
   height: 20px;
+}
+@media (hover: none) {
+  .playback-restart {
+    opacity: 1;
+  }
 }
 /* Sits left of the replay circle: replay width + 8px gap. */
 .playback-youtube {
