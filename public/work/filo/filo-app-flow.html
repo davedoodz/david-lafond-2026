@@ -4,105 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Filo · adding a material (prototype)</title>
+<link rel="stylesheet" href="filo-app-flow/app.css" />
 <style>
-  /* The app's interface type (Satoshi variable, Fontshare, free licence), kept local so the page works offline. */
-  @font-face { font-family: Satoshi; src: url('filo-app-flow/Satoshi-Variable.woff2') format('woff2'); font-weight: 300 900; font-display: block; }
-
-  :root {
-    --ink: #141414;
-    --text: #232323;
-    --muted: #6f6f71;
-    --faint: #98989b;
-    --line: #ececec;
-    --card: #fcfcfc;
-    --card-line: #ebebeb;
-    --well: #f4f4f4;
-    --app: #f9f9f9;
-    --side: #f5f5f5;
-    --btn-dark: #181818;
-    --btn-dark-hover: #333;
-    --hover: #f1f1f1;
-    --green: #1f7a32;
-    --green-bg: #e7f3e8;
-    --amber: #dc961f;
-    --amber-bg: #fcf0d8;
-    --blue: #3d91f4;
-    --ease-out: cubic-bezier(.23, 1, .32, 1);
-    --ease-move: cubic-bezier(.65, 0, .35, 1);
-  }
-  * { box-sizing: border-box; }
-  /* The page is the window: built at its source size (1536 × 1024) and scaled to fill the frame. */
-  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--app); -webkit-font-smoothing: antialiased; }
-  .stage { position: absolute; top: 0; left: 0; width: 1536px; height: 1024px; transform-origin: 0 0; }
-  .window {
-    position: absolute; inset: 0; overflow: hidden; background: var(--app);
-    font-family: Satoshi, system-ui, sans-serif; font-weight: 450; color: var(--text); font-size: 15px; letter-spacing: -.005em;
-    cursor: default; user-select: none;
-  }
-  .window img { display: block; }
-  /* Zero specificity, so every button class below wins over this reset. */
-  :where(.window) button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; }
-  .ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-
-  /* Title bar and sidebar: shared by every screen. */
-  .titlebar { position: absolute; top: 0; left: 0; right: 0; height: 48px; background: #f1f1f1; border-bottom: 1px solid #ebebeb; z-index: 2; }
-  .lights { position: absolute; left: 19px; top: 18px; display: flex; gap: 9px; }
-  .lights i { width: 12px; height: 12px; border-radius: 50%; background: #fe5f57; }
-  .lights i:nth-child(2) { background: #febc2e; }
-  .lights i:nth-child(3) { background: #28c840; }
-  .sidebar { position: absolute; top: 48px; bottom: 0; left: 0; width: 226px; background: var(--side); border-right: 1px solid #efefef; }
-  .sidebar .logo { position: absolute; left: 37px; top: 42px; height: 30px; width: auto; }
-  .nav { position: absolute; top: 112px; left: 20px; right: 18px; display: grid; gap: 8px; }
-  .nav a { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 18px; border-radius: 10px; color: #545456; font-size: 15.5px; text-decoration: none; transition: background-color .15s ease, color .15s ease; }
-  .nav a[aria-current] { background: #ececec; color: var(--ink); font-weight: 520; }
-  .nav a:hover, .nav a.is-hover { background: #eeeeee; color: var(--ink); }
-  .account { position: absolute; left: 28px; right: 16px; bottom: 46px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 6px; margin-left: -6px; border-radius: 10px; font-size: 13.5px; color: #2b2b2b; white-space: nowrap; transition: background-color .15s ease; }
-  .account:hover { background: #eeeeee; }
-  .avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #e7e7e7; font-size: 13px; font-weight: 550; color: #333; }
-  .account .ic { width: 16px; height: 16px; margin-left: auto; color: #555; }
-
-  /* Main area: the four screens stack here; only the active one shows. */
-  .main { position: absolute; top: 48px; left: 226px; right: 0; bottom: 0; }
-  /* A screen's box spans the window from its left edge, so it passes the pointer through to the sidebar. */
-  .screen { position: absolute; inset: 0; opacity: 0; visibility: hidden; translate: 0 10px; pointer-events: none; transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), visibility 0s linear .32s; }
-  .screen > * { pointer-events: auto; }
-  .screen.is-active { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .38s var(--ease-out) .06s, translate .38s var(--ease-out) .06s, visibility 0s; }
   /* Screen 1's positions are window px; screens 2–4 are main-area px (window y − 48). */
-  .abs { position: absolute; }
-
-  /* Shared parts. */
-  .h1 { margin: 0; font-size: 34px; font-weight: 620; letter-spacing: -.025em; color: #0d0d0d; line-height: 1.1; }
-  .sub { margin: 0; color: #8a8a8d; font-size: 18.5px; letter-spacing: -.01em; }
-  .crumbs { display: flex; align-items: center; gap: 10px; font-size: 14.5px; color: #8d8f95; }
-  .crumbs .ic { width: 14px; height: 14px; color: #8d8f95; }
-  .crumbs b { font-weight: 450; color: #2a2a2a; }
-  .card { background: var(--card); border: 1px solid var(--card-line); border-radius: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / .02); }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 0 22px; border-radius: 10px; border: 1px solid #e3e3e3; background: #fff; font-size: 15.5px; font-weight: 520; color: #151515; transition: background-color .15s ease, border-color .15s ease, scale .12s ease, box-shadow .15s ease, opacity .2s ease; box-shadow: 0 1px 2px rgb(0 0 0 / .03); }
-  .btn:hover, .btn.is-hover { background: #f4f4f4; border-color: #d6d6d6; }
-  .btn--dark { background: var(--btn-dark); border-color: var(--btn-dark); color: #fff; }
-  .btn--dark:hover, .btn--dark.is-hover { background: var(--btn-dark-hover); border-color: var(--btn-dark-hover); }
-  .btn:active, .btn.is-press { scale: .97; }
-  .btn[disabled] { opacity: .35; pointer-events: none; }
-  .btn .ic { width: 18px; height: 18px; }
-  .icon-btn { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; color: #444; transition: background-color .15s ease; }
-  .icon-btn:hover, .icon-btn.is-hover { background: #efefef; }
-  .icon-btn .ic { width: 18px; height: 18px; }
-  .pill { display: inline-flex; align-items: center; gap: 8px; height: 26px; padding: 0 11px; border-radius: 8px; font-size: 14px; font-weight: 480; white-space: nowrap; }
-  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .pill--draft { background: var(--amber-bg); color: #3a2c12; }
-  .pill--draft::before { background: var(--amber); }
-  .pill--pub { background: var(--green-bg); color: #0f3f17; }
-  .pill--pub::before { background: #16852b; }
-  .pill--grey { background: #f0f0f0; color: #4a4a4a; }
-  .pill--grey::before { background: #8a8a8a; }
-  .pill--ready { background: var(--green-bg); color: #145c20; height: 30px; padding: 0 13px; font-size: 15px; }
-  .pill--ready::before { background: #138021; }
-  .tag { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 13px; background: #f0f1f2; font-size: 13.5px; color: #444; }
-  .well { background: var(--well); border-radius: 12px; }
-  .chev { width: 18px; height: 18px; color: #777; }
-  .thumb { border-radius: 9px; object-fit: cover; }
-  .doc-thumb { border-radius: 6px; object-fit: cover; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .05), 0 4px 10px -4px rgb(0 0 0 / .18); }
-  .count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px; background: #efefef; font-size: 12.5px; color: #555; }
 
   /* ───────── Screen 1 · Materials ───────── */
   .s1-head { left: 264px; top: 90px; }
@@ -142,11 +46,6 @@
   .detail .more { position: absolute; left: 402px; top: 26px; width: 36px; height: 40px; border: 1px solid #e5e5e5; border-radius: 9px; background: #fff; }
   .detail h2 { position: absolute; left: 19px; top: 186px; margin: 0; font-size: 24px; font-weight: 620; letter-spacing: -.02em; color: #0d0d0d; }
   .detail .pill { position: absolute; left: 18px; top: 223px; }
-  .tabs { display: flex; gap: 0; border-bottom: 1px solid #e8e8e8; font-size: 15px; color: #6c6c6e; }
-  .tabs button { position: relative; height: 40px; padding: 0 2px; margin-right: 30px; border: 0; background: none; display: inline-flex; align-items: center; gap: 10px; transition: color .15s ease; }
-  .tabs button:hover, .tabs button.is-hover { color: #111; }
-  .tabs button[aria-selected='true'] { color: #0d0d0d; font-weight: 540; }
-  .tabs button[aria-selected='true']::after { content: ''; position: absolute; left: -4px; right: -4px; bottom: -1px; height: 2px; border-radius: 2px; background: #111; }
   .detail .tabs { position: absolute; left: 19px; right: 19px; top: 262px; }
   .detail .tabs button { margin-right: 32px; padding: 0 4px; }
   .summary { position: absolute; left: 19px; right: 19px; top: 320px; padding: 14px 17px 13px; }
@@ -241,7 +140,6 @@
   .progress { left: 274px; top: 176px; width: 1217px; height: 63px; display: flex; align-items: center; gap: 16px; padding: 0 25px 0 21px; border-radius: 13px; font-size: 14.5px; color: #262626; }
   .spin { width: 24px; height: 24px; border-radius: 50%; border: 2.4px solid #dce9fb; border-top-color: var(--blue); animation: spin 1s linear infinite; flex: none; }
   .progress.is-done .spin { animation: none; border-color: #25a246; background: #25a246 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 12.5 3.2 3.2L17 9'/%3E%3C/svg%3E") center / 16px no-repeat; }
-  @keyframes spin { to { rotate: 360deg; } }
   .progress .label { flex: none; white-space: nowrap; }
   .bar { flex: 1; height: 6px; border-radius: 3px; background: #f0f1f3; overflow: hidden; }
   .bar i { display: block; height: 100%; width: 100%; border-radius: 3px; background: var(--blue); transform-origin: left; scale: var(--p, 0) 1; }
@@ -328,8 +226,6 @@
   .input--select .ic { width: 16px; height: 16px; color: #444; }
   .fields > div:hover .input span, .fields > div.is-hover .input span { border-color: #cfcfcf; }
   .fields > div.is-focus .input span { border-color: #2a2a2a; box-shadow: 0 0 0 3px rgb(20 20 20 / .07); }
-  .caret { display: inline-block; width: 1.5px; height: 18px; margin-left: 1px; background: #111; animation: blink 1s steps(1) infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
   .src { display: grid; grid-template-columns: 26px 1fr 50px 24px; align-items: center; height: 40px; margin-left: 40px; padding: 0 6px 0 6px; border-radius: 8px; font-size: 14px; color: #6a6b70; transition: background-color .15s ease, color .15s ease; }
   .src .pg { color: #6a6b70; }
   .src .chev { width: 16px; height: 16px; color: #444; }
@@ -358,22 +254,6 @@
   .side .docs .tag { height: 24px; font-size: 13px; }
   .side .docs .icon-btn { width: 32px; height: 32px; color: #555; }
 
-  .toast { position: absolute; left: 50%; bottom: 40px; translate: -50% 16px; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 20px 0 14px; border-radius: 12px; background: #181818; color: #fff; font-size: 15px; font-weight: 480; opacity: 0; transition: opacity .25s var(--ease-out), translate .3s var(--ease-out); z-index: 5; }
-  .toast i { width: 22px; height: 22px; border-radius: 50%; background: #25a246 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 12.5 3.2 3.2L17 9'/%3E%3C/svg%3E") center / 14px no-repeat; }
-  .toast.is-on { opacity: 1; translate: -50% 0; }
-
-  /* Things that arrive (file rows, preview cards). */
-  .enter { opacity: 0; translate: 0 8px; }
-  .enter.is-in { opacity: 1; translate: 0 0; transition: opacity .35s var(--ease-out), translate .35s var(--ease-out); }
-
-  /* The cursor: a translucent circle. It shrinks while pressed and leaves a ring where it clicks. */
-  .cursor { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 20; pointer-events: none; }
-  .cursor .dot { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; background: rgb(30 30 30 / .2); box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / .55), 0 2px 8px rgb(0 0 0 / .12); backdrop-filter: blur(1.5px); transition: scale .14s var(--ease-out), background-color .14s ease; }
-  .cursor.is-down .dot { scale: .78; background: rgb(30 30 30 / .32); }
-  .cursor.is-hidden { opacity: 0; }
-  .cursor { transition: opacity .3s ease; }
-  .ring { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgb(30 30 30 / .35); pointer-events: none; z-index: 19; animation: ring .5s var(--ease-out) forwards; }
-  @keyframes ring { from { scale: .6; opacity: 1; } to { scale: 1.9; opacity: 0; } }
   /* Files dragged in from the desktop: a fanned stack with a count, held under the cursor. */
   .ghost { position: absolute; left: 10px; top: 12px; width: 120px; height: 110px; transition: opacity .2s ease, scale .25s var(--ease-out); transform-origin: 0 0; }
   .ghost.is-hidden { opacity: 0; scale: .7; }
@@ -385,8 +265,8 @@
   .ghost b { position: absolute; left: 92px; top: -8px; display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 13px; background: #e5484d; color: #fff; font: 600 13px Satoshi, system-ui, sans-serif; box-shadow: 0 2px 6px rgb(0 0 0 / .2); }
 
   @media (prefers-reduced-motion: reduce) {
-    .screen, .screen.is-active, .enter.is-in, .toast, .btn, .drop, .row, .cursor { transition: none; }
-    .spin, .status i, .skel, .caret { animation: none; }
+    .drop, .row { transition: none; }
+    .spin, .status i, .skel { animation: none; }
   }
 </style>
 </head>
@@ -426,7 +306,7 @@
 
 <div class="stage" id="stage">
   <div class="window" id="window">
-    <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div></div>
+    <div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><div class="urlbar"><svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.6"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="url"></span><i class="load"></i></div></div>
 
     <aside class="sidebar">
       <img class="logo" src="/work/filo/filo-mark.webp" width="990" height="466" alt="Filo" />
@@ -454,7 +334,7 @@
       </div>
       <div class="abs sort">Sort by <b>Recently updated <svg class="ic"><use href="#i-chev-d"/></svg></b></div>
       <div class="abs list">
-        <div class="row is-selected" data-k="row-0"><img class="thumb" src="filo-app-flow/thumb-bacterial.webp" alt=""><div class="name"><strong>Bacterial Cellulose</strong><span class="pill pill--draft">Draft</span><small>Updated Oct 18, 2026</small></div><div class="kv">100% bacterial cellulose<small>Composition</small></div><div class="kv">120 gsm<small>Weight</small></div><div class="kv">145 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
+        <div class="row is-selected" data-k="row-0"><img class="thumb" src="filo-app-flow/bc-1.webp" alt=""><div class="name"><strong>Bacterial Cellulose</strong><span class="pill pill--draft">Draft</span><small>Updated Oct 18, 2026</small></div><div class="kv">100% bacterial cellulose<small>Composition</small></div><div class="kv">120 gsm<small>Weight</small></div><div class="kv">145 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
         <div class="row" data-k="row-1"><img class="thumb" src="filo-app-flow/thumb-mycelium.webp" alt=""><div class="name"><strong>Mycelium Leather</strong><span class="pill pill--pub">Published</span><small>Updated Oct 12, 2026</small></div><div class="kv">Mycelium + bio-based PU<small>Composition</small></div><div class="kv">450 gsm<small>Weight</small></div><div class="kv">140 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
         <div class="row" data-k="row-2"><img class="thumb" src="filo-app-flow/thumb-algae.webp" alt=""><div class="name"><strong>Algae Textile</strong><span class="pill pill--pub">Published</span><small>Updated Sep 28, 2026</small></div><div class="kv">Algae-based fibres<small>Composition</small></div><div class="kv">220 gsm<small>Weight</small></div><div class="kv">150 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
         <div class="row" data-k="row-3"><img class="thumb" src="filo-app-flow/thumb-pineapple.webp" alt=""><div class="name"><strong>Pineapple Leather</strong><span class="pill pill--grey">Draft</span><small>Updated Sep 21, 2026</small></div><div class="kv">Pineapple leaf fibre<small>Composition</small></div><div class="kv">380 gsm<small>Weight</small></div><div class="kv">140 cm<small>Width</small></div><svg class="ic"><use href="#i-chev-r"/></svg></div>
@@ -463,7 +343,7 @@
       </div>
       <div class="abs search"><svg class="ic"><use href="#i-search"/></svg>Search materials...</div>
       <div class="abs card detail">
-        <img class="thumb hero" src="filo-app-flow/hero-bacterial.webp" alt="">
+        <img class="thumb hero" src="filo-app-flow/bc-1.webp" alt="">
         <button class="btn edit"><svg class="ic"><use href="#i-pencil"/></svg>Edit</button>
         <button class="icon-btn more" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button>
         <h2>Bacterial Cellulose</h2>
@@ -513,7 +393,7 @@
           <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-datasheet.webp" alt=""><div><strong>Technical datasheet.pdf</strong><small>2.4 MB<span class="meta-dot">12 pages</span></small><span class="tag">Datasheet</span></div></li>
           <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-lab.webp" alt=""><div><strong>Lab test report.pdf</strong><small>1.8 MB<span class="meta-dot">8 pages</span></small><span class="tag">Test report</span></div></li>
           <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-oeko.webp" alt=""><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB<span class="meta-dot">3 pages</span></small><span class="tag">Certification</span></div></li>
-          <li class="enter"><img class="doc-thumb" src="filo-app-flow/doc-photos.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">24 images</span></small><span class="tag">Images</span></div></li>
+          <li class="enter"><img class="doc-thumb" src="filo-app-flow/bc-7.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">8 images</span></small><span class="tag">Images</span></div></li>
         </ul>
         <div class="preview-foot">
           <button class="btn btn--dark" data-k="process" disabled>Process documents<svg class="ic"><use href="#i-arrow"/></svg></button>
@@ -529,7 +409,7 @@
       <button class="abs btn s3-cancel">Cancel</button>
       <div class="abs card progress" data-k="progress"><span class="spin"></span><span class="label">Extracting information...</span><span class="bar"><i></i></span><span class="pct">0%</span></div>
       <div class="abs card record">
-        <img class="thumb photo" src="filo-app-flow/s3-photo.webp" alt="">
+        <img class="thumb photo" src="filo-app-flow/bc-1.webp" alt="">
         <h2>Bacterial Cellulose</h2>
         <span class="pill pill--draft">Draft</span>
         <p class="desc">A lightweight, biodegradable material made from bacterial cellulose with a smooth, soft handfeel.</p>
@@ -552,7 +432,7 @@
           <li><img class="doc-thumb" src="filo-app-flow/doc-datasheet.webp" alt=""><div><strong>Technical datasheet.pdf</strong><small>2.4 MB<span class="meta-dot">12 pages</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
           <li data-k="sdoc-1"><img class="doc-thumb" src="filo-app-flow/doc-lab.webp" alt=""><div><strong>Lab test report.pdf</strong><small>1.8 MB<span class="meta-dot">8 pages</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
           <li><img class="doc-thumb" src="filo-app-flow/doc-oeko.webp" alt=""><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB<span class="meta-dot">3 pages</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
-          <li><img class="doc-thumb" src="filo-app-flow/doc-photos.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">24 images</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li><img class="doc-thumb" src="filo-app-flow/bc-7.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">8 images</span></small><span class="status"><i></i><span>Processing</span></span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
         </ul>
         <div class="note"><i>i</i><div><strong>Each value is linked to its source document.</strong><p>You can review, edit or remove any information before publishing.</p></div></div>
       </div>
@@ -565,7 +445,7 @@
       <p class="abs sub s4-sub">Review the extracted information, edit if needed, and add any missing details before publishing.</p>
       <button class="abs btn s4-save">Save draft</button>
       <button class="abs btn btn--dark s4-publish" data-k="publish"><span class="label">Publish material</span><span class="done"><svg class="ic"><use href="#i-check"/></svg>Published</span></button>
-      <div class="abs tabs" role="tablist"><button aria-selected="true">Properties</button><button>Documents <span class="count">4</span></button><button>Photos <span class="count">12</span></button><button>Details</button></div>
+      <div class="abs tabs" role="tablist"><button aria-selected="true">Properties</button><button>Documents <span class="count">4</span></button><button>Photos <span class="count">8</span></button><button>Details</button></div>
       <div class="abs card form">
         <div class="head"><strong>Material information</strong><p>Key properties extracted from your documents. You can edit any field.</p></div>
         <button class="btn autofill"><svg class="ic"><use href="#i-sparkles"/></svg>Auto-fill missing fields</button>
@@ -582,7 +462,7 @@
         <div class="more-found"><svg class="ic"><use href="#i-sparkles"/></svg><div><strong>6 additional properties found</strong><p>Colour options, care instructions, environmental certifications, and more.</p></div></div>
       </div>
       <div class="abs card side">
-        <img class="thumb photo" src="filo-app-flow/s4-photo.webp" alt="">
+        <img class="thumb photo" src="filo-app-flow/bc-1.webp" alt="">
         <button class="btn edit"><svg class="ic"><use href="#i-pencil"/></svg>Edit</button>
         <h2>Bacterial Cellulose</h2>
         <span class="pill pill--ready">Ready to publish</span>
@@ -593,7 +473,7 @@
           <li data-k="side-doc-0"><img class="doc-thumb" src="filo-app-flow/doc-datasheet.webp" alt=""><div><strong>Technical datasheet.pdf</strong><small>2.4 MB<span class="meta-dot">12 pages</span></small><span class="tag">Datasheet</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
           <li data-k="side-doc-1"><img class="doc-thumb" src="filo-app-flow/doc-lab.webp" alt=""><div><strong>Lab test report.pdf</strong><small>1.8 MB<span class="meta-dot">8 pages</span></small><span class="tag">Test report</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
           <li><img class="doc-thumb" src="filo-app-flow/doc-oeko.webp" alt=""><div><strong>OEKO-TEX certificate.pdf</strong><small>1.2 MB<span class="meta-dot">3 pages</span></small><span class="tag">Certification</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
-          <li><img class="doc-thumb" src="filo-app-flow/doc-photos.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">24 images</span></small><span class="tag">Images</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
+          <li><img class="doc-thumb" src="filo-app-flow/bc-7.webp" alt=""><div><strong>Material photos.zip</strong><small>12 MB<span class="meta-dot">8 images</span></small><span class="tag">Images</span></div><button class="icon-btn" aria-label="More"><svg class="ic"><use href="#i-dots"/></svg></button></li>
         </ul>
       </div>
     </section>
@@ -603,73 +483,18 @@
 
   <div class="cursor is-hidden" id="cursor">
     <div class="ghost is-hidden" id="ghost">
-      <img src="filo-app-flow/doc-datasheet.webp" alt=""><img src="filo-app-flow/doc-lab.webp" alt=""><img src="filo-app-flow/doc-oeko.webp" alt=""><img src="filo-app-flow/doc-photos.webp" alt=""><b>4</b>
+      <img src="filo-app-flow/doc-datasheet.webp" alt=""><img src="filo-app-flow/doc-lab.webp" alt=""><img src="filo-app-flow/doc-oeko.webp" alt=""><img src="filo-app-flow/bc-7.webp" alt=""><b>4</b>
     </div>
     <div class="dot"></div>
   </div>
 </div>
 
 <script type="module">
-const W = 1536, H = 1024
-const $ = (s, r = document) => r.querySelector(s)
-const $$ = (s, r = document) => [...r.querySelectorAll(s)]
-const stage = $('#stage'), cursor = $('#cursor'), ghost = $('#ghost'), toast = $('#toast')
+import { $, $$, k, cursor, sleep, isPaused, at, move, hover, click, setUrl, boot } from './filo-app-flow/player.js'
+const ghost = $('#ghost'), toast = $('#toast')
 const screens = $$('.screen')
-const k = name => $(`[data-k="${name}"]`)
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
-
-/* Fill the frame with the 1536 × 1024 window. */
-let scale = 1
-function fit() {
-  scale = Math.min(innerWidth / W, innerHeight / H)
-  stage.style.scale = scale
-}
-addEventListener('resize', fit); fit()
-
-/* ── Playback: every wait checks the run token, so a jump or pause stops the script cleanly. ── */
-let token = 0, paused = false, resume = null
-class Stop extends Error {}
-const sleep = (ms, t) => new Promise((ok, no) => {
-  let left = ms, last = performance.now()
-  // performance.now(), not rAF's timestamp: in an iframe Chrome's rAF time can trail it by seconds.
-  const tick = () => {
-    const now = performance.now()
-    if (t !== token) return no(new Stop())
-    if (!paused) left -= now - last
-    last = now
-    left <= 0 ? ok() : requestAnimationFrame(tick)
-  }
-  requestAnimationFrame(tick)
-})
-
-/* ── Cursor ── */
-let cx = 760, cy = 1120
-const place = (x, y) => { cx = x; cy = y; cursor.style.translate = `${x}px ${y}px` }
-place(cx, cy)
-/** Centre of an element (or a point inside it, as fractions) in window px. */
-function at(el, fx = .5, fy = .5) {
-  const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect()
-  return [(r.left - s.left + r.width * fx) / scale, (r.top - s.top + r.height * fy) / scale]
-}
-async function move(t, [x, y], ms) {
-  const d = Math.hypot(x - cx, y - cy)
-  ms ??= Math.min(1100, 380 + d * .75)
-  const a = cursor.animate([{ translate: `${cx}px ${cy}px` }, { translate: `${x}px ${y}px` }], { duration: ms, easing: 'cubic-bezier(.65, 0, .35, 1)', fill: 'forwards' })
-  const watch = setInterval(() => { if (t !== token) a.cancel(); else if (paused) a.pause(); else if (a.playState === 'paused') a.play() }, 50)
-  try { await a.finished } catch { throw new Stop() } finally { clearInterval(watch) }
-  if (t !== token) throw new Stop()
-  place(x, y); a.cancel()
-}
-let hovered = []
-function hover(...els) { hovered.forEach(e => e.classList.remove('is-hover')); hovered = els.filter(Boolean); hovered.forEach(e => e.classList.add('is-hover')) }
-async function click(t, el) {
-  cursor.classList.add('is-down'); el?.classList.add('is-press')
-  await sleep(130, t)
-  const ring = document.createElement('div'); ring.className = 'ring'; ring.style.translate = `${cx}px ${cy}px`
-  stage.append(ring); ring.addEventListener('animationend', () => ring.remove())
-  cursor.classList.remove('is-down'); el?.classList.remove('is-press')
-  await sleep(90, t)
-}
+/** The address bar for each screen: the portal, then the new material's record once it is reviewed. */
+const URLS = ['portal.filo.app', 'portal.filo.app', 'portal.filo.app', 'portal.filo.app/materials/BC-001']
 
 /* ── Scene state: each scene sets its screen from scratch, so a restart can begin anywhere. ── */
 function show(i) { screens.forEach((s, j) => s.classList.toggle('is-active', j === i)) }
@@ -692,14 +517,17 @@ function reset(i) {
   $('.record .more-found').classList.add('is-hidden')
   // Screen 4: nothing published.
   k('publish').classList.remove('is-done'); $('.caret')?.remove()
-  show(i)
+  show(i); setUrl(URLS[i])
 }
 function setProgress(p) { $('.bar i').style.setProperty('--p', p); $('.pct').textContent = `${Math.round(p * 100)}%` }
 
 /* ── The four scenes. ── */
 async function materials(t) {
   reset(0)
+  // Each loop opens on the public site, then signs in to the portal.
+  setUrl('filo.app', false)
   cursor.classList.remove('is-hidden')
+  await sleep(500, t); setUrl(URLS[0])
   await move(t, [690, 700], 900)
   hover(k('row-3')); await sleep(350, t)
   await move(t, at(k('row-2'), .5, .5), 420); hover(k('row-2')); await sleep(300, t)
@@ -755,7 +583,7 @@ async function extract(t) {
   // Progress fills; property values land row by row; each source turns to Processed.
   while (elapsed < dur) {
     await sleep(40, t)
-    const now = performance.now(); if (!paused) elapsed += now - last; last = now
+    const now = performance.now(); if (!isPaused()) elapsed += now - last; last = now
     const p = Math.min(1, elapsed / dur), e = 1 - Math.pow(1 - p, 1.6)
     setProgress(e)
     while (shown < rows.length && e > (shown + 1) / (rows.length + 1)) rows[shown++].classList.add('is-in')
@@ -794,51 +622,7 @@ async function review(t) {
   await sleep(300, t)
 }
 const scenes = [materials, upload, extract, review]
-
-async function run() {
-  const t = ++token
-  try {
-    cursor.classList.remove('is-hidden')
-    for (let i = 0; ; i = (i + 1) % scenes.length) await scenes[i](t)
-  } catch (e) { if (!(e instanceof Stop)) throw e }
-}
-
-/* ── Playback. Opened on its own, the prototype plays and loops. Embedded (the Filo case study), the
-   host page drives it, Momo-style: it posts { filoAppFlow: 'play' | 'pause' | 'restart' } and gets
-   { filoAppFlow: 'ready' } once the type has loaded, so it can send its current state. ── */
-let started = false
-function setPaused(p) {
-  paused = p
-  // Resume only what this pause stopped; finished animations (fill: forwards) stay put.
-  stage.getAnimations({ subtree: true }).forEach(a => p ? a.playState === 'running' && a.pause() : a.playState === 'paused' && a.play())
-}
-function play() {
-  if (reduce) return
-  if (started) return setPaused(false)
-  started = true; paused = false; run()
-}
-/** Back to the first screen with the cursor out of view; the next play starts the flow over. */
-function restart() {
-  setPaused(false)
-  token++; started = false
-  reset(0); place(760, 1120); cursor.classList.add('is-hidden')
-}
-
-await document.fonts.ready
-const embedded = parent !== window
-if (reduce) reset(0)
-else if (!embedded) play()
-else {
-  // The host's play/pause button covers the frame, so nothing in here takes focus.
-  document.body.inert = true
-  addEventListener('message', ({ source, origin, data }) => {
-    if (source !== parent || origin !== location.origin) return
-    if (data?.filoAppFlow === 'play') play()
-    else if (data?.filoAppFlow === 'pause') setPaused(true)
-    else if (data?.filoAppFlow === 'restart') restart()
-  })
-  parent.postMessage({ filoAppFlow: 'ready' }, location.origin)
-}
+boot({ scenes, home: () => reset(0) })
 </script>
 </body>
 </html>

@@ -34,6 +34,9 @@
 }
 .fss-visual { display: grid; justify-items: center; width: 100%; margin-top: 34px; min-width: 0; }
 
+/* Step 1's two prototypes, one above the other. */
+.fss-apps { display: grid; justify-items: center; row-gap: 56px; width: 100%; }
+
 /* Step 1: the desktop app prototype (AppFlow), framed like a window. The frame clips the cursor where
    it leaves the app, and its ground matches the app's so nothing flashes while the prototype loads.
    The playback toggle and replay button (VideoPlayback) sit on top, as on the Momo prototype. */
@@ -58,8 +61,17 @@
 /* Crops of the reference sit on a pure-white ground; multiply drops the white onto the page and keeps
    the shadows. */
 .fss-crop { display: block; max-width: none; height: auto; mix-blend-mode: multiply; user-select: none; pointer-events: none; }
-/* Capped at about the source's own size; the negative margin takes up the crop's empty top edge. */
-.fss-crop--box { width: min(100%, 320px); margin-top: -16px; translate: -.8% 0; }
+/* Step 2: the box closed → open → unwrapped, crossfading every --fss-box-cycle (Filo source steps ›
+   box › speed). The frames are transparent cut-outs on one canvas, each fading in over the last in
+   place; the open frame drops out once the unwrapped one covers it, so the return is one clean
+   unwrapped → closed fade. It plays only while the step is on screen, and holds unwrapped with
+   reduced motion. Box › scale sets the width; box › x / y nudge it in page px, like the phone. */
+.fss-box { position: relative; left: var(--fss-box-x, 0px); top: var(--fss-box-y, 0px); display: grid; width: min(100%, var(--fss-box-w, 489px)); margin-top: -8px; }
+.fss-box__frame { grid-area: 1 / 1; display: block; width: 100%; height: auto; user-select: none; pointer-events: none; }
+.fss-box__frame--open { animation: fss-box-open var(--fss-box-cycle, 9s) cubic-bezier(.45, 0, .25, 1) infinite; }
+.fss-box__frame--unwrapped { animation: fss-box-unwrapped var(--fss-box-cycle, 9s) cubic-bezier(.45, 0, .25, 1) infinite; }
+@keyframes fss-box-open { 0%, 22% { opacity: 0; } 30%, 58% { opacity: 1; } 66%, 100% { opacity: 0; } }
+@keyframes fss-box-unwrapped { 0%, 50% { opacity: 0; } 58%, 86% { opacity: 1; } 96%, 100% { opacity: 0; } }
 
 /* Step 3: a realistic phone (the Momo frame) whose screen loops, every --fss-cycle:
    scanning → tag detected (the tag tips toward the phone) → the Technical File. The loop runs only while
@@ -140,9 +152,9 @@
 @keyframes fss-file-layer { 0%, 55% { opacity: 0; translate: 0 22px; } 61%, 93% { opacity: 1; translate: 0 0; } 97%, 100% { opacity: 0; translate: 0 0; } }
 @keyframes fss-check-pop { 0%, 30% { scale: .55; } 35% { scale: 1.08; } 38%, 100% { scale: 1; } }
 @keyframes fss-tag-tap { 0%, 14% { translate: 0 0; rotate: 0deg; } 24%, 31% { translate: -22px 4px; rotate: -5deg; } 42%, 100% { translate: 0 0; rotate: 0deg; } }
-.fss-step:not([data-playing]) :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation-play-state: paused; }
+.fss-step:not([data-playing]) :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i, .fss-box__frame--open, .fss-box__frame--unwrapped) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
-  :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i) { animation: none; }
+  :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i, .fss-box__frame--open, .fss-box__frame--unwrapped) { animation: none; }
   .fss-layer--scan, .fss-layer--detect { opacity: 0; }
   .fss-layer--file { opacity: 1; }
 }

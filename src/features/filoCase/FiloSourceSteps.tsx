@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
-import { useTuning } from '../../tuning/useTuning'
+import { useTuningController } from '../../tuning/useTuning'
+import { EditableText } from '../../components/EditableText'
 import './filoSourceSteps.css'
 
 /**
@@ -126,14 +127,17 @@ const syncFlow = (frame: HTMLIFrameElement | null, state: FlowState) =>
   tellFlow(frame, state.visible && !state.userPaused ? 'play' : 'pause')
 
 /**
- * Step 1: the innovator's desktop app as a prototype (public/work/filo/filo-app-flow.html): a cursor
- * adds a material, from the library through upload and extraction to review and publish, then loops.
- * It runs in its own document so the app's generic class names (.card, .btn, .nav) never meet the
- * page's. Playback matches the Momo prototype: it plays while in view, clicking it pauses or plays,
- * the top-right button replays it, and once fully off screen it rewinds (clearing a pause) so the
- * next visit starts on the first screen.
+ * Step 1: the innovator's portal as two prototypes, one above the other. Each runs in its own document
+ * (public/work/filo/*.html) so the app's generic class names (.card, .btn, .nav) never meet the page's.
+ * Playback matches the Momo prototype: each plays while in view, clicking it pauses or plays, the
+ * top-right button replays it, and once fully off screen it rewinds (clearing a pause) so the next
+ * visit starts on its first screen.
  */
-function AppFlow() {
+const APP_FLOWS = [
+  { src: '/work/filo/filo-app-flow.html', title: 'Filo portal: a cursor adds Bacterial Cellulose, from the materials library through document upload and extraction to review and publish.' },
+  { src: '/work/filo/filo-app-share.html', title: 'Filo portal: the published Bacterial Cellulose record is shared as a link, written to an NFC tag for its physical sample, and sent by email.' },
+]
+function AppFlow({ src, title }: { src: string; title: string }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const live = useRef<FlowState>({ visible: false, userPaused: false })
@@ -175,8 +179,8 @@ function AppFlow() {
     <iframe
       ref={frameRef}
       className="fss-app__frame"
-      src="/work/filo/filo-app-flow.html"
-      title="Filo desktop app: a cursor adds Bacterial Cellulose, from the materials library through document upload and extraction to review and publish."
+      src={src}
+      title={title}
       loading="lazy"
       tabIndex={-1}
     />
@@ -195,24 +199,33 @@ function AppFlow() {
   </div>
 }
 
-const STEPS: { title: string; visual: ReactNode }[] = [
-  {
-    title: 'Material innovator\nprovides initial data.',
-    visual: <AppFlow />,
-  },
-  {
-    title: 'Sample arrives\nwith a Filo tag.',
-    visual: <img className="fss-crop fss-crop--box" src="/work/filo/steps/sample-box.webp" width={480} height={545} loading="lazy" decoding="async"
-      alt="An opened recycled-card sample box holding a folded cellulose swatch." />,
-  },
-  {
-    title: 'Technical designer taps the tag.\nThe Technical File opens.',
-    visual: <TapPhone />,
-  },
+/** Step 2: the shipped box arrives closed, opens on the wrapped sample and welcome card, then unwraps
+    to the sample and its Filo tag, on a loop. The photos are cut out on one 1100 × 696 frame (the open
+    ones at 1.5×), each registered to the same tray, so only the lid and contents change. The frame is
+    wider than the box to fit the unwrapped photo's card and tissue. */
+const BOX_FRAME = { w: 1100, h: 696, boxW: 720 }
+function SampleBox() {
+  return <div className="fss-box" role="img" aria-label="A kraft Filo box arrives closed, opens on a tissue-wrapped sample with a welcome card, then unwraps to the material sample wearing its Filo tag.">
+    <img className="fss-box__frame" src="/work/filo/steps/sample-box-closed.webp" width={BOX_FRAME.w} height={BOX_FRAME.h} alt="" loading="lazy" decoding="async" />
+    <img className="fss-box__frame fss-box__frame--open" src="/work/filo/steps/sample-box-open.webp" width={BOX_FRAME.w} height={BOX_FRAME.h} alt="" loading="lazy" decoding="async" />
+    <img className="fss-box__frame fss-box__frame--unwrapped" src="/work/filo/steps/sample-box-unwrapped.webp" width={BOX_FRAME.w} height={BOX_FRAME.h} alt="" loading="lazy" decoding="async" />
+  </div>
+}
+
+const VISUALS: ReactNode[] = [
+  <div className="fss-apps">{APP_FLOWS.map((flow) => <AppFlow key={flow.src} {...flow} />)}</div>,
+  <SampleBox />,
+  <TapPhone />,
 ]
 
 type Tuple = [number, number, number, number]
 const CONFIG = {
+  /** Step titles; edit them on the page in dev (each saves to tuning.json). */
+  titles: {
+    step1: { type: 'text' as const, default: 'Material innovator\nprovides initial data.' },
+    step2: { type: 'text' as const, default: 'Sample arrives\nwith a Filo tag.' },
+    step3: { type: 'text' as const, default: 'Technical designer taps the tag.\nThe Technical File opens.' },
+  },
   /** Step 3's phone and tag, as one group. Defaults centre the group under its number and title. */
   phone: {
     /** Size of the phone and tag together (1 = the 272px phone). */
@@ -221,10 +234,20 @@ const CONFIG = {
     x: [0, -200, 200, 1] as Tuple,
     y: [0, -200, 200, 1] as Tuple,
   },
+  /** Step 2's box loop. Defaults centre the box under its number and title. */
+  box: {
+    /** Size of the box (1 = the box 320px wide; never wider than the column). */
+    scale: [1, 0.5, 2, 0.01] as Tuple,
+    /** Playback speed of the closed → open → unwrapped loop (1 = one cycle every 9s, 2 = twice as fast). */
+    speed: [1, 0.25, 3, 0.05] as Tuple,
+    /** Move from the centred spot (px): positive x goes right, positive y goes down. */
+    x: [0, -200, 200, 1] as Tuple,
+    y: [0, -200, 200, 1] as Tuple,
+  },
 }
 
 export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: number } }) {
-  const dials = useTuning('Filo source steps', CONFIG)
+  const { values: dials, setValue } = useTuningController('Filo source steps', CONFIG)
   const ref = useRef<HTMLOListElement>(null)
   // The phone's CSS loop runs only while its step is on screen, so it starts on "scanning" when the
   // reader reaches it. Step 1's prototype watches itself (AppFlow).
@@ -251,14 +274,22 @@ export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: n
       '--fss-phone-scale': dials.phone.scale,
       '--fss-phone-x': `${dials.phone.x}px`,
       '--fss-phone-y': `${dials.phone.y}px`,
+      '--fss-box-cycle': `${9 / dials.box.speed}s`,
+      // The frame is wider than the box, so scale it to keep the box itself at 320px × scale.
+      '--fss-box-w': `${320 * dials.box.scale * BOX_FRAME.w / BOX_FRAME.boxW}px`,
+      '--fss-box-x': `${dials.box.x}px`,
+      '--fss-box-y': `${dials.box.y}px`,
     } as CSSProperties}
   >
     <ol ref={ref} className="fss-steps">
-      {STEPS.map((step, i) => <li key={i} className="fss-step">
-        <span className="fss-num case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')}</span>
-        <h3 className="fss-title">{step.title}</h3>
-        <div className="fss-visual">{step.visual}</div>
-      </li>)}
+      {VISUALS.map((visual, i) => {
+        const key = `step${i + 1}` as keyof typeof CONFIG.titles
+        return <li key={key} className="fss-step">
+          <span className="fss-num case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')}</span>
+          <EditableText as="h3" className="fss-title" label={`Step ${i + 1} title`} value={dials.titles[key]} onChange={next => setValue(`titles.${key}`, next)} />
+          <div className="fss-visual">{visual}</div>
+        </li>
+      })}
     </ol>
   </section>
 }

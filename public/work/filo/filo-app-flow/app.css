@@ -1,0 +1,138 @@
+/* Shared by the Filo portal prototypes (filo-app-flow.html, filo-app-share.html): the window, its
+   title bar and address bar, the sidebar, the shared controls, and the cursor. */
+
+/* The app's interface type (Satoshi variable, Fontshare, free licence), kept local so the pages work offline. */
+@font-face { font-family: Satoshi; src: url('Satoshi-Variable.woff2') format('woff2'); font-weight: 300 900; font-display: block; }
+
+:root {
+  --ink: #141414;
+  --text: #232323;
+  --muted: #6f6f71;
+  --faint: #98989b;
+  --line: #ececec;
+  --card: #fcfcfc;
+  --card-line: #ebebeb;
+  --well: #f4f4f4;
+  --app: #f9f9f9;
+  --side: #f5f5f5;
+  --btn-dark: #181818;
+  --btn-dark-hover: #333;
+  --hover: #f1f1f1;
+  --green: #1f7a32;
+  --green-bg: #e7f3e8;
+  --amber: #dc961f;
+  --amber-bg: #fcf0d8;
+  --blue: #3d91f4;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-move: cubic-bezier(.65, 0, .35, 1);
+}
+* { box-sizing: border-box; }
+/* The page is the window: built at its source size (1536 × 1024) and scaled to fill the frame. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--app); -webkit-font-smoothing: antialiased; }
+.stage { position: absolute; top: 0; left: 0; width: 1536px; height: 1024px; transform-origin: 0 0; }
+.window {
+  position: absolute; inset: 0; overflow: hidden; background: var(--app);
+  font-family: Satoshi, system-ui, sans-serif; font-weight: 450; color: var(--text); font-size: 15px; letter-spacing: -.005em;
+  cursor: default; user-select: none;
+}
+.window img { display: block; }
+/* Zero specificity, so every button class below wins over this reset. */
+:where(.window) button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; }
+.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Title bar, address bar and sidebar: shared by every screen. */
+.titlebar { position: absolute; top: 0; left: 0; right: 0; height: 48px; background: #f1f1f1; border-bottom: 1px solid #ebebeb; z-index: 2; }
+.lights { position: absolute; left: 19px; top: 18px; display: flex; gap: 9px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #fe5f57; }
+.lights i:nth-child(2) { background: #febc2e; }
+.lights i:nth-child(3) { background: #28c840; }
+/* A browser address bar, so the portal reads as a web app, not a desktop application. */
+.urlbar { position: absolute; left: 50%; top: 8px; translate: -50% 0; width: 560px; height: 32px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 9px; background: #e6e6e6; color: #6f6f71; font-size: 15px; overflow: hidden; }
+.urlbar .lock { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.urlbar .url { white-space: nowrap; transition: opacity .18s ease; }
+.urlbar .url b { font-weight: 520; color: #232323; }
+.urlbar .url.is-out { opacity: 0; }
+/* A page load: a thin line runs along the bar's bottom edge, then fades. */
+.urlbar .load { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--blue); transform-origin: 0 50%; scale: 0 1; opacity: 0; }
+.sidebar { position: absolute; top: 48px; bottom: 0; left: 0; width: 226px; background: var(--side); border-right: 1px solid #efefef; }
+.sidebar .logo { position: absolute; left: 37px; top: 42px; height: 30px; width: auto; }
+.nav { position: absolute; top: 112px; left: 20px; right: 18px; display: grid; gap: 8px; }
+.nav a { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 18px; border-radius: 10px; color: #545456; font-size: 15.5px; text-decoration: none; transition: background-color .15s ease, color .15s ease; }
+.nav a[aria-current] { background: #ececec; color: var(--ink); font-weight: 520; }
+.nav a:hover, .nav a.is-hover { background: #eeeeee; color: var(--ink); }
+.account { position: absolute; left: 28px; right: 16px; bottom: 46px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 6px; margin-left: -6px; border-radius: 10px; font-size: 13.5px; color: #2b2b2b; white-space: nowrap; transition: background-color .15s ease; }
+.account:hover { background: #eeeeee; }
+.avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #e7e7e7; font-size: 13px; font-weight: 550; color: #333; }
+.account .ic { width: 16px; height: 16px; margin-left: auto; color: #555; }
+
+/* Main area: the screens stack here; only the active one shows. */
+.main { position: absolute; top: 48px; left: 226px; right: 0; bottom: 0; }
+/* A screen's box spans the window from its left edge, so it passes the pointer through to the sidebar. */
+.screen { position: absolute; inset: 0; opacity: 0; visibility: hidden; translate: 0 10px; pointer-events: none; transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), visibility 0s linear .32s; }
+.screen > * { pointer-events: auto; }
+.screen.is-active { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .38s var(--ease-out) .06s, translate .38s var(--ease-out) .06s, visibility 0s; }
+.abs { position: absolute; }
+
+/* Shared parts. */
+.h1 { margin: 0; font-size: 34px; font-weight: 620; letter-spacing: -.025em; color: #0d0d0d; line-height: 1.1; }
+.sub { margin: 0; color: #8a8a8d; font-size: 18.5px; letter-spacing: -.01em; }
+.crumbs { display: flex; align-items: center; gap: 10px; font-size: 14.5px; color: #8d8f95; }
+.crumbs .ic { width: 14px; height: 14px; color: #8d8f95; }
+.crumbs b { font-weight: 450; color: #2a2a2a; }
+.card { background: var(--card); border: 1px solid var(--card-line); border-radius: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / .02); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 0 22px; border-radius: 10px; border: 1px solid #e3e3e3; background: #fff; font-size: 15.5px; font-weight: 520; color: #151515; transition: background-color .15s ease, border-color .15s ease, scale .12s ease, box-shadow .15s ease, opacity .2s ease; box-shadow: 0 1px 2px rgb(0 0 0 / .03); }
+.btn:hover, .btn.is-hover { background: #f4f4f4; border-color: #d6d6d6; }
+.btn--dark { background: var(--btn-dark); border-color: var(--btn-dark); color: #fff; }
+.btn--dark:hover, .btn--dark.is-hover { background: var(--btn-dark-hover); border-color: var(--btn-dark-hover); }
+.btn:active, .btn.is-press { scale: .97; }
+.btn[disabled] { opacity: .35; pointer-events: none; }
+.btn .ic { width: 18px; height: 18px; }
+.icon-btn { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; color: #444; transition: background-color .15s ease; }
+.icon-btn:hover, .icon-btn.is-hover { background: #efefef; }
+.icon-btn .ic { width: 18px; height: 18px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; height: 26px; padding: 0 11px; border-radius: 8px; font-size: 14px; font-weight: 480; white-space: nowrap; }
+.pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill--draft { background: var(--amber-bg); color: #3a2c12; }
+.pill--draft::before { background: var(--amber); }
+.pill--pub { background: var(--green-bg); color: #0f3f17; }
+.pill--pub::before { background: #16852b; }
+.pill--grey { background: #f0f0f0; color: #4a4a4a; }
+.pill--grey::before { background: #8a8a8a; }
+.pill--ready { background: var(--green-bg); color: #145c20; height: 30px; padding: 0 13px; font-size: 15px; }
+.pill--ready::before { background: #138021; }
+.tag { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 13px; background: #f0f1f2; font-size: 13.5px; color: #444; }
+.well { background: var(--well); border-radius: 12px; }
+.chev { width: 18px; height: 18px; color: #777; }
+.thumb { border-radius: 9px; object-fit: cover; }
+.doc-thumb { border-radius: 6px; object-fit: cover; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .05), 0 4px 10px -4px rgb(0 0 0 / .18); }
+.count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px; background: #efefef; font-size: 12.5px; color: #555; }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid #e8e8e8; font-size: 15px; color: #6c6c6e; }
+.tabs button { position: relative; height: 40px; padding: 0 2px; margin-right: 30px; border: 0; background: none; display: inline-flex; align-items: center; gap: 10px; transition: color .15s ease; }
+.tabs button:hover, .tabs button.is-hover { color: #111; }
+.tabs button[aria-selected='true'] { color: #0d0d0d; font-weight: 540; }
+.tabs button[aria-selected='true']::after { content: ''; position: absolute; left: -4px; right: -4px; bottom: -1px; height: 2px; border-radius: 2px; background: #111; }
+.caret { display: inline-block; width: 1.5px; height: 18px; margin-left: 1px; vertical-align: middle; background: #111; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes spin { to { rotate: 360deg; } }
+
+.toast { position: absolute; left: 50%; bottom: 40px; translate: -50% 16px; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 20px 0 14px; border-radius: 12px; background: #181818; color: #fff; font-size: 15px; font-weight: 480; opacity: 0; transition: opacity .25s var(--ease-out), translate .3s var(--ease-out); z-index: 5; }
+.toast i { width: 22px; height: 22px; border-radius: 50%; background: #25a246 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 12.5 3.2 3.2L17 9'/%3E%3C/svg%3E") center / 14px no-repeat; }
+.toast.is-on { opacity: 1; translate: -50% 0; }
+
+/* Things that arrive (file rows, preview cards). */
+.enter { opacity: 0; translate: 0 8px; }
+.enter.is-in { opacity: 1; translate: 0 0; transition: opacity .35s var(--ease-out), translate .35s var(--ease-out); }
+
+/* The cursor: a translucent circle. It shrinks while pressed and leaves a ring where it clicks. */
+.cursor { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 20; pointer-events: none; transition: opacity .3s ease; }
+.cursor .dot { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; background: rgb(30 30 30 / .2); box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / .55), 0 2px 8px rgb(0 0 0 / .12); backdrop-filter: blur(1.5px); transition: scale .14s var(--ease-out), background-color .14s ease; }
+.cursor.is-down .dot { scale: .78; background: rgb(30 30 30 / .32); }
+.cursor.is-hidden { opacity: 0; }
+.ring { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgb(30 30 30 / .35); pointer-events: none; z-index: 19; animation: ring .5s var(--ease-out) forwards; }
+@keyframes ring { from { scale: .6; opacity: 1; } to { scale: 1.9; opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen, .screen.is-active, .enter.is-in, .toast, .btn, .cursor, .urlbar .url { transition: none; }
+  .caret { animation: none; }
+}
