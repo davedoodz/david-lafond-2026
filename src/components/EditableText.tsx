@@ -105,6 +105,45 @@ function syncLinks(el: HTMLElement, links: readonly TextLink[]) {
   }
 }
 
+/** Collapsed range at a screen point (Chrome/Safari `caretRangeFromPoint`, Firefox `caretPositionFromPoint`). */
+function caretAt(x: number, y: number): { node: Node; offset: number } | null {
+  if (document.caretPositionFromPoint) {
+    const position = document.caretPositionFromPoint(x, y)
+    return position && { node: position.offsetNode, offset: position.offset }
+  }
+  const range = document.caretRangeFromPoint?.(x, y)
+  return range && { node: range.startContainer, offset: range.startOffset }
+}
+
+/**
+ * Dev, touch screens (and the browser's phone emulation, where mouse drags become touches): once a
+ * text is focused for editing, dragging a finger across it selects instead of scrolling the page
+ * (`.is-editable:focus` has `touch-action: none`), so a phrase can be selected and typed over. A tap
+ * still places the caret; drag outside the text, or tap elsewhere to leave it, to scroll.
+ */
+function installTouchSelect() {
+  let anchor: { node: Node; offset: number } | null = null
+  let field: HTMLElement | null = null
+  addEventListener('pointerdown', (event) => {
+    anchor = field = null
+    if (event.pointerType !== 'touch' || !(event.target instanceof Element)) return
+    const el = event.target.closest<HTMLElement>('.is-editable')
+    if (!el || document.activeElement !== el) return
+    const start = caretAt(event.clientX, event.clientY)
+    if (start && el.contains(start.node)) [anchor, field] = [start, el]
+  }, true)
+  addEventListener('pointermove', (event) => {
+    if (!anchor || !field || event.pointerType !== 'touch') return
+    const end = caretAt(event.clientX, event.clientY)
+    if (!end || !field.contains(end.node)) return
+    document.getSelection()?.setBaseAndExtent(anchor.node, anchor.offset, end.node, end.offset)
+  }, true)
+  const stop = () => { anchor = field = null }
+  addEventListener('pointerup', stop, true)
+  addEventListener('pointercancel', stop, true)
+}
+if (import.meta.env.DEV && typeof window !== 'undefined') installTouchSelect()
+
 export function EditableText({ as = 'div', value, onChange, className, id, label, enter, selectable, links }: Props) {
   const ref = useRef<HTMLElement>(null)
   const text = clean(value)

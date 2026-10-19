@@ -299,6 +299,11 @@ textarea,
   user-select: text;
 }
 
+/* Dev: a finger dragging across text being edited selects it (EditableText) instead of scrolling. */
+.is-editable:focus {
+  touch-action: none;
+}
+
 /* Text selection. The fill is drawn by <SelectionHighlight> (one white layer in
    `difference` blend, sized to each run's full glyph box) because the native fill
    is only line-height tall — with this type's tight leading it clipped
