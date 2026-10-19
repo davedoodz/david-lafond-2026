@@ -10,7 +10,8 @@ import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
 import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
 import { useEntrance } from '../lib/useEntrance'
-import { DOME_CURVES, domeClip } from '../lib/domeClip'
+import { DOME_CURVES } from '../lib/domeClip'
+import { SAVED_TOUCH_ARC, TOUCH_LANDING, smallViewportHeight, touchArcClip } from '../lib/touchLanding'
 import { useFitColumn } from '../lib/useFitColumn'
 import { revealDials, useReveal } from '../lib/useReveal'
 import { storyEntranceDials, useStoryEntrance } from '../features/storyEntrance/storyEntrance'
@@ -175,25 +176,34 @@ export function AboutPage() {
   useReveal(playRef, '.pg-card', t.reveal, revealRun)
 
   // "My playground" sits as far below the dark sheet's top edge as "Selected projects" does on Home.
-  // It stays in flow (the cards never move); only its own offset is set, re-measured on resize.
+  // Touch screens: like Home's label, it is centred between the sheet's top edge (the arc's tip) and
+  // the first row of cards. It stays in flow (the cards never move); only its own offset is set.
   useLayoutEffect(() => {
     const dark = darkRef.current
     const title = playTitleRef.current
     if (!dark || !title) return
     const mobile = window.matchMedia('(max-width: 640px)')
+    const touch = window.matchMedia(TOUCH_LANDING)
     const place = () => {
       title.style.top = '0px'
-      const natural = title.getBoundingClientRect().top - dark.getBoundingClientRect().top
-      const want = mobile.matches ? SHEET_LABEL_TOP.mobile : SHEET_LABEL_TOP.desktop
+      const edge = dark.getBoundingClientRect().top
+      const box = title.getBoundingClientRect()
+      const natural = box.top - edge
+      const grid = playRef.current?.querySelector('.pg-grid')
+      const want = touch.matches && grid
+        ? (grid.getBoundingClientRect().top - edge) / 2 - box.height / 2
+        : mobile.matches ? SHEET_LABEL_TOP.mobile : SHEET_LABEL_TOP.desktop
       title.style.top = `${want - natural}px`
     }
     place()
     const observer = new ResizeObserver(place)
     observer.observe(dark)
     mobile.addEventListener('change', place)
+    touch.addEventListener('change', place)
     return () => {
       observer.disconnect()
       mobile.removeEventListener('change', place)
+      touch.removeEventListener('change', place)
     }
   }, [])
 
@@ -209,6 +219,7 @@ export function AboutPage() {
     }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let frame = 0
+    let svh = smallViewportHeight()
     const update = () => {
       frame = 0
       const vh = window.innerHeight
@@ -221,16 +232,14 @@ export function AboutPage() {
       // time the sheet top reaches the top of the screen (the snap stop).
       const peek = mobile ? dome.peekMobile : dome.peekDesktop
       const rest = vh - peek
-      if (mobile) {
-        // Mobile: the Selected works morph — one progress value drives side, arch
-        // and corners together through the shared domeClip, so the shape never
-        // steps mid-scroll. Travel is capped at the rest distance so it is fully
-        // flat when the sheet snaps to the top (no page showing at the corners).
+      if (window.matchMedia(TOUCH_LANDING).matches) {
+        // Touch screens: the Work page's white arc (same saved touchArc curve), flattened by one
+        // progress value. Travel is capped at the rest distance so it is fully flat when the
+        // sheet snaps to the top (no page showing at the corners).
         const travel = Math.min(shape.enterDistance * vh, rest)
         // +1px: a sub-pixel snap position still counts as fully flat.
         const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest + 1 - sheet.getBoundingClientRect().top) / travel)))
-        const side = (shape.side * (1 - e) * vw) / 100
-        sheet.style.setProperty('--dome-clip', domeClip(side, { radius: shape.radius, arch: shape.arch }, 1 - e, { radius: 0, arch: 0 }, 0, vh))
+        sheet.style.setProperty('--dome-clip', touchArcClip(SAVED_TOUCH_ARC, sheet, svh, 1 - e, 0))
         return
       }
       const travel = Math.min(shape.enterDistance * vh, rest)
@@ -252,12 +261,20 @@ export function AboutPage() {
       if (!frame) frame = requestAnimationFrame(update)
     }
     update()
+    const resize = () => {
+      svh = smallViewportHeight()
+      schedule()
+    }
+    // The touch arc's clip is drawn in px over the sheet's box, so redraw when the sheet resizes.
+    const sized = new ResizeObserver(schedule)
+    sized.observe(sheet)
     window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
+    window.addEventListener('resize', resize)
     return () => {
       cancelAnimationFrame(frame)
+      sized.disconnect()
       window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
+      window.removeEventListener('resize', resize)
     }
     // `domeKey` captures every dome dial.
     // eslint-disable-next-line react-hooks/exhaustive-deps

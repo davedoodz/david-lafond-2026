@@ -184,10 +184,11 @@
   padding-left: var(--edge);
   padding-right: 35px;
 }
-/* Phones: the Work page lines the first link up with its hero text (useHeroFit sets --nav-start). */
+/* Phones: every page starts its first link where the Work hero's text starts (lib/navAlign).
+   24px is the Work hero's phone inset; the fallbacks match the current hero copy. */
 @media (max-width: 640px) {
   .nav[data-ghost-side='end'] {
-    padding-left: var(--nav-start, var(--edge));
+    padding-left: max(24px, min(50% - var(--nav-half, 166.8px), 100% - 24px - var(--nav-wide, 357.3px)));
   }
 }
 .nav[data-ghost-side='end'] .nav__start {

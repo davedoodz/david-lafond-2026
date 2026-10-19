@@ -7,6 +7,10 @@
   --case-reading: 680px;
   --case-story-reading: 410px;
   background: var(--paper);
+  /* Phone mocks that bleed past the screen edge must not widen a phone's layout viewport (the page
+     would pan sideways and the nav would sit off its alignment). body's clip propagates to the
+     viewport, which phones ignore when sizing the layout, so the page clips its own content. */
+  overflow-x: clip;
 }
 
 /* Page › text size. Compact is the portfolio default; the other modes are comparison tools. */

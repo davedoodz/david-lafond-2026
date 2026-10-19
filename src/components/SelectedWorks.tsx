@@ -16,9 +16,9 @@
  */
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
-import { DOME_CURVES, arcClip, domeClip } from '../lib/domeClip'
+import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
-import { TOUCH_ARCS, TOUCH_LANDING as TOUCH, smallViewportHeight, touchDome } from '../lib/touchLanding'
+import { TOUCH_ARCS, TOUCH_LANDING as TOUCH, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
 import saved from '../data/tuning.json'
 import { useTuningController } from '../tuning/useTuning'
 import { EditableText } from './EditableText'
@@ -218,13 +218,7 @@ export function SelectedWorks() {
       // Mirror: the bottom is as domed at `peek` below the viewport top as the top is at `peek` above its bottom.
       const bottom = reduced ? 0 : 1 - curve(clamp01((rect.bottom - peek) / travel))
       if (touch.matches) {
-        const ellipse = touchArc.preset === 'Ellipse (before)'
-        const height = ellipse ? 0.36 : touchArc.preset === 'Custom' ? touchArc.height / 100 : TOUCH_ARCS[touchArc.preset as keyof typeof TOUCH_ARCS] ?? TOUCH_ARCS.Soft
-        const { arch } = touchDome(svh, height)
-        const clip = ellipse
-          ? domeClip(0, { radius: 0, arch: (arch / vh) * 100 }, top, { radius: 0, arch: (arch / vh) * 100 }, bottom, vh)
-          : arcClip(bg.offsetWidth, bg.offsetHeight, arch * top, arch * bottom)
-        bg.style.setProperty('--works-clip', clip)
+        bg.style.setProperty('--works-clip', touchArcClip(touchArc, bg, svh, top, bottom))
         return
       }
       const shape = { radius: morph.startRadius, arch: morph.startArch }
@@ -240,11 +234,15 @@ export function SelectedWorks() {
     }
 
     update()
+    // The touch arc's clip is drawn in px over the background's box, so redraw when it resizes.
+    const sized = new ResizeObserver(schedule)
+    sized.observe(bg)
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', resize)
     touch.addEventListener('change', resize)
     return () => {
       cancelAnimationFrame(frame)
+      sized.disconnect()
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', resize)
       touch.removeEventListener('change', resize)

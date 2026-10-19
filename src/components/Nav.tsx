@@ -5,7 +5,11 @@ import { ArrowDownIcon, ArrowUpRightIcon, ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
 import { isLightUnder } from '../lib/surface'
 import { useTuning } from '../tuning/useTuning'
+import { restoreNavAlign } from '../lib/navAlign'
 import './Nav.css'
+
+// Phones: line the first link up with the Work hero's text, from the last measurement (lib/navAlign).
+restoreNavAlign()
 
 type Props = { route: Route }
 

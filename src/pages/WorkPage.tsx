@@ -4,6 +4,7 @@ import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
 import { DEFAULT_INTRO_TEXT, WorkIntroStickers, introLineSpan } from '../features/workStickers/WorkIntroStickers'
 import { TOUCH_LANDING, smallViewportHeight, touchDome } from '../lib/touchLanding'
+import { publishNavAlign } from '../lib/navAlign'
 import { Signature } from '../features/signature/Signature'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
@@ -110,11 +111,7 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     }
     const center = () => {
       // A centre-aligned hero is already centred line by line.
-      if (hero.dataset.align === 'center') {
-        hero.style.removeProperty('--hero-center-x')
-        document.documentElement.style.removeProperty('--nav-start')
-        return
-      }
+      if (hero.dataset.align === 'center') return hero.style.removeProperty('--hero-center-x')
       // Painted line widths at the fitted size: the title and role are fixed, the intro ranges with its pills.
       const fixed = Math.max(...['.hero__title', '.hero__role'].map((s) => textWidth(hero.querySelector(s))))
       const [narrow, wide] = introLineSpan(hero).map((w) => Math.max(fixed, w))
@@ -127,8 +124,12 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       const target = Math.min(vw / 2 - (narrow + wide) / 4, vw - inset - wide)
       const start = Math.max(inset, target)
       hero.style.setProperty('--hero-center-x', `${(start - left).toFixed(1)}px`)
-      // Phones: the nav's first link lines up with the hero text (Nav.css).
-      document.documentElement.style.setProperty('--nav-start', `${start.toFixed(1)}px`)
+      // Every page's phone nav follows this start (lib/navAlign): the same lengths at full type size.
+      const bodyFit = parseFloat(hero.style.getPropertyValue('--hero-body-fit')) || 1
+      const titleFit = parseFloat(hero.style.getPropertyValue('--hero-title-fit')) || 1
+      const fixedFull = Math.max(textWidth(hero.querySelector('.hero__title')) / titleFit, textWidth(hero.querySelector('.hero__role')) / bodyFit)
+      const [narrowFull, wideFull] = introLineSpan(hero).map((w) => Math.max(fixedFull, w / bodyFit))
+      publishNavAlign((narrowFull + wideFull) / 4, wideFull)
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
     fit()
@@ -148,7 +149,6 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       removeEventListener('resize', schedule)
       touch.removeEventListener('change', schedule)
       resize.disconnect()
-      document.documentElement.style.removeProperty('--nav-start')
     }
   }, [heroRef, key])
 }
