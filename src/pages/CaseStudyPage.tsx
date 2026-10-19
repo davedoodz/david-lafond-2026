@@ -112,7 +112,9 @@ function LogoRow({ l, id }: { l: Logos; id: Id }) {
     </div>
   )
 }
-type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; media: Media; textReveal?: TextReveal }
+/** Filo mark above a section title (FILO_CONFIG.outcomes.mark); the hero has its own page-level mark. */
+type SectionMark = { show: boolean; logo: 'Loop f' | 'Tall l'; scale: number; gap: number }
+type Section = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; media: Media; textReveal?: TextReveal; mark?: SectionMark }
 type Moment = { eyebrow: string; captionDetect: string; captionNotify: string; captionFocus: string; height: number; zoom: number; drift: number; showScreen: boolean }
 
 /**
@@ -591,6 +593,16 @@ export function CaseStudyPage({ id }: Props) {
               style={{ '--mark-x': `${mark.x}px`, '--mark-y': `${mark.y}px`, '--mark-scale': mark.scale } as CSSProperties}
             />
           )}
+          {!isHero && s.mark?.show && (
+            <img
+              className="case__section-mark"
+              src={s.mark.logo === 'Tall l' ? '/work/filo/filo-mark-2.webp' : '/work/filo/filo-mark.webp'}
+              alt=""
+              width={s.mark.logo === 'Tall l' ? 1090 : 990}
+              height={s.mark.logo === 'Tall l' ? 564 : 466}
+              style={{ '--mark-scale': s.mark.scale, '--mark-gap': `${s.mark.gap}px` } as CSSProperties}
+            />
+          )}
           {isHero && logos?.show && logos.placement === 'eyebrow' ? (
             <LogoRow l={logos} id={id} />
           ) : isHero && id === 'momo' ? (
@@ -605,7 +617,7 @@ export function CaseStudyPage({ id }: Props) {
                 Replay intro
               </span>
             </button>
-          ) : isHero && mark?.show && !s.eyebrow ? null : (
+          ) : (isHero ? mark?.show : s.mark?.show) && !s.eyebrow ? null : (
             // Under the Filo mark an empty eyebrow renders nothing: in dev an empty editable still takes a
             // line (production collapses it), which made dev and the live hero space differently.
             <EditableText className="case__eyebrow eyebrow" label={`${key} eyebrow`} value={s.eyebrow} onChange={edit(`${key}.eyebrow`)} />

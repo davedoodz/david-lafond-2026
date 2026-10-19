@@ -310,7 +310,7 @@
 </div>
 
 <script type="module">
-import { $, $$, k, W, H, cursor, reduce, isPaused, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
+import { $, $$, k, W, H, cursor, reduce, playRate, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
 const page = k('page'), tabs = k('tabs')
 
 /* ── Scene state: each scene sets its screen from scratch, so a restart can begin anywhere. ── */
@@ -339,7 +339,7 @@ async function glide(t, el, to, ms) {
   while (e < ms) {
     await sleep(0, t)
     const now = performance.now()
-    if (!isPaused()) e += Math.min(50, now - last)
+    e += Math.min(50, now - last) * playRate()
     last = now
     const p = Math.min(1, e / ms)
     el.scrollTop = from + (to - from) * (p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2)

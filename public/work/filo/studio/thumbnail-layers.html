@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filo · thumbnail layers: phone, tag, desktop, and products that turn into fabric</title>
+<style>
+/* The Filo work card at its real size (867 × 493, src/components/SelectedWorks.css), with the catalog wall from
+   src/components/FiloCard.tsx ported as-is: three tilted rails, linen glass, 4.5 fps turntables, no product twice.
+   On top, Momo-style layers (src/components/MomoThumb.tsx): the phone on the left and the portal on the right play
+   short snippets cut from the case study prototypes; the tag sits in the middle. Behind them, each product turns
+   into a swatch of fabric in its own colour, then back. */
+@font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+:root { --ink: #171717; --text: #666; --mute: #9a9a97; --line: #e4e4e1; --page: #f5f5f5; --cord: #965b40; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif; letter-spacing: -0.2px; }
+header { max-width: 1100px; margin: 0 auto; padding: 56px 40px 8px; }
+header h1 { margin: 0; font-size: 22px; font-weight: 500; }
+header p { margin: 6px 0 0; color: var(--text); font-size: 15px; max-width: 760px; line-height: 1.5; }
+header p.note { font-size: 13.5px; color: var(--mute); }
+
+/* ── Controls ── */
+.controls { position: sticky; top: 0; z-index: 20; background: rgb(245 245 245 / 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.controls__in { max-width: 1100px; margin: 0 auto; padding: 12px 40px; display: flex; flex-wrap: wrap; gap: 10px 22px; }
+.ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ctl > span { color: var(--mute); }
+.seg { display: flex; background: #e9e9e6; border-radius: 8px; padding: 2px; }
+.seg button { all: unset; cursor: pointer; padding: 4px 9px; border-radius: 6px; color: #555; font-size: 12.5px; white-space: nowrap; }
+.seg button[aria-pressed='true'] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.seg button:focus-visible { outline: 2px solid #8ab; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 28px 40px 96px; display: grid; gap: 60px; }
+figure { margin: 0; }
+figcaption { margin: 0 auto 10px; width: 867px; }
+figcaption b { display: block; font-size: 15px; font-weight: 500; }
+figcaption b span { color: var(--mute); font-weight: 400; margin-right: 8px; font-variant-numeric: tabular-nums; }
+figcaption small { display: block; margin-top: 4px; color: var(--text); font-size: 13.5px; line-height: 1.45; max-width: 640px; }
+
+/* ── The card ── */
+.card { position: relative; width: 867px; height: 493px; margin: 0 auto; border-radius: 24px; overflow: clip; contain: layout paint;
+  background: #ece6dc; box-shadow: 0 0 54.5px 16px rgb(23 23 23 / 0.15); }
+.glow { position: absolute; width: 70%; aspect-ratio: 1; opacity: 0.9; pointer-events: none; }
+.glow--a { left: -15%; top: -25%; background: radial-gradient(closest-side, #d6c7b4 45%, transparent); }
+.glow--b { right: -20%; bottom: -35%; background: radial-gradient(closest-side, #c3b19c 45%, transparent); }
+.wall { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.tile { position: absolute; left: 0; top: 0; visibility: hidden; border-radius: var(--tile-radius, 16px);
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.29), rgb(255 255 255 / 0.17));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.42), inset 0 0 0 1px rgb(255 255 255 / 0.231), 0 10px 24px rgb(60 45 30 / 0.08);
+  will-change: transform; }
+.tile canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rings { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.rings circle { fill: none; stroke: #fff; stroke-width: 1.5; opacity: 0; }
+/* A soft light pool behind the layers, so they read over the wall without hiding it. */
+.pool { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60% 70% at var(--px, 50%) var(--py, 45%), rgb(244 239 231 / var(--pool, 0.55)), transparent 70%); }
+.card-shade { position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background-image: linear-gradient(in oklab 180deg, oklab(20.5% 0 0 / 0%) 50%, oklab(20.5% 0 0) 92.5%); opacity: 0.45; z-index: 5; }
+.card-title { position: absolute; left: 45px; right: 45px; bottom: 35px; margin: 0; z-index: 6; font-family: 'Beatrice', 'Filo Inter', sans-serif;
+  font-size: 20px; line-height: 1.2; font-weight: 400; color: #f5f5f5; text-shadow: 0 0 14px rgb(255 255 255 / 0.35); letter-spacing: -0.01em; pointer-events: none; }
+.fg { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+body[data-layers='off'] .fg, body[data-layers='off'] .pool { display: none; }
+
+/* Phone: the case study's frame (Momo's phone-frame.png) over a snippet of the display. */
+.phone { position: absolute; height: var(--h); aspect-ratio: 434 / 884; filter: drop-shadow(0 22px 26px rgb(60 44 28 / 0.22)) drop-shadow(0 4px 8px rgb(60 44 28 / 0.12)); }
+.phone video { position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; object-fit: cover; background: #050505; }
+.phone img { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Desktop: the portal window. "Zoomed in" scales the snippet about its focus and keeps a slim window bar. */
+.desk { position: absolute; width: var(--w); aspect-ratio: 3 / 2; border-radius: 12px; overflow: hidden; background: #fff;
+  box-shadow: 0 26px 50px rgb(60 44 28 / 0.2), 0 6px 14px rgb(60 44 28 / 0.1), 0 0 0 1px rgb(40 30 20 / 0.08); }
+.desk video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: var(--fx, 50%) var(--fy, 50%); }
+.desk__bar { position: absolute; left: 0; right: 0; top: 0; height: 22px; z-index: 1; display: none; align-items: center; gap: 5px; padding: 0 10px; background: #f4f3f1; border-bottom: 1px solid #e6e4e0; }
+.desk__bar i { width: 7px; height: 7px; border-radius: 50%; background: #dcd9d4; }
+.desk__bar b { margin-left: auto; margin-right: auto; translate: -14px 0; width: 38%; height: 12px; border-radius: 4px; background: #e9e7e3; font: 500 7.5px/12px 'Filo Inter'; color: #8d8983; text-align: center; letter-spacing: 0; }
+body[data-zoom='in'] .desk video { transform: scale(var(--z, 1.9)); }
+body[data-zoom='in'] .desk__bar { display: flex; }
+body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
+
+/* The tag hangs on its cord from above the card; the cord image continues up past the card edge. */
+.tag { position: absolute; width: var(--tw); transform-origin: 50% calc(-1 * var(--hang, 120px)); animation: sway 6.5s ease-in-out infinite; }
+.tag img { display: block; width: 100%; filter: drop-shadow(0 18px 18px rgb(70 50 30 / 0.2)) drop-shadow(0 3px 4px rgb(70 50 30 / 0.12)); }
+.tag i { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); background: url('/work/filo/filo-app-flow/filo-tag.webp') 0 -6px / 100% auto repeat-y; -webkit-mask: linear-gradient(transparent, #000 1px); }
+@keyframes sway { 0%, 100% { rotate: -2.2deg; } 50% { rotate: 2.2deg; } }
+.hero-tag { position: absolute; width: var(--tw); animation: bob 7s ease-in-out infinite; filter: drop-shadow(0 26px 26px rgb(70 50 30 / 0.22)) drop-shadow(0 4px 6px rgb(70 50 30 / 0.12)); }
+@keyframes bob { 0%, 100% { translate: 0 -5px; rotate: -1.5deg; } 50% { translate: 0 5px; rotate: 1.5deg; } }
+
+/* The thread: the tag's cord, run from the phone through the tag to the portal. A light travels it. */
+.thread { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.thread path { fill: none; stroke-linecap: round; }
+.thread .cord { stroke: var(--cord); stroke-width: 1.6; opacity: 0.55; }
+.thread .spark { stroke: #fff6ea; stroke-width: 2.4; stroke-dasharray: 26 1000; filter: drop-shadow(0 0 3px #fff); animation: spark 3.6s cubic-bezier(.45, 0, .25, 1) infinite; }
+.thread .spark + .spark { animation-delay: -1.8s; }
+@keyframes spark { from { stroke-dashoffset: 26; } to { stroke-dashoffset: -640; } }
+
+/* Material chips: what the tag carries, surfacing one at a time. */
+.chip { position: absolute; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px 0 9px; border-radius: 14px; white-space: nowrap;
+  font: 500 12.5px/1 'Filo Inter'; color: #3b3632; letter-spacing: -0.1px;
+  background: rgb(255 255 255 / 0.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.75) inset, 0 8px 18px rgb(60 44 28 / 0.1);
+  opacity: 0; animation: chip 9.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.chip svg { width: 13px; height: 13px; flex: none; color: #8a6a55; }
+@keyframes chip { 0% { opacity: 0; translate: 0 6px; } 6%, 34% { opacity: 1; translate: 0 0; } 42%, 100% { opacity: 0; translate: 0 -6px; } }
+
+/* Stage: devices turned toward the tag. */
+.stage3d { position: absolute; inset: 0; perspective: 1100px; perspective-origin: 50% 38%; }
+.floor { position: absolute; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgb(70 50 30 / 0.22), transparent); filter: blur(2px); }
+
+/* ── Close-up strip ── */
+.strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; width: 1000px; margin: 0 auto; }
+.cell { background: #ece6dc; border-radius: 16px; padding: 10px 10px 12px; }
+.cell .tile { position: relative; visibility: visible; width: 100%; aspect-ratio: 1; display: block; }
+.cell p { margin: 8px 2px 0; font-size: 12px; line-height: 1.35; color: #4a4540; }
+.cell p span { display: block; color: #8d867e; }
+.cell p i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08) inset; }
+</style>
+</head>
+<body data-layers="on" data-zoom="window">
+<header>
+  <h1>Filo thumbnail · layers</h1>
+  <p>Ways to layer the Filo card the way the Momo card is layered: the phone on the left, the tag in the middle, the portal on the right. Each device plays a few seconds cut from the case study prototypes, not the whole flow. Behind them, every product on the wall turns into a swatch of fabric in its own colour while it spins, then back: one material, three forms.</p>
+  <p class="note">Every card is at its real size (867 × 493) and uses the real wall from FiloCard.tsx. The controls change all the cards at once. Fabric colour is sampled from each product; the finish (leather, weave, satin, knit) follows its material in the Future Fabric catalog.</p>
+</header>
+
+<div class="controls"><div class="controls__in" id="controls"></div></div>
+
+<main id="main"></main>
+
+<script type="module">
+/* ─────────────────────────── Data ─────────────────────────── */
+// studio/ecofabriq/products.json (code, name, material); sprites in /work/filo/sprites/.
+const PRODUCTS = [
+  ['MFB-01', 'EPHEA™ Floor-Length Coat', 'Ephea mycelium leather', 'balenciaga-ephea-mycelium-coat-fw2022'],
+  ['PBC-01', 'Air Max 90 Happy Pineapple', 'Piñatex pineapple-leaf fiber', 'nike-partners-with-pinatex-for-happy-pineapple-plant-based-sneaker-collection'],
+  ['BSP-01', 'Frayme Veuve Clicquot Bucket Bag', 'VEGEA grape-waste leather', 'stella-mccartney-x-veuve-clicquot-vegea-frayme-grape-waste-woven-bag'],
+  ['PRO-01', 'Wool Runner', 'ZQ Merino wool', 'allbirds-wool-runners'],
+  ['MFB-02', 'Reishi™', 'Reishi mycelium leather', 'reishi'],
+  ['PBC-02', 'Piñatex® Sandal', 'Piñatex pineapple-leaf fiber', 'zara-pinatex-sandal'],
+  ['BSP-02', 'PLA Windbreaker', 'PLA biopolymer', 'xtep-pla-windbreaker'],
+  ['PRO-02', 'Brewed Protein™ Couture', 'Brewed Protein™ fiber', 'yuima-nakazato-couture-with-brewed-protein'],
+  ['MFB-03', 'Mylo™ Bustier and Trousers', 'Mylo mycelium leather', 'stella-mccartney-mylo-bustier-and-trousers-2021'],
+  ['PBC-03', 'Tote Bag by Piñatex®', 'Piñatex pineapple-leaf fiber', 'zara-pinatex-bag'],
+  ['BSP-03', 'Moon Parka', 'Brewed Protein™ fiber', 'northface'],
+  ['MFB-04', 'Coprinus', 'Coprinus fungal mycelium', 'coprinus'],
+  ['PBC-04', 'Orange Fiber Capsule Collection', 'Orange Fiber citrus cellulose', 'ferragamo-orange-fiber-collection-2017'],
+  ['PBC-05', 'TENCEL™ Luxe', 'Tencel Luxe cellulosic filament', 'osman-yousefzada-ss22-tencel-luxe'],
+  ['PBC-06', 'Circ Lyocell', 'Circ Lyocell recycled cellulose', 'christian-siriano-ss2025-circ-lyocell'],
+  ['PBC-07', 'E. Marinella made with Orange Fiber', 'Orange Fiber citrus cellulose', 'slk-orangefiber-tieorange-fiber-collection-e-marinalla'],
+  ['PBC-08', 'Conscious Exclusive 2019', 'Orange Fiber citrus cellulose', 'orange-fiber-x-h-m-conscious-exclusive-collection-2019'],
+].map(([code, name, material, sprite]) => ({ code, name, material, sprite: `/work/filo/sprites/${sprite}-spritesheet.webp` }))
+
+const FINISHES = ['weave', 'knit', 'satin', 'leather']
+const finishOf = m => /leather|mycelium|Piñatex/i.test(m) ? 'leather' : /wool/i.test(m) ? 'knit' : /Tencel|Lyocell|Orange Fiber/i.test(m) ? 'satin' : 'weave'
+
+const SNIPPETS = {
+  phone: [
+    { id: 'phone-tap', label: 'Tap the tag' },
+    { id: 'phone-email', label: 'Open from email' },
+    { id: 'phone-file', label: 'Technical File' },
+  ],
+  desk: [
+    { id: 'desk-tag', label: 'Write the tag', fx: '30%', fy: '46%' },
+    { id: 'desk-extract', label: 'Extract', fx: '38%', fy: '48%' },
+    { id: 'desk-share', label: 'Share link', fx: '50%', fy: '48%' },
+    { id: 'desk-upload', label: 'Upload', fx: '36%', fy: '42%' },
+  ],
+}
+
+const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-tag', zoom: 'window', fabric: 'material', layers: 'on' },
+  Object.fromEntries(new URLSearchParams(location.search)))
+
+const CONTROLS = [
+  ['morph', 'Morph', [['turn', 'Turn'], ['threads', 'Threads'], ['melt', 'Melt'], ['off', 'Off']]],
+  ['timing', 'Timing', [['stagger', 'Staggered'], ['ripple', 'Ripple from the tag']]],
+  ['fabric', 'Fabric', [['material', 'By material'], ['weave', 'All plain weave']]],
+  ['phone', 'Phone', SNIPPETS.phone.map(s => [s.id, s.label])],
+  ['desk', 'Desktop', SNIPPETS.desk.map(s => [s.id, s.label])],
+  ['zoom', 'Desktop view', [['window', 'Whole window'], ['in', 'Zoomed in']]],
+  ['layers', 'Layers', [['on', 'On'], ['off', 'Wall only']]],
+]
+
+/* ─────────────────────────── Layouts ─────────────────────────── */
+// Card coordinates are px in the 867 × 493 card. Tag: filo-tag.webp is 368 × 900; its body starts 27% down.
+const phone = (x, y, h, extra = '') => `<div class="phone" style="left:${x}px;top:${y}px;--h:${h}px;${extra}"><video muted loop playsinline preload="auto" data-kind="phone"></video><img src="/work/momo/hero/phone-frame.png" alt=""></div>`
+const desk = (x, y, w, extra = '') => `<div class="desk" style="left:${x}px;top:${y}px;--w:${w}px;${extra}"><div class="desk__bar"><i></i><i></i><i></i><b>portal.filo.app</b></div><video muted loop playsinline preload="auto" data-kind="desk"></video></div>`
+const tag = (cx, bodyTop, bodyH, extra = '') => {
+  const w = bodyH * 368 / 653, imgTop = bodyTop - bodyH * 245 / 653
+  return `<div class="tag" data-origin="${cx},${bodyTop + bodyH / 2}" style="left:${cx - w / 2}px;top:${imgTop}px;--tw:${w}px;--hang:${imgTop + 12}px;${extra}"><i></i><img src="/work/filo/filo-app-flow/filo-tag.webp" alt=""></div>`
+}
+const thread = d => `<svg class="thread" viewBox="0 0 867 493"><path class="cord" d="${d}"/><path class="spark" d="${d}" pathLength="600"/><path class="spark" d="${d}" pathLength="600"/></svg>`
+const ICON = {
+  fibre: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 12c3-1 4-7 10-8M3 8c2 0 3-3 6-4"/></svg>',
+  weight: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 13h8l-1.2-7H5.2z"/><circle cx="8" cy="4" r="1.6"/></svg>',
+  check: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.6"/><path d="m5.6 8.1 1.7 1.7 3.2-3.4"/></svg>',
+  doc: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4.5 2.5h5l2.5 2.5v8.5h-7.5z"/><path d="M6.5 8h3.5M6.5 10.5h3.5"/></svg>',
+  pin: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 14s4.5-4 4.5-7.3a4.5 4.5 0 0 0-9 0C3.5 10 8 14 8 14z"/><circle cx="8" cy="6.6" r="1.5"/></svg>',
+}
+const chip = (x, y, icon, text, d) => `<div class="chip" style="left:${x}px;top:${y}px;--d:${d}s">${ICON[icon]}${text}</div>`
+
+const LAYOUTS = [
+  {
+    id: 'today', n: '00', name: 'Today', fixed: true,
+    note: 'The card as it ships: the catalog wall alone, no layers, no morph. For comparison.',
+    fg: '',
+  },
+  {
+    id: 'triptych', n: '01', name: 'Triptych, bleeding off the edges',
+    note: 'Your brief in Momo’s grammar. The phone runs off the bottom left, the portal off the right, and the tag hangs in the middle on its cord. The cord carries on as a thread from the phone, through the tag, into the portal, with a light running along it.',
+    pool: [50, 44, 0.5],
+    fg: thread('M 252 250 C 320 236, 360 214, 433 206 S 528 182, 566 172') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430),
+  },
+  {
+    id: 'contained', n: '02', name: 'Triptych, all three in frame',
+    note: 'Quieter. Nothing bleeds; the three objects sit on one line like product shots of the same thing. The wall stays the busiest part.',
+    pool: [50, 42, 0.58],
+    fg: phone(112, 70, 292) + tag(385, 112, 176) + desk(492, 118, 290),
+  },
+  {
+    id: 'stage', n: '03', name: 'Stage: devices turned toward the tag',
+    note: 'The phone and the portal angle in toward the tag, as if both are reading it. More depth, and the tag becomes the clear subject.',
+    pool: [50, 40, 0.6],
+    fg: `<div class="stage3d"><div class="floor" style="left:96px;top:414px;width:220px"></div><div class="floor" style="left:538px;top:356px;width:300px"></div>`
+      + phone(110, 52, 372, 'transform:rotateY(26deg);transform-origin:100% 50%')
+      + desk(500, 74, 360, 'transform:rotateY(-26deg);transform-origin:0 50%') + `</div>` + tag(433, 104, 226),
+  },
+  {
+    id: 'chips', n: '04', name: 'Triptych with material data',
+    note: 'Layout 01 plus what the tag carries, surfacing one fact at a time around it, like Momo’s sensor chips: composition, weight, certification, the documents, the supplier.',
+    pool: [50, 44, 0.5],
+    fg: thread('M 252 250 C 320 236, 360 214, 433 206 S 528 182, 566 172') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430)
+      + chip(266, 92, 'fibre', '100% bacterial cellulose', 0) + chip(478, 330, 'weight', '120 gsm', 1.6) + chip(262, 342, 'check', 'OEKO-TEX® certified', 3.2)
+      + chip(470, 26, 'doc', 'Lab test report', 4.8) + chip(282, 214, 'pin', 'Modern Synthesis', 6.4) + chip(470, 240, 'doc', 'Technical File', 8),
+  },
+  {
+    id: 'hero', n: '05', name: 'The tag as hero',
+    note: 'The tag fills the middle at three times the size; the phone and the portal are smaller and overlap its corners, like a collage of the same sample in two other places.',
+    pool: [50, 46, 0.45],
+    fg: `<img class="hero-tag" data-origin="433,232" src="/work/filo/hero-tag.webp" alt="" style="left:262px;top:-44px;--tw:334px">`
+      + phone(196, 226, 262, 'rotate:-7deg') + desk(540, 44, 268, 'rotate:5deg'),
+  },
+  {
+    id: 'read', n: '06', name: 'The read: phone over the tag',
+    note: 'The moment the product is about: the phone comes over the tag and reads it, and the portal shows the record it opens. Best with Timing › Ripple from the tag, so the wall answers the read.',
+    pool: [46, 46, 0.55],
+    fg: tag(390, 160, 214) + phone(112, 60, 400, 'rotate:-9deg') + desk(540, 96, 360),
+  },
+]
+
+/* ─────────────────────────── Page ─────────────────────────── */
+const controlsEl = document.getElementById('controls')
+for (const [key, label, opts] of CONTROLS) {
+  const div = document.createElement('div')
+  div.className = 'ctl'
+  div.innerHTML = `<span>${label}</span><div class="seg">${opts.map(([v, l]) => `<button type="button" data-key="${key}" data-v="${v}" aria-pressed="${S[key] === v}">${l}</button>`).join('')}</div>`
+  controlsEl.append(div)
+}
+controlsEl.addEventListener('click', e => {
+  const b = e.target.closest('button[data-key]')
+  if (!b) return
+  S[b.dataset.key] = b.dataset.v
+  controlsEl.querySelectorAll(`button[data-key="${b.dataset.key}"]`).forEach(x => x.setAttribute('aria-pressed', String(x === b)))
+  apply()
+})
+
+const main = document.getElementById('main')
+for (const L of LAYOUTS) {
+  const fig = document.createElement('figure')
+  const [px, py, pool] = L.pool ?? [50, 45, 0]
+  fig.innerHTML = `<figcaption><b><span>${L.n}</span>${L.name}</b><small>${L.note}</small></figcaption>
+    <div class="card" data-layout="${L.id}" ${L.fixed ? 'data-fixed' : ''}>
+      <span class="glow glow--a"></span><span class="glow glow--b"></span>
+      <div class="wall"></div>
+      <svg class="rings" viewBox="0 0 867 493"><circle/><circle/></svg>
+      ${L.fixed ? '' : `<div class="pool" style="--px:${px}%;--py:${py}%;--pool:${pool}"></div>`}
+      <div class="fg">${L.fg}</div>
+      <div class="card-shade"></div>
+      <h3 class="card-title">Filo — Software for Taking New Materials from Sample to Production</h3>
+    </div>`
+  main.append(fig)
+}
+const closeFig = document.createElement('figure')
+closeFig.innerHTML = `<figcaption style="width:1000px"><b><span>—</span>Close up: every product and its fabric</b><small>All 17 products from the wall, larger, cycling with the current morph. The swatch takes the product’s colour; the finish comes from its material.</small></figcaption><div class="strip" id="strip"></div>`
+main.append(closeFig)
+
+function apply() {
+  document.body.dataset.layers = S.layers
+  document.body.dataset.zoom = S.zoom
+  const ph = `/work/filo/thumb/${S.phone}.mp4`
+  const dk = SNIPPETS.desk.find(s => s.id === S.desk)
+  document.querySelectorAll('video[data-kind="phone"]').forEach(v => { if (!v.src.endsWith(ph)) { v.src = ph; v.load() } })
+  document.querySelectorAll('video[data-kind="desk"]').forEach(v => {
+    const src = `/work/filo/thumb/${dk.id}.mp4`
+    if (!v.src.endsWith(src)) { v.src = src; v.load() }
+    v.style.setProperty('--fx', dk.fx); v.style.setProperty('--fy', dk.fy)
+  })
+  history.replaceState(null, '', `?${new URLSearchParams(S)}`)
+  for (const c of cards) c.dirty()
+  for (const c of cells) c.key = ''
+}
+
+/* ─────────────────────────── Fabric renderer (WebGL2) ─────────────────────────── */
+// One offscreen canvas draws a swatch for (colour, finish, turntable frame); tiles copy it into their own canvas.
+const FAB = 256
+const Fabric = (() => {
+  const cvs = document.createElement('canvas')
+  cvs.width = cvs.height = FAB
+  const gl = cvs.getContext('webgl2', { premultipliedAlpha: true, antialias: true, alpha: true })
+  const VS = `#version 300 es
+  in vec2 a_uv;
+  uniform float u_phase, u_angle, u_lean, u_roll, u_size;
+  uniform int u_finish;
+  uniform mat4 u_pv;
+  out vec2 v_uv; out vec3 v_n; out vec3 v_t; out vec3 v_p; out float v_w;
+  float W(vec2 q) {
+    float stiff = u_finish == 3 ? 0.55 : 1.0;
+    return stiff * (0.07 * sin(6.2832 * (0.8 * q.x + 0.35 * q.y) + u_phase)
+      + 0.045 * sin(6.2832 * (1.5 * q.y - 0.45 * q.x) + 1.7 - 2.0 * u_phase)
+      + 0.02 * sin(6.2832 * (2.4 * q.x + 1.2 * q.y) + 0.6 + 3.0 * u_phase))
+      + 0.16 * (q.x * q.x + 0.5 * q.y * q.y);
+  }
+  mat3 rx(float a) { float c = cos(a), s = sin(a); return mat3(1, 0, 0, 0, c, s, 0, -s, c); }
+  mat3 rz(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0, -s, c, 0, 0, 0, 1); }
+  void main() {
+    vec2 q = a_uv - 0.5;
+    float e = 0.003, w = W(q);
+    float dx = (W(q + vec2(e, 0)) - W(q - vec2(e, 0))) / (2.0 * e);
+    float dy = (W(q + vec2(0, e)) - W(q - vec2(0, e))) / (2.0 * e);
+    // The swatch leans back toward the camera and spins in its own plane, so it never turns edge-on.
+    mat3 R = rx(u_lean) * rz(u_angle + u_roll);
+    vec3 p = R * (vec3(q, w) * u_size);
+    v_n = R * normalize(vec3(-dx, -dy, 1.0));
+    v_t = R * normalize(vec3(1.0, 0.0, dx));
+    v_uv = a_uv; v_p = p; v_w = w;
+    gl_Position = u_pv * vec4(p, 1.0);
+  }`
+  const FS = `#version 300 es
+  precision highp float; precision highp int;
+  in vec2 v_uv; in vec3 v_n; in vec3 v_t; in vec3 v_p; in float v_w;
+  uniform vec3 u_col, u_eye;
+  uniform int u_finish;
+  out vec4 o;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+  void main() {
+    vec2 q = abs(v_uv - 0.5);
+    float d;
+    if (u_finish == 3) { // leather: clean cut, rounded corners
+      vec2 b = vec2(0.5 - 0.07);
+      d = -(length(max(q - b, 0.0)) + min(max(q.x - b.x, q.y - b.y), 0.0) - 0.07);
+    } else { // textiles: pinked edges
+      float s = q.x > q.y ? v_uv.y : v_uv.x;
+      d = 0.5 - max(q.x, q.y) - 0.016 * (1.0 - abs(2.0 * fract(s / 0.034) - 1.0));
+    }
+    float alpha = smoothstep(0.0, fwidth(d) * 1.4, d);
+    if (alpha <= 0.0) discard;
+
+    vec3 N = normalize(v_n), V = normalize(u_eye - v_p);
+    float side = 1.0;
+    if (dot(N, V) < 0.0) { N = -N; side = 0.8; }
+
+    // Surface: a tone multiplier and how glossy it is.
+    float tone = 1.0, ks = 0.05, shin = 14.0, sheen = 0.1, aniso = 0.0;
+    vec2 g;
+    if (u_finish == 0) { // plain weave
+      g = v_uv * 36.0; vec2 c = floor(g), f = fract(g);
+      bool warp = mod(c.x + c.y, 2.0) < 1.0;
+      float h = warp ? sqrt(max(0.0, 1.0 - pow(2.0 * f.x - 1.0, 2.0))) : sqrt(max(0.0, 1.0 - pow(2.0 * f.y - 1.0, 2.0)));
+      tone = mix(0.8, 1.04, h) * (0.94 + 0.12 * hash(warp ? vec2(c.x, 0) : vec2(0, c.y)));
+    } else if (u_finish == 1) { // knit: rows of V stitches
+      g = vec2(v_uv.x * 22.0, v_uv.y * 30.0);
+      float col = fract(g.x), row = fract(g.y + abs(col - 0.5) * 1.3);
+      tone = mix(0.72, 1.05, pow(sin(row * 3.1416) * sin(col * 3.1416), 0.6)) * (0.95 + 0.1 * vnoise(v_uv * 70.0));
+      sheen = 0.16;
+    } else if (u_finish == 2) { // satin: smooth, fine twill, strong sheen
+      g = v_uv * 70.0;
+      tone = 0.97 + 0.03 * sin((g.x + g.y) * 3.1416);
+      ks = 0.0; aniso = 0.2; sheen = 0.06;
+    } else { // leather: pebbled grain
+      g = v_uv * 70.0;
+      float n = vnoise(v_uv * 95.0) * 0.6 + vnoise(v_uv * 190.0) * 0.4;
+      tone = 0.92 + 0.12 * n;
+      ks = 0.1; shin = 22.0; sheen = 0.04;
+    }
+    float fw = fwidth(g.x) + fwidth(g.y);
+    tone = mix(tone, 0.95, smoothstep(0.45, 0.95, fw)); // fade texture before it aliases
+
+    vec3 L1 = normalize(vec3(-0.55, 0.75, 0.7)), L2 = normalize(vec3(0.75, 0.15, 0.45));
+    float w1 = clamp((dot(N, L1) + 0.35) / 1.35, 0.0, 1.0), w2 = clamp((dot(N, L2) + 0.4) / 1.4, 0.0, 1.0);
+    float ao = 0.84 + 0.16 * smoothstep(-0.06, 0.08, v_w);
+    vec3 base = u_col * tone * side;
+    vec3 col = base * (0.32 + 0.72 * w1 + 0.22 * w2) * ao;
+    vec3 H = normalize(L1 + V);
+    col += vec3(1.0, 0.98, 0.95) * ks * pow(max(dot(N, H), 0.0), shin) * side;
+    // Satin: a Kajiya-Kay highlight along the warp, so the light runs in streaks down the folds.
+    vec3 T = normalize(v_t - N * dot(v_t, N));
+    float th = dot(T, H);
+    col += vec3(1.0, 0.98, 0.95) * aniso * pow(sqrt(max(0.0, 1.0 - th * th)), 36.0) * max(dot(N, L1), 0.0) * side;
+    col += (u_col * 0.6 + 0.25) * sheen * pow(1.0 - max(dot(N, V), 0.0), 3.0);
+    col = pow(max(col, 0.0), vec3(1.0 / 2.2));
+    o = vec4(col * alpha, alpha);
+  }`
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s }
+  const prog = gl.createProgram()
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog)
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog))
+  gl.useProgram(prog)
+  const G = 72, uv = [], idx = []
+  for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++) uv.push(i / G, j / G)
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const a = j * (G + 1) + i, b = a + 1, c = a + G + 1, d = c + 1; idx.push(a, b, d, a, d, c) }
+  const vao = gl.createVertexArray(); gl.bindVertexArray(vao)
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.STATIC_DRAW)
+  const loc = gl.getAttribLocation(prog, 'a_uv'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW)
+  const U = n => gl.getUniformLocation(prog, n)
+  const u = Object.fromEntries(['u_phase', 'u_angle', 'u_lean', 'u_roll', 'u_size', 'u_finish', 'u_pv', 'u_col', 'u_eye'].map(n => [n, U(n)]))
+  // Camera: a little above, looking at the swatch's centre; about the framing of the product turntables.
+  const eye = [0, 0.8, 3.2]
+  const pv = (() => {
+    const f = 1 / Math.tan((28 * Math.PI) / 360), n = 0.1, fa = 10
+    const P = [f, 0, 0, 0, 0, f, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, (2 * fa * n) / (n - fa), 0]
+    const zl = Math.hypot(...eye), z = eye.map(v => v / zl)
+    const x = [1, 0, 0], y = [z[1] * x[2] - z[2] * x[1], z[2] * x[0] - z[0] * x[2], z[0] * x[1] - z[1] * x[0]]
+    const Vm = [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -(x[0] * eye[0] + x[1] * eye[1] + x[2] * eye[2]), -(y[0] * eye[0] + y[1] * eye[1] + y[2] * eye[2]), -(z[0] * eye[0] + z[1] * eye[1] + z[2] * eye[2]), 1]
+    const M = new Float32Array(16)
+    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) { let s = 0; for (let k = 0; k < 4; k++) s += P[k * 4 + r] * Vm[c * 4 + k]; M[c * 4 + r] = s }
+    return M
+  })()
+  gl.uniformMatrix4fv(u.u_pv, false, pv)
+  gl.uniform3fv(u.u_eye, eye)
+  gl.uniform1f(u.u_lean, -0.78); gl.uniform1f(u.u_roll, 0.22); gl.uniform1f(u.u_size, 0.98)
+  gl.enable(gl.DEPTH_TEST)
+  gl.viewport(0, 0, FAB, FAB)
+  return {
+    /** Draws product p's swatch at turntable frame f (one turn per 36 frames, like the sprites) into ctx. */
+    draw(ctx, p, f) {
+      const finish = S.fabric === 'weave' ? 'weave' : p.finish
+      gl.uniform1i(u.u_finish, FINISHES.indexOf(finish))
+      gl.uniform3fv(u.u_col, p.lin)
+      gl.uniform1f(u.u_angle, -(f / 36) * Math.PI * 2 + 0.5)
+      gl.uniform1f(u.u_phase, (f / 36) * Math.PI * 2)
+      gl.clearColor(0, 0, 0, 0)
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+      gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0)
+      ctx.drawImage(cvs, 0, 0, ctx.canvas.width, ctx.canvas.height)
+    },
+  }
+})()
+
+/* ─────────────────────────── Products: sheets and colours ─────────────────────────── */
+const toLin = c => (c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+async function loadProducts() {
+  await Promise.all(PRODUCTS.map(async p => {
+    const img = new Image()
+    img.src = p.sprite
+    await img.decode()
+    p.img = img
+    p.view = img.naturalWidth / 6
+    p.finish = finishOf(p.material)
+    // Dominant colour: the fullest bin of a coarse histogram over two views' opaque pixels, averaged.
+    const c = document.createElement('canvas'); c.width = 96; c.height = 48
+    const x = c.getContext('2d', { willReadFrequently: true })
+    x.drawImage(img, 0, 0, p.view, p.view, 0, 0, 48, 48)
+    x.drawImage(img, 3 * p.view, p.view, p.view, p.view, 48, 0, 48, 48)
+    const d = x.getImageData(0, 0, 96, 48).data
+    const bins = new Map()
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 220) continue
+      const k = (d[i] >> 5) * 64 + (d[i + 1] >> 5) * 8 + (d[i + 2] >> 5)
+      const b = bins.get(k) ?? [0, 0, 0, 0]
+      b[0] += d[i]; b[1] += d[i + 1]; b[2] += d[i + 2]; b[3]++
+      bins.set(k, b)
+    }
+    const best = [...bins.values()].sort((a, b) => b[3] - a[3])[0]
+    p.rgb = best.slice(0, 3).map(v => Math.round(v / best[3]))
+    p.hex = '#' + p.rgb.map(v => v.toString(16).padStart(2, '0')).join('')
+    p.lin = p.rgb.map(toLin)
+  }))
+}
+
+/* ─────────────────────────── Morphs ─────────────────────────── */
+const SPIN = 4.5 // turntable frames per second (FiloCard spin)
+const MORPH_S = { turn: 0.7, threads: 1.3, melt: 1.1, off: 1 }
+const ease = x => x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2
+const mod = (a, n) => ((a % n) + n) % n
+/** 0 → 1 → 0 over: wait `a`, morph `m`, hold `f`, morph back `m`. */
+function envelope(u, a, m, f) {
+  if (u < a) return 0
+  if (u < a + m) return ease((u - a) / m)
+  if (u < a + m + f) return 1
+  if (u < a + 2 * m + f) return 1 - ease((u - a - m - f) / m)
+  return 0
+}
+const RIPPLE = { period: 9, speed: 430, start: 0.5, hold: 3 }
+
+// Threads: product and fabric trade places thread by thread, along horizontal rows (a precomputed threshold field).
+const TS = 256, LEVELS = 40
+const threadMasks = (() => {
+  const field = new Float32Array(TS * TS)
+  const rnd = s => { const x = Math.sin(s * 127.1 + 31.7) * 43758.5453; return x - Math.floor(x) }
+  for (let y = 0; y < TS; y++) {
+    const row = Math.floor(y / 5), r = rnd(row), dir = rnd(row + 99) > 0.5
+    for (let x = 0; x < TS; x++) field[y * TS + x] = r * 0.62 + 0.33 * (dir ? x / TS : 1 - x / TS) + 0.05 * rnd(x * 7.3 + y * 0.11)
+  }
+  const e = 0.035, out = { p: [], f: [] }
+  for (let l = 0; l < LEVELS; l++) {
+    const k = -e + (l / (LEVELS - 1)) * (1 + 2 * e)
+    for (const which of ['p', 'f']) {
+      const c = document.createElement('canvas'); c.width = c.height = TS
+      const x = c.getContext('2d'), im = x.createImageData(TS, TS)
+      for (let i = 0; i < field.length; i++) {
+        const t = Math.min(1, Math.max(0, (field[i] - k + e) / (2 * e)))
+        const a = t * t * (3 - 2 * t)
+        im.data[i * 4 + 3] = Math.round((which === 'p' ? a : 1 - a) * 255)
+      }
+      x.putImageData(im, 0, 0)
+      out[which].push(c)
+    }
+  }
+  return out
+})()
+const scratch = (() => { const c = document.createElement('canvas'); c.width = c.height = TS; return c.getContext('2d') })()
+const fabScratch = (() => { const c = document.createElement('canvas'); c.width = c.height = TS; return c.getContext('2d') })()
+
+function drawProduct(ctx, p, f) {
+  const v = p.view
+  ctx.drawImage(p.img, (f % 6) * v, Math.floor(f / 6) * v, v, v, 0, 0, TS, TS)
+}
+/** Draws tile content: product p at frame f, morphed `m` (0 product … 1 fabric) with the current morph. */
+function drawTile(tl, p, f, m) {
+  const ctx = tl.ctx
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.filter = 'none'
+  ctx.clearRect(0, 0, TS, TS)
+  const mode = S.morph
+  if (mode !== 'turn') tl.cvs.style.transform = ''
+  if (m <= 0 || mode === 'off') { drawProduct(ctx, p, f); return }
+  if (m >= 1) { Fabric.draw(ctx, p, f); return }
+  if (mode === 'turn') {
+    const c = Math.abs(Math.cos(Math.PI * m))
+    tl.cvs.style.transform = `scaleX(${Math.max(0.04, c).toFixed(3)})`
+    if (m < 0.5) drawProduct(ctx, p, f); else Fabric.draw(ctx, p, f)
+    ctx.globalCompositeOperation = 'source-atop'
+    ctx.fillStyle = `rgb(40 28 18 / ${(0.28 * (1 - c)).toFixed(3)})`
+    ctx.fillRect(0, 0, TS, TS)
+    return
+  }
+  if (mode === 'threads') {
+    const l = Math.round(m * (LEVELS - 1))
+    fabScratch.globalCompositeOperation = 'source-over'; fabScratch.clearRect(0, 0, TS, TS)
+    Fabric.draw(fabScratch, p, f)
+    fabScratch.globalCompositeOperation = 'destination-in'; fabScratch.drawImage(threadMasks.f[l], 0, 0)
+    ctx.drawImage(fabScratch.canvas, 0, 0)
+    scratch.globalCompositeOperation = 'source-over'; scratch.clearRect(0, 0, TS, TS)
+    drawProduct(scratch, p, f)
+    scratch.globalCompositeOperation = 'destination-in'; scratch.drawImage(threadMasks.p[l], 0, 0)
+    ctx.drawImage(scratch.canvas, 0, 0)
+    return
+  }
+  // melt: the product softens and shrinks as the fabric sharpens out of it
+  const s1 = 1 - 0.16 * m, s2 = 0.84 + 0.16 * m
+  ctx.save()
+  ctx.filter = `blur(${(12 * m).toFixed(1)}px)`; ctx.globalAlpha = 1 - m
+  ctx.translate(TS / 2, TS / 2); ctx.scale(s1, s1 * (1 - 0.1 * m)); ctx.translate(-TS / 2, -TS / 2)
+  drawProduct(ctx, p, f)
+  ctx.restore(); ctx.save()
+  fabScratch.globalCompositeOperation = 'source-over'; fabScratch.clearRect(0, 0, TS, TS)
+  Fabric.draw(fabScratch, p, f)
+  ctx.filter = `blur(${(12 * (1 - m)).toFixed(1)}px)`; ctx.globalAlpha = m
+  ctx.translate(TS / 2, TS / 2); ctx.scale(s2, s2); ctx.translate(-TS / 2, -TS / 2)
+  ctx.drawImage(fabScratch.canvas, 0, 0)
+  ctx.restore()
+}
+
+/* ─────────────────────────── The wall (FiloCard.tsx, ported) ─────────────────────────── */
+const W = { speed: 0.375, tilt: -9, zoom: 1.25, tile: 0.32, gap: 0.12, tileRadius: 0.1 }
+const ROWS = 3, PER_ROW = 9, RAIL_SPEED = [1, 1.5, 0.75]
+
+class Card {
+  constructor(el) {
+    this.el = el
+    this.fixed = el.hasAttribute('data-fixed')
+    this.wall = el.querySelector('.wall')
+    this.rings = [...el.querySelectorAll('.rings circle')]
+    const o = el.querySelector('[data-origin]')
+    ;[this.ox, this.oy] = o ? o.dataset.origin.split(',').map(Number) : [433, 230]
+    this.rings.forEach(c => { c.setAttribute('cx', this.ox); c.setAttribute('cy', this.oy) })
+    this.tiles = []
+    for (let i = 0; i < ROWS * PER_ROW; i++) {
+      const t = document.createElement('div'); t.className = 'tile'
+      const cvs = document.createElement('canvas'); cvs.width = cvs.height = TS
+      t.append(cvs); this.wall.append(t)
+      this.tiles.push({ el: t, cvs, ctx: cvs.getContext('2d'), product: -1, near: false, key: '' })
+    }
+    this.lastUsed = new Float64Array(PRODUCTS.length).fill(-Infinity)
+    this.w = 867; this.h = 493
+    this.visible = false
+    new IntersectionObserver(([e]) => {
+      this.visible = e.isIntersecting
+      el.querySelectorAll('video').forEach(v => this.visible ? v.play().catch(() => {}) : v.pause())
+    }, { rootMargin: '100px' }).observe(el)
+  }
+  dirty() { this.tiles.forEach(t => (t.key = '')) }
+  morph(i, cx, cy, t) {
+    if (this.fixed || S.morph === 'off') return 0
+    const m = MORPH_S[S.morph]
+    if (S.timing === 'ripple') {
+      const u = mod(t, RIPPLE.period) - Math.hypot(cx - this.ox, cy - this.oy) / RIPPLE.speed
+      return envelope(u, RIPPLE.start, m, RIPPLE.hold)
+    }
+    const A = 6, F = 2.8, P = A + 2 * m + F
+    return envelope(mod(t + ((i * 0.6180339) % 1) * P * 2.3, P), A, m, F)
+  }
+  render(t) {
+    const { w, h } = this
+    const tile = h * W.tile, slot = tile * (1 + W.gap), span = slot * PER_ROW
+    const a = (W.tilt * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a)
+    const mg = W.speed * Math.max(...RAIL_SPEED) * slot * W.zoom * 0.05 + 4
+    const corners = [[-mg, -mg], [w + mg, -mg], [w + mg, h + mg], [-mg, h + mg]].map(([px, py]) => {
+      const dx = (px - w / 2) / W.zoom, dy = (py - h / 2) / W.zoom
+      return [dx * c + dy * s + w / 2, -dx * s + dy * c + h / 2]
+    })
+    const range = (ax, ay) => { let lo = Infinity, hi = -Infinity; for (const [x, y] of corners) { const d = x * ax + y * ay; if (d < lo) lo = d; if (d > hi) hi = d } return [lo, hi] }
+    const cX = range(1, 0), cY = range(0, 1), cU = range(c, -s), cV = range(s, c)
+    const overlaps = (x, y) => {
+      if (x + tile < cX[0] || x > cX[1] || y + tile < cY[0] || y > cY[1]) return false
+      for (const [ax, ay, [lo, hi]] of [[c, -s, cU], [s, c, cV]]) {
+        const p = [x * ax + y * ay, (x + tile) * ax + y * ay, x * ax + (y + tile) * ay, (x + tile) * ax + (y + tile) * ay]
+        if (Math.max(...p) < lo || Math.min(...p) > hi) return false
+      }
+      return true
+    }
+    const pos = [], held = new Set(), entering = []
+    this.tiles.forEach((tl, i) => {
+      const row = Math.floor(i / PER_ROW), dir = row % 2 ? 1 : -1
+      const x = mod((i % PER_ROW) * slot + dir * t * W.speed * RAIL_SPEED[row] * slot, span) - slot
+      const y = h / 2 + (row - 1) * slot - tile / 2
+      pos.push([x, y])
+      const near = overlaps(x, y)
+      if (near && tl.near && tl.product >= 0) held.add(tl.product)
+      else if (near) entering.push(i)
+      tl.near = near
+    })
+    for (const i of entering) {
+      const tl = this.tiles[i]
+      let pick = -1
+      for (let p = 0; p < PRODUCTS.length; p++) if (!held.has(p) && (pick < 0 || this.lastUsed[p] < this.lastUsed[pick])) pick = p
+      if (pick < 0) pick = tl.product >= 0 ? tl.product : 0
+      tl.product = pick
+      this.lastUsed[pick] = t + i * 1e-6
+      held.add(pick)
+    }
+    this.wall.style.transform = `rotate(${W.tilt}deg) scale(${W.zoom})`
+    this.wall.style.setProperty('--tile-radius', `${tile * W.tileRadius}px`)
+    const sa = Math.sin(a)
+    this.tiles.forEach((tl, i) => {
+      if (!tl.near) { tl.el.style.visibility = 'hidden'; return }
+      const [x, y] = pos[i]
+      const f = mod(Math.floor(t * SPIN + i * 7), 36)
+      // Tile centre in card px (the wall is rotated and scaled about the card centre).
+      const dx = x + tile / 2 - w / 2, dy = y + tile / 2 - h / 2
+      const cx = w / 2 + W.zoom * (dx * c - dy * sa), cy = h / 2 + W.zoom * (dx * sa + dy * c)
+      const m = this.morph(i, cx, cy, t)
+      tl.el.style.visibility = 'visible'
+      tl.el.style.width = tl.el.style.height = `${tile}px`
+      tl.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
+      const key = `${tl.product}|${f}|${m.toFixed(3)}|${S.morph}|${S.fabric}`
+      if (key !== tl.key) { drawTile(tl, PRODUCTS[tl.product], f, m); tl.key = key }
+    })
+    // Ripple rings: one as the wave goes out to fabric, one as it comes back.
+    const ripple = !this.fixed && S.timing === 'ripple' && S.morph !== 'off'
+    const u = mod(t, RIPPLE.period)
+    const starts = [RIPPLE.start, RIPPLE.start + MORPH_S[S.morph] + RIPPLE.hold]
+    this.rings.forEach((ring, k) => {
+      const age = u - starts[k] + 0.25
+      const r = age * RIPPLE.speed
+      const show = ripple && age > 0 && r < 620
+      ring.style.opacity = show ? String(0.75 * (1 - r / 620) ** 1.5) : '0'
+      if (show) ring.setAttribute('r', r.toFixed(1))
+    })
+  }
+}
+
+/* Close-up cells: same drawing, larger, each on its own clock offset. */
+class Cell {
+  constructor(p, i, strip) {
+    this.p = p; this.i = i
+    const el = document.createElement('div'); el.className = 'cell'
+    el.innerHTML = `<div class="tile"><canvas width="${TS}" height="${TS}"></canvas></div><p><i style="background:${p.hex}"></i>${p.name}<span>${p.material} · ${p.finish}</span></p>`
+    strip.append(el)
+    this.cvs = el.querySelector('canvas'); this.ctx = this.cvs.getContext('2d'); this.key = ''
+    this.visible = false
+    new IntersectionObserver(([e]) => { this.visible = e.isIntersecting }).observe(el)
+  }
+  render(t) {
+    const f = mod(Math.floor(t * SPIN + this.i * 7), 36)
+    const mm = MORPH_S[S.morph]
+    const P = 2.2 + 2 * mm + 2.6
+    const m = S.morph === 'off' ? 0 : envelope(mod(t + this.i * 0.37, P), 2.2, mm, 2.6)
+    const key = `${f}|${m.toFixed(3)}|${S.morph}|${S.fabric}`
+    if (key !== this.key) { drawTile(this, this.p, f, m); this.key = key }
+  }
+}
+
+/* ─────────────────────────── Go ─────────────────────────── */
+await loadProducts()
+const cards = [...document.querySelectorAll('.card')].map(el => new Card(el))
+const strip = document.getElementById('strip')
+const cells = PRODUCTS.map((p, i) => new Cell(p, i, strip))
+apply()
+const t0 = performance.now()
+const tick = now => {
+  const t = (now - t0) / 1000
+  for (const c of cards) if (c.visible) c.render(t)
+  for (const c of cells) if (c.visible) c.render(t)
+  requestAnimationFrame(tick)
+}
+requestAnimationFrame(tick)
+// For headless checks: the state, the products with their sampled colours, and the swatch renderer.
+window.thumbLayers = { S, PRODUCTS, Fabric, drawProduct, ready: true }
+</script>
+</body>
+</html>

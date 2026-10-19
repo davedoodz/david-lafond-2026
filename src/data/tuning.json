@@ -1011,6 +1011,22 @@
           "floatStagger": 0.11
         }
       }
+    },
+    "outcomes": {
+      "eyebrow": "",
+      "title": "A circular future for new materials.",
+      "body": "",
+      "spacing": {
+        "top": 147,
+        "bottom": 240,
+        "contentGap": 99
+      },
+      "media": {
+        "size": 64
+      },
+      "mark": {
+        "gap": 31
+      }
     }
   },
   "Momo welcome": {
@@ -1356,6 +1372,16 @@
     }
   },
   "Filo source steps": {
+    "titles": {
+      "step1": "Material innovator creates the record.",
+      "step2": "Designer receives it before the sample.",
+      "step3": "The physical sample arrives with its tag.",
+      "step4": "Designer taps the sample to continue its Technical File."
+    },
+    "bodies": {
+      "step2": "A shared link lets them review the data and what still needs verification.",
+      "step4": "Filo surfaces what still needs verification so new observations \nand test results can move the material toward production."
+    },
     "box": {
       "scale": 1.33,
       "speed": 1.4,
@@ -1366,6 +1392,12 @@
       "x": 34,
       "y": 42,
       "gap": 72
+    }
+  },
+  "Filo next loop": {
+    "loop": {
+      "size": 950,
+      "productScale": 0.97
     }
   }
 }

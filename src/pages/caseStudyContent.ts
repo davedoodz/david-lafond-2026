@@ -651,6 +651,16 @@ export const FILO_CONFIG = {
       figure: 'next',
       gap: 48,
     }, NO_VIDEO),
+    /** Open by default: contentGap is the space between the title and the product loop (px). */
+    spacing: { ...sectionSpacingDials(96, 64, 48), _collapsed: false },
     textReveal: textRevealDials(),
+    /** The Filo mark above the title: which drawing, size (× its 120px base) and space to the title (px). */
+    mark: {
+      show: true,
+      logo: { type: 'select' as const, options: ['Loop f', 'Tall l'], default: 'Loop f' },
+      scale: [1, 0.2, 3, 0.01] as Tuple,
+      gap: [32, 0, 200, 1] as Tuple,
+      _collapsed: false,
+    },
   },
 }

@@ -490,7 +490,7 @@
 </div>
 
 <script type="module">
-import { $, $$, k, cursor, sleep, isPaused, at, move, hover, click, setUrl, boot } from './filo-app-flow/player.js'
+import { $, $$, k, cursor, sleep, playRate, at, move, hover, click, setUrl, boot } from './filo-app-flow/player.js'
 const ghost = $('#ghost'), toast = $('#toast')
 const screens = $$('.screen')
 /** The address bar for each screen: the portal, then the new material's record once it is reviewed. */
@@ -583,7 +583,7 @@ async function extract(t) {
   // Progress fills; property values land row by row; each source turns to Processed.
   while (elapsed < dur) {
     await sleep(40, t)
-    const now = performance.now(); if (!isPaused()) elapsed += now - last; last = now
+    const now = performance.now(); elapsed += (now - last) * playRate(); last = now
     const p = Math.min(1, elapsed / dur), e = 1 - Math.pow(1 - p, 1.6)
     setProgress(e)
     while (shown < rows.length && e > (shown + 1) / (rows.length + 1)) rows[shown++].classList.add('is-in')

@@ -5,6 +5,9 @@
 .fnl {
   --fnl-w: min(calc(100vw - 48px), var(--fnl-size, 880px));
   position: relative;
+  /* Products set their own z-index (lower = nearer) and the labels 1000; keep those inside the loop so
+     the milestone cards and their zoom (FiloMilestones) still cover the products. */
+  isolation: isolate;
   width: var(--fnl-w);
   margin-inline: calc((100% - var(--fnl-w)) / 2);
   aspect-ratio: var(--fnl-aspect, 2);

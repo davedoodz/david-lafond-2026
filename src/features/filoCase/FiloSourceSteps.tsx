@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import { useTuningController } from '../../tuning/useTuning'
 import { EditableText } from '../../components/EditableText'
@@ -6,7 +6,7 @@ import type { SectionSpacing, TextReveal } from '../../pages/caseStudyContent'
 import './filoSourceSteps.css'
 
 /**
- * Filo "source" steps: four case sections, create → share → receive → tap. Steps 1 and 2 are the
+ * Filo "source" steps: four case sections, create → share → receive → validate. Steps 1 and 2 are the
  * portal as looping prototypes; step 3 pairs the designer's phone (a looping prototype: the email, then
  * the record in Safari) with the sample box (cut-outs of David's photos, public/work/filo/steps). Step 4
  * is a looping scene: a phone comes over the bacterial cellulose swatch in a dealt deck, reads its tag
@@ -20,8 +20,8 @@ const tellFlow = (frame: HTMLIFrameElement | null, command: FlowCommand) =>
 /** Playback rate of a prototype: player.js runs its clock and every animation at `rate` (1 = as authored). */
 const tellSpeed = (frame: HTMLIFrameElement | null, rate: number) =>
   frame?.contentWindow?.postMessage({ filoAppFlow: 'speed', rate }, window.location.origin)
-/** Step 3's phone prototype speed (Filo source steps › inbox › speed); the portal flows play at 1. */
-const InboxSpeed = createContext(1)
+/** Prototype speeds from the dials: step 3's phone (inbox › speed) and step 4's tap scene (tap › speed); the portal flows play at 1. */
+const FlowSpeeds = createContext({ inbox: 1, tap: 1 })
 /** Plays while in view, unless the reader paused it. */
 const syncFlow = (frame: HTMLIFrameElement | null, state: FlowState) =>
   tellFlow(frame, state.visible && !state.userPaused ? 'play' : 'pause')
@@ -48,8 +48,8 @@ function AppFlow({ src, title, variant = 'window' }: { src: string; title: strin
   const live = useRef<FlowState>({ visible: false, userPaused: false })
   const [toggleKey, setToggleKey] = useState(0)
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const inboxSpeed = useContext(InboxSpeed)
-  const speed = variant === 'phone' ? inboxSpeed : 1
+  const speeds = useContext(FlowSpeeds)
+  const speed = variant === 'phone' ? speeds.inbox : variant === 'scene' ? speeds.tap : 1
   const speedRef = useRef(speed)
 
   // Sent on every change; a document still loading gets it with its state on 'ready'.
@@ -62,8 +62,11 @@ function AppFlow({ src, title, variant = 'window' }: { src: string; title: strin
     const host = hostRef.current
     if (!host) return
     // The prototype says it's ready once its type has loaded; anything sent before that is dropped.
+    // The tap scene also says when its phone is on stage; its replay circle sits on the phone, so it shows only then.
     const onMessage = (event: MessageEvent) => {
-      if (event.source !== frameRef.current?.contentWindow || event.data?.filoAppFlow !== 'ready') return
+      if (event.source !== frameRef.current?.contentWindow) return
+      if (event.data?.filoAppFlow === 'phone') host.toggleAttribute('data-phone', !!event.data.on)
+      if (event.data?.filoAppFlow !== 'ready') return
       tellSpeed(frameRef.current, speedRef.current)
       syncFlow(frameRef.current, live.current)
     }
@@ -91,7 +94,19 @@ function AppFlow({ src, title, variant = 'window' }: { src: string; title: strin
     tellFlow(frameRef.current, 'restart')
     syncFlow(frameRef.current, live.current)
   }
-  return <div ref={hostRef} className={variant === 'window' ? 'fss-app' : `fss-app fss-app--${variant}`}>
+  // The tap scene's replay circle shows only while the pointer is over its phone: the stage is 900 high,
+  // fills the host's height and is centred across it; the phone's box is 390.6 × 795.6 at y 52.2.
+  const overPhone = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const host = event.currentTarget, r = host.getBoundingClientRect(), s = r.height / 900
+    const x = event.clientX - r.left - r.width / 2, y = event.clientY - r.top
+    host.toggleAttribute('data-phone-hover', Math.abs(x) <= 195.3 * s && y >= 52.2 * s && y <= 847.8 * s)
+  }
+  return <div
+    ref={hostRef}
+    className={variant === 'window' ? 'fss-app' : `fss-app fss-app--${variant}`}
+    onPointerMove={variant === 'scene' ? overPhone : undefined}
+    onPointerLeave={variant === 'scene' ? (event) => event.currentTarget.removeAttribute('data-phone-hover') : undefined}
+  >
     <iframe
       ref={frameRef}
       className="fss-app__frame"
@@ -128,16 +143,23 @@ function SampleBox() {
   </div>
 }
 
-/** The four steps, in order, each its own section. Each has a one-word stage after its number. */
-const STEPS: { stage: string; visual: ReactNode }[] = [
-  { stage: 'Create', visual: <AppFlow {...APP_FLOWS[0]} /> },
-  { stage: 'Share', visual: <AppFlow {...APP_FLOWS[1]} /> },
-  { stage: 'Receive', visual: <div className="fss-receive"><AppFlow {...PHONE_FLOW} variant="phone" /><SampleBox /></div> },
-  { stage: 'Tap', visual: <AppFlow {...TAP_FLOW} variant="scene" /> },
+/** The four steps' visuals, in order; each step is its own section. */
+const STEPS: ReactNode[] = [
+  <AppFlow {...APP_FLOWS[0]} />,
+  <AppFlow {...APP_FLOWS[1]} />,
+  <div className="fss-receive"><AppFlow {...PHONE_FLOW} variant="phone" /><SampleBox /></div>,
+  <AppFlow {...TAP_FLOW} variant="scene" />,
 ]
 
 type Tuple = [number, number, number, number]
 const CONFIG = {
+  /** The number and stage above each title; editable on the page in dev, like the titles. */
+  eyebrows: {
+    step1: { type: 'text' as const, default: '01 — Create' },
+    step2: { type: 'text' as const, default: '02 — Share' },
+    step3: { type: 'text' as const, default: '03 — Receive' },
+    step4: { type: 'text' as const, default: '04 — Validate' },
+  },
   /** Step titles; edit them on the page in dev (each saves to tuning.json). */
   titles: {
     step1: { type: 'text' as const, default: 'Material innovator creates the material record.' },
@@ -172,6 +194,11 @@ const CONFIG = {
     /** Space between the phone and the box (px); the box's frame already adds room around the box. */
     gap: [24, 0, 240, 1] as Tuple,
     /** Playback speed of the phone prototype (1 = as authored, 2 = twice as fast); its loop's every wait and animation scale together. */
+    speed: [1, 0.25, 3, 0.05] as Tuple,
+  },
+  /** Step 4's tap scene. */
+  tap: {
+    /** Playback speed (1 = as authored, 2 = twice as fast); every wait and animation in its loop scales together. */
     speed: [1, 0.25, 3, 0.05] as Tuple,
   },
 }
@@ -215,8 +242,8 @@ export function FiloSourceSteps({ section }: { section: SectionLook }) {
   } as CSSProperties
   // Each step is its own case section (snap stop, reveal, copy styles). They share data-section="source",
   // so the sidebar's one Source entry jumps to step 1 and stays lit through step 4.
-  return <InboxSpeed.Provider value={dials.inbox.speed}>
-    {STEPS.map(({ stage, visual }, i) => {
+  return <FlowSpeeds.Provider value={{ inbox: dials.inbox.speed, tap: dials.tap.speed }}>
+    {STEPS.map((visual, i) => {
       const key = `step${i + 1}` as keyof typeof CONFIG.titles
       return <section
         key={key}
@@ -230,12 +257,12 @@ export function FiloSourceSteps({ section }: { section: SectionLook }) {
         aria-labelledby={`case-source-${key}`}
       >
         <div className="case__text case__section-copy">
-          <span className="case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')} — {stage}</span>
+          <EditableText className="case__eyebrow eyebrow" label={`Step ${i + 1} eyebrow`} value={dials.eyebrows[key]} onChange={next => setValue(`eyebrows.${key}`, next)} />
           <EditableText as="h2" id={`case-source-${key}`} className="case__title" label={`Step ${i + 1} title`} value={dials.titles[key]} onChange={next => setValue(`titles.${key}`, next)} />
           <EditableText as="p" className="case__body" label={`Step ${i + 1} text`} value={dials.bodies[key]} onChange={next => setValue(`bodies.${key}`, next)} />
         </div>
         <div className="fss-visual">{visual}</div>
       </section>
     })}
-  </InboxSpeed.Provider>
+  </FlowSpeeds.Provider>
 }

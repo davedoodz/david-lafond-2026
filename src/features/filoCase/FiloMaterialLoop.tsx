@@ -12,6 +12,8 @@ const CONFIG = {
     speed: [1, 0.1, 3, 0.05] as Tuple,
     /** Width of the loop (px); capped to the window. Products scale with it. */
     size: [880, 400, 1400, 10] as Tuple,
+    /** Size of each product against the loop (1 = 128 on the 1000-wide stage); the path stays put. */
+    productScale: [1, 0.4, 2, 0.01] as Tuple,
     /** Product name, maker and biomaterial under each product, in one of six Inter treatments, or none. */
     labels: { type: 'select' as const, options: ['Hidden', 'Catalog', 'Made from', 'Material first', 'Eyebrow', 'Chip', 'Whisper'], default: 'Hidden' },
   },
@@ -92,6 +94,13 @@ export function FiloMaterialLoop() {
   const placeRef = useRef<() => void>(undefined)
   const labels = dials.loop.labels
   useEffect(() => placeRef.current?.(), [labels])
+  // Product scale resizes the canvases and re-decodes the sheets without restarting the loop.
+  const scaleRef = useRef(dials.loop.productScale)
+  const refitRef = useRef<() => void>(undefined)
+  useEffect(() => {
+    scaleRef.current = dials.loop.productScale
+    refitRef.current?.()
+  }, [dials.loop.productScale])
 
   useEffect(() => {
     const root = rootRef.current
@@ -109,6 +118,7 @@ export function FiloMaterialLoop() {
     let alive = true
     let timer = 0
 
+    const itemPx = () => ITEM * scaleRef.current
     const place = () => {
       const lap = reduced.matches ? 0 : clock / LAP_SECONDS
       PRODUCTS.forEach((p, i) => {
@@ -116,7 +126,8 @@ export function FiloMaterialLoop() {
         if (!item) return
         const at = (((lap + i / PRODUCTS.length) % 1) + 1) % 1
         const [x, y] = points[Math.floor(at * points.length) % points.length]
-        const move = `translate(${((x - ITEM / 2) * k).toFixed(1)}px, ${((y - ITEM / 2) * k).toFixed(1)}px)`
+        const half = itemPx() / 2
+        const move = `translate(${((x - half) * k).toFixed(1)}px, ${((y - half) * k).toFixed(1)}px)`
         item.style.transform = move
         // Lower on the stage reads as nearer: it draws over what it passes.
         item.style.zIndex = String(Math.round(y))
@@ -151,7 +162,7 @@ export function FiloMaterialLoop() {
     }
     // Each sheet decodes once at the canvases' device-pixel size (never above the sheet's own).
     const decode = async () => {
-      const px = Math.min(VIEW_PX, Math.round(ITEM * k * devicePixelRatio))
+      const px = Math.min(VIEW_PX, Math.round(itemPx() * k * devicePixelRatio))
       if (!near || px <= decodedAt) return
       decodedAt = px
       await Promise.all(PRODUCTS.map(async (p, i) => {
@@ -163,16 +174,21 @@ export function FiloMaterialLoop() {
       }))
       if (alive) place()
     }
-    const resize = new ResizeObserver(([entry]) => {
-      k = entry.contentRect.width / STAGE_W
+    const refit = () => {
       if (!k) return
-      const px = Math.round(ITEM * k * devicePixelRatio)
+      const px = Math.round(itemPx() * k * devicePixelRatio)
       canvasRefs.current.forEach((c) => { if (c) { c.width = px; c.height = px } })
       shown.fill(-1)
       place()
-      // Debounced, so dragging the size dial decodes once it settles.
+      // Debounced, so dragging the size dials decodes once they settle. A smaller size keeps the
+      // sharper sheets already decoded; a larger one decodes again (decode skips smaller sizes).
       clearTimeout(timer)
       timer = window.setTimeout(() => void decode(), decodedAt ? 200 : 0)
+    }
+    refitRef.current = refit
+    const resize = new ResizeObserver(([entry]) => {
+      k = entry.contentRect.width / STAGE_W
+      refit()
     })
     const ahead = new IntersectionObserver(([entry]) => {
       near = entry.isIntersecting
@@ -203,7 +219,7 @@ export function FiloMaterialLoop() {
       ref={rootRef}
       className="fnl"
       data-labels={labels}
-      style={{ '--fnl-size': `${dials.loop.size}px`, '--fnl-item': `${(ITEM / STAGE_W) * 100}%`, '--fnl-aspect': `${STAGE_W} / ${height}` } as CSSProperties}
+      style={{ '--fnl-size': `${dials.loop.size}px`, '--fnl-item': `${(ITEM * dials.loop.productScale / STAGE_W) * 100}%`, '--fnl-aspect': `${STAGE_W} / ${height}` } as CSSProperties}
       role="img"
       aria-label={`Seventeen products made from biomaterials travel an infinity loop, turning: ${PRODUCTS.map((p) => `${p.name} by ${p.companies}, ${p.material}`).join('; ')}.`}
     >

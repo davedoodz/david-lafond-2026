@@ -37,7 +37,9 @@ function setRate(next) {
   if (rate === 1 || was === 1) keepRate()
 }
 export class Stop extends Error {}
-export const isPaused = () => paused
+/** How fast scripted time runs right now: 0 while paused, else the host's rate. Frame loops multiply their
+    elapsed ms by it, so tweens keep pace with sleeps and animations at any speed. */
+export const playRate = () => (paused ? 0 : rate)
 export const sleep = (ms, t) => new Promise((ok, no) => {
   let left = ms, last = performance.now()
   // performance.now(), not rAF's timestamp: in an iframe Chrome's rAF time can trail it by seconds.

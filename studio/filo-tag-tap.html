@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo · how the tag meets the phone</title>
+<style>
+  @font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  :root { --page: #f5f5f4; --ink: #171717; --muted: #666; --cycle: 4.8s; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: Beatrice, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { max-width: 1240px; margin: 0 auto; padding: 56px 32px 8px; }
+  h1 { margin: 0; font-size: 30px; font-weight: 400; letter-spacing: -.02em; }
+  header p { margin: 10px 0 0; max-width: 680px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+  .controls { display: flex; gap: 10px; align-items: center; margin-top: 18px; font-size: 14px; color: var(--muted); }
+  .controls button { font: inherit; color: var(--ink); background: #fff; border: 1px solid #dcdcda; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .controls input { width: 160px; }
+  main { max-width: 1240px; margin: 0 auto; padding: 24px 32px 96px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 28px 32px; }
+
+  /* No transform / filter / opacity on a variant's ancestors: the tag crop's multiply must reach the page. */
+  .variant { padding: 18px 0 0; border-top: 1px solid #e3e3e1; }
+  .variant h2 { margin: 0; font-size: 18px; font-weight: 400; letter-spacing: -.01em; }
+  .variant h2 b { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; background: #ebebea; font-size: 12px; font-weight: 400; vertical-align: 2px; }
+  .variant p { margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; min-height: 2.9em; }
+  .stage { position: relative; height: 470px; margin-top: 10px; }
+  .tap { position: absolute; left: 50%; top: 18px; width: 200px; margin-left: -150px; }
+
+  .phone { position: relative; z-index: 1; width: 200px; aspect-ratio: 1312 / 2672; filter: drop-shadow(0 18px 24px rgb(23 23 23 / .16)); }
+  .frame { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
+  .screen { position: absolute; inset: 2% 4.8%; border-radius: 14% / 6.7%; overflow: hidden; background: #fbfbfa; font-family: 'Filo Inter', Inter, system-ui, sans-serif; font-size: 12px; line-height: 18px; letter-spacing: -.2px; color: var(--muted); text-align: center; }
+  .screen .status { position: absolute; z-index: 1; top: 9px; left: 19px; color: var(--ink); font-size: 11px; font-weight: 600; text-align: left; }
+  .screen .logo { position: absolute; z-index: 1; top: 38px; left: 13px; height: 14px; }
+  .layer { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; background: #fbfbfa; }
+  .layer strong { margin-top: 30px; color: var(--ink); font-weight: 400; font-size: 13px; }
+  .badge { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #ececea; color: var(--ink); }
+  .badge svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .scan .badge i { position: absolute; inset: 0; border: 1.5px solid rgb(150 190 110 / .55); border-radius: 50%; animation: ring 2.1s cubic-bezier(.2, .6, .3, 1) infinite; }
+  .scan .badge i:nth-child(2) { animation-delay: .7s; }
+  .scan .badge i:nth-child(3) { animation-delay: 1.4s; }
+  .detect .badge { box-shadow: 0 0 0 1px #eef3e6, 0 0 0 18px rgb(196 224 160 / .22), 0 0 48px 28px rgb(196 224 160 / .35); }
+  .home { position: absolute; left: 50%; bottom: 6px; width: 36%; height: 3px; margin-left: -18%; border-radius: 2px; background: var(--ink); opacity: .85; }
+  @keyframes ring { from { scale: 1; opacity: .9; } to { scale: 2.5; opacity: 0; } }
+
+  /* Screen timeline, shared by every variant: contact (and "Tag detected") lands at 42%. */
+  .scan { animation: scan-layer var(--cycle) linear infinite; }
+  .detect { opacity: 0; animation: detect-layer var(--cycle) linear infinite; }
+  .detect .badge { animation: pop var(--cycle) cubic-bezier(.3, 1.4, .5, 1) infinite; }
+  @keyframes scan-layer { 0%, 41% { opacity: 1; } 45%, 94% { opacity: 0; } 99%, 100% { opacity: 1; } }
+  @keyframes detect-layer { 0%, 41% { opacity: 0; } 45%, 92% { opacity: 1; } 97%, 100% { opacity: 0; } }
+  @keyframes pop { 0%, 42% { scale: .55; } 47% { scale: 1.08; } 50%, 100% { scale: 1; } }
+
+  /* Tag: the full hero tag (a complete cutout, so it can move in front of the phone) or the step crop
+     (what the case page uses; its left edge is hidden behind the phone in the source, and its white
+     ground only disappears through multiply, so it can only move behind the phone). */
+  .tag { position: absolute; z-index: 0; height: auto; pointer-events: none; user-select: none; }
+  [data-tag='hero'] .tag { top: -14px; left: calc(100% - 74px); width: 176px; filter: drop-shadow(0 12px 14px rgb(23 23 23 / .16)); }
+  [data-tag='crop'] .tag { top: 30px; left: calc(100% - 12px); width: 140px; mix-blend-mode: multiply; }
+  .phone, .tag { animation-duration: var(--cycle); animation-iteration-count: infinite; }
+  .paused * { animation-play-state: paused !important; }
+
+  /* 1 · Tip in: the current page. Tag tips toward the phone's back edge. */
+  .v1 .tag { transform-origin: 30% 10%; animation-name: v1; animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+  @keyframes v1 { 0%, 22% { translate: 0 0; rotate: 0deg; } 36%, 46% { translate: -22px 4px; rotate: -5deg; } 60%, 100% { translate: 0 0; rotate: 0deg; } }
+
+  /* 2 · Slide behind: tag slides under the phone until its middle is behind the screen. */
+  .v2 .tag { animation-name: v2; animation-timing-function: cubic-bezier(.6, 0, .2, 1); }
+  @keyframes v2 { 0%, 18% { translate: 0 0; } 40%, 52% { translate: -96px 60px; } 74%, 100% { translate: 0 0; } }
+
+  /* 3 · Lift and tap: tag lifts off, arcs in front of the phone, taps the screen, returns. */
+  .v3 .tag { z-index: 3; animation-name: v3; animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+  @keyframes v3 {
+    0%, 14% { translate: 0 0; rotate: 0deg; scale: 1; filter: drop-shadow(0 12px 14px rgb(23 23 23 / .16)); }
+    30% { translate: -70px -26px; rotate: -12deg; scale: 1.08; filter: drop-shadow(0 26px 18px rgb(23 23 23 / .2)); }
+    40% { translate: -104px 74px; rotate: -8deg; scale: 1.05; filter: drop-shadow(0 16px 12px rgb(23 23 23 / .18)); }
+    43% { translate: -104px 78px; rotate: -8deg; scale: .98; filter: drop-shadow(0 4px 4px rgb(23 23 23 / .22)); }
+    52% { translate: -96px 66px; rotate: -8deg; scale: 1.04; filter: drop-shadow(0 14px 10px rgb(23 23 23 / .18)); }
+    72%, 100% { translate: 0 0; rotate: 0deg; scale: 1; filter: drop-shadow(0 12px 14px rgb(23 23 23 / .16)); }
+  }
+
+  /* 4 · Swing on the cord: a pendulum from the cord's knot; the low point of the swing meets the phone. */
+  .v4 .tag { transform-origin: 72% 0%; animation-name: v4; animation-timing-function: ease-in-out; }
+  @keyframes v4 { 0%, 12% { rotate: 0deg; } 26% { rotate: 9deg; } 42% { rotate: -14deg; } 56% { rotate: 6deg; } 68% { rotate: -3deg; } 78%, 100% { rotate: 0deg; } }
+
+  /* 5 · Phone to tag: the tag stays; the phone leans over to it, as in the hand. */
+  .v5 .phone { transform-origin: 50% 90%; animation-name: v5; animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+  @keyframes v5 { 0%, 18% { translate: 0 0; rotate: 0deg; } 38%, 50% { translate: 40px 10px; rotate: 5deg; } 72%, 100% { translate: 0 0; rotate: 0deg; } }
+
+  /* 6 · Turn to face: the tag turns on its vertical axis toward the phone, like presenting it. */
+  .v6 .tag { transform-origin: 0% 50%; animation-name: v6; animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+  @keyframes v6 { 0%, 18% { transform: perspective(500px) rotateY(0deg); translate: 0 0; } 38%, 50% { transform: perspective(500px) rotateY(38deg); translate: -18px 0; } 72%, 100% { transform: perspective(500px) rotateY(0deg); translate: 0 0; } }
+
+  /* 7 · Double tap: two quick bumps into the phone's edge, the second one reads. */
+  .v7 .tag { animation-name: v7; animation-timing-function: ease-out; }
+  @keyframes v7 { 0%, 20% { translate: 0 0; } 26% { translate: -20px 2px; } 31% { translate: -4px 0; } 37%, 44% { translate: -22px 2px; } 54%, 100% { translate: 0 0; } }
+
+  /* 8 · Pass behind: the tag sweeps down behind the phone and reads as it crosses the middle. */
+  .v8 .tag { animation-name: v8; animation-timing-function: cubic-bezier(.5, 0, .5, 1); }
+  @keyframes v8 { 0%, 10% { translate: 0 0; opacity: 1; } 24% { translate: -86px -40px; } 42% { translate: -86px 90px; } 60% { translate: -86px 200px; opacity: 1; } 66% { opacity: 0; translate: -86px 200px; } 72% { opacity: 0; translate: 0 0; } 84%, 100% { opacity: 1; translate: 0 0; } }
+
+  /* 9 · Hold and ripple: the tag eases close and holds; a ripple spreads from the contact point. */
+  .v9 .tag { animation-name: v9; animation-timing-function: cubic-bezier(.3, 0, .2, 1); }
+  @keyframes v9 { 0%, 16% { translate: 0 0; } 38%, 66% { translate: -16px 6px; } 84%, 100% { translate: 0 0; } }
+  .ripple { position: absolute; z-index: 2; left: calc(100% - 22px); top: 118px; width: 24px; height: 24px; margin: -12px; border-radius: 50%; border: 1.5px solid rgb(150 190 110 / .8); opacity: 0; animation: ripple var(--cycle) ease-out infinite; pointer-events: none; }
+  .ripple + .ripple { animation-delay: .25s; }
+  @keyframes ripple { 0%, 38% { scale: .4; opacity: 0; } 40% { opacity: .9; } 56%, 100% { scale: 5; opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) { .tag, .phone, .layer, .badge, .badge i, .ripple { animation: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>How the tag meets the phone</h1>
+  <p>Nine ways to stage step 03, “Technical designer taps the tag.” Every phone runs the same screen loop (scanning, then “Tag detected” at the moment of contact); only the motion of the tag, or the phone, changes. The phone is the case study’s Momo frame.</p>
+  <div class="controls">
+    <button id="toggle" type="button">Pause</button>
+    <button id="restart" type="button">Restart together</button>
+    <label>Loop <input id="cycle" type="range" min="2.5" max="9" step="0.1" value="4.8" /> <span id="cycleOut">4.8s</span></label>
+    <label>Tag <select id="tagPick"><option value="hero">Full tag (hero cutout)</option><option value="crop">Step crop (case page now)</option></select></label>
+  </div>
+</header>
+<main id="grid"></main>
+
+<template id="tap">
+  <div class="stage">
+    <div class="tap">
+      <img class="tag" alt="" />
+      <div class="phone">
+        <div class="screen">
+          <span class="status">9:41</span>
+          <img class="logo" src="/work/filo/filo-mark.webp" alt="" />
+          <div class="layer scan">
+            <span class="badge"><i></i><i></i><i></i><svg viewBox="0 0 24 24"><path d="M8.5 9.2a4 4 0 0 1 0 5.6M11.6 7a7.2 7.2 0 0 1 0 10M14.8 4.8a10.4 10.4 0 0 1 0 14.4" /></svg></span>
+            <strong>Ready to scan</strong><span>Hold near a Filo tag</span>
+          </div>
+          <div class="layer detect">
+            <span class="badge"><svg viewBox="0 0 24 24"><path d="M6.5 12.5l3.6 3.6L17.5 8.5" /></svg></span>
+            <strong>Tag detected</strong><span>Opening material record…</span>
+          </div>
+          <span class="home"></span>
+        </div>
+        <img class="frame" src="/work/momo/hero/phone-frame.png" width="1312" height="2672" alt="" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  const VARIANTS = [
+    ['Tip in', 'What the page does now: the tag tips toward the phone’s back edge and settles back. Quiet; reads as a nudge more than a tap.'],
+    ['Slide behind', 'The tag slides under the phone until its middle sits behind the screen, like placing the phone on top of it.'],
+    ['Lift and tap', 'The tag lifts off with a growing shadow, arcs in front of the phone and taps the screen. The most literal “tap”.'],
+    ['Swing on the cord', 'A pendulum from the knot: the low point of the swing brushes the phone, then it settles. Playful, physical.'],
+    ['Phone to tag', 'The tag stays put; the phone leans over to it, the way you actually hold a phone to a label.'],
+    ['Turn to face', 'The tag turns on its vertical axis toward the phone, as if presented to it.'],
+    ['Double tap', 'Two quick bumps into the phone’s edge; the second one reads. Feels like an NFC tap.'],
+    ['Pass behind', 'The tag sweeps down behind the phone and reads as it crosses the middle, like a checkout scan.'],
+    ['Hold and ripple', 'The tag eases close and holds while a ripple spreads from the contact point. Makes the signal visible.'],
+  ]
+  const TAGS = {
+    hero: { src: '/work/filo/hero-tag.webp', width: 1024, height: 1536 },
+    crop: { src: '/work/filo/steps/flat-tag.webp', width: 236, height: 420 },
+  }
+  const setTag = (key) => {
+    document.body.dataset.tag = key
+    document.querySelectorAll('.tag').forEach((img) => Object.assign(img, TAGS[key]))
+  }
+  const grid = document.getElementById('grid')
+  const tpl = document.getElementById('tap')
+  VARIANTS.forEach(([name, note], i) => {
+    const section = document.createElement('section')
+    section.className = `variant v${i + 1}`
+    section.innerHTML = `<h2><b>${i + 1}</b>${name}</h2><p>${note}</p>`
+    const stage = tpl.content.cloneNode(true)
+    if (i === 8) stage.querySelector('.tap').insertAdjacentHTML('beforeend', '<span class="ripple"></span><span class="ripple"></span>')
+    section.append(stage)
+    grid.append(section)
+  })
+  const tagPick = document.getElementById('tagPick')
+  tagPick.onchange = () => setTag(tagPick.value)
+  setTag(tagPick.value)
+  const toggle = document.getElementById('toggle')
+  toggle.onclick = () => { const p = document.body.classList.toggle('paused'); toggle.textContent = p ? 'Play' : 'Pause' }
+  const restart = () => document.getAnimations().forEach((a) => { a.currentTime = 0 })
+  document.getElementById('restart').onclick = restart
+  const cycle = document.getElementById('cycle')
+  cycle.oninput = () => { document.documentElement.style.setProperty('--cycle', `${cycle.value}s`); document.getElementById('cycleOut').textContent = `${cycle.value}s`; restart() }
+</script>
+</body>
+</html>

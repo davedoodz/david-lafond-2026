@@ -347,7 +347,7 @@
 </div>
 
 <script type="module">
-import { $$, k, W, H, cursor, reduce, isPaused, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
+import { $$, k, W, H, cursor, reduce, playRate, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
 const phone = k('phone'), display = k('display'), island = k('island'), clip = k('clip')
 const record = k('record'), scroll = k('scroll'), tabs = k('tabs'), file = k('file'), inf = k('inf')
 const PHONE_SCALE = .9
@@ -373,6 +373,8 @@ function poseSwatch({ el, stack, dealt }, p) {
 /** The phone's offset below its resting spot (stage px); OFF puts it fully below the stage. */
 const OFF = H - 8 + 40
 const posePhone = y => { phone.style.translate = `0 ${y}px` }
+/** Tells an embedding page whether the phone is on stage (the case study shows its replay circle only then). */
+const tellPhone = on => { if (parent !== window) parent.postMessage({ filoAppFlow: 'phone', on }, location.origin) }
 
 /* ── Timing ── */
 const outCubic = p => 1 - (1 - p) ** 3
@@ -385,7 +387,7 @@ async function tween(t, ms, fn, ease = inOutCubic) {
   while (e < ms) {
     await sleep(0, t)
     const now = performance.now()
-    if (!isPaused()) e += Math.min(50, now - last)
+    e += Math.min(50, now - last) * playRate()
     last = now
     fn(ease(Math.min(1, e / ms)))
   }
@@ -433,7 +435,7 @@ function resetPhone() {
 }
 function reset() {
   swatches.forEach(s => poseSwatch(s, 0))
-  posePhone(OFF)
+  posePhone(OFF); tellPhone(false)
   resetPhone()
 }
 
@@ -449,6 +451,7 @@ async function dealOut(t) {
 async function tapTag(t) {
   chapter(1)
   let woke = false
+  tellPhone(true)
   await tween(t, 1150, p => {
     posePhone(OFF * (1 - p))
     if (!woke && p > .82) { woke = true; display.classList.add('is-awake') }
@@ -506,6 +509,7 @@ async function technicalFile(t) {
   await sleep(2900, t)
   await move(t, [W * .58, H + 90], 750)
   await sleep(250, t)
+  tellPhone(false)
   await tween(t, 1000, p => posePhone(OFF * p), inCubic)
   resetPhone()
   await sleep(250, t)
@@ -515,7 +519,7 @@ async function technicalFile(t) {
 
 /** Reduced motion: one still that tells the story, the deck dealt and the record open on the phone. */
 function still() {
-  swatches.forEach(s => poseSwatch(s, 1)); posePhone(0)
+  swatches.forEach(s => poseSwatch(s, 1)); posePhone(0); tellPhone(true)
   display.classList.add('is-awake', 'is-app'); clip.classList.add('is-open')
 }
 boot({ scenes: [dealOut, tapTag, detect, tour, technicalFile], home: () => { reset(); chapter(0); if (reduce) still() } })
