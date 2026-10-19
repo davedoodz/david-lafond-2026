@@ -44,9 +44,11 @@
 .persona__quotes[data-qa-paused] .persona__marquee-track {
   animation-play-state: paused;
 }
-/* Strip scale dial: zoom (not transform) so the section's height follows the cards. */
+/* Strip scale dial: zoom (not transform) so the section's height follows the cards. Strip speed dial
+   divides the loop's duration, so 1 keeps the base pace. */
 .persona__quotes:has([data-filo-quote]) .persona__marquee-track {
   zoom: var(--qa-strip-scale, 1);
+  animation-duration: calc(var(--quote-loop, 40s) / var(--qa-speed, 1));
 }
 /* Card gap dial. The trailing padding equals the gap, so the two copies of the list still loop seamlessly. */
 .persona__quotes:has([data-filo-quote]) .persona__marquee-track ul {

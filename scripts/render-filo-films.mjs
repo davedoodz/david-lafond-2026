@@ -13,7 +13,7 @@ const output = path.join(root, 'public/work/filo/films')
 const origin = process.env.FILO_STUDIO_ORIGIN ?? 'http://127.0.0.1:4177'
 const selected = process.argv.slice(2)
 const films = Object.values(FILO_FILMS).filter(f => !selected.length || selected.includes(f.id))
-if (!films.length || selected.some(id => !FILO_FILMS[id])) throw new Error('Pass known flow IDs, or no arguments to render all fifteen.')
+if (!films.length || selected.some(id => !FILO_FILMS[id])) throw new Error('Pass known flow IDs, or no arguments to render every film.')
 await mkdir(output, { recursive: true })
 const scratch = await mkdtemp(path.join(tmpdir(), 'filo-case-films-'))
 const browser = await chromium.launch({ headless: true })

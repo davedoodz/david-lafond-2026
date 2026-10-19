@@ -20,9 +20,7 @@ import { CoreFlows, GuidedPair, StoryRow, type Flows, type Guided, type Story } 
 import { PersonaSection, QuoteMarquee, type Persona } from './casePersona'
 import { DeviceInsights } from './DeviceInsights'
 import { FiloStory, type FiloStorySettings } from './filoStoryArt'
-import { FiloFilms } from '../features/filoCase/FiloFilms'
 import { FiloSourceSteps } from '../features/filoCase/FiloSourceSteps'
-import type { FilmGroup } from '../features/filoCase/filoFilmPlan'
 import { FiloNext } from '../features/filoCase/FiloNext'
 import { FiloResearchFigure, type FiloResearchSettings } from '../features/filoCase/FiloResearch'
 import './CaseStudyPage.css'
@@ -540,18 +538,17 @@ export function CaseStudyPage({ id }: Props) {
         />
       )
     if (filo && key === 'source') return <FiloSourceSteps key={key} spacing={s.spacing} />
-    const hasFilms = filo && ['evidence', 'scale', 'handoff'].includes(key)
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />
     const hasDemo = s.media.figure === 'notification'
     const hasFigure = ['flow', 'system', 'vision', 'signals', 'paper', 'research', 'next'].includes(s.media.figure)
-    const hasVideo = !hasFilms && !hasFigure && !hasDemo && s.media.video !== 'none'
+    const hasVideo = !hasFigure && !hasDemo && s.media.video !== 'none'
     return (
       <section
         key={key}
-        className={`case__section${isHero ? ' case__section--hero' : hasFilms ? ' filo-film-section' : ''}`}
+        className={`case__section${isHero ? ' case__section--hero' : ''}`}
         data-section={key}
-        data-layout={isHero || hasFilms || hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
+        data-layout={isHero || hasVideo || hasFigure || hasDemo ? s.media.layout : 'text'}
         data-copy-align={s.align}
         data-text-reveal={s.textReveal?.preset}
         style={
@@ -655,7 +652,7 @@ export function CaseStudyPage({ id }: Props) {
               />
             )}
           </div>
-        ) : hasFilms ? <FiloFilms group={key as FilmGroup} /> : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
+        ) : hasVideo ? <ProtoMedia media={s.media} eager={isHero} /> : null}
         {isHero && logos?.show && (logos.placement === 'top right' || logos.placement === 'bottom') && <LogoRow l={logos} id={id} />}
         {hasDemo && <NotificationDemo media={s.media} />}
         {hasFigure &&

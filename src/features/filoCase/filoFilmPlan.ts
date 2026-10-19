@@ -1,5 +1,4 @@
 export type FilmCrop = 'phone' | 'detail' | 'upper'
-export type FilmGroup = 'evidence' | 'scale' | 'handoff'
 export type FiloFilm = { id: string; label: string; crop: FilmCrop; posterScene: number }
 
 /** Coordinates on the studio's 720 × 1040 transparent film canvas. */
@@ -9,29 +8,9 @@ export const FILM_CROPS: Record<FilmCrop, { x: number; y: number; width: number;
   upper: { x: 170, y: 197, width: 380, height: 510 },
 }
 
+/** Studio flows rendered to film by scripts/render-filo-films.mjs. Only flow-04 is on the page: it plays
+    on the Proposal's phone (filoStoryArt.tsx). The other flows' films left with the evidence, scale and
+    handoff sections. */
 export const FILO_FILMS: Record<string, FiloFilm> = {
-  'flow-01': { id: 'flow-01', label: 'Build the Technical File', crop: 'detail', posterScene: 3 },
-  'flow-02': { id: 'flow-02', label: 'Find the right suppliers', crop: 'phone', posterScene: 2 },
-  'flow-03': { id: 'flow-03', label: 'Approve the sample plan', crop: 'detail', posterScene: 3 },
   'flow-04': { id: 'flow-04', label: 'Tap the sample. Open its record.', crop: 'phone', posterScene: 0 },
-  'flow-05': { id: 'flow-05', label: 'Capture what happens at the bench', crop: 'upper', posterScene: 1 },
-  'flow-06': { id: 'flow-06', label: 'See the conflict before fusing', crop: 'phone', posterScene: 2 },
-  'flow-07': { id: 'flow-07', label: 'Can we make 10,000?', crop: 'phone', posterScene: 1 },
-  'flow-08': { id: 'flow-08', label: 'Turn a conflict into a test plan', crop: 'detail', posterScene: 3 },
-  'flow-09': { id: 'flow-09', label: 'Run a controlled test', crop: 'upper', posterScene: 2 },
-  'flow-10': { id: 'flow-10', label: 'Keep observations distinct from proof', crop: 'detail', posterScene: 1 },
-  'flow-11': { id: 'flow-11', label: 'Share only the evidence that matters', crop: 'detail', posterScene: 1 },
-  'flow-12': { id: 'flow-12', label: 'Review supplier changes', crop: 'upper', posterScene: 2 },
-  'flow-13': { id: 'flow-13', label: 'Make the consequential decision', crop: 'detail', posterScene: 0 },
-  'flow-14': { id: 'flow-14', label: 'Send a traceable Technical File', crop: 'phone', posterScene: 1 },
-  'flow-15': { id: 'flow-15', label: 'Carry the learning into the next collection', crop: 'upper', posterScene: 2 },
-}
-
-/** Ten studio flows, each once. flow-01 and flow-04 left with the hero (flow-04 now plays in the Proposal);
-    flow-02, flow-03 and flow-12 left with the source section, now the four-step FiloSourceSteps.
-    The lifecycle reel remains reserved for the intro. */
-export const FILM_GROUPS: Record<FilmGroup, string[]> = {
-  evidence: ['flow-05', 'flow-06', 'flow-09', 'flow-08', 'flow-10'],
-  scale: ['flow-07', 'flow-13'],
-  handoff: ['flow-11', 'flow-14', 'flow-15'],
 }

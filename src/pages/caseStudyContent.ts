@@ -599,7 +599,7 @@ export const FILO_CONFIG = {
       m1Role: txt('Technical designer, BlueSTEM'),
       m1Tag: txt('Know before you cut'),
       m2Quote: txt('“We can’t use heat or solvent on this.”'),
-      m2Role: txt('Designer, Gap'),
+      m2Role: txt('Sourcing lead, Gap'),
       m2Tag: txt('Catch it at the bench'),
       m3Quote: txt('“First we look at performance, then at how to do it in the most responsible way.”'),
       m3Role: txt('Product lead, O’Neill'),
@@ -638,24 +638,6 @@ export const FILO_CONFIG = {
     eyebrow: 'Source → approve',
     title: 'The work is prepared.\nThe decision stays yours.',
     body: 'Compare suppliers, approve samples, and review what changes.',
-    align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO), textReveal: textRevealDials() },
-  evidence: { ...sectionDials({
-    eyebrow: 'Observe → resolve',
-    title: 'Evidence belongs\nwhere the work happens.',
-    body: 'Capture the test. Surface the conflict. Keep what is still unknown in view.',
-    align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO), textReveal: textRevealDials() },
-  scale: { ...sectionDials({
-    eyebrow: 'Scale → decide',
-    title: 'The same material.\nA bigger question.',
-    body: 'Can we make 10,000? Confirm the capacity, see the gap, then choose the next move.',
-    align: 'center', layout: 'bottom', gap: 64,
-  }, NO_VIDEO), textReveal: textRevealDials() },
-  handoff: { ...sectionDials({
-    eyebrow: 'Share → reuse',
-    title: 'The record moves forward.\nThe context stays with it.',
-    body: 'Share the evidence, export a traceable file, and carry the learning into the next collection.',
     align: 'center', layout: 'bottom', gap: 64,
   }, NO_VIDEO), textReveal: textRevealDials() },
   outcomes: {

@@ -1011,9 +1011,6 @@
           "floatStagger": 0.11
         }
       }
-    },
-    "evidence": {
-      "eyebrow": "OBSERVE → RESOLVE"
     }
   },
   "Momo welcome": {
@@ -1310,12 +1307,14 @@
   },
   "Filo quote art": {
     "strip": {
-      "scale": 0.86
+      "scale": 0.87,
+      "speed": 2.25
     },
     "card": {
-      "width": 531,
+      "width": 516,
       "height": 281,
       "text": 55,
+      "fill": "#f2ebe4",
       "font": "Inter"
     },
     "quoteType": {
@@ -1330,14 +1329,20 @@
       "spread": -18,
       "opacity": 0.21
     },
+    "thickness": {
+      "show": true,
+      "depth": 8,
+      "shade": 19
+    },
     "Technical designer, BlueSTEM": {
       "scale": 1.24,
-      "x": 19,
-      "y": -18
+      "x": 20,
+      "y": -23
     },
-    "Designer, Gap": {
+    "Sourcing lead, Gap": {
       "scale": 1.37,
-      "y": -3
+      "x": 25,
+      "y": -17
     },
     "Product lead, O’Neill": {
       "scale": 1.43,
@@ -1348,6 +1353,18 @@
       "scale": 1.46,
       "x": 77,
       "y": -24
+    }
+  },
+  "Filo source steps": {
+    "titles": {
+      "step1": "Material innovator provides initial data.",
+      "step2": "Sample arrives with a Filo tag.",
+      "step3": "The Technical File follows the physical sample.\n"
+    },
+    "box": {
+      "scale": 1.33,
+      "speed": 2,
+      "y": 54
     }
   }
 }
