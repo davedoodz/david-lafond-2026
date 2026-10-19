@@ -463,7 +463,7 @@ export function AboutPage() {
         {fadeShow && <div ref={fadeRef} className="about__fade" aria-hidden="true" />}
         <div className="about__peek-stop" aria-hidden="true" />
       </div>
-      <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined}>
+      <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined} data-arc-edge>
         <SheetLayers preset={t.sheet.preset} />
         <section ref={playRef} className="about__play" data-fit={t.spacing.playFit || undefined} aria-labelledby="play-title">
           <h2 ref={playTitleRef} id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor }}>

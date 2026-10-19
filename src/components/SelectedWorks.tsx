@@ -468,7 +468,7 @@ export function SelectedWorks() {
 
   return (
     <section ref={sectionRef} className="works" data-surface="light" aria-labelledby="works-heading" style={style}>
-      <div className="works__bg" aria-hidden="true" />
+      <div className="works__bg" data-arc-edge aria-hidden="true" />
       <div className="works__inner">
         <h2
           id="works-heading"

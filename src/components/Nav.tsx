@@ -181,6 +181,21 @@ export function Nav({ route }: Props) {
       const sectionLight = isLightUnder(nav, x, y, '.works__card, .pg-card')
       if (sectionLight !== null) setSection(sectionLight ? 'light' : 'dark')
       else setSection((current) => current ?? declared())
+      // Edge blur: a sheet's curved edge inside a blur band is blurred toward the screen edge but sharp
+      // at its tip, which reads as a flat crop. Such a band clears while an arc is in it (Nav.css): the
+      // page's top band, and each sheet's own bottom band, which otherwise rests on the sheet's
+      // bottom (its arc) once that is above the screen bottom. An arc spans up to 0.3 × the width.
+      const band = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--edge-blur-length')) || 0
+      const sag = 0.3 * window.innerWidth
+      const vh = window.innerHeight
+      let topArc = false
+      for (const el of document.querySelectorAll<HTMLElement>('[data-arc-edge]')) {
+        const { top, bottom } = el.getBoundingClientRect()
+        if ((top > 0 && top < band) || (bottom > 0 && bottom < band + sag)) topArc = true
+        const sheet = el.closest<HTMLElement>('.works, .about__dark') ?? el
+        sheet.toggleAttribute('data-band-off', band > 0 && (bottom < vh - 0.5 || (top < vh && top > vh - band - sag)))
+      }
+      document.documentElement.toggleAttribute('data-edge-clear', band > 0 && topArc)
     }
     const queue = () => (frame ||= requestAnimationFrame(sample))
     sample()

@@ -271,6 +271,14 @@
     transition-duration: var(--nav-fade-time, 600ms);
     transition-timing-function: cubic-bezier(.4, 0, .2, 1);
   }
+  /* Edge blur clears while a sheet's curved edge is inside the top band (Nav.tsx, data-edge-clear), so
+     the arc stays one clean curve instead of blurred sides over a sharp, flat-looking tip. */
+  html[data-edge-blur] body::before {
+    transition: opacity 250ms ease;
+  }
+  html[data-edge-blur][data-edge-clear] body::before {
+    opacity: 0;
+  }
   /* Edge blur: no colour, only the page under the screen edge blurred (mobileContrast › edgeBlur). Full
      blur for the strength share of the length, then it thins to nothing. Drawn on <body>, not in the
      nav, in this stack (later in the page wins a tie):
@@ -324,6 +332,11 @@
     backdrop-filter: blur(var(--edge-blur, 8px));
     -webkit-mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
     mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+  }
+  /* Off while that band would rest on the sheet's own arc (Nav.tsx, data-band-off). Its height and
+     negative margin cancel out, so removing it moves nothing. */
+  html[data-edge-blur-bottom] :is(.works, .about__dark)[data-band-off]::after {
+    display: none;
   }
   html[data-edge-blur-bottom] .works__eyebrow {
     z-index: 2;
