@@ -1,24 +1,41 @@
-/* Shared by the Filo portal prototypes: fitting the 1536 × 1024 window, the scripted cursor, the
-   address bar, and playback. Opened on its own, a prototype plays and loops. Embedded (the Filo case
-   study), the host page drives it, Momo-style: it posts { filoAppFlow: 'play' | 'pause' | 'restart' }
+/* Shared by the Filo prototypes (the portal windows and the phone): fitting the stage, the scripted
+   cursor, the address bar, and playback. Opened on its own, a prototype plays and loops. Embedded (the
+   Filo case study), the host page drives it, Momo-style: it posts { filoAppFlow: 'play' | 'pause' | 'restart' }
    and gets { filoAppFlow: 'ready' } once the type has loaded, so it can send its current state. */
-export const W = 1536, H = 1024
 export const $ = (s, r = document) => r.querySelector(s)
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)]
 export const k = name => $(`[data-k="${name}"]`)
 export const stage = $('#stage'), cursor = $('#cursor')
+/* The stage's CSS size is the prototype's source size: 1536 × 1024 for the portal (app.css), the phone's own on its page. */
+export const W = stage.offsetWidth, H = stage.offsetHeight
 export const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/* Fill the frame with the window. */
+/* Fill the frame with the stage. A stage marked data-fit="height" fills the frame's height instead and
+   centres across it, so a wide scene keeps its middle and crops its sides in a narrow frame. */
 let scale = 1
+const byHeight = stage.dataset.fit === 'height'
 function fit() {
-  scale = Math.min(innerWidth / W, innerHeight / H)
+  scale = byHeight ? innerHeight / H : Math.min(innerWidth / W, innerHeight / H)
   stage.style.scale = scale
+  if (byHeight) stage.style.left = `${(innerWidth - W * scale) / 2}px`
 }
 addEventListener('resize', fit); fit()
 
 /* ── Timing: every wait checks the run token, so a jump or pause stops the script cleanly. ── */
 let token = 0, paused = false
+/* Speed (the host's { filoAppFlow: 'speed', rate }): waits count down at `rate`, and every animation in the
+   document, scripted or CSS, plays at it. New animations are caught on the next frame. */
+let rate = 1
+const keepRate = () => {
+  document.getAnimations().forEach(a => { if (a.playbackRate !== rate) a.playbackRate = rate })
+  if (rate !== 1) requestAnimationFrame(keepRate)
+}
+function setRate(next) {
+  const was = rate
+  rate = Number.isFinite(next) && next > 0 ? next : 1
+  // Back to 1: one pass resets everything and the loop ends. Away from 1: start the loop once.
+  if (rate === 1 || was === 1) keepRate()
+}
 export class Stop extends Error {}
 export const isPaused = () => paused
 export const sleep = (ms, t) => new Promise((ok, no) => {
@@ -27,7 +44,7 @@ export const sleep = (ms, t) => new Promise((ok, no) => {
   const tick = () => {
     const now = performance.now()
     if (t !== token) return no(new Stop())
-    if (!paused) left -= now - last
+    if (!paused) left -= (now - last) * rate
     last = now
     left <= 0 ? ok() : requestAnimationFrame(tick)
   }
@@ -35,7 +52,7 @@ export const sleep = (ms, t) => new Promise((ok, no) => {
 })
 
 /* ── Cursor ── */
-const HOME = [760, 1120]
+const HOME = [W / 2, H + 96]
 let cx = HOME[0], cy = HOME[1]
 export const place = (x, y) => { cx = x; cy = y; cursor.style.translate = `${x}px ${y}px` }
 place(cx, cy)
@@ -82,7 +99,7 @@ export function setUrl(next, animate = true) {
   urlLoad.getAnimations().forEach(a => a.cancel())
   urlLoad.animate([{ scale: '0 1', opacity: 1 }, { scale: '.85 1', opacity: 1, offset: .7 }, { scale: '1 1', opacity: 0 }], { duration: 520, easing: 'ease-out' })
   urlText.classList.add('is-out')
-  setTimeout(() => { if (url === next) { show(); urlText.classList.remove('is-out') } }, 180)
+  setTimeout(() => { if (url === next) { show(); urlText.classList.remove('is-out') } }, 180 / rate)
 }
 
 /** Tells an embedding page which chapter of the flow is on screen (the studio page highlights its caption). */
@@ -133,6 +150,7 @@ export async function boot({ scenes, home }) {
       if (data?.filoAppFlow === 'play') play()
       else if (data?.filoAppFlow === 'pause') setPaused(true)
       else if (data?.filoAppFlow === 'restart') restart()
+      else if (data?.filoAppFlow === 'speed') setRate(Number(data.rate))
     })
     parent.postMessage({ filoAppFlow: 'ready' }, location.origin)
   }

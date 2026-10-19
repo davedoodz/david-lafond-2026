@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Studio · Filo prototype: the designer receives the record</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #fff; font: 14px/1.5 system-ui, sans-serif; color: #232323; }
+  main { display: grid; grid-template-columns: 360px 300px; align-items: center; gap: 64px; padding: 40px 24px; }
+  .frame { aspect-ratio: 434 / 884; filter: drop-shadow(0 22px 30px rgb(23 23 23 / .16)); }
+  .frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+  /* The five chapters; the one on screen is in ink. */
+  ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 22px; }
+  li { color: #9a9a9d; transition: color .3s ease; }
+  li small { display: block; font: 12px ui-monospace, monospace; }
+  li b { display: block; margin: 4px 0 4px; font-weight: 550; font-size: 14.5px; color: #6f6f71; transition: color .3s ease; }
+  li.is-on { color: #6f6f71; }
+  li.is-on b { color: #141414; }
+  @media (max-width: 760px) { main { grid-template-columns: min(360px, 88vw); } }
+</style>
+</head>
+<body>
+<main>
+  <div class="frame"><iframe id="flow" src="/work/filo/filo-phone-receive.html" title="Filo prototype: the designer receives the material record on her phone"></iframe></div>
+  <ol id="chapters">
+    <li class="is-on"><small>01</small><b>The email arrives</b>Priya’s phone is locked. A notification lands: Modern Synthesis has shared a new material with her on Filo.</li>
+    <li><small>02</small><b>The record, before the sample</b>The email carries the summary card and the material link.</li>
+    <li><small>03</small><b>Open the Technical File</b>One tap opens the record in the browser: no app, no sign-in. The supplier’s key properties come first.</li>
+    <li><small>04</small><b>Documents and open questions</b>Datasheet, lab report and certificate, and the checks that still need testing.</li>
+    <li><small>05</small><b>Photos and supplier</b>The material photos and who makes it, before the swatch is in hand.</li>
+  </ol>
+</main>
+<script type="module">
+const frame = document.getElementById('flow'), items = [...document.querySelectorAll('#chapters li')]
+addEventListener('message', ({ source, data }) => {
+  if (source !== frame.contentWindow) return
+  if (data?.filoAppFlow === 'ready') frame.contentWindow.postMessage({ filoAppFlow: 'play' }, location.origin)
+  if (data?.filoAppFlow === 'chapter') items.forEach((li, i) => li.classList.toggle('is-on', i === data.index))
+})
+</script>
+</body>
+</html>
