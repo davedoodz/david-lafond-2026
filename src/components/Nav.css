@@ -184,6 +184,12 @@
   padding-left: var(--edge);
   padding-right: 35px;
 }
+/* Phones: the Work page lines the first link up with its hero text (useHeroFit sets --nav-start). */
+@media (max-width: 640px) {
+  .nav[data-ghost-side='end'] {
+    padding-left: var(--nav-start, var(--edge));
+  }
+}
 .nav[data-ghost-side='end'] .nav__start {
   display: flex;
   flex-direction: row-reverse;

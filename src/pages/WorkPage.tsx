@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'rea
 import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
-import { DEFAULT_INTRO_TEXT, WorkIntroStickers, widestIntroLine } from '../features/workStickers/WorkIntroStickers'
+import { DEFAULT_INTRO_TEXT, WorkIntroStickers, introLineSpan } from '../features/workStickers/WorkIntroStickers'
 import { TOUCH_LANDING, smallViewportHeight, touchDome } from '../lib/touchLanding'
 import { Signature } from '../features/signature/Signature'
 import { useEntrance } from '../lib/useEntrance'
@@ -66,8 +66,10 @@ function textWidth(el: Element | null) {
  * ever wraps.
  * Phones: the title also stays on one line per part ("I'm David Lafond," / "a product designer."),
  * shrinking the same way, and the hero takes its widest line's width.
- * The block is then centred (--hero-center-x) on its widest possible line (each pill at its longest
- * phrase), every line keeping one left edge, so it never moves as the pills change phrase.
+ * The block is then centred (--hero-center-x) on the middle of its width range, between its
+ * narrowest and widest phrase combinations, every line keeping one left edge. It never moves as the
+ * pills change phrase, and sits no further off centre one way than the other. On phones the widest
+ * line fills the screen, so the side insets pin it.
  * Touch landing (lib/touchLanding): when the hero is too tall for the sheet's peek to show, its
  * vertical padding shrinks (down to 8px) until it fits.
  */
@@ -82,7 +84,7 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       frame = 0
       for (const v of ['--hero-title-fit', '--hero-body-fit', '--column-fit', 'padding-block']) hero.style.removeProperty(v)
       const avail = document.documentElement.clientWidth - 2 * parseFloat(getComputedStyle(hero).getPropertyValue('--column-inset'))
-      const body = Math.max(textWidth(hero.querySelector('.hero__role')), widestIntroLine(hero))
+      const body = Math.max(textWidth(hero.querySelector('.hero__role')), introLineSpan(hero)[1])
       const bodyFit = body > avail ? avail / body : 1
       hero.style.setProperty('--hero-body-fit', bodyFit.toFixed(4))
       if (phone()) {
@@ -108,20 +110,25 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     }
     const center = () => {
       // A centre-aligned hero is already centred line by line.
-      if (hero.dataset.align === 'center') return hero.style.removeProperty('--hero-center-x')
-      // Painted line widths at the fitted size; the intro at each pill's longest phrase.
-      const widest = Math.max(
-        ...['.hero__title', '.hero__role'].map((s) => textWidth(hero.querySelector(s))),
-        widestIntroLine(hero),
-      )
+      if (hero.dataset.align === 'center') {
+        hero.style.removeProperty('--hero-center-x')
+        document.documentElement.style.removeProperty('--nav-start')
+        return
+      }
+      // Painted line widths at the fitted size: the title and role are fixed, the intro ranges with its pills.
+      const fixed = Math.max(...['.hero__title', '.hero__role'].map((s) => textWidth(hero.querySelector(s))))
+      const [narrow, wide] = introLineSpan(hero).map((w) => Math.max(fixed, w))
       const style = getComputedStyle(hero)
       const vw = document.documentElement.clientWidth
-      // Never past the side inset on the left.
       const inset = parseFloat(style.getPropertyValue('--column-inset')) || 0
       // Layout position (the hero is centred by its margins), not the rect, which includes the shift.
       const left = (vw - hero.offsetWidth) / 2 + parseFloat(style.paddingLeft)
-      const shift = Math.max(inset - left, vw / 2 - (left + widest / 2))
-      hero.style.setProperty('--hero-center-x', `${shift.toFixed(1)}px`)
+      // Centre the middle width; keep the widest line inside the right inset, and never pass the left one.
+      const target = Math.min(vw / 2 - (narrow + wide) / 4, vw - inset - wide)
+      const start = Math.max(inset, target)
+      hero.style.setProperty('--hero-center-x', `${(start - left).toFixed(1)}px`)
+      // Phones: the nav's first link lines up with the hero text (Nav.css).
+      document.documentElement.style.setProperty('--nav-start', `${start.toFixed(1)}px`)
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
     fit()
@@ -141,6 +148,7 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       removeEventListener('resize', schedule)
       touch.removeEventListener('change', schedule)
       resize.disconnect()
+      document.documentElement.style.removeProperty('--nav-start')
     }
   }, [heroRef, key])
 }

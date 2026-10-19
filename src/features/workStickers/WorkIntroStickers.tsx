@@ -216,10 +216,12 @@ function toLines(paragraph: Token[]): Token[][] {
  * its longest phrase, so the size never jumps as pills turn. */
 // Every phrase each pill can show, from the frozen config.
 const labelsById = new Map(Object.entries(config.stickers).map(([id, sticker]) => [id, sticker.faces.map(face => face.label.trim())]))
-/** Width of an intro line with each of its pills showing its longest phrase. Phrases are measured
- * in a hidden probe styled like the pill's label (canvas ignores letter-spacing and over-measures). */
-function widestWidth(line: HTMLElement) {
-  let width = line.getBoundingClientRect().width
+/** Width of an intro line with each of its pills at its shortest and at its longest phrase. Phrases
+ * are measured in a hidden probe styled like the pill's label (canvas ignores letter-spacing and
+ * over-measures). */
+function lineSpan(line: HTMLElement): [number, number] {
+  const width = line.getBoundingClientRect().width
+  let min = width, max = width
   for (const pill of line.querySelectorAll<HTMLElement>('.ws-pill[data-pill]')) {
     const label = pill.querySelector<HTMLElement>('.ws-pill-text')
     if (!label) continue
@@ -230,15 +232,20 @@ function widestWidth(line: HTMLElement) {
     probe.style.letterSpacing = style.letterSpacing
     probe.style.fontFeatureSettings = style.fontFeatureSettings
     pill.append(probe)
-    const widths = (labelsById.get(pill.dataset.pill!) ?? []).map(l => { probe.textContent = l; return probe.getBoundingClientRect().width })
     probe.textContent = label.textContent
     const shown = probe.getBoundingClientRect().width
+    const widths = (labelsById.get(pill.dataset.pill!) ?? []).map(l => { probe.textContent = l; return probe.getBoundingClientRect().width })
     probe.remove()
-    width += Math.max(shown, ...widths) - shown
+    min += Math.min(shown, ...widths) - shown
+    max += Math.max(shown, ...widths) - shown
   }
-  return width
+  return [min, max]
 }
-/** The widest sticker-intro line inside `scope` at its current font size (pills at their longest phrase). */
-export function widestIntroLine(scope: HTMLElement) {
-  return Math.max(0, ...Array.from(scope.querySelectorAll<HTMLElement>('.work-intro-stickers__p .ws-line'), widestWidth))
+/**
+ * How wide the sticker intro inside `scope` can get at its current font size, as its longest line:
+ * `[narrowest, widest]` over every combination of phrases the pills can show.
+ */
+export function introLineSpan(scope: HTMLElement): [number, number] {
+  const spans = Array.from(scope.querySelectorAll<HTMLElement>('.work-intro-stickers__p .ws-line'), lineSpan)
+  return [Math.max(0, ...spans.map(s => s[0])), Math.max(0, ...spans.map(s => s[1]))]
 }
