@@ -21,6 +21,22 @@ const CONFIG = {
   },
 }
 
+/**
+ * The title as exactly two lines: split at a line break typed in the title, else at the word gap
+ * nearest the middle (by characters). Each line keeps its words together (ContactCta.css).
+ */
+function twoLines(title: string): [string, string] {
+  const typed = title.indexOf('\n')
+  if (typed >= 0) return [title.slice(0, typed).trim(), title.slice(typed + 1).replace(/\n/g, ' ').trim()]
+  const words = title.trim().split(/\s+/)
+  let best = 1, bestDiff = Infinity
+  for (let i = 1; i < words.length; i++) {
+    const diff = Math.abs(words.slice(0, i).join(' ').length - words.slice(i).join(' ').length)
+    if (diff < bestDiff) [best, bestDiff] = [i, diff]
+  }
+  return [words.slice(0, best).join(' '), words.slice(best).join(' ')]
+}
+
 export function ContactCta() {
   const t = useTuning('Contact CTA', CONFIG)
   return (
@@ -41,7 +57,9 @@ export function ContactCta() {
       aria-labelledby="cta-title"
     >
       <h2 id="cta-title" className="cta__title" data-selectable>
-        {t.title}
+        {twoLines(t.title).map((line, i) => (
+          <span key={i} className="cta__line">{line}</span>
+        ))}
       </h2>
       <p className="cta__subtitle" data-selectable>{t.subtitle}</p>
       <LetsChat />

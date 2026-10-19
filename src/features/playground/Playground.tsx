@@ -169,7 +169,7 @@ const PLAYGROUND_CONFIG = {
     /** How many cards show, in data order (first N). */
     count: [playgroundItems.length, 1, playgroundItems.length, 1] as [number, number, number, number],
     columnsDesktop: [4, 1, 8, 1] as [number, number, number, number],
-    columnsMobile: [3, 1, 4, 1] as [number, number, number, number],
+    columnsMobile: [2, 1, 4, 1] as [number, number, number, number],
     /** Card width (px); height follows the card's aspect ratio. Capped by the page margins. */
     cardWidthDesktop: [230, 80, 600, 1] as [number, number, number, number],
     cardWidthMobile: [142, 60, 400, 1] as [number, number, number, number],

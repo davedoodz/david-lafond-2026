@@ -346,18 +346,19 @@ body.davebot-open {
 }
 
 @media (max-width: 639px) {
+  /* Same layout and flight as desktop: the ghost sits above a centred palette. The top padding
+     reserves the ghost's upward offset (Davebot › ghost › offsetY) and the palette's height cap
+     leaves room for the ghost, so neither is pushed off screen by a long answer. */
   .davebot-stack {
-    justify-content: flex-start;
-    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
-  }
-  /* The palette docks to the top edge so the software keyboard cannot bury
-     the rows; there is no room above it for the scaled ghost. */
-  .davebot-ghost {
-    display: none;
+    padding: calc(max(8px, env(safe-area-inset-top)) + var(--davebot-ghost-lift, 0px)) 8px
+      max(8px, env(safe-area-inset-bottom));
   }
   .davebot-panel {
     width: 100% !important;
-    max-height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    max-height: calc(
+      100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom)) - var(--davebot-ghost-size) * 0.89 -
+        var(--davebot-ghost-lift, 0px)
+    );
   }
   .davebot-form {
     min-height: 52px;

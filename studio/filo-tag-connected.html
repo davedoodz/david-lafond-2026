@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo · tag connected, ways to show it</title>
+<style>
+  @font-face { font-family: Satoshi; src: url('/work/filo/filo-app-flow/Satoshi-Variable.woff2') format('woff2'); font-weight: 300 900; font-display: block; }
+  @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  :root { --page: #f5f5f4; --ink: #171717; --muted: #666; --green: #2a9a43; --green-ink: #24903c; --pale: #d3e8d6; --halo: #e2eee3;
+    --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-move: cubic-bezier(.65, 0, .35, 1); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: Beatrice, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { max-width: 1240px; margin: 0 auto; padding: 56px 32px 8px; }
+  h1 { margin: 0; font-size: 30px; font-weight: 400; letter-spacing: -.02em; }
+  header p { margin: 10px 0 0; max-width: 720px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+  .controls { display: flex; gap: 10px; align-items: center; margin-top: 18px; font-size: 14px; color: var(--muted); }
+  .controls button { font: inherit; color: var(--ink); background: #fff; border: 1px solid #dcdcda; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .controls button[aria-pressed='true'] { background: var(--ink); color: #fff; border-color: var(--ink); }
+  main { max-width: 1240px; margin: 0 auto; padding: 24px 32px 96px; display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 32px; }
+  .variant { padding: 18px 0 0; border-top: 1px solid #e3e3e1; }
+  .variant h2 { margin: 0; font-size: 18px; font-weight: 400; letter-spacing: -.01em; }
+  .variant h2 b { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; background: #ebebea; font-size: 12px; font-weight: 400; vertical-align: 2px; }
+  .variant > p { margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; min-height: 5.8em; }
+
+  /* The right column of the portal's "Write to NFC tag" page, at its real size: the reader while waiting,
+     then the connected tag. The mark is one element in both states: it rises and shrinks into the badge
+     slot above "Tag connected", so the reader turns into the result instead of being swapped for it. */
+  .panel { position: relative; width: 336px; height: 330px; margin: 14px auto 0; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px #ececec;
+    font-family: Satoshi, system-ui, sans-serif; font-weight: 450; letter-spacing: -.005em; color: #2a2a2a; text-align: center; overflow: hidden; }
+  .mark { position: absolute; left: 102px; top: 72px; width: 132px; height: 132px; display: grid; place-items: center;
+    transition: translate .6s var(--ease-move), scale .6s var(--ease-move); }
+  .mark::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--halo); transition: opacity .35s ease, scale .5s var(--ease-out); }
+  .pulse { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #9fcca7; opacity: 0; animation: pulse 2.2s ease-out infinite; transition: opacity .25s ease; }
+  .pulse + .pulse { animation-delay: 1.1s; }
+  .disc { position: relative; display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: var(--pale); color: var(--green-ink);
+    transition: background-color .4s ease, color .4s ease; }
+  .disc svg { position: absolute; width: 42px; height: 42px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+    transition: opacity .35s ease, translate .5s var(--ease-move), scale .5s var(--ease-move), rotate .5s var(--ease-move); }
+  .alt { opacity: 0; }
+  .is-hit .disc { animation: hit .5s var(--ease-out); }
+  @keyframes pulse { from { scale: .7; opacity: .9; } to { scale: 1.35; opacity: 0; } }
+  @keyframes hit { 40% { scale: 1.12; } }
+
+  /* Linked: halo and pulses go; the disc lands where the badge sits (centre 60px from the top, 68px wide). */
+  .is-linked .mark { translate: 0 -78px; scale: .74; }
+  .is-linked .mark::before { opacity: 0; scale: .8; }
+  .is-linked .pulse { animation: none; opacity: 0; }
+
+  .copy { position: absolute; inset: 0; transition: opacity .35s ease; }
+  .copy strong { position: absolute; left: 0; right: 0; font-size: 18.5px; font-weight: 600; color: #141414; }
+  .copy p { position: absolute; left: 0; right: 0; margin: 0; font-size: 15px; line-height: 22px; color: #7a7a7d; }
+  .wait strong { top: 226px; } .wait p { top: 256px; line-height: 23px; }
+  .done { opacity: 0; } .done strong { top: 110px; } .done p { top: 140px; }
+  .is-linked .wait { opacity: 0; } .is-linked .done { opacity: 1; transition-delay: .18s; }
+  .tinfo { position: absolute; left: 18px; right: 18px; top: 196px; margin: 0; padding: 8px 14px; border-radius: 10px; background: #f7f7f7; text-align: left; font-size: 13.5px; }
+  .tinfo div { display: grid; grid-template-columns: 112px 1fr; padding: 6px 0; }
+  .tinfo dt { color: #7a7a7d; } .tinfo dd { margin: 0; color: #1a1a1a; }
+  .tinfo .dot::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--green); vertical-align: 1px; }
+
+  /* 1 · Today: a solid green check, the same as every finished step on the page. */
+  .v1 .alt { scale: .5; color: #fff; stroke-width: 2.6; }
+  .v1.is-linked .disc { background: var(--green); }
+  .v1.is-linked .nfc { opacity: 0; }
+  .v1.is-linked .alt { opacity: 1; scale: 1; }
+
+  /* 2 · Signal on: the same waves, now white on solid green; one still ring is all that's left of the pulse. */
+  .v2 .hold { position: absolute; inset: -9px; border-radius: 50%; border: 2px solid #9fcca7; opacity: 0; scale: 1.25; transition: opacity .4s ease .1s, scale .6s var(--ease-out) .1s; }
+  .v2.is-linked .disc { background: var(--green); color: #fff; }
+  .v2.is-linked .hold { opacity: 1; scale: 1; }
+
+  /* 3 · Link written: the waves fold away and a link draws in its place: it says what the tag now holds. */
+  .v3 .alt path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .6s var(--ease-out) .2s; }
+  .v3.is-linked .nfc { opacity: 0; scale: .5; rotate: -30deg; }
+  .v3.is-linked .alt { opacity: 1; }
+  .v3.is-linked .alt path { stroke-dashoffset: 0; }
+  .v3.is-linked .disc { background: #cbe5cf; color: #1f7a32; }
+
+  /* 4 · Circle closes: the waves stay, and a green ring draws once around the disc. Done = the loop is closed. */
+  .v4 .close { left: -8px; top: -8px; width: 108px; height: 108px; overflow: visible; rotate: -90deg; }
+  .v4 .close circle { fill: none; stroke: var(--green); stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1;
+    transition: stroke-dashoffset .8s var(--ease-move) .15s; }
+  .v4.is-linked .close circle { stroke-dashoffset: 0; }
+  .v4.is-linked .disc { color: #1f7a32; }
+
+  /* 5 · The tag arrives: the waves slide out to the right as the tag slides in from the left and settles. */
+  .v5 .alt { translate: -26px 0; rotate: -14deg; }
+  .v5.is-linked .nfc { opacity: 0; translate: 26px 0; }
+  .v5.is-linked .alt { opacity: 1; translate: 0 0; rotate: 0deg; }
+  .v5.is-linked .disc { background: #cbe5cf; color: #1f7a32; }
+
+  /* 6 · Waves and badge: the waves stay as they are; a small solid link badge clips onto the disc. */
+  .v6 .badge { position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--green); color: #fff;
+    box-shadow: 0 0 0 4px #fff; scale: 0; transition: scale .45s cubic-bezier(.3, 1.5, .5, 1) .2s; }
+  .v6 .badge svg { position: static; width: 18px; height: 18px; stroke-width: 2.4; }
+  .v6.is-linked .badge { scale: 1; }
+  .v6.is-linked .disc { color: #1f7a32; }
+
+  .paused * { animation-play-state: paused !important; }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } .mark, .disc, .disc svg, .copy { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Tag connected: ways to show it</h1>
+  <p>The share video's tag step, at its real size. Each card loops: waiting for a tag, the tap, then connected. In every version the reader's green disc rises into the badge slot instead of being swapped for a new icon, so the result comes out of the waiting symbol. They differ in what the disc turns into. Version 1 is what the page has now.</p>
+  <div class="controls">
+    <button type="button" id="replay">Replay</button>
+    <button type="button" id="hold" aria-pressed="false">Hold on connected</button>
+  </div>
+</header>
+<main id="grid"></main>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-nfc" viewBox="0 0 24 24"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m6.5 12.5 3.6 3.6L17.5 8.5"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  </defs>
+</svg>
+
+<script>
+const use = id => `<svg class="${id === 'i-nfc' ? 'nfc' : 'alt'}"><use href="#${id}"/></svg>`
+// The link icon is drawn inline (not <use>), so its strokes can draw in.
+const LINK = '<svg class="alt" viewBox="0 0 24 24"><path pathLength="1" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path pathLength="1" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+const VARIANTS = [
+  ['v1', 'Green check (today)', 'The disc fills green and the waves become a white check. Clear, but it is the same mark as the finished step numbers and the toast, so the tag step reads as one more tick.', use('i-nfc') + use('i-check'), ''],
+  ['v2', 'Signal on', 'Nothing new to learn: the same waves turn white on solid green, and one still ring stays where the pulses were. Waiting is pale and moving; connected is solid and still.', use('i-nfc'), '<i class="hold"></i>'],
+  ['v3', 'Link written', 'The waves fold away and a link draws in. It names the result (this tag now holds a link), which matches "This tag will open" right below it.', use('i-nfc') + LINK, ''],
+  ['v4', 'Circle closes', 'The waves stay and a green ring draws once around the disc, like a scan completing. Done without a check, and still clearly the reader.', use('i-nfc'), '<svg class="close" viewBox="0 0 108 108"><circle pathLength="1" cx="54" cy="54" r="52"/></svg>'],
+  ['v5', 'The tag arrives', 'The waves slide out as a tag icon slides in and settles. It shows what connected: the physical tag the hanging card just tapped.', use('i-nfc') + use('i-tag'), ''],
+  ['v6', 'Waves with a link badge', 'The waves stay; a small solid link badge clips onto the disc. The most information in one mark (a tag, now linked), at the cost of a second shape.', use('i-nfc'), '<span class="badge"><svg viewBox="0 0 24 24"><use href="#i-link"/></svg></span>'],
+]
+const grid = document.getElementById('grid')
+grid.innerHTML = VARIANTS.map(([cls, name, note, icons, extra], i) => `
+  <section class="variant">
+    <h2><b>${i + 1}</b>${name}</h2>
+    <p>${note}</p>
+    <div class="panel ${cls}">
+      <div class="mark"><i class="pulse"></i><i class="pulse"></i><span class="disc">${icons}${extra}</span></div>
+      <div class="copy wait"><strong>Tap an NFC tag</strong><p>Place the tag near your computer<br>or use a phone with NFC.</p></div>
+      <div class="copy done"><strong>Tag connected</strong><p>This tag will open:<br>Bacterial Cellulose (BC-001)</p>
+        <dl class="tinfo"><div><dt>Tag type</dt><dd>NTAG215</dd></div><div><dt>Serial number</dt><dd>04:A2:B3:9C:E1:6D:80</dd></div><div><dt>Status</dt><dd class="dot">Linked</dd></div></dl></div>
+    </div>
+  </section>`).join('')
+
+const panels = [...document.querySelectorAll('.panel')]
+let timers = [], hold = false
+const later = (ms, fn) => timers.push(setTimeout(fn, ms))
+function cycle() {
+  timers.forEach(clearTimeout); timers = []
+  panels.forEach(p => p.classList.remove('is-hit', 'is-linked'))
+  later(2200, () => panels.forEach(p => p.classList.add('is-hit')))
+  later(2600, () => panels.forEach(p => p.classList.replace('is-hit', 'is-linked')))
+  later(6400, () => { if (!hold) cycle() })
+}
+document.getElementById('replay').onclick = cycle
+document.getElementById('hold').onclick = e => {
+  hold = !hold; e.currentTarget.setAttribute('aria-pressed', hold)
+  if (!hold && panels[0].classList.contains('is-linked')) later(1200, cycle)
+}
+cycle()
+</script>
+</body>
+</html>

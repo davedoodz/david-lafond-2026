@@ -3,7 +3,10 @@
   display: block;
   width: var(--sig-w);
   height: var(--sig-h);
-  transform: translate(var(--sig-offset-x), var(--sig-offset-y));
+  /* Scale grows from the box point that the X offset puts on the hero text's left edge, so the
+     signature stays aligned with the text at any size. */
+  transform: translate(var(--sig-offset-x), var(--sig-offset-y)) scale(var(--sig-scale, 1));
+  transform-origin: calc(var(--sig-offset-x) * -1) 50%;
   cursor: pointer;
   border-radius: 8px;
   -webkit-tap-highlight-color: transparent;

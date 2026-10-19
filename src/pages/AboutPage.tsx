@@ -10,7 +10,8 @@ import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
 import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
 import { useEntrance } from '../lib/useEntrance'
-import { DOME_CURVES, domeClip } from '../lib/domeClip'
+import { DOME_CURVES } from '../lib/domeClip'
+import { SAVED_TOUCH_ARC, TOUCH_LANDING, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
 import { useFitColumn } from '../lib/useFitColumn'
 import { revealDials, useReveal } from '../lib/useReveal'
 import { storyEntranceDials, useStoryEntrance } from '../features/storyEntrance/storyEntrance'
@@ -175,25 +176,42 @@ export function AboutPage() {
   useReveal(playRef, '.pg-card', t.reveal, revealRun)
 
   // "My playground" sits as far below the dark sheet's top edge as "Selected projects" does on Home.
-  // It stays in flow (the cards never move); only its own offset is set, re-measured on resize.
+  // Touch screens: like Home's label, it is centred between the arc's tip and the screen's bottom
+  // edge at the story's end (half the Work page's peek). It stays in flow (the cards never move);
+  // only its own offset is set.
   useLayoutEffect(() => {
     const dark = darkRef.current
     const title = playTitleRef.current
     if (!dark || !title) return
     const mobile = window.matchMedia('(max-width: 640px)')
+    const touch = window.matchMedia(TOUCH_LANDING)
     const place = () => {
+      const play = playRef.current
       title.style.top = '0px'
-      const natural = title.getBoundingClientRect().top - dark.getBoundingClientRect().top
-      const want = mobile.matches ? SHEET_LABEL_TOP.mobile : SHEET_LABEL_TOP.desktop
+      play?.style.removeProperty('--play-touch-push')
+      const edge = dark.getBoundingClientRect().top
+      const peek = touch.matches ? touchDome(smallViewportHeight()).peek : 0
+      // Touch screens: like Home's first thumbnail, the first row of cards starts at the fold, so
+      // only the arc and the label show in the peek.
+      const grid = play?.querySelector('.pg-grid')
+      const push = grid ? peek - (grid.getBoundingClientRect().top - edge) : 0
+      if (play && push > 0) play.style.setProperty('--play-touch-push', `${push.toFixed(1)}px`)
+      const box = title.getBoundingClientRect()
+      const natural = box.top - dark.getBoundingClientRect().top
+      const want = touch.matches
+        ? peek / 2 - box.height / 2
+        : mobile.matches ? SHEET_LABEL_TOP.mobile : SHEET_LABEL_TOP.desktop
       title.style.top = `${want - natural}px`
     }
     place()
     const observer = new ResizeObserver(place)
     observer.observe(dark)
     mobile.addEventListener('change', place)
+    touch.addEventListener('change', place)
     return () => {
       observer.disconnect()
       mobile.removeEventListener('change', place)
+      touch.removeEventListener('change', place)
     }
   }, [])
 
@@ -209,6 +227,7 @@ export function AboutPage() {
     }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let frame = 0
+    let svh = smallViewportHeight()
     const update = () => {
       frame = 0
       const vh = window.innerHeight
@@ -219,18 +238,22 @@ export function AboutPage() {
       // 0 while only the peek shows (same full dome as the Work page's resting tip),
       // 1 once it has travelled enterDistance. Capped so it is always flat by the
       // time the sheet top reaches the top of the screen (the snap stop).
-      const peek = mobile ? dome.peekMobile : dome.peekDesktop
+      const touch = window.matchMedia(TOUCH_LANDING).matches
+      // Touch screens peek exactly as far as the Work page's white arc (touchDome), not the peek dial.
+      const peek = touch ? touchDome(svh).peek : mobile ? dome.peekMobile : dome.peekDesktop
+      for (const v of ['--dome-peek-d', '--dome-peek-m']) {
+        if (touch) sheet.style.setProperty(v, `${peek.toFixed(2)}px`)
+        else sheet.style.removeProperty(v)
+      }
       const rest = vh - peek
-      if (mobile) {
-        // Mobile: the Selected works morph — one progress value drives side, arch
-        // and corners together through the shared domeClip, so the shape never
-        // steps mid-scroll. Travel is capped at the rest distance so it is fully
-        // flat when the sheet snaps to the top (no page showing at the corners).
+      if (touch) {
+        // Touch screens: the Work page's white arc (same saved touchArc curve), flattened by one
+        // progress value. Travel is capped at the rest distance so it is fully flat when the
+        // sheet snaps to the top (no page showing at the corners).
         const travel = Math.min(shape.enterDistance * vh, rest)
         // +1px: a sub-pixel snap position still counts as fully flat.
         const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest + 1 - sheet.getBoundingClientRect().top) / travel)))
-        const side = (shape.side * (1 - e) * vw) / 100
-        sheet.style.setProperty('--dome-clip', domeClip(side, { radius: shape.radius, arch: shape.arch }, 1 - e, { radius: 0, arch: 0 }, 0, vh))
+        sheet.style.setProperty('--dome-clip', touchArcClip(SAVED_TOUCH_ARC, sheet, svh, 1 - e, 0))
         return
       }
       const travel = Math.min(shape.enterDistance * vh, rest)
@@ -252,12 +275,20 @@ export function AboutPage() {
       if (!frame) frame = requestAnimationFrame(update)
     }
     update()
+    const resize = () => {
+      svh = smallViewportHeight()
+      schedule()
+    }
+    // The touch arc's clip is drawn in px over the sheet's box, so redraw when the sheet resizes.
+    const sized = new ResizeObserver(schedule)
+    sized.observe(sheet)
     window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
+    window.addEventListener('resize', resize)
     return () => {
       cancelAnimationFrame(frame)
+      sized.disconnect()
       window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
+      window.removeEventListener('resize', resize)
     }
     // `domeKey` captures every dome dial.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -369,6 +400,61 @@ export function AboutPage() {
     }
   }, [])
 
+  // Phones: the gap from the GitHub logo down to the contact heading always equals the gap from the
+  // playground's last row of cards down to the graph's month labels. Measured on screen (the graph,
+  // its logo and the playground all have position dials), and the contact section's top padding
+  // absorbs the difference through --cta-match (AboutPage.css). Re-measured on resize, on any dial
+  // change (style writes), and when reveal animations settle.
+  useLayoutEffect(() => {
+    const dark = darkRef.current
+    if (!dark) return
+    const phone = window.matchMedia('(max-width: 640px)')
+    let shift = 0
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const cta = dark.querySelector<HTMLElement>('.cta')
+      const cards = dark.querySelectorAll<HTMLElement>('.pg-card')
+      const months = dark.querySelector<HTMLElement>('.cg__labels')
+      const logo = dark.querySelector<HTMLElement>('.cg__logo')
+      const title = dark.querySelector<HTMLElement>('.cta__title')
+      if (!phone.matches || !cta || !cards.length || !months || !logo || !title) {
+        shift = 0
+        cta?.style.removeProperty('--cta-match')
+        return
+      }
+      const lastRow = Math.max(...Array.from(cards, (card) => card.getBoundingClientRect().bottom))
+      const above = months.getBoundingClientRect().top - lastRow
+      const below = title.getBoundingClientRect().top - logo.getBoundingClientRect().bottom - shift
+      const next = Math.round((above - below) * 2) / 2
+      if (Math.abs(next - shift) < 0.5) return
+      shift = next
+      cta.style.setProperty('--cta-match', `${shift}px`)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
+    }
+    measure()
+    const resize = new ResizeObserver(schedule)
+    resize.observe(dark)
+    const dials = new MutationObserver(schedule)
+    dials.observe(dark, { attributes: true, attributeFilter: ['style'], subtree: true, childList: true })
+    dark.addEventListener('transitionend', schedule)
+    dark.addEventListener('animationend', schedule)
+    phone.addEventListener('change', schedule)
+    window.addEventListener('scroll', schedule, { passive: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      resize.disconnect()
+      dials.disconnect()
+      dark.removeEventListener('transitionend', schedule)
+      dark.removeEventListener('animationend', schedule)
+      phone.removeEventListener('change', schedule)
+      window.removeEventListener('scroll', schedule)
+      dark.querySelector<HTMLElement>('.cta')?.style.removeProperty('--cta-match')
+    }
+  }, [])
+
   useEffect(() => {
     document.body.dataset.page = 'about'
     return () => {
@@ -446,7 +532,7 @@ export function AboutPage() {
         {fadeShow && <div ref={fadeRef} className="about__fade" aria-hidden="true" />}
         <div className="about__peek-stop" aria-hidden="true" />
       </div>
-      <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined}>
+      <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined} data-arc-edge>
         <SheetLayers preset={t.sheet.preset} />
         <section ref={playRef} className="about__play" data-fit={t.spacing.playFit || undefined} aria-labelledby="play-title">
           <h2 ref={playTitleRef} id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor }}>

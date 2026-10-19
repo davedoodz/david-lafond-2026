@@ -9,7 +9,7 @@
    src/components/FiloCard.tsx ported as-is: three tilted rails, linen glass, 4.5 fps turntables, no product twice.
    On top, Momo-style layers (src/components/MomoThumb.tsx): the phone on the left and the portal on the right play
    short snippets cut from the case study prototypes; the tag sits in the middle. Behind them, each product turns
-   into a swatch of fabric in its own colour, then back. */
+   into a photographed swatch of its own material, in its colour, then back. */
 @font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 :root { --ink: #171717; --text: #666; --mute: #9a9a97; --line: #e4e4e1; --page: #f5f5f5; --cord: #965b40; }
@@ -36,6 +36,26 @@ figcaption { margin: 0 auto 10px; width: 867px; }
 figcaption b { display: block; font-size: 15px; font-weight: 500; }
 figcaption b span { color: var(--mute); font-weight: 400; margin-right: 8px; font-variant-numeric: tabular-nums; }
 figcaption small { display: block; margin-top: 4px; color: var(--text); font-size: 13.5px; line-height: 1.45; max-width: 640px; }
+
+/* ── Picked layout: the desktop card and the mobile card side by side, with placement controls ── */
+.pick { width: 1199px; margin-left: calc(50% - 600px); }
+.pick figcaption { width: auto; }
+.pick__cards { display: flex; gap: 24px; align-items: flex-start; }
+.pick__cards .card { margin: 0; flex: none; }
+.pick__cards small { display: block; margin-top: 8px; color: var(--mute); font-size: 12px; }
+/* Mobile card: Selected Works below 640px is 100 : 134 with 41px side margins, so 308 × 413 on a 390px phone. */
+.card.card--m { width: 308px; height: 413px; border-radius: 11px; }
+.card.card--m .card-title { left: 16px; right: 16px; bottom: 16px; font-size: 16px; }
+.place { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin-top: 18px; padding: 16px 18px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+.place h4 { margin: 0 0 6px; font-size: 13px; font-weight: 500; }
+.place__group { display: grid; grid-template-columns: 52px 1fr 1fr 1fr; gap: 6px 12px; align-items: center; font-size: 12px; color: var(--text); }
+.place__group > b { font-weight: 500; color: var(--ink); }
+.place label { display: grid; grid-template-columns: 30px 1fr 34px; gap: 6px; align-items: center; }
+.place label span { color: var(--mute); }
+.place label output { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); }
+.place input[type=range] { width: 100%; accent-color: #8a6a55; }
+.place__bar { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--mute); }
+.place__bar button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 6px; background: #e9e9e6; color: var(--ink); }
 
 /* ── The card ── */
 .card { position: relative; width: 867px; height: 493px; margin: 0 auto; border-radius: 24px; overflow: clip; contain: layout paint;
@@ -76,10 +96,10 @@ body[data-zoom='in'] .desk video { transform: scale(var(--z, 1.9)); }
 body[data-zoom='in'] .desk__bar { display: flex; }
 body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 
-/* The tag hangs on its cord from above the card; the cord image continues up past the card edge. */
+/* The tag hangs on its cord from above the card: tag-cord.webp carries both strands of filo-tag.webp on, unbroken, up past the card edge. */
 .tag { position: absolute; width: var(--tw); transform-origin: 50% calc(-1 * var(--hang, 120px)); animation: sway 6.5s ease-in-out infinite; }
 .tag img { display: block; width: 100%; filter: drop-shadow(0 18px 18px rgb(70 50 30 / 0.2)) drop-shadow(0 3px 4px rgb(70 50 30 / 0.12)); }
-.tag i { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); background: url('/work/filo/filo-app-flow/filo-tag.webp') 0 -6px / 100% auto repeat-y; -webkit-mask: linear-gradient(transparent, #000 1px); }
+.tag i { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); background: url('/work/filo/thumb/tag-cord.webp') 50% 100% / 100% auto no-repeat; }
 @keyframes sway { 0%, 100% { rotate: -2.2deg; } 50% { rotate: 2.2deg; } }
 .hero-tag { position: absolute; width: var(--tw); animation: bob 7s ease-in-out infinite; filter: drop-shadow(0 26px 26px rgb(70 50 30 / 0.22)) drop-shadow(0 4px 6px rgb(70 50 30 / 0.12)); }
 @keyframes bob { 0%, 100% { translate: 0 -5px; rotate: -1.5deg; } 50% { translate: 0 5px; rotate: 1.5deg; } }
@@ -92,7 +112,7 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .thread .spark + .spark { animation-delay: -1.8s; }
 @keyframes spark { from { stroke-dashoffset: 26; } to { stroke-dashoffset: -640; } }
 
-/* Material chips: what the tag carries, surfacing one at a time. */
+/* Data chips: the kinds of specs and documents Filo carries and shares, surfacing one at a time. */
 .chip { position: absolute; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px 0 9px; border-radius: 14px; white-space: nowrap;
   font: 500 12.5px/1 'Filo Inter'; color: #3b3632; letter-spacing: -0.1px;
   background: rgb(255 255 255 / 0.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -101,6 +121,20 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .chip svg { width: 13px; height: 13px; flex: none; color: #8a6a55; }
 @keyframes chip { 0% { opacity: 0; translate: 0 6px; } 6%, 34% { opacity: 1; translate: 0 0; } 42%, 100% { opacity: 0; translate: 0 -6px; } }
 
+/* Entrance, each time a card comes into view: the phone rises from below, the portal slides in from the right,
+   the tag drops in on its cord from above. `translate` leaves each layer's own rotate/transform alone. */
+.card .phone, .card .desk, .card .tag { transition: translate 1.1s cubic-bezier(.2, .8, .2, 1); }
+.card .phone { transition-delay: 0.05s; }
+.card .desk { transition-delay: 0.3s; }
+.card .tag { transition: translate 1.3s cubic-bezier(.3, 1.25, .5, 1) 0.55s; }
+.card:not(.is-in) .phone { translate: 0 110%; transition: none; }
+.card:not(.is-in) .desk { translate: 110% 0; transition: none; }
+.card:not(.is-in) .tag { translate: 0 -125%; transition: none; }
+/* The chips and the cord's thread wait until the layers have landed. */
+.card .chip { animation-delay: calc(var(--d, 0s) + 1.6s); }
+.card:not(.is-in) .chip { animation: none; }
+.card .thread { transition: opacity 0.6s ease 1.3s; }
+.card:not(.is-in) .thread { opacity: 0; transition: none; }
 /* Stage: devices turned toward the tag. */
 .stage3d { position: absolute; inset: 0; perspective: 1100px; perspective-origin: 50% 38%; }
 .floor { position: absolute; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgb(70 50 30 / 0.22), transparent); filter: blur(2px); }
@@ -118,7 +152,7 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 <header>
   <h1>Filo thumbnail · layers</h1>
   <p>Ways to layer the Filo card the way the Momo card is layered: the phone on the left, the tag in the middle, the portal on the right. Each device plays a few seconds cut from the case study prototypes, not the whole flow. Behind them, every product on the wall turns into a swatch of fabric in its own colour while it spins, then back: one material, three forms.</p>
-  <p class="note">Every card is at its real size (867 × 493) and uses the real wall from FiloCard.tsx. The controls change all the cards at once. Fabric colour is sampled from each product; the finish (leather, weave, satin, knit) follows its material in the Future Fabric catalog.</p>
+  <p class="note">Every card is at its real size (867 × 493) and uses the real wall from FiloCard.tsx. The controls change all the cards at once. Each swatch is a photograph of a sample of that product’s material, in its colour (generated with ChatGPT image generation, in /work/filo/thumb/fabric/): textiles are cut with pinking shears, leathers and mycelium with a knife, as in the Future Fabric catalog.</p>
 </header>
 
 <div class="controls"><div class="controls__in" id="controls"></div></div>
@@ -148,7 +182,6 @@ const PRODUCTS = [
   ['PBC-08', 'Conscious Exclusive 2019', 'Orange Fiber citrus cellulose', 'orange-fiber-x-h-m-conscious-exclusive-collection-2019'],
 ].map(([code, name, material, sprite]) => ({ code, name, material, sprite: `/work/filo/sprites/${sprite}-spritesheet.webp` }))
 
-const FINISHES = ['weave', 'knit', 'satin', 'leather']
 const finishOf = m => /leather|mycelium|Piñatex/i.test(m) ? 'leather' : /wool/i.test(m) ? 'knit' : /Tencel|Lyocell|Orange Fiber/i.test(m) ? 'satin' : 'weave'
 
 const SNIPPETS = {
@@ -158,6 +191,7 @@ const SNIPPETS = {
     { id: 'phone-file', label: 'Technical File' },
   ],
   desk: [
+    { id: 'desk-materials', label: 'Materials', fx: '40%', fy: '40%' },
     { id: 'desk-tag', label: 'Write the tag', fx: '30%', fy: '46%' },
     { id: 'desk-extract', label: 'Extract', fx: '38%', fy: '48%' },
     { id: 'desk-share', label: 'Share link', fx: '50%', fy: '48%' },
@@ -165,13 +199,12 @@ const SNIPPETS = {
   ],
 }
 
-const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-tag', zoom: 'window', fabric: 'material', layers: 'on' },
+const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-materials', zoom: 'window', layers: 'on' },
   Object.fromEntries(new URLSearchParams(location.search)))
 
 const CONTROLS = [
   ['morph', 'Morph', [['turn', 'Turn'], ['threads', 'Threads'], ['melt', 'Melt'], ['off', 'Off']]],
   ['timing', 'Timing', [['stagger', 'Staggered'], ['ripple', 'Ripple from the tag']]],
-  ['fabric', 'Fabric', [['material', 'By material'], ['weave', 'All plain weave']]],
   ['phone', 'Phone', SNIPPETS.phone.map(s => [s.id, s.label])],
   ['desk', 'Desktop', SNIPPETS.desk.map(s => [s.id, s.label])],
   ['zoom', 'Desktop view', [['window', 'Whole window'], ['in', 'Zoomed in']]],
@@ -203,10 +236,10 @@ const LAYOUTS = [
     fg: '',
   },
   {
-    id: 'triptych', n: '01', name: 'Triptych, bleeding off the edges',
-    note: 'Your brief in Momo’s grammar. The phone runs off the bottom left, the portal off the right, and the tag hangs in the middle on its cord. The cord carries on as a thread from the phone, through the tag, into the portal, with a light running along it.',
+    id: 'triptych', n: '01', name: 'Triptych, bleeding off the edges · picked',
+    note: 'The phone runs off the bottom left, the portal off the right, and the tag hangs in the middle on its cord. No threads. The desktop card and the mobile card side by side; place each layer with the sliders below them.',
     pool: [50, 44, 0.5],
-    fg: thread('M 252 250 C 320 236, 360 214, 433 206 S 528 182, 566 172') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430),
+    pick: true,
   },
   {
     id: 'contained', n: '02', name: 'Triptych, all three in frame',
@@ -218,17 +251,17 @@ const LAYOUTS = [
     id: 'stage', n: '03', name: 'Stage: devices turned toward the tag',
     note: 'The phone and the portal angle in toward the tag, as if both are reading it. More depth, and the tag becomes the clear subject.',
     pool: [50, 40, 0.6],
-    fg: `<div class="stage3d"><div class="floor" style="left:96px;top:414px;width:220px"></div><div class="floor" style="left:538px;top:356px;width:300px"></div>`
+    fg: `<div class="stage3d"><div class="floor" style="left:104px;top:410px;width:200px"></div><div class="floor" style="left:520px;top:306px;width:330px"></div>`
       + phone(110, 52, 372, 'transform:rotateY(26deg);transform-origin:100% 50%')
       + desk(500, 74, 360, 'transform:rotateY(-26deg);transform-origin:0 50%') + `</div>` + tag(433, 104, 226),
   },
   {
-    id: 'chips', n: '04', name: 'Triptych with material data',
-    note: 'Layout 01 plus what the tag carries, surfacing one fact at a time around it, like Momo’s sensor chips: composition, weight, certification, the documents, the supplier.',
+    id: 'chips', n: '04', name: 'Triptych with what Filo carries',
+    note: 'Layout 01 plus what Filo carries and shares, surfacing one at a time around the tag, like Momo’s sensor chips: not one material’s values but the kinds of specs and documents every record holds. The cord runs from the phone into the tag only.',
     pool: [50, 44, 0.5],
-    fg: thread('M 252 250 C 320 236, 360 214, 433 206 S 528 182, 566 172') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430)
-      + chip(266, 92, 'fibre', '100% bacterial cellulose', 0) + chip(478, 330, 'weight', '120 gsm', 1.6) + chip(262, 342, 'check', 'OEKO-TEX® certified', 3.2)
-      + chip(470, 26, 'doc', 'Lab test report', 4.8) + chip(282, 214, 'pin', 'Modern Synthesis', 6.4) + chip(470, 240, 'doc', 'Technical File', 8),
+    fg: thread('M 252 250 C 320 236, 360 214, 433 206') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430)
+      + chip(266, 92, 'fibre', 'Composition', 0) + chip(478, 330, 'weight', 'Weight, width, thickness', 1.6) + chip(262, 342, 'check', 'Certifications', 3.2)
+      + chip(470, 26, 'doc', 'Lab test reports', 4.8) + chip(282, 214, 'pin', 'Supplier, MOQ, lead time', 6.4) + chip(470, 240, 'doc', 'Technical file', 8),
   },
   {
     id: 'hero', n: '05', name: 'The tag as hero',
@@ -262,23 +295,95 @@ controlsEl.addEventListener('click', e => {
 })
 
 const main = document.getElementById('main')
-for (const L of LAYOUTS) {
-  const fig = document.createElement('figure')
+const cardHTML = (L, fg, cls = '') => {
   const [px, py, pool] = L.pool ?? [50, 45, 0]
-  fig.innerHTML = `<figcaption><b><span>${L.n}</span>${L.name}</b><small>${L.note}</small></figcaption>
-    <div class="card" data-layout="${L.id}" ${L.fixed ? 'data-fixed' : ''}>
+  return `<div class="card ${cls}" data-layout="${L.id}" ${L.fixed ? 'data-fixed' : ''}>
       <span class="glow glow--a"></span><span class="glow glow--b"></span>
       <div class="wall"></div>
       <svg class="rings" viewBox="0 0 867 493"><circle/><circle/></svg>
       ${L.fixed ? '' : `<div class="pool" style="--px:${px}%;--py:${py}%;--pool:${pool}"></div>`}
-      <div class="fg">${L.fg}</div>
+      <div class="fg">${fg}</div>
       <div class="card-shade"></div>
       <h3 class="card-title">Filo — Software for Taking New Materials from Sample to Production</h3>
     </div>`
+}
+
+/* Picked layout: each layer's place in the desktop card (d) and the mobile card (m), in card px.
+   Phone and portal: x, y = top-left; size = phone height / portal width. Tag: x = centre, y = top of the tag body,
+   size = body height. Edited with the sliders, kept in localStorage. */
+const PICK_DEFAULT = {
+  d: { phone: { x: 42, y: 116, size: 432 }, tag: { x: 433, y: 98, size: 214 }, desk: { x: 566, y: 56, size: 430 } },
+  m: { phone: { x: 12, y: 150, size: 270 }, tag: { x: 154, y: 38, size: 132 }, desk: { x: 172, y: 150, size: 210 } },
+}
+const PICK_KEY = 'filo-thumb-pick'
+const PICK = JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)
+const PICK_RANGE = {
+  d: { x: [-300, 1100], y: [-300, 700], size: { phone: [150, 800], tag: [60, 420], desk: [200, 900] } },
+  m: { x: [-200, 500], y: [-200, 600], size: { phone: [100, 600], tag: [40, 320], desk: [100, 600] } },
+}
+const LAYER_NAME = { phone: 'Phone', tag: 'Tag', desk: 'Desktop' }
+function place(card, which, p) {
+  const el = card.querySelector(`.fg .${which}`)
+  if (which === 'tag') {
+    const w = p.size * 368 / 653, imgTop = p.y - p.size * 245 / 653
+    el.style.left = `${p.x - w / 2}px`; el.style.top = `${imgTop}px`
+    el.style.setProperty('--tw', `${w}px`); el.style.setProperty('--hang', `${Math.max(0, imgTop + 12)}px`)
+    el.dataset.origin = `${p.x},${p.y + p.size / 2}`
+  } else {
+    el.style.left = `${p.x}px`; el.style.top = `${p.y}px`
+    el.style.setProperty(which === 'phone' ? '--h' : '--w', `${p.size}px`)
+  }
+}
+const placeAll = (card, v) => { for (const k of ['phone', 'tag', 'desk']) place(card, k, PICK[v][k]) }
+
+function buildPick(L) {
+  const fig = document.createElement('figure'); fig.className = 'pick'
+  const layers = phone(0, 0, 100) + tag(0, 0, 100) + desk(0, 0, 100)
+  const group = (v, k) => `<div class="place__group"><b>${LAYER_NAME[k]}</b>${['x', 'y', 'size'].map(a => {
+    const [lo, hi] = a === 'size' ? PICK_RANGE[v].size[k] : PICK_RANGE[v][a]
+    return `<label><span>${a}</span><input type="range" min="${lo}" max="${hi}" step="1" value="${PICK[v][k][a]}" data-v="${v}" data-k="${k}" data-a="${a}"><output>${PICK[v][k][a]}</output></label>`
+  }).join('')}</div>`
+  fig.innerHTML = `<figcaption><b><span>${L.n}</span>${L.name}</b><small>${L.note}</small></figcaption>
+    <div class="pick__cards">
+      <div>${cardHTML(L, layers)}<small>Desktop · 867 × 493</small></div>
+      <div>${cardHTML(L, layers, 'card--m')}<small>Mobile · 308 × 413 (100 : 134, a 390px phone)</small></div>
+    </div>
+    <div class="place">
+      ${['d', 'm'].map(v => `<div><h4>${v === 'd' ? 'Desktop card' : 'Mobile card'}</h4>${['phone', 'tag', 'desk'].map(k => group(v, k)).join('')}</div>`).join('')}
+      <div class="place__bar"><button data-act="copy">Copy values</button><button data-act="reset">Reset</button><span data-out></span></div>
+    </div>`
+  const [cd, cm] = fig.querySelectorAll('.card')
+  const cardOf = { d: cd, m: cm }
+  placeAll(cd, 'd'); placeAll(cm, 'm')
+  fig.querySelector('.place').addEventListener('input', e => {
+    const { v, k, a } = e.target.dataset
+    if (!v) return
+    PICK[v][k][a] = Number(e.target.value)
+    e.target.nextElementSibling.value = e.target.value
+    place(cardOf[v], k, PICK[v][k])
+    localStorage.setItem(PICK_KEY, JSON.stringify(PICK))
+  })
+  fig.querySelector('.place__bar').addEventListener('click', async e => {
+    const act = e.target.dataset?.act
+    const out = fig.querySelector('[data-out]')
+    if (act === 'copy') { await navigator.clipboard.writeText(JSON.stringify(PICK, null, 2)); out.textContent = 'Copied as JSON.' }
+    if (act === 'reset') {
+      Object.assign(PICK, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
+      fig.querySelectorAll('input[type=range]').forEach(i => { i.value = PICK[i.dataset.v][i.dataset.k][i.dataset.a]; i.nextElementSibling.value = i.value })
+      placeAll(cd, 'd'); placeAll(cm, 'm'); out.textContent = 'Back to the defaults.'
+    }
+  })
+  return fig
+}
+
+for (const L of LAYOUTS) {
+  if (L.pick) { main.append(buildPick(L)); continue }
+  const fig = document.createElement('figure')
+  fig.innerHTML = `<figcaption><b><span>${L.n}</span>${L.name}</b><small>${L.note}</small></figcaption>${cardHTML(L, L.fg)}`
   main.append(fig)
 }
 const closeFig = document.createElement('figure')
-closeFig.innerHTML = `<figcaption style="width:1000px"><b><span>—</span>Close up: every product and its fabric</b><small>All 17 products from the wall, larger, cycling with the current morph. The swatch takes the product’s colour; the finish comes from its material.</small></figcaption><div class="strip" id="strip"></div>`
+closeFig.innerHTML = `<figcaption style="width:1000px"><b><span>—</span>Close up: every product and its fabric</b><small>All 17 products from the wall, larger, cycling with the current morph. Each swatch is a photo texture of the product’s own material, in its colour.</small></figcaption><div class="strip" id="strip"></div>`
 main.append(closeFig)
 
 function apply() {
@@ -297,157 +402,23 @@ function apply() {
   for (const c of cells) c.key = ''
 }
 
-/* ─────────────────────────── Fabric renderer (WebGL2) ─────────────────────────── */
-// One offscreen canvas draws a swatch for (colour, finish, turntable frame); tiles copy it into their own canvas.
-const FAB = 256
-const Fabric = (() => {
-  const cvs = document.createElement('canvas')
-  cvs.width = cvs.height = FAB
-  const gl = cvs.getContext('webgl2', { premultipliedAlpha: true, antialias: true, alpha: true })
-  const VS = `#version 300 es
-  in vec2 a_uv;
-  uniform float u_phase, u_angle, u_lean, u_roll, u_size;
-  uniform int u_finish;
-  uniform mat4 u_pv;
-  out vec2 v_uv; out vec3 v_n; out vec3 v_t; out vec3 v_p; out float v_w;
-  float W(vec2 q) {
-    float stiff = u_finish == 3 ? 0.55 : 1.0;
-    return stiff * (0.07 * sin(6.2832 * (0.8 * q.x + 0.35 * q.y) + u_phase)
-      + 0.045 * sin(6.2832 * (1.5 * q.y - 0.45 * q.x) + 1.7 - 2.0 * u_phase)
-      + 0.02 * sin(6.2832 * (2.4 * q.x + 1.2 * q.y) + 0.6 + 3.0 * u_phase))
-      + 0.16 * (q.x * q.x + 0.5 * q.y * q.y);
-  }
-  mat3 rx(float a) { float c = cos(a), s = sin(a); return mat3(1, 0, 0, 0, c, s, 0, -s, c); }
-  mat3 rz(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0, -s, c, 0, 0, 0, 1); }
-  void main() {
-    vec2 q = a_uv - 0.5;
-    float e = 0.003, w = W(q);
-    float dx = (W(q + vec2(e, 0)) - W(q - vec2(e, 0))) / (2.0 * e);
-    float dy = (W(q + vec2(0, e)) - W(q - vec2(0, e))) / (2.0 * e);
-    // The swatch leans back toward the camera and spins in its own plane, so it never turns edge-on.
-    mat3 R = rx(u_lean) * rz(u_angle + u_roll);
-    vec3 p = R * (vec3(q, w) * u_size);
-    v_n = R * normalize(vec3(-dx, -dy, 1.0));
-    v_t = R * normalize(vec3(1.0, 0.0, dx));
-    v_uv = a_uv; v_p = p; v_w = w;
-    gl_Position = u_pv * vec4(p, 1.0);
-  }`
-  const FS = `#version 300 es
-  precision highp float; precision highp int;
-  in vec2 v_uv; in vec3 v_n; in vec3 v_t; in vec3 v_p; in float v_w;
-  uniform vec3 u_col, u_eye;
-  uniform int u_finish;
-  out vec4 o;
-  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
-  void main() {
-    vec2 q = abs(v_uv - 0.5);
-    float d;
-    if (u_finish == 3) { // leather: clean cut, rounded corners
-      vec2 b = vec2(0.5 - 0.07);
-      d = -(length(max(q - b, 0.0)) + min(max(q.x - b.x, q.y - b.y), 0.0) - 0.07);
-    } else { // textiles: pinked edges
-      float s = q.x > q.y ? v_uv.y : v_uv.x;
-      d = 0.5 - max(q.x, q.y) - 0.016 * (1.0 - abs(2.0 * fract(s / 0.034) - 1.0));
-    }
-    float alpha = smoothstep(0.0, fwidth(d) * 1.4, d);
-    if (alpha <= 0.0) discard;
-
-    vec3 N = normalize(v_n), V = normalize(u_eye - v_p);
-    float side = 1.0;
-    if (dot(N, V) < 0.0) { N = -N; side = 0.8; }
-
-    // Surface: a tone multiplier and how glossy it is.
-    float tone = 1.0, ks = 0.05, shin = 14.0, sheen = 0.1, aniso = 0.0;
-    vec2 g;
-    if (u_finish == 0) { // plain weave
-      g = v_uv * 36.0; vec2 c = floor(g), f = fract(g);
-      bool warp = mod(c.x + c.y, 2.0) < 1.0;
-      float h = warp ? sqrt(max(0.0, 1.0 - pow(2.0 * f.x - 1.0, 2.0))) : sqrt(max(0.0, 1.0 - pow(2.0 * f.y - 1.0, 2.0)));
-      tone = mix(0.8, 1.04, h) * (0.94 + 0.12 * hash(warp ? vec2(c.x, 0) : vec2(0, c.y)));
-    } else if (u_finish == 1) { // knit: rows of V stitches
-      g = vec2(v_uv.x * 22.0, v_uv.y * 30.0);
-      float col = fract(g.x), row = fract(g.y + abs(col - 0.5) * 1.3);
-      tone = mix(0.72, 1.05, pow(sin(row * 3.1416) * sin(col * 3.1416), 0.6)) * (0.95 + 0.1 * vnoise(v_uv * 70.0));
-      sheen = 0.16;
-    } else if (u_finish == 2) { // satin: smooth, fine twill, strong sheen
-      g = v_uv * 70.0;
-      tone = 0.97 + 0.03 * sin((g.x + g.y) * 3.1416);
-      ks = 0.0; aniso = 0.2; sheen = 0.06;
-    } else { // leather: pebbled grain
-      g = v_uv * 70.0;
-      float n = vnoise(v_uv * 95.0) * 0.6 + vnoise(v_uv * 190.0) * 0.4;
-      tone = 0.92 + 0.12 * n;
-      ks = 0.1; shin = 22.0; sheen = 0.04;
-    }
-    float fw = fwidth(g.x) + fwidth(g.y);
-    tone = mix(tone, 0.95, smoothstep(0.45, 0.95, fw)); // fade texture before it aliases
-
-    vec3 L1 = normalize(vec3(-0.55, 0.75, 0.7)), L2 = normalize(vec3(0.75, 0.15, 0.45));
-    float w1 = clamp((dot(N, L1) + 0.35) / 1.35, 0.0, 1.0), w2 = clamp((dot(N, L2) + 0.4) / 1.4, 0.0, 1.0);
-    float ao = 0.84 + 0.16 * smoothstep(-0.06, 0.08, v_w);
-    vec3 base = u_col * tone * side;
-    vec3 col = base * (0.32 + 0.72 * w1 + 0.22 * w2) * ao;
-    vec3 H = normalize(L1 + V);
-    col += vec3(1.0, 0.98, 0.95) * ks * pow(max(dot(N, H), 0.0), shin) * side;
-    // Satin: a Kajiya-Kay highlight along the warp, so the light runs in streaks down the folds.
-    vec3 T = normalize(v_t - N * dot(v_t, N));
-    float th = dot(T, H);
-    col += vec3(1.0, 0.98, 0.95) * aniso * pow(sqrt(max(0.0, 1.0 - th * th)), 36.0) * max(dot(N, L1), 0.0) * side;
-    col += (u_col * 0.6 + 0.25) * sheen * pow(1.0 - max(dot(N, V), 0.0), 3.0);
-    col = pow(max(col, 0.0), vec3(1.0 / 2.2));
-    o = vec4(col * alpha, alpha);
-  }`
-  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s }
-  const prog = gl.createProgram()
-  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog)
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog))
-  gl.useProgram(prog)
-  const G = 72, uv = [], idx = []
-  for (let j = 0; j <= G; j++) for (let i = 0; i <= G; i++) uv.push(i / G, j / G)
-  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const a = j * (G + 1) + i, b = a + 1, c = a + G + 1, d = c + 1; idx.push(a, b, d, a, d, c) }
-  const vao = gl.createVertexArray(); gl.bindVertexArray(vao)
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.STATIC_DRAW)
-  const loc = gl.getAttribLocation(prog, 'a_uv'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW)
-  const U = n => gl.getUniformLocation(prog, n)
-  const u = Object.fromEntries(['u_phase', 'u_angle', 'u_lean', 'u_roll', 'u_size', 'u_finish', 'u_pv', 'u_col', 'u_eye'].map(n => [n, U(n)]))
-  // Camera: a little above, looking at the swatch's centre; about the framing of the product turntables.
-  const eye = [0, 0.8, 3.2]
-  const pv = (() => {
-    const f = 1 / Math.tan((28 * Math.PI) / 360), n = 0.1, fa = 10
-    const P = [f, 0, 0, 0, 0, f, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, (2 * fa * n) / (n - fa), 0]
-    const zl = Math.hypot(...eye), z = eye.map(v => v / zl)
-    const x = [1, 0, 0], y = [z[1] * x[2] - z[2] * x[1], z[2] * x[0] - z[0] * x[2], z[0] * x[1] - z[1] * x[0]]
-    const Vm = [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -(x[0] * eye[0] + x[1] * eye[1] + x[2] * eye[2]), -(y[0] * eye[0] + y[1] * eye[1] + y[2] * eye[2]), -(z[0] * eye[0] + z[1] * eye[1] + z[2] * eye[2]), 1]
-    const M = new Float32Array(16)
-    for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) { let s = 0; for (let k = 0; k < 4; k++) s += P[k * 4 + r] * Vm[c * 4 + k]; M[c * 4 + r] = s }
-    return M
-  })()
-  gl.uniformMatrix4fv(u.u_pv, false, pv)
-  gl.uniform3fv(u.u_eye, eye)
-  gl.uniform1f(u.u_lean, -0.78); gl.uniform1f(u.u_roll, 0.22); gl.uniform1f(u.u_size, 0.98)
-  gl.enable(gl.DEPTH_TEST)
-  gl.viewport(0, 0, FAB, FAB)
-  return {
-    /** Draws product p's swatch at turntable frame f (one turn per 36 frames, like the sprites) into ctx. */
-    draw(ctx, p, f) {
-      const finish = S.fabric === 'weave' ? 'weave' : p.finish
-      gl.uniform1i(u.u_finish, FINISHES.indexOf(finish))
-      gl.uniform3fv(u.u_col, p.lin)
-      gl.uniform1f(u.u_angle, -(f / 36) * Math.PI * 2 + 0.5)
-      gl.uniform1f(u.u_phase, (f / 36) * Math.PI * 2)
-      gl.clearColor(0, 0, 0, 0)
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-      gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0)
-      ctx.drawImage(cvs, 0, 0, ctx.canvas.width, ctx.canvas.height)
-    },
-  }
-})()
+/* ─────────────────────────── Fabric swatches ─────────────────────────── */
+// A photographed swatch, shot from above, turns on the spot like the product turntables (one turn per 36 frames),
+// seen from a little above (the vertical squash) and lifted off the tile by a soft shadow.
+const SWATCH = { size: 0.7, lean: 0.8 } // size 0.7: the diagonal still fits the tile at 45°
+const Fabric = {
+  /** Draws product p's swatch at turntable frame f into ctx, filling its canvas. */
+  draw(ctx, p, f) {
+    const s = ctx.canvas.width, d = s * SWATCH.size
+    ctx.save()
+    ctx.shadowColor = 'rgb(60 40 24 / 0.22)'; ctx.shadowBlur = s * 0.05; ctx.shadowOffsetY = s * 0.03
+    ctx.translate(s / 2, s / 2); ctx.scale(1, SWATCH.lean); ctx.rotate(-(f / 36) * Math.PI * 2 + 0.5)
+    ctx.drawImage(p.fabric, -d / 2, -d / 2, d, d)
+    ctx.restore()
+  },
+}
 
 /* ─────────────────────────── Products: sheets and colours ─────────────────────────── */
-const toLin = c => (c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
 async function loadProducts() {
   await Promise.all(PRODUCTS.map(async p => {
     const img = new Image()
@@ -456,6 +427,9 @@ async function loadProducts() {
     p.img = img
     p.view = img.naturalWidth / 6
     p.finish = finishOf(p.material)
+    p.fabric = new Image()
+    p.fabric.src = `/work/filo/thumb/fabric/${p.code}.webp`
+    await p.fabric.decode()
     // Dominant colour: the fullest bin of a coarse histogram over two views' opaque pixels, averaged.
     const c = document.createElement('canvas'); c.width = 96; c.height = 48
     const x = c.getContext('2d', { willReadFrequently: true })
@@ -473,7 +447,6 @@ async function loadProducts() {
     const best = [...bins.values()].sort((a, b) => b[3] - a[3])[0]
     p.rgb = best.slice(0, 3).map(v => Math.round(v / best[3]))
     p.hex = '#' + p.rgb.map(v => v.toString(16).padStart(2, '0')).join('')
-    p.lin = p.rgb.map(toLin)
   }))
 }
 
@@ -591,12 +564,17 @@ class Card {
       this.tiles.push({ el: t, cvs, ctx: cvs.getContext('2d'), product: -1, near: false, key: '' })
     }
     this.lastUsed = new Float64Array(PRODUCTS.length).fill(-Infinity)
-    this.w = 867; this.h = 493
+    this.w = el.offsetWidth; this.h = el.offsetHeight
     this.visible = false
     new IntersectionObserver(([e]) => {
       this.visible = e.isIntersecting
       el.querySelectorAll('video').forEach(v => this.visible ? v.play().catch(() => {}) : v.pause())
     }, { rootMargin: '100px' }).observe(el)
+    // Replays the layers' entrance whenever the card comes back into view.
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !el.classList.contains('is-in')) el.querySelectorAll('video').forEach(v => { v.currentTime = 0 })
+      el.classList.toggle('is-in', e.isIntersecting)
+    }, { threshold: 0.4 }).observe(el)
   }
   dirty() { this.tiles.forEach(t => (t.key = '')) }
   morph(i, cx, cy, t) {
@@ -662,7 +640,7 @@ class Card {
       tl.el.style.visibility = 'visible'
       tl.el.style.width = tl.el.style.height = `${tile}px`
       tl.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
-      const key = `${tl.product}|${f}|${m.toFixed(3)}|${S.morph}|${S.fabric}`
+      const key = `${tl.product}|${f}|${m.toFixed(3)}|${S.morph}`
       if (key !== tl.key) { drawTile(tl, PRODUCTS[tl.product], f, m); tl.key = key }
     })
     // Ripple rings: one as the wave goes out to fabric, one as it comes back.
@@ -695,7 +673,7 @@ class Cell {
     const mm = MORPH_S[S.morph]
     const P = 2.2 + 2 * mm + 2.6
     const m = S.morph === 'off' ? 0 : envelope(mod(t + this.i * 0.37, P), 2.2, mm, 2.6)
-    const key = `${f}|${m.toFixed(3)}|${S.morph}|${S.fabric}`
+    const key = `${f}|${m.toFixed(3)}|${S.morph}`
     if (key !== this.key) { drawTile(this, this.p, f, m); this.key = key }
   }
 }

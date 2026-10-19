@@ -23,6 +23,7 @@ import { FiloStory, type FiloStorySettings } from './filoStoryArt'
 import { FiloSourceSteps } from '../features/filoCase/FiloSourceSteps'
 import { FiloNext } from '../features/filoCase/FiloNext'
 import { FiloResearchFigure, type FiloResearchSettings } from '../features/filoCase/FiloResearch'
+import { useCaseMobileStyle } from './caseMobile'
 import './CaseStudyPage.css'
 
 
@@ -318,6 +319,7 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
 export function CaseStudyPage({ id }: Props) {
   const panel = PANELS[id]
   const { values, setValue } = useTuningController(panel.name, panel.config)
+  const mobile = useCaseMobileStyle()
   const base = values as unknown as Record<string, Section> & {
     page: {
       snap: string
@@ -694,7 +696,7 @@ export function CaseStudyPage({ id }: Props) {
       data-intro={intro || undefined}
       data-text-size={page.textSize}
       data-section-reveal={page.sectionReveal}
-      style={{ '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
+      style={{ ...mobile, '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
     >
       {id === 'momo' && <MomoIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}
       <div className="case__light" data-surface="light">

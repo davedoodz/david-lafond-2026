@@ -17,12 +17,10 @@
 }
 
 .about__story {
-  /* Room the column has on each side before it would cross the page margin (--column-inset).
-     The X nudge is clamped to it, so on narrow windows the text slides back to centre instead
-     of being cropped. `100%` resolves against the page width where `left` uses it. */
-  --text-slack: max(0px, (100% - var(--column-fit, var(--column))) / 2 - var(--column-inset));
+  /* Desktop: the column stays centred and the Text › x dial narrows the text on both sides, so the
+     story has the same margin left and right on any window (the dial is how far its left edge sits
+     in from the full column's). */
   margin-top: var(--stack-gap-d);
-  left: clamp(-1 * var(--text-slack), var(--text-x-d, 0px), var(--text-slack));
   top: var(--text-y-d, 0px);
 }
 
@@ -36,8 +34,9 @@
 }
 
 .about__text {
-  /* Keep Paper's wrap width even when the heading widens the shared column. */
-  max-width: var(--column);
+  /* Keep Paper's wrap width even when the heading widens the shared column, less the X inset on
+     both sides (desktop). */
+  max-width: calc(var(--column) - 2 * max(0px, var(--text-x-d, 0px)));
   margin-top: 40px;
   font-size: var(--story-size-d, var(--text-body));
   /* Same leading as the Work page intro (Hero › spacing › introLineHeight, 1.56). */
@@ -87,6 +86,12 @@
   .about {
     --column-inset: clamp(20px, 14.25vw, 57px);
   }
+  /* The story starts where the Work hero's text and every page's nav start (--text-edge), with the
+     same margin on the right; a narrower fitted column keeps that left edge. */
+  .about__story {
+    --column-inset: var(--text-edge);
+    margin-left: var(--column-inset);
+  }
   .about__light {
     padding-bottom: var(--story-gap-m);
   }
@@ -95,6 +100,10 @@
     top: var(--cards-y-m, 0px);
   }
   .about__story {
+    /* Room the column has on each side before it would cross the page margin (--column-inset).
+       The X nudge is clamped to it, so on narrow screens the text slides back instead of being
+       cropped. `100%` resolves against the page width where `left` uses it. */
+    --text-slack: max(0px, (100% - var(--column-fit, var(--column))) / 2 - var(--column-inset));
     margin-top: var(--stack-gap-m);
     left: clamp(-1 * var(--text-slack), var(--text-x-m, 0px), var(--text-slack));
     top: var(--text-y-m, 0px);
@@ -111,6 +120,7 @@
   }
   .about__text {
     margin-top: 33px;
+    max-width: var(--column);
     font-size: var(--story-size-m, var(--text-body));
   }
   .about__dark {
@@ -121,6 +131,8 @@
   }
   .about .cta {
     padding-top: 84px;
+    /* Matches logo → heading to cards → months (AboutPage.tsx); a margin, so it can also pull up. */
+    margin-top: var(--cta-match, 0px);
   }
 }
 
@@ -161,6 +173,25 @@
 @media (max-width: 640px) {
   .about__fade {
     height: var(--fade-h-m, 120px);
+  }
+  /* Nav › mobileContrast "Edge blur" (Nav.tsx sets these on <html>): the nav's top blur mirrored at
+     the bottom. No colour; only the blur, with the same length, strength, opacity and blur. */
+  html[data-edge-blur] .about__fade {
+    height: var(--edge-blur-length, 110px);
+  }
+  html[data-edge-blur] .about__fade::before {
+    opacity: calc(var(--fade-p, 0) * var(--edge-blur-opacity, 1));
+    -webkit-backdrop-filter: blur(var(--edge-blur, 8px));
+    backdrop-filter: blur(var(--edge-blur, 8px));
+    -webkit-mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+    mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+  }
+  html[data-edge-blur] .about__fade::after {
+    display: none;
+  }
+  /* The screen-bottom blur (edgeBlur › bottom) already covers this band; don't blur it twice. */
+  html[data-edge-blur-bottom] .about__fade {
+    display: none;
   }
 }
 
@@ -298,9 +329,10 @@ html[data-about-snap] .about .footer {
   }
 }
 
-/* About → spacing: playY moves the playground; playSpaceAbove/Below add room around it. */
+/* About → spacing: playY moves the playground; playSpaceAbove/Below add room around it.
+   --play-touch-push (touch screens, AboutPage.tsx) keeps the first cards below the fold at the peek. */
 .about__play {
-  margin-top: var(--play-above, 0px);
+  margin-top: calc(var(--play-above, 0px) + var(--play-touch-push, 0px));
   margin-bottom: var(--play-below, 0px);
 }
 /* Whole section shifts without changing the space it takes in the page. */
@@ -313,4 +345,18 @@ html[data-about-snap] .about .footer {
 #play-title {
   position: relative;
   z-index: 1;
+}
+
+/* Phones, after the playground's own sizing rules so these win. */
+@media (max-width: 640px) {
+  /* The cards span the story's text width: the same margin as the essay on both sides. */
+  .about .about__play .pg-grid {
+    width: auto;
+    margin-inline: var(--text-edge);
+  }
+  /* "Let's chat" clears the contribution graph and the GitHub logo hanging below the section
+     (a negative playSpaceBelow, tuned for desktop, would pull it up over them). */
+  .about .about__play {
+    margin-bottom: max(64px, var(--play-below, 0px));
+  }
 }

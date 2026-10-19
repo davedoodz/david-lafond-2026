@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Filo · tap a sample to open its record (prototype)</title>
 <link rel="stylesheet" href="filo-app-flow/app.css" />
+<link rel="stylesheet" href="filo-app-flow/clip.css" />
 <style>
   /* Step 4 of the Filo case study, as one loop on a table: six tagged swatches stacked, dealt out left and
      right with the bacterial cellulose left in the middle; a phone slides up over it, wakes, and the Dynamic
@@ -12,174 +13,34 @@
      overview, documents, photos and samples, then BC-001's Technical File. The phone slides away and the
      swatches gather back into the stack, where the loop began.
      The phone is the Momo frame at its source size (434 × 884, the screen 390 × 845.5 at 22.5, 19.2), the
-     same as step 3's phone, scaled into the scene. iOS chrome is in the system font; the App Clip uses the
-     portal's type, tokens, icons and controls (app.css). */
+     same as step 3's phone, scaled into the scene. iOS chrome is in the system font; the island and the
+     App Clip are shared with the Proposal's phone (clip.css, lock.svg). */
   html, body { background: transparent; }
-  .stage { width: 1440px; height: 900px; }
+  /* The scene is 1440 × 900; the stage runs 100px deeper so the phone rises out of a fade instead of a hard
+     edge: the bottom 150px (below the phone's resting frame, which ends at 848) fade to clear. Hosts size the
+     frame for the 900 scene and let the extra 100 hang below it (filoSourceSteps.css, .fss-app--scene). */
+  .stage { width: 1440px; height: 1000px; mask-image: linear-gradient(#000 850px, transparent 1000px); }
 
   /* ───────── The swatches: placed by script (translate + rotate), centred on the stage ───────── */
   .swatch { position: absolute; left: 720px; top: 450px; width: 280px; height: auto; translate: -50% -50%;
     filter: drop-shadow(0 14px 16px rgb(70 52 34 / .16)) drop-shadow(0 2px 3px rgb(70 52 34 / .12)); user-select: none; pointer-events: none; }
+  /* The sheer's fabric fills less of its photo than the others' (≈ 234px square at 280 wide, against ≈ 256),
+     so it runs wider to match them. */
+  .swatch[data-k="sw-sheer"] { width: 306px; }
 
   /* ───────── The phone ───────── */
-  .phone { --sys: -apple-system, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  .phone { --sys: -apple-system, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; --isl-x: 22.5px; --isl-y: 19.2px;
     position: absolute; left: 503px; top: 8px; width: 434px; height: 884px; z-index: 10; scale: .9; transform-origin: 50% 50%;
     filter: drop-shadow(0 20px 24px rgb(40 30 20 / .22)) drop-shadow(0 6px 8px rgb(40 30 20 / .12)); }
   .frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; user-select: none; }
-  /* The display (not .screen: app.css hides every .screen that isn't the active one). Black until it wakes. */
+  /* The display (not .screen: app.css hides every .screen that isn't the active one). Black until it wakes.
+     Its corners are tighter than the frame's opening (≈55px), so they tuck under the bezel: no gap. */
   .display {
     --chrome: #fff;
-    position: absolute; left: 22.5px; top: 19.2px; width: 390px; height: 845.5px; border-radius: 60px; overflow: hidden;
+    position: absolute; left: 22.5px; top: 19.2px; width: 390px; height: 845.5px; border-radius: 50px; overflow: hidden;
     background: #050505; font-family: var(--sys); color: #000; cursor: default; user-select: none; -webkit-font-smoothing: antialiased;
   }
   .display.is-app { --chrome: #000; }
-  :where(.display, .island) button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; }
-  :where(.display, .island) p { margin: 0; }
-  .ios { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .awake { opacity: 0; transition: opacity .45s ease; }
-  .display.is-awake .awake { opacity: 1; }
-
-  /* Status bar (the case study's phone status bar, 390pt units) and home indicator. */
-  .status { position: absolute; z-index: 5; left: 0; top: 0; width: 390px; height: 54px; fill: var(--chrome); transition: fill .3s ease, opacity .45s ease; pointer-events: none; }
-  .status text { font: 600 16px var(--sys); }
-  .status .wifi { fill: none; stroke: var(--chrome); stroke-width: 2.35; stroke-linecap: round; transition: stroke .3s ease; }
-  .status .wedge { stroke: var(--chrome); stroke-width: 1.3; stroke-linejoin: round; transition: stroke .3s ease; }
-  .status .cell { fill: none; stroke: var(--chrome); stroke-width: 1; opacity: .4; transition: stroke .3s ease; }
-  .homebar { position: absolute; z-index: 5; left: 50%; bottom: 8px; translate: -50% 0; width: 139px; height: 5px; border-radius: 3px; background: var(--chrome); transition: background-color .3s ease, opacity .45s ease; pointer-events: none; }
-  /* While the island is busy it runs wider than the clock and the signal allow; iOS clears the status bar for it. */
-  .phone:has(.island.is-reading) .status { opacity: 0; transition: fill .3s ease, opacity .2s ease; }
-
-  /* ───────── Lock screen ───────── */
-  .lockscreen { position: absolute; inset: 0; background: url('filo-app-flow/wallpaper.webp') center / cover; color: #fff; }
-  .lock-ic { left: 50%; top: 64px; translate: -50% 0; width: 15px; height: 20px; fill: #fff; }
-  .lock-date { left: 0; right: 0; top: 96px; text-align: center; font-size: 21px; font-weight: 600; letter-spacing: .005em; color: rgb(255 255 255 / .9); }
-  .lock-time { left: 0; right: 0; top: 116px; text-align: center; font-size: 112px; line-height: 1; font-weight: 400; letter-spacing: -.01em; }
-  .qbtn { bottom: 48px; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: rgb(20 40 25 / .24); backdrop-filter: blur(12px); color: #fff; }
-  .qbtn .ios { width: 22px; height: 22px; stroke-width: 1.7; }
-  .qbtn--l { left: 46px; } .qbtn--r { right: 46px; }
-
-  /* ───────── Dynamic Island: drawn over the frame's own island (phone units), shown only while it's busy ─────────
-     rest = the hardware island; compact = stretched left and right, reading; expanded = the detected card. */
-  .island { --spring: cubic-bezier(.3, 1.22, .42, 1);
-    position: absolute; z-index: 12; left: 155.5px; top: 30.4px; width: 124px; height: 36px; border-radius: 18px; background: #000; overflow: hidden;
-    opacity: 0; color: #fff; font-family: var(--sys); -webkit-font-smoothing: antialiased;
-    transition: left .5s var(--spring), top .5s var(--spring), width .5s var(--spring), height .5s var(--spring), border-radius .5s var(--spring); }
-  .island.is-on { opacity: 1; }
-  .island.is-compact { left: 100.5px; width: 198px; }
-  /* Expanded runs down past the lock clock's baseline (display y ≈ 212), so the card covers the date and the time. */
-  .island.is-expanded { left: 33.5px; top: 30.2px; width: 368px; height: 216px; border-radius: 46px; transition-duration: .6s; }
-  .isl-compact, .isl-full { position: absolute; inset: 0; opacity: 0; transition: opacity .25s ease; }
-  .island.is-reading .isl-compact { opacity: 1; transition-delay: .18s; }
-  .island.is-expanded .isl-compact { opacity: 0; transition-delay: 0s; }
-  .island.is-expanded .isl-full { opacity: 1; transition: opacity .3s ease .22s; }
-  .isl-tag { position: absolute; left: 13px; top: 5px; height: 26px; width: auto; }
-  .isl-read { position: absolute; left: 36px; top: 0; line-height: 36px; font-size: 12.5px; font-weight: 500; color: rgb(255 255 255 / .86); white-space: nowrap; }
-  /* The ∞ embossed on every tag is the loader: a faint track, then a glowing blue line drawn along it. */
-  .inf { position: absolute; right: 12px; top: 8px; width: 40px; height: 20px; overflow: visible; fill: none; stroke-linecap: round; }
-  .inf path { stroke-width: 1.25; }
-  .inf--track path { stroke: rgb(255 255 255 / .2); }
-  .inf--fill { filter: drop-shadow(0 0 1.5px #5cb0ff) drop-shadow(0 0 4px rgb(42 140 255 / .85)); }
-  .inf--fill path { stroke: #3d9bff; stroke-dasharray: 100; stroke-dashoffset: 100; }
-  .inf--fill.is-done { animation: glow .5s ease-out; }
-  @keyframes glow { 40% { filter: drop-shadow(0 0 2px #8fcaff) drop-shadow(0 0 8px rgb(42 140 255 / 1)); } }
-  .isl-photo { position: absolute; left: 24px; top: 18px; height: 128px; width: auto; filter: drop-shadow(0 4px 8px rgb(0 0 0 / .4)); }
-  .isl-full b { position: absolute; left: 132px; top: 52px; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
-  .isl-full small { position: absolute; left: 132px; top: 80px; font-size: 14.5px; color: rgb(255 255 255 / .58); }
-  .isl-open { position: absolute; left: 18px; right: 18px; bottom: 18px; height: 48px; border-radius: 24px; background: #ece6dc !important; color: #141414 !important; font-size: 16px !important; font-weight: 600 !important; transition: scale .12s ease, background-color .12s ease; }
-  .isl-open.is-press { scale: .97; background: #fff !important; }
-
-  /* ───────── The Filo App Clip: the portal's type and tokens ───────── */
-  .clip { position: absolute; inset: 0; z-index: 2; background: var(--app); font-family: Satoshi, var(--sys); font-weight: 450; font-size: 15px; letter-spacing: -.005em; color: var(--text);
-    opacity: 0; visibility: hidden; scale: .9; transform-origin: 50% 6%; transition: opacity .3s var(--ease-out), scale .45s var(--ease-out), visibility 0s linear .45s; }
-  .clip.is-open { opacity: 1; visibility: visible; scale: 1; transition: opacity .3s var(--ease-out), scale .45s var(--ease-out), visibility 0s; }
-  .clip img { display: block; }
-  .pg { position: absolute; inset: 0; overflow: hidden; background: var(--app); transition: translate .5s cubic-bezier(.32, .72, 0, 1), filter .5s ease; }
-  .pg-file { translate: 100% 0; box-shadow: -12px 0 30px rgb(0 0 0 / .06); }
-  .clip.is-pushed .pg-record { translate: -28% 0; filter: brightness(.96); }
-  .clip.is-pushed .pg-file { translate: 0 0; }
-
-  /* Round header buttons: frosted over the photo, grey on the page. */
-  .rbtn { position: absolute; z-index: 4; top: 54px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: rgb(255 255 255 / .62); backdrop-filter: blur(10px); color: #1a1a1a; transition: background-color .25s ease; }
-  .rbtn .ic { width: 20px; height: 20px; stroke-width: 2; }
-  .rbtn--l { left: 18px; } .rbtn--r { right: 18px; }
-  .pg-file .rbtn, .pg-record.is-scrolled .rbtn { background: #ececec; }
-  .topbar { position: absolute; z-index: 3; left: 0; right: 0; top: 0; height: 104px; background: var(--app); opacity: 0; transition: opacity .2s ease; pointer-events: none; }
-  .pg-record.is-scrolled .topbar { opacity: 1; }
-
-  .scroll { position: absolute; inset: 0; overflow: hidden; }
-  /* The middle ground: nearly full bleed, inset with corners that follow the screen's. */
-  .hero { margin: 7px 7px 0; height: 262px; border-radius: 53px 53px 28px 28px; overflow: hidden; }
-  .hero img { width: 100%; height: 100%; object-fit: cover; }
-  .r-title { margin: 20px 20px 0; font-size: 30px; line-height: 1.12; font-weight: 620; letter-spacing: -.024em; color: #0d0d0d; }
-  .r-sub { margin: 5px 20px 0; font-size: 16px; color: #8a8a8d; }
-  .clip .tabs { position: sticky; top: 104px; z-index: 2; justify-content: space-between; margin: 16px 0 0; padding: 0 20px; background: var(--app); font-size: 15px; }
-  .clip .tabs button { height: 42px; margin: 0; }
-  .panel { display: none; min-height: 700px; padding: 16px 20px 140px; }
-  .panel.is-on { display: block; }
-  .clip .card { border-radius: 14px; }
-
-  .sum strong { display: block; font-size: 16.5px; font-weight: 600; color: #121212; }
-  .sum p { margin-top: 4px; font-size: 14.5px; line-height: 20px; color: #6f6f71; }
-  .props { margin: 10px 0 0; }
-  .props > div { display: grid; grid-template-columns: 30px 118px 1fr; align-items: center; height: 27.5px; font-size: 13.5px; }
-  .props dt { display: contents; color: #7a7a7d; }
-  .props dd { margin: 0; color: #1a1a1a; }
-  .props .ic { width: 17px; height: 17px; color: #6a6a6c; stroke-width: 1.5; }
-
-  .rows { display: grid; gap: 8px; }
-  .row { display: grid; grid-template-columns: 64px 1fr auto 18px; align-items: center; column-gap: 0; height: 74px; padding: 0 12px 0 10px; }
-  .row strong { display: block; font-size: 15px; font-weight: 520; color: #1a1a1a; }
-  .row small { display: block; margin-top: 3px; font-size: 13.5px; color: #8a8a8d; }
-  .row .chev { width: 17px; height: 17px; color: #9a9a9c; }
-  .tile { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 11px; background: #f0efed; overflow: hidden; color: #4a4a4c; }
-  .tile .doc-thumb { width: 30px; height: 38px; border-radius: 3px; }
-  .tile .ic { width: 24px; height: 24px; stroke-width: 1.4; }
-  .tile > img:not(.doc-thumb) { width: 100%; height: 100%; object-fit: cover; }
-  .ftype { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #e4f0e4; color: #3c8a48; }
-  .ftype .ic { width: 19px; height: 19px; }
-
-  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .shots img { width: 100%; height: 150px; border-radius: 11px; object-fit: cover; }
-  .shots .big { grid-column: span 2; height: 196px; }
-
-  .samples .row { height: 88px; grid-template-columns: 82px 1fr auto 0; }
-  .samples .tile { width: 68px; height: 68px; border-radius: 12px; }
-  .samples strong { font-size: 16px; }
-  .state { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #cfcfd1; }
-  .state--ok { border: 0; background: var(--green); color: #fff; }
-  .state--ok .ic { width: 15px; height: 15px; stroke-width: 2.6; }
-  .state--warn { border: 0; background: var(--amber-bg); color: #b9720c; font: 700 14px/1 Satoshi, var(--sys); }
-
-  /* Bottom actions, over a fade of the page. */
-  .cta { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 128px; padding: 24px 16px 0; background: linear-gradient(rgb(249 249 249 / 0), var(--app) 26%);
-    text-align: center; opacity: 0; transition: opacity .25s ease; pointer-events: none; }
-  .cta.is-on { opacity: 1; }
-  .cta .btn { position: relative; width: 100%; height: 50px; border-radius: 25px; font-size: 16px; }
-  .cta .btn .ic { position: absolute; right: 20px; width: 18px; height: 18px; }
-  .cta p { margin-top: 12px; font-size: 14.5px; color: #8a8a8d; }
-
-  /* Technical File. */
-  .f-title { position: absolute; left: 20px; top: 112px; margin: 0; font-size: 32px; line-height: 1.1; font-weight: 620; letter-spacing: -.026em; color: #0d0d0d; }
-  .f-meta { position: absolute; left: 20px; right: 20px; top: 160px; display: flex; align-items: center; height: 30px; font-size: 15.5px; color: #8a8a8d; }
-  .f-meta .pill { margin-left: auto; font-size: 13.5px; }
-  .meta-dot::before { content: '·'; margin: 0 7px; }
-  .f-rows { position: absolute; left: 16px; right: 16px; top: 206px; }
-  .f-rows .row { height: 76px; }
-  .f-rows .state { margin-right: 8px; }
-  .f-rows .state--ok, .f-rows .state--warn { scale: 0; transition: scale .35s cubic-bezier(.3, 1.4, .5, 1); }
-  .pg-file.is-in .state--ok, .pg-file.is-in .state--warn { scale: 1; }
-  .pg-file.is-in .f-rows .row:nth-child(2) .state { transition-delay: .12s; }
-  .pg-file.is-in .f-rows .row:nth-child(3) .state { transition-delay: .24s; }
-  .f-progress { position: absolute; left: 20px; right: 20px; bottom: 50px; font-size: 15px; color: #1a1a1a; }
-  .f-bar { height: 8px; margin-top: 10px; border-radius: 4px; background: #e9e9e9; overflow: hidden; }
-  .f-bar i { display: block; width: 33.4%; height: 100%; border-radius: inherit; background: var(--green); scale: 0 1; transform-origin: 0 50%; transition: scale .8s var(--ease-out) .3s; }
-  .pg-file.is-in .f-bar i { scale: 1 1; }
-
-  .tabs button.is-press, .row.is-press { scale: .97; transition: scale .12s ease; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .island, .isl-compact, .isl-full, .clip, .pg, .status, .homebar, .awake, .f-bar i, .f-rows .state { transition: none !important; }
-  }
 </style>
 </head>
 <body>
@@ -202,9 +63,6 @@
     <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4 4 9-9"/></symbol>
     <symbol id="i-dots-h" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></symbol>
-    <!-- iOS lock screen glyphs. -->
-    <symbol id="o-torch" viewBox="0 0 24 24"><path d="M7.5 2.5h9v3.5l-2 3.5v11a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-11l-2-3.5z"/><path d="M7.5 6h9"/><path d="M12 13v2.5"/></symbol>
-    <symbol id="o-camera" viewBox="0 0 24 24"><path d="M14.5 4.5h-5L7.5 7H4.5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h15a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   </defs>
 </svg>
 
@@ -221,10 +79,10 @@
     <div class="display" data-k="display">
       <div class="lockscreen awake">
         <svg class="abs lock-ic" viewBox="0 0 15 20" aria-hidden="true"><path d="M3.2 8.6V6a4.3 4.3 0 0 1 8.6 0v2.6" fill="none" stroke="#fff" stroke-width="2"/><rect x=".5" y="8.4" width="14" height="11.1" rx="2.6"/></svg>
-        <p class="abs lock-date">Sunday, October 18</p>
-        <p class="abs lock-time">9:41</p>
-        <span class="abs qbtn qbtn--l"><svg class="ios"><use href="#o-torch"/></svg></span>
-        <span class="abs qbtn qbtn--r"><svg class="ios"><use href="#o-camera"/></svg></span>
+        <svg class="abs lock-date" viewBox="0 -1980 17535 2412" role="img" aria-label="Sunday, October 18"><use href="filo-app-flow/lock.svg#lock-date" y="-1980" width="17535" height="2412"/></svg>
+        <svg class="abs lock-time" viewBox="0 -1980 3994 2412" role="img" aria-label="9:41"><use href="filo-app-flow/lock.svg#lock-time" y="-1980" width="3994" height="2412"/></svg>
+        <span class="abs qbtn qbtn--l"><svg width="10.38" height="22.96" aria-hidden="true"><use href="filo-app-flow/lock.svg#o-torch"/></svg></span>
+        <span class="abs qbtn qbtn--r"><svg width="25.76" height="20" aria-hidden="true"><use href="filo-app-flow/lock.svg#o-camera"/></svg></span>
       </div>
 
       <!-- ───────── The App Clip ───────── -->
@@ -352,25 +210,65 @@ const phone = k('phone'), display = k('display'), island = k('island'), clip = k
 const record = k('record'), scroll = k('scroll'), tabs = k('tabs'), file = k('file'), inf = k('inf')
 const PHONE_SCALE = .9
 
-/* ── The deck. Stacked: a loose pile, the cellulose on top. Dealt: three to the left, two to the right,
-   inner ones over outer ones like a fanned hand, the outer two at ±560 so the hand spans the stage evenly;
-   the cellulose stays put under the phone. ── */
-const DECK = {
-  cellulose: { stack: [0, 0, 1.5], dealt: [0, 0, 0] },
-  felt: { stack: [5, -4, 7], dealt: [-300, 16, -4] },
-  sheer: { stack: [-4, 3, -5], dealt: [330, -14, 4] },
-  olive: { stack: [-6, 5, -8], dealt: [-430, -20, 5] },
-  boucle: { stack: [6, -3, 4], dealt: [560, 18, -5] },
-  canvas: { stack: [-3, 6, -3], dealt: [-560, 24, -2] },
+/* ── The deck. Stacked: a loose pile; the cellulose (the swatch the phone reads) stays put under the phone.
+   Its place in the pile is ?scan=bottom|middle|top (default bottom; the case study's Tap › scanned dial).
+   Dealt: one of the SPREADS below, chosen with ?spread=<name> (studio/filo-phone-tap-spreads.html compares
+   them). Each pose is [x, y, rotation°] from the stage's centre; the phone covers x ±195. Layers run bottom
+   to top and hold through the deal, so no swatch pops over another mid-flight. The sheer is the least
+   wanted, so every spread tucks it under its neighbours: same size, just less of it showing. ── */
+const STACK = {
+  cellulose: [0, 0, 1.5], felt: [5, -4, 7], sheer: [-4, 3, -5],
+  olive: [-6, 5, -8], boucle: [6, -3, 4], canvas: [-3, 6, -3],
 }
-const swatches = Object.keys(DECK).map(name => ({ el: k(`sw-${name}`), ...DECK[name] }))
+const SPREADS = {
+  /** Loose and even: three down the left with the sheer in the middle, two staggered on the right. */
+  scatter: {
+    layers: ['sheer', 'canvas', 'olive', 'boucle', 'felt'],
+    olive: [-440, -175, -9], sheer: [-565, 15, 4], canvas: [-420, 195, 7],
+    felt: [395, -150, 8], boucle: [470, 140, -5],
+  },
+  /** A ring around the phone, each swatch turned along it. */
+  orbit: {
+    layers: ['sheer', 'olive', 'canvas', 'felt', 'boucle'],
+    olive: [-370, -215, -14], sheer: [-560, -5, -3], canvas: [-380, 210, 12],
+    felt: [385, -200, 13], boucle: [395, 205, -11],
+  },
+  /** Two piles, one each side, the swatches overlapping like a sorted sample bundle. */
+  clusters: {
+    layers: ['sheer', 'canvas', 'olive', 'boucle', 'felt'],
+    canvas: [-470, -55, -6], sheer: [-545, 70, 8], olive: [-385, 95, -3],
+    felt: [405, -60, 5], boucle: [480, 75, -8],
+  },
+  /** Dropped on the table: bigger turns and uneven heights. */
+  tossed: {
+    layers: ['sheer', 'canvas', 'olive', 'boucle', 'felt'],
+    olive: [-470, -200, -16], sheer: [-560, 40, 11], canvas: [-395, 175, 14],
+    felt: [415, 180, -9], boucle: [455, -150, 17],
+  },
+  /** A diagonal from the top left to the bottom right, through the phone. */
+  cascade: {
+    layers: ['sheer', 'olive', 'canvas', 'felt', 'boucle'],
+    olive: [-555, -235, -6], canvas: [-390, -95, 4], sheer: [-520, 70, -8],
+    felt: [395, 95, 6], boucle: [550, 245, -4],
+  },
+}
+const query = new URLSearchParams(location.search)
+const spread = SPREADS[query.get('spread')] ?? SPREADS.scatter
+const scan = query.get('scan') ?? 'bottom'
+// The pile, bottom to top: the spread's layers with the cellulose at its scan position.
+const pile = [...spread.layers]
+pile.splice({ top: pile.length, middle: Math.ceil(pile.length / 2) }[scan] ?? 0, 0, 'cellulose')
+const swatches = Object.keys(STACK).map(name => ({ name, el: k(`sw-${name}`), z: pile.indexOf(name) + 1, stack: STACK[name], dealt: spread[name] ?? STACK[name] }))
+swatches.forEach(s => { s.el.style.zIndex = s.z })
+/** The swatches that move, top of the pile first: dealt off the top like cards, gathered back bottom first. */
+const movers = swatches.filter(s => s.name !== 'cellulose').sort((a, b) => b.z - a.z)
 const lerp = (a, b, p) => a + (b - a) * p
 function poseSwatch({ el, stack, dealt }, p) {
   const [x, y, r] = stack.map((v, i) => lerp(v, dealt[i], p))
   el.style.translate = `calc(-50% + ${x}px) calc(-50% + ${y}px)`
   el.style.rotate = `${r}deg`
 }
-/** The phone's offset below its resting spot (stage px); OFF puts it fully below the stage. */
+/** The phone's offset below its resting spot (stage px); OFF puts it fully below the stage, inside the fade. */
 const OFF = H - 8 + 40
 const posePhone = y => { phone.style.translate = `0 ${y}px` }
 /** Tells an embedding page whether the phone is on stage (the case study shows its replay circle only then). */
@@ -394,7 +292,7 @@ async function tween(t, ms, fn, ease = inOutCubic) {
 }
 /** Deals the deck out (to = 1) or gathers it back (to = 0), each card a beat after the last. */
 function deal(t, to, ms, gap, ease) {
-  const order = to ? swatches.slice(1) : swatches.slice(1).reverse()
+  const order = to ? movers : [...movers].reverse()
   return Promise.all(order.map(async (s, i) => {
     await sleep(i * gap, t)
     await tween(t, ms, p => poseSwatch(s, to ? p : 1 - p), ease)
@@ -417,11 +315,11 @@ const glide = (t, to, ms) => { const from = scroll.scrollTop; return tween(t, ms
 async function drag(t, x, y, dy, ms = 850) {
   const to = Math.max(0, Math.min(scroll.scrollHeight - scroll.clientHeight, scroll.scrollTop + dy))
   const real = (to - scroll.scrollTop) * PHONE_SCALE
-  await move(t, [x, y]); cursor.classList.add('is-down'); await sleep(110, t)
+  await move(t, [x, y]); cursor.classList.add('is-down'); await sleep(60, t)
   await Promise.all([move(t, [x, y - real], ms), glide(t, to, ms)])
-  cursor.classList.remove('is-down'); await sleep(140, t)
+  cursor.classList.remove('is-down'); await sleep(40, t)
 }
-async function tap(t, el, fx = .5, fy = .5) { await move(t, at(el, fx, fy)); await sleep(150, t); await click(t, el) }
+async function tap(t, el, fx = .5, fy = .5) { await move(t, at(el, fx, fy)); await sleep(40, t); await click(t, el) }
 
 /* ── Scene state ── */
 function resetPhone() {

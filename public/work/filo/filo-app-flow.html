@@ -516,7 +516,7 @@ function reset(i) {
   $('.sources-count').textContent = 'Processing 4 documents'
   $('.record .more-found').classList.add('is-hidden')
   // Screen 4: nothing published.
-  k('publish').classList.remove('is-done'); $('.caret')?.remove()
+  k('publish').classList.remove('is-done'); $('.caret')?.remove(); k('weight-input').textContent = '120'
   show(i); setUrl(URLS[i])
 }
 function setProgress(p) { $('.bar i').style.setProperty('--p', p); $('.pct').textContent = `${Math.round(p * 100)}%` }
@@ -528,12 +528,8 @@ async function materials(t) {
   setUrl('filo.app', false)
   cursor.classList.remove('is-hidden')
   await sleep(500, t); setUrl(URLS[0])
-  await move(t, [690, 700], 900)
-  hover(k('row-3')); await sleep(350, t)
-  await move(t, at(k('row-2'), .5, .5), 420); hover(k('row-2')); await sleep(300, t)
-  await move(t, at(k('row-1'), .5, .5), 420); hover(k('row-1')); await sleep(300, t)
-  await move(t, at(k('row-0'), .55, .5), 420); hover(k('row-0')); await sleep(450, t)
-  await move(t, at(k('add'), .6, .55)); hover(k('add')); await sleep(420, t)
+  // Straight to the one thing this screen is for.
+  await move(t, at(k('add'), .6, .55)); hover(k('add')); await sleep(120, t)
   await click(t, k('add'))
 }
 async function upload(t) {
@@ -543,12 +539,12 @@ async function upload(t) {
   hover()
   await move(t, [1180, 1110], 900)
   ghost.classList.remove('is-hidden'); cursor.classList.add('is-down')
-  await sleep(250, t)
+  await sleep(120, t)
   const drop = k('drop')
   await move(t, at(drop, .62, .62), 1150)
-  drop.classList.add('is-over'); await sleep(250, t)
+  drop.classList.add('is-over'); await sleep(150, t)
   // Release below the "Drop to upload" label, so the files under the cursor never cover it.
-  await move(t, at(drop, .47, .72), 380); await sleep(250, t)
+  await move(t, at(drop, .47, .72), 380); await sleep(120, t)
   cursor.classList.remove('is-down'); ghost.classList.add('is-hidden'); drop.classList.remove('is-over')
   const files = $$('.files li'), docs = $$('.preview .docs li')
   $('.preview').classList.add('has-files')
@@ -567,9 +563,7 @@ async function upload(t) {
   }
   k('process').disabled = false
   await sleep(450, t)
-  await move(t, at(files[1], .5, .5), 650); hover(files[1]); await sleep(500, t)
-  await move(t, at(docs[1], .55, .5), 700); hover(docs[1]); await sleep(550, t)
-  await move(t, at(k('process'), .56, .55)); hover(k('process')); await sleep(420, t)
+  await move(t, at(k('process'), .56, .55)); hover(k('process')); await sleep(120, t)
   await click(t, k('process'))
 }
 async function extract(t) {
@@ -577,8 +571,8 @@ async function extract(t) {
   hover()
   const rows = $$('.ptable > div'), stats = $$('.status')
   const dur = 4200
-  let shown = 0, done = 0, elapsed = 0, glanced = false
-  await move(t, [1080, 640], 900)
+  let shown = 0, done = 0, elapsed = 0
+  // The cursor rests where the last click left it: extraction runs by itself.
   let last = performance.now()
   // Progress fills; property values land row by row; each source turns to Processed.
   while (elapsed < dur) {
@@ -591,30 +585,26 @@ async function extract(t) {
       stats[done].classList.add('is-done'); stats[done].lastElementChild.textContent = 'Processed'; done++
       $('.sources-count').textContent = done === 4 ? '4 documents processed' : `${done} of 4 documents processed`
     }
-    // Glance at a source while the rest keeps filling: the move runs alongside the loop.
-    if (elapsed > 1400 && !glanced) { glanced = true; move(t, at(k('sdoc-1'), .5, .5), 700).then(() => hover(k('sdoc-1'))).catch(() => {}) }
   }
   rows.forEach(r => r.classList.add('is-in'))
   $('.record .more-found').classList.remove('is-hidden')
   $('.progress').classList.add('is-done'); $('.progress .label').textContent = 'Extraction complete'
-  hover()
   await sleep(1300, t)
 }
 async function review(t) {
   reset(3)
   await sleep(450, t)
-  // A value, its page in the source, and that document in the sidebar light up together.
-  const f1 = k('f-1')
-  await move(t, at(f1.querySelector('.input span'), .35, .5), 800); hover(f1); await sleep(380, t)
+  // Correct the weight: the field and the datasheet it came from light up together, and 120 becomes 125.
+  const f1 = k('f-1'), w = k('weight-input')
+  await move(t, at(w, .9, .5), 800); hover(f1); await sleep(120, t)
   await click(t)
-  f1.classList.add('is-focus'); k('weight-input').insertAdjacentHTML('beforeend', '<i class="caret"></i>')
+  f1.classList.add('is-focus'); w.innerHTML = '120<i class="caret"></i>'
   k('side-doc-0').classList.add('is-linked')
-  await sleep(1300, t)
-  await move(t, at(k('f-3').querySelector('.src'), .4, .5), 650)
-  f1.classList.remove('is-focus'); $('.caret')?.remove(); k('side-doc-0').classList.remove('is-linked')
-  hover(k('f-3')); k('side-doc-1').classList.add('is-linked'); await sleep(1100, t)
-  k('side-doc-1').classList.remove('is-linked')
-  await move(t, at(k('publish'), .55, .55), 900); hover(k('publish')); await sleep(420, t)
+  await sleep(450, t)
+  w.firstChild.data = '12'; await sleep(240, t)
+  w.firstChild.data = '125'; await sleep(1000, t)
+  hover(); f1.classList.remove('is-focus'); $('.caret')?.remove(); k('side-doc-0').classList.remove('is-linked')
+  await move(t, at(k('publish'), .55, .55), 900); hover(k('publish')); await sleep(120, t)
   await click(t, k('publish'))
   hover(); k('publish').classList.add('is-done'); toast.classList.add('is-on')
   await sleep(1700, t)

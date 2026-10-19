@@ -85,30 +85,14 @@ Canonical entry: `studio/filo-prototypes.html`, served by Vite at `/studio/filo-
 
 Proof: all sixteen reels exercised through each scene and transition boundary; exact loop endpoints matched and outside-device pixels retained alpha. Headless smoke covered title/timing edits, phone drag, image/tap changes, reload persistence and per-flow isolation. A complete contextual-warning WebM was rendered and decoded: 24 fps, alpha present, no audio. Desktop and narrow-screen surfaces reviewed; reduced-motion preference starts playback paused.
 
-## Case-study film assembly
+## Case-study phone prototypes
 
-`src/features/filoCase/filoFilmPlan.ts` maps all fifteen studio flows into five showcases, including the hero:
+The case study no longer plays rendered studio films. Every phone and portal screen on the page is a live HTML prototype in `public/work/filo/`, driven by the shared `filo-app-flow/player.js` (cursor, timing, speed, play/pause/restart messages from the host).
 
-| Showcase | Studio flows | Presentation |
-| --- | --- | --- |
-| Material → record (hero) | 04, 01 | Arrival phone + frameless intake detail |
-| Source → approve | 02, 03, 12 | Supplier phone + approval and update details |
-| Observe → resolve | 05, 06, 09, 08, 10 | Warning phone surrounded by evidence, test and insight crops |
-| Scale → decide | 07, 13 | Feasibility phone + decision detail |
-| Share → reuse | 11, 14, 15 | Export phone + sharing and learning details |
+- Proposal (the phone over the tag): `filo-phone-glimpse.html`, a short looping glimpse in the current app design. The island reads the tag, Open launches the App Clip on Bacterial Cellulose's record, and the clip then closes by itself to the lock screen the loop starts from (DialKit › story › proposalImage › speed sets its pace). `src/pages/filoStoryArt.tsx` projects its 390 × 845.5 screen onto each photographed phone with that photo's warp and screen mask, and cuts the photo's own Dynamic Island so the prototype's island, sized to it, grows over that spot.
+- Step 4 (Validate): `filo-phone-tap.html`, the dealt swatches and the full record tour.
+- Both share `filo-app-flow/clip.css` (iOS chrome, Dynamic Island, App Clip, Technical File) and `filo-app-flow/lock.svg` (SF Pro Rounded lock clock and date, flashlight and camera).
 
-The complete-lifecycle reel is deliberately reserved for the future concise introduction. Research and the three-part concept story remain separate from these five prototype showcases.
+The film studio above remains a separate editing tool; its canvas design predates the current app design.
 
-Regenerate the release assets with `node scripts/render-filo-films.mjs` while Vite runs at `http://127.0.0.1:4177` (override with `FILO_STUDIO_ORIGIN`). Optional flow IDs render a subset. The renderer uses canonical studio data and defaults—not inaccessible browser-local edits. Approved studio edits must be transferred into the canonical data before regeneration.
-
-`public/work/filo/films/` contains each loop as transparent VP9 WebM and HEVC-alpha MOV, plus a meaningful WebP poster. Films run at 30 fps with no audio; full phones, frameless details and upper-screen crops share one crop plan. Runtime build assets belong in the repository. Each loop includes the return transition rather than jumping from its final frame.
-
-`FiloFilms.tsx` starts playback only near the viewport, pauses offscreen or when the document is hidden, and provides a group pause control. Reduced-motion visitors see the posters. No beige panel or explanatory UI surrounds the recordings; mobile stacks the supporting films vertically.
-
-Film proof: all fifteen recordings advance in headless Chromium and WebKit; Chromium chooses VP9 and WebKit chooses HEVC. Both engines preserve transparent pixels outside the full iPhone frames. All thirty video files have one video stream and no audio. Chromium checks also covered all fifteen loop seams, pause/resume, offscreen pause, reduced-motion posters, and 390px/320px containment. Desktop and mobile compositions were visually inspected; shared Momo devices still render. `npm run typecheck` and the Vite production build pass, resolving the earlier obsolete `FiloTagScene` typecheck blocker.
-
-Final review corrections: mobile evidence items explicitly override desktop grid spans so all supporting films remain a readable single column; viewport-sized screenshots and computed-grid checks passed at 390px and 320px. Warning and resolution sequences occupy different rows to avoid near-duplicate adjacent screens. Research videos now respond to live Reduce Motion changes, and obsolete Filo `system`/`dynamic` settings were removed.
-
-Commit-boundary verification: the exact staged source snapshot passed typecheck and production build in an isolated temporary directory. The shared checkout's later typecheck was blocked by concurrent, excluded book-layout edits (`LayoutEditor.tsx`, `useDiagramTransition.ts`, `BookViewer.tsx`); those were not changed or included in this Filo commit.
-
-Next owner: David reviews the assembled case study and decides the future intro direction. Built locally does not imply visual acceptance or deployment.
+Next owner: David reviews the Proposal glimpse in the case study. Built locally does not imply visual acceptance or deployment.

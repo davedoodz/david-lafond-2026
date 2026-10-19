@@ -47,4 +47,9 @@
   .dither-band--footer {
     height: calc(var(--band-h-m) + 40px);
   }
+  /* Nav › mobileContrast "Edge blur": the bands draw above the screen-edge blur (z 47, Nav.css),
+     so their dots stay crisp; the nav (z 50) and the footer's text (z 49) stay above them. */
+  html[data-edge-blur] .dither-band {
+    z-index: 48;
+  }
 }

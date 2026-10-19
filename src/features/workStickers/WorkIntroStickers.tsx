@@ -51,15 +51,15 @@ interface Parts {
 /** `text` is the intro, one string per paragraph (see DEFAULT_INTRO_TEXT); the parent should remount
  * this component (via `key`) when it changes so the engine rebinds to the new pills.
  * `align="center"` centres every line on the hero column; long lines spill evenly to both sides.
- * `size` sets the intro text in px (desktop / mobile); pills and stickers are sized in em, so they scale with it. */
-export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', size }: { text?: string[]; align?: 'left' | 'center'; size?: { desktop: number; mobile: number } }) {
+ * Text size comes from the parent (--intro-size-*); pills and stickers are sized in em, so they scale
+ * with it. The parent also keeps every line fitting (WorkPage's useHeroFit, with the helpers below). */
+export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left' }: { text?: string[]; align?: 'left' | 'center' }) {
   const [paragraphs] = useState(() => {
     const used = new Set<string>()
     return text.filter(paragraph => paragraph.trim()).map(paragraph => parseIntro(paragraph, used))
   })
   const partsRef = useRef<Record<string, Parts>>({})
   const paragraphsRef = useRef<HTMLParagraphElement[]>([])
-  const fitRef = useRef<() => void>(() => {})
 
   useLayoutEffect(() => {
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
@@ -122,11 +122,6 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', s
     loop.schedule()
 
     const paragraphElements = paragraphsRef.current.filter(Boolean)
-    const fit = () => fitLines(paragraphElements, records)
-    fitRef.current = fit
-    fit()
-    addEventListener('resize', fit, { signal: controller.signal })
-    document.fonts?.ready.then(fit)
 
     const recordsByButton = new Map(records.map(record => [record.button as HTMLElement, record]))
     bindIntroSelection(paragraphElements, pill => recordsByButton.get(pill)?.current ?? pill.textContent ?? '', controller.signal)
@@ -140,8 +135,6 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', s
       }
     }
   }, [])
-  // The available width depends on alignment and text size, so refit when either changes.
-  useLayoutEffect(() => fitRef.current(), [align, size?.desktop, size?.mobile])
 
   function bindPart<K extends keyof Parts>(id: string, key: K) {
     return (el: NonNullable<Parts[K]> | null) => {
@@ -170,7 +163,6 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', s
           data-hl-local
           data-fit-ignore
           data-align={align}
-          style={size && ({ '--intro-size-d': `${size.desktop}px`, '--intro-size-m': `${size.mobile}px` } as CSSProperties)}
           ref={bindParagraph(p)}
         >
           {toLines(paragraph).map((line, l) => (
@@ -183,6 +175,7 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left', s
                     key={i}
                     type="button"
                     className="ws-pill"
+                    data-pill={token.id}
                     style={{ '--pill': look.appearance.pill, '--icon-scale': look.appearance.stickerScale } as CSSProperties}
                     ref={bindPart(token.id, 'button')}
                   >
@@ -219,35 +212,44 @@ function toLines(paragraph: Token[]): Token[][] {
 }
 
 /* Each line always stays on one line. Lines may run past the column into the free space on its
- * right; when even that is too narrow, the intro's font shrinks until the widest line fits.
- * "Widest" assumes each pill shows its longest phrase, so the size never jumps as pills turn. */
-// Every phrase each pill can show, from the frozen config.
-const labelsById = new Map(Object.entries(config.stickers).map(([id, sticker]) => [id, sticker.faces.map(face => face.label.trim())]))
-const labelWidths = (record: StickerRecord, font: string): number[] => {
-  const context = document.createElement('canvas').getContext('2d')!
-  context.font = font
-  return (labelsById.get(record.id) ?? []).map(label => context.measureText(label).width)
-}
-function fitLines(paragraphs: HTMLParagraphElement[], records: StickerRecord[]) {
-  for (const p of paragraphs) p.style.fontSize = ''
-  const root = document.documentElement.clientWidth
-  let scale = 1
-  for (const p of paragraphs) {
-    const box = p.getBoundingClientRect()
-    const margin = Math.max(16, Math.min(box.left, 40))
-    // Centred lines spill to both sides of the column's centre, so the nearer screen edge limits them.
-    const center = box.left + box.width / 2
-    const available = p.dataset.align === 'center' ? 2 * Math.min(center - margin, root - margin - center) : root - box.left - margin
-    for (const line of p.querySelectorAll<HTMLElement>('.ws-line')) {
-      let widest = line.getBoundingClientRect().width
-      for (const record of records) {
-        if (!line.contains(record.button)) continue
-        const label = record.label.getBoundingClientRect().width
-        widest += Math.max(...labelWidths(record, getComputedStyle(record.label).font)) - label
-      }
-      scale = Math.min(scale, available / widest)
-    }
+ * right; the parent shrinks the text when even that is too narrow. "Widest" assumes each pill shows
+ * its longest phrase, so the size never jumps as pills turn. */
+// Every phrase each pill can show, from the frozen config, with the padding (em) its artwork adds:
+// the pill pads by 1.2em + gap + ends before the label and 0.15em + ends after it (CSS --art-pad,
+// --text-pad), and the gap and ends change with the face.
+const facesById = new Map(Object.entries(config.stickers).map(([id, sticker]) => [id, sticker.faces.map(face => ({ label: face.label.trim(), pad: face.gap + 2 * face.ends }))]))
+/** Width of an intro line with each of its pills at its narrowest and at its widest face (phrase
+ * plus padding). Phrases are measured in a hidden probe styled like the pill's label (canvas
+ * ignores letter-spacing and over-measures). */
+function lineSpan(line: HTMLElement): [number, number] {
+  const width = line.getBoundingClientRect().width
+  let min = width, max = width
+  for (const pill of line.querySelectorAll<HTMLElement>('.ws-pill[data-pill]')) {
+    const label = pill.querySelector<HTMLElement>('.ws-pill-text')
+    if (!label) continue
+    const style = getComputedStyle(label)
+    const em = parseFloat(getComputedStyle(pill).fontSize)
+    const pad = (v: string) => (parseFloat(pill.style.getPropertyValue(v)) || 0) * em
+    const probe = document.createElement('span')
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none'
+    probe.style.font = style.font
+    probe.style.letterSpacing = style.letterSpacing
+    probe.style.fontFeatureSettings = style.fontFeatureSettings
+    pill.append(probe)
+    probe.textContent = label.textContent
+    const shown = probe.getBoundingClientRect().width + pad('--gap') + 2 * pad('--ends')
+    const widths = (facesById.get(pill.dataset.pill!) ?? []).map(f => { probe.textContent = f.label; return probe.getBoundingClientRect().width + f.pad * em })
+    probe.remove()
+    min += Math.min(shown, ...widths) - shown
+    max += Math.max(shown, ...widths) - shown
   }
-  if (scale >= 1) return
-  for (const p of paragraphs) p.style.fontSize = `${parseFloat(getComputedStyle(p).fontSize) * scale}px`
+  return [min, max]
+}
+/**
+ * How wide the sticker intro inside `scope` can get at its current font size, as its longest line:
+ * `[narrowest, widest]` over every combination of phrases the pills can show.
+ */
+export function introLineSpan(scope: HTMLElement): [number, number] {
+  const spans = Array.from(scope.querySelectorAll<HTMLElement>('.work-intro-stickers__p .ws-line'), lineSpan)
+  return [Math.max(0, ...spans.map(s => s[0])), Math.max(0, ...spans.map(s => s[1]))]
 }
