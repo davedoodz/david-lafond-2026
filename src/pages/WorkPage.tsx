@@ -6,6 +6,7 @@ import { DEFAULT_INTRO_TEXT, WorkIntroStickers, introLineSpan } from '../feature
 import { TOUCH_LANDING, smallViewportHeight, touchDome } from '../lib/touchLanding'
 import { publishNavAlign } from '../lib/navAlign'
 import { Signature } from '../features/signature/Signature'
+import { getSignatureData } from '../features/signature/store'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
@@ -68,6 +69,98 @@ function textWidth(el: Element | null) {
   return right > left ? right - left : 0
 }
 
+/** Painted box of an element's text (its font's line boxes). */
+function textRect(el: Element) {
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const rect = range.getBoundingClientRect()
+  range.detach()
+  return rect
+}
+
+/** Font metrics of an element's text: line box ascent and descent, and the capital height. */
+let metricsCanvas: CanvasRenderingContext2D | null = null
+function fontMetrics(el: Element) {
+  metricsCanvas ||= document.createElement('canvas').getContext('2d')
+  const ctx = metricsCanvas!
+  const s = getComputedStyle(el)
+  ctx.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`
+  const m = ctx.measureText('I')
+  return { ascent: m.fontBoundingBoxAscent, descent: m.fontBoundingBoxDescent, cap: m.actualBoundingBoxAscent }
+}
+
+/**
+ * Vertical offset load-ins add right now: the `translate` and `transform` of the element and its
+ * ancestors while an animation runs on them (useEntrance's data-enter, useReveal on the nav links).
+ * Standing transforms (the signature's offset dials) are kept.
+ */
+function entering(el: Element) {
+  let dy = 0
+  for (let e: Element | null = el; e && e !== document.body; e = e.parentElement) {
+    if (!e.getAnimations().length) continue
+    const style = getComputedStyle(e)
+    if (style.translate !== 'none') dy += parseFloat(style.translate.split(' ')[1] ?? '0') || 0
+    if (style.transform !== 'none') dy += new DOMMatrix(style.transform).m42
+  }
+  return dy
+}
+
+/** A box as it will sit once the load-in settles. */
+function settled(el: Element, rect: DOMRect = el.getBoundingClientRect()) {
+  const dy = entering(el)
+  return { left: rect.left, right: rect.right, top: rect.top - dy, bottom: rect.bottom - dy }
+}
+
+/**
+ * The signature's ink box: its recorded points mapped into the drawn SVG (viewBox, meet). From the
+ * data, not the paths, which are empty until the signing animation draws them.
+ */
+function signatureInk(hero: HTMLElement) {
+  const svg = hero.querySelector('.hero__signature svg')
+  const { strokes, width, height } = getSignatureData()
+  if (!svg || !strokes.length) return null
+  let x0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  for (const { points } of strokes) for (const [x, y] of points) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y1 = Math.max(y1, y) }
+  const box = settled(svg)
+  const scale = Math.min((box.right - box.left) / width, (box.bottom - box.top) / height)
+  const left = box.left + ((box.right - box.left) - width * scale) / 2
+  const top = box.top + ((box.bottom - box.top) - height * scale) / 2
+  return { left: left + x0 * scale, right: left + x1 * scale, bottom: top + y1 * scale }
+}
+
+/**
+ * Desktop landing: the Selected projects sheet peeks far enough for its label to read with as much
+ * room below it as above it (at least the peekDesktop dial), and the hero sits with equal gaps
+ * between the nav links' baseline and the title's capitals, and between the signature's ink and
+ * the sheet's tip. Short screens keep a 24px floor; the landing then grows past the fold.
+ */
+function frameDesktop(hero: HTMLElement, landing: HTMLElement) {
+  // One link's own text: the links row also holds animated extras (the Resume arrow, Back).
+  const links = document.querySelector('.nav__links a')
+  const title = hero.querySelector('.hero__title')
+  const label = document.querySelector<HTMLElement>('.works__eyebrow')
+  const ink = signatureInk(hero)
+  const first = hero.firstElementChild as HTMLElement | null, last = hero.lastElementChild as HTMLElement | null
+  if (!links || !title || !label || !ink || !first || !last) return
+  const dial = parseFloat(getComputedStyle(landing).getPropertyValue('--peek-d')) || 0
+  const peek = Math.max(dial, 2 * label.offsetTop + label.offsetHeight)
+  const tip = landing.getBoundingClientRect().top + window.innerHeight - peek
+  const navM = fontMetrics(links), titleM = fontMetrics(title)
+  const navBase = settled(links, textRect(links)).bottom - navM.descent
+  const capTop = settled(title, textRect(title)).top + titleM.ascent - titleM.cap
+  const gap = Math.max(24, (tip - navBase - (ink.bottom - capTop)) / 2)
+  // Children are placed from the first one's layout box (offsets ignore the load-in and the
+  // signature's own transform); the padding then fills the box exactly, so justify-content has no
+  // slack left to move them.
+  const heroTop = hero.getBoundingClientRect().top
+  const top = heroTop + first.offsetTop
+  const content = last.offsetTop + last.offsetHeight - first.offsetTop
+  const start = navBase + gap - (capTop - top)
+  const end = Math.max(tip, ink.bottom - top + start + gap)
+  hero.style.setProperty('padding-block', `${(start - heroTop).toFixed(1)}px ${Math.max(0, end - start - content).toFixed(1)}px`)
+  landing.style.minHeight = '0'
+}
+
 /**
  * Hero text fit, at every width. The sticker intro and the role line always share one size
  * (--hero-body-fit scales both), shrunk only when their widest line (pills at their longest phrase)
@@ -88,10 +181,12 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     const landing = hero?.parentElement
     if (!hero || !landing) return
     const touch = window.matchMedia(TOUCH_LANDING)
+    const desktop = () => !phone() && !touch.matches
     let frame = 0
     const fit = () => {
       frame = 0
       for (const v of ['--hero-title-fit', '--hero-body-fit', '--column-fit', 'padding-block']) hero.style.removeProperty(v)
+      landing.style.removeProperty('min-height')
       const avail = document.documentElement.clientWidth - 2 * parseFloat(getComputedStyle(hero).getPropertyValue('--column-inset'))
       const body = Math.max(textWidth(hero.querySelector('.hero__role')), introLineSpan(hero)[1])
       const bodyFit = body > avail ? avail / body : 1
@@ -103,6 +198,7 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
         hero.style.setProperty('--column-fit', `${Math.ceil(Math.max(title * titleFit, body * bodyFit))}px`)
       }
       center()
+      if (desktop()) return frameDesktop(hero, landing)
       if (!touch.matches) return
       const svh = smallViewportHeight()
       const items = Array.from(hero.children) as HTMLElement[]
@@ -128,9 +224,15 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       const inset = parseFloat(style.getPropertyValue('--column-inset')) || 0
       // Layout position (the hero is centred by its margins), not the rect, which includes the shift.
       const left = (vw - hero.offsetWidth) / 2 + parseFloat(style.paddingLeft)
-      // Centre the middle width; keep the widest line inside the right inset, and never pass the left one.
-      const target = Math.min(vw / 2 - (narrow + wide) / 4, vw - inset - wide)
-      const start = Math.max(inset, target)
+      // Desktop: centre the whole block, signature ink included, at its widest, so it reads centred
+      // on the page. Phones: centre the middle width. Keep the widest line inside the right inset,
+      // and never pass the left one.
+      const ink = signatureInk(hero)
+      const textLeft = hero.getBoundingClientRect().left + parseFloat(style.paddingLeft)
+      const from = desktop() && ink ? Math.min(0, ink.left - textLeft) : 0
+      const to = desktop() && ink ? Math.max(wide, ink.right - textLeft) : wide
+      const target = Math.min(desktop() ? (vw - to - from) / 2 : vw / 2 - (narrow + wide) / 4, vw - inset - to)
+      const start = Math.max(inset - from, target)
       hero.style.setProperty('--hero-center-x', `${(start - left).toFixed(1)}px`)
       // Every page's phone nav follows this start (lib/navAlign): the same lengths at full type size.
       const bodyFit = parseFloat(hero.style.getPropertyValue('--hero-body-fit')) || 1
@@ -144,6 +246,14 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     addEventListener('resize', schedule)
     touch.addEventListener('change', schedule)
     void document.fonts.ready.then(schedule)
+    // Faces first used after `ready` (italic, sticker pills) load later and re-measure the lines.
+    document.fonts.addEventListener('loadingdone', schedule)
+    // The load-in (text rising in, pills growing in) moves what the frame and centring measure; refit
+    // once each piece settles. Later pill phrase changes refit to the same place.
+    hero.addEventListener('animationend', schedule)
+    hero.addEventListener('transitionend', schedule)
+    // The nav's and page's own load-ins sit outside the hero; refit once everything running settles.
+    void Promise.allSettled(document.getAnimations().map((a) => a.finished)).then(schedule)
     // The column re-centres once useFitColumn measures; the intro's room depends on where it starts.
     let width = hero.offsetWidth
     const resize = new ResizeObserver(() => {
@@ -152,11 +262,19 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       schedule()
     })
     resize.observe(hero)
+    // The signature sizes itself after mount (its dials); the desktop frame and centring follow its ink.
+    const sig = hero.querySelector('.hero__signature')
+    const signed = new ResizeObserver(schedule)
+    if (sig) signed.observe(sig)
     return () => {
       cancelAnimationFrame(frame)
       removeEventListener('resize', schedule)
       touch.removeEventListener('change', schedule)
+      document.fonts.removeEventListener('loadingdone', schedule)
+      hero.removeEventListener('animationend', schedule)
+      hero.removeEventListener('transitionend', schedule)
       resize.disconnect()
+      signed.disconnect()
     }
   }, [heroRef, key])
 }

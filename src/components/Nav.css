@@ -335,7 +335,7 @@
   html[data-edge-blur-bottom] .works__eyebrow {
     z-index: 2;
   }
-  html[data-edge-blur-bottom] #play-title {
+  html[data-edge-blur] #play-title {
     position: relative;
     z-index: 2;
   }

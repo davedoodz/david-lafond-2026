@@ -70,9 +70,13 @@
   .hero__role {
     font-size: calc(var(--intro-size-m, var(--text-body)) * var(--hero-body-fit, 1));
   }
+  /* The text block (title to signature) is centred between the bottom of the nav's link text and
+     the dome's tip (the landing's bottom), on any screen. The hero starts at the nav's bottom edge,
+     26px below the link text (Nav.css: 16px bottom padding + the 10px under the 16px text line), so
+     the bottom padding is 26px more than the top. */
   .hero {
     --column-inset: 24px;
-    padding-block: 72px 64px;
+    padding-block: 24px 50px;
   }
   .hero__intro {
     max-width: 260px;

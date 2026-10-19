@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Section seams: white ↔ black without a flat line</title>
+<style>
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; }
+  :root {
+    --ink: #171717; --ink-2: #1c1c1c; --paper: #f3f3f3; --stone-600: #6f6b68; --stone-400: #a6a09c;
+    --phone-w: 330px; --phone-h: 600px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Beatrice', system-ui, sans-serif; font-synthesis: none; background: #e6eaf2; color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  /* --- Page chrome */
+  header.top { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 18px 28px; background: rgb(230 234 242 / 0.86); backdrop-filter: blur(12px); }
+  header.top h1 { margin: 0; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
+  header.top p { margin: 0; flex: 1 1 360px; font-size: 13px; color: var(--stone-600); }
+  .controls { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .controls button { font: inherit; padding: 7px 12px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; cursor: pointer; }
+  .controls button[aria-pressed='false'] { background: #fff; color: var(--ink); box-shadow: 0 0 0 1px #d4d8e0; }
+  .controls input { width: 180px; accent-color: var(--ink); }
+
+  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--phone-w), 1fr)); gap: 40px 28px; padding: 12px 28px 80px; justify-items: center; }
+  figure { margin: 0; width: var(--phone-w); }
+  figcaption { margin-top: 14px; font-size: 13px; line-height: 1.45; color: var(--stone-600); }
+  figcaption b { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; font-weight: 500; color: var(--ink); font-size: 14px; }
+  figcaption b span { font-size: 11px; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; color: var(--stone-400); }
+  figcaption b span.pick { color: #2f7d4f; }
+
+  /* --- Phone: a scroll container with a light story above a dark sheet */
+  .phone { position: relative; width: var(--phone-w); height: var(--phone-h); border-radius: 34px; overflow: hidden; background: var(--paper); box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 24px 50px -20px rgb(20 30 60 / 0.35); }
+  .scroller { height: 100%; overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain; }
+  .scroller::-webkit-scrollbar { display: none; }
+  .light { position: relative; padding: 70px 26px 120px; background: var(--paper); transform-origin: 50% 100%; }
+  .light p { margin: 0 0 18px; font-size: 14px; line-height: 1.45; color: #57534f; }
+  .dark { position: relative; padding: 46px 22px 60px; background: var(--ink); color: #f3f3f3; }
+  .label { margin: 0 0 34px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { aspect-ratio: 1 / 0.9; border-radius: 14px; background: #fff; display: grid; place-items: center; }
+  .card i { width: 78%; aspect-ratio: 16 / 10; border-radius: 3px; background: linear-gradient(135deg, #222, #555); }
+  .card:nth-child(2) i { background: repeating-linear-gradient(90deg, #ddd 0 6px, #eee 6px 12px); }
+  .card:nth-child(3) i { background: linear-gradient(135deg, #c9b79c, #7f8f6a); }
+  .card:nth-child(4) i { background: radial-gradient(circle at 40% 50%, #e7a9c9, #f5f0f3 60%); }
+  .nav { position: absolute; inset: 0 0 auto; z-index: 5; display: flex; gap: 22px; padding: 26px 24px; font-size: 10.5px; font-weight: 500; letter-spacing: 0.02em; pointer-events: none; color: #6f6b68; mix-blend-mode: difference; filter: invert(1) grayscale(1); }
+  .nav b { font-weight: 500; }
+
+  /* --p: 0 while the seam sits at the screen bottom, 1 once it reaches the top (JS below). */
+
+  /* 1. Baseline: the dome flattens to a straight cut as it rises. */
+  [data-fx='baseline'] .dark { border-radius: 50% 50% 0 0 / calc((1 - var(--p)) * 90px) calc((1 - var(--p)) * 90px) 0 0; }
+
+  /* 2. Persistent arc: the dome keeps a minimum curve, so the edge is never straight. */
+  [data-fx='arc'] .dark { border-radius: 50% 50% 0 0 / calc(26px + (1 - var(--p)) * 64px) calc(26px + (1 - var(--p)) * 64px) 0 0; }
+
+  /* 3. Sheet stack: the dark sheet is an object sliding over a receding page (iOS sheet). */
+  [data-fx='sheet'] .dark { margin-inline: calc((1 - var(--p)) * 14px); border-radius: 34px 34px 0 0; box-shadow: 0 -24px 50px -6px rgb(0 0 0 / calc(0.18 + var(--p) * 0.2)); }
+  [data-fx='sheet'] .light { scale: calc(1 - var(--p) * 0.06); filter: brightness(calc(1 - var(--p) * 0.25)); }
+  [data-fx='sheet'] .scroller { background: #c9c9c9; }
+
+  /* 4. Feathered gradient: a long eased ramp from paper to ink, no edge at all. */
+  [data-fx='feather'] .dark::before { content: ''; position: absolute; inset: auto 0 100%; height: 190px; pointer-events: none;
+    background: linear-gradient(to bottom, rgb(23 23 23 / 0) 0%, rgb(23 23 23 / 0.04) 18%, rgb(23 23 23 / 0.14) 34%, rgb(23 23 23 / 0.32) 50%, rgb(23 23 23 / 0.56) 66%, rgb(23 23 23 / 0.8) 82%, var(--ink) 100%); }
+
+  /* 5. Dither dissolve: the seam breaks into an ordered-dither dot field (the site's shader look). */
+  [data-fx='dither'] .dark::before { content: ''; position: absolute; inset: auto 0 calc(100% - 1px); height: 150px; pointer-events: none; background-image: var(--dither); background-size: 100% 100%; image-rendering: pixelated; }
+
+  /* 6. Wave edge: a soft wave that drifts sideways as you scroll; never a straight line. */
+  [data-fx='wave'] .dark::before { content: ''; position: absolute; inset: auto 0 calc(100% - 1px); height: 34px; background: var(--ink); pointer-events: none;
+    -webkit-mask: var(--wave) calc(var(--p) * -240px) 100% / 240px 34px repeat-x; mask: var(--wave) calc(var(--p) * -240px) 100% / 240px 34px repeat-x; }
+
+  /* 7. Frosted veil: the light page blurs and darkens into the sheet over ~120px. */
+  [data-fx='frost'] .dark::before { content: ''; position: absolute; inset: auto 0 100%; height: 130px; pointer-events: none;
+    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+    background: linear-gradient(to bottom, rgb(23 23 23 / 0), rgb(23 23 23 / 0.25) 45%, var(--ink));
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40%); mask-image: linear-gradient(to bottom, transparent, #000 40%); }
+
+  /* 8. Tilted edge: the seam is a diagonal that levels out only off screen. */
+  [data-fx='tilt'] .dark { margin-top: -1px; clip-path: polygon(0 calc(var(--tilt) * 1px), 100% 0, 100% 100%, 0 100%); padding-top: calc(46px + var(--tilt) * 0.5px); --tilt: calc(42 - var(--p) * 18); }
+
+  /* 9. Horizon glow: the dome stays curved and the dark sheet glows at its rim, like a planet's edge. */
+  [data-fx='horizon'] .dark { border-radius: 50% 50% 0 0 / calc(30px + (1 - var(--p)) * 60px) calc(30px + (1 - var(--p)) * 60px) 0 0;
+    background: radial-gradient(120% 70% at 50% 0%, #3b3b3b 0%, #232323 22%, var(--ink) 50%);
+    box-shadow: 0 -10px 40px -4px rgb(255 255 255 / 0.9), 0 -2px 0 0 rgb(255 255 255 / 0.6) inset; }
+  [data-fx='horizon'] .light { background: radial-gradient(140% 40% at 50% 100%, #dcdcdc 0%, var(--paper) 70%); }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Section seams: white ↔ black without a flat line</h1>
+  <p>Each phone scrolls on its own. Play scrolls them all through the seam together so you can compare. Option 1 is today's dome, which goes flat as it rises.</p>
+  <div class="controls">
+    <button id="play" aria-pressed="true">Pause</button>
+    <input id="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Scrub the seam" />
+  </div>
+</header>
+<main id="board"></main>
+
+<template id="phone">
+  <div class="phone">
+    <div class="nav"><b>WORK</b><span>ABOUT</span><span>RESUME</span></div>
+    <div class="scroller">
+      <section class="light">
+        <p>But despite all this, I've never felt more empowered to get better and build faster.</p>
+        <p>So to all artists, designers, and builders –</p>
+        <p>It truly is an incredible time to be alive.</p>
+        <p>Because right now, the possibilities feel endless.</p>
+        <p>And so maybe being a misfit isn't so bad after all?</p>
+        <p>To designing the future.</p>
+        <p>- DL</p>
+      </section>
+      <section class="dark">
+        <p class="label">My playground ↓</p>
+        <div class="grid"><div class="card"><i></i></div><div class="card"><i></i></div><div class="card"><i></i></div><div class="card"><i></i></div><div class="card"><i></i></div><div class="card"><i></i></div></div>
+      </section>
+    </div>
+  </div>
+</template>
+
+<script>
+  const OPTIONS = [
+    ['baseline', 'Today: flattening dome', 'The problem', 'The dome opens as it rises, so mid-scroll it is a dead-straight cut across the screen.'],
+    ['arc', 'Persistent arc', 'Smallest change', 'Same dome, but it never relaxes below a 26px rise. The edge always reads as a curve; one dial (minimum rise) on the existing dome.'],
+    ['sheet', 'Sheet stack', 'Physical', 'The dark sheet is a rounded card with a shadow sliding over a page that sinks and dims. The edge is an object, not a cut.'],
+    ['feather', 'Feathered gradient', 'Softest', 'A 190px eased ramp from paper to ink. There is no edge to see; the text above simply sinks into the dark.'],
+    ['dither', 'Dither dissolve', 'Pick: on-brand', 'The seam breaks into an ordered-dither dot field, the same visual language as the nav and footer shader bands.'],
+    ['wave', 'Wave edge', 'Playful', 'A soft wave that drifts sideways as you scroll. Never straight, but more decorative than the rest of the site.'],
+    ['frost', 'Frosted veil', 'Matches the blur', 'The light page blurs and darkens into the sheet over 130px, echoing the edge blur under the nav.'],
+    ['tilt', 'Tilted edge', 'Graphic', 'A diagonal seam that levels slightly as it rises but never reaches flat. Strong, editorial, and directional.'],
+    ['horizon', 'Horizon glow', 'Atmospheric', 'A dome that keeps its curve, with a lit rim like a planet\'s edge. The seam becomes a horizon.'],
+  ]
+
+  // Ordered (Bayer 8×8) dither from transparent to ink, drawn once as a data URL for option 5.
+  function ditherURL(w = 110, h = 50) {
+    const bayer = [0,48,12,60,3,51,15,63,32,16,44,28,35,19,47,31,8,56,4,52,11,59,7,55,40,24,36,20,43,27,39,23,2,50,14,62,1,49,13,61,34,18,46,30,33,17,45,29,10,58,6,54,9,57,5,53,42,26,38,22,41,25,37,21]
+    const c = document.createElement('canvas'); c.width = w; c.height = h
+    const ctx = c.getContext('2d'); const img = ctx.createImageData(w, h)
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const t = y / (h - 1), v = t * t * (3 - 2 * t) // smoothstep density ramp
+      const on = v > (bayer[(y % 8) * 8 + (x % 8)] + 0.5) / 64
+      const i = (y * w + x) * 4; img.data[i] = 23; img.data[i + 1] = 23; img.data[i + 2] = 23; img.data[i + 3] = on ? 255 : 0
+    }
+    ctx.putImageData(img, 0, 0); return `url(${c.toDataURL()})`
+  }
+  const wave = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 34" preserveAspectRatio="none"><path d="M0 22 C40 4 80 4 120 18 S200 32 240 22 V34 H0Z"/></svg>')}")`
+  document.documentElement.style.setProperty('--dither', ditherURL())
+  document.documentElement.style.setProperty('--wave', wave)
+
+  const board = document.getElementById('board'), tpl = document.getElementById('phone')
+  const phones = OPTIONS.map(([fx, title, tag, text], i) => {
+    const fig = document.createElement('figure')
+    const phone = tpl.content.firstElementChild.cloneNode(true)
+    phone.dataset.fx = fx
+    fig.append(phone)
+    fig.insertAdjacentHTML('beforeend', `<figcaption><b>${i + 1}. ${title}<span class="${tag.startsWith('Pick') ? 'pick' : ''}">${tag}</span></b>${text}</figcaption>`)
+    board.append(fig)
+    return phone
+  })
+
+  // --p per phone: how far the seam (top of .dark) has risen through the screen, 0 at the bottom → 1 at the top.
+  function update(phone) {
+    const sc = phone.querySelector('.scroller'), dark = phone.querySelector('.dark')
+    const y = dark.offsetTop - sc.scrollTop, h = sc.clientHeight
+    phone.style.setProperty('--p', Math.min(1, Math.max(0, 1 - y / h)).toFixed(4))
+  }
+  // Scroll every phone so its seam sits at fraction t of the trip from the screen bottom (-10%) to the top (+10%).
+  function scrubTo(t) {
+    for (const phone of phones) {
+      const sc = phone.querySelector('.scroller'), dark = phone.querySelector('.dark'), h = sc.clientHeight
+      sc.scrollTop = dark.offsetTop - h * (1.1 - t * 1.2)
+      update(phone)
+    }
+  }
+  for (const phone of phones) {
+    const sc = phone.querySelector('.scroller')
+    sc.addEventListener('scroll', () => update(phone), { passive: true })
+    sc.addEventListener('pointerdown', () => setPlaying(false))
+    sc.addEventListener('wheel', () => setPlaying(false), { passive: true })
+    update(phone)
+  }
+
+  const play = document.getElementById('play'), scrub = document.getElementById('scrub')
+  let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, t0 = performance.now()
+  function setPlaying(on) { playing = on; play.textContent = on ? 'Pause' : 'Play'; play.setAttribute('aria-pressed', String(on)); if (on) t0 = performance.now() - Number(scrub.value) * 3500 }
+  play.addEventListener('click', () => setPlaying(!playing))
+  scrub.addEventListener('input', () => { setPlaying(false); scrubTo(Number(scrub.value)) })
+  setPlaying(playing)
+  // 3.5s up, 3.5s down, eased, looping.
+  function tick(now) {
+    if (playing) {
+      const k = ((now - t0) / 3500) % 2, lin = k < 1 ? k : 2 - k
+      const t = lin * lin * (3 - 2 * lin)
+      scrub.value = String(t); scrubTo(t)
+    }
+    requestAnimationFrame(tick)
+  }
+  scrubTo(0); requestAnimationFrame(tick)
+</script>
+</body>
+</html>

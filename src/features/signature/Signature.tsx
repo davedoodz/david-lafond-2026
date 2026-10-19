@@ -44,8 +44,12 @@ export function Signature({ className }: { className?: string }) {
     },
   })
 
-  const width = isMobile ? values.layout.mobileWidth : values.layout.desktopWidth
-  const height = isMobile ? values.layout.mobileHeight : values.layout.desktopHeight
+  const layout = values.layout
+  const width = isMobile ? layout.mobileWidth : layout.desktopWidth
+  const height = isMobile ? layout.mobileHeight : layout.desktopHeight
+  const offsetX = isMobile ? layout.mobileX : layout.desktopX
+  const offsetY = isMobile ? layout.mobileY : layout.desktopY
+  const scale = isMobile ? layout.mobileScale : layout.desktopScale
   const hasStrokes = data.strokes.length > 0
   const wipeDurationMs = 1200 / values.playback.speed
   // A click (or the DialKit Replay button) signs straight away; only the first,
@@ -72,8 +76,9 @@ export function Signature({ className }: { className?: string }) {
         {
           '--sig-w': `${width}px`,
           '--sig-h': `${height}px`,
-          '--sig-offset-x': `${values.layout.offsetX}px`,
-          '--sig-offset-y': `${values.layout.offsetY}px`,
+          '--sig-offset-x': `${offsetX}px`,
+          '--sig-offset-y': `${offsetY}px`,
+          '--sig-scale': scale,
         } as CSSProperties
       }
     >

@@ -23,14 +23,21 @@ export const SIGNATURE_CONFIG = {
     maxGapMs: [350, 0, 2000, 10],
     replay: { type: 'action', label: 'Replay' },
   },
+  /** Size of the drawing box, and its position and scale, separately for desktop and phones (≤ 640px).
+      X/Y move it without moving anything around it; scale grows it from the point that sits on the
+      hero text's left edge, so the signature stays lined up with the text. */
   layout: {
     _collapsed: true,
     desktopWidth: [311, 100, 500, 1],
     desktopHeight: [76, 20, 150, 1],
+    desktopX: [-81, -200, 200, 1],
+    desktopY: [-6, -150, 150, 1],
+    desktopScale: [1, 0.3, 2, 0.01],
     mobileWidth: [292, 100, 500, 1],
     mobileHeight: [70, 20, 150, 1],
-    offsetX: [-81, -120, 120, 1],
-    offsetY: [-6, -60, 150, 1],
+    mobileX: [-81, -200, 200, 1],
+    mobileY: [-6, -150, 150, 1],
+    mobileScale: [1, 0.3, 2, 0.01],
   },
   openStudio: { type: 'action', label: 'Open signature studio' },
 } satisfies DialConfig

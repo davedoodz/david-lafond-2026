@@ -11,7 +11,7 @@ import { Playground } from '../features/playground/Playground'
 import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
 import { useEntrance } from '../lib/useEntrance'
 import { DOME_CURVES } from '../lib/domeClip'
-import { SAVED_TOUCH_ARC, TOUCH_LANDING, smallViewportHeight, touchArcClip } from '../lib/touchLanding'
+import { SAVED_TOUCH_ARC, TOUCH_LANDING, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
 import { useFitColumn } from '../lib/useFitColumn'
 import { revealDials, useReveal } from '../lib/useReveal'
 import { storyEntranceDials, useStoryEntrance } from '../features/storyEntrance/storyEntrance'
@@ -176,8 +176,9 @@ export function AboutPage() {
   useReveal(playRef, '.pg-card', t.reveal, revealRun)
 
   // "My playground" sits as far below the dark sheet's top edge as "Selected projects" does on Home.
-  // Touch screens: like Home's label, it is centred between the sheet's top edge (the arc's tip) and
-  // the first row of cards. It stays in flow (the cards never move); only its own offset is set.
+  // Touch screens: like Home's label, it is centred between the arc's tip and the screen's bottom
+  // edge at the story's end (half the Work page's peek). It stays in flow (the cards never move);
+  // only its own offset is set.
   useLayoutEffect(() => {
     const dark = darkRef.current
     const title = playTitleRef.current
@@ -185,13 +186,20 @@ export function AboutPage() {
     const mobile = window.matchMedia('(max-width: 640px)')
     const touch = window.matchMedia(TOUCH_LANDING)
     const place = () => {
+      const play = playRef.current
       title.style.top = '0px'
+      play?.style.removeProperty('--play-touch-push')
       const edge = dark.getBoundingClientRect().top
+      const peek = touch.matches ? touchDome(smallViewportHeight()).peek : 0
+      // Touch screens: like Home's first thumbnail, the first row of cards starts at the fold, so
+      // only the arc and the label show in the peek.
+      const grid = play?.querySelector('.pg-grid')
+      const push = grid ? peek - (grid.getBoundingClientRect().top - edge) : 0
+      if (play && push > 0) play.style.setProperty('--play-touch-push', `${push.toFixed(1)}px`)
       const box = title.getBoundingClientRect()
-      const natural = box.top - edge
-      const grid = playRef.current?.querySelector('.pg-grid')
-      const want = touch.matches && grid
-        ? (grid.getBoundingClientRect().top - edge) / 2 - box.height / 2
+      const natural = box.top - dark.getBoundingClientRect().top
+      const want = touch.matches
+        ? peek / 2 - box.height / 2
         : mobile.matches ? SHEET_LABEL_TOP.mobile : SHEET_LABEL_TOP.desktop
       title.style.top = `${want - natural}px`
     }
@@ -230,9 +238,15 @@ export function AboutPage() {
       // 0 while only the peek shows (same full dome as the Work page's resting tip),
       // 1 once it has travelled enterDistance. Capped so it is always flat by the
       // time the sheet top reaches the top of the screen (the snap stop).
-      const peek = mobile ? dome.peekMobile : dome.peekDesktop
+      const touch = window.matchMedia(TOUCH_LANDING).matches
+      // Touch screens peek exactly as far as the Work page's white arc (touchDome), not the peek dial.
+      const peek = touch ? touchDome(svh).peek : mobile ? dome.peekMobile : dome.peekDesktop
+      for (const v of ['--dome-peek-d', '--dome-peek-m']) {
+        if (touch) sheet.style.setProperty(v, `${peek.toFixed(2)}px`)
+        else sheet.style.removeProperty(v)
+      }
       const rest = vh - peek
-      if (window.matchMedia(TOUCH_LANDING).matches) {
+      if (touch) {
         // Touch screens: the Work page's white arc (same saved touchArc curve), flattened by one
         // progress value. Travel is capped at the rest distance so it is fully flat when the
         // sheet snaps to the top (no page showing at the corners).
@@ -383,6 +397,61 @@ export function AboutPage() {
     return () => {
       observer.disconnect()
       mutations.disconnect()
+    }
+  }, [])
+
+  // Phones: the gap from the GitHub logo down to the contact heading always equals the gap from the
+  // playground's last row of cards down to the graph's month labels. Measured on screen (the graph,
+  // its logo and the playground all have position dials), and the contact section's top padding
+  // absorbs the difference through --cta-match (AboutPage.css). Re-measured on resize, on any dial
+  // change (style writes), and when reveal animations settle.
+  useLayoutEffect(() => {
+    const dark = darkRef.current
+    if (!dark) return
+    const phone = window.matchMedia('(max-width: 640px)')
+    let shift = 0
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const cta = dark.querySelector<HTMLElement>('.cta')
+      const cards = dark.querySelectorAll<HTMLElement>('.pg-card')
+      const months = dark.querySelector<HTMLElement>('.cg__labels')
+      const logo = dark.querySelector<HTMLElement>('.cg__logo')
+      const title = dark.querySelector<HTMLElement>('.cta__title')
+      if (!phone.matches || !cta || !cards.length || !months || !logo || !title) {
+        shift = 0
+        cta?.style.removeProperty('--cta-match')
+        return
+      }
+      const lastRow = Math.max(...Array.from(cards, (card) => card.getBoundingClientRect().bottom))
+      const above = months.getBoundingClientRect().top - lastRow
+      const below = title.getBoundingClientRect().top - logo.getBoundingClientRect().bottom - shift
+      const next = Math.round((above - below) * 2) / 2
+      if (Math.abs(next - shift) < 0.5) return
+      shift = next
+      cta.style.setProperty('--cta-match', `${shift}px`)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
+    }
+    measure()
+    const resize = new ResizeObserver(schedule)
+    resize.observe(dark)
+    const dials = new MutationObserver(schedule)
+    dials.observe(dark, { attributes: true, attributeFilter: ['style'], subtree: true, childList: true })
+    dark.addEventListener('transitionend', schedule)
+    dark.addEventListener('animationend', schedule)
+    phone.addEventListener('change', schedule)
+    window.addEventListener('scroll', schedule, { passive: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      resize.disconnect()
+      dials.disconnect()
+      dark.removeEventListener('transitionend', schedule)
+      dark.removeEventListener('animationend', schedule)
+      phone.removeEventListener('change', schedule)
+      window.removeEventListener('scroll', schedule)
+      dark.querySelector<HTMLElement>('.cta')?.style.removeProperty('--cta-match')
     }
   }, [])
 

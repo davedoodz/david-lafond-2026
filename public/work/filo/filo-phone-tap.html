@@ -33,10 +33,11 @@
     position: absolute; left: 503px; top: 8px; width: 434px; height: 884px; z-index: 10; scale: .9; transform-origin: 50% 50%;
     filter: drop-shadow(0 20px 24px rgb(40 30 20 / .22)) drop-shadow(0 6px 8px rgb(40 30 20 / .12)); }
   .frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; user-select: none; }
-  /* The display (not .screen: app.css hides every .screen that isn't the active one). Black until it wakes. */
+  /* The display (not .screen: app.css hides every .screen that isn't the active one). Black until it wakes.
+     Its corners are tighter than the frame's opening (≈55px), so they tuck under the bezel: no gap. */
   .display {
     --chrome: #fff;
-    position: absolute; left: 22.5px; top: 19.2px; width: 390px; height: 845.5px; border-radius: 60px; overflow: hidden;
+    position: absolute; left: 22.5px; top: 19.2px; width: 390px; height: 845.5px; border-radius: 50px; overflow: hidden;
     background: #050505; font-family: var(--sys); color: #000; cursor: default; user-select: none; -webkit-font-smoothing: antialiased;
   }
   .display.is-app { --chrome: #000; }

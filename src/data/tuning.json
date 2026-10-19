@@ -80,7 +80,7 @@
     "ghost": {
       "navSize": 30,
       "zoomSize": 190,
-      "offsetY": -85,
+      "color": "gray text",
       "morph": {
         "type": "spring",
         "visualDuration": 0.65,
@@ -135,9 +135,15 @@
       "startDelayMs": 1610
     },
     "layout": {
-      "mobileWidth": 373,
-      "offsetX": -69,
-      "offsetY": 10
+      "desktopWidth": 316,
+      "desktopHeight": 78,
+      "desktopX": -17,
+      "desktopY": 13,
+      "desktopScale": 1.33,
+      "mobileWidth": 382,
+      "mobileHeight": 64,
+      "mobileX": -85,
+      "mobileY": -3
     }
   },
   "Selected works": {
@@ -782,12 +788,20 @@
   "Nav": {
     "position": "fixed",
     "backdrop": "none",
+    "letterSpacing": {
+      "desktop": -0.16,
+      "mobile": -0.16
+    },
     "resumeArrow": {
       "scale": 1.15,
       "x": 4
     },
     "mobileContrast": {
-      "preset": "Edge blur",
+      "edgeBlur": {
+        "length": 232,
+        "strength": 0.05,
+        "blur": 5.5
+      },
       "strength": 1,
       "fadeBlur": 30,
       "fadeLength": 100,
@@ -797,7 +811,8 @@
       },
       "fadeBlack": {
         "top": 1
-      }
+      },
+      "fadeTime": 0
     }
   },
   "Project open": {

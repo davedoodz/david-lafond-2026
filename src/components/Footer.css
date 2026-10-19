@@ -43,6 +43,11 @@
   .footer__places {
     row-gap: calc(22px - 1.2em);
   }
+  /* Nav › mobileContrast "Edge blur": the links and places sit above the screen-edge blur (z 47) and
+     the footer's dither band (z 48, DitherBand.css), so they are never blurred or dotted over. */
+  html[data-edge-blur] .footer__inner {
+    z-index: 49;
+  }
 }
 
 .footer__place {

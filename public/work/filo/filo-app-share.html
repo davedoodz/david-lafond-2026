@@ -168,23 +168,35 @@
   .tagp.is-linked .tag-img { animation: none; }
   @keyframes sway { 0%, 100% { rotate: -1.6deg; } 50% { rotate: 1.6deg; } }
   .nfc, .linked { position: absolute; left: 300px; top: 0; width: 330px; height: 100%; text-align: center; transition: opacity .35s ease; }
-  .linked, .tagp.is-linked .nfc { opacity: 0; }
+  .nfc > :not(.waves) { transition: opacity .35s ease; }
+  /* Linked: the reader's copy fades, and the reader itself stays: it becomes the badge above "Tag connected". */
+  .linked, .tagp.is-linked .nfc > :not(.waves) { opacity: 0; }
   /* Linked: the info sits a little further right so the second tap never crosses it. */
   .linked { left: 336px; width: 300px; }
-  .tagp.is-linked .linked { opacity: 1; }
-  .waves { position: absolute; left: 99px; top: 72px; width: 132px; height: 132px; display: grid; place-items: center; }
-  .waves::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #e2eee3; }
+  .tagp.is-linked .linked { opacity: 1; transition-delay: .18s; }
+  .waves { position: absolute; left: 99px; top: 72px; width: 132px; height: 132px; display: grid; place-items: center; transition: translate .6s var(--ease-move), scale .6s var(--ease-move); }
+  .waves::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #e2eee3; transition: opacity .35s ease, scale .5s var(--ease-out); }
   .waves > i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #9fcca7; opacity: 0; animation: pulse 2.2s ease-out infinite; }
   .waves > i:nth-child(2) { animation-delay: 1.1s; }
-  .waves span { position: relative; display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: #d3e8d6; color: #24903c; }
-  .waves span .ic { width: 42px; height: 42px; stroke-width: 2.2; }
+  .waves span { position: relative; display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: #d3e8d6; color: #24903c; transition: background-color .4s ease, color .4s ease; }
+  .waves span .ic { position: absolute; width: 42px; height: 42px; stroke-width: 2.2; transition: opacity .35s ease, translate .5s var(--ease-move), rotate .5s var(--ease-move); }
+  .waves .tag-ic { opacity: 0; translate: -26px 0; rotate: -14deg; }
+  .waves .closing { position: absolute; left: -8px; top: -8px; width: 108px; height: 108px; rotate: -90deg; overflow: visible; }
+  .waves .closing circle { fill: none; stroke: #2a9a43; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .8s var(--ease-move) .2s; }
   .waves.is-hit span { animation: hit .5s var(--ease-out); }
+  /* Connected: the disc rises into the badge slot (centre 60px down, 68px wide) over the linked column; the
+     waves slide out as the tag slides in, and a green ring draws once around it. */
+  .tagp.is-linked .waves { translate: 21px -78px; scale: .74; }
+  .tagp.is-linked .waves::before { opacity: 0; scale: .8; }
+  .tagp.is-linked .waves > i { animation: none; }
+  .tagp.is-linked .waves span { background: #cbe5cf; color: #1f7a32; }
+  .tagp.is-linked .waves .nfc-ic { opacity: 0; translate: 26px 0; }
+  .tagp.is-linked .waves .tag-ic { opacity: 1; translate: 0 0; rotate: 0deg; }
+  .tagp.is-linked .waves .closing circle { stroke-dashoffset: 0; }
   @keyframes pulse { from { scale: .7; opacity: .9; } to { scale: 1.35; opacity: 0; } }
   @keyframes hit { 40% { scale: 1.12; } }
   .nfc strong { position: absolute; left: 0; right: 0; top: 226px; font-size: 18.5px; font-weight: 600; color: #141414; }
   .nfc p { position: absolute; left: 0; right: 0; top: 256px; margin: 0; font-size: 15px; line-height: 23px; color: #7a7a7d; }
-  .ok { position: absolute; left: calc(50% - 34px); top: 26px; width: 68px; height: 68px; border-radius: 50%; background: #2a9a43 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6.5 12.5 3.6 3.6L17.5 8.5'/%3E%3C/svg%3E") center / 40px no-repeat; scale: .6; transition: scale .45s var(--ease-out); }
-  .tagp.is-linked .ok { scale: 1; }
   .linked strong { position: absolute; left: 0; right: 0; top: 110px; font-size: 18.5px; font-weight: 600; color: #141414; }
   .linked > p { position: absolute; left: 0; right: 0; top: 140px; margin: 0; font-size: 15px; line-height: 22px; color: #7a7a7d; }
   .tinfo { position: absolute; left: 0; right: 0; top: 196px; margin: 0; padding: 8px 14px; border-radius: 10px; background: #f7f7f7; text-align: left; font-size: 13.5px; }
@@ -245,7 +257,7 @@
   .needs .btn:last-child { left: 266px; width: 188px; }
 
   @media (prefers-reduced-motion: reduce) {
-    .veil, .dialog, .gallery img, .switch, .switch::after, .num, .step-t, .step-d, .state, .radio, .tip, .urlrow, .tag-actions, .ok, .tag-img, .nfc, .linked { transition: none; }
+    .veil, .dialog, .gallery img, .switch, .switch::after, .num, .step-t, .step-d, .state, .radio, .tip, .urlrow, .tag-actions, .tag-img, .nfc, .nfc > *, .linked, .waves, .waves::before, .waves span, .waves span .ic, .waves .closing circle { transition: none; }
     .tag-img, .waves > i, .spin-s, .urlrow .w i { animation: none; }
   }
 </style>
@@ -277,8 +289,9 @@
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5a14.5 14.5 0 0 0 0 19 14.5 14.5 0 0 0 0-19"/><path d="M2.5 12h19"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h5"/></symbol>
     <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20v-5"/><path d="M10 20V9"/><path d="M15 20v-8"/><path d="M20 20V5"/></symbol>
-    <symbol id="i-qr" viewBox="0 0 24 24"><rect width="6" height="6" x="3" y="3" rx="1"/><rect width="6" height="6" x="15" y="3" rx="1"/><rect width="6" height="6" x="3" y="15" rx="1"/><path d="M15 15h2v2h-2z"/><path d="M19 15h2"/><path d="M15 19h2"/><path d="M19 19h2v2"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
     <symbol id="i-nfc" viewBox="0 0 24 24"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
     <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></symbol>
     <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/></symbol>
@@ -371,12 +384,11 @@
       <div class="abs panel">
         <img class="tag-img" data-k="tag" src="filo-app-flow/filo-tag.webp" width="368" height="900" alt="">
         <div class="nfc">
-          <div class="waves" data-k="waves"><i></i><i></i><span><svg class="ic"><use href="#i-nfc"/></svg></span></div>
+          <div class="waves" data-k="waves"><i></i><i></i><span><svg class="ic nfc-ic"><use href="#i-nfc"/></svg><svg class="ic tag-ic"><use href="#i-tag"/></svg><svg class="closing" viewBox="0 0 108 108"><circle pathLength="1" cx="54" cy="54" r="52"/></svg></span></div>
           <strong>Tap an NFC tag</strong>
           <p>Place the tag near your computer<br>or use a phone with NFC.</p>
         </div>
         <div class="linked">
-          <i class="ok"></i>
           <strong>Tag connected</strong>
           <p>This tag will open:<br>Bacterial Cellulose (BC-001)</p>
           <dl class="tinfo">

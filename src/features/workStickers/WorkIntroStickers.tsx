@@ -214,11 +214,13 @@ function toLines(paragraph: Token[]): Token[][] {
 /* Each line always stays on one line. Lines may run past the column into the free space on its
  * right; the parent shrinks the text when even that is too narrow. "Widest" assumes each pill shows
  * its longest phrase, so the size never jumps as pills turn. */
-// Every phrase each pill can show, from the frozen config.
-const labelsById = new Map(Object.entries(config.stickers).map(([id, sticker]) => [id, sticker.faces.map(face => face.label.trim())]))
-/** Width of an intro line with each of its pills at its shortest and at its longest phrase. Phrases
- * are measured in a hidden probe styled like the pill's label (canvas ignores letter-spacing and
- * over-measures). */
+// Every phrase each pill can show, from the frozen config, with the padding (em) its artwork adds:
+// the pill pads by 1.2em + gap + ends before the label and 0.15em + ends after it (CSS --art-pad,
+// --text-pad), and the gap and ends change with the face.
+const facesById = new Map(Object.entries(config.stickers).map(([id, sticker]) => [id, sticker.faces.map(face => ({ label: face.label.trim(), pad: face.gap + 2 * face.ends }))]))
+/** Width of an intro line with each of its pills at its narrowest and at its widest face (phrase
+ * plus padding). Phrases are measured in a hidden probe styled like the pill's label (canvas
+ * ignores letter-spacing and over-measures). */
 function lineSpan(line: HTMLElement): [number, number] {
   const width = line.getBoundingClientRect().width
   let min = width, max = width
@@ -226,6 +228,8 @@ function lineSpan(line: HTMLElement): [number, number] {
     const label = pill.querySelector<HTMLElement>('.ws-pill-text')
     if (!label) continue
     const style = getComputedStyle(label)
+    const em = parseFloat(getComputedStyle(pill).fontSize)
+    const pad = (v: string) => (parseFloat(pill.style.getPropertyValue(v)) || 0) * em
     const probe = document.createElement('span')
     probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none'
     probe.style.font = style.font
@@ -233,8 +237,8 @@ function lineSpan(line: HTMLElement): [number, number] {
     probe.style.fontFeatureSettings = style.fontFeatureSettings
     pill.append(probe)
     probe.textContent = label.textContent
-    const shown = probe.getBoundingClientRect().width
-    const widths = (labelsById.get(pill.dataset.pill!) ?? []).map(l => { probe.textContent = l; return probe.getBoundingClientRect().width })
+    const shown = probe.getBoundingClientRect().width + pad('--gap') + 2 * pad('--ends')
+    const widths = (facesById.get(pill.dataset.pill!) ?? []).map(f => { probe.textContent = f.label; return probe.getBoundingClientRect().width + f.pad * em })
     probe.remove()
     min += Math.min(shown, ...widths) - shown
     max += Math.max(shown, ...widths) - shown

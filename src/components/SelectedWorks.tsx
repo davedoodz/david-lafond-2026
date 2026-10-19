@@ -296,6 +296,7 @@ export function SelectedWorks() {
     const tail = section?.nextElementSibling as HTMLElement | null
     if (!section || !tail) return
     let frame = 0
+    const phone = window.matchMedia('(max-width: 640px)')
     const fit = () => {
       frame = 0
       for (const p of ['min-height', 'padding-top', 'padding-bottom']) tail.style.removeProperty(p)
@@ -311,18 +312,36 @@ export function SelectedWorks() {
         tail.style.setProperty(`padding-${side}`, `${next.toFixed(1)}px`)
         short += pad - next
       }
+      // Phones: centre the contact text in the dark space between the panel's bottom dome tip and the
+      // footer links, i.e. dome tip → title top equals "Let's chat" bottom → first footer link top.
+      // Padding moves from one side to the other, so the tail keeps its height.
+      const title = tail.querySelector('.cta__title')
+      const pill = tail.lastElementChild
+      const links = Array.from(document.querySelectorAll('.footer__inner :is(a, button)'), (el) => el.getBoundingClientRect().top)
+      if (!phone.matches || !title || !pill || !links.length) return
+      const gapAbove = title.getBoundingClientRect().top - section.getBoundingClientRect().bottom
+      const gapBelow = Math.min(...links) - pill.getBoundingClientRect().bottom
+      const style = getComputedStyle(tail)
+      const padTop = parseFloat(style.paddingTop), padBottom = parseFloat(style.paddingBottom)
+      // When the tail was grown (min-height), the slack sits below the text, so the shift can exceed
+      // the bottom padding; the min-height keeps the tail's height either way.
+      const shift = Math.max(-padTop, (gapBelow - gapAbove) / 2)
+      tail.style.setProperty('padding-top', `${(padTop + shift).toFixed(1)}px`)
+      tail.style.setProperty('padding-bottom', `${Math.max(0, padBottom - shift).toFixed(1)}px`)
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
     fit()
     const resize = new ResizeObserver(schedule)
     if (section.previousElementSibling) resize.observe(section.previousElementSibling)
     addEventListener('resize', schedule)
+    phone.addEventListener('change', schedule)
     void document.fonts.ready.then(schedule)
     return () => {
       cancelAnimationFrame(frame)
       resize.disconnect()
       removeEventListener('resize', schedule)
-      tail.style.removeProperty('min-height')
+      phone.removeEventListener('change', schedule)
+      for (const p of ['min-height', 'padding-top', 'padding-bottom']) tail.style.removeProperty(p)
     }
   }, [])
 
