@@ -37,12 +37,6 @@
   transition: color 180ms ease;
 }
 
-/* The current page reads heavier than the other links. Beatrice ships no upright semibold, so a hairline
-   stroke in the text colour thickens the Medium glyphs without shifting the layout. */
-.nav__links a[aria-current] {
-  -webkit-text-stroke: 0.45px currentColor;
-}
-
 .nav__links a[aria-current],
 .nav__links a:hover,
 .nav__links a:focus-visible {
