@@ -787,7 +787,7 @@
       "x": 4
     },
     "mobileContrast": {
-      "preset": "Soft fade",
+      "preset": "Edge blur",
       "strength": 1,
       "fadeBlur": 30,
       "fadeLength": 100,

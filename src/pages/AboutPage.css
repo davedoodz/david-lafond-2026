@@ -168,6 +168,21 @@
   .about__fade {
     height: var(--fade-h-m, 120px);
   }
+  /* Nav › mobileContrast "Edge blur" (Nav.tsx sets these on <html>): the nav's top blur mirrored at
+     the bottom. No colour; only the blur, with the same length, strength, opacity and blur. */
+  html[data-edge-blur] .about__fade {
+    height: var(--edge-blur-length, 110px);
+  }
+  html[data-edge-blur] .about__fade::before {
+    opacity: calc(var(--fade-p, 0) * var(--edge-blur-opacity, 1));
+    -webkit-backdrop-filter: blur(var(--edge-blur, 8px));
+    backdrop-filter: blur(var(--edge-blur, 8px));
+    -webkit-mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+    mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+  }
+  html[data-edge-blur] .about__fade::after {
+    display: none;
+  }
 }
 
 .about__dark {

@@ -43,7 +43,20 @@ const NAV_CONFIG = {
   },
   /** Phones only: how the links and Davebot stand off busy content under them (Nav.css, data-contrast). */
   mobileContrast: {
-    preset: { type: 'select' as const, options: ['Off', 'Soft fade', 'Fade scrim', 'Pill', 'Text halo', 'Strong text'], default: 'Off' },
+    preset: { type: 'select' as const, options: ['Off', 'Edge blur', 'Soft fade', 'Fade scrim', 'Pill', 'Text halo', 'Strong text'], default: 'Edge blur' },
+    /**
+     * Edge blur: no colour, only a blur strongest at the screen edge that thins out. Drawn at the top
+     * under the nav, and at the bottom over the About story (AboutPage.css .about__fade).
+     * length: band height (px). strength: share of it held at full blur before thinning (0–1).
+     * opacity: how much of the blur shows (0–1). blur: the blur at the edge (px).
+     */
+    edgeBlur: {
+      length: [110, 20, 400, 1] as Tuple,
+      strength: [0.3, 0, 1, 0.01] as Tuple,
+      opacity: [1, 0, 1, 0.01] as Tuple,
+      blur: [8, 0, 40, 0.5] as Tuple,
+      _collapsed: false,
+    },
     /** Fade scrim, Pill, Text halo, Strong text: how strong the tint, scrim, halo or text colour is (0–1). */
     strength: [0.9, 0, 1, 0.01] as Tuple,
     /** Soft fade colour. Follow section: dark over dark sections (the Work page top, My Playground), light over
@@ -209,6 +222,22 @@ export function Nav({ route }: Props) {
       '--nav-pad-bottom': `${t.padBottom}px`,
     }),
   } as CSSProperties
+
+  // Edge blur: published on <html> so the About story's bottom band draws the same blur (AboutPage.css).
+  const edge = t.mobileContrast.edgeBlur
+  useEffect(() => {
+    const root = document.documentElement
+    if (preset !== 'Edge blur') return
+    root.dataset.edgeBlur = ''
+    root.style.setProperty('--edge-blur-length', `${edge.length}px`)
+    root.style.setProperty('--edge-blur-solid', `${edge.strength * 100}%`)
+    root.style.setProperty('--edge-blur-opacity', String(edge.opacity))
+    root.style.setProperty('--edge-blur', `${edge.blur}px`)
+    return () => {
+      delete root.dataset.edgeBlur
+      for (const p of ['--edge-blur-length', '--edge-blur-solid', '--edge-blur-opacity', '--edge-blur']) root.style.removeProperty(p)
+    }
+  }, [preset, edge.length, edge.strength, edge.opacity, edge.blur])
 
   return (
     <>
