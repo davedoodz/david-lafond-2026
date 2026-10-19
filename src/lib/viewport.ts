@@ -22,18 +22,19 @@ export function useInView(ref: RefObject<Element | null>, { once = false, amount
   return inView
 }
 
-const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
-
-function subscribeReducedMotion(listener: () => void) {
-  const mql = window.matchMedia(REDUCED_MOTION)
-  mql.addEventListener('change', listener)
-  return () => mql.removeEventListener('change', listener)
+/** Whether a CSS media query matches, kept live. */
+export function useMedia(query: string) {
+  return useSyncExternalStore(
+    (listener) => {
+      const mql = window.matchMedia(query)
+      mql.addEventListener('change', listener)
+      return () => mql.removeEventListener('change', listener)
+    },
+    () => window.matchMedia(query).matches,
+    () => false,
+  )
 }
 
 export function usePrefersReducedMotion() {
-  return useSyncExternalStore(
-    subscribeReducedMotion,
-    () => window.matchMedia(REDUCED_MOTION).matches,
-    () => false,
-  )
+  return useMedia('(prefers-reduced-motion: reduce)')
 }

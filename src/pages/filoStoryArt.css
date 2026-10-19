@@ -28,9 +28,9 @@
 .fs-stage { position: absolute; inset: 0; }
 .fs-stage img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .fs-film[data-paused='true'] .fs-stage * { animation-play-state: paused; }
-/* Proposal: the flow-04 prototype on the photographed phone. The stage is the photo at 1:1, scaled
-   to the frame by --fs-opp-scale. The film's screen is projected onto the phone's screen (SCREEN_WARP),
-   clipped to the screen mask, and the photo, with its screen cut out, sits on top as the bezel.
+/* Proposal: the glimpse prototype (filo-phone-glimpse.html) on the photographed phone. The stage is the
+   photo at 1:1, scaled to the frame by --fs-opp-scale. The prototype's screen is projected onto the phone's
+   screen (each photo's warp), clipped to the screen mask, and the photo, with its screen cut out, sits on top as the bezel.
    DialKit › story › proposalImage: scale resizes the frame (centred, section height follows); x/y shift it. */
 .fs-film--opportunity {
   --fs-opp-w: calc(min(100%, 460px) * var(--fs-prop-scale, 1));
@@ -64,7 +64,12 @@
   mask: var(--fs-opp-mask) 0 0 / 100% 100% no-repeat;
 }
 .fs-opp-warp { overflow: hidden; transform-origin: 0 0; }
-.fs-opp-warp video { position: absolute; width: 920px; height: 1844px; max-width: none; }
+/* The photo, with its Dynamic Island cut where the prototype's island lands (filoStoryArt.tsx islandCut). */
+.fs-stage .fs-opp-phone {
+  -webkit-mask: var(--fs-opp-island) 0 0 / 100% 100% no-repeat;
+  mask: var(--fs-opp-island) 0 0 / 100% 100% no-repeat;
+}
+.fs-opp-warp iframe { position: absolute; left: 0; top: 0; max-width: none; border: 0; transform-origin: 0 0; pointer-events: none; background: #050505; }
 @media (max-width: 700px) {
   .case__section.filo-story { padding-inline: 22px; gap: min(var(--fs-chapter-gap, 100px), 90px); }
   .fs-film { aspect-ratio: 1.35; margin-top: 24px; }

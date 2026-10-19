@@ -141,6 +141,10 @@
     }
   },
   "Selected works": {
+    "titles": {
+      "momoMobile": "Momo – Multimodal AI Reflection",
+      "filoMobile": "Filo – New Materials Software"
+    },
     "morph": {
       "curve": "expo-out",
       "enterDistance": 1.75,
@@ -152,6 +156,9 @@
       "enterDistance": 1.73,
       "startArch": 20,
       "startRadius": 60
+    },
+    "touchArc": {
+      "preset": "Round"
     },
     "intro": {
       "delayMs": 3010,
@@ -328,11 +335,16 @@
   "Hero": {
     "introText2": "Now, I’m bringing that to {products} \nwhere ideas have room to {faster}.",
     "role": "Looking for my next mission to embark on.",
+    "stickerOutline": {
+      "mode": "Same for all",
+      "width": 0
+    },
     "spacing": {
       "introLineHeight": 1.56,
       "titleToIntroDesktop": 28,
       "introToIntroDesktop": 20,
-      "introToIntroMobile": 19
+      "introToIntroMobile": 19,
+      "introToRoleMobile": 18
     },
     "peekDesktop": 95,
     "peekMobile": 95
@@ -471,8 +483,8 @@
     }
   },
   "About": {
-    "heading": "Wanna hear my short story?",
-    "story": "I’ve always felt like a bit of a misfit.\n\nNever quite fitting in, and often feeling like an imposter\n\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nFrom working in Canadian hospitals as a pre-med to working as an architect across continents, and eventually pitching prototypes to labs at MIT.\n\nI’ve changed \"career\" directions more than once, but it's usually because I found some new skill I couldn’t stop obsessing about.\n\nNow, that new skill is something called \"product design\". \n\nAnd I'm loving it.\n\nI'm still learning, still experimenting, and definitely still figuring things out.\n\nThe world is moving fast, and the future can feel uncertain.\n\nYet I've never felt more empowered to learn and create.\n\nAnd maybe that's the beauty of being a misfit. \n\nYou learn to find your way through the unknown.\n\nAnd right now, the possibilities truly feel endless.\n\nMan, what a time to be alive.\n\nTo designing the future,\n\n- DL",
+    "heading": "A short love letter to design",
+    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nI always had trouble fitting within a single box, often feeling like some imposter\n\n\nFrom working as a pre-med in Canadian hospitals to working as an architect across continents, and eventually pitching prototypes as a researcher to world class labs.\n\n(with a few failed ventures sprinkled in between)\n\nI’ve changed \"careers\" more than once.\n\nBut it's usually because I found something new I couldn’t stop obsessing about.\n\nAnd right now, that thing is product design. \n\nI'm completely addicted to the craft.\n\nYes, there's still so much to learn.\n\nYes, the world is moving fast.\n\nAnd yes, the future can feel uncertain.\n\nBut despite all this, I've never felt more empowered to get better and build faster.\n\nSo to all artists, designers, and builders –\n\nIt truly is an incredible time to be alive.\n\nBecause right now, the possibilities feel endless.\n\nAnd so maybe being a misfit isn't so bad after all?\n\nTo designing the future.\n\n- DL",
     "sheet": {
       "travel": 1.5,
       "depth": 2
@@ -773,6 +785,19 @@
     "resumeArrow": {
       "scale": 1.15,
       "x": 4
+    },
+    "mobileContrast": {
+      "preset": "Soft fade",
+      "strength": 1,
+      "fadeBlur": 30,
+      "fadeLength": 100,
+      "fadeSolid": 0,
+      "fadeWhite": {
+        "top": 1
+      },
+      "fadeBlack": {
+        "top": 1
+      }
     }
   },
   "Project open": {
@@ -958,7 +983,14 @@
       },
       "proposalImage": {
         "image": "Orange swatches",
-        "y": 50
+        "accent": "Olive",
+        "y": 50,
+        "speed": 1.5
+      },
+      "products": {
+        "topRight": "Tote",
+        "bottomLeft": "Sneakers",
+        "bottomRight": "Bucket hat"
       },
       "spacing": {
         "top": 0
@@ -1308,7 +1340,7 @@
     }
   },
   "Filo persona loop": {
-    "speed": 2,
+    "speed": 2.4,
     "fade": 0.4,
     "blur": 9.5
   },
@@ -1382,7 +1414,17 @@
     "inbox": {
       "x": 34,
       "y": 42,
-      "gap": 72
+      "gap": 72,
+      "speed": 1.8
+    },
+    "create": {
+      "speed": 1.8
+    },
+    "share": {
+      "speed": 1.8
+    },
+    "tap": {
+      "speed": 1.8
     }
   },
   "Filo next loop": {

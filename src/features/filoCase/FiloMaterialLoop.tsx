@@ -19,10 +19,14 @@ const CONFIG = {
   },
 }
 
+/** Sheets the loop shows in place of the catalog's: the windbreaker in the olive it wears beside the proposal image. */
+const SHEET_OVERRIDES: Record<string, string> = {
+  'xtep-pla-windbreaker-spritesheet.webp': 'xtep-pla-windbreaker-olive-spritesheet.webp',
+}
 /** The Future Fabric catalog (studio/ecofabriq/products.json); every sheet also ships in public/work/filo/sprites. */
 const PRODUCTS = catalog.map((p, i) => ({
   ...p,
-  sheet: `/work/filo/sprites/${p.sprite}`,
+  sheet: `/work/filo/sprites/${SHEET_OVERRIDES[p.sprite] ?? p.sprite}`,
   /** Staggered turns: golden-ratio steps keep neighbours from ever facing the same way at once. */
   phase: (i * 0.618034) % 1,
 }))

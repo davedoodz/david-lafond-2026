@@ -349,19 +349,18 @@ async function glide(t, el, to, ms) {
 async function drag(t, x, y, dy, ms = 800) {
   const to = Math.max(0, Math.min(page.scrollHeight - page.clientHeight, page.scrollTop + dy))
   const real = to - page.scrollTop
-  await move(t, [x, y]); cursor.classList.add('is-down'); await sleep(110, t)
+  await move(t, [x, y]); cursor.classList.add('is-down'); await sleep(60, t)
   await Promise.all([move(t, [x, y - real], ms), glide(t, page, to, ms)])
-  cursor.classList.remove('is-down'); await sleep(140, t)
+  cursor.classList.remove('is-down'); await sleep(40, t)
 }
-async function tap(t, el, fx, fy) { await move(t, at(el, fx, fy)); await sleep(160, t); await click(t, el) }
+async function tap(t, el, fx, fy) { await move(t, at(el, fx, fy)); await sleep(40, t); await click(t, el) }
 
 /* ── 01 · The email lands: the message, its summary card, and the link. ── */
 async function email(t) {
   reset(); chapter(0)
   await sleep(450, t)
   k('mail').classList.add('is-landed')
-  await sleep(1500, t)
-  await move(t, at($('.m-body'), .55, .6), 700); await sleep(900, t)
+  await sleep(2100, t)
   await tap(t, k('view'), .5, .5)
   open(k('safari'))
   k('load').animate([{ scale: '0 1', opacity: 1 }, { scale: '.8 1', opacity: 1, offset: .7 }, { scale: '1 1', opacity: 0 }], { duration: 900, easing: 'ease-out' })

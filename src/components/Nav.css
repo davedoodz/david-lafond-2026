@@ -209,3 +209,107 @@
   display: flex;
   flex-direction: row-reverse;
 }
+
+/* The Soft fade's colour and edge opacities are registered, so a change of tone (dark section ↔ light
+   section, Work ↔ About) cross-fades instead of snapping; the gradient that uses them repaints every frame. */
+@property --nav-fade-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --nav-fade-top {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --nav-fade-bottom {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* 'Nav → mobileContrast' (phones only): ways to lift the links and Davebot off busy content under them.
+   Colours follow the sampled surface (--nav-bg / --nav-active, data-under); --nav-contrast sets strength. */
+@media (max-width: 640px) {
+  .nav[data-contrast] {
+    isolation: isolate;
+  }
+  /* The fade's tone change and the links' colour run together (mobileContrast › fadeTime). Phones only,
+     so the slower link colour never slows a hover. */
+  .nav[data-contrast='Soft fade'][data-fade-live] {
+    transition-property: --nav-fade-color, --nav-fade-top, --nav-fade-bottom;
+    transition-duration: var(--nav-fade-time, 600ms);
+    transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  }
+  .nav[data-contrast='Soft fade'][data-fade-live] :is(.nav__links a, .nav__back) {
+    transition-duration: var(--nav-fade-time, 600ms);
+    transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+  }
+  .nav:is([data-contrast='Soft fade'], [data-contrast='Fade scrim'])::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 -28px;
+    z-index: -1;
+    pointer-events: none;
+  }
+  /* Soft fade: the About story's bottom fade (AboutPage.css .about__fade) flipped to the top edge. A blur
+     strongest at the top that thins to nothing, under a colour wash that holds its top opacity for the
+     fadeSolid share, then ramps to its bottom opacity at fadeLength. Colour and opacities follow
+     mobileContrast › fadeTone (white or black, each with its own fadeWhite / fadeBlack edges). */
+  .nav[data-contrast='Soft fade']::before,
+  .nav[data-contrast='Soft fade']::after {
+    bottom: auto;
+    height: var(--nav-fade-length, 126px);
+  }
+  .nav[data-contrast='Soft fade']::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    background: none;
+    top: 0;
+    z-index: -1;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(var(--nav-fade-blur, 6px));
+    backdrop-filter: blur(var(--nav-fade-blur, 6px));
+    -webkit-mask-image: linear-gradient(#000 var(--nav-fade-solid, 35%), transparent);
+    mask-image: linear-gradient(#000 var(--nav-fade-solid, 35%), transparent);
+  }
+  .nav[data-contrast='Soft fade']::after {
+    background: linear-gradient(
+      color-mix(in srgb, var(--nav-fade-color) calc(var(--nav-fade-top) * 100%), transparent) var(--nav-fade-solid, 35%),
+      color-mix(in srgb, var(--nav-fade-color) calc(var(--nav-fade-bottom) * 100%), transparent)
+    );
+  }
+  /* No blur: the page colour washes down from the top edge and clears below the links. */
+  .nav[data-contrast='Fade scrim']::after {
+    background: linear-gradient(color-mix(in srgb, var(--nav-bg, var(--paper)) calc(var(--nav-contrast) * 100%), transparent) 60%, transparent);
+  }
+  /* One frosted capsule around the links; Davebot stays bare. */
+  .nav[data-contrast='Pill'] .nav__links {
+    margin: -9px -16px 0;
+    padding: 16px 16px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--nav-bg, var(--paper)) calc(var(--nav-contrast) * 85%), transparent);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--nav-active, var(--ink-900)) 10%, transparent), 0 6px 20px rgb(0 0 0 / 0.08);
+  }
+  /* A soft glow of the page colour hugging the letters and Davebot; no shape at all. */
+  .nav[data-contrast='Text halo'] .nav__links a {
+    text-shadow:
+      0 0 3px color-mix(in srgb, var(--nav-bg, var(--paper)) calc(var(--nav-contrast) * 100%), transparent),
+      0 0 3px color-mix(in srgb, var(--nav-bg, var(--paper)) calc(var(--nav-contrast) * 100%), transparent),
+      0 0 12px color-mix(in srgb, var(--nav-bg, var(--paper)) calc(var(--nav-contrast) * 100%), transparent),
+      0 0 24px color-mix(in srgb, var(--nav-bg, var(--paper)) calc(var(--nav-contrast) * 100%), transparent);
+  }
+  .nav[data-contrast='Text halo'] .nav__ghost {
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--nav-bg, var(--paper)) calc(var(--nav-contrast) * 100%), transparent));
+  }
+  /* Darker idle links, closer to the current page's colour, and a touch heavier. */
+  .nav[data-contrast='Strong text'] {
+    --nav-idle: color-mix(in srgb, var(--nav-active, var(--ink-900)) calc(45% + var(--nav-contrast) * 45%), var(--nav-bg, var(--paper)));
+  }
+  .nav[data-contrast='Strong text'] .nav__links {
+    font-weight: 500;
+  }
+}

@@ -21,6 +21,10 @@ export const PROTO_VIDEOS = {
 } as const
 export type ProtoVideo = keyof typeof PROTO_VIDEOS
 const VIDEO_OPTIONS = ['none', ...Object.keys(PROTO_VIDEOS)]
+/** The five products that can turn beside Filo's proposal image; four show at once (filoStoryArt.tsx PROPOSAL_PRODUCTS). */
+export const PROPOSAL_PRODUCT_NAMES = ['Windbreaker', 'Tote', 'Puffer', 'Sneakers', 'Bucket hat']
+/** How the Proposal phone's App Clip closes to the lock screen at the end of each lap (filo-phone-glimpse.html `data-close`). */
+export const CLOSE_PRESETS = ['Dissolve', 'Shrink to island', 'Swipe home', 'Slide down', 'Blur']
 
 /** Media direction. `center` and `rise` remain available for project heroes. */
 const LAYOUTS = ['bottom', 'top', 'right', 'left', 'center', 'rise']
@@ -546,11 +550,21 @@ export const FILO_CONFIG = {
     textReveal: textRevealDials(),
     /** Market gap's desk image: size relative to the 800px column, and offset (px). */
     gapImage: { scale: [1, 0.3, 2, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
-    /** Proposal's phone-over-tag image: which photo, size relative to its 460px base, and offset (px).
-        accent Olive recolours the orange swatch (Orange swatches photo) and the turning windbreaker olive. */
-    proposalImage: { image: { type: 'select' as const, options: ['Green swatches', 'Orange swatches'], default: 'Green swatches' }, accent: { type: 'select' as const, options: ['Orange', 'Olive'], default: 'Orange' }, scale: [1, 0.3, 2.5, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
-    /** Cream products turning beside the proposal image: size (px), gap from the image (px), seconds per turn. */
-    products: { show: true, size: [190, 80, 360, 1] as Tuple, spread: [30, -200, 300, 1] as Tuple, spin: [9, 3, 30, 0.5] as Tuple, _collapsed: false },
+    /** Proposal's phone-over-tag image: which photo, size relative to its 460px base, offset (px), the phone
+        screen's playback speed (1 = as authored), and how its App Clip closes back to the lock screen at the end
+        of each lap (filo-phone-glimpse.html). accent Olive recolours the orange swatch (Orange swatches photo)
+        and the turning windbreaker olive. */
+    proposalImage: { image: { type: 'select' as const, options: ['Green swatches', 'Orange swatches'], default: 'Green swatches' }, accent: { type: 'select' as const, options: ['Orange', 'Olive'], default: 'Orange' }, scale: [1, 0.3, 2.5, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, speed: [1, 0.25, 3, 0.05] as Tuple, close: { type: 'select' as const, options: CLOSE_PRESETS, default: 'Dissolve' }, _collapsed: false },
+    /** Products turning beside the proposal image: size (px), gap from the image (px), seconds per turn, and which
+        of the five products sits in each quadrant (filoStoryArt.tsx PROPOSAL_PRODUCTS). */
+    products: {
+      show: true, size: [190, 80, 360, 1] as Tuple, spread: [30, -200, 300, 1] as Tuple, spin: [9, 3, 30, 0.5] as Tuple,
+      topLeft: { type: 'select' as const, options: PROPOSAL_PRODUCT_NAMES, default: 'Windbreaker' },
+      topRight: { type: 'select' as const, options: PROPOSAL_PRODUCT_NAMES, default: 'Puffer' },
+      bottomLeft: { type: 'select' as const, options: PROPOSAL_PRODUCT_NAMES, default: 'Bucket hat' },
+      bottomRight: { type: 'select' as const, options: PROPOSAL_PRODUCT_NAMES, default: 'Sneakers' },
+      _collapsed: false,
+    },
     spacing: sectionSpacingDials(90, 70, 100),
     textWidth: [590, 280, 720, 10] as Tuple,
     _collapsed: true,

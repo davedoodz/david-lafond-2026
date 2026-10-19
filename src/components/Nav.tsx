@@ -1,9 +1,10 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
 import { ArrowDownIcon, ArrowUpRightIcon, ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
 import { isLightUnder } from '../lib/surface'
+import { useMedia } from '../lib/viewport'
 import { useTuning } from '../tuning/useTuning'
 import { restoreNavAlign } from '../lib/navAlign'
 import './Nav.css'
@@ -38,6 +39,31 @@ const NAV_CONFIG = {
     x: [6, -10, 30, 0.5] as Tuple,
     /** Vertical nudge (px); negative lifts it. */
     y: [0, -12, 12, 0.5] as Tuple,
+    _collapsed: false,
+  },
+  /** Phones only: how the links and Davebot stand off busy content under them (Nav.css, data-contrast). */
+  mobileContrast: {
+    preset: { type: 'select' as const, options: ['Off', 'Soft fade', 'Fade scrim', 'Pill', 'Text halo', 'Strong text'], default: 'Off' },
+    /** Fade scrim, Pill, Text halo, Strong text: how strong the tint, scrim, halo or text colour is (0–1). */
+    strength: [0.9, 0, 1, 0.01] as Tuple,
+    /** Soft fade colour. Follow section: dark over dark sections (the Work page top, My Playground), light over
+        light ones (Selected works), never flipping over a project or playground card; the links still switch with whatever is under them.
+        Light / Dark hold one tone everywhere. */
+    fadeTone: { type: 'select' as const, options: ['Follow section', 'Light', 'Dark'], default: 'Follow section' },
+    /** Soft fade, the About story's bottom fade turned upside down: blur at the top edge (px), thinning
+        downward; its length from the top of the screen (px; the nav itself is 86px); and the share of that
+        length that holds the top opacity before ramping to the bottom one (0–0.8). */
+    fadeBlur: [6, 0, 30, 0.5] as Tuple,
+    fadeLength: [126, 40, 400, 1] as Tuple,
+    fadeSolid: [0.35, 0, 0.8, 0.01] as Tuple,
+    /** Soft fade opacity at its top and bottom edges, for the white and the black fade (0–1). */
+    fadeWhite: { top: [0.9, 0, 1, 0.01] as Tuple, bottom: [0, 0, 1, 0.01] as Tuple, _collapsed: false },
+    fadeBlack: { top: [0.9, 0, 1, 0.01] as Tuple, bottom: [0, 0, 1, 0.01] as Tuple, _collapsed: false },
+    /** Soft fade: the links and cursor take the fade's tone (readable over it at high strength), or keep
+        switching with the content under the fade (e.g. white over the Harvard & MIT card). */
+    fadeLinks: { type: 'select' as const, options: ['Match fade', 'Follow content'], default: 'Match fade' },
+    /** Soft fade: how long a change of tone takes (ms), scrolling between sections or moving between pages. */
+    fadeTime: [600, 0, 2000, 10] as Tuple,
     _collapsed: false,
   },
 }
@@ -100,18 +126,39 @@ export function Nav({ route }: Props) {
   }, [pin])
 
   // Follow the actual background, including pages that pin the nav through their own CSS.
-  // Expose the same sampled surface to both link styling and the custom cursor.
+  // Expose the same sampled surface to both link styling and the custom cursor. `section` is the
+  // page behind any project or playground card, for the Soft fade's colour (mobileContrast › fadeTone).
   const [under, setUnder] = useState<'light' | 'dark'>()
+  const [section, setSection] = useState<'light' | 'dark'>()
+  // The fade's tone animates only once the nav has its first tone; on mount (each page has its own nav)
+  // it takes the page's tone at once, so a page transition's new snapshot shows it from the first frame.
+  const [fadeLive, setFadeLive] = useState(false)
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setFadeLive(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
     let frame = 0
+    // Hit tests see nothing during a page transition, when each page mounts its own nav. A new nav then
+    // starts from the surface its page declares, so the transition's new snapshot already shows the
+    // destination's tone and cross-fades into it.
+    const declared = () => {
+      const surface = nav.parentElement?.closest<HTMLElement>('[data-surface]')?.dataset.surface
+      return surface === 'light' || surface === 'dark' ? surface : undefined
+    }
     const sample = () => {
       frame = 0
       const links = nav.querySelector('.nav__links')?.getBoundingClientRect()
       if (!links) return
-      const light = isLightUnder(nav, links.left + links.width / 2, links.top + links.height / 2)
+      const [x, y] = [links.left + links.width / 2, links.top + links.height / 2]
+      const light = isLightUnder(nav, x, y)
       if (light !== null) setUnder(light ? 'light' : 'dark')
+      else setUnder((current) => current ?? declared())
+      const sectionLight = isLightUnder(nav, x, y, '.works__card, .pg-card')
+      if (sectionLight !== null) setSection(sectionLight ? 'light' : 'dark')
+      else setSection((current) => current ?? declared())
     }
     const queue = () => (frame ||= requestAnimationFrame(sample))
     sample()
@@ -137,10 +184,24 @@ export function Nav({ route }: Props) {
     }
   }, [pin, route])
 
+  // Phones with Soft fade and fadeLinks › Match fade: the links and cursor take the fade's tone.
+  const phone = useMedia('(max-width: 640px)')
+  const { preset, fadeTone, fadeLinks } = t.mobileContrast
+  const fadeSurface = fadeTone === 'Light' ? 'light' : fadeTone === 'Dark' ? 'dark' : section
+  const surface = phone && preset === 'Soft fade' && fadeLinks === 'Match fade' ? fadeSurface : under
+
   const style = {
     '--resume-arrow-scale': t.resumeArrow.scale,
     '--resume-arrow-x': `${t.resumeArrow.x}px`,
     '--resume-arrow-y': `${t.resumeArrow.y}px`,
+    '--nav-contrast': t.mobileContrast.strength,
+    '--nav-fade-color': fadeSurface === 'dark' ? 'var(--ink-900)' : 'var(--paper)',
+    '--nav-fade-top': (fadeSurface === 'dark' ? t.mobileContrast.fadeBlack : t.mobileContrast.fadeWhite).top,
+    '--nav-fade-bottom': (fadeSurface === 'dark' ? t.mobileContrast.fadeBlack : t.mobileContrast.fadeWhite).bottom,
+    '--nav-fade-blur': `${t.mobileContrast.fadeBlur}px`,
+    '--nav-fade-length': `${t.mobileContrast.fadeLength}px`,
+    '--nav-fade-time': `${t.mobileContrast.fadeTime}ms`,
+    '--nav-fade-solid': `${t.mobileContrast.fadeSolid * 100}%`,
     ...(pin && {
       '--nav-h': `${height}px`,
       '--nav-backdrop-opacity': t.backdrop === 'none' ? 0 : t.backdropOpacity,
@@ -152,7 +213,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={under} data-surface={under} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

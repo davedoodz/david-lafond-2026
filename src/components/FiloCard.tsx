@@ -43,7 +43,7 @@ const SPRITES = [
   'allbirds-wool-runners',
   'reishi',
   'zara-pinatex-sandal',
-  'xtep-pla-windbreaker',
+  'xtep-pla-windbreaker-olive',
   'yuima-nakazato-couture-with-brewed-protein',
   'stella-mccartney-mylo-bustier-and-trousers-2021',
   'zara-pinatex-bag',

@@ -167,33 +167,29 @@ function DavebotPanel() {
 
   // --- open/close ghost flight + panel entrance, imperative because the
   // flight target is a live measurement of the nav trigger, not a fixed value.
-  useEffect(() => {
-    const trigger = getDavebotTrigger()
-    let raf1 = 0
-    let raf2 = 0
-    raf1 = requestAnimationFrame(() => {
-      const flight = measureFlight(trigger, ghostWrapRef.current, ghostX.get(), ghostY.get(), ghostScale.get())
-      if (flight) {
-        ghostX.set(flight.x)
-        ghostY.set(flight.y)
-        ghostScale.set(flight.scale)
-      }
-      raf2 = requestAnimationFrame(() => {
-        const morph = reducedMotion ? { duration: 0.001 } : toMotionTransition(tuningRef.current.ghost.morph)
-        const fade = reducedMotion ? { duration: 0.001 } : { duration: 0.22 }
-        animate(ghostX, 0, morph)
-        animate(ghostY, 0, morph)
-        animate(ghostScale, 1, morph)
-        animate(veilOpacity, 1, fade)
-        animate(panelOpacity, 1, fade)
-        animate(panelScale, 1, morph)
-        animate(panelY, 0, morph)
-      })
-    })
-    return () => {
-      cancelAnimationFrame(raf1)
-      cancelAnimationFrame(raf2)
+  // The ghost is parked on the nav mark before the first paint (a layout effect), so the big
+  // ghost never flashes at the centre for a frame before it flies out of the nav. The DOM still
+  // holds the mount pose (0, 0, 1) here, even on StrictMode's second run after the first one's
+  // set() calls, because motion writes styles on its next frame.
+  useLayoutEffect(() => {
+    const flight = measureFlight(getDavebotTrigger(), ghostWrapRef.current, 0, 0, 1)
+    if (flight) {
+      ghostX.set(flight.x)
+      ghostY.set(flight.y)
+      ghostScale.set(flight.scale)
     }
+    const raf = requestAnimationFrame(() => {
+      const morph = reducedMotion ? { duration: 0.001 } : toMotionTransition(tuningRef.current.ghost.morph)
+      const fade = reducedMotion ? { duration: 0.001 } : { duration: 0.22 }
+      animate(ghostX, 0, morph)
+      animate(ghostY, 0, morph)
+      animate(ghostScale, 1, morph)
+      animate(veilOpacity, 1, fade)
+      animate(panelOpacity, 1, fade)
+      animate(panelScale, 1, morph)
+      animate(panelY, 0, morph)
+    })
+    return () => cancelAnimationFrame(raf)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -491,6 +487,9 @@ function DavebotPanel() {
       style={{
         ['--davebot-highlight' as string]: tuning.highlight.show ? tuning.highlight.color : 'transparent',
         ['--davebot-veil' as string]: `rgb(0 0 0 / ${tuning.box.backdropOpacity})`,
+        // Read by the phone layout (davebot.css) to keep room for the ghost above the palette.
+        ['--davebot-ghost-size' as string]: `${tuning.ghost.zoomSize}px`,
+        ['--davebot-ghost-lift' as string]: `${Math.max(0, -tuning.ghost.offsetY)}px`,
       }}
     >
       <motion.div className="davebot-veil" style={{ opacity: veilOpacity }} onClick={requestClose} />

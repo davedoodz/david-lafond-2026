@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo · a glimpse: tap the swatch, open its Technical File (prototype)</title>
+<link rel="stylesheet" href="filo-app-flow/app.css" />
+<link rel="stylesheet" href="filo-app-flow/clip.css" />
+<style>
+  /* The Proposal's phone in the Filo case study (src/pages/filoStoryArt.tsx projects this screen onto the
+     photographed phone over the tag). A short glimpse of the app, looping: the Dynamic Island reads the tag,
+     Open launches the App Clip on Bacterial Cellulose's record, and the clip then closes by itself to the lock
+     screen the loop started from, with the cursor parked off-screen where it began, so the seam can't be seen. The same
+     island, App Clip and lock screen as step 4's scene (clip.css, lock.svg). The stage is the bare screen,
+     390 × 845.5: the photo is the bezel, with its own island cut out (filoStoryArt.tsx), so this island
+     is drawn at rest too and grows over the spot where the hardware island was. */
+  html, body { background: #050505; }
+  .stage { --sys: -apple-system, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; width: 390px; height: 845.5px; }
+  .display { --chrome: #fff; position: absolute; inset: 0; overflow: hidden; background: #050505; font-family: var(--sys); color: #000; cursor: default; user-select: none; -webkit-font-smoothing: antialiased; }
+  .display.is-app { --chrome: #000; }
+  /* Sized to the photographed phone's island (screen px 134–254 × 15–55.5, measured in both photos), so the
+     cut in the photo (filoStoryArt.tsx islandCut, kept in step) is filled exactly. Expanded keeps its own size. */
+  .island { --isl-y: 3.6px; opacity: 1; height: 40px; border-radius: 20px; }
+  .isl-compact { inset: 2px 0 auto; height: 36px; }
+  /* The loop's return to the lock screen (close(), below), in one of five presets the host picks
+     (DialKit › story › proposalImage › close, sent as a `close` message): the lock screen settles in from a
+     breath larger under each, and the status bar fades its colour in step. */
+  .display.is-closing .clip { transition: opacity 1s cubic-bezier(.4, 0, .2, 1), scale 1.1s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 1.1s; }
+  /* Dissolve: the record fades with only a hint of scale. */
+  .display.is-closing[data-close="Dissolve"] .clip { scale: .985; }
+  /* Shrink to island: iOS closing an app, the record pulls back into the Dynamic Island. */
+  .display.is-closing[data-close="Shrink to island"] .clip { scale: .18; border-radius: 48px; transition: opacity .55s cubic-bezier(.4, 0, 1, 1) .15s, scale .7s cubic-bezier(.32, .72, 0, 1), border-radius .4s ease, visibility 0s linear .7s; }
+  /* Swipe home: the card lifts and shrinks upward, as when swiping up from the home bar. */
+  .display.is-closing[data-close="Swipe home"] .clip { scale: .55; translate: 0 -12%; border-radius: 48px; transform-origin: 50% 100%; transition: opacity .5s ease .25s, scale .75s cubic-bezier(.32, .72, 0, 1), translate .75s cubic-bezier(.32, .72, 0, 1), border-radius .35s ease, visibility 0s linear .75s; }
+  /* Slide down: the record drops away like a dismissed sheet. */
+  .display.is-closing[data-close="Slide down"] .clip { opacity: 1; translate: 0 100%; transition: translate .8s cubic-bezier(.5, 0, .2, 1), visibility 0s linear .8s; }
+  /* Blur: the record softens out of focus as it fades. */
+  .display.is-closing[data-close="Blur"] .clip { filter: blur(14px); transition: opacity 1s cubic-bezier(.4, 0, .2, 1), filter 1s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 1s; }
+  .display.is-closing .lockscreen { animation: lock-settle 1.1s cubic-bezier(.22, 1, .36, 1) both; }
+  @keyframes lock-settle { from { scale: 1.025; filter: brightness(.9); } }
+  .display.is-closing .status, .display.is-closing .status :is(.wifi, .wedge, .cell), .display.is-closing .homebar { transition-duration: .9s; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Portal icons (the same symbols as filo-phone-tap.html). -->
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-weight" viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"/></symbol>
+    <symbol id="i-width" viewBox="0 0 24 24"><path d="M3 8h18"/><path d="M3 16h18"/><path d="m6 5-3 3 3 3"/><path d="m18 13 3 3-3 3"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
+    <symbol id="i-shirt" viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/></symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4 4 9-9"/></symbol>
+    <symbol id="i-dots-h" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="stage" id="stage">
+  <div class="display is-awake" data-k="display" data-close="Dissolve">
+    <div class="lockscreen awake">
+      <svg class="abs lock-ic" viewBox="0 0 15 20" aria-hidden="true"><path d="M3.2 8.6V6a4.3 4.3 0 0 1 8.6 0v2.6" fill="none" stroke="#fff" stroke-width="2"/><rect x=".5" y="8.4" width="14" height="11.1" rx="2.6"/></svg>
+      <svg class="abs lock-date" viewBox="0 -1980 17535 2412" role="img" aria-label="Sunday, October 18"><use href="filo-app-flow/lock.svg#lock-date" y="-1980" width="17535" height="2412"/></svg>
+      <svg class="abs lock-time" viewBox="0 -1980 3994 2412" role="img" aria-label="9:41"><use href="filo-app-flow/lock.svg#lock-time" y="-1980" width="3994" height="2412"/></svg>
+      <span class="abs qbtn qbtn--l"><svg width="10.38" height="22.96" aria-hidden="true"><use href="filo-app-flow/lock.svg#o-torch"/></svg></span>
+      <span class="abs qbtn qbtn--r"><svg width="25.76" height="20" aria-hidden="true"><use href="filo-app-flow/lock.svg#o-camera"/></svg></span>
+    </div>
+
+    <!-- ───────── The App Clip ───────── -->
+    <section class="clip" data-k="clip">
+      <div class="pg pg-record" data-k="record">
+        <div class="scroll" data-k="scroll">
+          <div class="hero"><img src="filo-app-flow/bc-1.webp" alt=""></div>
+          <h1 class="r-title">Bacterial Cellulose</h1>
+          <p class="r-sub">Provided by Modern Synthesis</p>
+          <div class="tabs" data-k="tabs" role="tablist">
+            <button aria-selected="true">Overview</button>
+            <button>Documents</button>
+            <button>Photos</button>
+            <button data-k="t-samples">Samples</button>
+          </div>
+          <div class="panel is-on">
+            <div class="sum"><strong>Material summary</strong><p>A lightweight, biodegradable material made from bacterial cellulose with a smooth, soft handfeel.</p></div>
+            <dl class="props">
+              <div><dt><svg class="ic"><use href="#i-shield"/></svg>Composition</dt><dd>100% bacterial cellulose</dd></div>
+              <div><dt><svg class="ic"><use href="#i-weight"/></svg>Weight</dt><dd>120 gsm</dd></div>
+              <div><dt><svg class="ic"><use href="#i-width"/></svg>Width</dt><dd>145 cm</dd></div>
+              <div><dt><svg class="ic"><use href="#i-flame"/></svg>Heat tolerance</dt><dd>Max. 60°C</dd></div>
+              <div><dt><svg class="ic"><use href="#i-user"/></svg>Supplier</dt><dd>Modern Synthesis</dd></div>
+            </dl>
+          </div>
+        </div>
+        <div class="topbar"></div>
+        <span class="rbtn rbtn--l"><svg class="ic"><use href="#i-chev-l"/></svg></span>
+        <span class="rbtn rbtn--r"><svg class="ic"><use href="#i-dots-h"/></svg></span>
+      </div>
+    </section>
+
+    <!-- The case study's phone status bar (390pt units), and the home indicator. -->
+    <svg class="status awake" viewBox="0 0 390 54" aria-hidden="true">
+      <text x="52" y="30" dominant-baseline="middle">9:41</text>
+      <rect x="278.2" y="29.7" width="3.3" height="4.3" rx="1.1"/><rect x="283.13" y="28.1" width="3.3" height="5.9" rx="1.1"/><rect x="288.06" y="25.6" width="3.3" height="8.4" rx="1.1"/><rect x="292.99" y="23.3" width="3.3" height="10.7" rx="1.1"/>
+      <path class="wifi" d="M303.28 26.25A11.1 11.1 0 0 1 318.12 26.25M306.05 29.33A6.95 6.95 0 0 1 315.35 29.33"/>
+      <path class="wedge" d="M310.7 33.8L308.9 31.79A2.7 2.7 0 0 1 312.5 31.79Z"/>
+      <rect class="cell" x="325.05" y="23.7" width="20" height="11" rx="4"/>
+      <path opacity=".4" d="M346.25 27.45h.7a.7.7 0 0 1 .7.7v2.1a.7.7 0 0 1-.7.7h-.7z"/>
+      <rect x="326.4" y="25" width="17.3" height="8.4" rx="2.5"/>
+    </svg>
+    <i class="homebar awake"></i>
+  </div>
+
+  <!-- ───────── Dynamic Island ───────── -->
+  <div class="island" data-k="island">
+    <div class="isl-compact">
+      <img class="isl-tag" src="filo-app-flow/tag-island.webp" alt="">
+      <span class="isl-read">Reading tag…</span>
+      <svg class="inf inf--track" viewBox="2 7 20 10"><path d="M12 12c-2-2.6-3.6-4-5.4-4a4 4 0 0 0 0 8c1.8 0 3.4-1.4 5.4-4s3.6-4 5.4-4a4 4 0 0 1 0 8c-1.8 0-3.4-1.4-5.4-4z"/></svg>
+      <svg class="inf inf--fill" viewBox="2 7 20 10" data-k="inf"><path pathLength="100" d="M12 12c-2-2.6-3.6-4-5.4-4a4 4 0 0 0 0 8c1.8 0 3.4-1.4 5.4-4s3.6-4 5.4-4a4 4 0 0 1 0 8c-1.8 0-3.4-1.4-5.4-4z"/></svg>
+    </div>
+    <div class="isl-full">
+      <img class="isl-photo" src="filo-app-flow/tag-island.webp" alt="">
+      <b>Bacterial Cellulose</b>
+      <small>Material tag detected</small>
+      <button class="isl-open" data-k="open">Open</button>
+    </div>
+  </div>
+  <div class="cursor is-hidden" id="cursor"><div class="dot"></div></div>
+</div>
+
+<script type="module">
+import { $$, k, W, H, reduce, playRate, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
+const display = k('display'), island = k('island'), clip = k('clip'), inf = k('inf')
+// The host picks how the clip closes at the end of each lap (filoStoryArt.tsx, appFlowMessages tellClose).
+addEventListener('message', e => {
+  if (e.origin === location.origin && e.data?.filoAppFlow === 'close') display.dataset.close = e.data.preset
+})
+
+/** Runs `fn(eased progress)` every frame for `ms`; holds while paused. */
+async function tween(t, ms, fn, ease = p => p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2) {
+  let e = 0, last = performance.now()
+  fn(ease(0))
+  while (e < ms) {
+    await sleep(0, t)
+    const now = performance.now()
+    e += Math.min(50, now - last) * playRate(); last = now
+    fn(ease(Math.min(1, e / ms)))
+  }
+}
+async function tap(t, el, fx = .5, fy = .5) { await move(t, at(el, fx, fy)); await sleep(40, t); await click(t, el) }
+
+function reset() {
+  display.classList.remove('is-app', 'is-closing')
+  island.className = 'island'
+  inf.classList.remove('is-done'); inf.querySelector('path').style.strokeDashoffset = ''
+  clip.classList.remove('is-open')
+  $$('.is-press').forEach(e => e.classList.remove('is-press'))
+}
+
+/* ── 01 · The phone is on the tag: the island reads it. ── */
+async function read(t) {
+  reset(); chapter(0)
+  await sleep(600, t)
+  island.classList.add('is-compact', 'is-reading')
+  await sleep(380, t)
+  const dash = inf.querySelector('path')
+  await tween(t, 1300, p => { dash.style.strokeDashoffset = String(100 * (1 - p)) }, p => p < .5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2)
+  inf.classList.add('is-done')
+  await sleep(320, t)
+}
+
+/* ── 02 · Tag detected. Open: the record. ── */
+async function open(t) {
+  chapter(1)
+  island.classList.remove('is-compact'); island.classList.add('is-expanded')
+  await sleep(850, t)
+  await tap(t, k('open'))
+  island.classList.remove('is-expanded', 'is-reading')
+  display.classList.add('is-app'); clip.classList.add('is-open')
+  await sleep(500, t)
+  await move(t, [W * .62, H + 90], 700)
+}
+
+/* ── 03 · The record holds, then the clip closes by itself to the lock screen; off-screen, the cursor
+   returns to where the loop starts (player.js HOME), so the next lap begins exactly as the first. ── */
+async function close(t) {
+  await sleep(3000, t)
+  display.classList.add('is-closing')
+  display.classList.remove('is-app'); clip.classList.remove('is-open')
+  await move(t, [W / 2, H + 96], 450)
+  await sleep(900, t)
+}
+
+/** The record open: the one screen reduced motion shows. */
+function still() { display.classList.add('is-app'); clip.classList.add('is-open') }
+boot({ scenes: [read, open, close], home: () => { reset(); chapter(0); if (reduce) still() } })
+</script>
+</body>
+</html>

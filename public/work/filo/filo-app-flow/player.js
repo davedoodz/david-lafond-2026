@@ -53,34 +53,57 @@ export const sleep = (ms, t) => new Promise((ok, no) => {
   requestAnimationFrame(tick)
 })
 
-/* ── Cursor ── */
+/* ── Cursor: weightless ──
+   Each move floats along a soft arc: it eases in and settles out with no momentum carried over, no
+   overshoot, no correction. The arc bows a little to one side (usually the wrist's side) and its length
+   and timing vary slightly, so no two moves look plotted. Between actions the cursor stays exactly where
+   it is. While pressed (a drag) the path is straight, so the finger stays on the content it pulls. */
 const HOME = [W / 2, H + 96]
 let cx = HOME[0], cy = HOME[1]
-export const place = (x, y) => { cx = x; cy = y; cursor.style.translate = `${x}px ${y}px` }
+export const place = (x, y) => { cx = x; cy = y; draw(x, y) }
+function draw(x, y) { cursor.style.translate = `${x.toFixed(2)}px ${y.toFixed(2)}px` }
 place(cx, cy)
 /** Centre of an element (or a point inside it, as fractions) in window px. */
 export function at(el, fx = .5, fy = .5) {
   const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect()
   return [(r.left - s.left + r.width * fx) / scale, (r.top - s.top + r.height * fy) / scale]
 }
+/* Soft in, softer out: ease-in-out sine with its landing stretched a little, so it settles rather than stops. */
+const floatEase = p => { const s = .5 - .5 * Math.cos(Math.PI * p); return .7 * s + .3 * (1 - (1 - p) ** 3) }
+const dragEase = p => p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2
+const vary = (spread) => 1 + (Math.random() - .5) * 2 * spread
 export async function move(t, [x, y], ms) {
-  const d = Math.hypot(x - cx, y - cy)
-  ms ??= Math.min(1100, 380 + d * .75)
-  const a = cursor.animate([{ translate: `${cx}px ${cy}px` }, { translate: `${x}px ${y}px` }], { duration: ms, easing: 'cubic-bezier(.65, 0, .35, 1)', fill: 'forwards' })
-  const watch = setInterval(() => { if (t !== token) a.cancel(); else if (paused) a.pause(); else if (a.playState === 'paused') a.play() }, 50)
-  try { await a.finished } catch { throw new Stop() } finally { clearInterval(watch) }
-  if (t !== token) throw new Stop()
-  place(x, y); a.cancel()
+  const sx = cx, sy = cy, dx = x - sx, dy = y - sy, d = Math.hypot(dx, dy)
+  ms ??= Math.min(1100, 380 + d * .55) * vary(.08)
+  const down = cursor.classList.contains('is-down')
+  // Bow 4–9% of the distance (up to 60px), usually to the wrist's side; drags stay straight.
+  const side = (dx >= 0 ? -1 : 1) * (Math.random() < .75 ? 1 : -1)
+  const bow = down || d < 1 ? 0 : Math.min(60, d * (.04 + Math.random() * .05)) * side
+  const nx = -dy / (d || 1) * bow, ny = dx / (d || 1) * bow
+  const c1x = sx + dx * .33 + nx, c1y = sy + dy * .33 + ny
+  const c2x = sx + dx * .72 + nx * .6, c2y = sy + dy * .72 + ny * .6
+  const ease = down ? dragEase : floatEase
+  let e = 0, last = performance.now()
+  while (e < ms) {
+    await sleep(0, t)
+    const now = performance.now()
+    e += Math.min(50, now - last) * playRate(); last = now
+    const p = ease(Math.min(1, e / ms)), q = 1 - p
+    cx = q * q * q * sx + 3 * q * q * p * c1x + 3 * q * p * p * c2x + p * p * p * x
+    cy = q * q * q * sy + 3 * q * q * p * c1y + 3 * q * p * p * c2y + p * p * p * y
+    draw(cx, cy)
+  }
+  place(x, y)
 }
 let hovered = []
 export function hover(...els) { hovered.forEach(e => e.classList.remove('is-hover')); hovered = els.filter(Boolean); hovered.forEach(e => e.classList.add('is-hover')) }
 export async function click(t, el) {
   cursor.classList.add('is-down'); el?.classList.add('is-press')
-  await sleep(130, t)
+  await sleep(100, t)
   const ring = document.createElement('div'); ring.className = 'ring'; ring.style.translate = `${cx}px ${cy}px`
   stage.append(ring); ring.addEventListener('animationend', () => ring.remove())
   cursor.classList.remove('is-down'); el?.classList.remove('is-press')
-  await sleep(90, t)
+  await sleep(50, t)
 }
 /** Types `text` into `el` one character at a time, with a blinking caret at the end. */
 export async function type(t, el, text, ms = 38) {
@@ -111,8 +134,9 @@ export function chapter(index) {
 
 /* ── Playback ── */
 /**
- * Runs `scenes` in a loop. Each scene is `async t => …` and sets its screen from scratch, so a restart
- * can begin anywhere; `home()` shows the first screen at rest.
+ * Runs `scenes` in a loop.
+ * Each scene is `async t => …` and sets its screen from scratch, so a restart can begin anywhere;
+ * `home()` shows the first screen at rest.
  */
 export async function boot({ scenes, home }) {
   let started = false
@@ -120,7 +144,7 @@ export async function boot({ scenes, home }) {
     const t = ++token
     try {
       cursor.classList.remove('is-hidden')
-      for (let i = 0; ; i = (i + 1) % scenes.length) await scenes[i](t)
+      for (let i = 0; ; i++) await scenes[i % scenes.length](t)
     } catch (e) { if (!(e instanceof Stop)) throw e }
   }
   function setPaused(p) {

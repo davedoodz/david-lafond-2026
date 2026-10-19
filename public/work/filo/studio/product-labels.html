@@ -6,7 +6,7 @@
 <title>Filo · Proposal product labels — 10 variants</title>
 <style>
 /* The case study's Proposal scene, as it renders at 1440 with David's saved dials (src/pages/filoStoryArt.tsx,
-   filoStoryArt.css): 460px frame, "Orange swatches" photo with flow-04 playing on the phone, four 190px
+   filoStoryArt.css): 460px frame, "Orange swatches" photo with the glimpse prototype playing on the phone, four 190px
    turntables 30px out, spinning every 9s. Only the labels under the products change. */
 @font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 :root { --ink: #171717; --text: #666; --mute: #9a9a97; --line: #e4e4e1; --moss: #4f6b4a; --page: #f5f5f5; }
@@ -31,7 +31,7 @@ figcaption small { display: block; margin-top: 4px; color: var(--text); font-siz
 .screen { width: 100%; height: 100%; -webkit-mask: url('/work/filo/story/opportunity-screen-mask-2.webp') 0 0 / 100% 100% no-repeat; mask: url('/work/filo/story/opportunity-screen-mask-2.webp') 0 0 / 100% 100% no-repeat; }
 .warp { width: 792px; height: 1715px; overflow: hidden; transform-origin: 0 0;
   transform: matrix3d(0.521914, -0.111371, 0, 9.46491e-06, 0.174494, 0.318496, 0, -5.03511e-05, 0, 0, 1, 0, 239.6, 100.902, 0, 1); }
-.warp video { position: absolute; left: -65px; top: -63px; width: 920px; height: 1844px; max-width: none; }
+.warp iframe { position: absolute; left: 0; top: 0; width: 390px; height: 845.5px; border: 0; transform-origin: 0 0; scale: calc(792 / 390) calc(1715 / 845.5); pointer-events: none; }
 .phone { width: 100%; height: 100%; }
 .product { position: absolute; width: 190px; }
 .product canvas { display: block; width: 190px; height: 190px; }
@@ -128,10 +128,7 @@ main.innerHTML = VARIANTS.map(([title, note, label], i) => `
     <div class="scene"><div class="frame">
       <div class="stage">
         <div class="screen"><div class="warp">
-          <video muted loop playsinline preload="none" poster="/work/filo/films/flow-04.webp" width="920" height="1844">
-            <source data-src="/work/filo/films/flow-04.mov" type='video/quicktime; codecs="hvc1"'>
-            <source data-src="/work/filo/films/flow-04.webm" type="video/webm">
-          </video>
+          <iframe src="/work/filo/filo-phone-glimpse.html" title="" tabindex="-1" loading="lazy"></iframe>
         </div></div>
         <img class="phone" src="/work/filo/story/opportunity-phone-2.webp" width="1127" height="1396" alt="">
       </div>
@@ -162,14 +159,10 @@ canvases.forEach(c => draw(c, performance.now()))
 const tick = now => { visible.forEach(fig => fig.querySelectorAll('canvas').forEach(c => draw(c, now))); requestAnimationFrame(tick) }
 requestAnimationFrame(tick)
 
-// Films play only while their scene is on screen.
+// The prototype runs on its own when opened, and loops; reduced motion shows its still.
 const observer = new IntersectionObserver(entries => entries.forEach(({ target, isIntersecting }) => {
-  const video = target.querySelector('video')
-  if (!isIntersecting) { visible.delete(target); return video.pause() }
+  if (!isIntersecting) { visible.delete(target); return }
   visible.add(target)
-  if (reduced) return
-  if (!video.dataset.loaded) { video.querySelectorAll('source').forEach(s => { s.src = s.dataset.src }); video.dataset.loaded = '1'; video.load() }
-  video.play().catch(() => {})
 }), { threshold: 0.15 })
 document.querySelectorAll('figure').forEach(fig => observer.observe(fig))
 </script>

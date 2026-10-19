@@ -524,18 +524,16 @@ function reset() {
   show(rec); setUrl(RECORD)
 }
 
-/* ── 01 · The published record: a look at its properties and photos, then Share. ── */
+/* ── 01 · The published record: flick through its photos, then Share. ── */
 async function record(t) {
   reset(); chapter(0)
   cursor.classList.remove('is-hidden')
-  await move(t, at(k('p-0'), .45, .5), 900); hover(k('p-0')); await sleep(400, t)
-  await move(t, at(k('p-2'), .45, .5), 450); hover(k('p-2')); await sleep(350, t)
   for (const i of [1, 2, 3]) {
-    await move(t, at(k(`th-${i}`)), i === 1 ? 800 : 380); hover(k(`th-${i}`)); await sleep(120, t)
-    await click(t); pickPhoto(i); await sleep(650, t)
+    await move(t, at(k(`th-${i}`)), i === 1 ? 800 : 380); hover(k(`th-${i}`)); await sleep(60, t)
+    await click(t); pickPhoto(i); await sleep(400, t)
   }
-  await move(t, at(k('th-0'))); hover(k('th-0')); await click(t); pickPhoto(0); await sleep(450, t)
-  await move(t, at(k('share'), .55, .55)); hover(k('share')); await sleep(380, t)
+  await move(t, at(k('th-0'))); hover(k('th-0')); await click(t); pickPhoto(0); await sleep(250, t)
+  await move(t, at(k('share'), .55, .55)); hover(k('share')); await sleep(120, t)
   await click(t, k('share')); hover()
 }
 
@@ -544,17 +542,17 @@ async function share(t) {
   chapter(1)
   k('veil-share').classList.add('is-open')
   await sleep(700, t)
-  await move(t, at(k('opt-track'), .5, .5), 750); hover(k('opt-track')); await sleep(350, t)
-  await move(t, at(k('track')), 380); await click(t); k('track').classList.add('is-on'); await sleep(500, t)
-  await move(t, at(k('create'), .5, .55)); hover(k('create')); await sleep(350, t)
+  await move(t, at(k('track')), 800); hover(k('opt-track')); await sleep(120, t)
+  await click(t); k('track').classList.add('is-on'); await sleep(300, t)
+  await move(t, at(k('create'), .5, .55)); hover(k('create')); await sleep(120, t)
   await click(t, k('create')); hover()
   k('create').classList.add('is-busy'); await sleep(800, t)
   k('create').classList.replace('is-busy', 'is-done'); k('share-dialog').classList.add('is-made'); k('copy').disabled = false
   await sleep(600, t)
-  await move(t, at(k('copy'), .5, .55)); hover(k('copy')); await sleep(300, t)
+  await move(t, at(k('copy'), .5, .55)); hover(k('copy')); await sleep(120, t)
   await click(t, k('copy')); hover(); k('copy').classList.add('is-done')
   await sleep(1000, t)
-  await move(t, at(k('share-close'))); hover(k('share-close')); await sleep(250, t)
+  await move(t, at(k('share-close'))); hover(k('share-close')); await sleep(100, t)
   await click(t); hover(); k('veil-share').classList.remove('is-open')
   await sleep(450, t)
 }
@@ -562,7 +560,7 @@ async function share(t) {
 /* ── 03 · Write the link to a tag: the tag taps the computer's reader. ── */
 async function attach(t) {
   chapter(2)
-  await move(t, at(k('qa-nfc'), .45, .5)); hover(k('qa-nfc')); await sleep(380, t)
+  await move(t, at(k('qa-nfc'), .45, .5)); hover(k('qa-nfc')); await sleep(120, t)
   await click(t, k('qa-nfc')); hover()
   show(tagp); setUrl(`${RECORD}/tag`)
   await sleep(500, t)
@@ -590,7 +588,7 @@ async function linked(t) {
   k('n3').classList.replace('is-active', 'is-done'); k('r3').classList.add('is-hidden'); k('st3').classList.remove('is-hidden')
   swap('blue', true); swap('needs', true); k('tag-actions').classList.add('is-in')
   await sleep(1100, t)
-  await move(t, at(k('done'), .5, .55)); hover(k('done')); await sleep(380, t)
+  await move(t, at(k('done'), .5, .55)); hover(k('done')); await sleep(120, t)
   await click(t, k('done')); hover()
   show(rec); setUrl(RECORD)
   await sleep(700, t)
@@ -599,7 +597,7 @@ async function linked(t) {
 /* ── 05 · Send it by email, with a message and a summary card. ── */
 async function email(t) {
   chapter(4)
-  await move(t, at(k('qa-share'), .45, .5)); hover(k('qa-share')); await sleep(380, t)
+  await move(t, at(k('qa-share'), .45, .5)); hover(k('qa-share')); await sleep(120, t)
   await click(t, k('qa-share')); hover()
   k('veil-email').classList.add('is-open')
   await sleep(650, t)
@@ -610,9 +608,7 @@ async function email(t) {
   k('to').innerHTML = '<span class="chip">priya@aurastudio.com<svg class="ic"><use href="#i-x"/></svg></span>'
   k('to').classList.remove('is-focus'); k('to').style.color = ''
   await sleep(500, t)
-  await move(t, at(k('msg'), .55, .45), 650); await sleep(700, t)
-  await move(t, at(k('summary'), .5, .5), 550); hover(k('summary')); await sleep(800, t)
-  await move(t, at(k('send'), .5, .55)); hover(k('send')); await sleep(350, t)
+  await move(t, at(k('send'), .5, .55)); hover(k('send')); await sleep(120, t)
   await click(t, k('send')); hover()
   k('send').classList.add('is-busy'); await sleep(700, t)
   k('veil-email').classList.remove('is-open'); toast.classList.add('is-on')

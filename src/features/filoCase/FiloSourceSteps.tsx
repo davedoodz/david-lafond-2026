@@ -3,6 +3,7 @@ import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import { useTuningController } from '../../tuning/useTuning'
 import { EditableText } from '../../components/EditableText'
 import type { SectionSpacing, TextReveal } from '../../pages/caseStudyContent'
+import { tellFlow, tellSpeed } from './appFlowMessages'
 import './filoSourceSteps.css'
 
 /**
@@ -13,15 +14,10 @@ import './filoSourceSteps.css'
  * and opens the record in an App Clip.
  */
 
-type FlowCommand = 'play' | 'pause' | 'restart'
 type FlowState = { visible: boolean; userPaused: boolean }
-const tellFlow = (frame: HTMLIFrameElement | null, command: FlowCommand) =>
-  frame?.contentWindow?.postMessage({ filoAppFlow: command }, window.location.origin)
-/** Playback rate of a prototype: player.js runs its clock and every animation at `rate` (1 = as authored). */
-const tellSpeed = (frame: HTMLIFrameElement | null, rate: number) =>
-  frame?.contentWindow?.postMessage({ filoAppFlow: 'speed', rate }, window.location.origin)
-/** Prototype speeds from the dials: step 3's phone (inbox › speed) and step 4's tap scene (tap › speed); the portal flows play at 1. */
-const FlowSpeeds = createContext({ inbox: 1, tap: 1 })
+/** Prototype speeds from the dials, one per step: create, share, inbox (step 3's phone) and tap (step 4's scene). */
+type SpeedKey = 'create' | 'share' | 'inbox' | 'tap'
+const FlowSpeeds = createContext<Record<SpeedKey, number>>({ create: 1, share: 1, inbox: 1, tap: 1 })
 /** Plays while in view, unless the reader paused it. */
 const syncFlow = (frame: HTMLIFrameElement | null, state: FlowState) =>
   tellFlow(frame, state.visible && !state.userPaused ? 'play' : 'pause')
@@ -35,21 +31,20 @@ const syncFlow = (frame: HTMLIFrameElement | null, state: FlowState) =>
  * visit starts on its first screen.
  */
 const APP_FLOWS = [
-  { src: '/work/filo/filo-app-flow.html', title: 'Filo portal: a cursor adds Bacterial Cellulose, from the materials library through document upload and extraction to review and publish.' },
-  { src: '/work/filo/filo-app-share.html', title: 'Filo portal: the published Bacterial Cellulose record is shared as a link, written to an NFC tag for its physical sample, and sent by email.' },
-]
+  { src: '/work/filo/filo-app-flow.html', speedKey: 'create', title: 'Filo portal: a cursor adds Bacterial Cellulose, from the materials library through document upload and extraction to review and publish.' },
+  { src: '/work/filo/filo-app-share.html', speedKey: 'share', title: 'Filo portal: the published Bacterial Cellulose record is shared as a link, written to an NFC tag for its physical sample, and sent by email.' },
+] as const
 const PHONE_FLOW = { src: '/work/filo/filo-phone-receive.html', title: 'A designer’s phone: the Filo email lands in Mail, and its link opens the Bacterial Cellulose record in Safari, with its documents, open checks and photos.' }
 const TAP_FLOW = { src: '/work/filo/filo-phone-tap.html', title: 'Six tagged swatches are dealt out; a phone comes over the bacterial cellulose one, its Dynamic Island reads the tag, and Open shows the record in an App Clip: overview, documents, photos, samples, then BC-001’s Technical File.' }
 /** window: the portal in its window chrome. phone: step 3's phone on a clear ground. scene: step 4's wide scene on a clear ground. */
 type FlowVariant = 'window' | 'phone' | 'scene'
-function AppFlow({ src, title, variant = 'window' }: { src: string; title: string; variant?: FlowVariant }) {
+function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; title: string; speedKey: SpeedKey; variant?: FlowVariant }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const live = useRef<FlowState>({ visible: false, userPaused: false })
   const [toggleKey, setToggleKey] = useState(0)
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const speeds = useContext(FlowSpeeds)
-  const speed = variant === 'phone' ? speeds.inbox : variant === 'scene' ? speeds.tap : 1
+  const speed = useContext(FlowSpeeds)[speedKey]
   const speedRef = useRef(speed)
 
   // Sent on every change; a document still loading gets it with its state on 'ready'.
@@ -143,12 +138,13 @@ function SampleBox() {
   </div>
 }
 
-/** The four steps' visuals, in order; each step is its own section. */
-const STEPS: ReactNode[] = [
+/** The four steps' visuals, in order; each step is its own section. `scan` is where the scanned swatch
+    starts in step 4's pile (Tap › scanned); it rides in the scene's URL, so a change replays it from the pile. */
+const stepVisuals = (scan: string): ReactNode[] => [
   <AppFlow {...APP_FLOWS[0]} />,
   <AppFlow {...APP_FLOWS[1]} />,
-  <div className="fss-receive"><AppFlow {...PHONE_FLOW} variant="phone" /><SampleBox /></div>,
-  <AppFlow {...TAP_FLOW} variant="scene" />,
+  <div className="fss-receive"><AppFlow {...PHONE_FLOW} speedKey="inbox" variant="phone" /><SampleBox /></div>,
+  <AppFlow {...TAP_FLOW} src={`${TAP_FLOW.src}?scan=${scan}`} speedKey="tap" variant="scene" />,
 ]
 
 type Tuple = [number, number, number, number]
@@ -196,10 +192,23 @@ const CONFIG = {
     /** Playback speed of the phone prototype (1 = as authored, 2 = twice as fast); its loop's every wait and animation scale together. */
     speed: [1, 0.25, 3, 0.05] as Tuple,
   },
+  /** Step 1's portal flow: create the material. */
+  create: {
+    /** Playback speed (1 = as authored, 2 = twice as fast); every wait, cursor move and animation scales together. */
+    speed: [1, 0.25, 3, 0.05] as Tuple,
+  },
+  /** Step 2's portal flow: share the record and write the tag. */
+  share: {
+    /** Playback speed (1 = as authored, 2 = twice as fast); every wait, cursor move and animation scales together. */
+    speed: [1, 0.25, 3, 0.05] as Tuple,
+  },
   /** Step 4's tap scene. */
   tap: {
     /** Playback speed (1 = as authored, 2 = twice as fast); every wait and animation in its loop scales together. */
     speed: [1, 0.25, 3, 0.05] as Tuple,
+    /** Where the bacterial cellulose (the swatch the phone reads) starts in the pile: under the others,
+        among them, or on top. The rest are dealt off the top first, so it's uncovered last. */
+    scanned: { type: 'select' as const, options: ['bottom', 'middle', 'top'], default: 'bottom' },
   },
 }
 
@@ -242,8 +251,8 @@ export function FiloSourceSteps({ section }: { section: SectionLook }) {
   } as CSSProperties
   // Each step is its own case section (snap stop, reveal, copy styles). They share data-section="source",
   // so the sidebar's one Source entry jumps to step 1 and stays lit through step 4.
-  return <FlowSpeeds.Provider value={{ inbox: dials.inbox.speed, tap: dials.tap.speed }}>
-    {STEPS.map((visual, i) => {
+  return <FlowSpeeds.Provider value={{ create: dials.create.speed, share: dials.share.speed, inbox: dials.inbox.speed, tap: dials.tap.speed }}>
+    {stepVisuals(dials.tap.scanned).map((visual, i) => {
       const key = `step${i + 1}` as keyof typeof CONFIG.titles
       return <section
         key={key}

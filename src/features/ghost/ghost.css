@@ -49,11 +49,6 @@
   fill: var(--ghost-fill, var(--placeholder));
 }
 
-/* Paper About page: the ghost darkens so it reads against the light dither band. */
-[data-surface='light'] .ghost-mark__shell {
-  fill: var(--ghost-fill, #bcbcbc);
-}
-
 .ghost-mark__pupil {
   fill: var(--ink-900);
 }
