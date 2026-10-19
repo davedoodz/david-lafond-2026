@@ -18,7 +18,7 @@ import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
 import { DOME_CURVES, arcClip, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
-import { TOUCH_LANDING as TOUCH, smallViewportHeight, touchDome } from '../lib/touchLanding'
+import { TOUCH_ARCS, TOUCH_LANDING as TOUCH, smallViewportHeight, touchDome } from '../lib/touchLanding'
 import saved from '../data/tuning.json'
 import { useTuningController } from '../tuning/useTuning'
 import { EditableText } from './EditableText'
@@ -74,6 +74,16 @@ const CONFIG = {
     startSide: [0, 0, 45, 0.5] as Tuple,
     startArch: [70, 0, 100, 1] as Tuple,
     startRadius: [0, 0, 200, 1] as Tuple,
+    _collapsed: false,
+  },
+  /**
+   * Phones and tablets: curvature of the sheet's edge (top on landing, mirrored at the page end).
+   * Presets are circular arcs, flattest to roundest; "Ellipse (before)" is the earlier stretched
+   * shape for comparison; "Custom" uses `height` (arc height, % of screen width).
+   */
+  touchArc: {
+    preset: { type: 'select' as const, options: [...Object.keys(TOUCH_ARCS), 'Ellipse (before)', 'Custom'], default: 'Soft' },
+    height: [18, 2, 50, 0.5] as Tuple,
     _collapsed: false,
   },
   /**
@@ -178,7 +188,8 @@ export function SelectedWorks() {
   const sectionRef = useRef<HTMLElement>(null)
   const morphDesktop = t.morph
   const morphMobile = t.morphMobile
-  const morphKey = JSON.stringify([morphDesktop, morphMobile])
+  const touchArc = t.touchArc
+  const morphKey = JSON.stringify([morphDesktop, morphMobile, touchArc])
 
   useEffect(() => {
     const section = sectionRef.current
@@ -206,9 +217,14 @@ export function SelectedWorks() {
       const top = reduced ? 0 : 1 - curve(clamp01((restTop - rect.top) / travel))
       // Mirror: the bottom is as domed at `peek` below the viewport top as the top is at `peek` above its bottom.
       const bottom = reduced ? 0 : 1 - curve(clamp01((rect.bottom - peek) / travel))
-      const dome = touch.matches ? touchDome(svh) : null
-      if (dome) {
-        bg.style.setProperty('--works-clip', arcClip(bg.offsetWidth, bg.offsetHeight, dome.arch * top, dome.arch * bottom))
+      if (touch.matches) {
+        const ellipse = touchArc.preset === 'Ellipse (before)'
+        const height = ellipse ? 0.36 : touchArc.preset === 'Custom' ? touchArc.height / 100 : TOUCH_ARCS[touchArc.preset as keyof typeof TOUCH_ARCS] ?? TOUCH_ARCS.Soft
+        const { arch } = touchDome(svh, height)
+        const clip = ellipse
+          ? domeClip(0, { radius: 0, arch: (arch / vh) * 100 }, top, { radius: 0, arch: (arch / vh) * 100 }, bottom, vh)
+          : arcClip(bg.offsetWidth, bg.offsetHeight, arch * top, arch * bottom)
+        bg.style.setProperty('--works-clip', clip)
         return
       }
       const shape = { radius: morph.startRadius, arch: morph.startArch }
