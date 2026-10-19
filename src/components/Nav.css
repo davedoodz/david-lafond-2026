@@ -184,11 +184,10 @@
   padding-left: var(--edge);
   padding-right: 35px;
 }
-/* Phones: every page starts its first link where the Work hero's text starts (lib/navAlign).
-   24px is the Work hero's phone inset; the fallbacks match the current hero copy. */
+/* Phones: every page starts its first link where the Work hero's text starts (--text-edge). */
 @media (max-width: 640px) {
   .nav[data-ghost-side='end'] {
-    padding-left: max(24px, min(50% - var(--nav-half, 166.8px), 100% - 24px - var(--nav-wide, 357.3px)));
+    padding-left: var(--text-edge);
   }
 }
 .nav[data-ghost-side='end'] .nav__start {

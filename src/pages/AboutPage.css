@@ -87,10 +87,10 @@
   .about {
     --column-inset: clamp(20px, 14.25vw, 57px);
   }
-  /* The story starts where the Work hero's text and every page's nav start (lib/navAlign, Nav.css),
-     with the same margin on the right; a narrower fitted column keeps that left edge. */
+  /* The story starts where the Work hero's text and every page's nav start (--text-edge), with the
+     same margin on the right; a narrower fitted column keeps that left edge. */
   .about__story {
-    --column-inset: max(24px, min(50% - var(--nav-half, 166.8px), 100% - 24px - var(--nav-wide, 357.3px)));
+    --column-inset: var(--text-edge);
     margin-left: var(--column-inset);
   }
   .about__light {
@@ -319,4 +319,18 @@ html[data-about-snap] .about .footer {
 #play-title {
   position: relative;
   z-index: 1;
+}
+
+/* Phones, after the playground's own sizing rules so these win. */
+@media (max-width: 640px) {
+  /* The cards span the story's text width: the same margin as the essay on both sides. */
+  .about .about__play .pg-grid {
+    width: auto;
+    margin-inline: var(--text-edge);
+  }
+  /* "Let's chat" clears the contribution graph and the GitHub logo hanging below the section
+     (a negative playSpaceBelow, tuned for desktop, would pull it up over them). */
+  .about .about__play {
+    margin-bottom: max(64px, var(--play-below, 0px));
+  }
 }

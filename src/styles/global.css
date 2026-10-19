@@ -65,6 +65,9 @@
     --text-eyebrow: 10px;
     --column-inset: clamp(24px, 19.5vw, 78px);
     --edge: clamp(20px, 10vw, 41px);
+    /* Where the Work hero's text starts (lib/navAlign); the nav, the About story and its playground
+       line up on it. Its % resolve where it is used, against the full page width. */
+    --text-edge: max(24px, min(50% - var(--nav-half, 166.8px), 100% - 24px - var(--nav-wide, 357.3px)));
   }
 }
 
