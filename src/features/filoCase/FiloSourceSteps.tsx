@@ -1,133 +1,33 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import { useTuningController } from '../../tuning/useTuning'
 import { EditableText } from '../../components/EditableText'
 import './filoSourceSteps.css'
 
 /**
- * Filo "source" section: three steps from the innovator's first data to the open Technical File.
- * Step 1 is the desktop app as a looping prototype. The sample box and the flat tag are crops of
- * David's reference (public/work/filo/steps, whitened so the page shows through via multiply, shadows
- * kept). Step 3 is one realistic phone whose screen loops scanning → tag detected → Technical File,
- * rebuilt in HTML.
+ * Filo "source" section: four steps, create → share → receive → tap. Steps 1 and 2 are the
+ * portal as looping prototypes; step 3 pairs the designer's phone (a looping prototype: the email, then
+ * the record in Safari) with the sample box (cut-outs of David's photos, public/work/filo/steps). Step 4
+ * is a looping scene: a phone comes over the bacterial cellulose swatch in a dealt deck, reads its tag
+ * and opens the record in an App Clip.
  */
-
-const ICON = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
-
-const ICONS: Record<string, ReactNode> = {
-  composition: <><circle cx="12" cy="12" r="8" /><circle cx="9.5" cy="10" r="1.2" /><circle cx="14.5" cy="10.5" r="1.2" /><path d="M9 14.5c1.6 1.4 4.4 1.4 6 0" /></>,
-  weight: <><path d="M7.5 9h9l2 10h-13z" /><path d="M10 9V7.5a2 2 0 0 1 4 0V9" /></>,
-  width: <><path d="M4 12h16" /><path d="M7 9l-3 3 3 3M17 9l3 3-3 3" /></>,
-  care: <><path d="M3.5 7.5l2.2 10.5h12.6l2.2-10.5" /><path d="M4.4 11.5c1.9 1.3 3.8 1.3 5.2 0 1.4 1.3 3.4 1.3 4.8 0 1.4 1.3 3.3 1.3 5.2 0" /></>,
-  verify: <><path d="M12 3.5l7 2.8v5c0 4.3-2.9 7.6-7 9.2-4.1-1.6-7-4.9-7-9.2v-5z" /><path d="M9 12l2.1 2.1L15 10.2" /></>,
-}
-const Icon = ({ name }: { name: string }) => <svg className="fss-icon" viewBox="0 0 24 24" aria-hidden="true" {...ICON}>{ICONS[name]}</svg>
-
-const PROPERTIES = [
-  ['composition', 'Composition', '100% BC'],
-  ['weight', 'Weight', '120 gsm'],
-  ['width', 'Width', '145 cm'],
-  ['care', 'Recommended care', 'Max 60°C'],
-] as const
-const OPEN_CHECKS = ['Heat tolerance', 'Seam performance', 'Pilling']
-
-const Logo = () => <img className="fss-logo" src="/work/filo/filo-mark.webp" width={990} height={466} alt="Filo" />
-
-/**
- * The Momo case study's in-app status bar (phoneFilm.js `statusBar`, with its saved Status icons gaps:
- * Wi-Fi 6.1pt, battery 7.4pt), drawn in the same 390pt screen units so it scales with the phone and
- * sits level with the frame's Dynamic Island.
- */
-const StatusBar = () => <svg className="fss-status" viewBox="0 0 390 54" aria-hidden="true">
-  <text x="52" y="30" dominantBaseline="middle">9:41</text>
-  {[4.3, 5.9, 8.4, 10.7].map((h, i) => <rect key={i} x={278.2 + i * 4.93} y={34 - h} width="3.3" height={h} rx="1.1" />)}
-  <path className="fss-status__wifi" d="M303.28 26.25A11.1 11.1 0 0 1 318.12 26.25M306.05 29.33A6.95 6.95 0 0 1 315.35 29.33" />
-  <path className="fss-status__wedge" d="M310.7 33.8L308.9 31.79A2.7 2.7 0 0 1 312.5 31.79Z" />
-  <rect className="fss-status__cell" x="325.05" y="23.7" width="20" height="11" rx="4" />
-  <path opacity=".4" d="M346.25 27.45h.7a.7.7 0 0 1 .7.7v2.1a.7.7 0 0 1-.7.7h-.7z" />
-  <rect x="326.4" y="25" width="17.3" height="8.4" rx="2.5" />
-</svg>
-
-function ScanLayer() {
-  return <div className="fss-layer fss-layer--scan">
-    <Logo />
-    <div className="fss-center">
-      <span className="fss-scan" aria-hidden="true">
-        <i /><i /><i />
-        <svg viewBox="0 0 24 24" {...ICON} strokeWidth={1.7}><path d="M8.5 9.2a4 4 0 0 1 0 5.6M11.6 7a7.2 7.2 0 0 1 0 10M14.8 4.8a10.4 10.4 0 0 1 0 14.4" /></svg>
-      </span>
-      <p className="fss-center__title">Ready to scan</p>
-      <p>Hold near a Filo tag</p>
-    </div>
-  </div>
-}
-
-function DetectLayer() {
-  return <div className="fss-layer fss-layer--detect">
-    <Logo />
-    <div className="fss-center">
-      <span className="fss-check" aria-hidden="true">
-        <svg viewBox="0 0 24 24" {...ICON} strokeWidth={1.8}><path d="M6.5 12.5l3.6 3.6L17.5 8.5" /></svg>
-      </span>
-      <p className="fss-center__title">Tag detected</p>
-      <p>Opening material record…</p>
-    </div>
-  </div>
-}
-
-function FileLayer() {
-  return <div className="fss-layer fss-layer--file">
-    <div className="fss-bar"><Logo /><span className="fss-more" aria-hidden="true">···</span></div>
-    <div className="fss-photo">
-      <img src="/work/filo/studio/cellulose.webp" alt="" loading="lazy" decoding="async" />
-      <span className="fss-pill">In development</span>
-    </div>
-    <p className="fss-name">Bacterial Cellulose</p>
-    <dl className="fss-props">
-      {PROPERTIES.map(([icon, label, value]) => <div key={label}>
-        <dt><Icon name={icon} />{label}</dt>
-        <dd>{value}</dd>
-      </div>)}
-    </dl>
-    <div className="fss-verify">
-      <p><Icon name="verify" /><span>Needs verification</span><span className="fss-count">3 items</span></p>
-      <ul>
-        {OPEN_CHECKS.map((check) => <li key={check}>
-          <span className="fss-dot" aria-hidden="true" />{check}
-          <svg className="fss-chevron" viewBox="0 0 24 24" aria-hidden="true" {...ICON}><path d="M10 7l5 5-5 5" /></svg>
-        </li>)}
-      </ul>
-    </div>
-  </div>
-}
-
-/** A realistic phone (the Momo frame) over the three screens; the flat tag peeks out behind it. */
-function TapPhone() {
-  return <div className="fss-tap">
-    <img className="fss-crop fss-crop--tag" src="/work/filo/steps/flat-tag.webp" width={236} height={420} loading="lazy" decoding="async" alt="" />
-    <div className="fss-phone">
-      <div className="fss-screen">
-        <StatusBar />
-        <ScanLayer />
-        <DetectLayer />
-        <FileLayer />
-        <span className="fss-home" aria-hidden="true" />
-      </div>
-      <img className="fss-frame" src="/work/momo/hero/phone-frame.png" width={1312} height={2672} alt="" draggable={false} />
-    </div>
-  </div>
-}
 
 type FlowCommand = 'play' | 'pause' | 'restart'
 type FlowState = { visible: boolean; userPaused: boolean }
 const tellFlow = (frame: HTMLIFrameElement | null, command: FlowCommand) =>
   frame?.contentWindow?.postMessage({ filoAppFlow: command }, window.location.origin)
+/** Playback rate of a prototype: player.js runs its clock and every animation at `rate` (1 = as authored). */
+const tellSpeed = (frame: HTMLIFrameElement | null, rate: number) =>
+  frame?.contentWindow?.postMessage({ filoAppFlow: 'speed', rate }, window.location.origin)
+/** Step 3's phone prototype speed (Filo source steps › inbox › speed); the portal flows play at 1. */
+const InboxSpeed = createContext(1)
 /** Plays while in view, unless the reader paused it. */
 const syncFlow = (frame: HTMLIFrameElement | null, state: FlowState) =>
   tellFlow(frame, state.visible && !state.userPaused ? 'play' : 'pause')
 
 /**
- * Step 1: the innovator's portal as two prototypes, one above the other. Each runs in its own document
+ * The looping prototypes: the innovator's portal in steps 1 and 2 (adding a material, then sharing and
+ * tagging it), the designer's phone in step 3 and the tap scene in step 4. Each runs in its own document
  * (public/work/filo/*.html) so the app's generic class names (.card, .btn, .nav) never meet the page's.
  * Playback matches the Momo prototype: each plays while in view, clicking it pauses or plays, the
  * top-right button replays it, and once fully off screen it rewinds (clearing a pause) so the next
@@ -137,19 +37,34 @@ const APP_FLOWS = [
   { src: '/work/filo/filo-app-flow.html', title: 'Filo portal: a cursor adds Bacterial Cellulose, from the materials library through document upload and extraction to review and publish.' },
   { src: '/work/filo/filo-app-share.html', title: 'Filo portal: the published Bacterial Cellulose record is shared as a link, written to an NFC tag for its physical sample, and sent by email.' },
 ]
-function AppFlow({ src, title }: { src: string; title: string }) {
+const PHONE_FLOW = { src: '/work/filo/filo-phone-receive.html', title: 'A designer’s phone: the Filo email arrives on the lock screen, opens in Mail, and its link opens the Bacterial Cellulose record in Safari, with its documents, open checks and photos.' }
+const TAP_FLOW = { src: '/work/filo/filo-phone-tap.html', title: 'Six tagged swatches are dealt out; a phone comes over the bacterial cellulose one, its Dynamic Island reads the tag, and Open shows the record in an App Clip: overview, documents, photos, samples, then BC-001’s Technical File.' }
+/** window: the portal in its window chrome. phone: step 3's phone on a clear ground. scene: step 4's wide scene on a clear ground. */
+type FlowVariant = 'window' | 'phone' | 'scene'
+function AppFlow({ src, title, variant = 'window' }: { src: string; title: string; variant?: FlowVariant }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const live = useRef<FlowState>({ visible: false, userPaused: false })
   const [toggleKey, setToggleKey] = useState(0)
   const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const inboxSpeed = useContext(InboxSpeed)
+  const speed = variant === 'phone' ? inboxSpeed : 1
+  const speedRef = useRef(speed)
+
+  // Sent on every change; a document still loading gets it with its state on 'ready'.
+  useEffect(() => {
+    speedRef.current = speed
+    tellSpeed(frameRef.current, speed)
+  }, [speed])
 
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
     // The prototype says it's ready once its type has loaded; anything sent before that is dropped.
     const onMessage = (event: MessageEvent) => {
-      if (event.source === frameRef.current?.contentWindow && event.data?.filoAppFlow === 'ready') syncFlow(frameRef.current, live.current)
+      if (event.source !== frameRef.current?.contentWindow || event.data?.filoAppFlow !== 'ready') return
+      tellSpeed(frameRef.current, speedRef.current)
+      syncFlow(frameRef.current, live.current)
     }
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.intersectionRatio >= 0.2) {
@@ -175,7 +90,7 @@ function AppFlow({ src, title }: { src: string; title: string }) {
     tellFlow(frameRef.current, 'restart')
     syncFlow(frameRef.current, live.current)
   }
-  return <div ref={hostRef} className="fss-app">
+  return <div ref={hostRef} className={variant === 'window' ? 'fss-app' : `fss-app fss-app--${variant}`}>
     <iframe
       ref={frameRef}
       className="fss-app__frame"
@@ -199,7 +114,7 @@ function AppFlow({ src, title }: { src: string; title: string }) {
   </div>
 }
 
-/** Step 2: the shipped box arrives closed, opens on the wrapped sample and welcome card, then unwraps
+/** Step 3 (right of the phone): the shipped box arrives closed, opens on the wrapped sample and welcome card, then unwraps
     to the sample and its Filo tag, on a loop. The photos are cut out on one 1100 × 696 frame (the open
     ones at 1.5×), each registered to the same tray, so only the lid and contents change. The frame is
     wider than the box to fit the unwrapped photo's card and tissue. */
@@ -212,29 +127,31 @@ function SampleBox() {
   </div>
 }
 
-const VISUALS: ReactNode[] = [
-  <div className="fss-apps">{APP_FLOWS.map((flow) => <AppFlow key={flow.src} {...flow} />)}</div>,
-  <SampleBox />,
-  <TapPhone />,
+/** The four steps, in order. Each has a one-word stage after its number. */
+const STEPS: { stage: string; visual: ReactNode }[] = [
+  { stage: 'Create', visual: <AppFlow {...APP_FLOWS[0]} /> },
+  { stage: 'Share', visual: <AppFlow {...APP_FLOWS[1]} /> },
+  { stage: 'Receive', visual: <div className="fss-receive"><AppFlow {...PHONE_FLOW} variant="phone" /><SampleBox /></div> },
+  { stage: 'Tap', visual: <AppFlow {...TAP_FLOW} variant="scene" /> },
 ]
 
 type Tuple = [number, number, number, number]
 const CONFIG = {
   /** Step titles; edit them on the page in dev (each saves to tuning.json). */
   titles: {
-    step1: { type: 'text' as const, default: 'Material innovator\nprovides initial data.' },
-    step2: { type: 'text' as const, default: 'Sample arrives\nwith a Filo tag.' },
-    step3: { type: 'text' as const, default: 'Technical designer taps the tag.\nThe Technical File opens.' },
+    step1: { type: 'text' as const, default: 'Material innovator creates the material record.' },
+    step2: { type: 'text' as const, default: 'The designer receives the record before the sample.' },
+    step3: { type: 'text' as const, default: 'The physical sample arrives with its Filo tag.' },
+    step4: { type: 'text' as const, default: 'Tap the sample to pick up where you left off.' },
   },
-  /** Step 3's phone and tag, as one group. Defaults centre the group under its number and title. */
-  phone: {
-    /** Size of the phone and tag together (1 = the 272px phone). */
-    scale: [0.8, 0.5, 1.2, 0.01] as Tuple,
-    /** Move from the centred spot (px): positive x goes right, positive y goes down. */
-    x: [0, -200, 200, 1] as Tuple,
-    y: [0, -200, 200, 1] as Tuple,
+  /** The line under each title; editable on the page in dev, like the titles. */
+  bodies: {
+    step1: { type: 'text' as const, default: 'Specs, reports, certifications and photos become the starting Technical File.' },
+    step2: { type: 'text' as const, default: 'A shared Filo link lets them review the material, supplier data and what still needs verification.' },
+    step3: { type: 'text' as const, default: 'The same material URL is encoded in the tag and travels with the swatch.' },
+    step4: { type: 'text' as const, default: 'At the bench, the designer can instantly identify the exact swatch and reopen its Technical File.' },
   },
-  /** Step 2's box loop. Defaults centre the box under its number and title. */
+  /** Step 3's box loop, right of the phone. x / y move it from that spot. */
   box: {
     /** Size of the box (1 = the box 320px wide; never wider than the column). */
     scale: [1, 0.5, 2, 0.01] as Tuple,
@@ -244,13 +161,24 @@ const CONFIG = {
     x: [0, -200, 200, 1] as Tuple,
     y: [0, -200, 200, 1] as Tuple,
   },
+  /** Step 3's phone prototype (the email and the record in Safari), left of the box. */
+  inbox: {
+    /** Size of the phone (1 = 300px wide). */
+    scale: [1, 0.6, 1.4, 0.01] as Tuple,
+    /** Move from its spot (px): positive x goes right, positive y goes down. */
+    x: [0, -200, 200, 1] as Tuple,
+    y: [0, -200, 200, 1] as Tuple,
+    /** Space between the phone and the box (px); the box's frame already adds room around the box. */
+    gap: [24, 0, 240, 1] as Tuple,
+    /** Playback speed of the phone prototype (1 = as authored, 2 = twice as fast); its loop's every wait and animation scale together. */
+    speed: [1, 0.25, 3, 0.05] as Tuple,
+  },
 }
 
 export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: number } }) {
   const { values: dials, setValue } = useTuningController('Filo source steps', CONFIG)
   const ref = useRef<HTMLOListElement>(null)
-  // The phone's CSS loop runs only while its step is on screen, so it starts on "scanning" when the
-  // reader reaches it. Step 1's prototype watches itself (AppFlow).
+  // The box's CSS loop runs only while its step is on screen. The prototypes watch themselves (AppFlow).
   useEffect(() => {
     const steps = ref.current?.children
     if (!steps) return
@@ -267,29 +195,34 @@ export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: n
   return <section
     className="case__section filo-steps"
     data-section="source"
-    aria-label="From initial material data to an open Technical File"
+    aria-label="From the material record to the bench: create, share, receive, tap"
     style={{
       '--section-pad-top': `${spacing.top}px`,
       '--section-pad-bottom': `${spacing.bottom}px`,
-      '--fss-phone-scale': dials.phone.scale,
-      '--fss-phone-x': `${dials.phone.x}px`,
-      '--fss-phone-y': `${dials.phone.y}px`,
       '--fss-box-cycle': `${9 / dials.box.speed}s`,
-      // The frame is wider than the box, so scale it to keep the box itself at 320px × scale.
-      '--fss-box-w': `${320 * dials.box.scale * BOX_FRAME.w / BOX_FRAME.boxW}px`,
+      // The frame is wider than the box, so size it to keep the box itself at 320px; box › scale grows it from there.
+      '--fss-box-w': `${320 * BOX_FRAME.w / BOX_FRAME.boxW}px`,
+      '--fss-box-scale': dials.box.scale,
       '--fss-box-x': `${dials.box.x}px`,
       '--fss-box-y': `${dials.box.y}px`,
+      '--fss-inbox-scale': dials.inbox.scale,
+      '--fss-inbox-x': `${dials.inbox.x}px`,
+      '--fss-inbox-y': `${dials.inbox.y}px`,
+      '--fss-inbox-gap': `${dials.inbox.gap}px`,
     } as CSSProperties}
   >
+    <InboxSpeed.Provider value={dials.inbox.speed}>
     <ol ref={ref} className="fss-steps">
-      {VISUALS.map((visual, i) => {
+      {STEPS.map(({ stage, visual }, i) => {
         const key = `step${i + 1}` as keyof typeof CONFIG.titles
         return <li key={key} className="fss-step">
-          <span className="fss-num case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')}</span>
+          <span className="fss-num case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')} — {stage.toUpperCase()}</span>
           <EditableText as="h3" className="fss-title" label={`Step ${i + 1} title`} value={dials.titles[key]} onChange={next => setValue(`titles.${key}`, next)} />
+          <EditableText as="p" className="fss-body" label={`Step ${i + 1} text`} value={dials.bodies[key]} onChange={next => setValue(`bodies.${key}`, next)} />
           <div className="fss-visual">{visual}</div>
         </li>
       })}
     </ol>
+    </InboxSpeed.Provider>
   </section>
 }

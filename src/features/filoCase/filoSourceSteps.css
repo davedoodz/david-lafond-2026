@@ -1,6 +1,3 @@
-/* Interface type for the rebuilt screens: Inter Regular (the variable file, used at 400). */
-@font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
-
 /* Wider than the case column so the desktop app reads at size, still clear of the fixed back link. */
 .case__section.filo-steps {
   height: auto;
@@ -10,7 +7,7 @@
   grid-template-columns: minmax(0, 1fr);
   justify-items: stretch;
 }
-/* The steps stack top to bottom: 01, then 02, then 03. Each centres its number, title and visual. */
+/* The steps stack top to bottom, 01 to 05. Each centres its number and stage, title, text and visual. */
 .fss-steps {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -32,12 +29,18 @@
   white-space: pre-line;
   text-wrap: balance;
 }
+.fss-body {
+  max-width: 34em;
+  margin: 10px 0 0;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--ink-500, #6f6b66);
+  white-space: pre-line;
+  text-wrap: pretty;
+}
 .fss-visual { display: grid; justify-items: center; width: 100%; margin-top: 34px; min-width: 0; }
 
-/* Step 1's two prototypes, one above the other. */
-.fss-apps { display: grid; justify-items: center; row-gap: 56px; width: 100%; }
-
-/* Step 1: the desktop app prototype (AppFlow), framed like a window. The frame clips the cursor where
+/* Steps 1 and 2: the portal prototypes (AppFlow), each framed like a window. The frame clips the cursor where
    it leaves the app, and its ground matches the app's so nothing flashes while the prototype loads.
    The playback toggle and replay button (VideoPlayback) sit on top, as on the Momo prototype. */
 .fss-app {
@@ -57,145 +60,69 @@
   height: 100%;
   border: 0;
 }
-
-/* Crops of the reference sit on a pure-white ground; multiply drops the white onto the page and keeps
-   the shadows. */
-.fss-crop { display: block; max-width: none; height: auto; mix-blend-mode: multiply; user-select: none; pointer-events: none; }
-/* Step 2: the box closed → open → unwrapped, crossfading every --fss-box-cycle (Filo source steps ›
+/* Step 3: the designer's phone prototype on the left, the box on the right, centred together. The phone
+   document carries its own frame on a transparent ground, so the host drops the window's chrome and
+   shadows the phone's outline instead. Inbox › gap spaces them.
+   Each keeps a fixed slot at scale 1 (phone 300px, box 489px); inbox › scale and box › scale grow each
+   one from its own centre with `scale`, and x / y move it with left / top, so no dial reflows or
+   resizes the other one. */
+.fss-receive { display: flex; align-items: center; justify-content: center; gap: var(--fss-inbox-gap, 24px); width: 100%; }
+.fss-receive .fss-box { flex: 0 1 auto; }
+/* Its replay circle uses Momo's phone rule (CaseStudyPage.css, .playback-restart on the phone prototypes). */
+.fss-app--phone {
+  position: relative;
+  left: var(--fss-inbox-x, 0px);
+  top: var(--fss-inbox-y, 0px);
+  flex: none;
+  width: 300px;
+  scale: var(--fss-inbox-scale, 1);
+  aspect-ratio: 434 / 884;
+  overflow: visible;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 22px 30px rgb(23 23 23 / .16));
+}
+/* Step 4: the tap scene. Its document is a 1440 × 900 stage on a transparent ground that fills the frame's
+   height and centres across it (player.js data-fit="height"), so a narrower frame crops the deck's ends
+   and keeps the phone whole. 1106px wide puts its phone at step 3's 300px. It draws its own shadows. */
+.fss-app--scene {
+  width: min(100%, 1106px);
+  aspect-ratio: 1440 / 900;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+/* The page runs color-scheme: dark and the phone documents declare none; Chrome paints an opaque canvas
+   behind an iframe whose scheme differs from its document's, so match it to keep the ground clear. */
+.fss-app:is(.fss-app--phone, .fss-app--scene) .fss-app__frame { color-scheme: normal; }
+/* Step 3: the box closed → open → unwrapped, crossfading every --fss-box-cycle (Filo source steps ›
    box › speed). The frames are transparent cut-outs on one canvas, each fading in over the last in
    place; the open frame drops out once the unwrapped one covers it, so the return is one clean
    unwrapped → closed fade. It plays only while the step is on screen, and holds unwrapped with
-   reduced motion. Box › scale sets the width; box › x / y nudge it in page px, like the phone. */
-.fss-box { position: relative; left: var(--fss-box-x, 0px); top: var(--fss-box-y, 0px); display: grid; width: min(100%, var(--fss-box-w, 489px)); margin-top: -8px; }
+   reduced motion. Box › scale and x / y: see step 3 above. */
+.fss-box { position: relative; left: var(--fss-box-x, 0px); top: var(--fss-box-y, 0px); display: grid; width: min(100%, var(--fss-box-w, 489px)); scale: var(--fss-box-scale, 1); margin-top: -8px; }
 .fss-box__frame { grid-area: 1 / 1; display: block; width: 100%; height: auto; user-select: none; pointer-events: none; }
 .fss-box__frame--open { animation: fss-box-open var(--fss-box-cycle, 9s) cubic-bezier(.45, 0, .25, 1) infinite; }
 .fss-box__frame--unwrapped { animation: fss-box-unwrapped var(--fss-box-cycle, 9s) cubic-bezier(.45, 0, .25, 1) infinite; }
 @keyframes fss-box-open { 0%, 22% { opacity: 0; } 30%, 58% { opacity: 1; } 66%, 100% { opacity: 0; } }
 @keyframes fss-box-unwrapped { 0%, 50% { opacity: 0; } 58%, 86% { opacity: 1; } 96%, 100% { opacity: 0; } }
 
-/* Step 3: a realistic phone (the Momo frame) whose screen loops, every --fss-cycle:
-   scanning → tag detected (the tag tips toward the phone) → the Technical File. The loop runs only while
-   the section is on screen ([data-playing]), so it starts on "scanning". */
-/* The phone and the tag scale together (Filo source steps › phone › scale) with zoom, which, unlike a
-   transform, neither isolates the tag's multiply blend nor leaves the layout at full size.
-   The group is centred under its title: the tag starts 14px inside the phone's right edge and its
-   visible part is 76.3% of the crop's width, so the phone moves left by half of what the tag adds.
-   Offset with left, not translate: a transform would isolate the tag's multiply blend from the page. */
-.fss-tap { --fss-cycle: 10s; --fss-tag-w: 188px; position: relative; left: calc((14px - var(--fss-tag-w) * .763) / 2); width: 272px; zoom: var(--fss-phone-scale, .8); }
-/* Phone › x / y: on the step's visual cell, so the nudge is in page px at any scale. */
-.fss-step:nth-child(3) .fss-visual { position: relative; left: var(--fss-phone-x, 0px); top: var(--fss-phone-y, 0px); }
-.fss-phone { position: relative; z-index: 1; width: 100%; aspect-ratio: 1312 / 2672; filter: drop-shadow(0 22px 30px rgb(23 23 23 / .16)); }
-.fss-frame { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; user-select: none; }
-.fss-screen {
-  --fss-ink: #171717;
-  --fss-text: #666666;
-  --fss-line: #ececea;
-  position: absolute;
-  inset: 2% 4.8%;
-  border-radius: 14% / 6.7%;
-  overflow: hidden;
-  background: #fbfbfa;
-  font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif;
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 24px;
-  letter-spacing: -0.2px;
-  color: var(--fss-text);
-  /* The section centres its text on narrow screens; the app UI stays left-aligned. */
-  text-align: left;
-}
-.fss-screen p, .fss-screen ul, .fss-screen dl, .fss-screen dd { margin: 0; padding: 0; }
-.fss-logo { display: block; width: auto; height: 19px; }
-/* Status bar: Momo's, in 390pt screen units across the screen's full width. */
-.fss-status { position: absolute; z-index: 1; top: 0; left: 0; width: 100%; height: auto; fill: var(--fss-ink); }
-.fss-status text { font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 0; }
-.fss-status__wifi { fill: none; stroke: var(--fss-ink); stroke-width: 2.35; stroke-linecap: round; }
-.fss-status__wedge { stroke: var(--fss-ink); stroke-width: 1.3; stroke-linejoin: round; }
-.fss-status__cell { fill: none; stroke: var(--fss-ink); stroke-width: 1; opacity: .4; }
-.fss-layer { position: absolute; inset: 0; padding: 50px 16px 20px; background: #fbfbfa; }
-.fss-center { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
-.fss-center__title { margin-top: 42px !important; color: var(--fss-ink); font-size: 16px; }
-.fss-home { position: absolute; z-index: 1; left: 50%; bottom: 8px; width: 36%; height: 4px; border-radius: 2px; background: var(--fss-ink); translate: -50% 0; opacity: .85; }
-
-/* Scanning: rings pulse out from the NFC mark. */
-.fss-scan { position: relative; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: #fff; color: var(--fss-ink); box-shadow: 0 0 0 1px #ececea; }
-.fss-scan svg { width: 28px; height: 28px; }
-.fss-scan i { position: absolute; inset: 0; border: 1.5px solid rgb(150 190 110 / .55); border-radius: 50%; animation: fss-ring 2.1s cubic-bezier(.2, .6, .3, 1) infinite; }
-.fss-scan i:nth-child(2) { animation-delay: .7s; }
-.fss-scan i:nth-child(3) { animation-delay: 1.4s; }
-@keyframes fss-ring { from { scale: 1; opacity: .9; } to { scale: 2.5; opacity: 0; } }
-
-/* Detected: the check pops inside a soft green glow. */
-.fss-check {
-  display: grid;
-  place-items: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--fss-ink);
-  box-shadow: 0 0 0 1px #eef3e6, 0 0 0 24px rgb(196 224 160 / .22), 0 0 64px 36px rgb(196 224 160 / .35);
-}
-.fss-check svg { width: 28px; height: 28px; }
-
-/* The flat tag peeks out from behind the phone's right edge. */
-.fss-crop--tag { position: absolute; z-index: 0; top: 34px; left: calc(100% - 14px); width: var(--fss-tag-w); transform-origin: 30% 10%; }
-
-/* The loop. */
-.fss-layer--scan { animation: fss-scan-layer var(--fss-cycle) linear infinite; }
-.fss-layer--detect { opacity: 0; animation: fss-detect-layer var(--fss-cycle) linear infinite; }
-.fss-layer--file { opacity: 0; animation: fss-file-layer var(--fss-cycle) cubic-bezier(.2, .7, .2, 1) infinite; }
-.fss-check { animation: fss-check-pop var(--fss-cycle) cubic-bezier(.3, 1.4, .5, 1) infinite; }
-.fss-crop--tag { animation: fss-tag-tap var(--fss-cycle) cubic-bezier(.45, 0, .25, 1) infinite; }
-@keyframes fss-scan-layer { 0%, 29% { opacity: 1; } 33%, 95% { opacity: 0; } 99%, 100% { opacity: 1; } }
-@keyframes fss-detect-layer { 0%, 29% { opacity: 0; } 33%, 55% { opacity: 1; } 60%, 100% { opacity: 0; } }
-@keyframes fss-file-layer { 0%, 55% { opacity: 0; translate: 0 22px; } 61%, 93% { opacity: 1; translate: 0 0; } 97%, 100% { opacity: 0; translate: 0 0; } }
-@keyframes fss-check-pop { 0%, 30% { scale: .55; } 35% { scale: 1.08; } 38%, 100% { scale: 1; } }
-@keyframes fss-tag-tap { 0%, 14% { translate: 0 0; rotate: 0deg; } 24%, 31% { translate: -22px 4px; rotate: -5deg; } 42%, 100% { translate: 0 0; rotate: 0deg; } }
-.fss-step:not([data-playing]) :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i, .fss-box__frame--open, .fss-box__frame--unwrapped) { animation-play-state: paused; }
+.fss-step:not([data-playing]) :is(.fss-box__frame--open, .fss-box__frame--unwrapped) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
-  :is(.fss-layer, .fss-check, .fss-crop--tag, .fss-scan i, .fss-box__frame--open, .fss-box__frame--unwrapped) { animation: none; }
-  .fss-layer--scan, .fss-layer--detect { opacity: 0; }
-  .fss-layer--file { opacity: 1; }
+  :is(.fss-box__frame--open, .fss-box__frame--unwrapped) { animation: none; }
 }
-
-/* The Technical File. */
-.fss-bar { display: flex; align-items: center; justify-content: space-between; }
-.fss-more { color: var(--fss-ink); font-size: 16px; letter-spacing: 1px; }
-.fss-photo { position: relative; margin-top: 12px; }
-.fss-photo img { display: block; width: 100%; height: 66px; object-fit: cover; border-radius: 10px; }
-.fss-pill {
-  position: absolute;
-  right: -2px;
-  bottom: -9px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: #e3efd9;
-  color: var(--filo-moss, #4f6b4a);
-  font-size: 13px;
-  line-height: 22px;
-}
-.fss-name { margin-top: 14px !important; color: var(--fss-ink); font-size: 17px; line-height: 24px; letter-spacing: -0.3px; }
-.fss-props { margin-top: 4px !important; }
-.fss-props > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--fss-line); }
-.fss-props dt { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.fss-props dd { color: var(--fss-ink); white-space: nowrap; }
-.fss-icon { flex: none; width: 16px; height: 16px; color: var(--fss-text); }
-.fss-verify { margin-top: 10px; }
-.fss-verify > p { display: flex; align-items: center; gap: 8px; color: var(--fss-ink); }
-.fss-verify > p .fss-icon { color: var(--fss-ink); }
-.fss-count { margin-left: auto; color: var(--fss-text); white-space: nowrap; }
-.fss-verify ul { list-style: none; }
-.fss-verify li { display: flex; align-items: center; gap: 10px; padding: 2px 0; border-bottom: 1px solid var(--fss-line); }
-.fss-verify li:last-child { border-bottom: 0; }
-.fss-dot { flex: none; width: 13px; height: 13px; margin-inline: 1.5px; border: 1.3px solid #c8c8c5; border-radius: 50%; }
-.fss-chevron { width: 15px; height: 15px; margin-left: auto; color: #b5b5b2; }
 
 @media (max-width: 640px) {
   .case__section.filo-steps { padding-inline: 16px; }
   .fss-steps { row-gap: 88px; }
-  .fss-app { border-radius: 6px; }
-  /* A smaller tag still peeks out; the group re-centres from --fss-tag-w. */
-  .fss-tap { --fss-tag-w: 90px; }
-  .fss-crop--tag { top: 44px; }
+  .fss-app:not(.fss-app--phone, .fss-app--scene) { border-radius: 6px; }
+  /* Step 3 stacks: the phone, then the box under it, each sized in layout (scale capped to the column).
+     The phone stays centred: inbox › x / y place it beside the box, which only exists on desktop. */
+  .fss-receive { flex-direction: column; gap: 40px; }
+  .fss-app--phone { width: min(calc(300px * var(--fss-inbox-scale, 1)), 70vw); scale: none; left: 0; top: 0; }
+  .fss-box { width: min(100%, calc(var(--fss-box-w, 489px) * var(--fss-box-scale, 1))); scale: none; }
+  /* Step 4 goes tall: the stage fits the frame's height, and its phone is 390.6px wide on a 900px-high
+     stage, so this height puts the phone at step 3's width (min(300px, 70vw)) and the deck runs off both sides. */
+  .fss-app--scene { aspect-ratio: auto; height: calc(min(300px, 70vw) * 900 / 390.6); }
 }

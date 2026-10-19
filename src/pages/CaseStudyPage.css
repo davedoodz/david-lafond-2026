@@ -281,6 +281,32 @@
 .case__section--hero .case__meta {
   translate: 0 var(--hero-meta-y, 0px);
 }
+/* Filo: moss persona tags, and a hero that grows to fit the hang tag. */
+.case[data-work='filo'] { --filo-moss: #4f6b4a; }
+.case[data-work='filo'] .persona__tag { color: var(--filo-moss); }
+.case[data-work='filo'] .case__section--hero {
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+}
+.case[data-work='filo'] .case__section--hero .case__devices {
+  width: min(100%, 750px);
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+@media (max-width: 700px) {
+  .case[data-work='filo'] .case__section--hero .case__devices { width: 100%; }
+}
+/* The Filo hang tag in the hero (transparent, so it sits on the page). heroTag › scale sizes it and
+   x / y move it without changing the layout around it. */
+.filo-hero-tag {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  margin-inline: auto;
+  transform: translate(var(--tag-x, 0px), var(--tag-y, 0px)) scale(var(--tag-scale, 1));
+}
 /* The Filo mark above the hero title (mark › x, y, scale): moves and sizes visually only. */
 .case__hero-mark {
   display: block;
@@ -1060,12 +1086,14 @@ html[data-case-snap] .case__moment {
   object-fit: contain;
   filter: drop-shadow(0 30px 40px rgb(23 23 23 / 0.12));
 }
-/* Replay circle (shared .playback-restart) on the phone prototypes, here and on the cross-device phone:
-   inside the screen's top-right corner, squared to the frame's antenna lines. Its left edge sits on the
-   top edge's line (78% across both frames: x 414/530 in the recordings, 681/874 on the mockup) and its
-   bottom edge on the right side's line (10.9% down: y 117.5/1080, 194/1780). Shown while the phone is
-   hovered or the button has keyboard focus; touch screens can't hover, so it stays visible there. */
-:is(.case__phone, .mc-phone) > .playback-restart {
+/* Replay circle (shared .playback-restart) on the phone prototypes: Momo's flow phones, its cross-device
+   phone and Filo's step 3 phone (.fss-app--phone, the same frame drawn by its document). Inside the
+   screen's top-right corner, squared to the frame's antenna lines. Its left edge sits on the top edge's
+   line (78% across: x 414/530 in the recordings, 681/874 on the mockup, 1023/1312 on phone-frame.png)
+   and its bottom edge on the right side's line (10.9% down: y 117.5/1080, 194/1780, 291/2672). Shown
+   while the phone is hovered or the button has keyboard focus; touch screens can't hover, so it stays
+   visible there. */
+:is(.case__phone, .mc-phone, .fss-app--phone) > .playback-restart {
   top: calc(10.9% - 32px);
   left: 78%;
   right: auto;
@@ -1079,16 +1107,16 @@ html[data-case-snap] .case__moment {
 .mc-phone > .playback-toggle {
   z-index: 5;
 }
-:is(.case__phone, .mc-phone) > .playback-restart svg {
+:is(.case__phone, .mc-phone, .fss-app--phone) > .playback-restart svg {
   width: 17px;
   height: 17px;
 }
-:is(.case__phone, .mc-phone):hover > .playback-restart,
-:is(.case__phone, .mc-phone) > .playback-restart:focus-visible {
+:is(.case__phone, .mc-phone, .fss-app--phone):hover > .playback-restart,
+:is(.case__phone, .mc-phone, .fss-app--phone) > .playback-restart:focus-visible {
   opacity: 1;
 }
 @media (hover: none) {
-  :is(.case__phone, .mc-phone) > .playback-restart {
+  :is(.case__phone, .mc-phone, .fss-app--phone) > .playback-restart {
     opacity: 1;
   }
 }

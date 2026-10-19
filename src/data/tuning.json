@@ -1356,15 +1356,16 @@
     }
   },
   "Filo source steps": {
-    "titles": {
-      "step1": "Material innovator provides initial data.",
-      "step2": "Sample arrives with a Filo tag.",
-      "step3": "The Technical File follows the physical sample.\n"
-    },
     "box": {
       "scale": 1.33,
-      "speed": 2,
+      "speed": 1.4,
+      "x": 30,
       "y": 54
+    },
+    "inbox": {
+      "x": 34,
+      "y": 42,
+      "gap": 72
     }
   }
 }

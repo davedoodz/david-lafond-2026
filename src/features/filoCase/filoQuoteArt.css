@@ -1,4 +1,4 @@
-/* Card font dial › Inter: the same file the step screens use. */
+/* Card font dial › Inter: the variable file (public/fonts/Inter-var-latin.woff2). */
 @font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 
 /* Filo quote cards: one shared size (dials on the card), quote on the left, art bottom-right. */
