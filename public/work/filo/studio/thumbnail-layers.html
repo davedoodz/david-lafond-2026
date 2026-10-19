@@ -76,10 +76,10 @@ body[data-zoom='in'] .desk video { transform: scale(var(--z, 1.9)); }
 body[data-zoom='in'] .desk__bar { display: flex; }
 body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 
-/* The tag hangs on its cord from above the card; the cord image continues up past the card edge. */
+/* The tag hangs on its cord from above the card: tag-cord.webp carries both strands of filo-tag.webp on, unbroken, up past the card edge. */
 .tag { position: absolute; width: var(--tw); transform-origin: 50% calc(-1 * var(--hang, 120px)); animation: sway 6.5s ease-in-out infinite; }
 .tag img { display: block; width: 100%; filter: drop-shadow(0 18px 18px rgb(70 50 30 / 0.2)) drop-shadow(0 3px 4px rgb(70 50 30 / 0.12)); }
-.tag i { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); background: url('/work/filo/filo-app-flow/filo-tag.webp') 0 -6px / 100% auto repeat-y; -webkit-mask: linear-gradient(transparent, #000 1px); }
+.tag i { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); background: url('/work/filo/thumb/tag-cord.webp') 50% 100% / 100% auto no-repeat; }
 @keyframes sway { 0%, 100% { rotate: -2.2deg; } 50% { rotate: 2.2deg; } }
 .hero-tag { position: absolute; width: var(--tw); animation: bob 7s ease-in-out infinite; filter: drop-shadow(0 26px 26px rgb(70 50 30 / 0.22)) drop-shadow(0 4px 6px rgb(70 50 30 / 0.12)); }
 @keyframes bob { 0%, 100% { translate: 0 -5px; rotate: -1.5deg; } 50% { translate: 0 5px; rotate: 1.5deg; } }
@@ -92,7 +92,7 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .thread .spark + .spark { animation-delay: -1.8s; }
 @keyframes spark { from { stroke-dashoffset: 26; } to { stroke-dashoffset: -640; } }
 
-/* Material chips: what the tag carries, surfacing one at a time. */
+/* Data chips: the kinds of specs and documents Filo carries and shares, surfacing one at a time. */
 .chip { position: absolute; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px 0 9px; border-radius: 14px; white-space: nowrap;
   font: 500 12.5px/1 'Filo Inter'; color: #3b3632; letter-spacing: -0.1px;
   background: rgb(255 255 255 / 0.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -101,6 +101,20 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .chip svg { width: 13px; height: 13px; flex: none; color: #8a6a55; }
 @keyframes chip { 0% { opacity: 0; translate: 0 6px; } 6%, 34% { opacity: 1; translate: 0 0; } 42%, 100% { opacity: 0; translate: 0 -6px; } }
 
+/* Entrance, each time a card comes into view: the phone rises from below, the portal slides in from the right,
+   the tag drops in on its cord from above. `translate` leaves each layer's own rotate/transform alone. */
+.card .phone, .card .desk, .card .tag { transition: translate 1.1s cubic-bezier(.2, .8, .2, 1); }
+.card .phone { transition-delay: 0.05s; }
+.card .desk { transition-delay: 0.3s; }
+.card .tag { transition: translate 1.3s cubic-bezier(.3, 1.25, .5, 1) 0.55s; }
+.card:not(.is-in) .phone { translate: 0 110%; transition: none; }
+.card:not(.is-in) .desk { translate: 110% 0; transition: none; }
+.card:not(.is-in) .tag { translate: 0 -125%; transition: none; }
+/* The chips and the cord's thread wait until the layers have landed. */
+.card .chip { animation-delay: calc(var(--d, 0s) + 1.6s); }
+.card:not(.is-in) .chip { animation: none; }
+.card .thread { transition: opacity 0.6s ease 1.3s; }
+.card:not(.is-in) .thread { opacity: 0; transition: none; }
 /* Stage: devices turned toward the tag. */
 .stage3d { position: absolute; inset: 0; perspective: 1100px; perspective-origin: 50% 38%; }
 .floor { position: absolute; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgb(70 50 30 / 0.22), transparent); filter: blur(2px); }
@@ -157,6 +171,7 @@ const SNIPPETS = {
     { id: 'phone-file', label: 'Technical File' },
   ],
   desk: [
+    { id: 'desk-materials', label: 'Materials', fx: '40%', fy: '40%' },
     { id: 'desk-tag', label: 'Write the tag', fx: '30%', fy: '46%' },
     { id: 'desk-extract', label: 'Extract', fx: '38%', fy: '48%' },
     { id: 'desk-share', label: 'Share link', fx: '50%', fy: '48%' },
@@ -164,7 +179,7 @@ const SNIPPETS = {
   ],
 }
 
-const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-tag', zoom: 'window', layers: 'on' },
+const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-materials', zoom: 'window', layers: 'on' },
   Object.fromEntries(new URLSearchParams(location.search)))
 
 const CONTROLS = [
@@ -221,12 +236,12 @@ const LAYOUTS = [
       + desk(500, 74, 360, 'transform:rotateY(-26deg);transform-origin:0 50%') + `</div>` + tag(433, 104, 226),
   },
   {
-    id: 'chips', n: '04', name: 'Triptych with material data',
-    note: 'Layout 01 plus what the tag carries, surfacing one fact at a time around it, like Momo’s sensor chips: composition, weight, certification, the documents, the supplier.',
+    id: 'chips', n: '04', name: 'Triptych with what Filo carries',
+    note: 'Layout 01 plus what Filo carries and shares, surfacing one at a time around the tag, like Momo’s sensor chips: not one material’s values but the kinds of specs and documents every record holds. The cord runs from the phone into the tag only.',
     pool: [50, 44, 0.5],
-    fg: thread('M 252 250 C 320 236, 360 214, 433 206 S 528 182, 566 172') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430)
-      + chip(266, 92, 'fibre', '100% bacterial cellulose', 0) + chip(478, 330, 'weight', '120 gsm', 1.6) + chip(262, 342, 'check', 'OEKO-TEX® certified', 3.2)
-      + chip(470, 26, 'doc', 'Lab test report', 4.8) + chip(282, 214, 'pin', 'Modern Synthesis', 6.4) + chip(470, 240, 'doc', 'Technical File', 8),
+    fg: thread('M 252 250 C 320 236, 360 214, 433 206') + phone(42, 116, 432) + tag(433, 98, 214) + desk(566, 56, 430)
+      + chip(266, 92, 'fibre', 'Composition', 0) + chip(478, 330, 'weight', 'Weight, width, thickness', 1.6) + chip(262, 342, 'check', 'Certifications', 3.2)
+      + chip(470, 26, 'doc', 'Lab test reports', 4.8) + chip(282, 214, 'pin', 'Supplier, MOQ, lead time', 6.4) + chip(470, 240, 'doc', 'Technical file', 8),
   },
   {
     id: 'hero', n: '05', name: 'The tag as hero',
@@ -463,6 +478,11 @@ class Card {
       this.visible = e.isIntersecting
       el.querySelectorAll('video').forEach(v => this.visible ? v.play().catch(() => {}) : v.pause())
     }, { rootMargin: '100px' }).observe(el)
+    // Replays the layers' entrance whenever the card comes back into view.
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !el.classList.contains('is-in')) el.querySelectorAll('video').forEach(v => { v.currentTime = 0 })
+      el.classList.toggle('is-in', e.isIntersecting)
+    }, { threshold: 0.4 }).observe(el)
   }
   dirty() { this.tiles.forEach(t => (t.key = '')) }
   morph(i, cx, cy, t) {
