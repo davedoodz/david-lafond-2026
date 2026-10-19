@@ -4,6 +4,7 @@ import { BackLink, Nav } from '../components/Nav'
 import { BookViewer } from '../features/book/BookViewer'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
+import { useCaseMobileStyle } from './caseMobile'
 import './HarvardMitPage.css'
 
 const CONFIG = {
@@ -16,6 +17,7 @@ export function HarvardMitPage() {
   const mainRef = useRef<HTMLElement>(null)
   useFitColumn(mainRef)
   const { snap } = useTuning('Harvard & MIT page', CONFIG)
+  const mobile = useCaseMobileStyle()
 
   // Snap lives on <html>; layout effect so it is gone in the same commit that swaps pages.
   useLayoutEffect(() => {
@@ -28,7 +30,7 @@ export function HarvardMitPage() {
   }, [snap])
 
   return (
-    <main ref={mainRef} className="project" data-surface="dark">
+    <main ref={mainRef} className="project" data-surface="dark" style={mobile}>
       <Nav route="harvard-mit" />
       <BackLink className="project__back" />
       <h1 className="visually-hidden">The Architecture Portfolio that Got Me Into Harvard &amp; MIT</h1>

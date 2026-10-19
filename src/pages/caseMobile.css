@@ -1,0 +1,112 @@
+/* Mobile case studies panel (caseMobile.ts): phones only, Momo, Filo and Harvard & MIT.
+   One rule per text role covers every section, so all eyebrows, titles and bodies match.
+   `main.case` / `main.project` lifts these above the page's own phone rules without !important.
+   Positions use relative left/top: the reveal animations own `translate` and `transform`, and a
+   relative offset moves the element without moving anything around it. */
+@media (max-width: 640px) {
+  /* --- Text roles */
+  main.case :is(.eyebrow, .case__eyebrow) {
+    font-size: var(--m-eyebrow-size);
+    line-height: var(--m-eyebrow-lh);
+    letter-spacing: var(--m-eyebrow-track);
+  }
+  main.case .case__title.case__title--hero {
+    position: relative;
+    left: var(--m-hero-title-x);
+    top: var(--m-hero-title-y);
+    font-size: var(--m-hero-title-size);
+    line-height: var(--m-hero-title-lh);
+  }
+  main.case :is(.case__title:not(.case__title--hero), .case__story-title, .persona__title, .fs-copy > h2) {
+    font-size: var(--m-title-size);
+    line-height: var(--m-title-lh);
+    letter-spacing: var(--m-title-track);
+  }
+  main.case :is(.case__body, .case__story-body, .persona__body, .fs-copy > p:not(.eyebrow)) {
+    font-size: var(--m-body-size);
+    line-height: var(--m-body-lh);
+  }
+  main.case .case__meta dt.eyebrow {
+    font-size: var(--m-meta-label-size);
+  }
+  main.case .case__meta .case__meta-value {
+    font-size: var(--m-meta-value-size);
+  }
+  main.case .persona__quote {
+    font-size: var(--m-quote-size);
+    line-height: var(--m-quote-lh);
+  }
+  main:is(.case, .project) :is(.persona__role, .viewer__counter, .viewer__switch button, .viewer__video-pill, .spread-grid__label) {
+    font-size: var(--m-small-size);
+  }
+  main:is(.case, .project) .cta__line {
+    font-size: var(--m-contact-title-size);
+  }
+  main:is(.case, .project) .cta__subtitle {
+    font-size: var(--m-contact-body-size);
+  }
+
+  /* --- Text block rhythm: eyebrow → title → body, the same in every block. */
+  main.case :is(.case__text, .case__section-copy, .case__story-text, .fs-copy, .persona__moments header) {
+    row-gap: 0;
+  }
+  main.case :is(.case__text, .case__section-copy, .case__story-text, .fs-copy, .persona__moments header) > :is(.eyebrow, .case__eyebrow) {
+    position: relative;
+    left: var(--m-eyebrow-x);
+    top: var(--m-eyebrow-y);
+    margin-top: 0;
+    margin-bottom: var(--m-eyebrow-gap);
+  }
+  main.case :is(.case__section-copy, .case__story-text, .fs-copy, .persona__moments header) > :is(.case__title, .case__story-title, .persona__title, h2) {
+    position: relative;
+    left: var(--m-title-x);
+    top: var(--m-title-y);
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  main.case :is(.case__section-copy, .case__story-text, .fs-copy, .persona__moments header) > :is(.case__body, .case__story-body, .persona__body, p:not(.eyebrow)) {
+    position: relative;
+    left: var(--m-body-x);
+    top: var(--m-body-y);
+    margin-top: var(--m-title-gap);
+  }
+  main.case .case__section--hero .case__meta {
+    position: relative;
+    left: var(--m-meta-x);
+    top: var(--m-meta-y);
+    margin-top: var(--m-hero-meta-gap);
+  }
+
+  /* --- Sections: the same padding, side inset and text-to-media gap everywhere. */
+  main.case .case__section,
+  main.case .case__section[data-layout] {
+    gap: var(--m-media-gap);
+    padding: var(--m-section-top) var(--m-side) var(--m-section-bottom);
+  }
+
+  /* --- Element sizes and positions */
+  main.case .case__section[data-layout] .case__media {
+    height: min(var(--media-h, 72svh), var(--m-media-h));
+    max-height: var(--m-media-h);
+  }
+  main.case .case__section--hero .case__devices {
+    scale: var(--m-hero-art-scale);
+  }
+  main.case .case__section :is(.case__media, .case__figure, .case__devices, .case__notification, .story-art, .persona__stage) {
+    position: relative;
+    left: var(--m-media-x);
+    top: var(--m-media-y);
+  }
+  main.case .case__story .story-art {
+    max-width: var(--m-story-art-w);
+  }
+  main.case .case__persona {
+    --persona-img-w: var(--m-persona-img-w) !important;
+  }
+  main.project .book {
+    left: var(--m-book-x);
+    top: var(--m-book-y);
+    padding-top: var(--m-book-pad-top);
+    padding-inline: var(--m-book-pad-x);
+  }
+}
