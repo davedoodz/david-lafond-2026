@@ -31,3 +31,17 @@ export function domeClip(sidePx: number, top: DomeEdge, topK: number, bottom: Do
   const b = edge(bottom, bottomK, vh)
   return `inset(0 ${sidePx.toFixed(2)}px round ${t.x} ${t.x} ${b.x} ${b.x} / ${t.y} ${t.y} ${b.y} ${b.y})`
 }
+
+/**
+ * Full-width sheet whose top and bottom edges are circular arcs (a true circle segment, not the
+ * ellipse of `domeClip`, whose sides turn vertical and read as stretched). `topSag` / `bottomSag`
+ * are each arc's height in px at its middle; 0 is a flat edge. `w` × `h` is the clipped box.
+ */
+export function arcClip(w: number, h: number, topSag: number, bottomSag: number) {
+  const r = (s: number) => n(((w * w) / 4 + s * s) / (2 * s))
+  const n = (v: number) => v.toFixed(2)
+  const yb = h - bottomSag
+  const top = topSag > 0.5 ? `M0 ${n(topSag)} A${r(topSag)} ${r(topSag)} 0 0 1 ${n(w)} ${n(topSag)}` : `M0 0 L${n(w)} 0`
+  const bottom = bottomSag > 0.5 ? `L${n(w)} ${n(yb)} A${r(bottomSag)} ${r(bottomSag)} 0 0 1 0 ${n(yb)}` : `L${n(w)} ${n(h)} L0 ${n(h)}`
+  return `path('${top} ${bottom} Z')`
+}

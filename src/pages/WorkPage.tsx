@@ -1,8 +1,9 @@
-import { useRef, type CSSProperties } from 'react'
+import { useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
-import { DEFAULT_INTRO_TEXT, WorkIntroStickers } from '../features/workStickers/WorkIntroStickers'
+import { DEFAULT_INTRO_TEXT, WorkIntroStickers, widestIntroLine } from '../features/workStickers/WorkIntroStickers'
+import { TOUCH_LANDING, smallViewportHeight, touchDome } from '../lib/touchLanding'
 import { Signature } from '../features/signature/Signature'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
@@ -18,13 +19,11 @@ const CONFIG = {
   introText2: { type: 'text' as const, default: DEFAULT_INTRO_TEXT[1], placeholder: '{cities} {labs} {products} {faster} = pills' },
   /** Name lives in the headline; this line sits directly above the signature. */
   role: { type: 'text' as const, default: 'Architect & ex-MIT UX researcher\nnow focused on product design' },
-  /** Text block: left- or centre-aligned; `x` / `xMobile` nudge it from the page centre (px). */
+  /** Text block: left- or centre-aligned. A left-aligned block is centred on its longest line (useHeroFit). */
   align: {
     text: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
     /** Sticker intro only: left-aligned with the text block, or centred on it. */
     intro: { type: 'select' as const, options: ['left', 'center'], default: 'left' },
-    x: [0, -400, 400, 1] as [number, number, number, number],
-    xMobile: [0, -200, 200, 1] as [number, number, number, number],
   },
   /** Sticker intro text size (px); pills and stickers scale with it. */
   introSize: {
@@ -48,10 +47,110 @@ const CONFIG = {
   peekMobile: [28, 0, 240, 1] as [number, number, number, number],
 }
 
+const phone = () => window.matchMedia('(max-width: 640px)').matches
+/** Width of an element's text as laid out. */
+function textWidth(el: Element | null) {
+  if (!el) return 0
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  let left = Infinity, right = -Infinity
+  for (const r of range.getClientRects()) if (r.width) { left = Math.min(left, r.left); right = Math.max(right, r.right) }
+  range.detach()
+  return right > left ? right - left : 0
+}
+
+/**
+ * Hero text fit, at every width. The sticker intro and the role line always share one size
+ * (--hero-body-fit scales both), shrunk only when their widest line (pills at their longest phrase)
+ * would not fit the screen less the hero's side inset (--column-inset) on both sides, so no line
+ * ever wraps.
+ * Phones: the title also stays on one line per part ("I'm David Lafond," / "a product designer."),
+ * shrinking the same way, and the hero takes its widest line's width.
+ * The block is then centred (--hero-center-x) on its widest possible line (each pill at its longest
+ * phrase), every line keeping one left edge, so it never moves as the pills change phrase.
+ * Touch landing (lib/touchLanding): when the hero is too tall for the sheet's peek to show, its
+ * vertical padding shrinks (down to 8px) until it fits.
+ */
+function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
+  useLayoutEffect(() => {
+    const hero = heroRef.current
+    const landing = hero?.parentElement
+    if (!hero || !landing) return
+    const touch = window.matchMedia(TOUCH_LANDING)
+    let frame = 0
+    const fit = () => {
+      frame = 0
+      for (const v of ['--hero-title-fit', '--hero-body-fit', '--column-fit', 'padding-block']) hero.style.removeProperty(v)
+      const avail = document.documentElement.clientWidth - 2 * parseFloat(getComputedStyle(hero).getPropertyValue('--column-inset'))
+      const body = Math.max(textWidth(hero.querySelector('.hero__role')), widestIntroLine(hero))
+      const bodyFit = body > avail ? avail / body : 1
+      hero.style.setProperty('--hero-body-fit', bodyFit.toFixed(4))
+      if (phone()) {
+        const title = textWidth(hero.querySelector('.hero__title'))
+        const titleFit = title > avail ? avail / title : 1
+        hero.style.setProperty('--hero-title-fit', titleFit.toFixed(4))
+        hero.style.setProperty('--column-fit', `${Math.ceil(Math.max(title * titleFit, body * bodyFit))}px`)
+      }
+      center()
+      if (!touch.matches) return
+      const svh = smallViewportHeight()
+      const items = Array.from(hero.children) as HTMLElement[]
+      const first = items[0], last = items[items.length - 1]
+      if (!first || !last) return
+      const content = last.offsetTop + last.offsetHeight - first.offsetTop
+      const above = hero.getBoundingClientRect().top - landing.getBoundingClientRect().top
+      const style = getComputedStyle(hero)
+      const top = parseFloat(style.paddingTop), bottom = parseFloat(style.paddingBottom)
+      const room = svh - touchDome(svh).peek - above - content
+      if (room >= top + bottom) return
+      const k = Math.max(0, room) / (top + bottom)
+      hero.style.setProperty('padding-block', `${Math.max(8, top * k).toFixed(1)}px ${Math.max(8, bottom * k).toFixed(1)}px`)
+    }
+    const center = () => {
+      // A centre-aligned hero is already centred line by line.
+      if (hero.dataset.align === 'center') return hero.style.removeProperty('--hero-center-x')
+      // Painted line widths at the fitted size; the intro at each pill's longest phrase.
+      const widest = Math.max(
+        ...['.hero__title', '.hero__role'].map((s) => textWidth(hero.querySelector(s))),
+        widestIntroLine(hero),
+      )
+      const style = getComputedStyle(hero)
+      const vw = document.documentElement.clientWidth
+      // Never past the side inset on the left.
+      const inset = parseFloat(style.getPropertyValue('--column-inset')) || 0
+      // Layout position (the hero is centred by its margins), not the rect, which includes the shift.
+      const left = (vw - hero.offsetWidth) / 2 + parseFloat(style.paddingLeft)
+      const shift = Math.max(inset - left, vw / 2 - (left + widest / 2))
+      hero.style.setProperty('--hero-center-x', `${shift.toFixed(1)}px`)
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
+    fit()
+    addEventListener('resize', schedule)
+    touch.addEventListener('change', schedule)
+    void document.fonts.ready.then(schedule)
+    // The column re-centres once useFitColumn measures; the intro's room depends on where it starts.
+    let width = hero.offsetWidth
+    const resize = new ResizeObserver(() => {
+      if (hero.offsetWidth === width) return
+      width = hero.offsetWidth
+      schedule()
+    })
+    resize.observe(hero)
+    return () => {
+      cancelAnimationFrame(frame)
+      removeEventListener('resize', schedule)
+      touch.removeEventListener('change', schedule)
+      resize.disconnect()
+    }
+  }, [heroRef, key])
+}
+
 export function WorkPage() {
   const t = useTuning('Hero', CONFIG)
   const mainRef = useRef<HTMLElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
   const entrance = useEntrance()
+  useHeroFit(heroRef, JSON.stringify([t.headlineLead, t.headlineName, t.headlineTagline, t.introText1, t.introText2, t.role, t.introSize, t.align]))
   useFitColumn(mainRef)
   return (
     <main ref={mainRef} className="work">
@@ -61,13 +160,15 @@ export function WorkPage() {
       >
         <Nav route="work" />
         <section
+          ref={heroRef}
           className={`hero column ${entrance.className}`}
           data-align={t.align.text}
           style={
             {
               ...entrance.style,
-              '--align-x': `${t.align.x}px`,
-              '--align-x-m': `${t.align.xMobile}px`,
+              // Sticker intro and role share one text size (WorkPage.css).
+              '--intro-size-d': `${t.introSize.desktop}px`,
+              '--intro-size-m': `${t.introSize.mobile}px`,
               '--intro-leading': String(t.spacing.introLineHeight),
               '--gap-title-intro-d': `${t.spacing.titleToIntroDesktop}px`,
               '--gap-intro-intro-d': `${t.spacing.introToIntroDesktop}px`,
@@ -90,7 +191,6 @@ export function WorkPage() {
             key={`${t.introText1}\u0000${t.introText2}`}
             text={[t.introText1, t.introText2]}
             align={t.align.intro === 'center' ? 'center' : 'left'}
-            size={t.introSize}
           />
           <p className="hero__role" data-enter="2" data-selectable>{t.role}</p>
           <Signature className="hero__signature" />

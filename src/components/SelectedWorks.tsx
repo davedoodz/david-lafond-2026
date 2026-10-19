@@ -1,21 +1,24 @@
 /**
  * White "Selected works" panel.
  *
- * At landing the panel sits fully below the fold. Scrolling pulls its top edge
- * up as a dome (side inset + tall elliptical top) that flattens until the white
- * bleeds edge to edge. Near the end the bottom edge does the reverse, curving
- * back into the black above the contact section.
+ * At landing the panel peeks above the fold as a dome (side inset + elliptical top). Scrolling pulls
+ * its top edge up and the dome flattens until the white bleeds edge to edge. At the end the bottom
+ * edge mirrors it exactly: the same dome shape, side inset, distance and curve, fully domed when the
+ * panel's bottom sits as far below the viewport top as its top peeked above the viewport bottom.
+ * The page's tail (contact + footer) is at least as tall as the landing, so that mirror state is
+ * reachable.
  *
- *   enter e: panel top travels `enterDistance`·vh up from the viewport bottom
- *   exit  x: panel bottom travels `exitDistance`·vh up from `exitStart`·vh
+ *   top k:    1 at scroll 0, flat once the panel top travels `enterDistance`·vh
+ *   bottom k: 1 when the panel bottom is `peek` from the viewport top, flat `enterDistance`·vh lower
  *
  * Only a clip-path on a flat background layer changes, so cards never re-layout.
  * Optional scroll snap centres one project per stop.
  */
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
-import { DOME_CURVES, domeClip } from '../lib/domeClip'
+import { DOME_CURVES, arcClip, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
+import { TOUCH_LANDING as TOUCH, smallViewportHeight, touchDome } from '../lib/touchLanding'
 import saved from '../data/tuning.json'
 import { useTuningController } from '../tuning/useTuning'
 import { EditableText } from './EditableText'
@@ -55,32 +58,22 @@ const CONFIG = {
     shadeStart: [50, 0, 100, 1] as Tuple,
     _collapsed: true,
   },
-  /** Dome in at the top, dome out at the bottom. Sides in % of viewport width, arches in % of viewport height. */
+  /** One dome for both ends: the bottom mirrors the top. Side in % of viewport width, arch in % of viewport height. */
   morph: {
     curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'smoother' },
     enterDistance: [1, 0.2, 2.5, 0.01] as Tuple,
     startSide: [14, 0, 45, 0.5] as Tuple,
     startArch: [40, 0, 100, 1] as Tuple,
     startRadius: [45, 0, 200, 1] as Tuple,
-    exitStart: [0, -0.5, 0.8, 0.01] as Tuple,
-    exitDistance: [0.9, 0.2, 2.5, 0.01] as Tuple,
-    endSide: [14, 0, 45, 0.5] as Tuple,
-    endArch: [40, 0, 100, 1] as Tuple,
-    endRadius: [45, 0, 200, 1] as Tuple,
     _collapsed: false,
   },
-  /** Same dome, used at ≤640px wide. Starts from the tuned desktop values. */
+  /** Same dome, used at ≤640px wide (touch screens use lib/touchLanding's shape). */
   morphMobile: {
     curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'expo-out' },
     enterDistance: [1.75, 0.2, 2.5, 0.01] as Tuple,
     startSide: [0, 0, 45, 0.5] as Tuple,
     startArch: [70, 0, 100, 1] as Tuple,
     startRadius: [0, 0, 200, 1] as Tuple,
-    exitStart: [0.07, -0.5, 0.8, 0.01] as Tuple,
-    exitDistance: [2.5, 0.2, 2.5, 0.01] as Tuple,
-    endSide: [0, 0, 45, 0.5] as Tuple,
-    endArch: [70, 0, 100, 1] as Tuple,
-    endRadius: [0, 0, 200, 1] as Tuple,
     _collapsed: false,
   },
   /**
@@ -179,7 +172,6 @@ const TITLE_KEYS = {
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x)
 const smooth = (x: number) => x * x * (3 - 2 * x)
 
-
 export function SelectedWorks() {
   const { values: t, setValue } = useTuningController('Selected works', CONFIG)
   const openProject = useProjectOpen()
@@ -196,48 +188,129 @@ export function SelectedWorks() {
     if (!section || !bg) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const mobile = window.matchMedia('(max-width: 640px)')
+    const touch = window.matchMedia(TOUCH)
     let frame = 0
+    let svh = smallViewportHeight()
 
     const update = () => {
       frame = 0
-      const morph = mobile.matches ? morphMobile : morphDesktop
+      const morph = mobile.matches || touch.matches ? morphMobile : morphDesktop
       const vh = window.innerHeight
       const vw = document.documentElement.clientWidth
       const rect = section.getBoundingClientRect()
       const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
-      // Enter starts from wherever the panel sits at scroll 0 (its peek), so the dome tip shows on load.
+      // The top domes from wherever the panel sits at scroll 0 (its peek), so the dome tip shows on load.
       const restTop = rect.top + window.scrollY
-      const e = reduced ? 1 : curve(clamp01((restTop - rect.top) / (morph.enterDistance * vh)))
-      const x = reduced ? 0 : curve(clamp01((vh * (1 - morph.exitStart) - rect.bottom) / (morph.exitDistance * vh)))
-
-      const side = Math.max(morph.startSide * (1 - e), morph.endSide * x) * vw / 100
-      bg.style.setProperty(
-        '--works-clip',
-        domeClip(
-          side,
-          { radius: morph.startRadius, arch: morph.startArch },
-          1 - e,
-          { radius: morph.endRadius, arch: morph.endArch },
-          x,
-          vh,
-        ),
-      )
+      const peek = Math.max(0, vh - restTop)
+      const travel = morph.enterDistance * vh
+      const top = reduced ? 0 : 1 - curve(clamp01((restTop - rect.top) / travel))
+      // Mirror: the bottom is as domed at `peek` below the viewport top as the top is at `peek` above its bottom.
+      const bottom = reduced ? 0 : 1 - curve(clamp01((rect.bottom - peek) / travel))
+      const dome = touch.matches ? touchDome(svh) : null
+      if (dome) {
+        bg.style.setProperty('--works-clip', arcClip(bg.offsetWidth, bg.offsetHeight, dome.arch * top, dome.arch * bottom))
+        return
+      }
+      const shape = { radius: morph.startRadius, arch: morph.startArch }
+      const side = ((morph.startSide * vw) / 100) * Math.max(top, bottom)
+      bg.style.setProperty('--works-clip', domeClip(side, shape, top, shape, bottom, vh))
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
     }
+    const resize = () => {
+      svh = smallViewportHeight()
+      schedule()
+    }
 
     update()
     window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
+    window.addEventListener('resize', resize)
+    touch.addEventListener('change', resize)
     return () => {
       cancelAnimationFrame(frame)
       window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
+      window.removeEventListener('resize', resize)
+      touch.removeEventListener('change', resize)
     }
     // `morphKey` captures every morph dial.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [morphKey])
+
+  // Touch landing (see touchDome): the peek is written on the page (WorkPage.css reads --works-peek),
+  // the label is centred in it and the first thumbnail's top (at its resting focus scale) sits on the fold.
+  const restScale = t.focus.mode === 'off' ? 1 : t.focus.restScale
+  useLayoutEffect(() => {
+    const section = sectionRef.current
+    const page = section?.parentElement
+    const label = section?.querySelector<HTMLElement>('.works__eyebrow')
+    const first = section?.querySelector<HTMLElement>('.works__list > li')
+    if (!section || !page || !label || !first) return
+    const touch = window.matchMedia(TOUCH)
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const clear = () => {
+      delete section.dataset.touchLanding
+      page.style.removeProperty('--works-peek')
+      for (const v of ['--works-touch-label-top', '--works-touch-first']) section.style.removeProperty(v)
+    }
+    const place = () => {
+      if (!touch.matches) return clear()
+      const { peek } = touchDome(smallViewportHeight())
+      const scale = reduced ? 1 : restScale
+      section.dataset.touchLanding = ''
+      page.style.setProperty('--works-peek', `${peek.toFixed(2)}px`)
+      section.style.setProperty('--works-touch-label-top', `${(peek / 2 - label.offsetHeight / 2).toFixed(2)}px`)
+      section.style.setProperty('--works-touch-first', `${(peek - ((1 - scale) / 2) * first.offsetHeight).toFixed(2)}px`)
+    }
+    place()
+    window.addEventListener('resize', place)
+    touch.addEventListener('change', place)
+    void document.fonts.ready.then(place)
+    return () => {
+      window.removeEventListener('resize', place)
+      touch.removeEventListener('change', place)
+      clear()
+    }
+  }, [restScale])
+  // Mirror reach: the page below the panel (contact + footer) is exactly as tall as the landing above
+  // it (capped at one viewport), so scrolling to the end brings the panel's bottom to `peek` below the
+  // viewport top, where its bottom dome matches the landing's top dome. The section right after the
+  // panel (the contact CTA) grows to make up a shortfall, or gives up padding (top first, down to
+  // 16px each) when the tail is too tall.
+  useLayoutEffect(() => {
+    const section = sectionRef.current
+    const tail = section?.nextElementSibling as HTMLElement | null
+    if (!section || !tail) return
+    let frame = 0
+    const fit = () => {
+      frame = 0
+      for (const p of ['min-height', 'padding-top', 'padding-bottom']) tail.style.removeProperty(p)
+      const doc = document.documentElement
+      const top = section.getBoundingClientRect().top + window.scrollY
+      const below = doc.scrollHeight - (section.getBoundingClientRect().bottom + window.scrollY)
+      let short = Math.min(top, window.innerHeight) - below
+      if (short > 0.5) tail.style.minHeight = `${(tail.offsetHeight + short).toFixed(1)}px`
+      for (const side of ['top', 'bottom'] as const) {
+        if (short >= -0.5) break
+        const pad = parseFloat(getComputedStyle(tail).getPropertyValue(`padding-${side}`))
+        const next = Math.max(16, pad + short)
+        tail.style.setProperty(`padding-${side}`, `${next.toFixed(1)}px`)
+        short += pad - next
+      }
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
+    fit()
+    const resize = new ResizeObserver(schedule)
+    if (section.previousElementSibling) resize.observe(section.previousElementSibling)
+    addEventListener('resize', schedule)
+    void document.fonts.ready.then(schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      resize.disconnect()
+      removeEventListener('resize', schedule)
+      tail.style.removeProperty('min-height')
+    }
+  }, [])
 
   // Project focus scale, written as --focus-scale on each <li> (the card's own
   // `scale` stays free for hover).
@@ -291,13 +364,16 @@ export function SelectedWorks() {
   }, [focusKey])
 
   // Sheet intro: only the background layer moves, so cards and scroll math are untouched.
+  // Layout effect, so the sheet is already lowered on the first painted frame; and it starts
+  // fully below the fold (at least the dial distance), so no white shows before it springs up.
   const intro = t.intro
   const introKey = JSON.stringify(intro)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const bg = sectionRef.current?.querySelector<HTMLElement>('.works__bg')
     if (!bg || intro.preset === 'none') return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.scrollY > 10) return
-    const d = intro.distance
+    // 24px spare: the hero can still settle a little after this runs (WorkPage's useHeroFit).
+    const d = Math.max(intro.distance, window.innerHeight - bg.getBoundingClientRect().top + 24)
     const frames: Keyframe[] =
       intro.preset === 'bounce'
         ? [
@@ -420,8 +496,8 @@ export function SelectedWorks() {
                   {work.id === 'harvard-mit' && <HarvardMitCard />}
                   <div className="card-shade" />
                   <h3 className="card-title works__title">
-                    <span className="works__title-desktop">{t.titles[desktopKey]}</span>
-                    <span className="works__title-mobile">{t.titles[mobileKey]}</span>
+                    <EditableText as="span" className="works__title-desktop" label={`${work.id} desktop title`} value={t.titles[desktopKey]} onChange={(next) => setValue(`titles.${desktopKey}`, next)} />
+                    <EditableText as="span" className="works__title-mobile" label={`${work.id} mobile title`} value={t.titles[mobileKey]} onChange={(next) => setValue(`titles.${mobileKey}`, next)} />
                   </h3>
                 </article>
               </li>

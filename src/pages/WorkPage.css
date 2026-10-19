@@ -1,5 +1,6 @@
 .landing {
-  min-height: calc(100svh - var(--peek-d));
+  /* --works-peek: the touch landing's peek (SelectedWorks.tsx), else the Hero dial. */
+  min-height: calc(100svh - var(--works-peek, var(--peek-d)));
   display: flex;
   flex-direction: column;
 }
@@ -37,9 +38,15 @@
   margin-top: var(--gap-intro-intro-d);
 }
 
+/* The sticker intro and the role share one size: the Hero introSize dial (--intro-size-*, on .hero)
+   × --hero-body-fit (useHeroFit in WorkPage.tsx). */
+.hero .hero__intro.work-intro-stickers__p,
+.hero__role {
+  font-size: calc(var(--intro-size-d, var(--text-body)) * var(--hero-body-fit, 1));
+}
+
 .hero__role {
   margin-top: var(--gap-intro-role-d);
-  font-size: var(--text-body);
   line-height: 1.2;
   color: var(--text-muted);
   white-space: pre-line;
@@ -51,14 +58,21 @@
 
 @media (max-width: 640px) {
   .landing {
-    min-height: calc(100svh - var(--peek-m));
+    min-height: calc(100svh - var(--works-peek, var(--peek-m)));
+  }
+  /* Phones: every hero line stays on one line; useHeroFit (WorkPage.tsx) shrinks the title and the
+     body text only when a line would not fit inside the 24px side inset. */
+  .hero__title {
+    font-size: calc(var(--text-display) * var(--hero-title-fit, 1));
+    white-space: nowrap;
+  }
+  .hero .hero__intro.work-intro-stickers__p,
+  .hero__role {
+    font-size: calc(var(--intro-size-m, var(--text-body)) * var(--hero-body-fit, 1));
   }
   .hero {
+    --column-inset: 24px;
     padding-block: 72px 64px;
-  }
-  /* The desktop nudge would push the block off-centre on a phone; mobile has its own. */
-  .hero[data-align] {
-    translate: var(--align-x-m, 0px) 0;
   }
   .hero__intro {
     max-width: 260px;
@@ -69,10 +83,16 @@
   }
   .hero__role {
     margin-top: var(--gap-intro-role-m);
+    white-space: pre;
   }
   .hero__signature {
     margin-top: var(--gap-role-sig-m);
   }
+}
+
+/* Centred once on its widest possible line, so the block holds still as the pills change phrase (useHeroFit). */
+.work .hero[data-align] {
+  translate: var(--hero-center-x, 0px) 0;
 }
 
 .hero {

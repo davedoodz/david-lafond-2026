@@ -123,14 +123,18 @@ li:last-child > .works__card .card-shade {
   }
   .works__list > li {
     width: calc(100% - 2 * var(--works-card-margin-m));
+    container-type: inline-size;
   }
   .works__card {
     aspect-ratio: var(--works-card-ratio-m);
   }
+  /* Mobile titles stay on one line. The longest, "Harvard & MIT Architecture", runs about 13em wide in layout, so
+     on narrow cards every title shrinks together to fit it inside the 16px insets (titles › sizeMobile is the cap). */
   .works__title {
-    --title-size: var(--works-title-m);
+    --title-size: min(var(--works-title-m), calc((100cqi - 32px) / 13.4));
     --title-x: 16px;
     --title-y: 16px;
+    white-space: nowrap;
   }
   .works__title-desktop {
     display: none;
@@ -138,6 +142,15 @@ li:last-child > .works__card .card-shade {
   .works__title-mobile {
     display: inline;
   }
+}
+
+/* Touch landing (SelectedWorks.tsx touchDome): label centred between the sheet tip and the first
+   thumbnail, whose top sits on the fold. Wins over both the desktop and the phone spacing. */
+.works[data-touch-landing] .works__inner {
+  padding-top: var(--works-touch-first);
+}
+.works[data-touch-landing] .works__eyebrow {
+  top: var(--works-touch-label-top);
 }
 
 .works__eyebrow {
@@ -199,6 +212,17 @@ html[data-works-snap] body:has(.works) .footer {
   outline-offset: 4px;
 }
 
+/* Dev only (EditableText adds .is-editable): the titles sit above the card link and take the caret,
+   so clicking a title edits it instead of opening the project. */
+.works__title:has(.is-editable) {
+  z-index: 3;
+}
+.works__title .is-editable {
+  pointer-events: auto;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
 
 /* Filo catalog wall (FiloCard). */
 .ecowall {

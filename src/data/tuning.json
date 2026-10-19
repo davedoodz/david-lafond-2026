@@ -146,18 +146,12 @@
       "enterDistance": 1.75,
       "startSide": 0,
       "startArch": 70,
-      "startRadius": 0,
-      "exitStart": 0.07,
-      "exitDistance": 2.5,
-      "endSide": 0,
-      "endArch": 70,
-      "endRadius": 0
+      "startRadius": 0
     },
     "morphMobile": {
       "enterDistance": 1.73,
       "startArch": 20,
-      "startRadius": 60,
-      "endArch": 35
+      "startRadius": 60
     },
     "intro": {
       "delayMs": 3010,
@@ -332,11 +326,8 @@
     }
   },
   "Hero": {
-    "introText2": "Now, I’m bringing that range to {products} \nwhere ideas have room to {faster}.",
-    "role": "Looking for my next meaningful mission to embark on.",
-    "align": {
-      "x": 27
-    },
+    "introText2": "Now, I’m bringing that to {products} \nwhere ideas have room to {faster}.",
+    "role": "Looking for my next mission to embark on.",
     "spacing": {
       "introLineHeight": 1.56,
       "titleToIntroDesktop": 28,
