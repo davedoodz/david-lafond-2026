@@ -23,11 +23,24 @@
   font-weight: 500;
   line-height: 18px;
   text-transform: uppercase;
+  /* Nav › letterSpacing (desktop / mobile). */
+  letter-spacing: var(--nav-tracking-d, -0.64px);
+}
+@media (max-width: 640px) {
+  .nav__links {
+    letter-spacing: var(--nav-tracking-m, -0.64px);
+  }
 }
 
 .nav__links a {
   color: var(--nav-idle, var(--text-muted));
   transition: color 180ms ease;
+}
+
+/* The current page reads heavier than the other links. Beatrice ships no upright semibold, so a hairline
+   stroke in the text colour thickens the Medium glyphs without shifting the layout. */
+.nav__links a[aria-current] {
+  -webkit-text-stroke: 0.45px currentColor;
 }
 
 .nav__links a[aria-current],
@@ -108,6 +121,13 @@
   --nav-idle: var(--stone-400);
   --nav-active: var(--ink-900);
   --nav-bg: var(--paper);
+}
+/* Phones: About and Resume (and Back) read darker over white; desktop keeps the lighter gray. */
+@media (max-width: 640px) {
+  .nav[data-under='light'],
+  [data-surface='light'] .nav:not([data-under='dark']) {
+    --nav-idle: var(--stone-600);
+  }
 }
 
 /* Backdrop on its own layer behind the links. */
@@ -199,10 +219,16 @@
   padding-left: var(--edge);
   padding-right: 35px;
 }
-/* Phones: every page starts its first link where the Work hero's text starts (--text-edge). */
+/* Phones: every page starts its first link where the Work hero's text starts (--text-edge). Davebot
+   mirrors it: his body's right edge sits --text-edge from the screen edge (the button pads 6.5px
+   around the drawn body), and his body's middle lines up with the middle of the links' text. */
 @media (max-width: 640px) {
   .nav[data-ghost-side='end'] {
     padding-left: var(--text-edge);
+    padding-right: calc(var(--text-edge) - 6.5px);
+  }
+  .nav[data-ghost-side='end'] .nav__ghost {
+    margin-top: -2px;
   }
 }
 .nav[data-ghost-side='end'] .nav__start {
@@ -245,20 +271,66 @@
     transition-duration: var(--nav-fade-time, 600ms);
     transition-timing-function: cubic-bezier(.4, 0, .2, 1);
   }
-  /* Edge blur: no colour, only the page under the top edge blurred (mobileContrast › edgeBlur). Full blur
-     for the strength share of the length, then it thins to nothing. */
+  /* Edge blur: no colour, only the page under the screen edge blurred (mobileContrast › edgeBlur). Full
+     blur for the strength share of the length, then it thins to nothing. Drawn on <body>, not in the
+     nav, in this stack (later in the page wins a tie):
+       46 bottom blur (edgeBlur › bottom)
+       47 Selected projects panel and My Playground sheet: each draws its own bottom blur (below)
+          so its section label can sit above it while the cards stay blurred
+       48 top blur; then the dither bands (DitherBand.css), later in the page, so above it
+       49 footer text (Footer.css), 50 nav */
   .nav[data-contrast='Edge blur']::before {
+    display: none;
+  }
+  html[data-edge-blur] body::before,
+  html[data-edge-blur-bottom] body::after {
     content: '';
-    position: absolute;
+    position: fixed;
     inset: 0 0 auto;
+    z-index: 48;
     height: var(--edge-blur-length, 110px);
-    z-index: -1;
     pointer-events: none;
     opacity: var(--edge-blur-opacity, 1);
     -webkit-backdrop-filter: blur(var(--edge-blur, 8px));
     backdrop-filter: blur(var(--edge-blur, 8px));
     -webkit-mask-image: linear-gradient(#000 var(--edge-blur-solid, 30%), transparent);
     mask-image: linear-gradient(#000 var(--edge-blur-solid, 30%), transparent);
+  }
+  html[data-edge-blur-bottom] body::after {
+    inset: auto 0 0;
+    z-index: 46;
+    -webkit-mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+    mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+  }
+  /* Both sections isolate their own stacking (the dome, the sheet depth), which traps their labels
+     under the page's bottom blur. So each rises above it (z 47) and draws the same bottom blur inside
+     itself: a sticky band pinned to the screen bottom (sticky, not fixed, because the sheet's transform
+     would pin a fixed band to the sheet), negative top margin so it takes no space. The section label
+     sits above that band; the cards stay under it. */
+  html[data-edge-blur-bottom] :is(.works, .about__dark) {
+    z-index: 47;
+  }
+  html[data-edge-blur-bottom] :is(.works, .about__dark)::after {
+    content: '';
+    display: block;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    height: var(--edge-blur-length, 110px);
+    margin-top: calc(-1 * var(--edge-blur-length, 110px));
+    pointer-events: none;
+    opacity: var(--edge-blur-opacity, 1);
+    -webkit-backdrop-filter: blur(var(--edge-blur, 8px));
+    backdrop-filter: blur(var(--edge-blur, 8px));
+    -webkit-mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+    mask-image: linear-gradient(to top, #000 var(--edge-blur-solid, 30%), transparent);
+  }
+  html[data-edge-blur-bottom] .works__eyebrow {
+    z-index: 2;
+  }
+  html[data-edge-blur-bottom] #play-title {
+    position: relative;
+    z-index: 2;
   }
   .nav:is([data-contrast='Soft fade'], [data-contrast='Fade scrim'])::after {
     content: '';

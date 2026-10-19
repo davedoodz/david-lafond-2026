@@ -29,6 +29,12 @@ const NAV_CONFIG = {
   blur: [16, 0, 40, 1] as Tuple,
   /** Space under the links while pinned, so the backdrop does not end tight on the text. */
   padBottom: [16, 0, 48, 1] as Tuple,
+  /** Space between the letters of the nav words, Back included (px; the page text uses -0.64). */
+  letterSpacing: {
+    desktop: [-0.64, -2, 4, 0.01] as Tuple,
+    mobile: [-0.64, -2, 4, 0.01] as Tuple,
+    _collapsed: false,
+  },
   /** Which side Davebot (the ghost) sits on; the links take the other side. */
   order: { type: 'select' as const, options: ['links · Davebot', 'Davebot · links'], default: 'links · Davebot' },
   /** Up-right arrow shown beside "Resume" on hover; it never shifts the other links. */
@@ -49,12 +55,15 @@ const NAV_CONFIG = {
      * under the nav, and at the bottom over the About story (AboutPage.css .about__fade).
      * length: band height (px). strength: share of it held at full blur before thinning (0–1).
      * opacity: how much of the blur shows (0–1). blur: the blur at the edge (px).
+     * bottom: the same blur pinned to the bottom of the screen on every page (Nav.css). The dither
+     * bands and the footer's text draw above both blurs, so they stay crisp (DitherBand.css, Footer.css).
      */
     edgeBlur: {
       length: [110, 20, 400, 1] as Tuple,
       strength: [0.3, 0, 1, 0.01] as Tuple,
       opacity: [1, 0, 1, 0.01] as Tuple,
       blur: [8, 0, 40, 0.5] as Tuple,
+      bottom: true,
       _collapsed: false,
     },
     /** Fade scrim, Pill, Text halo, Strong text: how strong the tint, scrim, halo or text colour is (0–1). */
@@ -204,6 +213,8 @@ export function Nav({ route }: Props) {
   const surface = phone && preset === 'Soft fade' && fadeLinks === 'Match fade' ? fadeSurface : under
 
   const style = {
+    '--nav-tracking-d': `${t.letterSpacing.desktop}px`,
+    '--nav-tracking-m': `${t.letterSpacing.mobile}px`,
     '--resume-arrow-scale': t.resumeArrow.scale,
     '--resume-arrow-x': `${t.resumeArrow.x}px`,
     '--resume-arrow-y': `${t.resumeArrow.y}px`,
@@ -223,21 +234,24 @@ export function Nav({ route }: Props) {
     }),
   } as CSSProperties
 
-  // Edge blur: published on <html> so the About story's bottom band draws the same blur (AboutPage.css).
+  // Edge blur: published on <html> so the About story's bottom band and the optional screen-bottom
+  // blur draw the same blur (AboutPage.css, Nav.css), and the footer clears it (Footer.css).
   const edge = t.mobileContrast.edgeBlur
   useEffect(() => {
     const root = document.documentElement
     if (preset !== 'Edge blur') return
     root.dataset.edgeBlur = ''
+    if (edge.bottom) root.dataset.edgeBlurBottom = ''
     root.style.setProperty('--edge-blur-length', `${edge.length}px`)
     root.style.setProperty('--edge-blur-solid', `${edge.strength * 100}%`)
     root.style.setProperty('--edge-blur-opacity', String(edge.opacity))
     root.style.setProperty('--edge-blur', `${edge.blur}px`)
     return () => {
       delete root.dataset.edgeBlur
+      delete root.dataset.edgeBlurBottom
       for (const p of ['--edge-blur-length', '--edge-blur-solid', '--edge-blur-opacity', '--edge-blur']) root.style.removeProperty(p)
     }
-  }, [preset, edge.length, edge.strength, edge.opacity, edge.blur])
+  }, [preset, edge.length, edge.strength, edge.opacity, edge.blur, edge.bottom])
 
   return (
     <>
