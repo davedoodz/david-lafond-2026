@@ -157,7 +157,9 @@ export function Nav({ route }: Props) {
           <GhostButton className="nav__ghost" />
         </div>
         <nav className="nav__links" aria-label="Primary">
-          <a href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
+          {/* Phones, project pages: "← Back" takes Work's place (Nav.css). */}
+          {isProject && <BackLink className="nav__links-back" />}
+          <a className="nav__work" href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
             Work
           </a>
           <a href="/about" aria-current={route === 'about' ? 'page' : undefined} onClick={internalLink('about')}>

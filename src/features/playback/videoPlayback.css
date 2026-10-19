@@ -87,3 +87,12 @@
     right: 62px;
   }
 }
+
+/* Phones: case-study devices (phones, desktop) just loop; no pause, play or replay. The playground
+   lightbox keeps its controls. */
+@media (max-width: 640px) {
+  .case .playback-toggle,
+  .case .playback-restart {
+    display: none;
+  }
+}

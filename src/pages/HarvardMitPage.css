@@ -15,6 +15,12 @@
     margin: 0 0 56px var(--edge);
   }
 }
+/* Phones: Back lives in the nav, in Work's place (Nav.css); its room stays so the book doesn't move. */
+@media (max-width: 640px) {
+  .project__back {
+    visibility: hidden;
+  }
+}
 
 /* Scroll snap (Harvard & MIT page → snap): the book at the top, then the page end. */
 html[data-project-snap='proximity'] {
