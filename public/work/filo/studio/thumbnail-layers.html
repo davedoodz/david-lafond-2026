@@ -9,7 +9,7 @@
    src/components/FiloCard.tsx ported as-is: three tilted rails, linen glass, 4.5 fps turntables, no product twice.
    On top, Momo-style layers (src/components/MomoThumb.tsx): the phone on the left and the portal on the right play
    short snippets cut from the case study prototypes; the tag sits in the middle. Behind them, each product turns
-   into a swatch of fabric in its own colour, then back. */
+   into a swatch of its own fabric (a generated photo texture in the product's colour), then back. */
 @font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 :root { --ink: #171717; --text: #666; --mute: #9a9a97; --line: #e4e4e1; --page: #f5f5f5; --cord: #965b40; }
@@ -118,7 +118,7 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 <header>
   <h1>Filo thumbnail · layers</h1>
   <p>Ways to layer the Filo card the way the Momo card is layered: the phone on the left, the tag in the middle, the portal on the right. Each device plays a few seconds cut from the case study prototypes, not the whole flow. Behind them, every product on the wall turns into a swatch of fabric in its own colour while it spins, then back: one material, three forms.</p>
-  <p class="note">Every card is at its real size (867 × 493) and uses the real wall from FiloCard.tsx. The controls change all the cards at once. Fabric colour is sampled from each product; the finish (leather, weave, satin, knit) follows its material in the Future Fabric catalog.</p>
+  <p class="note">Every card is at its real size (867 × 493) and uses the real wall from FiloCard.tsx. The controls change all the cards at once. Each swatch wears a photographic texture of that product’s material, in its colour (generated with ChatGPT image generation, in /work/filo/thumb/fabric/); the cut and the sheen (leather, weave, satin, knit) follow its material in the Future Fabric catalog.</p>
 </header>
 
 <div class="controls"><div class="controls__in" id="controls"></div></div>
@@ -165,13 +165,12 @@ const SNIPPETS = {
   ],
 }
 
-const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-tag', zoom: 'window', fabric: 'material', layers: 'on' },
+const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-tag', zoom: 'window', layers: 'on' },
   Object.fromEntries(new URLSearchParams(location.search)))
 
 const CONTROLS = [
   ['morph', 'Morph', [['turn', 'Turn'], ['threads', 'Threads'], ['melt', 'Melt'], ['off', 'Off']]],
   ['timing', 'Timing', [['stagger', 'Staggered'], ['ripple', 'Ripple from the tag']]],
-  ['fabric', 'Fabric', [['material', 'By material'], ['weave', 'All plain weave']]],
   ['phone', 'Phone', SNIPPETS.phone.map(s => [s.id, s.label])],
   ['desk', 'Desktop', SNIPPETS.desk.map(s => [s.id, s.label])],
   ['zoom', 'Desktop view', [['window', 'Whole window'], ['in', 'Zoomed in']]],
@@ -278,7 +277,7 @@ for (const L of LAYOUTS) {
   main.append(fig)
 }
 const closeFig = document.createElement('figure')
-closeFig.innerHTML = `<figcaption style="width:1000px"><b><span>—</span>Close up: every product and its fabric</b><small>All 17 products from the wall, larger, cycling with the current morph. The swatch takes the product’s colour; the finish comes from its material.</small></figcaption><div class="strip" id="strip"></div>`
+closeFig.innerHTML = `<figcaption style="width:1000px"><b><span>—</span>Close up: every product and its fabric</b><small>All 17 products from the wall, larger, cycling with the current morph. Each swatch is a photo texture of the product’s own material, in its colour.</small></figcaption><div class="strip" id="strip"></div>`
 main.append(closeFig)
 
 function apply() {
@@ -335,12 +334,10 @@ const Fabric = (() => {
   const FS = `#version 300 es
   precision highp float; precision highp int;
   in vec2 v_uv; in vec3 v_n; in vec3 v_t; in vec3 v_p; in float v_w;
-  uniform vec3 u_col, u_eye;
+  uniform vec3 u_eye;
   uniform int u_finish;
+  uniform sampler2D u_tex;
   out vec4 o;
-  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
   void main() {
     vec2 q = abs(v_uv - 0.5);
     float d;
@@ -358,36 +355,17 @@ const Fabric = (() => {
     float side = 1.0;
     if (dot(N, V) < 0.0) { N = -N; side = 0.8; }
 
-    // Surface: a tone multiplier and how glossy it is.
-    float tone = 1.0, ks = 0.05, shin = 14.0, sheen = 0.1, aniso = 0.0;
-    vec2 g;
-    if (u_finish == 0) { // plain weave
-      g = v_uv * 36.0; vec2 c = floor(g), f = fract(g);
-      bool warp = mod(c.x + c.y, 2.0) < 1.0;
-      float h = warp ? sqrt(max(0.0, 1.0 - pow(2.0 * f.x - 1.0, 2.0))) : sqrt(max(0.0, 1.0 - pow(2.0 * f.y - 1.0, 2.0)));
-      tone = mix(0.8, 1.04, h) * (0.94 + 0.12 * hash(warp ? vec2(c.x, 0) : vec2(0, c.y)));
-    } else if (u_finish == 1) { // knit: rows of V stitches
-      g = vec2(v_uv.x * 22.0, v_uv.y * 30.0);
-      float col = fract(g.x), row = fract(g.y + abs(col - 0.5) * 1.3);
-      tone = mix(0.72, 1.05, pow(sin(row * 3.1416) * sin(col * 3.1416), 0.6)) * (0.95 + 0.1 * vnoise(v_uv * 70.0));
-      sheen = 0.16;
-    } else if (u_finish == 2) { // satin: smooth, fine twill, strong sheen
-      g = v_uv * 70.0;
-      tone = 0.97 + 0.03 * sin((g.x + g.y) * 3.1416);
-      ks = 0.0; aniso = 0.2; sheen = 0.06;
-    } else { // leather: pebbled grain
-      g = v_uv * 70.0;
-      float n = vnoise(v_uv * 95.0) * 0.6 + vnoise(v_uv * 190.0) * 0.4;
-      tone = 0.92 + 0.12 * n;
-      ks = 0.1; shin = 22.0; sheen = 0.04;
-    }
-    float fw = fwidth(g.x) + fwidth(g.y);
-    tone = mix(tone, 0.95, smoothstep(0.45, 0.95, fw)); // fade texture before it aliases
+    // Surface: the photo texture is the colour; the finish only sets how glossy it is.
+    float ks = 0.025, shin = 18.0, sheen = 0.1, aniso = 0.0;
+    if (u_finish == 1) sheen = 0.16; // knit: fuzzy rim
+    else if (u_finish == 2) { ks = 0.0; aniso = 0.2; sheen = 0.06; } // satin: streaks down the folds
+    else if (u_finish == 3) { ks = 0.05; shin = 44.0; sheen = 0.04; } // leather: a small, tight highlight
+    vec3 tex = pow(texture(u_tex, v_uv).rgb, vec3(2.2));
 
     vec3 L1 = normalize(vec3(-0.55, 0.75, 0.7)), L2 = normalize(vec3(0.75, 0.15, 0.45));
     float w1 = clamp((dot(N, L1) + 0.35) / 1.35, 0.0, 1.0), w2 = clamp((dot(N, L2) + 0.4) / 1.4, 0.0, 1.0);
     float ao = 0.84 + 0.16 * smoothstep(-0.06, 0.08, v_w);
-    vec3 base = u_col * tone * side;
+    vec3 base = tex * side;
     vec3 col = base * (0.32 + 0.72 * w1 + 0.22 * w2) * ao;
     vec3 H = normalize(L1 + V);
     col += vec3(1.0, 0.98, 0.95) * ks * pow(max(dot(N, H), 0.0), shin) * side;
@@ -395,7 +373,7 @@ const Fabric = (() => {
     vec3 T = normalize(v_t - N * dot(v_t, N));
     float th = dot(T, H);
     col += vec3(1.0, 0.98, 0.95) * aniso * pow(sqrt(max(0.0, 1.0 - th * th)), 36.0) * max(dot(N, L1), 0.0) * side;
-    col += (u_col * 0.6 + 0.25) * sheen * pow(1.0 - max(dot(N, V), 0.0), 3.0);
+    col += (tex * 0.8 + 0.04) * sheen * pow(1.0 - max(dot(N, V), 0.0), 3.0);
     col = pow(max(col, 0.0), vec3(1.0 / 2.2));
     o = vec4(col * alpha, alpha);
   }`
@@ -412,7 +390,7 @@ const Fabric = (() => {
   const loc = gl.getAttribLocation(prog, 'a_uv'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW)
   const U = n => gl.getUniformLocation(prog, n)
-  const u = Object.fromEntries(['u_phase', 'u_angle', 'u_lean', 'u_roll', 'u_size', 'u_finish', 'u_pv', 'u_col', 'u_eye'].map(n => [n, U(n)]))
+  const u = Object.fromEntries(['u_phase', 'u_angle', 'u_lean', 'u_roll', 'u_size', 'u_finish', 'u_pv', 'u_eye'].map(n => [n, U(n)]))
   // Camera: a little above, looking at the swatch's centre; about the framing of the product turntables.
   const eye = [0, 0.8, 3.2]
   const pv = (() => {
@@ -433,9 +411,15 @@ const Fabric = (() => {
   return {
     /** Draws product p's swatch at turntable frame f (one turn per 36 frames, like the sprites) into ctx. */
     draw(ctx, p, f) {
-      const finish = S.fabric === 'weave' ? 'weave' : p.finish
-      gl.uniform1i(u.u_finish, FINISHES.indexOf(finish))
-      gl.uniform3fv(u.u_col, p.lin)
+      gl.uniform1i(u.u_finish, FINISHES.indexOf(p.finish))
+      if (!p.tex) {
+        p.tex = gl.createTexture()
+        gl.bindTexture(gl.TEXTURE_2D, p.tex)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, p.fabric)
+        gl.generateMipmap(gl.TEXTURE_2D)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+      }
+      gl.bindTexture(gl.TEXTURE_2D, p.tex)
       gl.uniform1f(u.u_angle, -(f / 36) * Math.PI * 2 + 0.5)
       gl.uniform1f(u.u_phase, (f / 36) * Math.PI * 2)
       gl.clearColor(0, 0, 0, 0)
@@ -456,6 +440,9 @@ async function loadProducts() {
     p.img = img
     p.view = img.naturalWidth / 6
     p.finish = finishOf(p.material)
+    p.fabric = new Image()
+    p.fabric.src = `/work/filo/thumb/fabric/${p.code}.webp`
+    await p.fabric.decode()
     // Dominant colour: the fullest bin of a coarse histogram over two views' opaque pixels, averaged.
     const c = document.createElement('canvas'); c.width = 96; c.height = 48
     const x = c.getContext('2d', { willReadFrequently: true })
@@ -662,7 +649,7 @@ class Card {
       tl.el.style.visibility = 'visible'
       tl.el.style.width = tl.el.style.height = `${tile}px`
       tl.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
-      const key = `${tl.product}|${f}|${m.toFixed(3)}|${S.morph}|${S.fabric}`
+      const key = `${tl.product}|${f}|${m.toFixed(3)}|${S.morph}`
       if (key !== tl.key) { drawTile(tl, PRODUCTS[tl.product], f, m); tl.key = key }
     })
     // Ripple rings: one as the wave goes out to fabric, one as it comes back.
@@ -695,7 +682,7 @@ class Cell {
     const mm = MORPH_S[S.morph]
     const P = 2.2 + 2 * mm + 2.6
     const m = S.morph === 'off' ? 0 : envelope(mod(t + this.i * 0.37, P), 2.2, mm, 2.6)
-    const key = `${f}|${m.toFixed(3)}|${S.morph}|${S.fabric}`
+    const key = `${f}|${m.toFixed(3)}|${S.morph}`
     if (key !== this.key) { drawTile(this, this.p, f, m); this.key = key }
   }
 }
