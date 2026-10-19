@@ -537,7 +537,7 @@ export function CaseStudyPage({ id }: Props) {
           quoteArt={filo ? (i) => <FiloQuoteArt index={i} /> : undefined}
         />
       )
-    if (filo && key === 'source') return <FiloSourceSteps key={key} spacing={s.spacing} />
+    if (filo && key === 'source') return <FiloSourceSteps key={key} section={s} />
     if (key === 'flows') return <CoreFlows key={key} f={s as unknown as Flows} edit={edit} selectable />
     if (key === 'guided') return <GuidedPair key={key} g={s as unknown as Guided} edit={edit} selectable />
     const hasDemo = s.media.figure === 'notification'

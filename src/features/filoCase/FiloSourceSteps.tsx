@@ -2,10 +2,11 @@ import { createContext, useContext, useEffect, useRef, useState, type CSSPropert
 import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import { useTuningController } from '../../tuning/useTuning'
 import { EditableText } from '../../components/EditableText'
+import type { SectionSpacing, TextReveal } from '../../pages/caseStudyContent'
 import './filoSourceSteps.css'
 
 /**
- * Filo "source" section: four steps, create → share → receive → tap. Steps 1 and 2 are the
+ * Filo "source" steps: four case sections, create → share → receive → tap. Steps 1 and 2 are the
  * portal as looping prototypes; step 3 pairs the designer's phone (a looping prototype: the email, then
  * the record in Safari) with the sample box (cut-outs of David's photos, public/work/filo/steps). Step 4
  * is a looping scene: a phone comes over the bacterial cellulose swatch in a dealt deck, reads its tag
@@ -37,7 +38,7 @@ const APP_FLOWS = [
   { src: '/work/filo/filo-app-flow.html', title: 'Filo portal: a cursor adds Bacterial Cellulose, from the materials library through document upload and extraction to review and publish.' },
   { src: '/work/filo/filo-app-share.html', title: 'Filo portal: the published Bacterial Cellulose record is shared as a link, written to an NFC tag for its physical sample, and sent by email.' },
 ]
-const PHONE_FLOW = { src: '/work/filo/filo-phone-receive.html', title: 'A designer’s phone: the Filo email arrives on the lock screen, opens in Mail, and its link opens the Bacterial Cellulose record in Safari, with its documents, open checks and photos.' }
+const PHONE_FLOW = { src: '/work/filo/filo-phone-receive.html', title: 'A designer’s phone: the Filo email lands in Mail, and its link opens the Bacterial Cellulose record in Safari, with its documents, open checks and photos.' }
 const TAP_FLOW = { src: '/work/filo/filo-phone-tap.html', title: 'Six tagged swatches are dealt out; a phone comes over the bacterial cellulose one, its Dynamic Island reads the tag, and Open shows the record in an App Clip: overview, documents, photos, samples, then BC-001’s Technical File.' }
 /** window: the portal in its window chrome. phone: step 3's phone on a clear ground. scene: step 4's wide scene on a clear ground. */
 type FlowVariant = 'window' | 'phone' | 'scene'
@@ -127,7 +128,7 @@ function SampleBox() {
   </div>
 }
 
-/** The four steps, in order. Each has a one-word stage after its number. */
+/** The four steps, in order, each its own section. Each has a one-word stage after its number. */
 const STEPS: { stage: string; visual: ReactNode }[] = [
   { stage: 'Create', visual: <AppFlow {...APP_FLOWS[0]} /> },
   { stage: 'Share', visual: <AppFlow {...APP_FLOWS[1]} /> },
@@ -175,13 +176,14 @@ const CONFIG = {
   },
 }
 
-export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: number } }) {
+/** The source section's dials (FILO_CONFIG.source) that each step section shares. */
+type SectionLook = { align: 'left' | 'center'; spacing: SectionSpacing; textReveal?: TextReveal }
+
+export function FiloSourceSteps({ section }: { section: SectionLook }) {
   const { values: dials, setValue } = useTuningController('Filo source steps', CONFIG)
-  const ref = useRef<HTMLOListElement>(null)
+  const refs = useRef<(HTMLElement | null)[]>([])
   // The box's CSS loop runs only while its step is on screen. The prototypes watch themselves (AppFlow).
   useEffect(() => {
-    const steps = ref.current?.children
-    if (!steps) return
     const observer = new IntersectionObserver(entries => {
       for (const { target, isIntersecting } of entries) {
         const step = target as HTMLElement
@@ -189,40 +191,51 @@ export function FiloSourceSteps({ spacing }: { spacing: { top: number; bottom: n
         else delete step.dataset.playing
       }
     }, { threshold: 0.2 })
-    for (const step of steps) observer.observe(step)
+    for (const step of refs.current) if (step) observer.observe(step)
     return () => observer.disconnect()
   }, [])
-  return <section
-    className="case__section filo-steps"
-    data-section="source"
-    aria-label="From the material record to the bench: create, share, receive, tap"
-    style={{
-      '--section-pad-top': `${spacing.top}px`,
-      '--section-pad-bottom': `${spacing.bottom}px`,
-      '--fss-box-cycle': `${9 / dials.box.speed}s`,
-      // The frame is wider than the box, so size it to keep the box itself at 320px; box › scale grows it from there.
-      '--fss-box-w': `${320 * BOX_FRAME.w / BOX_FRAME.boxW}px`,
-      '--fss-box-scale': dials.box.scale,
-      '--fss-box-x': `${dials.box.x}px`,
-      '--fss-box-y': `${dials.box.y}px`,
-      '--fss-inbox-scale': dials.inbox.scale,
-      '--fss-inbox-x': `${dials.inbox.x}px`,
-      '--fss-inbox-y': `${dials.inbox.y}px`,
-      '--fss-inbox-gap': `${dials.inbox.gap}px`,
-    } as CSSProperties}
-  >
-    <InboxSpeed.Provider value={dials.inbox.speed}>
-    <ol ref={ref} className="fss-steps">
-      {STEPS.map(({ stage, visual }, i) => {
-        const key = `step${i + 1}` as keyof typeof CONFIG.titles
-        return <li key={key} className="fss-step">
-          <span className="fss-num case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')} — {stage.toUpperCase()}</span>
-          <EditableText as="h3" className="fss-title" label={`Step ${i + 1} title`} value={dials.titles[key]} onChange={next => setValue(`titles.${key}`, next)} />
-          <EditableText as="p" className="fss-body" label={`Step ${i + 1} text`} value={dials.bodies[key]} onChange={next => setValue(`bodies.${key}`, next)} />
-          <div className="fss-visual">{visual}</div>
-        </li>
-      })}
-    </ol>
-    </InboxSpeed.Provider>
-  </section>
+  const style = {
+    '--section-pad-top': `${section.spacing.top}px`,
+    '--section-pad-bottom': `${section.spacing.bottom}px`,
+    '--section-content-gap': `${section.spacing.contentGap}px`,
+    ...(section.textReveal ? {
+      '--text-reveal-duration': `${section.textReveal.duration}s`,
+      '--text-reveal-stagger': `${section.textReveal.stagger}s`,
+    } : {}),
+    '--fss-box-cycle': `${9 / dials.box.speed}s`,
+    // The frame is wider than the box, so size it to keep the box itself at 320px; box › scale grows it from there.
+    '--fss-box-w': `${320 * BOX_FRAME.w / BOX_FRAME.boxW}px`,
+    '--fss-box-scale': dials.box.scale,
+    '--fss-box-x': `${dials.box.x}px`,
+    '--fss-box-y': `${dials.box.y}px`,
+    '--fss-inbox-scale': dials.inbox.scale,
+    '--fss-inbox-x': `${dials.inbox.x}px`,
+    '--fss-inbox-y': `${dials.inbox.y}px`,
+    '--fss-inbox-gap': `${dials.inbox.gap}px`,
+  } as CSSProperties
+  // Each step is its own case section (snap stop, reveal, copy styles). They share data-section="source",
+  // so the sidebar's one Source entry jumps to step 1 and stays lit through step 4.
+  return <InboxSpeed.Provider value={dials.inbox.speed}>
+    {STEPS.map(({ stage, visual }, i) => {
+      const key = `step${i + 1}` as keyof typeof CONFIG.titles
+      return <section
+        key={key}
+        ref={el => { refs.current[i] = el }}
+        className="case__section fss-step"
+        data-section="source"
+        data-layout="bottom"
+        data-copy-align={section.align}
+        data-text-reveal={section.textReveal?.preset}
+        style={style}
+        aria-labelledby={`case-source-${key}`}
+      >
+        <div className="case__text case__section-copy">
+          <span className="case__eyebrow eyebrow">{String(i + 1).padStart(2, '0')} — {stage}</span>
+          <EditableText as="h2" id={`case-source-${key}`} className="case__title" label={`Step ${i + 1} title`} value={dials.titles[key]} onChange={next => setValue(`titles.${key}`, next)} />
+          <EditableText as="p" className="case__body" label={`Step ${i + 1} text`} value={dials.bodies[key]} onChange={next => setValue(`bodies.${key}`, next)} />
+        </div>
+        <div className="fss-visual">{visual}</div>
+      </section>
+    })}
+  </InboxSpeed.Provider>
 }

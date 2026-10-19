@@ -6,9 +6,9 @@
 <title>Filo · the designer receives a material record (phone prototype)</title>
 <link rel="stylesheet" href="filo-app-flow/app.css" />
 <style>
-  /* Picks up after filo-app-share.html: the email Modern Synthesis sent lands on Priya's phone. Lock screen,
-     notification, Mail, then the shared material record in Safari. The phone is the Momo frame (the same one
-     as step 4's phone), and the stage is that frame in screen points: the 390 × 845 screen sits at 22.5, 19.2.
+  /* Picks up after filo-app-share.html: the email Modern Synthesis sent, open in Priya's Mail, then the shared
+     material record in Safari. The phone is the Momo frame (the same one as step 4's phone), and the stage is
+     that frame in screen points: the 390 × 845 screen sits at 22.5, 19.2.
      iOS chrome is in the system font; the Filo page and the email's summary card use the portal's type,
      tokens, icons and pills (app.css), so they read as the same product as the desktop prototypes. */
   html, body { background: transparent; }
@@ -18,48 +18,23 @@
   .display {
     --sys: -apple-system, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
     --ios-blue: #007aff;
-    --chrome: #fff;
+    --chrome: #000;
     position: absolute; left: 22.5px; top: 19.2px; width: 390px; height: 845.5px; border-radius: 60px; overflow: hidden;
-    background: #000; font-family: var(--sys); color: #000; cursor: default; user-select: none; -webkit-font-smoothing: antialiased;
+    /* White under the apps, so the crossfade from Safari back to Mail never dims. */
+    background: #fff; font-family: var(--sys); color: #000; cursor: default; user-select: none; -webkit-font-smoothing: antialiased;
   }
-  .display.is-app { --chrome: #000; }
   :where(.display) button { margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; }
   :where(.display) p { margin: 0; }
   .abs { position: absolute; }
   .ios { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
   /* Status bar (the case study's phone status bar, 390pt units) and home indicator: over every screen. */
-  .status { position: absolute; z-index: 5; left: 0; top: 0; width: 390px; height: 54px; fill: var(--chrome); transition: fill .3s ease; pointer-events: none; }
+  .status { position: absolute; z-index: 5; left: 0; top: 0; width: 390px; height: 54px; fill: var(--chrome); pointer-events: none; }
   .status text { font: 600 16px var(--sys); }
-  .status .wifi { fill: none; stroke: var(--chrome); stroke-width: 2.35; stroke-linecap: round; transition: stroke .3s ease; }
-  .status .wedge { stroke: var(--chrome); stroke-width: 1.3; stroke-linejoin: round; transition: stroke .3s ease; }
-  .status .cell { fill: none; stroke: var(--chrome); stroke-width: 1; opacity: .4; transition: stroke .3s ease; }
-  .homebar { position: absolute; z-index: 5; left: 50%; bottom: 8px; translate: -50% 0; width: 139px; height: 5px; border-radius: 3px; background: var(--chrome); transition: background-color .3s ease; pointer-events: none; }
-
-  /* ───────── Lock screen ───────── */
-  .lockscreen { position: absolute; inset: 0; background: url('filo-app-flow/wallpaper.webp') center / cover; color: #fff; }
-  .lock-ic { left: 50%; top: 64px; translate: -50% 0; width: 15px; height: 20px; fill: #fff; }
-  .lock-date { left: 0; right: 0; top: 96px; text-align: center; font-size: 21px; font-weight: 600; letter-spacing: .005em; color: rgb(255 255 255 / .9); }
-  .lock-time { left: 0; right: 0; top: 116px; text-align: center; font-size: 112px; line-height: 1; font-weight: 400; letter-spacing: -.01em; }
-  .qbtn { bottom: 48px; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: rgb(20 40 25 / .24); backdrop-filter: blur(12px); color: #fff; }
-  .qbtn .ios { width: 22px; height: 22px; stroke-width: 1.7; }
-  .qbtn--l { left: 46px; } .qbtn--r { right: 46px; }
-
-  /* The notification drops in above the quick buttons, frosted, like iOS's. */
-  .notif { left: 10px; right: 10px; bottom: 128px; height: 84px; padding: 12px 14px 0 64px; border-radius: 22px; background: rgb(244 246 242 / .66); backdrop-filter: blur(22px) saturate(1.6);
-    box-shadow: 0 6px 20px -8px rgb(0 0 0 / .18); color: #111; font-size: 15px; line-height: 20px;
-    opacity: 0; translate: 0 26px; scale: .94; transition: opacity .35s var(--ease-out), translate .55s cubic-bezier(.2, 1.25, .4, 1), scale .55s cubic-bezier(.2, 1.25, .4, 1); }
-  .notif.is-in { opacity: 1; translate: 0 0; scale: 1; }
-  .notif.is-press { scale: .97; transition: scale .12s ease; }
-  .notif .app-ic { position: absolute; left: 13px; top: 50%; translate: 0 -50%; }
-  .n-head { display: flex; align-items: baseline; }
-  .n-head b { font-weight: 600; }
-  .n-head span { margin-left: auto; font-size: 13.5px; color: rgb(40 50 40 / .55); }
-  .notif p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .n-sub { font-weight: 600; }
-  /* The Mail app icon. */
-  .app-ic { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 9px; background: linear-gradient(#2fb4ff, #1f6cf2); color: #fff; }
-  .app-ic .ios { width: 25px; height: 25px; stroke-width: 1.5; }
+  .status .wifi { fill: none; stroke: var(--chrome); stroke-width: 2.35; stroke-linecap: round; }
+  .status .wedge { stroke: var(--chrome); stroke-width: 1.3; stroke-linejoin: round; }
+  .status .cell { fill: none; stroke: var(--chrome); stroke-width: 1; opacity: .4; }
+  .homebar { position: absolute; z-index: 5; left: 50%; bottom: 8px; translate: -50% 0; width: 139px; height: 5px; border-radius: 3px; background: var(--chrome); pointer-events: none; }
 
   /* ───────── Apps: each zooms up over the last ───────── */
   .app { position: absolute; inset: 0; background: #fff; opacity: 0; visibility: hidden; scale: .92;
@@ -75,6 +50,9 @@
   .m-more { right: 14px; top: 64px; width: 24px; height: 24px; color: var(--ios-blue); }
   .m-more .ios { width: 24px; height: 24px; }
   .mail > .hair:first-of-type { top: 98px; }
+  /* The email lands: Mail's bars hold still while the message rises in, a beat apart (--i). */
+  .rise { opacity: 0; translate: 0 16px; }
+  .mail.is-landed .rise { opacity: 1; translate: 0 0; transition: opacity .5s var(--ease-out) calc(var(--i) * 80ms), translate .7s var(--ease-out) calc(var(--i) * 80ms); }
   .m-from { left: 16px; right: 16px; top: 114px; height: 50px; }
   .m-avatar { position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: #141414; }
   .m-avatar img { width: 34px; height: auto; filter: invert(1); }
@@ -169,7 +147,7 @@
   .m-view.is-press, .btn.is-press { scale: .97; }
 
   @media (prefers-reduced-motion: reduce) {
-    .notif, .app, .status, .homebar { transition: none; }
+    .app, .rise { transition: none !important; }
   }
 </style>
 </head>
@@ -207,53 +185,35 @@
     <symbol id="o-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 9.5h20"/></symbol>
     <symbol id="o-reply" viewBox="0 0 24 24"><path d="M9.5 17 4 11.5 9.5 6"/><path d="M20.5 19v-2a5.5 5.5 0 0 0-5.5-5.5H4"/></symbol>
     <symbol id="o-compose" viewBox="0 0 24 24"><path d="M12 3.5H5.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V12"/><path d="M18.4 2.6a1.9 1.9 0 0 1 3 3l-8.6 8.6-3.8 1 1-3.8z"/></symbol>
-    <symbol id="o-mail" viewBox="0 0 24 24"><rect width="19" height="14" x="2.5" y="5" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></symbol>
-    <symbol id="o-torch" viewBox="0 0 24 24"><path d="M7.5 2.5h9v3.5l-2 3.5v11a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-11l-2-3.5z"/><path d="M7.5 6h9"/><path d="M12 13v2.5"/></symbol>
-    <symbol id="o-camera" viewBox="0 0 24 24"><path d="M14.5 4.5h-5L7.5 7H4.5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h15a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   </defs>
 </svg>
 
 <div class="stage" id="stage">
   <div class="display" data-k="display">
-    <!-- ───────── Lock screen ───────── -->
-    <div class="lockscreen">
-      <svg class="abs lock-ic" viewBox="0 0 15 20" aria-hidden="true"><path d="M3.2 8.6V6a4.3 4.3 0 0 1 8.6 0v2.6" fill="none" stroke="#fff" stroke-width="2"/><rect x=".5" y="8.4" width="14" height="11.1" rx="2.6"/></svg>
-      <p class="abs lock-date">Sunday, October 18</p>
-      <p class="abs lock-time">9:41</p>
-      <div class="abs notif" data-k="notif">
-        <span class="app-ic"><svg class="ios"><use href="#o-mail"/></svg></span>
-        <div class="n-head"><b>Filo</b><span>now</span></div>
-        <p class="n-sub">New material shared: Bacterial Cellulose (BC-001)</p>
-        <p class="n-prev">Hi Priya, Here’s the technical file for Bacterial Cellulose (BC-001).</p>
-      </div>
-      <span class="abs qbtn qbtn--l"><svg class="ios"><use href="#o-torch"/></svg></span>
-      <span class="abs qbtn qbtn--r"><svg class="ios"><use href="#o-camera"/></svg></span>
-    </div>
-
     <!-- ───────── Mail ───────── -->
     <section class="app mail" data-k="mail">
       <div class="abs m-back"><svg class="ios"><use href="#o-back"/></svg>Inbox</div>
       <span class="abs m-more"><svg class="ios"><use href="#i-dots-h"/></svg></span>
       <i class="hair"></i>
-      <div class="abs m-from">
+      <div class="abs m-from rise" style="--i: 0">
         <span class="m-avatar"><img src="/work/filo/filo-mark.webp" width="990" height="466" alt=""></span>
         <span class="m-name">Filo</span>
         <span class="m-to">to me</span>
         <span class="m-time">9:41 AM</span>
       </div>
-      <h1 class="abs m-subj">New material shared:<br>Bacterial Cellulose (BC-001)</h1>
-      <div class="abs m-body">
+      <h1 class="abs m-subj rise" style="--i: 1">New material shared:<br>Bacterial Cellulose (BC-001)</h1>
+      <div class="abs m-body rise" style="--i: 2">
         <p>Hi Priya,</p>
         <p>Here’s the technical file for Bacterial Cellulose (BC-001). You can view the full material record, including specs, test reports and certifications, on Filo.</p>
       </div>
-      <div class="abs m-card">
+      <div class="abs m-card rise" style="--i: 3">
         <img src="filo-app-flow/bc-1.webp" alt="">
         <strong>Bacterial Cellulose</strong>
         <small>BC-001<span class="meta-dot">Modern Synthesis</span></small>
         <button class="btn btn--dark m-view" data-k="view">View material record<svg class="ic"><use href="#i-arrow"/></svg></button>
       </div>
-      <p class="abs m-or">Or copy this link:</p>
-      <div class="abs m-link">https://filo.app/materials/BC-001<svg class="ic"><use href="#i-copy"/></svg></div>
+      <p class="abs m-or rise" style="--i: 4">Or copy this link:</p>
+      <div class="abs m-link rise" style="--i: 4">https://filo.app/materials/BC-001<svg class="ic"><use href="#i-copy"/></svg></div>
       <div class="abs tools"><i class="hair"></i>
         <svg class="ios"><use href="#o-trash"/></svg><svg class="ios"><use href="#o-folder"/></svg><svg class="ios"><use href="#o-reply"/></svg><svg class="ios"><use href="#o-compose"/></svg>
       </div>
@@ -351,12 +311,11 @@
 
 <script type="module">
 import { $, $$, k, W, H, cursor, reduce, isPaused, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
-const display = k('display'), page = k('page'), tabs = k('tabs')
+const page = k('page'), tabs = k('tabs')
 
 /* ── Scene state: each scene sets its screen from scratch, so a restart can begin anywhere. ── */
 function open(app) {
   for (const a of [k('mail'), k('safari')]) a.classList.toggle('is-active', a === app)
-  display.classList.toggle('is-app', !!app)
 }
 function pickTab(i) {
   $$('button', tabs).forEach((b, j) => b.setAttribute('aria-selected', String(j === i)))
@@ -365,8 +324,8 @@ function pickTab(i) {
 function reset() {
   $$('.is-press').forEach(e => e.classList.remove('is-press'))
   cursor.classList.remove('is-down')
-  k('notif').classList.remove('is-in')
-  open(null); pickTab(0); page.scrollTop = 0
+  k('mail').classList.remove('is-landed')
+  open(k('mail')); pickTab(0); page.scrollTop = 0
 }
 
 /** Screen px per stage px, for measuring the page while the stage is scaled. */
@@ -396,37 +355,29 @@ async function drag(t, x, y, dy, ms = 800) {
 }
 async function tap(t, el, fx, fy) { await move(t, at(el, fx, fy)); await sleep(160, t); await click(t, el) }
 
-/* ── 01 · Locked, then the email arrives. ── */
-async function arrive(t) {
-  reset(); chapter(0)
-  await sleep(1400, t)
-  k('notif').classList.add('is-in')
-  await sleep(1300, t)
-  await tap(t, k('notif'), .5, .5)
-  open(k('mail')); k('notif').classList.remove('is-in')
-}
-
-/* ── 02 · The email: the message, its summary card, and the link. ── */
+/* ── 01 · The email lands: the message, its summary card, and the link. ── */
 async function email(t) {
-  chapter(1)
-  await sleep(700, t)
+  reset(); chapter(0)
+  await sleep(450, t)
+  k('mail').classList.add('is-landed')
+  await sleep(1500, t)
   await move(t, at($('.m-body'), .55, .6), 700); await sleep(900, t)
   await tap(t, k('view'), .5, .5)
   open(k('safari'))
   k('load').animate([{ scale: '0 1', opacity: 1 }, { scale: '.8 1', opacity: 1, offset: .7 }, { scale: '1 1', opacity: 0 }], { duration: 900, easing: 'ease-out' })
 }
 
-/* ── 03 · The record in the browser: no app, no sign-in. Scroll to its key properties. ── */
+/* ── 02 · The record in the browser: no app, no sign-in. Scroll to its key properties. ── */
 async function record(t) {
-  chapter(2)
+  chapter(1)
   await sleep(1300, t)
   await drag(t, 250, 640, stuck(), 900)
   await sleep(1500, t)
 }
 
-/* ── 04 · Documents, and what still needs verification. ── */
+/* ── 03 · Documents, and what still needs verification. ── */
 async function documents(t) {
-  chapter(3)
+  chapter(2)
   await tap(t, k('t-1'), .4, .5)
   pickTab(1); page.scrollTop = stuck()
   await sleep(1300, t)
@@ -435,20 +386,20 @@ async function documents(t) {
   await sleep(1800, t)
 }
 
-/* ── 05 · Photos and the supplier. ── */
+/* ── 04 · Photos and the supplier. ── */
 async function photos(t) {
-  chapter(4)
+  chapter(3)
   await tap(t, k('t-2'), .4, .5)
   pickTab(2); page.scrollTop = stuck()
   await sleep(1400, t)
   await drag(t, 250, 690, 200, 800)
   await sleep(1700, t)
-  // The finger lifts away before the loop locks the phone again.
+  // The finger lifts away before the loop goes back to the email.
   await move(t, [W * .62, H + 60], 700)
   await sleep(500, t)
 }
 
-boot({ scenes: [arrive, email, record, documents, photos], home: () => { reset(); chapter(0); if (reduce) k('notif').classList.add('is-in') } })
+boot({ scenes: [email, record, documents, photos], home: () => { reset(); chapter(0); if (reduce) k('mail').classList.add('is-landed') } })
 </script>
 </body>
 </html>

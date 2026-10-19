@@ -546,8 +546,9 @@ export const FILO_CONFIG = {
     textReveal: textRevealDials(),
     /** Market gap's desk image: size relative to the 800px column, and offset (px). */
     gapImage: { scale: [1, 0.3, 2, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
-    /** Proposal's phone-over-tag image: which photo, size relative to its 460px base, and offset (px). */
-    proposalImage: { image: { type: 'select' as const, options: ['Green swatches', 'Orange swatches'], default: 'Green swatches' }, scale: [1, 0.3, 2.5, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
+    /** Proposal's phone-over-tag image: which photo, size relative to its 460px base, and offset (px).
+        accent Olive recolours the orange swatch (Orange swatches photo) and the turning windbreaker olive. */
+    proposalImage: { image: { type: 'select' as const, options: ['Green swatches', 'Orange swatches'], default: 'Green swatches' }, accent: { type: 'select' as const, options: ['Orange', 'Olive'], default: 'Orange' }, scale: [1, 0.3, 2.5, 0.01] as Tuple, x: [0, -400, 400, 1] as Tuple, y: [0, -300, 300, 1] as Tuple, _collapsed: false },
     /** Cream products turning beside the proposal image: size (px), gap from the image (px), seconds per turn. */
     products: { show: true, size: [190, 80, 360, 1] as Tuple, spread: [30, -200, 300, 1] as Tuple, spin: [9, 3, 30, 0.5] as Tuple, _collapsed: false },
     spacing: sectionSpacingDials(90, 70, 100),

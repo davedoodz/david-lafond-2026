@@ -1,44 +1,14 @@
-/* Wider than the case column so the desktop app reads at size, still clear of the fixed back link. */
-.case__section.filo-steps {
+/* Each step is a case section (CaseStudyPage.css) with the shared section copy. It grows past one screen
+   to fit its prototype, and runs wider than the case column so the desktop app reads at size, still
+   clear of the fixed back link. */
+.case__section.fss-step[data-layout] {
   height: auto;
-  min-height: 0;
+  min-height: 100svh;
   overflow: visible;
   padding-inline: max(24px, calc((100% - 1200px) / 2));
   grid-template-columns: minmax(0, 1fr);
-  justify-items: stretch;
 }
-/* The steps stack top to bottom, 01 to 05. Each centres its number and stage, title, text and visual. */
-.fss-steps {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  row-gap: 140px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.fss-step { position: relative; display: grid; justify-items: center; min-width: 0; text-align: center; }
-/* The step number is the case study's eyebrow, sized like the section-copy eyebrow (“Primary market research”). */
-.fss-num { margin: 0; font-size: var(--text-small); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
-.fss-title {
-  margin: 14px 0 0;
-  font-size: clamp(19px, 1.5vw, 22px);
-  font-weight: 400;
-  line-height: 1.18;
-  letter-spacing: -.02em;
-  color: var(--ink-950, #0b0a09);
-  white-space: pre-line;
-  text-wrap: balance;
-}
-.fss-body {
-  max-width: 34em;
-  margin: 10px 0 0;
-  font-size: var(--text-small);
-  line-height: 1.5;
-  color: var(--ink-500, #6f6b66);
-  white-space: pre-line;
-  text-wrap: pretty;
-}
-.fss-visual { display: grid; justify-items: center; width: 100%; margin-top: 34px; min-width: 0; }
+.fss-visual { display: grid; justify-items: center; width: 100%; min-width: 0; }
 
 /* Steps 1 and 2: the portal prototypes (AppFlow), each framed like a window. The frame clips the cursor where
    it leaves the app, and its ground matches the app's so nothing flashes while the prototype loads.
@@ -114,8 +84,7 @@
 }
 
 @media (max-width: 640px) {
-  .case__section.filo-steps { padding-inline: 16px; }
-  .fss-steps { row-gap: 88px; }
+  .case__section.fss-step[data-layout] { padding-inline: 16px; }
   .fss-app:not(.fss-app--phone, .fss-app--scene) { border-radius: 6px; }
   /* Step 3 stacks: the phone, then the box under it, each sized in layout (scale capped to the column).
      The phone stays centred: inbox › x / y place it beside the box, which only exists on desktop. */

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filo · Proposal product labels — 10 variants</title>
+<style>
+/* The case study's Proposal scene, as it renders at 1440 with David's saved dials (src/pages/filoStoryArt.tsx,
+   filoStoryArt.css): 460px frame, "Orange swatches" photo with flow-04 playing on the phone, four 190px
+   turntables 30px out, spinning every 9s. Only the labels under the products change. */
+@font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+:root { --ink: #171717; --text: #666; --mute: #9a9a97; --line: #e4e4e1; --moss: #4f6b4a; --page: #f5f5f5; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif; letter-spacing: -0.2px; }
+header { max-width: 1100px; margin: 0 auto; padding: 56px 40px 8px; }
+header h1 { margin: 0; font-size: 22px; font-weight: 500; }
+header p { margin: 6px 0 0; color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.5; }
+header p.note { font-size: 13.5px; color: var(--mute); }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 40px 96px; display: grid; gap: 64px; }
+figure { margin: 0; }
+figcaption { margin-bottom: 8px; }
+figcaption b { display: block; font-size: 15px; font-weight: 500; }
+figcaption b span { color: var(--mute); font-weight: 400; margin-right: 8px; font-variant-numeric: tabular-nums; }
+figcaption small { display: block; margin-top: 4px; color: var(--text); font-size: 13.5px; line-height: 1.45; max-width: 560px; }
+
+/* The scene: frame centred, products 30px outside it, top 4% / bottom 6%. */
+.scene { position: relative; width: 900px; height: 700px; margin: 0 auto; padding-top: 40px; }
+.frame { position: absolute; left: 220px; top: 40px; width: 460px; aspect-ratio: 1127 / 1396; translate: 0 50px; }
+.stage { position: absolute; left: 0; top: 0; width: 1127px; height: 1396px; transform-origin: 0 0; scale: calc(460 / 1127); }
+.stage > * { position: absolute; left: 0; top: 0; }
+.screen { width: 100%; height: 100%; -webkit-mask: url('/work/filo/story/opportunity-screen-mask-2.webp') 0 0 / 100% 100% no-repeat; mask: url('/work/filo/story/opportunity-screen-mask-2.webp') 0 0 / 100% 100% no-repeat; }
+.warp { width: 792px; height: 1715px; overflow: hidden; transform-origin: 0 0;
+  transform: matrix3d(0.521914, -0.111371, 0, 9.46491e-06, 0.174494, 0.318496, 0, -5.03511e-05, 0, 0, 1, 0, 239.6, 100.902, 0, 1); }
+.warp video { position: absolute; left: -65px; top: -63px; width: 920px; height: 1844px; max-width: none; }
+.phone { width: 100%; height: 100%; }
+.product { position: absolute; width: 190px; }
+.product canvas { display: block; width: 190px; height: 190px; }
+.product[data-place$='left'] { right: calc(100% + 30px); }
+.product[data-place$='right'] { left: calc(100% + 30px); }
+.product[data-place^='top'] { top: 4%; }
+.product[data-place^='bottom'] { top: calc(94% - 190px); }
+
+/* Labels: subtle, under each product. Pulled up into the turntable's empty margin. */
+.label { margin-top: -12px; font-size: 12px; line-height: 16px; color: var(--mute); }
+.label p { margin: 0; }
+.label .name { color: var(--ink); font-weight: 500; }
+
+/* 01 Future Fabric: name, brand, material; left aligned. */
+.v1 .label .name { font-weight: 600; letter-spacing: -0.25px; }
+.v1 .label .mat { color: var(--text); }
+/* 02 the same, centred under the product. */
+.v2 .label { text-align: center; }
+.v2 .label .name { font-weight: 600; }
+/* 03 Material class as a tiny eyebrow. */
+.v3 .label .eyebrow { font-size: 9.5px; line-height: 14px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); margin-bottom: 2px; }
+.v3 .label .name { font-weight: 600; }
+/* 04 Brand and material share one muted line. */
+.v4 .label .name { font-weight: 600; }
+.v4 .label .dot { padding: 0 5px; color: #c4c4c1; }
+/* 05 "Made from…" in moss, the line that says it isn't a normal product. */
+.v5 .label .made { color: var(--moss); margin-top: 3px; }
+.v5 .label .name { font-weight: 600; }
+/* 06 Material as a small outlined chip. */
+.v6 .label .name { font-weight: 600; }
+.v6 .label .chip { display: inline-block; margin-top: 6px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 11px; line-height: 15px; color: var(--text); background: rgb(255 255 255 / .55); }
+/* 07 Hairline spec: name, rule, label/value rows. */
+.v7 .label .name { font-weight: 600; padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 5px; }
+.v7 .label dl { margin: 0; display: grid; grid-template-columns: 52px 1fr; row-gap: 1px; font-size: 11px; line-height: 15px; }
+.v7 .label dt { color: var(--mute); }
+.v7 .label dd { margin: 0; color: var(--text); }
+/* 08 Material leads; the product and brand follow. */
+.v8 .label .mat { color: var(--ink); font-weight: 600; }
+/* 09 Aligned toward the phone: left products right-aligned, right products left-aligned. */
+.v9 .product[data-place$='left'] .label { text-align: right; }
+.v9 .label .name { font-weight: 600; }
+.v9 .label .x { color: var(--text); }
+/* 10 Whisper: one line of ink, one line of mute, 11px. */
+.v10 .label { font-size: 11px; line-height: 15px; text-align: center; }
+.v10 .label .name { font-weight: 500; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Proposal products — 10 label treatments</h1>
+  <p>The Proposal scene as it renders on the case study, with each product named the Future Fabric way: product, then brand, plus what it is made of. Inter, 9.5–12px.</p>
+  <p class="note">Sources: Xtep's 100% PLA windbreaker (corn-starch PLA, Xtep 2020); Zara × Piñatex and Nike Happy Pineapple (Piñatex, pineapple-leaf fibre). The North Face × Spiber Brewed Protein is real, but this exact white puffer is not confirmed to use it — check the sprite's source before shipping.</p>
+</header>
+<main id="variants"></main>
+<script type="module">
+const PRODUCTS = [
+  { place: 'top-left', sheet: '/work/filo/sprites-hd/xtep-pla-windbreaker-spritesheet.webp', view: 768,
+    name: 'PLA windbreaker', brand: 'Xtep', mat: '100% PLA from corn starch', made: 'Made from fermented corn', cls: 'Bio-based polymer · PLA', short: 'Corn-starch PLA' },
+  { place: 'bottom-left', sheet: '/work/filo/sprites-hd/zara-pinatex-bag-spritesheet.webp', view: 768,
+    name: 'Piñatex tote', brand: 'Zara × Piñatex', mat: 'Pineapple-leaf fibre', made: 'Made from pineapple leaves', cls: 'Plant-based · Piñatex', short: 'Pineapple-leaf fibre' },
+  { place: 'top-right', sheet: '/work/filo/sprites-hd/northface-spritesheet.webp', view: 768,
+    name: 'Brewed Protein puffer', brand: 'The North Face × Spiber', mat: 'Brewed Protein fibre', made: 'Made from microbe-brewed protein', cls: 'Protein-based · Brewed Protein', short: 'Brewed Protein' },
+  { place: 'bottom-right', sheet: '/work/filo/sprites/nike-partners-with-pinatex-for-happy-pineapple-plant-based-sneaker-collection-spritesheet.webp', view: 256,
+    name: 'Happy Pineapple sneakers', brand: 'Nike × Piñatex', mat: 'Pineapple-leaf fibre upper', made: 'Made from pineapple leaves', cls: 'Plant-based · Piñatex', short: 'Pineapple-leaf fibre' },
+]
+
+const VARIANTS = [
+  ['Future Fabric', 'Name, brand, material — three left-aligned lines, as in the Future Fabric catalog.',
+    p => `<p class="name">${p.name}</p><p>${p.brand}</p><p class="mat">${p.mat}</p>`],
+  ['Future Fabric, centred', 'The same three lines centred on the product, so they sit under the object rather than the canvas edge.',
+    p => `<p class="name">${p.name}</p><p>${p.brand}</p><p>${p.mat}</p>`],
+  ['Material eyebrow', 'A 9.5px uppercase material class above the name: the reader sees “protein-based” before “puffer”.',
+    p => `<p class="eyebrow">${p.cls}</p><p class="name">${p.name}</p><p>${p.brand}</p>`],
+  ['Brand · material', 'Two lines only: the name, then brand and material on one muted line.',
+    p => `<p class="name">${p.name}</p><p>${p.brand}<span class="dot">·</span>${p.short}</p>`],
+  ['Made from…', 'Name and brand, then a moss-green “Made from…” line — the one colour accent says these are not ordinary products.',
+    p => `<p class="name">${p.name}</p><p>${p.brand}</p><p class="made">${p.made}</p>`],
+  ['Material chip', 'The material sits in a small outlined pill under name and brand, like a spec tag.',
+    p => `<p class="name">${p.name}</p><p>${p.brand}</p><span class="chip">${p.short}</span>`],
+  ['Hairline spec', 'Name over a hairline, then two label/value rows. Reads like the Technical File itself.',
+    p => `<p class="name">${p.name}</p><dl><dt>Brand</dt><dd>${p.brand}</dd><dt>Material</dt><dd>${p.short}</dd></dl>`],
+  ['Material leads', 'The material is the headline; the product and brand follow in mute.',
+    p => `<p class="mat">${p.short}</p><p>${p.name}, ${p.brand}</p>`],
+  ['Toward the phone', 'Left products right-aligned, right products left-aligned, so all four labels lean into the centre.',
+    p => `<p class="name">${p.name}</p><p class="x">${p.brand}</p><p>${p.mat}</p>`],
+  ['Whisper', 'The smallest option: 11px, centred, name in ink and “brand · material” in mute.',
+    p => `<p class="name">${p.name}</p><p>${p.brand} · ${p.short}</p>`],
+]
+
+const main = document.getElementById('variants')
+main.innerHTML = VARIANTS.map(([title, note, label], i) => `
+  <figure class="v${i + 1}">
+    <figcaption><b><span>${String(i + 1).padStart(2, '0')}</span>${title}</b><small>${note}</small></figcaption>
+    <div class="scene"><div class="frame">
+      <div class="stage">
+        <div class="screen"><div class="warp">
+          <video muted loop playsinline preload="none" poster="/work/filo/films/flow-04.webp" width="920" height="1844">
+            <source data-src="/work/filo/films/flow-04.mov" type='video/quicktime; codecs="hvc1"'>
+            <source data-src="/work/filo/films/flow-04.webm" type="video/webm">
+          </video>
+        </div></div>
+        <img class="phone" src="/work/filo/story/opportunity-phone-2.webp" width="1127" height="1396" alt="">
+      </div>
+      ${PRODUCTS.map((p, j) => `<div class="product" data-place="${p.place}"><canvas data-sheet="${j}" data-phase="${j * 0.37}"></canvas><div class="label">${label(p)}</div></div>`).join('')}
+    </div></div>
+  </figure>`).join('')
+
+// Each sheet decoded once at 2× the 190px tile and shared by every scene; one rAF loop draws visible canvases.
+const GRID = 6, VIEWS = 36, SPIN = 9, TILE = 380
+const sheets = await Promise.all(PRODUCTS.map(async p => {
+  const blob = await (await fetch(p.sheet)).blob()
+  const size = Math.min(TILE, p.view) * GRID
+  return createImageBitmap(blob, { resizeWidth: size, resizeHeight: size, resizeQuality: 'high' })
+}))
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+const visible = new Set()
+const canvases = [...document.querySelectorAll('canvas[data-sheet]')]
+for (const c of canvases) { c.width = c.height = TILE; c.dataset.shown = '-1' }
+const draw = (c, now) => {
+  const index = reduced ? 0 : Math.floor((((now / 1000) / SPIN + Number(c.dataset.phase)) % 1) * VIEWS)
+  if (String(index) === c.dataset.shown) return
+  c.dataset.shown = String(index)
+  const bmp = sheets[Number(c.dataset.sheet)], t = bmp.width / GRID, ctx = c.getContext('2d')
+  ctx.clearRect(0, 0, TILE, TILE)
+  ctx.drawImage(bmp, (index % GRID) * t, Math.floor(index / GRID) * t, t, t, 0, 0, TILE, TILE)
+}
+canvases.forEach(c => draw(c, performance.now()))
+const tick = now => { visible.forEach(fig => fig.querySelectorAll('canvas').forEach(c => draw(c, now))); requestAnimationFrame(tick) }
+requestAnimationFrame(tick)
+
+// Films play only while their scene is on screen.
+const observer = new IntersectionObserver(entries => entries.forEach(({ target, isIntersecting }) => {
+  const video = target.querySelector('video')
+  if (!isIntersecting) { visible.delete(target); return video.pause() }
+  visible.add(target)
+  if (reduced) return
+  if (!video.dataset.loaded) { video.querySelectorAll('source').forEach(s => { s.src = s.dataset.src }); video.dataset.loaded = '1'; video.load() }
+  video.play().catch(() => {})
+}), { threshold: 0.15 })
+document.querySelectorAll('figure').forEach(fig => observer.observe(fig))
+</script>
+</body>
+</html>

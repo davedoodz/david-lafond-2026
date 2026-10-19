@@ -3,14 +3,14 @@ import { EditableText } from '../components/EditableText'
 import { FiloPersonaLoop } from '../features/filoCase/FiloPersonaLoop'
 import type { Story } from './caseStudyFlows'
 import type { TextReveal } from './caseStudyContent'
-import type { SheetReply, SheetRequest } from './turntableSheet.worker'
+import { SHEET_GRID, SHEET_VIEWS, decodeSheet } from '../features/filoCase/turntableSheets'
 import './filoStoryArt.css'
 
 type StoryCopy = Pick<Story, 'problemLabel' | 'problemTitle' | 'problemBody' | 'opportunityLabel' | 'opportunityTitle' | 'opportunityBody' | 'spacing' | 'textWidth'>
 export type FiloStorySettings = StoryCopy & {
   textReveal: TextReveal
   gapImage: { scale: number; x: number; y: number }
-  proposalImage: { image: string; scale: number; x: number; y: number }
+  proposalImage: { image: string; accent: string; scale: number; x: number; y: number }
   products: { show: boolean; size: number; spread: number; spin: number }
 }
 
@@ -24,7 +24,8 @@ const FILM_SCREEN = { x: 65, y: 63, width: 792, height: 1715 }
  * blue screen and pushed 3px past them, so the bezel hides the seam and no gap can show at the edges.
  * Both photos' Dynamic Islands land within 5px of the film's.
  */
-const OPPORTUNITY_PHOTOS: Record<string, { phone: string; mask: string; warp: string }> = {
+/** `olive`: the same photo with its orange swatch recoloured olive (DialKit › story › proposalImage › accent). */
+const OPPORTUNITY_PHOTOS: Record<string, { phone: string; olive?: string; mask: string; warp: string }> = {
   'Green swatches': {
     phone: '/work/filo/story/opportunity-phone.webp',
     mask: '/work/filo/story/opportunity-screen-mask.webp',
@@ -32,41 +33,21 @@ const OPPORTUNITY_PHOTOS: Record<string, { phone: string; mask: string; warp: st
   },
   'Orange swatches': {
     phone: '/work/filo/story/opportunity-phone-2.webp',
+    olive: '/work/filo/story/opportunity-phone-2-olive.webp',
     mask: '/work/filo/story/opportunity-screen-mask-2.webp',
     warp: 'matrix3d(0.521914, -0.111371, 0, 9.46491e-06, 0.174494, 0.318496, 0, -5.03511e-05, 0, 0, 1, 0, 239.6, 100.902, 0, 1)',
   },
 }
 
 /** Products made with new materials, turning beside the proposal image. Each sheet is 36 transparent
-    views in a 6 × 6 grid, row by row; `view` is the sheet's own px per view. */
+    views in a 6 × 6 grid, row by row; `view` is the sheet's own px per view; `olive` is the sheet recoloured
+    for the olive accent. */
 const PROPOSAL_PRODUCTS = [
-  { place: 'top-left', label: 'Xtep windbreaker in PLA', sheet: '/work/filo/sprites-hd/xtep-pla-windbreaker-spritesheet.webp', view: 768 },
+  { place: 'top-left', label: 'Xtep windbreaker in PLA', sheet: '/work/filo/sprites-hd/xtep-pla-windbreaker-spritesheet.webp', olive: '/work/filo/sprites-hd/xtep-pla-windbreaker-olive-spritesheet.webp', view: 768 },
   { place: 'bottom-left', label: 'Zara tote in Piñatex', sheet: '/work/filo/sprites-hd/zara-pinatex-bag-spritesheet.webp', view: 768 },
   { place: 'top-right', label: 'The North Face puffer', sheet: '/work/filo/sprites-hd/northface-spritesheet.webp', view: 768 },
   { place: 'bottom-right', label: 'Nike Happy Pineapple sneaker in Piñatex', sheet: '/work/filo/sprites/nike-partners-with-pinatex-for-happy-pineapple-plant-based-sneaker-collection-spritesheet.webp', view: 256 },
 ] as const
-const SHEET_GRID = 6
-const SHEET_VIEWS = SHEET_GRID * SHEET_GRID
-
-/** One shared worker decodes every sheet (see turntableSheet.worker.ts), started on first use. */
-let sheetWorker: Worker | undefined
-let sheetRequests = 0
-const sheetReplies = new Map<number, (reply: SheetReply) => void>()
-function decodeSheet(src: string, size: number) {
-  if (!sheetWorker) {
-    sheetWorker = new Worker(new URL('./turntableSheet.worker.ts', import.meta.url), { type: 'module' })
-    sheetWorker.addEventListener('message', (event: MessageEvent<SheetReply>) => {
-      sheetReplies.get(event.data.id)?.(event.data)
-      sheetReplies.delete(event.data.id)
-    })
-  }
-  const request: SheetRequest = { id: ++sheetRequests, src, size }
-  const worker = sheetWorker
-  return new Promise<ImageBitmap>((resolve, reject) => {
-    sheetReplies.set(request.id, (reply) => 'bitmap' in reply ? resolve(reply.bitmap) : reject(new Error(`${src}: ${reply.error}`)))
-    worker.postMessage(request)
-  })
-}
 
 /**
  * One product turning on a canvas. Painting the HD sheet as a CSS background made Chrome decode the
@@ -163,16 +144,16 @@ function Turntable({ sheet, view, spin, phase }: { sheet: string; view: number; 
   return <canvas ref={ref} className="fs-turntable" />
 }
 
-function ProposalProducts({ spin }: { spin: number }) {
+function ProposalProducts({ spin, olive }: { spin: number; olive: boolean }) {
   return <>
     {PROPOSAL_PRODUCTS.map((p, i) => <div key={p.place} className="fs-product" data-place={p.place}>
-      <Turntable sheet={p.sheet} view={p.view} spin={spin} phase={i * 0.37} />
+      <Turntable sheet={olive && 'olive' in p ? p.olive : p.sheet} view={p.view} spin={spin} phase={i * 0.37} />
     </div>)}
   </>
 }
 
 /** The tag-to-record prototype (flow-04) playing on the photographed phone, under its bezel. */
-function Opportunity({ image, productSpin }: { image: string; productSpin: number | null }) {
+function Opportunity({ image, olive, productSpin }: { image: string; olive: boolean; productSpin: number | null }) {
   const photo = OPPORTUNITY_PHOTOS[image] ?? OPPORTUNITY_PHOTOS['Green swatches']
   const hostRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -220,10 +201,10 @@ function Opportunity({ image, productSpin }: { image: string; productSpin: numbe
           </video>
         </div>
       </div>
-      <img className="fs-opp-phone" src={photo.phone} width={OPPORTUNITY_PHOTO.width} height={OPPORTUNITY_PHOTO.height} alt="" loading="lazy" decoding="async" draggable={false} />
+      <img className="fs-opp-phone" src={olive && photo.olive ? photo.olive : photo.phone} width={OPPORTUNITY_PHOTO.width} height={OPPORTUNITY_PHOTO.height} alt="" loading="lazy" decoding="async" draggable={false} />
     </div>
   </div>
-  {productSpin !== null && <ProposalProducts spin={productSpin} />}
+  {productSpin !== null && <ProposalProducts spin={productSpin} olive={olive} />}
   </>
 }
 
@@ -264,7 +245,7 @@ export function FiloStory({ s, edit }: { s: FiloStorySettings; edit: (path: stri
     ['problem', s.problemLabel, s.problemTitle, s.problemBody,
       'A technical designer at her desk calls a supplier, sketches, sews a sample, checks a swatch and types up the result.', <FiloPersonaLoop key="gap" alt="" />],
     ['opportunity', s.opportunityLabel, s.opportunityTitle, s.opportunityBody,
-      'A phone held over a Filo tag on fabric swatches plays the prototype: tap the sample and its Technical File opens.', <Opportunity key="opportunity" image={s.proposalImage.image} productSpin={s.products.show ? s.products.spin : null} />],
+      'A phone held over a Filo tag on fabric swatches plays the prototype: tap the sample and its Technical File opens.', <Opportunity key="opportunity" image={s.proposalImage.image} olive={s.proposalImage.accent === 'Olive'} productSpin={s.products.show ? s.products.spin : null} />],
   ] as const
   return <section
     id="filo-story"
