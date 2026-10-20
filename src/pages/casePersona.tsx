@@ -148,9 +148,9 @@ export const FLOAT_DIALS = {
     /** Image first: pause after the last bubble settles before the text block. Text first: pause after the
      *  body finishes before the portrait. Below 0 they overlap. */
     textGap: [0.1, -3, 4, 0.01] as Tuple,
-    /** Image first: from the portrait landing to the first floating bubble. Text first: from the last pill
-     *  landing to the first bubble. */
-    floatsDelay: [0.35, 0, 4, 0.05] as Tuple,
+    /** Seconds the floating bubbles wait before the first one appears, counted from their trigger (the
+     *  profile pills settled and the title scrolled up to the Back link, or the pills arriving from below). */
+    floatsDelay: [0.35, 0, 6, 0.05] as Tuple,
     /** Between one floating bubble and the next (drift). */
     floatStagger: [0.18, 0, 1.5, 0.01] as Tuple,
     _collapsed: false,
@@ -792,6 +792,7 @@ export function PersonaSection({
                 '--pe-text-2': `${timeline.text[2]}s`,
                 '--pe-image': `${timeline.image}s`,
                 '--pe-floats': `${timeline.floats}s`,
+                '--pe-floats-delay': `${ent.floatsDelay}s`,
                 '--pe-float-stagger': `${ent.floatStagger}s`,
                 '--pe-float-duration': `${DRIFT_IN_DURATION}s`,
               }

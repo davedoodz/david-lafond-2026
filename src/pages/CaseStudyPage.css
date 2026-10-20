@@ -2034,10 +2034,11 @@ html[data-case-snap] .case__group > * {
   animation: var(--pe-image-kf, none) var(--pe-dur, 0.7s) var(--pe-image, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 /* Floating cards (and the quotes layout) wait for the title to scroll up past the Back link
-   (casePersona `crossed` sets data-floats-in), then play on their own clock from that moment: no
-   entrance offset, hidden and paused until then. Reduced motion shows them still, as before. */
+   (casePersona `crossed` sets data-floats-in), then play on their own clock from that moment, after
+   the float › entrance › floatsDelay dial (--pe-floats-delay); hidden and paused until then. Reduced
+   motion shows them still, as before. */
 .case__persona :is(.persona__floats, .persona__quotes) {
-  --pe-floats: 0s;
+  --pe-floats: var(--pe-floats-delay, 0s);
 }
 @media (prefers-reduced-motion: no-preference) {
   .case__persona:not([data-floats-in]) :is(.persona__floats, .persona__quotes) {
