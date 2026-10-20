@@ -133,14 +133,13 @@ const CONFIG = {
     yMobile: [0, -300, 300, 1] as [number, number, number, number],
   },
   /**
-   * White fade + blur fixed to the bottom of the screen, over the story only: it eases in as the
-   * story enters from below and out as its last line rises clear, so it never covers the cards or
-   * the playground sheet.
+   * Desktop: white fade + blur fixed to the bottom of the screen, over the story only: it eases in
+   * as the story enters from below and out as its last line rises clear, so it never covers the
+   * cards or the playground sheet. Phones have none (AboutPage.css).
    */
   fade: {
     show: true,
     heightDesktop: [160, 40, 480, 1] as [number, number, number, number],
-    heightMobile: [120, 40, 360, 1] as [number, number, number, number],
     /** Blur at the bottom edge (px); it thins out toward the top of the fade. */
     blur: [6, 0, 30, 0.5] as [number, number, number, number],
     color: { type: 'color' as const, default: '#FFFFFF' },
@@ -591,7 +590,6 @@ export function AboutPage() {
     '--text-x-m': `${t.text.xMobile}px`,
     '--text-y-m': `${t.text.yMobile}px`,
     '--fade-h-d': `${t.fade.heightDesktop}px`,
-    '--fade-h-m': `${t.fade.heightMobile}px`,
     '--fade-blur': `${t.fade.blur}px`,
     '--fade-color': t.fade.color,
     '--fade-strength': t.fade.strength,

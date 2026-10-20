@@ -47,12 +47,13 @@ const NAV_CONFIG = {
     y: [0, -12, 12, 0.5] as Tuple,
     _collapsed: false,
   },
-  /** Phones only: how the links and Davebot stand off busy content under them (Nav.css, data-contrast). */
+  /** Phones only: how the links and Davebot stand off busy content under them (Nav.css, data-contrast).
+   *  Off by default: phones show no blur or fade at the top or bottom; the links tuck away on scroll instead. */
   mobileContrast: {
-    preset: { type: 'select' as const, options: ['Off', 'Edge blur', 'Soft fade', 'Fade scrim', 'Pill', 'Text halo', 'Strong text'], default: 'Edge blur' },
+    preset: { type: 'select' as const, options: ['Off', 'Edge blur', 'Soft fade', 'Fade scrim', 'Pill', 'Text halo', 'Strong text'], default: 'Off' },
     /**
      * Edge blur: no colour, only a blur strongest at the screen edge that thins out. Drawn at the top
-     * under the nav, and at the bottom over the About story (AboutPage.css .about__fade).
+     * under the nav.
      * length: band height (px). strength: share of it held at full blur before thinning (0–1).
      * opacity: how much of the blur shows (0–1). blur: the blur at the edge (px).
      * bottom: the same blur pinned to the bottom of the screen on every page (Nav.css). The dither
@@ -226,6 +227,45 @@ export function Nav({ route }: Props) {
   const { preset, fadeTone, fadeLinks } = t.mobileContrast
   const fadeSurface = fadeTone === 'Light' ? 'light' : fadeTone === 'Dark' ? 'dark' : section
   const surface = phone && preset === 'Soft fade' && fadeLinks === 'Match fade' ? fadeSurface : under
+
+  // Phones: the links tuck away while you scroll down and come back as soon as you scroll up (or
+  // reach the top); Davebot stays. Direction is judged over a few pixels of travel so jitter and
+  // iOS overscroll at either end don't flicker them (Nav.css, data-tucked). Only your own scrolling
+  // (a touch, wheel or key in the last 1.5s, which covers a flick's momentum) tucks them: the Momo
+  // intro's glide or a jump to a section leaves them shown.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav || !phone) return
+    const max = () => document.documentElement.scrollHeight - window.innerHeight
+    let last = Math.min(Math.max(window.scrollY, 0), max())
+    let travel = 0
+    let input = -Infinity
+    const onInput = () => {
+      input = performance.now()
+    }
+    const onScroll = () => {
+      const y = Math.min(Math.max(window.scrollY, 0), max())
+      const dy = y - last
+      last = y
+      if (y < 40) {
+        travel = 0
+        nav.removeAttribute('data-tucked')
+        return
+      }
+      if (!dy) return
+      travel = Math.sign(dy) === Math.sign(travel) ? travel + dy : dy
+      if (travel > 12 && performance.now() - input < 1500) nav.setAttribute('data-tucked', '')
+      else if (travel < -12) nav.removeAttribute('data-tucked')
+    }
+    const inputs = ['touchstart', 'touchmove', 'wheel', 'keydown'] as const
+    for (const type of inputs) window.addEventListener(type, onInput, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      for (const type of inputs) window.removeEventListener(type, onInput)
+      window.removeEventListener('scroll', onScroll)
+      nav.removeAttribute('data-tucked')
+    }
+  }, [phone])
 
   const style = {
     '--nav-tracking-d': `${t.letterSpacing.desktop}px`,
