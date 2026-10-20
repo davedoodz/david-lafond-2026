@@ -65,7 +65,7 @@ const DIALS: PhoneDialTable = {
   },
   '4 Steps 01–04 · prototypes': {
     'Portal window width': ['--fm-portal-w', 342, 200, 400, 2, 'px'],
-    'Phone width': ['--fm-phone-w', 125, 80, 320, 1, 'px'],
+    'Phone width': ['--fm-phone-w', 156, 80, 320, 1, 'px'],
     'Sample box width': ['--fm-box-w', 390, 200, 700, 2, 'px'],
     'Box to phone gap': ['--fm-box-gap', 40, 0, 120, 2, 'px'],
     'Tap scene phone width': ['--fm-tap-w', 175, 100, 250, 1, 'px'],

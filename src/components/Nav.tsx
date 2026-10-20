@@ -258,8 +258,8 @@ export function Nav({ route }: Props) {
   // Phones: the links tuck away while you scroll down and come back as soon as you scroll up (or
   // reach the top); Davebot stays. Direction is judged over a few pixels of travel so jitter and
   // iOS overscroll at either end don't flicker them (Nav.css, data-tucked). Only your own scrolling
-  // (a touch, wheel or key in the last 1.5s, which covers a flick's momentum) tucks them: the Momo
-  // intro's glide or a jump to a section leaves them shown.
+  // (a drag, wheel or scroll key in the last 1.5s, which covers a flick's momentum) tucks them: the
+  // Momo intro's glide or a jump to a section leaves them shown, even when a tap (Skip) started it.
   useEffect(() => {
     const nav = navRef.current
     if (!nav || !phone) return
@@ -267,7 +267,9 @@ export function Nav({ route }: Props) {
     let last = Math.min(Math.max(window.scrollY, 0), max())
     let travel = 0
     let input = -Infinity
-    const onInput = () => {
+    const onInput = (event: Event) => {
+      // Enter or Space on a button or link presses it; it doesn't scroll the page.
+      if (event.type === 'keydown' && (event.target as Element | null)?.closest?.('button, a, input, textarea, select')) return
       input = performance.now()
     }
     const onScroll = () => {
@@ -284,7 +286,8 @@ export function Nav({ route }: Props) {
       if (travel > 12 && performance.now() - input < 1500) nav.setAttribute('data-tucked', '')
       else if (travel < -12) nav.removeAttribute('data-tucked')
     }
-    const inputs = ['touchstart', 'touchmove', 'wheel', 'keydown'] as const
+    // No touchstart: a tap (Skip, Replay) isn't a scroll, and the glide it starts shouldn't tuck.
+    const inputs = ['touchmove', 'wheel', 'keydown'] as const
     for (const type of inputs) window.addEventListener(type, onInput, { passive: true })
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => {

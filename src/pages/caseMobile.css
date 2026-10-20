@@ -145,13 +145,14 @@
   main.project .project__back {
     display: none;
   }
+  /* Sticky on the nav row (its middle 49px down) while the viewer is on screen; it leaves with the
+     viewer. Margins net its 44px to zero flow: up 57px into the nav row, then 13px back down. */
   main.project .viewer__switch {
-    position: absolute;
-    /* Its middle on the nav row (49px down); the viewer starts at the nav's 84px. */
-    top: -57px;
-    left: 50%;
+    position: sticky;
+    top: 27px;
     z-index: 51;
-    margin: 0;
-    translate: -50% 0;
+    align-self: center;
+    margin: -57px 0 13px;
+    translate: none;
   }
 }

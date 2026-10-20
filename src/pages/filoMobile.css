@@ -194,10 +194,13 @@
     right: auto;
     bottom: var(--a-y);
     width: var(--a-w);
-    transform: translateX(calc(-50% + var(--a-x)));
+    transform: translateX(calc(-50% + var(--a-shift, 0%) + var(--a-x)));
   }
+  /* The four care-label icons sit 47px right of the 900px art's middle: shift by that share so the
+     icon row, not the whole picture, is on the card's centre line. */
   main.case[data-work='filo'] .filo-quote-art[src*='technical-designer'] {
     --a-w: var(--fm-art1-w); --a-x: var(--fm-art1-x); --a-y: var(--fm-art1-y);
+    --a-shift: calc(-47 / 900 * 100%);
   }
   main.case[data-work='filo'] .filo-quote-art[src*='quote-art-designer'] {
     --a-w: var(--fm-art2-w); --a-x: var(--fm-art2-x); --a-y: var(--fm-art2-y);

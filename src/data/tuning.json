@@ -151,7 +151,8 @@
   "Selected works": {
     "titles": {
       "momoMobile": "Momo – Multimodal AI Reflection",
-      "filoMobile": "Filo – New Materials Software"
+      "filoDesktop": "Filo — Software for Next-Gen Textiles, from Sample to Apparel Production",
+      "filoMobile": "Filo – Next-Gen Textiles Software"
     },
     "morph": {
       "curve": "expo-out",
@@ -186,11 +187,11 @@
     },
     "label": {
       "text": "SELECTED PROJECTS",
+      "show": false,
       "topDesktop": 48,
       "topMobile": 135,
       "arrowSize": 1,
-      "arrowY": -0.5,
-      "show": false
+      "arrowY": -0.5
     },
     "focus": {
       "restScale": 0.95
@@ -200,6 +201,11 @@
     }
   },
   "Photo stack": {
+    "card": {
+      "outline": {
+        "width": 4.5
+      }
+    },
     "order": {
       "second": "photo 3",
       "third": "photo 2"
@@ -399,6 +405,7 @@
       "speed": 10,
       "label": {
         "pillScale": 1.45,
+        "entrance": "uppercut",
         "duration": 930,
         "idleIntensity": 2
       },
@@ -493,7 +500,7 @@
   },
   "About": {
     "heading": "A short love letter to design",
-    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nI always had trouble fitting within a single box, often feeling like some imposter\n\n\nFrom working as a pre-med in Canadian hospitals to working as an architect across continents, and eventually pitching prototypes as a researcher to world class labs.\n\n(with a few failed ventures sprinkled in between)\n\nI’ve changed \"careers\" more than once.\n\nBut it's usually because I found something new I couldn’t stop obsessing about.\n\nAnd right now, that thing is product design. \n\nI'm completely addicted to the craft.\n\nYes, there's still so much to learn.\n\nYes, the world is moving fast.\n\nAnd yes, the future can feel uncertain.\n\nBut despite all this, I've never felt more empowered to get better and build faster.\n\nSo to all artists, designers, and builders –\n\nIt truly is an incredible time to be alive.\n\nBecause right now, the possibilities feel endless.\n\nAnd so maybe being a misfit isn't so bad after all?\n\nTo designing the future.\n\n- DL",
+    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nI always had trouble fitting within a single box, often feeling like some imposter\n\n\nFrom working as a pre-med in Canadian hospitals to working as an architect across continents, and eventually pitching prototypes as a researcher at MIT.\n\n(with a few failed ventures sprinkled in between)\n\nI’ve changed \"careers\" more than once.\n\nBut it's usually because I found something new I couldn’t stop obsessing about.\n\nAnd right now, that thing is product design. \n\nI'm completely addicted to the craft.\n\nYes, there's still so much to learn.\n\nYes, the world is moving fast.\n\nAnd yes, the future can feel uncertain.\n\nBut despite all this, I've never felt more empowered to get better and build faster.\n\nSo to all artists, designers, and builders –\n\nIt truly is an incredible time to be alive.\n\nBecause right now, the possibilities feel endless.\n\nAnd so maybe being a misfit isn't so bad after all?\n\nTo designing the future.\n\n- DL",
     "sheet": {
       "travel": 1.5,
       "depth": 2
@@ -585,6 +592,7 @@
     "motion": {
       "preset": "rounded",
       "loopSec": 5.6,
+      "speed": 1.5,
       "hold": 0.15,
       "stagger": 0.3,
       "order": "bottom → top",
@@ -958,7 +966,7 @@
       "sectionReveal": "still"
     },
     "hero": {
-      "title": "Taking New Materials \nfrom Sample to Production",
+      "title": "Taking Next-Gen Textiles \nfrom Sample to Production",
       "spacing": {
         "top": 46,
         "bottom": 53,
@@ -996,9 +1004,9 @@
       "offset": 28
     },
     "story": {
-      "problemTitle": "Tagged swatches can identify a material.\nThey can’t tell you if it’s production‑ready.\n",
+      "problemTitle": "Tagged swatches can identify materials.\nBut, can’t tell you if it’s production‑ready.\n",
       "problemBody": "Technical designers still have to verify supplier claims, test unknowns and document constraints across emails, spreadsheets, lab reports and PLMs before a factory can use it.",
-      "opportunityTitle": "Turn the swatch into \nan active material record.",
+      "opportunityTitle": "Turn the swatch into \na dynamic material record.",
       "opportunityBody": "One tap connects each physical sample to a living Technical File, bringing its evidence, constraints and next actions.\n",
       "gapImage": {
         "scale": 0.66,
@@ -1376,14 +1384,16 @@
       "width": 516,
       "height": 281,
       "text": 55,
+      "mobileHeight": 402,
       "fill": "#f2ebe4",
       "font": "Inter"
     },
     "quoteType": {
       "size": 22.5,
+      "sizeMobile": 15.5,
       "weight": 460,
       "spacing": -1.04,
-      "lineHeight": 1.21
+      "lineHeight": 1.18
     },
     "shadow": {
       "y": 14,
@@ -1447,7 +1457,7 @@
       "speed": 2
     },
     "tap": {
-      "speed": 2.4
+      "speed": 2
     }
   },
   "Filo next loop": {

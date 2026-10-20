@@ -90,7 +90,17 @@ export const SpreadStack = memo(function SpreadStack() {
     }
   }, [])
 
-  const go = (to: 'cover' | 'back') => {
+  const go = (to: 'cover' | 'back', button: HTMLElement) => {
+    // :active only lasts as long as the press, which a quick tap barely shows while the page starts
+    // gliding; every tap gets the same white flash instead, held briefly then eased out.
+    button.animate(
+      [
+        { background: 'var(--paper)', color: 'var(--ink-900)' },
+        { background: 'var(--paper)', color: 'var(--ink-900)', offset: 0.35 },
+        { background: 'transparent', color: 'var(--stone-400)' },
+      ],
+      { duration: 520, easing: 'ease-out' },
+    )
     const ol = list.current
     if (!ol) return
     const smooth = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
@@ -115,13 +125,13 @@ export const SpreadStack = memo(function SpreadStack() {
       </ol>
       {/* Portalled: an ancestor's transform would otherwise trap `position: fixed`. */}
       {createPortal(<nav className="spread-stack__pill" data-shown={shown} aria-label="Book position" inert={!shown}>
-        <button type="button" onClick={() => go('cover')} aria-label="Back to the cover">
+        <button type="button" onClick={(event) => go('cover', event.currentTarget)} aria-label="Back to the cover">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
         </button>
         <span className="spread-stack__count">
           {current + 1} <span>/ {SPREADS.length}</span>
         </span>
-        <button type="button" onClick={() => go('back')} aria-label="Go to the back cover">
+        <button type="button" onClick={(event) => go('back', event.currentTarget)} aria-label="Go to the back cover">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
         </button>
       </nav>, document.body)}

@@ -43,9 +43,8 @@ function aroundCentre(base: Pose, fx: TopEffect, width: number, height: number):
 
 const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms))
 
-const IMAGES = ['/about/image1.webp', '/about/image2.webp', '/about/image3.webp', '/about/image4.webp', '/about/image5.webp']
-const IMAGE_ALT = ['David outdoors in the city, wearing red sunglasses', 'David speaking into a microphone, black and white', 'David skiing in the mountains', 'David smiling in front of a workshop tool wall', 'David in sunglasses standing in a tulip garden']
-const CARD_COUNT = 5
+const IMAGES = ['/about/image1.webp', '/about/image2.webp', '/about/image3.webp', '/about/image4.webp', '/about/image5.webp', '/about/image6.webp']
+const IMAGE_ALT = ['David outdoors in the city, wearing red sunglasses', 'David speaking into a microphone, black and white', 'David skiing in the mountains', 'David smiling in front of a workshop tool wall', 'David in sunglasses standing in a tulip garden', 'David laughing in a school hallway, wearing a navy fleece, cap and a Nohant backpack']
 
 function useCardMotionValues(initial: Pose) {
   const x = useMotionValue(initial.x)
@@ -76,25 +75,28 @@ export function PhotoStack({ className }: { className?: string }) {
     if (values.topHover.preset !== 'custom') setValue('topHover.preset', 'custom')
   }, [topKey, values.topHover.preset, setValue])
 
+  const cardCount = values.photo6.show ? 6 : 5
   const slotPoses = useMemo<Pose[]>(
-    () => [values.slots.slot0, values.slots.slot1, values.slots.slot2, values.slots.slot3, values.slots.slot4],
-    [values.slots],
+    () => [values.slots.slot0, values.slots.slot1, values.slots.slot2, values.slots.slot3, values.slots.slot4, values.slots.slot5].slice(0, cardCount),
+    [values.slots, cardCount],
   )
   const imagePos = useMemo(
-    () => [values.images.image1, values.images.image2, values.images.image3, values.images.image4, values.images.image5],
+    () => [values.images.image1, values.images.image2, values.images.image3, values.images.image4, values.images.image5, values.images.image6],
     [values.images],
   )
 
   // Starting order from the Order dials: first pick wins, unpicked photos fill the gaps.
   const { order: picks } = values
-  const startKey = [picks.front, picks.second, picks.third, picks.fourth, picks.back].join('|')
+  const startKey = [cardCount, picks.front, picks.second, picks.third, picks.fourth, picks.back].join('|')
   const startOrder = useMemo(() => {
+    const [count, ...pickList] = startKey.split('|')
+    const n = Number(count)
     const out: number[] = []
-    for (const pick of startKey.split('|')) {
+    for (const pick of pickList) {
       const id = Number(pick.replace('photo ', '')) - 1
-      if (id >= 0 && id < CARD_COUNT && !out.includes(id)) out.push(id)
+      if (id >= 0 && id < n && !out.includes(id)) out.push(id)
     }
-    for (let id = 0; id < CARD_COUNT; id++) if (!out.includes(id)) out.push(id)
+    for (let id = 0; id < n; id++) if (!out.includes(id)) out.push(id)
     return out
   }, [startKey])
   const zForOrder = (next: number[]) => {
@@ -132,7 +134,9 @@ export function PhotoStack({ className }: { className?: string }) {
   const [entered, setEntered] = useState(false)
 
   const initialPoseFor = (cardId: number): Pose => {
-    const base = slotPoses[startOrder.indexOf(cardId)]
+    // A hidden photo 6 waits at the back slot.
+    const slot = startOrder.indexOf(cardId)
+    const base = slotPoses[slot === -1 ? slotPoses.length - 1 : slot]
     return { x: base.x, y: base.y + values.entrance.startOffsetY, rotate: base.rotate }
   }
 
@@ -142,6 +146,7 @@ export function PhotoStack({ className }: { className?: string }) {
     useCardMotionValues(initialPoseFor(2)),
     useCardMotionValues(initialPoseFor(3)),
     useCardMotionValues(initialPoseFor(4)),
+    useCardMotionValues(initialPoseFor(5)),
   ]
   const rootRef = useRef<HTMLDivElement>(null)
   const mvRef = useRef(mv)
@@ -174,7 +179,7 @@ export function PhotoStack({ className }: { className?: string }) {
   const playEntrance = useCallback(() => {
     setEntered(false)
     const tuckSpring = toMotionTransition(values.entrance.spring)
-    for (let cardId = 0; cardId < CARD_COUNT; cardId++) {
+    for (let cardId = 0; cardId < slotPoses.length; cardId++) {
       const slot = orderRef.current.indexOf(cardId)
       const base = slotPoses[slot]
       const { x, y, rotate, opacity } = mvRef.current[cardId]
@@ -189,7 +194,7 @@ export function PhotoStack({ className }: { className?: string }) {
       y.set(base.y + values.entrance.startOffsetY)
       rotate.set(base.rotate)
       opacity.set(0)
-      const delay = values.entrance.delay + (CARD_COUNT - 1 - slot) * values.entrance.stagger
+      const delay = values.entrance.delay + (slotPoses.length - 1 - slot) * values.entrance.stagger
       animate(x, base.x, { ...tuckSpring, delay })
       animate(y, base.y, { ...tuckSpring, delay })
       animate(rotate, base.rotate, { ...tuckSpring, delay })
@@ -197,7 +202,7 @@ export function PhotoStack({ className }: { className?: string }) {
     }
     const totalMs = reducedMotion
       ? 0
-      : 1000 * (values.entrance.delay + CARD_COUNT * values.entrance.stagger + estimateSeconds(values.entrance.spring))
+      : 1000 * (values.entrance.delay + slotPoses.length * values.entrance.stagger + estimateSeconds(values.entrance.spring))
     window.setTimeout(() => setEntered(true), totalMs)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reducedMotion, slotPoses, values.entrance])
@@ -240,8 +245,18 @@ export function PhotoStack({ className }: { className?: string }) {
   // Keep resting cards aligned with their current slot when dial values change or the pointer leaves.
   useEffect(() => {
     if (!entered) return
-    for (let cardId = 0; cardId < CARD_COUNT; cardId++) {
+    for (let cardId = 0; cardId < order.length; cardId++) {
       if (cyclingIds.has(cardId) || cardId === hoveredId) continue
+      const { x, y, rotate, opacity } = mvRef.current[cardId]
+      // Photo 6 just switched on: appear in its slot instead of flying in from the entrance pose.
+      if (opacity.get() === 0) {
+        const base = slotPoses[order.indexOf(cardId)]
+        x.set(base.x)
+        y.set(base.y)
+        rotate.set(base.rotate)
+        animate(opacity, 1, { duration: values.entrance.fade, ease: 'easeOut' })
+        continue
+      }
       settle(cardId, toMotionTransition(values.cycle.springTuck))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -256,7 +271,7 @@ export function PhotoStack({ className }: { className?: string }) {
 
     const zFor = (slot: number) => 40 - slot * 10
     const nextZ = zIndicesRef.current.slice()
-    for (const id of newOrder.slice(0, CARD_COUNT - 1)) {
+    for (const id of newOrder.slice(0, newOrder.length - 1)) {
       nextZ[id] = zFor(newOrder.indexOf(id))
     }
     nextZ[frontId] = 999
@@ -267,7 +282,7 @@ export function PhotoStack({ className }: { className?: string }) {
 
     const { x, y, rotate, scale } = mvRef.current[frontId]
     const frontPose = slotPoses[0]
-    const backSlot = CARD_COUNT - 1
+    const backSlot = slotPoses.length - 1
     const backPose = slotPoses[backSlot]
     // Leaves by the chosen side, leaning the same way (negative rotation leans left).
     const side = values.cycle.direction === 'right' ? 1 : -1
@@ -400,8 +415,9 @@ export function PhotoStack({ className }: { className?: string }) {
       moveTo(cardId, aroundCentre(base, fx, values.card.width, values.card.height), toMotionTransition(values.topHover.spring))
       return
     }
-    const { second, third, fourth, back, spring } = values.backHover
-    const peek = [second, third, fourth, back][slot - 1]
+    const { second, third, fourth, fifth, back, spring } = values.backHover
+    // The last slot always takes the `back` peek; `fifth` is the fifth card of six.
+    const peek = slot === slotPoses.length - 1 ? back : [second, third, fourth, fifth][slot - 1]
     moveTo(
       cardId,
       { x: base.x + peek.pullX, y: base.y + peek.pullY, rotate: base.rotate + peek.rotate, scale: 1 },
@@ -459,8 +475,8 @@ export function PhotoStack({ className }: { className?: string }) {
       : `brightness(${grade.brightness}) contrast(${grade.contrast}) saturate(${grade.saturation}) sepia(${grade.warmth}) hue-rotate(${grade.hue}deg)`
 
   const captionStyle = values.caption.style
-  const { image1, image2, image3, image4, image5 } = values.caption.text
-  const captions = [image1, image2, image3, image4, image5]
+  const { image1, image2, image3, image4, image5, image6 } = values.caption.text
+  const captions = [image1, image2, image3, image4, image5, image6]
   const shownId = hoveredId !== null && !cyclingIds.has(hoveredId) && captions[hoveredId].trim() ? hoveredId : null
   const lastCaptionIdRef = useRef(0)
   if (shownId !== null) lastCaptionIdRef.current = shownId
@@ -501,7 +517,7 @@ export function PhotoStack({ className }: { className?: string }) {
         }}
       >
         <div style={{ width: containerWidth, height: containerHeight, transform: `scale(${scale})`, transformOrigin: '0 0' }}>
-          {Array.from({ length: CARD_COUNT }, (_, cardId) => {
+          {Array.from({ length: order.length }, (_, cardId) => {
             const isTop = order[0] === cardId && !cyclingIds.has(cardId)
             const { x, y, rotate, scale, opacity } = mv[cardId]
             // One element type for every card: swapping tags on cycle would remount
