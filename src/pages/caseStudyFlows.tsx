@@ -21,7 +21,7 @@ function flowWidth(host: HTMLElement) {
 }
 
 /** A phone recording that plays only while on screen (and not for reduced motion). It rewinds once fully off screen, so each return starts from the beginning without a visible jump. `controls`: clicking the phone pauses and plays it (the shared playback toggle), and hovering it shows the replay circle, which plays the recording again from the start. */
-export function PhoneVideo({ name, className = '', controls = true }: { name: string; className?: string; controls?: boolean }) {
+export function PhoneVideo({ name, className = '', controls = true, rate = 1 }: { name: string; className?: string; controls?: boolean; rate?: number }) {
   const host = useRef<HTMLSpanElement>(null)
   const ref = useRef<HTMLVideoElement>(null)
   const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -63,6 +63,13 @@ export function PhoneVideo({ name, className = '', controls = true }: { name: st
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
   }, [])
+  // Playback speed: the default rate too, which a source swap (resize) resets the live rate to.
+  useEffect(() => {
+    const video = ref.current
+    if (!video) return
+    video.defaultPlaybackRate = rate
+    video.playbackRate = rate
+  }, [rate, width])
   const { src, poster } = flow(name, width ?? null)
   // The wrapper carries size and shadow; the video is clipped to the phone outline (see .case__phone-video).
   return (
@@ -288,7 +295,7 @@ function useRiseOnView() {
 }
 
 /* ---------- Core flows: three phone films, composed as one hero image ---------- */
-export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; entriesLabel: string; voiceLabel: string; trackerLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
+export type Flows = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; phoneScale: number; speed?: Record<'entries' | 'voice' | 'tracker', number>; entriesLabel: string; voiceLabel: string; trackerLabel: string; spacing: SectionSpacing; textReveal: TextReveal }
 export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edit; selectable?: boolean }) {
   const ref = useRiseOnView()
   useEffect(() => {
@@ -341,7 +348,7 @@ export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edi
       <ol className="case__flows-row">
         {phones.map(([name, label, position], i) => (
           <li key={name} className="case__flow-card case__rise" data-position={position} style={{ '--i': i } as CSSProperties}>
-            <div className="case__flow-device"><PhoneVideo name={name} /></div>
+            <div className="case__flow-device"><PhoneVideo name={name} rate={f.speed?.[name] ?? 1} /></div>
             <EditableText as="p" className="case__phone-label" label={`${name} label`} value={label} onChange={edit(`flows.${name}Label`)} />
           </li>
         ))}

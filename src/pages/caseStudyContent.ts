@@ -424,6 +424,13 @@ export const MOMO_CONFIG = {
     body: { type: 'text' as const, default: 'Your reflections become a record of your experiences and a way to turn insight into action.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     phoneScale: [1, 0.6, 1.25, 0.01] as Tuple,
+    /** Playback speed of each phone recording (1 = as recorded, 2 = twice as fast). */
+    speed: {
+      entries: [1, 0.25, 3, 0.05] as Tuple,
+      voice: [1, 0.25, 3, 0.05] as Tuple,
+      tracker: [1, 0.25, 3, 0.05] as Tuple,
+      _collapsed: false,
+    },
     entriesLabel: { type: 'text' as const, default: 'Your entries' },
     voiceLabel: { type: 'text' as const, default: 'Say what happened' },
     trackerLabel: { type: 'text' as const, default: 'Keep yourself on track' },
@@ -458,6 +465,8 @@ export const MOMO_CONFIG = {
       _collapsed: true,
     },
     spacing: sectionSpacingDials(110, 72, 36),
+    /** Playback speed of the Watch → iPhone sequence (1 = as designed, 2 = twice as fast). The device entrance keeps its own duration. */
+    speed: [1, 0.25, 3, 0.05] as Tuple,
     deviceEntrance: {
       preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'handoff' },
       duration: [0.8, 0.25, 1.8, 0.05] as Tuple,

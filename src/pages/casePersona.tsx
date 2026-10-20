@@ -563,6 +563,9 @@ export function PersonaSection({
     // (transcript, wall, spotlight, marquee) sit below the portrait and enter as soon as they are in frame.
     let pillsSettled = false
     let entranceRun = 0
+    // Entered from below (scrolling back up): the title only moves down, away from the Back link, so
+    // the bubbles follow the pills instead of waiting for it.
+    let fromBelow = false
     const crossed = () => {
       if (floatsLive.current) return
       const strip = el.querySelector<HTMLElement>('.persona__quotes')
@@ -574,9 +577,11 @@ export function PersonaSection({
         const title = el.querySelector<HTMLElement>('.persona__title')
         const back = document.querySelector<HTMLElement>('.case__back:not(.case__back--inline)')
         if (!title) return
-        const t = title.getBoundingClientRect(), b = back?.getBoundingClientRect()
-        const line = b && b.height > 0 ? b.top + b.height / 2 : 90
-        if (t.top + t.height / 2 > line) return
+        if (!fromBelow) {
+          const t = title.getBoundingClientRect(), b = back?.getBoundingClientRect()
+          const line = b && b.height > 0 ? b.top + b.height / 2 : 90
+          if (t.top + t.height / 2 > line) return
+        }
       }
       floatsLive.current = true
       floatAnims().forEach((a) => { a.currentTime = 0; a.play() })
@@ -588,12 +593,18 @@ export function PersonaSection({
       if (wasLive.current) return
       // Settled layout box from the offset chain, not the animated one: the paused first frame of the
       // stamp is scaled and lifted, which would fire the trigger early.
-      let top = -scrollY
-      const anchor = anchorOf()
-      for (let n: HTMLElement | null = anchor; n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop
-      const h = anchor.offsetHeight, bottom = top + h
-      const side = Math.sign(top + h / 2 - innerHeight / 2)
-      if ((top >= 0 && bottom <= innerHeight) || (lastSide !== 0 && side !== lastSide)) {
+      const box = (node: HTMLElement) => {
+        let top = -scrollY
+        for (let n: HTMLElement | null = node; n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop
+        return { top, bottom: top + node.offsetHeight }
+      }
+      const inView = (b: { top: number; bottom: number }) => b.top >= 0 && b.bottom <= innerHeight
+      const { top, bottom } = box(anchorOf())
+      const side = Math.sign((top + bottom) / 2 - innerHeight / 2)
+      // Coming back up from below, the profile pills (the section's last row) arrive first: the whole
+      // entrance, and then the bubbles, play once they are wholly on screen.
+      const tagRow = el.querySelector<HTMLElement>('.persona__tags')
+      if (inView({ top, bottom }) || (tagRow && inView(box(tagRow))) || (lastSide !== 0 && side !== lastSide)) {
         wasLive.current = true
         entrance().forEach((a) => { a.currentTime = 0; a.play() })
         const run = ++entranceRun
@@ -611,6 +622,7 @@ export function PersonaSection({
     const observer = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) {
         lastSide = 0
+        fromBelow = e.boundingClientRect.top < 0
         addEventListener('scroll', onScroll, { passive: true })
         addEventListener('resize', onScroll)
         check()

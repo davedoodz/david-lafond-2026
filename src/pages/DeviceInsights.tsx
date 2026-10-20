@@ -91,14 +91,14 @@ const phoneScreen = (id: StepId) => (
 )
 
 /* Crossfade like the studio's swap(): the new screen enters while the previous one leaves for TRANSITION_MS. */
-function Screens({ step, render }: { step: StepId; render: (id: StepId) => ReactNode }) {
+function Screens({ step, render, speed }: { step: StepId; render: (id: StepId) => ReactNode; speed: number }) {
   const [layers, setLayers] = useState<{ id: StepId; n: number; phase?: 'entering' | 'leaving' }[]>([{ id: step, n: 0 }])
   useEffect(() => {
     setLayers(prev => {
       const top = prev[prev.length - 1]
       return top.id === step ? prev : [{ ...top, phase: 'leaving' }, { id: step, n: top.n + 1, phase: 'entering' }]
     })
-    const timer = setTimeout(() => setLayers(prev => prev.filter(l => l.phase !== 'leaving')), TRANSITION_MS + 50)
+    const timer = setTimeout(() => setLayers(prev => prev.filter(l => l.phase !== 'leaving')), TRANSITION_MS / speed + 50)
     return () => clearTimeout(timer)
   }, [step])
   return <>{layers.map(l => <div key={l.n} className={`mc-screen${l.phase ? ` mc-screen--${l.phase}` : ''}`}>{render(l.id)}</div>)}</>
@@ -106,7 +106,7 @@ function Screens({ step, render }: { step: StepId; render: (id: StepId) => React
 
 
 type DeviceEntrance = { preset: 'handoff' | 'rise together' | 'split sides' | 'scale in' | 'focus' | 'still'; duration: number; stagger: number }
-type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; watch?: { strapColor: string }; deviceEntrance?: DeviceEntrance; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void }
+type Props = { copy: { eyebrow: string; title: string; body: string; align: 'left' | 'center'; spacing: SectionSpacing; speed?: number; watch?: { strapColor: string }; deviceEntrance?: DeviceEntrance; textReveal?: TextReveal }; edit: (path: string) => (value: string) => void }
 
 export function DeviceInsights({ copy, edit }: Props) {
   const ref = useRef<HTMLElement>(null)
@@ -134,6 +134,28 @@ export function DeviceInsights({ copy, edit }: Props) {
   const watchLogo = useTuning('MomoThumbnail', MOMO_THUMB_CONFIG).watchLogo
   const island = useTuning('MomoIsland', ISLAND_CONFIG)
   const steps = STEPS
+  const speed = copy.speed ?? 1
+  // Sequence speed: every animation and transition inside the devices runs at `speed`, set as each
+  // one starts. The devices' own entrance (transitions on the device boxes) keeps its duration.
+  useEffect(() => {
+    const el = stage.current
+    if (!el) return
+    const ENTRANCE = '.mc-watch, .mc-left, .mc-link, .mc-phone'
+    const apply = (target: Element) => {
+      for (const a of target.getAnimations()) {
+        if (a instanceof CSSTransition && target.matches(ENTRANCE)) continue
+        if (a.playbackRate !== speed) a.updatePlaybackRate(speed)
+      }
+    }
+    const onStart = (e: Event) => { if (e.target instanceof Element) apply(e.target) }
+    el.querySelectorAll('*').forEach(apply)
+    el.addEventListener('animationstart', onStart)
+    el.addEventListener('transitionrun', onStart)
+    return () => {
+      el.removeEventListener('animationstart', onStart)
+      el.removeEventListener('transitionrun', onStart)
+    }
+  }, [speed])
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -192,12 +214,12 @@ export function DeviceInsights({ copy, edit }: Props) {
     const key = `${step}:${run}`
     if (progress.current.key !== key) progress.current = { key, elapsed: 0 }
     const started = performance.now()
-    const timer = setTimeout(() => setStep((step + 1) % steps.length), Math.max(0, steps[step].ms - progress.current.elapsed))
+    const timer = setTimeout(() => setStep((step + 1) % steps.length), Math.max(0, steps[step].ms / speed - progress.current.elapsed))
     return () => {
       clearTimeout(timer)
       progress.current.elapsed += performance.now() - started
     }
-  }, [visible, reduced, step, run, paused])
+  }, [visible, reduced, step, run, paused, speed])
   function resume() {
     frozen.current.forEach((a) => { if (a.playState === 'paused') a.play() })
     frozen.current = []
@@ -235,14 +257,14 @@ export function DeviceInsights({ copy, edit }: Props) {
         <div className="mc-devices" role="group" aria-label="Apple Watch notices a rising heart rate, no workout and low HRV, passes the moment to iPhone, and Momo gently asks: Something on your mind?">
           <div className="mc-watch" aria-hidden="true" style={watchLogoVars(watchLogo) as CSSProperties}>
             <div className="mc-watch__screen-fill" aria-hidden="true" />
-            <div className="mc-watch__screen"><Screens step={id} render={watchScreen} />{watchHead}</div>
+            <div className="mc-watch__screen"><Screens step={id} render={watchScreen} speed={speed} />{watchHead}</div>
             <img className="mc-watch__img" src="/work/momo/devices/watch-starlight.png" alt="" />
           </div>
           <div className="mc-link" aria-hidden="true" data-state={id} data-out={traceOut || undefined}>
             <svg className="mc-trace" viewBox="0 0 150 120" preserveAspectRatio="none"><path className="mc-trace__base" pathLength={100} d={TRACE} /><path ref={pulse} className="mc-trace__live" pathLength={100} d={TRACE} /></svg>
           </div>
           <div className="mc-phone">
-            <div className="mc-phone__screen" aria-hidden="true">{phoneLock}<Screens step={id} render={phoneScreen} /></div>
+            <div className="mc-phone__screen" aria-hidden="true">{phoneLock}<Screens step={id} render={phoneScreen} speed={speed} /></div>
             <img className="mc-phone__img" src="/work/momo/devices/iphone-silver.png" alt="" />
             <div className="mc-island" aria-hidden="true" data-state={id} style={{ '--island-x': `${island.x}px`, '--island-y': `${island.y}px` } as CSSProperties}><div className="mc-island__momo"><img src={MOMO} alt="" /></div></div>
             <div className="mc-island__lens" aria-hidden="true" />
