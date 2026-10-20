@@ -6,12 +6,11 @@ import './ghost.css'
 /**
  * Davebot, drawn on a 32 grid — ported from ditto's DavebotGhost.tsx.
  *
- * The eyes are holes: they are cut out of the body by a mask, so whatever is behind him shows
- * through them, on every surface. They never blink or change shape.
+ * The eyes are plain black ovals on every surface. They never blink or change shape.
  *
- * The eye cut-outs sit inside a group clipped to the head dome. `ghostGaze` measures that clip
- * path every frame to cap how far the holes may travel, so the clip is load-bearing geometry
- * rather than decoration.
+ * They sit inside a group clipped to the head dome. `ghostGaze` measures that clip path every
+ * frame to cap how far the eyes may travel, so the clip is load-bearing geometry rather than
+ * decoration.
  *
  * Every mounted mark self-registers with the single shared gaze tracker, so the nav ghost and
  * the opened palette ghost both track the pointer without any coordination from their parents.
@@ -86,16 +85,6 @@ export function GhostMark({ size, className, happy, fill }: GhostMarkProps) {
             <clipPath id={`${id}-head`}>
               <path d={HEAD_CLIP} />
             </clipPath>
-            {/* White keeps the body, black cuts it: the eyes are holes through body and blush. */}
-            <mask id={`${id}-eyes`} maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
-              <rect width="32" height="32" fill="#fff" />
-              {/* The gaze tracker moves exactly these two paths (g[clip-path] > path). */}
-              <g clipPath={`url(#${id}-head)`}>
-                {EYES.map((d, index) => (
-                  <path key={index} d={d} fill="#000" />
-                ))}
-              </g>
-            </mask>
             {happy && (
               <radialGradient id={`${id}-blush`}>
                 <stop ref={blushCoreRef} offset="0" stopColor={happy.blushColor} />
@@ -103,14 +92,18 @@ export function GhostMark({ size, className, happy, fill }: GhostMarkProps) {
               </radialGradient>
             )}
           </defs>
-          <g mask={`url(#${id}-eyes)`}>
-            <path ref={shellRef} className="ghost-mark__shell" d={BODY} />
-            {happy && (
-              <>
-                <ellipse ref={blushLRef} className="ghost-mark__blush" fill={`url(#${id}-blush)`} opacity="0" />
-                <ellipse ref={blushRRef} className="ghost-mark__blush" fill={`url(#${id}-blush)`} opacity="0" />
-              </>
-            )}
+          <path ref={shellRef} className="ghost-mark__shell" d={BODY} />
+          {happy && (
+            <>
+              <ellipse ref={blushLRef} className="ghost-mark__blush" fill={`url(#${id}-blush)`} opacity="0" />
+              <ellipse ref={blushRRef} className="ghost-mark__blush" fill={`url(#${id}-blush)`} opacity="0" />
+            </>
+          )}
+          {/* The gaze tracker moves exactly these two paths (g[clip-path] > path). */}
+          <g className="ghost-mark__eyes" clipPath={`url(#${id}-head)`}>
+            {EYES.map((d, index) => (
+              <path key={index} className="ghost-mark__eye" d={d} />
+            ))}
           </g>
         </svg>
       </span>

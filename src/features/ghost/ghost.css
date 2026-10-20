@@ -71,6 +71,11 @@
   pointer-events: auto;
 }
 
+/* Eyes: black on every surface, no blink, no expressions. */
+.ghost-mark__eye {
+  fill: var(--ink-900);
+}
+
 .ghost-mark__blush {
   pointer-events: none;
 }
