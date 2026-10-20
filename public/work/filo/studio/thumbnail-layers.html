@@ -144,6 +144,10 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .card:not(.is-in) .chip { animation: none; }
 .card .thread { transition: opacity 0.6s ease 1.3s; }
 .card:not(.is-in) .thread { opacity: 0; transition: none; }
+/* Exit, for the picked layout's loop: the entrance reversed, so the tag lifts out first, then the portal, then the phone. */
+.card.is-out .tag { translate: 0 -125%; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0s; }
+.card.is-out .desk { translate: 110% 0; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0.15s; }
+.card.is-out .phone { translate: 0 110%; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0.3s; }
 /* Stage: devices turned toward the tag. */
 .stage3d { position: absolute; inset: 0; perspective: 1100px; perspective-origin: 50% 38%; }
 .floor { position: absolute; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgb(70 50 30 / 0.22), transparent); filter: blur(2px); }
@@ -328,6 +332,9 @@ const PICK_DEFAULT = {
 }
 const PICK_KEY = 'filo-thumb-pick'
 const PICK = { sway: 1, ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
+/* Picked layout's loop: `hold` = seconds the layers rest after the phone snippet ends;
+   `out` = the exit (1.2s) plus a beat of empty wall before they come back. */
+const LAYER_LOOP = { hold: 0.4, out: 1.7 }
 /* Tag sway speed: 1 = one swing out and back every 6.5s; 0 holds it still. */
 const SWAY_PERIOD = 6.5
 function setSway(fig, speed) {
@@ -604,11 +611,33 @@ class Card {
       this.visible = e.isIntersecting
       el.querySelectorAll('video').forEach(v => this.visible ? v.play().catch(() => {}) : v.pause())
     }, { rootMargin: '100px' }).observe(el)
-    // Replays the layers' entrance whenever the card comes back into view.
+    // Replays the layers' entrance whenever the card comes back into view. The picked layout loops instead:
+    // in, the phone snippet plays once, out, in again.
+    const pick = el.closest('.pick')
+    if (pick) el.querySelectorAll('video[data-kind="phone"]').forEach(v => { v.loop = false })
     new IntersectionObserver(([e]) => {
+      if (pick) return this.loopLayers(e.isIntersecting)
       if (e.isIntersecting && !el.classList.contains('is-in')) el.querySelectorAll('video').forEach(v => { v.currentTime = 0 })
       el.classList.toggle('is-in', e.isIntersecting)
     }, { threshold: 0.4 }).observe(el)
+  }
+  /** Picked layout's loop, while the card is in view. The phone snippet ends on its first frame (the loops are
+   *  crossfaded at the seam), so it slides out showing what it slides back in with. */
+  loopLayers(on) {
+    clearTimeout(this.cycleTimer)
+    const el = this.el, ph = el.querySelector('video[data-kind="phone"]')
+    el.classList.remove('is-out')
+    if (!on) { el.classList.remove('is-in'); return }
+    const enter = () => {
+      el.classList.remove('is-out')
+      el.querySelectorAll('video').forEach(v => { v.currentTime = 0; v.play().catch(() => {}) })
+      el.classList.add('is-in')
+      this.cycleTimer = setTimeout(() => {
+        el.classList.replace('is-in', 'is-out')
+        this.cycleTimer = setTimeout(enter, LAYER_LOOP.out * 1000)
+      }, ((ph.duration || 6) + LAYER_LOOP.hold) * 1000)
+    }
+    enter()
   }
   dirty() { this.tiles.forEach(t => (t.key = '')) }
   morph(i, cx, cy, t) {
