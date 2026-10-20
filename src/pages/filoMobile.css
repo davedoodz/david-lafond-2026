@@ -58,19 +58,14 @@
   main.case[data-work='filo'] [data-section='research'] .case__body-line + .case__body-line {
     margin-top: var(--fm-body-line-gap);
   }
-  /* Primary research reads in three lines and step 04 in two: each written line keeps to one screen
-     line, so these paragraphs run out to 10px from the screen's edges, and on narrow phones the text
-     shrinks just enough for the longest written line to fit (--fit-em: its width in em). The
-     research's second sentence still wraps, balanced, into two lines. */
-  main.case[data-work='filo'] :is([data-section='research'], .fss-step[aria-labelledby$='step4']) .case__section-copy > .case__body {
-    --fit-em: 30.6;
-    width: calc(100vw - 20px);
-    max-width: none;
-    margin-inline: calc(50% - 50vw + 10px);
-    font-size: min(var(--m-body-size), calc((100vw - 20px) / var(--fit-em)));
+  /* Primary research and step 04 keep to the content column at the normal body size, balanced:
+     research's first sentence in two lines, and step 04 ignores its written line break (made for
+     desktop) so it reads in three. */
+  main.case[data-work='filo'] .fss-step[aria-labelledby$='step4'] .case__body {
+    white-space: normal;
   }
-  main.case[data-work='filo'] .fss-step[aria-labelledby$='step4'] .case__section-copy > .case__body {
-    --fit-em: 29.5;
+  main.case[data-work='filo'] .fss-step[aria-labelledby$='step4'] .case__body br {
+    display: none;
   }
 
   /* --- 1 Hero. Role, Origin, Program and Team in two even columns, each value centred under its
