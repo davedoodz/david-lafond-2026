@@ -72,14 +72,15 @@
   main.case[data-work='filo'] .case__section--hero .case__hero-mark {
     scale: calc(var(--mark-scale, 1) * var(--fm-mark-scale));
   }
-  /* The tag photo is a 1024 × 1536 cut-out with clear space around the tag: 287px above it and 142px
-     below. The margins take that space back, so logos → tag matches meta → logos and the gap to the
-     next section is measured from the tag itself. */
+  /* The tag photo is a 1024 × 1536 cut-out with clear space around the tag: 286px above it and 138px
+     below its shadow. The margins take that space back so the tag has the same gap above (to the
+     logos) and below (to "Market gap"): --fm-tag-gap, in place of the section gap under the hero. */
   main.case[data-work='filo'] .case__section--hero .case__devices {
     width: var(--fm-tag-w);
     max-width: 100%;
-    margin-top: calc(var(--fm-logos-gap) - var(--fm-media-gap) - var(--fm-tag-w) * 287 / 1024);
-    margin-bottom: calc(var(--fm-tag-w) * -142 / 1024);
+    margin-top: calc(var(--fm-tag-gap) - var(--fm-media-gap) - var(--fm-tag-w) * 286 / 1024);
+    /* − 6px: "Market gap" starts 6px into its chapter (caseMobile.css), so the gap reads to its letters. */
+    margin-bottom: calc(var(--fm-tag-gap) - var(--fm-section-gap) - var(--fm-tag-w) * 138 / 1024 - 6px);
   }
   main.case[data-work='filo'] .filo-hero-tag {
     width: 100%;

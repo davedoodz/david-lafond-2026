@@ -20,6 +20,7 @@ const DIALS: PhoneDialTable = {
     'Filo mark size': ['--fm-mark-scale', 0.75, 0.3, 1.2, 0.01, ''],
     'Partner logo height': ['--fm-logo-h', 36, 12, 48, 1, 'px'],
     'Gap above and below logos': ['--fm-logos-gap', 46, 0, 120, 1, 'px'],
+    'Gap above and below tag': ['--fm-tag-gap', 80, 0, 200, 1, 'px'],
     'Hang tag width': ['--fm-tag-w', 300, 160, 400, 2, 'px'],
   },
   '2 Market gap · Proposal': {
