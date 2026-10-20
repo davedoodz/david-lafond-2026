@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo quote cards on phones: text layouts</title>
+<style>
+  /* Studio sheet: six text layouts for the Filo interview quote cards on phones, each shown on all four
+     cards at their phone size (278 × 470, the hang tag's proportions). The card fill, shadow, Inter and
+     the art match the page; only the text block changes. Option A is the page today. */
+  @font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; }
+  @font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; }
+  :root { --ink: #171717; --muted: #6f6b68; --fill: #f2ebe4; --page: #f5f5f5; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 48px 40px 80px; background: var(--page); color: var(--ink); font-family: 'Filo Inter', Inter, system-ui, sans-serif; }
+  h1 { margin: 0 0 6px; font-size: 22px; font-weight: 560; letter-spacing: -0.02em; }
+  .lede { margin: 0 0 40px; max-width: 720px; color: var(--muted); font-size: 15px; line-height: 1.45; }
+  section { margin-bottom: 56px; }
+  section > header { display: flex; gap: 14px; align-items: baseline; margin-bottom: 18px; }
+  section > header b { font-size: 15px; font-weight: 620; }
+  section > header span { color: var(--muted); font-size: 13px; }
+  .row { display: flex; gap: 16px; overflow-x: auto; padding: 4px 4px 28px; }
+
+  .card {
+    position: relative; flex: none; overflow: hidden; isolation: isolate;
+    width: 278px; aspect-ratio: 560 / 947;
+    padding: 24px 22px; border-radius: 20px; background: var(--fill);
+    box-shadow: 0 14px 36px -18px rgb(23 23 23 / 0.21), 0 8px 0 -2px rgb(0 0 0 / 0.06);
+    display: flex; flex-direction: column;
+  }
+  .card img { position: absolute; z-index: -1; left: 50%; bottom: 16px; width: 92%; height: auto; translate: -50% 0; }
+  .q { margin: 0; color: var(--ink); text-wrap: balance; }
+  .who { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 450; letter-spacing: -0.01em; }
+
+  /* A · today: 13.4px (15.4 × the strip's 0.87), weight 460, centred. */
+  .a .card { text-align: center; }
+  .a .q { font-size: 13.4px; font-weight: 460; line-height: 1.21; letter-spacing: -0.03em; }
+  .a .who { margin-top: 14px; }
+
+  /* B · big, left: the desktop card's look, scaled to the phone card. */
+  .b .q { font-size: 23px; font-weight: 540; line-height: 1.16; letter-spacing: -0.045em; }
+  .b .who { margin-top: 14px; font-size: 12px; }
+
+  /* C · big, centred. */
+  .c .card { text-align: center; }
+  .c .q { font-size: 23px; font-weight: 540; line-height: 1.16; letter-spacing: -0.045em; }
+  .c .who { margin-top: 14px; font-size: 12px; }
+
+  /* D · display: biggest and boldest, hanging opening quote mark, role pinned to the bottom. */
+  .d .card { padding: 26px 22px 22px 26px; }
+  .d .q { font-size: 27px; font-weight: 600; line-height: 1.08; letter-spacing: -0.05em; text-indent: -0.42em; }
+  .d .who { position: absolute; left: 26px; bottom: 20px; font-size: 12px; }
+  .d .card img { bottom: 40px; }
+
+  /* E · role first as a small caps label, quote under it. */
+  .e .card { text-align: left; }
+  .e .who { order: -1; margin-bottom: 12px; font-size: 10.5px; font-weight: 560; letter-spacing: 0.06em; text-transform: uppercase; }
+  .e .q { font-size: 23px; font-weight: 560; line-height: 1.14; letter-spacing: -0.045em; }
+
+  /* F · art on top, quote at the bottom: the picture sets the scene, the words land last. */
+  .f .card { justify-content: flex-end; }
+  .f .card img { top: 22px; bottom: auto; }
+  .f .q { font-size: 22px; font-weight: 560; line-height: 1.15; letter-spacing: -0.045em; }
+  .f .who { margin-top: 12px; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Filo quote cards on phones: text layouts</h1>
+<p class="lede">Six ways to set the interview quotes on the phone cards (278 × 470, the hang tag's proportions). A is the page today. B–F set the quote at 22–27px in a heavier Inter weight (540–600, up from 460), so the text takes about as much of the card as it does on desktop. The art is centred at 92% of the card in every option; the phone dials can still move and size it per card.</p>
+
+<template id="cards">
+  <div class="card"><p class="q">“How does it sew? What happens when we fuse, press or wash it?”</p><p class="who">— Technical designer, BlueSTEM</p><img src="/work/filo/studio/quote-art-technical-designer.webp" alt="" /></div>
+  <div class="card"><p class="q">“From what I've seen, we can’t use heat or solvent on these.”</p><p class="who">— Sourcing lead, Gap</p><img src="/work/filo/studio/quote-art-designer.webp" alt="" /></div>
+  <div class="card"><p class="q">“We look at performance, then at how to do it in the most responsible way.”</p><p class="who">— Product lead, O’Neill</p><img src="/work/filo/studio/quote-art-product-lead.webp" alt="" /></div>
+  <div class="card"><p class="q">“Can this construction still work at 10,000 units?”</p><p class="who">— Merchandiser, Calvin Klein</p><img src="/work/filo/studio/quote-art-merchandiser.webp" alt="" /></div>
+</template>
+
+<section class="a"><header><b>A · Today</b><span>13.4px, weight 460, centred</span></header><div class="row"></div></section>
+<section class="b"><header><b>B · Big, left</b><span>23px, weight 540, left: the desktop card's look</span></header><div class="row"></div></section>
+<section class="c"><header><b>C · Big, centred</b><span>23px, weight 540, centred like the rest of the phone page</span></header><div class="row"></div></section>
+<section class="d"><header><b>D · Display</b><span>27px, weight 600, hanging quote mark, role at the bottom</span></header><div class="row"></div></section>
+<section class="e"><header><b>E · Role first</b><span>small caps role, then 23px weight 560</span></header><div class="row"></div></section>
+<section class="f"><header><b>F · Art first</b><span>picture on top, 22px weight 560 quote at the bottom</span></header><div class="row"></div></section>
+
+<script>
+  const cards = document.getElementById('cards').content
+  for (const row of document.querySelectorAll('.row')) row.append(cards.cloneNode(true))
+</script>
+</body>
+</html>

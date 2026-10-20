@@ -136,6 +136,28 @@
   main.case[data-work='filo'] .filo-research .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
     margin-block: calc(-1 * var(--qa-shadow-pad, 0px));
   }
+  /* Card art on phones: centred on the card, --a-w of its width, --a-x px right of centre and --a-y px
+     above the card's bottom edge, one set per card (filoMobile.ts › Quote card art). The desktop art
+     dials (size, x, y in desktop px) don't apply here. */
+  main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] .filo-quote-art {
+    left: 50%;
+    right: auto;
+    bottom: var(--a-y);
+    width: var(--a-w);
+    transform: translateX(calc(-50% + var(--a-x)));
+  }
+  main.case[data-work='filo'] .filo-quote-art[src*='technical-designer'] {
+    --a-w: var(--fm-art1-w); --a-x: var(--fm-art1-x); --a-y: var(--fm-art1-y);
+  }
+  main.case[data-work='filo'] .filo-quote-art[src*='quote-art-designer'] {
+    --a-w: var(--fm-art2-w); --a-x: var(--fm-art2-x); --a-y: var(--fm-art2-y);
+  }
+  main.case[data-work='filo'] .filo-quote-art[src*='product-lead'] {
+    --a-w: var(--fm-art3-w); --a-x: var(--fm-art3-x); --a-y: var(--fm-art3-y);
+  }
+  main.case[data-work='filo'] .filo-quote-art[src*='merchandiser'] {
+    --a-w: var(--fm-art4-w); --a-x: var(--fm-art4-x); --a-y: var(--fm-art4-y);
+  }
   main.case[data-work='filo'] .filo-research__overview {
     width: min(var(--fm-miro-w), var(--fm-content-w));
   }

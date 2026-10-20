@@ -12,7 +12,7 @@ import { useEffect, useMemo, type RefObject } from 'react'
 import { useTuning } from '../tuning/useTuning'
 
 type Tuple = [number, number, number, number]
-export type PhoneDialTable = Record<string, Record<string, [string, number, number, number, number, 'px' | '']>>
+export type PhoneDialTable = Record<string, Record<string, [string, number, number, number, number, 'px' | '%' | '']>>
 
 const configOf = (dials: PhoneDialTable) =>
   Object.fromEntries(
