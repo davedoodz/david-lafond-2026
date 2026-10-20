@@ -583,7 +583,6 @@ export function CaseStudyPage({ id }: Props) {
         aria-labelledby={`case-${key}`}
       >
         <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
-          {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} id={id} />}
           {isHero && mark?.show && (
             <img

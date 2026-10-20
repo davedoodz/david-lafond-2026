@@ -175,9 +175,15 @@
   translate: -3px 0;
 }
 
-/* "← Back" inside the links: phones only, where it replaces Work on project pages. The links'
-   gap is unchanged, so About and Resume shift right by Back's extra length. */
-.nav__links-back {
+/* "← Back" inside the links: on project pages it replaces Work at every width. The links' gap is
+   unchanged, so Back → About and About → Resume keep the same spacing. */
+.nav__links .nav__links-back {
+  display: inline-flex;
+  /* The arrow's tip sits where Work's first letter would. */
+  margin-left: var(--back-arrow-inset, 0px);
+  line-height: inherit;
+}
+.nav__links:has(.nav__links-back) .nav__work {
   display: none;
 }
 
@@ -189,15 +195,6 @@
     gap: 29px;
     padding-top: 7px;
     line-height: 16px;
-  }
-  .nav__links .nav__links-back {
-    display: inline-flex;
-    /* The arrow's tip sits where Work's first letter would. */
-    margin-left: var(--back-arrow-inset, 0px);
-    line-height: inherit;
-  }
-  .nav__links:has(.nav__links-back) .nav__work {
-    display: none;
   }
 }
 
