@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Harvard &amp; MIT · ways to read the book on a phone</title>
+<!--
+  Five ways to read the Harvard & MIT portfolio book on a phone, each live.
+  /studio/harvard-mit-mobile-viewers.html          all five, side by side in phone frames
+  /studio/harvard-mit-mobile-viewers.html?o=fold   one option full screen (fold | spread | scroll | deck | scrub)
+  Pages: 480px thumbs from /work/harvard-mit/thumbs (instant), 1600px mediums from the portfolio's
+  Blob store layered over them for the pages in view (same files as the live book, bookPages.ts).
+-->
+<style>
+@font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+:root {
+  --ink: #171717;
+  --paper: #f5f5f5;
+  --muted: #8f8b88;
+  --sheet: #f3f1ed;
+  --font: 'Beatrice', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--ink); color: var(--paper); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* ───────── Gallery (no ?o) ───────── */
+body.gallery { height: auto; min-height: 100%; }
+.g-head { max-width: 1180px; margin: 0 auto; padding: 56px 32px 8px; }
+.g-head h1 { margin: 0; font-size: 30px; font-weight: 500; letter-spacing: -0.02em; }
+.g-head p { margin: 10px 0 0; max-width: 640px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.g-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 56px 30px; max-width: 1640px; margin: 0 auto; padding: 40px 24px 80px; }
+.g-item { width: 281px; margin: 0; }
+.g-phone { position: relative; width: 281px; height: 608px; border-radius: 44px; overflow: hidden; background: var(--ink);
+  box-shadow: 0 0 0 7px #262626, 0 0 0 8px #3a3a3a, 0 30px 60px rgb(0 0 0 / 0.5); }
+.g-phone iframe { width: 390px; height: 844px; border: 0; transform: scale(0.72); transform-origin: 0 0; display: block; }
+.g-item figcaption { padding: 26px 4px 0; }
+.g-item b { display: block; font-weight: 500; font-size: 16px; }
+.g-item b span { color: var(--muted); font-weight: 400; margin-right: 8px; }
+.g-item p { margin: 6px 0 10px; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.g-item a { color: var(--paper); font-size: 13px; text-decoration: none; border-bottom: 1px solid rgb(255 255 255 / 0.25); }
+.g-list { display: grid; gap: 12px; padding: 24px 20px 48px; }
+.g-list a { display: block; padding: 18px 20px; border-radius: 18px; background: #222; color: var(--paper); text-decoration: none; }
+.g-list a b { display: block; font-weight: 500; font-size: 17px; }
+.g-list a span { display: block; margin-top: 6px; color: var(--muted); font-size: 13.5px; line-height: 1.4; }
+
+/* ───────── One option, full screen ───────── */
+body.single { overflow: hidden; overscroll-behavior: none; }
+.stage { position: fixed; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.stage.native { touch-action: auto; }
+/* The site's phone nav, for judging overlaps: "← Back" left, Davebot right (the links tuck on scroll). */
+.mock-nav { position: fixed; z-index: 40; top: calc(34px + env(safe-area-inset-top)); left: 24px; right: 17px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+.mock-nav span { font-size: 13px; font-weight: 500; letter-spacing: -0.16px; text-transform: uppercase; color: #b9b5b1; display: inline-flex; gap: 6px; align-items: center; padding-top: 2px; }
+.mock-nav svg { width: 29px; height: 29px; }
+.count { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(34px + env(safe-area-inset-bottom)); text-align: center; font-size: 13px; letter-spacing: 0.02em; color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; }
+.count b { color: var(--paper); font-weight: 500; }
+.back-to-all { position: fixed; z-index: 41; left: 50%; top: calc(36px + env(safe-area-inset-top)); translate: -50% 0; padding: 7px 13px; border-radius: 99px; background: rgb(255 255 255 / 0.08); color: var(--paper); font-size: 12px; text-decoration: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.hint { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom)); text-align: center; font-size: 11.5px; color: #6c6966; pointer-events: none; transition: opacity 600ms ease; }
+.hint.gone { opacity: 0; }
+
+/* Page paint: thumb underneath, medium over it once loaded. */
+.pg { background-color: var(--sheet); background-repeat: no-repeat; background-size: cover; background-position: center; }
+
+/* ───────── 1 · Folded page ───────── */
+.fold-scene { position: absolute; inset: 0; perspective: 1500px; perspective-origin: 50% 46%; }
+.fold-book { position: absolute; transform-style: preserve-3d; }
+.sheet { position: absolute; top: 0; left: 0; height: 100%; transform-style: preserve-3d; transform-origin: 0 50%; will-change: transform; }
+.face { position: absolute; inset: 0; transform-style: preserve-3d; backface-visibility: hidden; -webkit-backface-visibility: hidden; background-repeat: no-repeat; }
+.strip { position: absolute; top: 0; bottom: 0; right: 100%; transform-origin: 100% 50%; transform-style: preserve-3d; backface-visibility: hidden; -webkit-backface-visibility: hidden; background-repeat: no-repeat; }
+.face.back { transform: rotateY(180deg); background: #ebe8e3; overflow: hidden; }
+/* Show-through: the front page, faint and mirrored, as paper lets it through. */
+.face.back i { position: absolute; inset: 0; background-size: cover; transform: scaleX(-1); opacity: 0.09; filter: grayscale(1) contrast(1.2); }
+.lit, .cast { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+.lit { background: linear-gradient(to right, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.08) 60%, rgb(255 255 255 / 0.06)); }
+.cast { background: linear-gradient(to right, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.18) var(--reach, 40%), transparent calc(var(--reach, 40%) + 18%)); }
+/* Grounding shadow under the whole book. */
+.fold-shadow { position: absolute; border-radius: 4px; box-shadow: 0 26px 46px rgb(0 0 0 / 0.55), 0 6px 12px rgb(0 0 0 / 0.35); }
+
+/* ───────── 2 · Open spread ───────── */
+.spread-track { position: absolute; left: 0; right: 0; display: flex; align-items: stretch; gap: 46px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.spread-track::-webkit-scrollbar { display: none; }
+.spread { flex: none; display: flex; height: 100%; box-shadow: 0 20px 44px rgb(0 0 0 / 0.5), 0 4px 10px rgb(0 0 0 / 0.3); }
+.spread-page { position: relative; flex: none; height: 100%; scroll-snap-align: center; scroll-snap-stop: always; }
+.spread-page.l::after, .spread-page.r::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+/* Gutter: the pages dip into the binding, darkest at the fold, with a soft rise just before it. */
+.spread-page.l::after { background: linear-gradient(to left, rgb(0 0 0 / 0.32), rgb(0 0 0 / 0.1) 3%, rgb(255 255 255 / 0.05) 7%, transparent 16%); }
+.spread-page.r::after { background: linear-gradient(to right, rgb(0 0 0 / 0.32), rgb(0 0 0 / 0.1) 3%, rgb(255 255 255 / 0.05) 7%, transparent 16%); }
+
+/* ───────── 3 · Scroll ───────── */
+.scroll-list { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 104px 18px 110px; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
+.scroll-page { width: 100%; aspect-ratio: 1600 / 2263; border-radius: 2px; box-shadow: 0 10px 24px rgb(0 0 0 / 0.45); }
+.scroll-page + .scroll-page { margin-top: 4px; }
+.scroll-page.starts { margin-top: 26px; }
+.rail { position: fixed; z-index: 30; right: 5px; top: 120px; bottom: 120px; width: 3px; border-radius: 3px; background: rgb(255 255 255 / 0.07); pointer-events: none; }
+.rail i { position: absolute; left: 0; right: 0; height: 36px; border-radius: 3px; background: rgb(255 255 255 / 0.45); }
+
+/* ───────── 4 · Deck ───────── */
+.deck-card { position: absolute; border-radius: 3px; will-change: transform; box-shadow: 0 16px 34px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.3); }
+
+/* ───────── 5 · Scrubber ───────── */
+.scrub-page { position: absolute; box-shadow: 0 20px 44px rgb(0 0 0 / 0.5), 0 4px 10px rgb(0 0 0 / 0.3); transition: opacity 160ms ease; }
+.scrub-bar { position: fixed; z-index: 31; left: 22px; right: 22px; bottom: calc(66px + env(safe-area-inset-bottom)); height: 46px; touch-action: none; }
+.scrub-strip { position: absolute; inset: 0; display: flex; gap: 2px; border-radius: 6px; overflow: hidden; opacity: 0.55; }
+.scrub-strip i { flex: 1; background-size: cover; background-position: center; }
+.scrub-window { position: absolute; top: -5px; bottom: -5px; width: 36px; border-radius: 6px; box-shadow: 0 0 0 2px var(--paper), 0 6px 16px rgb(0 0 0 / 0.5); background-size: cover; background-position: center; }
+.scrub-bar + .count { bottom: calc(126px + env(safe-area-inset-bottom)); }
+.scrub-bar ~ .hint { bottom: calc(150px + env(safe-area-inset-bottom)); }
+</style>
+</head>
+<body>
+<script type="module">
+const N = 60
+const ASPECT = 1600 / 2263
+const pad = (p) => String(p).padStart(2, '0')
+const thumb = (p) => `/work/harvard-mit/thumbs/page-${pad(p)}.webp`
+const medium = (p) => `https://iywe3spz629xaaix.public.blob.vercel-storage.com/mit-harvard-portfolio/medium/page-${pad(p)}.webp`
+/** Cover alone, 29 two-page spreads, back cover alone (bookPages.ts). */
+const SPREADS = [[1], ...Array.from({ length: 29 }, (_, i) => [2 + i * 2, 3 + i * 2]), [N]]
+
+const OPTIONS = [
+  { key: 'fold', name: 'Folded page', line: 'One page, the rest of the book folded back behind it: the edge bends round the spine with the other pages layered under it. Swipe or tap a side to turn; the sheet swings over the spine.' },
+  { key: 'spread', name: 'Open spread', line: 'The real two-page spreads at full height, gutter shadow and all. Swipe pans page by page across each spread, then on to the next.' },
+  { key: 'scroll', name: 'Scroll', line: 'All 60 pages in one column, pairs kept close so spreads still read as spreads. Fastest to skim; feels like a PDF.' },
+  { key: 'deck', name: 'Deck', line: 'Pages as a pile of prints. Flick the top one left for the next, right to bring the last one back.' },
+  { key: 'scrub', name: 'Scrubber', line: 'One page with a filmstrip of the whole book under it. Drag along the strip to fly through and land anywhere.' },
+]
+
+const el = (tag, cls, parent) => {
+  const n = document.createElement(tag)
+  if (cls) n.className = cls
+  if (parent) parent.append(n)
+  return n
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v))
+const easeOut = (p) => 1 - (1 - p) ** 3
+const easeInOut = (p) => (p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2)
+/** Tweens `fn(value)` from `from` to `to`; resolves when done. */
+function tween(from, to, ms, fn, ease = easeOut) {
+  return new Promise((resolve) => {
+    const t0 = performance.now()
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / ms)
+      fn(from + (to - from) * ease(p))
+      if (p < 1) requestAnimationFrame(tick)
+      else resolve()
+    }
+    requestAnimationFrame(tick)
+  })
+}
+/** Paints page `p` onto `node`: thumb at once, the medium layered over it when `hi`. */
+function paint(node, p, hi) {
+  node.style.backgroundImage = hi ? `url(${medium(p)}), url(${thumb(p)})` : `url(${thumb(p)})`
+}
+/** Upgrades `.pg[data-p]` children of `root` to mediums as they come near the viewport. */
+function lazyHi(root, margin) {
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { paint(e.target, +e.target.dataset.p, true); io.unobserve(e.target) }
+  }, { root, rootMargin: margin })
+  root.querySelectorAll('.pg[data-p]').forEach((n) => io.observe(n))
+}
+function counter() {
+  const n = el('div', 'count', document.body)
+  return (p) => { n.innerHTML = `<b>${p}</b> / ${N}` }
+}
+function hint(text) {
+  const n = el('div', 'hint', document.body)
+  n.textContent = text
+  setTimeout(() => n.classList.add('gone'), 3200)
+}
+/**
+ * Horizontal swipe on `target`: `move(dx)` while dragging, `end(dx, vx)` on release, `tap(x)` for a
+ * short touch that barely moved. Vertical-first drags are ignored.
+ */
+function swipe(target, { move, end, tap }) {
+  let id = null, x0 = 0, y0 = 0, t0 = 0, lx = 0, lt = 0, vx = 0, axis = null
+  target.addEventListener('pointerdown', (e) => {
+    if (id !== null) return
+    id = e.pointerId; x0 = lx = e.clientX; y0 = e.clientY; t0 = lt = performance.now(); vx = 0; axis = null
+    target.setPointerCapture(id)
+  })
+  target.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== id) return
+    const dx = e.clientX - x0, dy = e.clientY - y0
+    if (!axis && Math.hypot(dx, dy) > 7) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+    const now = performance.now()
+    vx = (e.clientX - lx) / Math.max(1, now - lt); lx = e.clientX; lt = now
+    if (axis === 'x') move?.(dx)
+  })
+  const up = (e) => {
+    if (e.pointerId !== id) return
+    id = null
+    const dx = e.clientX - x0
+    if (axis === 'x') end?.(dx, vx)
+    else if (!axis && performance.now() - t0 < 350) tap?.(e.clientX)
+  }
+  target.addEventListener('pointerup', up)
+  target.addEventListener('pointercancel', up)
+}
+const GHOST = `<svg viewBox="0 0 29 29" aria-hidden="true"><path d="M14.5 3.5c-5.6 0-9.5 4.2-9.5 9.9v10.4c0 1.2 1.3 1.8 2.2 1l1.7-1.5 2 1.7c.6.5 1.4.5 2 0l1.6-1.4 1.6 1.4c.6.5 1.4.5 2 0l2-1.7 1.7 1.5c.9.8 2.2.2 2.2-1V13.4c0-5.7-3.9-9.9-9.5-9.9Z" fill="#bdb9b5"/><ellipse cx="11.2" cy="13.6" rx="1.9" ry="2.4" fill="#171717"/><ellipse cx="17.8" cy="13.6" rx="1.9" ry="2.4" fill="#171717"/></svg>`
+
+/* ───────── 1 · Folded page ─────────
+   The sheet's left edge bends away round the spine: the page's own pixels on a chain of thin
+   strips, each turned a little more (nested, so the turns add up), darker as they face away. Under
+   it, blank sheets with wider bends peek out as the folded-back pages' edges; their right and
+   bottom edges step out as the page block. Turning swings the sheet over the spine (its back shows
+   paper with the page faintly through it) while it shades the page it uncovers. */
+function mountFold(stage) {
+  const scene = el('div', 'fold-scene', stage)
+  const vw = stage.clientWidth, vh = stage.clientHeight
+  const TURN = (100 * Math.PI) / 180, STRIPS = 10, R = 14
+  const W = Math.round(Math.min(vw * 0.8, (vh - 250) * ASPECT)), H = Math.round(W / ASPECT)
+  const bendW = (r) => r * Math.sin(TURN > Math.PI / 2 ? Math.PI / 2 : TURN) // projected width of a bend
+  const left = Math.round((vw - W) / 2 + bendW(R) * 0.7)
+  const top = Math.round((vh - H) / 2 + 6)
+  const flat = (r) => W - r * TURN // the page width that stays flat
+  const book = el('div', 'fold-book', scene)
+  Object.assign(book.style, { left: `${left}px`, top: `${top}px`, width: `${flat(R)}px`, height: `${H}px` })
+  const ground = el('div', 'fold-shadow', book)
+  Object.assign(ground.style, { left: `${-bendW(R)}px`, top: '2px', width: `${flat(R) + bendW(R) + 4}px`, height: `${H}px`, transform: 'translateZ(-40px)' })
+
+  /** A sheet: page `p` (or blank paper), bent round the spine with radius `r`. */
+  function sheet(p, { r = R, hi = false, extra = 0, tone = 0 } = {}) {
+    const arc = r * TURN, step = arc / STRIPS
+    const root = el('div', 'sheet')
+    root.style.width = `${flat(R) + extra}px`
+    const front = el('div', 'face front', root)
+    const layers = (shade, from) => {
+      const imgs = p ? (hi ? [`url(${medium(p)})`, `url(${thumb(p)})`] : [`url(${thumb(p)})`]) : [`linear-gradient(${tone ? `hsl(36 8% ${92 - tone * 3}%)` : 'var(--sheet)'}, ${tone ? `hsl(36 8% ${90 - tone * 3}%)` : 'var(--sheet)'})`]
+      return {
+        backgroundImage: [shade ? `linear-gradient(rgb(0 0 0 / ${shade}), rgb(0 0 0 / ${shade}))` : null, ...imgs].filter(Boolean).join(', '),
+        backgroundSize: `${W}px ${H}px`,
+        backgroundPosition: `${-from}px 0`,
+        backgroundColor: 'var(--sheet)',
+      }
+    }
+    Object.assign(front.style, layers(0, arc))
+    let parent = front
+    for (let k = 1; k <= STRIPS; k++) {
+      const s = el('div', 'strip', parent)
+      // Overlap a hair so the seams never show the background through.
+      s.style.width = `${step + 0.5}px`
+      s.style.transform = `rotateY(${-TURN / STRIPS}rad)`
+      const facing = (k / STRIPS) ** 1.5
+      Object.assign(s.style, layers(0.04 + 0.5 * facing + (k === 2 ? -0.05 : 0), arc - k * step))
+      parent = s
+    }
+    const back = el('div', 'face back', root)
+    if (p) el('i', '', back).style.backgroundImage = `url(${thumb(p)})`
+    const lit = el('div', 'lit', front)
+    const cast = el('div', 'cast', front)
+    return { root, front, lit, cast }
+  }
+
+  // The folded-back pages: blank sheets with wider bends, stepping out under the page.
+  for (let i = 4; i >= 1; i--) {
+    const b = sheet(null, { r: R + 2.1 * i, extra: 1.3 * i, tone: i })
+    b.root.style.transform = `translate3d(0, ${1.1 * i}px, ${-i * 1.5 - 1}px)`
+    book.append(b.root)
+  }
+
+  let index = 0, busy = false
+  let current = null, under = null, incoming = null
+  const setCount = counter()
+  function render() {
+    current?.root.remove(); under?.root.remove(); incoming?.root.remove()
+    incoming = null
+    under = index + 1 < N ? sheet(index + 2, { hi: true }) : null
+    if (under) { under.root.style.transform = 'translateZ(-0.6px)'; book.append(under.root) }
+    current = sheet(index + 1, { hi: true })
+    book.append(current.root)
+    setCount(index + 1)
+    if (index + 2 < N) new Image().src = medium(index + 3)
+    if (index > 0) new Image().src = medium(index)
+  }
+  /** Turning: the top sheet at `deg` (0 flat, 180 swung over the spine), and the page under it shaded. */
+  function poseTurn(top, below, deg) {
+    const rad = (deg * Math.PI) / 180
+    top.root.style.transform = `rotateY(${-deg}deg) translateZ(${Math.sin(rad) * 2}px)`
+    top.lit.style.opacity = String(Math.sin(rad) * 0.9)
+    if (below) {
+      below.cast.style.opacity = String(Math.sin(rad) ** 0.6 * 0.95 * (1 - deg / 200))
+      below.cast.style.setProperty('--reach', `${(1 - Math.cos(rad)) * 45 + 6}%`)
+    }
+  }
+  function startBack() {
+    incoming = sheet(index, { hi: true })
+    incoming.root.style.transform = 'rotateY(-180deg)'
+    book.append(incoming.root)
+  }
+  async function settle(forward, done) {
+    busy = true
+    if (forward) {
+      const from = parseFloat(current.root.style.transform.match(/-?[\d.]+/)?.[0] ?? '0') * -1 || 0
+      const to = done ? 180 : 0
+      await tween(from, to, done ? 520 : 300, (d) => poseTurn(current, under, d), done ? easeInOut : easeOut)
+      if (done) { index++; render() }
+    } else {
+      if (!incoming) startBack()
+      const from = parseFloat(incoming.root.style.transform.match(/-?[\d.]+/)?.[0] ?? '-180') * -1
+      const to = done ? 0 : 180
+      await tween(from, to, done ? 520 : 300, (d) => poseTurn(incoming, current, d), done ? easeInOut : easeOut)
+      if (done) { index--; render() } else { incoming.root.remove(); incoming = null; current.cast.style.opacity = '0' }
+    }
+    busy = false
+  }
+  swipe(stage, {
+    move(dx) {
+      if (busy) return
+      const p = clamp(Math.abs(dx) / (W * 0.95), 0, 1)
+      if (dx < 0 && index < N - 1) poseTurn(current, under, p * 180)
+      else if (dx > 0 && index > 0) { if (!incoming) startBack(); poseTurn(incoming, current, 180 - p * 180) }
+    },
+    end(dx, vx) {
+      if (busy) return
+      const p = Math.abs(dx) / (W * 0.95)
+      if (dx < 0 && index < N - 1) settle(true, p > 0.33 || vx < -0.45)
+      else if (dx > 0 && index > 0) settle(false, p > 0.33 || vx > 0.45)
+    },
+    tap(x) {
+      if (busy) return
+      if (x > vw * 0.4 && index < N - 1) settle(true, true)
+      else if (x <= vw * 0.4 && index > 0) settle(false, true)
+    },
+  })
+  render()
+  hint('Swipe or tap the sides to turn')
+}
+
+/* ───────── 2 · Open spread ───────── */
+function mountSpread(stage) {
+  stage.classList.add('native')
+  const vw = stage.clientWidth, vh = stage.clientHeight
+  const W = Math.round(Math.min(vw * 0.84, (vh - 250) * ASPECT)), H = Math.round(W / ASPECT)
+  const track = el('div', 'spread-track', stage)
+  Object.assign(track.style, { top: `${Math.round((vh - H) / 2 + 4)}px`, height: `${H + 60}px`, paddingInline: `${Math.round((vw - W) / 2)}px`, paddingBottom: '60px' })
+  for (const pages of SPREADS) {
+    const s = el('div', 'spread', track)
+    s.style.height = `${H}px`
+    pages.forEach((p, j) => {
+      const n = el('div', `pg spread-page${pages.length === 2 ? (j ? ' r' : ' l') : ''}`, s)
+      n.dataset.p = p
+      n.style.width = `${W}px`
+      paint(n, p, false)
+    })
+  }
+  // The spreads end flush with the padding; a spacer keeps the last one centrable.
+  el('div', '', track).style.cssText = `flex:none;width:${Math.round((vw - W) / 2) - 46}px`
+  lazyHi(track, '0px 500px')
+  const setCount = counter()
+  const pages = [...track.querySelectorAll('.spread-page')]
+  const update = () => {
+    const mid = track.scrollLeft + vw / 2
+    let best = pages[0], d = Infinity
+    for (const n of pages) { const c = n.offsetLeft + n.offsetParent.offsetLeft + W / 2; const dd = Math.abs(c - mid - 0); if (dd < d) { d = dd; best = n } }
+    setCount(+best.dataset.p)
+  }
+  track.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true })
+  update()
+  hint('Swipe across the spread')
+}
+
+/* ───────── 3 · Scroll ───────── */
+function mountScroll(stage) {
+  stage.classList.add('native')
+  const list = el('div', 'scroll-list', stage)
+  for (let p = 1; p <= N; p++) {
+    const n = el('div', `pg scroll-page${p === 2 || (p > 2 && p % 2 === 0) || p === N ? ' starts' : ''}`, list)
+    n.dataset.p = p
+    paint(n, p, false)
+  }
+  lazyHi(list, '700px 0px')
+  const rail = el('div', 'rail', document.body), knob = el('i', '', rail)
+  const setCount = counter()
+  const pages = [...list.children]
+  const update = () => {
+    const mid = list.scrollTop + list.clientHeight * 0.45
+    const i = pages.findIndex((n) => n.offsetTop + n.offsetHeight > mid)
+    setCount(i < 0 ? N : i + 1)
+    const p = list.scrollTop / Math.max(1, list.scrollHeight - list.clientHeight)
+    knob.style.top = `calc(${p * 100}% - ${p * 36}px)`
+  }
+  list.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true })
+  update()
+}
+
+/* ───────── 4 · Deck ───────── */
+function mountDeck(stage) {
+  const vw = stage.clientWidth, vh = stage.clientHeight
+  const W = Math.round(Math.min(vw * 0.78, (vh - 270) * ASPECT)), H = Math.round(W / ASPECT)
+  const x = Math.round((vw - W) / 2), y = Math.round((vh - H) / 2 - 4)
+  const TILT = [0, -2.2, 1.6, -1.1]
+  let index = 0, busy = false
+  const cards = new Map()
+  const setCount = counter()
+  const card = (p) => {
+    let n = cards.get(p)
+    if (!n) {
+      n = el('div', 'pg deck-card')
+      Object.assign(n.style, { left: `${x}px`, top: `${y}px`, width: `${W}px`, height: `${H}px` })
+      paint(n, p, true)
+      cards.set(p, n)
+    }
+    return n
+  }
+  const restPose = (depth) => `translate(${depth * 3}px, ${depth * 9}px) rotate(${TILT[depth]}deg) scale(${1 - depth * 0.035})`
+  function layout() {
+    for (const [p, n] of cards) if (p < index + 1 || p > index + 4) { n.remove(); cards.delete(p) }
+    for (let d = 3; d >= 0; d--) {
+      const p = index + 1 + d
+      if (p > N) continue
+      const n = card(p)
+      n.style.zIndex = String(10 - d)
+      n.style.transition = 'transform 320ms cubic-bezier(.2,.8,.2,1)'
+      n.style.transform = restPose(d)
+      stage.append(n)
+    }
+    setCount(index + 1)
+  }
+  const top = () => cards.get(index + 1)
+  async function next() {
+    if (index >= N - 1) return spring()
+    busy = true
+    const n = top()
+    n.style.transition = 'transform 300ms cubic-bezier(.4,0,.6,1)'
+    n.style.transform = `translate(${-vw * 1.15}px, -30px) rotate(-16deg)`
+    await new Promise((r) => setTimeout(r, 280))
+    index++
+    layout()
+    busy = false
+  }
+  async function prev() {
+    if (index === 0) return spring()
+    busy = true
+    index--
+    const n = card(index + 1)
+    n.style.transition = 'none'
+    n.style.transform = `translate(${vw * 1.15}px, -30px) rotate(16deg)`
+    n.style.zIndex = '11'
+    stage.append(n)
+    n.getBoundingClientRect()
+    layout()
+    await new Promise((r) => setTimeout(r, 320))
+    busy = false
+  }
+  function spring() {
+    const n = top()
+    n.style.transition = 'transform 320ms cubic-bezier(.2,.8,.2,1)'
+    n.style.transform = restPose(0)
+  }
+  swipe(stage, {
+    move(dx) {
+      if (busy) return
+      const n = top()
+      n.style.transition = 'none'
+      n.style.transform = `translate(${dx}px, ${Math.abs(dx) * -0.06}px) rotate(${dx / 22}deg)`
+    },
+    end(dx, vx) {
+      if (busy) return
+      if (dx < -W * 0.28 || vx < -0.5) next()
+      else if (dx > W * 0.28 || vx > 0.5) { spring(); prev() }
+      else spring()
+    },
+    tap(px) { if (!busy) (px < vw * 0.3 ? prev : next)() },
+  })
+  layout()
+  hint('Flick left for the next page, right to go back')
+}
+
+/* ───────── 5 · Scrubber ───────── */
+function mountScrub(stage) {
+  const vw = stage.clientWidth, vh = stage.clientHeight
+  const W = Math.round(Math.min(vw * 0.82, (vh - 320) * ASPECT)), H = Math.round(W / ASPECT)
+  const page = el('div', 'pg scrub-page', stage)
+  Object.assign(page.style, { left: `${Math.round((vw - W) / 2)}px`, top: `${Math.round((vh - H) / 2 - 40)}px`, width: `${W}px`, height: `${H}px` })
+  const bar = el('div', 'scrub-bar', document.body)
+  const strip = el('div', 'scrub-strip', bar)
+  const SAMPLES = 16
+  for (let i = 0; i < SAMPLES; i++) el('i', '', strip).style.backgroundImage = `url(${thumb(1 + Math.round((i / (SAMPLES - 1)) * (N - 1)))})`
+  const win = el('div', 'scrub-window', bar)
+  const setCount = counter()
+  let index = 0, hiTimer = 0
+  function show(i, settle) {
+    index = clamp(i, 0, N - 1)
+    const p = index + 1
+    paint(page, p, false)
+    clearTimeout(hiTimer)
+    hiTimer = setTimeout(() => paint(page, p, true), settle ? 0 : 140)
+    win.style.left = `calc((100% - 36px) * ${index / (N - 1)})`
+    win.style.backgroundImage = `url(${thumb(p)})`
+    setCount(p)
+  }
+  let scrubbing = null
+  bar.addEventListener('pointerdown', (e) => { scrubbing = e.pointerId; bar.setPointerCapture(e.pointerId); scrubTo(e) })
+  bar.addEventListener('pointermove', (e) => { if (e.pointerId === scrubbing) scrubTo(e) })
+  const stop = (e) => { if (e.pointerId === scrubbing) { scrubbing = null; show(index, true) } }
+  bar.addEventListener('pointerup', stop)
+  bar.addEventListener('pointercancel', stop)
+  function scrubTo(e) {
+    const r = bar.getBoundingClientRect()
+    const i = Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * (N - 1))
+    if (i !== index) show(i)
+  }
+  async function step(dir) {
+    const i = clamp(index + dir, 0, N - 1)
+    if (i === index) return
+    await tween(1, 0, 110, (o) => { page.style.opacity = String(o); page.style.translate = `${(1 - o) * -dir * 18}px 0` })
+    show(i, true)
+    await tween(0, 1, 180, (o) => { page.style.opacity = String(o); page.style.translate = `${(1 - o) * dir * 18}px 0` })
+  }
+  swipe(stage, {
+    end(dx, vx) { if (dx < -40 || vx < -0.4) step(1); else if (dx > 40 || vx > 0.4) step(-1) },
+    tap(x) { step(x < vw * 0.4 ? -1 : 1) },
+  })
+  show(0, true)
+  hint('Drag along the strip, or swipe the page')
+}
+
+const MOUNT = { fold: mountFold, spread: mountSpread, scroll: mountScroll, deck: mountDeck, scrub: mountScrub }
+const query = new URLSearchParams(location.search)
+const key = query.get('o')
+if (key && MOUNT[key]) {
+  document.body.className = 'single'
+  const stage = el('div', 'stage', document.body)
+  const nav = el('div', 'mock-nav', document.body)
+  nav.innerHTML = `<span>← Back</span>${GHOST}`
+  if (!query.has('framed')) {
+    const all = el('a', 'back-to-all', document.body)
+    all.href = location.pathname
+    all.textContent = `${OPTIONS.findIndex((o) => o.key === key) + 1}/5 · ${OPTIONS.find((o) => o.key === key).name} · all`
+  }
+  MOUNT[key](stage)
+} else {
+  document.body.className = 'gallery'
+  const head = el('header', 'g-head', document.body)
+  head.innerHTML = `<h1>Harvard &amp; MIT on a phone: five ways to read the book</h1><p>Every phone is live: swipe, drag, tap. Each one is the real 60-page book, with the site's phone nav (← Back, Davebot) drawn on top to judge overlaps. Open one full screen on your phone to feel it in the hand.</p>`
+  if (innerWidth < 700) {
+    const list = el('nav', 'g-list', document.body)
+    OPTIONS.forEach((o, i) => { const a = el('a', '', list); a.href = `?o=${o.key}`; a.innerHTML = `<b>${i + 1} · ${o.name}</b><span>${o.line}</span>` })
+  } else {
+    const row = el('div', 'g-row', document.body)
+    OPTIONS.forEach((o, i) => {
+      const fig = el('figure', 'g-item', row)
+      const phone = el('div', 'g-phone', fig)
+      const frame = el('iframe', '', phone)
+      frame.src = `?o=${o.key}&framed`
+      frame.title = o.name
+      frame.loading = 'lazy'
+      const cap = el('figcaption', '', fig)
+      cap.innerHTML = `<b><span>${i + 1}</span>${o.name}</b><p>${o.line}</p><a href="?o=${o.key}">Open full screen</a>`
+    })
+  }
+}
+</script>
+</body>
+</html>
