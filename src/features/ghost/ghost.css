@@ -44,13 +44,31 @@
   }
 }
 
-/* --ghost-fill comes from the 'Davebot → ghost → color' dial; unset keeps the defaults. */
+/* --ghost-fill comes from the 'Davebot → ghost → color' dial; unset keeps the default. */
 .ghost-mark__shell {
   fill: var(--ghost-fill, var(--placeholder));
 }
 
+/* 'nav link' colour: the idle nav links' colour on the page Davebot is on, set by the surface the
+   page declares above the nav, not by the nav's own live tone (its data-under / data-surface
+   follow what scrolls under it), so he keeps one colour while the page scrolls. The opened
+   Davebot (outside any page) takes the dark-page colour. */
+.ghost-mark {
+  --ghost-link-body: var(--text-muted);
+}
+[data-surface='light'] .nav .ghost-mark {
+  --ghost-link-body: var(--stone-400);
+}
+@media (max-width: 640px) {
+  /* Phones darken the links on light pages (Nav.css). */
+  [data-surface='light'] .nav .ghost-mark {
+    --ghost-link-body: var(--stone-600);
+  }
+}
+
+/* Eyes (and the happy arcs): always the About page's white background, on every page and body colour. */
 .ghost-mark__pupil {
-  fill: var(--ink-900);
+  fill: var(--paper);
 }
 
 /* Blink scales the clipped eye group about its own box, so it reads as lids
@@ -78,7 +96,7 @@
 
 .ghost-mark__arc {
   fill: none;
-  stroke: var(--ink-900);
+  stroke: var(--paper);
   stroke-linecap: round;
   stroke-linejoin: round;
   opacity: 0;

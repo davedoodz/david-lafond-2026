@@ -6,8 +6,15 @@
 
 export const DAVEBOT_PANEL = 'Davebot'
 
+/** Graphite: dark warm grey body (#3A3836), on dark and light pages alike. The eyes are always paper (ghost.css). */
+const GRAPHITE = '#3a3836'
+
 /** CSS fill for the ghost body from the 'ghost → color' dial; undefined keeps the stylesheet default. */
 export function ghostFill(ghost: { color: string; customColor: string }): string | undefined {
+  if (ghost.color === 'graphite') return GRAPHITE
+  // The idle nav links' colour on this page (e.g. RESUME at the top), fixed per page: it does not
+  // follow the links' tone changes while scrolling (ghost.css).
+  if (ghost.color === 'nav link') return 'var(--ghost-link-body)'
   if (ghost.color === 'gray text') return 'var(--text-muted)'
   if (ghost.color === 'custom') return ghost.customColor
   return undefined
@@ -32,9 +39,10 @@ export const DAVEBOT_CONFIG = {
     offsetX: [0, -300, 300, 1] as [number, number, number, number],
     offsetY: [0, -200, 200, 1] as [number, number, number, number],
     paletteWidth: [560, 360, 720, 4] as [number, number, number, number],
-    /** Body colour. default: light gray (darker on light pages); gray text: the site's muted
-     *  text gray (--text-muted, e.g. "a product designer."); custom: the colour below. */
-    color: { type: 'select' as const, options: ['default', 'gray text', 'custom'], default: 'default' },
+    /** Body colour (the eyes are always paper). default: light gray (darker on light pages);
+     *  graphite: dark warm grey; nav link: the idle nav links' colour (RESUME); gray text: the site's
+     *  muted text gray (--text-muted, e.g. "a product designer."); custom: the colour below. */
+    color: { type: 'select' as const, options: ['default', 'graphite', 'nav link', 'gray text', 'custom'], default: 'default' },
     customColor: colorField('#a6a09c'),
     morph: springField(0.4, 0.15),
     _collapsed: false,
