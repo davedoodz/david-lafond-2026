@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filo · thumbnail layers: the record travelling from the portal to the tag to the phone</title>
+<style>
+/* Card chrome (fonts, the 867×493 card, the phone/tag/desk layers) ported from thumbnail-layers.html, so this
+   study reads as the same object. What's new here is the travel between them: eight ways to show the material
+   record leaving the portal, landing on the tag, then leaving the tag again for the phone. The catalog wall
+   behind the triptych is left out on purpose — this page is about the three devices and what moves between
+   them, not the wall morph, so each card shows the picked placement on its plain base tone. */
+@font-face { font-family: 'Filo Inter'; src: url('/fonts/Inter-var-latin.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Beatrice'; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+:root { --ink: #171717; --text: #666; --mute: #9a9a97; --line: #e4e4e1; --page: #f5f5f5; --cord: #965b40;
+  --cycle: 7.2s; --speed: 1; --dur: calc(var(--cycle) / var(--speed)); }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Filo Inter', Inter, -apple-system, system-ui, sans-serif; letter-spacing: -0.2px; }
+header { max-width: 1020px; margin: 0 auto; padding: 56px 40px 8px; }
+header h1 { margin: 0; font-size: 22px; font-weight: 500; }
+header p { margin: 6px 0 0; color: var(--text); font-size: 15px; max-width: 760px; line-height: 1.5; }
+header p.note { font-size: 13.5px; color: var(--mute); }
+
+/* ── Controls ── */
+.controls { position: sticky; top: 0; z-index: 20; background: rgb(245 245 245 / 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.controls__in { max-width: 1020px; margin: 0 auto; padding: 12px 40px; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ctl > span { color: var(--mute); }
+.seg { display: flex; background: #e9e9e6; border-radius: 8px; padding: 2px; }
+.seg button { all: unset; cursor: pointer; padding: 4px 9px; border-radius: 6px; color: #555; font-size: 12.5px; white-space: nowrap; }
+.seg button[aria-pressed='true'] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.seg button:focus-visible { outline: 2px solid #8ab; }
+
+main { max-width: 1020px; margin: 0 auto; padding: 28px 40px 96px; display: grid; gap: 56px; }
+figure { margin: 0; }
+figcaption { margin: 0 auto 10px; width: 867px; max-width: 100%; }
+figcaption b { display: block; font-size: 15px; font-weight: 500; }
+figcaption b span { color: var(--mute); font-weight: 400; margin-right: 8px; font-variant-numeric: tabular-nums; }
+figcaption small { display: block; margin-top: 4px; color: var(--text); font-size: 13.5px; line-height: 1.45; max-width: 640px; }
+
+/* ── The card ── */
+.card { position: relative; width: 867px; height: 493px; margin: 0 auto; border-radius: 24px; overflow: clip; contain: layout paint;
+  background: #ece6dc; box-shadow: 0 0 54.5px 16px rgb(23 23 23 / 0.15); }
+.glow { position: absolute; width: 70%; aspect-ratio: 1; opacity: 0.9; pointer-events: none; }
+.glow--a { left: -15%; top: -25%; background: radial-gradient(closest-side, #d6c7b4 45%, transparent); }
+.glow--b { right: -20%; bottom: -35%; background: radial-gradient(closest-side, #c3b19c 45%, transparent); }
+.pool { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(60% 70% at 50% 44%, rgb(244 239 231 / 0.5), transparent 70%); }
+.card-shade { position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background-image: linear-gradient(in oklab 180deg, oklab(20.5% 0 0 / 0%) 50%, oklab(20.5% 0 0) 92.5%); opacity: 0.45; z-index: 5; }
+.card-title { position: absolute; left: 45px; right: 45px; bottom: 35px; margin: 0; z-index: 6; font-family: 'Beatrice', 'Filo Inter', sans-serif;
+  font-size: 20px; line-height: 1.2; font-weight: 400; color: #f5f5f5; text-shadow: 0 0 14px rgb(255 255 255 / 0.35); letter-spacing: -0.01em; pointer-events: none; }
+.fg { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.fg .desk { z-index: 1; }
+.fg .phone { z-index: 2; }
+.fg .tag { z-index: 3; }
+
+/* Phone: drawn in the portal window's style (as in thumbnail-layers.html); the snippet carries its own Dynamic Island. */
+.phone { position: absolute; height: var(--h); aspect-ratio: 434 / 884; }
+.phone::before { content: ''; position: absolute; left: 3.1843%; right: 2.954%; top: 1.19%; bottom: 1.2%; border-radius: 17% / 8%; background: #f1f1f1;
+  box-shadow: 0 26px 50px rgb(60 44 28 / 0.2), 0 6px 14px rgb(60 44 28 / 0.1), 0 0 0 1px rgb(40 30 20 / 0.08); }
+.phone video { position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; object-fit: cover; background: #050505;
+  box-shadow: 0 0 0 1px rgb(40 30 20 / 0.08); }
+
+/* Desktop: the portal window. */
+.desk { position: absolute; width: var(--w); aspect-ratio: 3 / 2; border-radius: 12px; overflow: hidden; background: #fff;
+  box-shadow: 0 26px 50px rgb(60 44 28 / 0.2), 0 6px 14px rgb(60 44 28 / 0.1), 0 0 0 1px rgb(40 30 20 / 0.08); }
+.desk video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.desk__bar { position: absolute; left: 0; right: 0; top: 0; height: 22px; z-index: 1; display: none; align-items: center; gap: 5px; padding: 0 10px; background: #f4f3f1; border-bottom: 1px solid #e6e4e0; }
+.desk__bar i { width: 7px; height: 7px; border-radius: 50%; background: #dcd9d4; }
+
+/* The tag hangs on its cord from above the card. */
+.tag { position: absolute; width: var(--tw); transform-origin: 50% calc(-1 * var(--hang, 120px)); animation: sway calc(6.5s / var(--speed)) ease-in-out infinite; }
+.tag img { display: block; width: 100%; filter: drop-shadow(0 18px 18px rgb(70 50 30 / 0.2)) drop-shadow(0 3px 4px rgb(70 50 30 / 0.12)); }
+.tag i { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); background: url('/work/filo/thumb/tag-cord.webp') 50% 100% / 100% auto no-repeat; }
+@keyframes sway { 0%, 100% { rotate: -2.2deg; } 50% { rotate: 2.2deg; } }
+
+/* Data chips, reused from the layers study. */
+.chip { position: absolute; display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px; border-radius: 13px; white-space: nowrap;
+  font: 500 11.5px/1 'Filo Inter'; color: #3b3632; letter-spacing: -0.1px;
+  background: rgb(255 255 255 / 0.68); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.75) inset, 0 8px 18px rgb(60 44 28 / 0.12);
+  translate: -50% -50%; offset-rotate: 0deg; }
+.chip svg { width: 12px; height: 12px; flex: none; color: #8a6a55; }
+
+/* Shared helpers for things that travel between the three layers. */
+.fx { position: absolute; inset: 0; pointer-events: none; }
+.fx-top { z-index: 7; }
+.fx-line { z-index: 0; }
+.rest { position: absolute; display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 10px; font: 500 11px/1 'Filo Inter';
+  color: #3b3632; background: rgb(255 255 255 / 0.7); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7) inset, 0 6px 14px rgb(60 44 28 / 0.12);
+  translate: -50% -50%; opacity: 0; }
+
+/* ───────────────────────────────────────────────────────────────────────
+   Per-variant effects. All share one cycle: 0–40% portal → tag, 40–50%
+   the tag holds it, 50–85% tag → phone, 85–100% the phone rests on it
+   before the next record leaves the portal. `--path-a`/`--path-b` (set per
+   card from the real layer positions) carry the two legs of the trip. */
+
+/* 01 · Cord of light: a spark, drawn like Momo's heartbeat lines, runs the thread. */
+.thread2 { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.thread2 path { fill: none; stroke-linecap: round; }
+.cord2 { stroke: var(--cord); stroke-width: 1.4; opacity: 0.32; }
+.spark2 { stroke: #fff6ea; stroke-width: 2.6; filter: drop-shadow(0 0 4px #fff3df); stroke-dasharray: 34 400; opacity: 0; }
+.spark2--a { animation: spark2a var(--dur) linear infinite; }
+.spark2--b { animation: spark2b var(--dur) linear infinite; }
+@keyframes spark2a { 0% { opacity: 0; stroke-dashoffset: 34; } 3% { opacity: 1; } 37% { opacity: 1; stroke-dashoffset: -210; } 40%, 100% { opacity: 0; } }
+@keyframes spark2b { 0%, 49% { opacity: 0; stroke-dashoffset: 34; } 52% { opacity: 1; } 83% { opacity: 1; stroke-dashoffset: -210; } 86%, 100% { opacity: 0; } }
+
+/* 02 · Chips fly and dock: the record's fields leave the portal one at a time, land on the tag, then move on. */
+.chip2a, .chip2b { position: absolute; offset-rotate: 0deg; opacity: 0; }
+.chip2a { offset-path: var(--path-a); animation: chip2aPos var(--dur) linear infinite; animation-delay: calc(var(--dur) * var(--stag, 0)); }
+.chip2b { offset-path: var(--path-b); animation: chip2bPos var(--dur) linear infinite; animation-delay: calc(var(--dur) * var(--stag, 0)); }
+.chip2a__in, .chip2b__in { translate: -50% calc(-50% + var(--ty, 0px)); }
+.chip2a__in { animation: chip2aScale var(--dur) linear infinite; animation-delay: calc(var(--dur) * var(--stag, 0)); }
+.chip2b__in { animation: chip2bScale var(--dur) linear infinite; animation-delay: calc(var(--dur) * var(--stag, 0)); }
+@keyframes chip2aPos { 0%, 100% { offset-distance: 0%; opacity: 0; } 3% { opacity: 1; } 34% { offset-distance: 100%; opacity: 1; } 38%, 100% { opacity: 0; } }
+@keyframes chip2aScale { 0%, 100% { scale: 0.7; } 3% { scale: 1; } 34%, 100% { scale: 0.5; } }
+@keyframes chip2bPos { 0%, 49%, 100% { offset-distance: 0%; opacity: 0; } 53% { opacity: 1; } 82% { offset-distance: 100%; opacity: 1; } 85%, 100% { opacity: 0; } }
+@keyframes chip2bScale { 0%, 49%, 100% { scale: 0.4; } 53%, 100% { scale: 1; } }
+
+/* 03 · The ∞ fills and drains: the tag's embossed mark charges up, then lets go. */
+.inf3 { position: absolute; overflow: visible; filter: drop-shadow(0 0 7px rgb(255 214 150 / 0.65)); }
+.inf3 path { fill: none; stroke: #e7b36a; stroke-width: 7; stroke-linecap: round; }
+.inf3 .track { stroke: rgb(70 50 30 / 0.14); }
+.inf3 .fill { stroke-dasharray: 200; animation: inf3 var(--dur) linear infinite; }
+.inf3 .glow { fill: radial-gradient(#fff, transparent); }
+@keyframes inf3 {
+  0% { stroke-dashoffset: 200; opacity: 0.35; }
+  38% { stroke-dashoffset: 0; opacity: 1; }
+  50% { stroke-dashoffset: 0; opacity: 1; }
+  83% { stroke-dashoffset: 200; opacity: 0.35; }
+  100% { stroke-dashoffset: 200; opacity: 0.35; }
+}
+
+/* 04 · NFC rings: two taps, the first at the tag, the second between the tag and the phone. */
+.ring4 { fill: none; stroke: #8fbf4f; opacity: 0; }
+.ring4--a { animation: ring4a var(--dur) ease-out infinite; }
+.ring4--b { animation: ring4b var(--dur) ease-out infinite; }
+@keyframes ring4a { 0%, 8% { opacity: 0; r: 4; stroke-width: 5; } 16% { opacity: 0.75; } 38% { opacity: 0; r: 48; stroke-width: 1; } 100% { opacity: 0; } }
+@keyframes ring4b { 0%, 54%, 100% { opacity: 0; r: 4; stroke-width: 5; } 62% { opacity: 0.8; } 85% { opacity: 0; r: 48; stroke-width: 1; } }
+.nfc4 { position: absolute; width: 30px; translate: -50% -50%; opacity: 0; }
+.nfc4--a { animation: nfcicon4a var(--dur) ease-out infinite; }
+.nfc4--b { animation: nfcicon4b var(--dur) ease-out infinite; }
+@keyframes nfcicon4a { 0%, 6% { opacity: 0; scale: 0.6; } 14% { opacity: 1; scale: 1; } 30% { opacity: 1; } 38%, 100% { opacity: 0; } }
+@keyframes nfcicon4b { 0%, 52%, 100% { opacity: 0; scale: 0.6; } 60% { opacity: 1; scale: 1; } 78% { opacity: 1; } 85% { opacity: 0; } }
+
+/* 05 · The row shrinks into the tag: the material row itself rides the trip, small enough to fit. */
+.row5a, .row5b { position: absolute; offset-rotate: 0deg; opacity: 0; }
+.row5a { offset-path: var(--path-a); animation: row5aPos var(--dur) linear infinite; }
+.row5b { offset-path: var(--path-b); animation: row5bPos var(--dur) linear infinite; }
+.row5__box { display: flex; align-items: center; gap: 7px; width: 150px; padding: 6px 10px 6px 6px; border-radius: 10px;
+  background: #fff; box-shadow: 0 10px 22px rgb(60 44 28 / 0.18), 0 0 0 1px rgb(255 255 255 / 0.6) inset; }
+.row5a .row5__box { animation: row5aScale var(--dur) linear infinite; }
+.row5b .row5__box { animation: row5bScale var(--dur) linear infinite; }
+.row5__sw { width: 26px; height: 26px; border-radius: 6px; flex: none; background-size: cover; background-position: 50%; }
+.row5__tx { min-width: 0; }
+.row5__tx b { display: block; font-size: 11px; font-weight: 500; color: #2c2823; white-space: nowrap; }
+.row5__tx i { display: block; font-size: 9.5px; font-style: normal; color: #948d84; white-space: nowrap; }
+@keyframes row5aPos { 0%, 100% { offset-distance: 0%; opacity: 0; } 3% { opacity: 1; } 36% { offset-distance: 100%; opacity: 1; } 40%, 100% { opacity: 0; } }
+@keyframes row5aScale { 0%, 100% { scale: 0.9; } 3% { scale: 1; } 36%, 100% { scale: 0.12; } }
+@keyframes row5bPos { 0%, 49%, 100% { offset-distance: 0%; opacity: 0; } 56% { opacity: 1; } 83% { offset-distance: 100%; opacity: 1; } 97% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes row5bScale { 0%, 49%, 100% { scale: 0.12; } 56% { scale: 0.4; } 83%, 100% { scale: 1; } }
+
+/* 06 · Text streams: loose characters of the record drift along the same two legs. */
+.tok6 { position: absolute; font: 600 11px/1 ui-monospace, 'SF Mono', Menlo, monospace; letter-spacing: 0.02em; color: #7a5c45;
+  offset-rotate: 0deg; translate: -50% -50%; opacity: 0; text-shadow: 0 0 8px rgb(255 255 255 / 0.6); }
+.tok6--1 { offset-path: var(--path-a); animation: tok6a var(--dur) linear infinite; translate: -50% -170%; }
+.tok6--2 { offset-path: var(--path-a); animation: tok6a var(--dur) linear infinite; animation-delay: calc(var(--dur) * -0.065); translate: -50% -50%; }
+.tok6--3 { offset-path: var(--path-a); animation: tok6a var(--dur) linear infinite; animation-delay: calc(var(--dur) * -0.13); translate: -50% 70%; }
+.tok6--4 { offset-path: var(--path-b); animation: tok6b var(--dur) linear infinite; translate: -50% -170%; }
+.tok6--5 { offset-path: var(--path-b); animation: tok6b var(--dur) linear infinite; animation-delay: calc(var(--dur) * -0.065); translate: -50% -50%; }
+.tok6--6 { offset-path: var(--path-b); animation: tok6b var(--dur) linear infinite; animation-delay: calc(var(--dur) * -0.13); translate: -50% 70%; }
+@keyframes tok6a { 0%, 100% { opacity: 0; offset-distance: 0%; } 4% { opacity: 1; } 34% { offset-distance: 100%; opacity: 1; } 38% { opacity: 0; } }
+@keyframes tok6b { 0%, 49%, 100% { opacity: 0; offset-distance: 0%; } 53% { opacity: 1; } 81% { offset-distance: 100%; opacity: 1; } 85% { opacity: 0; } }
+
+/* 07 · A light pulse down the cord: one bead rides the real cord into the tag, another rides a thread on to the phone. */
+.cord7 { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); display: flex; justify-content: center; overflow: visible; }
+.bead7 { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fffdf5, #ffcf7e 55%, rgb(255 207 126 / 0)); filter: drop-shadow(0 0 9px #ffd98f) drop-shadow(0 0 3px #fff); opacity: 0; }
+.bead7--a { top: 4%; animation: bead7a var(--dur) ease-in infinite; }
+@keyframes bead7a { 0%, 100% { opacity: 0; top: 4%; } 4% { opacity: 1; } 36% { top: 92%; opacity: 1; } 40% { opacity: 0; } }
+.thread7 { position: absolute; inset: 0; overflow: visible; }
+.thread7 path { fill: none; stroke: var(--cord); stroke-width: 3; stroke-linecap: round; opacity: 0.4; }
+.bead7--b { offset-path: var(--path-b); offset-rotate: 0deg; animation: bead7b var(--dur) ease-out infinite; }
+@keyframes bead7b { 0%, 49%, 100% { opacity: 0; offset-distance: 0%; } 53% { opacity: 1; } 84% { offset-distance: 100%; opacity: 1; } 86% { opacity: 0; } }
+
+/* 08 · The swatch folds down small enough to ride, then opens out again. */
+.sw8a, .sw8b { position: absolute; offset-rotate: 0deg; opacity: 0; }
+.sw8a { offset-path: var(--path-a); animation: sw8aPos var(--dur) linear infinite; }
+.sw8b { offset-path: var(--path-b); animation: sw8bPos var(--dur) linear infinite; }
+.sw8__box { position: absolute; width: 46px; height: 46px; border-radius: 6px; background-size: cover; background-position: 50%;
+  box-shadow: 0 10px 20px rgb(60 44 28 / 0.2); translate: -50% -50%; }
+.sw8a .sw8__box { animation: sw8aScale var(--dur) linear infinite; }
+.sw8b .sw8__box { animation: sw8bScale var(--dur) linear infinite; }
+@keyframes sw8aPos { 0%, 100% { offset-distance: 0%; opacity: 0; } 3% { opacity: 1; } 36% { offset-distance: 100%; opacity: 1; } 40%, 100% { opacity: 0; } }
+@keyframes sw8aScale { 0%, 100% { scale: 1; rotate: 0deg; } 14% { scale: 1 0.55; rotate: 8deg; } 26% { scale: 1 0.22; rotate: -6deg; } 36%, 100% { scale: 1 0.08; rotate: 0deg; } }
+@keyframes sw8bPos { 0%, 49%, 100% { offset-distance: 0%; opacity: 0; } 55% { opacity: 1; } 83% { offset-distance: 100%; opacity: 1; } 97% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes sw8bScale { 0%, 49%, 100% { scale: 1 0.08; rotate: 0deg; } 66% { scale: 1 0.3; rotate: 7deg; } 76% { scale: 1 0.65; rotate: -5deg; } 83%, 100% { scale: 1 1; rotate: 0deg; } }
+
+body.is-paused .fx, body.is-paused .fx *, body.is-paused .tag { animation-play-state: paused !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx, .fx *, .tag { animation: none !important; }
+  .card[data-v='thread'] .spark2 { opacity: 0.9 !important; stroke-dashoffset: -210 !important; }
+  .card[data-v='chips'] .chip2a { display: none; } .card[data-v='chips'] .chip2b { opacity: 1 !important; offset-distance: 100% !important; } .card[data-v='chips'] .chip2b__in { scale: 1 !important; }
+  .card[data-v='infinity'] .inf3 .fill { stroke-dashoffset: 200 !important; opacity: 0.35 !important; }
+  .card[data-v='rings'] .ring4, .card[data-v='rings'] .nfc4 { opacity: 0 !important; }
+  .card[data-v='row'] .row5a { display: none; } .card[data-v='row'] .row5b { opacity: 1 !important; offset-distance: 100% !important; } .card[data-v='row'] .row5b .row5__box { scale: 1 !important; }
+  .card[data-v='text'] .tok6 { opacity: 0 !important; }
+  .card[data-v='cord'] .bead7 { opacity: 0 !important; }
+  .card[data-v='swatch'] .sw8a { display: none; } .card[data-v='swatch'] .sw8b { opacity: 1 !important; offset-distance: 100% !important; } .card[data-v='swatch'] .sw8b .sw8__box { scale: 1 1 !important; rotate: 0deg !important; }
+  .rest { opacity: 1 !important; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Filo thumbnail · transfer</h1>
+  <p>Ways to show the material record travelling from the portal onto the tag, then from the tag into the phone. Same triptych as the layers study — desk on the right, the tag on the cord in the middle, the phone on the left, in the positions picked there — but the subject here is what moves between them: a designer publishes Bacterial Cellulose in the portal, it is written onto the tag, a technical designer's phone reads the tag and opens the record.</p>
+  <p class="note">Each loop runs portal → tag, a short hold, then tag → phone, then rests before the next record leaves. The phone's snippet restarts right as the data lands on it, so the "Filo Tag Detected" screen appears at the moment of arrival.</p>
+</header>
+
+<div class="controls"><div class="controls__in" id="controls"></div></div>
+
+<main id="main"></main>
+
+<script type="module">
+/* ─────────────────────────── Placement: read the layers study's picked positions ─────────────────────────── */
+const PICK_DEFAULT = { phone: { x: 42, y: 116, size: 432 }, tag: { x: 433, y: 98, size: 214 }, desk: { x: 566, y: 56, size: 430 } }
+const stored = (() => { try { return JSON.parse(localStorage.getItem('filo-thumb-pick') ?? 'null') } catch { return null } })()
+const P = stored?.d?.phone && stored.d.tag && stored.d.desk ? stored.d : PICK_DEFAULT
+
+// phone-tap.mp4: the island reads the tag from 0.3 s and expands to "Material tag detected" at DETECT.
+const DETECT = 3.0
+const phone = (p, extra = '') => `<div class="phone" style="left:${p.x}px;top:${p.y}px;--h:${p.size}px;${extra}"><video muted loop playsinline preload="auto" data-kind="phone" src="/work/filo/thumb/phone-tap.mp4"></video></div>`
+const desk = (p, extra = '') => `<div class="desk" style="left:${p.x}px;top:${p.y}px;--w:${p.size}px;${extra}"><div class="desk__bar"><i></i><i></i><i></i><b>portal.filo.app</b></div><video muted loop autoplay playsinline preload="auto" data-kind="desk" src="/work/filo/thumb/desk-materials.mp4"></video></div>`
+const tag = (p, extra = '') => {
+  const w = p.size * 368 / 653, imgTop = p.y - p.size * 245 / 653
+  return `<div class="tag" data-origin="${p.x},${p.y + p.size / 2}" style="left:${p.x - w / 2}px;top:${imgTop}px;--tw:${w}px;--hang:${Math.max(0, imgTop + 12)}px;${extra}"><i></i><img src="/work/filo/filo-app-flow/filo-tag.webp" alt=""></div>`
+}
+
+/* ─────────────────────────── Geometry shared by every variant ─────────────────────────── */
+// Anchor points on the real layers: the desk's edge nearest the tag, the tag's centre, the phone's
+// edge nearest the tag. A gentle bow (perpendicular offset from the straight line) gives each leg a
+// Filo-cord curve rather than a ruler-straight one.
+const dh = P.desk.size * 2 / 3
+const A = { x: P.desk.x, y: P.desk.y + dh / 2 } // desk → tag starts here
+const T = { x: P.tag.x, y: P.tag.y + P.tag.size / 2 } // the tag, centre of its body
+const phW = P.phone.size * 434 / 884
+const B = { x: P.phone.x + phW, y: P.phone.y + P.phone.size / 2 } // tag → phone ends here
+function bow(a, b, k) {
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1
+  const nx = -dy / len, ny = dx / len
+  return `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} Q ${(mx + nx * len * k).toFixed(1)} ${(my + ny * len * k).toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`
+}
+const pathToTag = bow(A, T, -0.14) // desk → tag
+const pathToPhone = bow(T, B, 0.18) // tag → phone
+const PATH_VARS = `--path-a:path('${pathToTag}');--path-b:path('${pathToPhone}');`
+// The tag's embossed ∞, in card px, from the real art (filo-tag.webp: body starts 27% down its 368×900
+// sheet; the mark sits at 43% down the body, centred).
+const tagW = P.tag.size * 368 / 653
+const MARK = { x: P.tag.x, y: P.tag.y + P.tag.size * 0.43, w: tagW * 0.46 }
+
+const ICON = {
+  fibre: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 12c3-1 4-7 10-8M3 8c2 0 3-3 6-4"/></svg>',
+  weight: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 13h8l-1.2-7H5.2z"/><circle cx="8" cy="4" r="1.6"/></svg>',
+  ruler: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 11h12M2 9.5v3M5 11V8M8 11V6.5M11 11V8M14 9.5v3"/></svg>',
+  doc: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4.5 2.5h5l2.5 2.5v8.5h-7.5z"/><path d="M6.5 8h3.5M6.5 10.5h3.5"/></svg>',
+}
+const SWATCH_IMG = '/work/filo/filo-app-flow/swatch-cellulose.webp'
+
+/* ─────────────────────────── Per-variant overlays ─────────────────────────── */
+const VARIANTS = [
+  {
+    id: 'thread', n: '01', name: 'Cord of light',
+    note: 'A spark, drawn the way Momo\u2019s heartbeat lines are drawn, runs from the portal to the tag, then from the tag to the phone — the record as current on a wire.',
+    fx: () => `<svg class="fx fx-line" viewBox="0 0 867 493">
+        <path class="cord2" d="${pathToTag}"/><path class="cord2" d="${pathToPhone}"/>
+        <path class="spark2 spark2--a" d="${pathToTag}" pathLength="200"/>
+        <path class="spark2 spark2--b" d="${pathToPhone}" pathLength="200"/>
+      </svg>
+      <div class="fx fx-top"><div class="rest" style="left:${B.x}px;top:${(B.y - 26)}px">Delivered</div></div>`,
+  },
+  {
+    id: 'chips', n: '02', name: 'Fields fly and dock',
+    note: 'The record\u2019s own fields — composition, weight, width — leave the portal one at a time, land on the tag, then peel off again for the phone.',
+    fx: () => `<div class="fx fx-top" style="${PATH_VARS}">
+        <div class="chip2a" style="--stag:0;--ty:-20px"><div class="chip chip2a__in">${ICON.fibre}100% bacterial cellulose</div></div>
+        <div class="chip2a" style="--stag:-0.06;--ty:0px"><div class="chip chip2a__in">${ICON.weight}120 gsm</div></div>
+        <div class="chip2a" style="--stag:-0.12;--ty:20px"><div class="chip chip2a__in">${ICON.ruler}145 cm</div></div>
+        <div class="chip2b" style="--stag:0;--ty:-20px"><div class="chip chip2b__in">${ICON.fibre}100% bacterial cellulose</div></div>
+        <div class="chip2b" style="--stag:-0.06;--ty:0px"><div class="chip chip2b__in">${ICON.weight}120 gsm</div></div>
+        <div class="chip2b" style="--stag:-0.12;--ty:20px"><div class="chip chip2b__in">${ICON.ruler}145 cm</div></div>
+      </div>`,
+  },
+  {
+    id: 'infinity', n: '03', name: 'The \u221e fills, then drains',
+    note: 'The tag\u2019s embossed mark charges up like a loading ring while the record writes to it, then empties again as it hands the record on to the phone.',
+    fx: () => `<div class="fx fx-top">
+        <svg class="inf3" viewBox="0 0 100 50" style="left:${MARK.x - MARK.w / 2}px;top:${MARK.y - MARK.w / 4.4}px;width:${MARK.w}px;height:${MARK.w * 0.5}px">
+          <path class="track" pathLength="200" d="M5,25 C5,5 35,5 50,25 C65,45 95,45 95,25 C95,5 65,5 50,25 C35,45 5,45 5,25 Z"/>
+          <path class="fill" pathLength="200" d="M5,25 C5,5 35,5 50,25 C65,45 95,45 95,25 C95,5 65,5 50,25 C35,45 5,45 5,25 Z"/>
+        </svg>
+      </div>`,
+  },
+  {
+    id: 'rings', n: '04', name: 'Two NFC taps',
+    note: 'A ripple at the tag when the portal writes to it, a second ripple between the tag and the phone when it\u2019s read back — the same chime, twice.',
+    fx: () => `<svg class="fx fx-top" viewBox="0 0 867 493">
+        <circle class="ring4 ring4--a" cx="${T.x}" cy="${T.y}" r="2"/>
+        <circle class="ring4 ring4--b" cx="${(T.x + B.x) / 2}" cy="${(T.y + B.y) / 2}" r="2"/>
+      </svg>
+      <div class="fx fx-top">
+        <img class="nfc4 nfc4--a" style="left:${T.x}px;top:${T.y - 54}px" src="/work/filo/studio/nfc.webp" alt="">
+        <img class="nfc4 nfc4--b" style="left:${(T.x + B.x) / 2}px;top:${(T.y + B.y) / 2 - 46}px" src="/work/filo/studio/nfc.webp" alt="">
+      </div>`,
+  },
+  {
+    id: 'row', n: '05', name: 'The row rides along',
+    note: 'The material row itself — swatch and name — shrinks small enough to ride from the portal to the tag, then grows back out of it on the way to the phone.',
+    fx: () => `<div class="fx fx-top" style="${PATH_VARS}">
+        <div class="row5a"><div class="row5__box"><span class="row5__sw" style="background-image:url('${SWATCH_IMG}')"></span><span class="row5__tx"><b>Bacterial Cellulose</b><i>BC\u2011001 \u00b7 120 gsm</i></span></div></div>
+        <div class="row5b"><div class="row5__box"><span class="row5__sw" style="background-image:url('${SWATCH_IMG}')"></span><span class="row5__tx"><b>Bacterial Cellulose</b><i>BC\u2011001 \u00b7 120 gsm</i></span></div></div>
+      </div>`,
+  },
+  {
+    id: 'text', n: '06', name: 'The record streams as text',
+    note: 'Loose characters of the record — its code, its composition, its weight — drift along the same two legs, like a readout rather than an object.',
+    fx: () => `<div class="fx fx-top" style="${PATH_VARS}">
+        <span class="tok6 tok6--1">BC\u2011001</span><span class="tok6 tok6--2">100%</span><span class="tok6 tok6--3">120gsm</span>
+        <span class="tok6 tok6--4">\u221e</span><span class="tok6 tok6--5">BC\u2011001</span><span class="tok6 tok6--6">145cm</span>
+      </div>`,
+  },
+  {
+    id: 'cord', n: '07', name: 'A pulse down the cord',
+    note: 'One bead of light rides the tag\u2019s own cord down from above, the way the portal\u2019s write would arrive; a second rides a new thread on down to the phone.',
+    fx: () => {
+      const imgTop = P.tag.y - P.tag.size * 245 / 653
+      const hang = Math.max(0, imgTop + 12)
+      return `<div class="fx fx-top" style="left:${P.tag.x - tagW / 2}px;top:0;width:${tagW}px;height:${imgTop}px">
+          <div class="cord7" style="height:${hang}px"><span class="bead7 bead7--a"></span></div>
+        </div>
+        <svg class="fx fx-line thread7" viewBox="0 0 867 493"><path d="${pathToPhone}"/></svg>
+        <div class="fx fx-top" style="${PATH_VARS}"><span class="bead7 bead7--b" style="width:14px;height:14px"></span></div>`
+    },
+  },
+  {
+    id: 'swatch', n: '08', name: 'The swatch folds down',
+    note: 'The fabric sample folds flat enough to ride from the portal to the tag, then unfolds again on its way into the phone\u2019s screen.',
+    fx: () => `<div class="fx fx-top" style="${PATH_VARS}"><div class="sw8a"><div class="sw8__box" style="background-image:url('${SWATCH_IMG}')"></div></div><div class="sw8b"><div class="sw8__box" style="background-image:url('${SWATCH_IMG}')"></div></div></div>`,
+  },
+]
+
+/* ─────────────────────────── Build the page ─────────────────────────── */
+const main = document.getElementById('main')
+for (const v of VARIANTS) {
+  const fig = document.createElement('figure')
+  fig.innerHTML = `<figcaption><b><span>${v.n}</span>${v.name}</b><small>${v.note}</small></figcaption>
+    <div class="card" data-v="${v.id}">
+      <span class="glow glow--a"></span><span class="glow glow--b"></span>
+      <div class="pool"></div>
+      <div class="fg">${desk(P.desk)}${phone(P.phone)}${tag(P.tag)}${v.fx()}</div>
+      <div class="card-shade"></div>
+      <h3 class="card-title">Filo — Software for Taking New Materials from Sample to Production</h3>
+    </div>`
+  main.append(fig)
+}
+
+/* ─────────────────────────── Controls: pause, restart, speed — persisted ─────────────────────────── */
+const CTL_KEY = 'filo-transfer-controls'
+const CTL = Object.assign({ speed: 1, paused: false }, JSON.parse(localStorage.getItem(CTL_KEY) ?? '{}'))
+const SPEEDS = [['0.5', '0.5×'], ['1', '1×'], ['2', '2×']]
+const controlsEl = document.getElementById('controls')
+controlsEl.innerHTML = `
+  <div class="ctl"><div class="seg"><button type="button" data-act="toggle">${CTL.paused ? 'Play' : 'Pause'}</button><button type="button" data-act="restart">Restart</button></div></div>
+  <div class="ctl"><span>Speed</span><div class="seg">${SPEEDS.map(([v, l]) => `<button type="button" data-speed="${v}" aria-pressed="${String(CTL.speed) === v}">${l}</button>`).join('')}</div></div>`
+function saveCtl() { localStorage.setItem(CTL_KEY, JSON.stringify(CTL)) }
+function setSpeed(s) {
+  CTL.speed = s
+  document.documentElement.style.setProperty('--speed', String(s))
+  controlsEl.querySelectorAll('button[data-speed]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === s)))
+  saveCtl()
+  restart() // keep the CSS clock and the video clock in step rather than jumping mid-cycle
+}
+function setPaused(p) {
+  CTL.paused = p
+  document.body.classList.toggle('is-paused', p)
+  controlsEl.querySelector('button[data-act="toggle"]').textContent = p ? 'Play' : 'Pause'
+  if (p) { paused = true; accum = cur() ; document.querySelectorAll('video').forEach(v => v.pause()) }
+  else { paused = false; segStart = performance.now(); document.querySelectorAll('video[data-kind="desk"]').forEach(v => v.play().catch(() => {})) }
+  saveCtl()
+}
+controlsEl.addEventListener('click', e => {
+  const b = e.target.closest('button')
+  if (!b) return
+  if (b.dataset.act === 'toggle') setPaused(!CTL.paused)
+  if (b.dataset.act === 'restart') restart()
+  if (b.dataset.speed) setSpeed(Number(b.dataset.speed))
+})
+document.documentElement.style.setProperty('--speed', String(CTL.speed))
+
+/* ─────────────────────────── The clock: drives the phone's "tag detected" moment ─────────────────────────── */
+const CYCLE_MS = 7200, ARRIVAL = 0.85 // must match the 85% mark in the keyframes above
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches
+let paused = CTL.paused, accum = 0, segStart = performance.now()
+const cur = () => accum + (paused ? 0 : (performance.now() - segStart) * CTL.speed)
+function restart() {
+  accum = 0; segStart = performance.now(); lastPos = -1
+  const ANIMATED = '.spark2, .chip2a, .chip2a__in, .chip2b, .chip2b__in, .inf3 .fill, .ring4, .nfc4, .row5a, .row5b, .row5__box, .tok6, .bead7, .sw8a, .sw8b, .sw8__box, .tag, .rest'
+  document.querySelectorAll(ANIMATED).forEach(el => { el.style.animation = 'none'; void el.getBoundingClientRect(); el.style.animation = '' })
+  document.querySelectorAll('video[data-kind="desk"]').forEach(v => { v.currentTime = 0; if (!paused) v.play().catch(() => {}) })
+  document.querySelectorAll('video[data-kind="phone"]').forEach(v => { v.pause(); v.currentTime = 0 })
+}
+let lastPos = -1
+function tick() {
+  if (!paused) {
+    const pos = cur() % CYCLE_MS
+    if (lastPos >= 0) {
+      if (pos < lastPos) document.querySelectorAll('video[data-kind="desk"]').forEach(v => { v.currentTime = 0; v.play().catch(() => {}) })
+      if (lastPos < ARRIVAL * CYCLE_MS && pos >= ARRIVAL * CYCLE_MS)
+        document.querySelectorAll('video[data-kind="phone"]').forEach(v => { v.currentTime = DETECT; v.play().catch(() => {}) })
+    }
+    lastPos = pos
+  }
+  requestAnimationFrame(tick)
+}
+
+if (REDUCED) {
+  document.body.classList.add('is-paused')
+  document.querySelectorAll('video[data-kind="desk"]').forEach(v => { v.pause(); v.currentTime = 0 })
+  document.querySelectorAll('video[data-kind="phone"]').forEach(v => {
+    v.pause()
+    v.addEventListener('loadedmetadata', () => { v.currentTime = DETECT + 0.6 }, { once: true })
+  })
+} else {
+  if (CTL.paused) document.body.classList.add('is-paused')
+  else document.querySelectorAll('video[data-kind="desk"]').forEach(v => v.play().catch(() => {}))
+  requestAnimationFrame(tick)
+}
+window.thumbTransfer = { P, pathToTag, pathToPhone, MARK, ready: true }
+</script>
+</body>
+</html>
