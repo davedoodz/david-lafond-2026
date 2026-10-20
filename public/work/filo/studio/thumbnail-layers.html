@@ -94,8 +94,9 @@ body[data-layers='off'] .fg, body[data-layers='off'] .pool { display: none; }
 .phone { position: absolute; height: var(--h); aspect-ratio: 434 / 884; }
 .phone::before { content: ''; position: absolute; left: 3.1843%; right: 2.954%; top: 1.19%; bottom: 1.2%; border-radius: 17% / 8%; background: #f1f1f1;
   box-shadow: 0 26px 50px rgb(60 44 28 / 0.2), 0 6px 14px rgb(60 44 28 / 0.1), 0 0 0 1px rgb(40 30 20 / 0.08); }
-.phone video { position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; object-fit: cover; background: #050505;
-  box-shadow: 0 0 0 1px rgb(40 30 20 / 0.08); }
+.phone video { position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; object-fit: cover; background: #f1f1f1; }
+/* The bezel laps 1.5px over the screen's edge, so no dark antialiased seam shows between them. */
+.phone::after { content: ''; position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; box-shadow: inset 0 0 0 1.5px #f1f1f1; pointer-events: none; }
 
 /* Desktop: the portal window. "Zoomed in" scales the snippet about its focus and keeps a slim window bar. */
 .desk { position: absolute; width: var(--w); aspect-ratio: 3 / 2; border-radius: 12px; overflow: hidden; background: #fff;
@@ -211,12 +212,12 @@ const finishOf = m => /leather|mycelium|Piñatex/i.test(m) ? 'leather' : /wool/i
 
 const SNIPPETS = {
   phone: [
-    { id: 'phone-tap', label: 'Tap the tag, read the record' },
+    { id: 'phone-tap', label: 'The record, four tabs' },
     { id: 'phone-email', label: 'Open from email' },
     { id: 'phone-file', label: 'Technical File' },
   ],
   desk: [
-    { id: 'desk-materials', label: 'Materials: publish', fx: '20%', fy: '35%' },
+    { id: 'desk-materials', label: 'Portal: Samples, Orders', fx: '20%', fy: '35%' },
     { id: 'desk-tag', label: 'Write the tag', fx: '30%', fy: '46%' },
     { id: 'desk-extract', label: 'Extract', fx: '38%', fy: '48%' },
     { id: 'desk-share', label: 'Share link', fx: '50%', fy: '48%' },
