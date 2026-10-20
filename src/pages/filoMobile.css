@@ -130,8 +130,11 @@
      is padded for the cards' shadow; taking that padding back out of the layout keeps the cards
      themselves --fm-image-gap from the interviews and the Miro board. */
   main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] {
+    width: min(var(--qa-card-w, 640px), var(--fm-card-w) * 1vw);
     height: auto;
     aspect-ratio: 560 / 947;
+    gap: var(--fm-quote-gap);
+    border-radius: var(--fm-card-radius);
   }
   main.case[data-work='filo'] .filo-research .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
     margin-block: calc(-1 * var(--qa-shadow-pad, 0px));
@@ -141,23 +144,28 @@
      card's and shrink with it. */
   main.case[data-work='filo'] .persona__quotes:has([data-filo-quote]) .persona__marquee-track {
     zoom: calc(var(--qa-strip-scale, 1) * var(--fm-cards-scale));
+    animation-duration: calc(var(--quote-loop, 40s) / (var(--qa-speed, 1) * var(--fm-cards-speed)));
+  }
+  main.case[data-work='filo'] .persona__quotes:has([data-filo-quote]) .persona__marquee-track ul {
+    gap: var(--fm-cards-gap);
+    padding-right: var(--fm-cards-gap);
   }
   /* Quote text, layout B of public/work/filo/studio/quote-card-text.html: big and left, like the
      desktop card. Sizes are the ones seen on screen; the strip draws everything at --qa-strip-scale,
      so each is divided by it. */
   main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] {
-    padding: calc(24px / var(--qa-strip-scale, 1)) calc(22px / var(--qa-strip-scale, 1));
+    padding: calc(var(--fm-card-pad-y) / var(--qa-strip-scale, 1)) calc(var(--fm-card-pad-x) / var(--qa-strip-scale, 1));
     text-align: left;
   }
   main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] .persona__quote {
-    font-size: calc(23px / var(--qa-strip-scale, 1));
-    font-weight: 540;
-    line-height: 1.16;
-    letter-spacing: -0.045em;
+    font-size: calc(var(--fm-quote-size) / var(--qa-strip-scale, 1));
+    font-weight: var(--fm-quote-weight);
+    line-height: var(--fm-quote-lh);
+    letter-spacing: calc(var(--fm-quote-ls) * 1em);
     text-wrap: balance;
   }
   main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] .persona__role {
-    font-size: calc(12px / var(--qa-strip-scale, 1));
+    font-size: calc(var(--fm-role-size) / var(--qa-strip-scale, 1));
   }
   /* Card art on phones: centred on the card, --a-w of its width, --a-x px right of centre and --a-y px
      above the card's bottom edge, one set per card (filoMobile.ts › Quote card art). The desktop art

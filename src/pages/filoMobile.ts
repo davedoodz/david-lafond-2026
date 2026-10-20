@@ -47,6 +47,21 @@ const DIALS: PhoneDialTable = {
     'Merchandiser art y': ['--fm-art4-y', 16, -100, 250, 1, 'px'],
   },
   '4 Steps 01–04 · prototypes': {
+  /** Every dial below is in the full-size card's units: Quote cards scale shrinks the whole strip. */
+  '3 Primary research · quote cards': {
+    'Scroll speed': ['--fm-cards-speed', 1, 0.2, 3, 0.05, ''],
+    'Gap between cards': ['--fm-cards-gap', 16, 0, 80, 1, 'px'],
+    'Card width (% of screen)': ['--fm-card-w', 82, 40, 100, 1, ''],
+    'Card corner radius': ['--fm-card-radius', 20, 0, 60, 1, 'px'],
+    'Card padding top and bottom': ['--fm-card-pad-y', 24, 0, 80, 1, 'px'],
+    'Card padding sides': ['--fm-card-pad-x', 22, 0, 80, 1, 'px'],
+    'Quote text size': ['--fm-quote-size', 23, 12, 40, 0.5, 'px'],
+    'Quote text weight': ['--fm-quote-weight', 540, 300, 800, 10, ''],
+    'Quote line spacing': ['--fm-quote-lh', 1.16, 0.9, 1.6, 0.01, ''],
+    'Quote letter spacing': ['--fm-quote-ls', -0.045, -0.1, 0.05, 0.005, ''],
+    'Quote to name gap': ['--fm-quote-gap', 16, 0, 60, 1, 'px'],
+    'Name text size': ['--fm-role-size', 12, 8, 20, 0.5, 'px'],
+  },
     'Portal window width': ['--fm-portal-w', 342, 200, 400, 2, 'px'],
     'Phone width': ['--fm-phone-w', 250, 180, 320, 2, 'px'],
     'Sample box width': ['--fm-box-w', 390, 200, 700, 2, 'px'],
