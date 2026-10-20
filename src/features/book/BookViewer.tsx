@@ -492,6 +492,7 @@ export function BookViewer() {
     '--video-scale-d': t.video.scaleDesktop,
     '--video-scale-m': t.video.scaleMobile,
     '--video-radius': `${t.video.radius}px`,
+    '--video-radius-n': t.video.radius,
     '--grid-min': `${t.grid.minCard * t.grid.scale}px`,
     '--grid-gap': `${t.grid.gap * t.grid.scale}px`,
     '--grid-side-d': `${t.grid.sideMarginDesktop}px`,
