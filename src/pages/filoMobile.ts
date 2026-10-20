@@ -30,6 +30,7 @@ const DIALS: PhoneDialTable = {
   '3 Primary research': {
     'Interview video width': ['--fm-interviews-w', 342, 200, 400, 2, 'px'],
     'Miro board width': ['--fm-miro-w', 342, 200, 400, 2, 'px'],
+    'Quote cards scale': ['--fm-cards-scale', 0.5, 0.3, 1.2, 0.01, ''],
   },
   '3 Primary research · quote card art': {
     'Technical designer art size': ['--fm-art1-w', 92, 40, 140, 1, '%'],
