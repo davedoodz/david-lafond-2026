@@ -17,7 +17,7 @@ const DIALS: PhoneDialTable = {
     'Body text line spacing': ['--fm-body-lh', 1.25, 1, 1.8, 0.01, ''],
   },
   '1 Hero · title and hang tag': {
-    'Filo mark size': ['--fm-mark-scale', 0.5, 0.3, 1.2, 0.01, ''],
+    'Filo mark size': ['--fm-mark-scale', 0.75, 0.3, 1.2, 0.01, ''],
     'Partner logo height': ['--fm-logo-h', 36, 12, 48, 1, 'px'],
     'Gap above and below logos': ['--fm-logos-gap', 46, 0, 120, 1, 'px'],
     'Hang tag width': ['--fm-tag-w', 300, 160, 400, 2, 'px'],
