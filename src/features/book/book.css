@@ -523,6 +523,7 @@
   gap: 7px;
   padding: 9px 15px;
   border-radius: 999px;
+  --pill-fill: var(--paper);
   background: var(--paper);
   color: var(--ink-900);
   font-size: var(--text-small);
@@ -530,6 +531,7 @@
   line-height: 1.3;
   white-space: nowrap;
   transform-origin: center;
+  position: relative;
 }
 
 .viewer__video-label-text {
@@ -544,6 +546,7 @@
 }
 
 .viewer__video[data-pill='dark'] .viewer__video-pill {
+  --pill-fill: var(--ink-900);
   background: var(--ink-900);
   color: var(--paper);
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.14);
@@ -579,14 +582,33 @@
   .viewer__video-frame:hover + .viewer__video-label .viewer__video-label-entrance {
     animation: var(--pill-entrance) var(--pill-ms) cubic-bezier(0.16, 1, 0.3, 1) both;
   }
+  .viewer__video[data-entrance='none'] .viewer__video-frame:hover + .viewer__video-label .viewer__video-label-entrance {
+    animation: none;
+  }
   .viewer__video-frame:hover + .viewer__video-label .viewer__video-pill {
-    animation: var(--pill-idle, none) var(--pill-idle-ms) ease-in-out var(--pill-ms) infinite;
+    animation: var(--pill-idle, none) var(--pill-idle-ms) ease-in-out var(--pill-idle-delay, var(--pill-ms)) infinite;
   }
   .viewer__video[data-idle='pulse'] .viewer__video-frame:hover + .viewer__video-label .viewer__video-pill {
     animation-duration: var(--pill-pulse-ms);
     animation-timing-function: var(--pill-pulse-ease);
   }
+  /* Halo: a ring that swells and fades on the pulse's own curve, so ring and beat land together. */
+  .viewer__video[data-halo] .viewer__video-frame:hover + .viewer__video-label .viewer__video-pill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    animation: video-pill-halo var(--pill-pulse-ms) var(--pill-pulse-ease) var(--pill-idle-delay, var(--pill-ms)) infinite both;
+  }
 }
+
+[data-entrance='fade'] { --pill-entrance: video-pill-fade; }
+[data-entrance='rise'] { --pill-entrance: video-pill-rise; }
+[data-entrance='bloom'] { --pill-entrance: video-pill-bloom; }
+[data-entrance='beat'] { --pill-entrance: video-pill-beat; }
+[data-entrance='focus'] { --pill-entrance: video-pill-focus; }
+[data-entrance='unfold'] { --pill-entrance: video-pill-unfold; }
 
 [data-entrance='burst'] { --pill-entrance: video-pill-burst; }
 [data-entrance='slingshot'] { --pill-entrance: video-pill-slingshot; }
@@ -607,6 +629,46 @@
 [data-idle='pulse'] { --pill-idle: video-pill-pulse; }
 [data-idle='levitate'] { --pill-idle: video-pill-levitate; }
 
+/* Quiet entrances: short travel, no spin, and each ends on exactly scale 1 so the pulse picks up
+   from rest. */
+@keyframes video-pill-fade {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes video-pill-rise {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+/* One soft beat in: reads as the pulse's first beat arriving early. */
+@keyframes video-pill-bloom {
+  0% { opacity: 0; transform: scale(0.86); }
+  60% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: none; }
+}
+/* Fades in on a small double beat, the same rhythm the pulse keeps after it. */
+@keyframes video-pill-beat {
+  0% { opacity: 0; transform: scale(0.92); }
+  30% { opacity: 1; transform: scale(1.04); }
+  50% { transform: scale(0.995); }
+  70% { transform: scale(1.02); }
+  100% { opacity: 1; transform: none; }
+}
+/* Pulls into focus: from a slight blur and a hair large. */
+@keyframes video-pill-focus {
+  from { opacity: 0; filter: blur(6px); transform: scale(1.05); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+/* Opens from its left end like a reveal. The final inset leaves room for the pulse to grow unclipped. */
+@keyframes video-pill-unfold {
+  from { opacity: 0.4; clip-path: inset(-24px 100% -24px -24px round 999px); }
+  to { opacity: 1; clip-path: inset(-24px -24px -24px -24px round 999px); }
+}
+/* Progress follows the pulse curve (0 at rest, peak on each beat), so the ring swells with the beat
+   and draws back with it, in the pill's own fill. */
+@keyframes video-pill-halo {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pill-fill) calc(var(--pill-halo-opacity) * 100%), transparent); }
+  to { box-shadow: 0 0 0 var(--pill-halo-size) color-mix(in srgb, var(--pill-fill) calc(var(--pill-halo-opacity) * 100%), transparent); }
+}
 @keyframes video-pill-burst {
   0% { opacity: 0; transform: scale(0.35) rotate(-14deg); }
   55% { opacity: 1; transform: scale(1.12) rotate(3deg); }
@@ -712,7 +774,8 @@
     transform: none;
   }
   .viewer__video-frame:hover + .viewer__video-label .viewer__video-label-entrance,
-  .viewer__video-frame:hover + .viewer__video-label .viewer__video-pill {
+  .viewer__video-frame:hover + .viewer__video-label .viewer__video-pill,
+  .viewer__video[data-halo] .viewer__video-frame:hover + .viewer__video-label .viewer__video-pill::after {
     animation: none;
   }
 }
