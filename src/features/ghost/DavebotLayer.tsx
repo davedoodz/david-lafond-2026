@@ -310,7 +310,8 @@ function DavebotPanel() {
         window.location.href = row.route
         return
       }
-      if (/^https?:/.test(row.route)) {
+      // Full URLs and site files like the résumé PDF ("/resume/…") open in a new tab; bare names are app routes.
+      if (/^(https?:|\/)/.test(row.route)) {
         window.open(row.route, '_blank', 'noopener,noreferrer')
         return
       }
