@@ -15,12 +15,12 @@ const DIALS: PhoneDialTable = {
     'Gap between sections': ['--fm-section-gap', 112, 40, 240, 2, 'px'],
     'Heading to image gap': ['--fm-media-gap', 32, 0, 120, 1, 'px'],
     'Body text line spacing': ['--fm-body-lh', 1.25, 1, 1.8, 0.01, ''],
+    'Gap above and below images': ['--fm-image-gap', 80, 0, 200, 1, 'px'],
   },
   '1 Hero · title and hang tag': {
     'Filo mark size': ['--fm-mark-scale', 0.75, 0.3, 1.2, 0.01, ''],
     'Partner logo height': ['--fm-logo-h', 36, 12, 48, 1, 'px'],
     'Gap above and below logos': ['--fm-logos-gap', 46, 0, 120, 1, 'px'],
-    'Gap above and below tag': ['--fm-tag-gap', 80, 0, 200, 1, 'px'],
     'Hang tag width': ['--fm-tag-w', 300, 160, 400, 2, 'px'],
   },
   '2 Market gap · Proposal': {
@@ -30,13 +30,13 @@ const DIALS: PhoneDialTable = {
   '3 Primary research': {
     'Interview video width': ['--fm-interviews-w', 342, 200, 400, 2, 'px'],
     'Miro board width': ['--fm-miro-w', 342, 200, 400, 2, 'px'],
-    'Gap between the 3 blocks': ['--fm-research-gap', 72, 16, 200, 2, 'px'],
   },
   '4 Steps 01–04 · prototypes': {
     'Portal window width': ['--fm-portal-w', 342, 200, 400, 2, 'px'],
     'Phone width': ['--fm-phone-w', 250, 180, 320, 2, 'px'],
-    'Sample box width': ['--fm-box-w', 300, 160, 400, 2, 'px'],
-    'Phone to box gap': ['--fm-box-gap', 40, 0, 120, 2, 'px'],
+    'Sample box width': ['--fm-box-w', 600, 200, 700, 2, 'px'],
+    'Box to phone gap': ['--fm-box-gap', 40, 0, 120, 2, 'px'],
+    'Tap scene phone width': ['--fm-tap-w', 140, 100, 250, 2, 'px'],
   },
   '5 A circular future · milestones': {
     'Product loop width': ['--fm-loop-w', 342, 200, 400, 2, 'px'],

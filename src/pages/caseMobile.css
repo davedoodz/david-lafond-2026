@@ -50,6 +50,15 @@
   main:is(.case, .project) .cta__subtitle {
     font-size: var(--m-contact-body-size);
   }
+  /* Contact sheet (Momo, Filo): the CTA block sits midway between the sheet's top edge and the
+     contact links. The footer drops its minimum height so it ends at the links' top, and the CTA gets
+     the same space above and below; 199px keeps the sheet its earlier height (654px). */
+  main.case .case__dark > .cta.column {
+    padding-block: 199px;
+  }
+  main.case .case__dark > .footer {
+    min-height: 0;
+  }
 
   /* --- Text block rhythm: eyebrow → title → body, the same in every block. */
   main.case :is(.case__text, .case__section-copy, .case__story-text, .fs-copy, .persona__moments header) {

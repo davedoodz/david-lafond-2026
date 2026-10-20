@@ -74,22 +74,24 @@
   }
   /* The tag photo is a 1024 × 1536 cut-out with clear space around the tag: 286px above it and 138px
      below its shadow. The margins take that space back so the tag has the same gap above (to the
-     logos) and below (to "Market gap"): --fm-tag-gap, in place of the section gap under the hero. */
+     logos) and below (to "Market gap"): --fm-image-gap, in place of the section gap under the hero. */
   main.case[data-work='filo'] .case__section--hero .case__devices {
     width: var(--fm-tag-w);
     max-width: 100%;
-    margin-top: calc(var(--fm-tag-gap) - var(--fm-media-gap) - var(--fm-tag-w) * 286 / 1024);
+    margin-top: calc(var(--fm-image-gap) - var(--fm-media-gap) - var(--fm-tag-w) * 286 / 1024);
     /* − 6px: "Market gap" starts 6px into its chapter (caseMobile.css), so the gap reads to its letters. */
-    margin-bottom: calc(var(--fm-tag-gap) - var(--fm-section-gap) - var(--fm-tag-w) * 138 / 1024 - 6px);
+    margin-bottom: calc(var(--fm-image-gap) - var(--fm-section-gap) - var(--fm-tag-w) * 138 / 1024 - 6px);
   }
   main.case[data-work='filo'] .filo-hero-tag {
     width: 100%;
     transform: none;
   }
 
-  /* --- 2 Market gap · Proposal: two chapters, a section gap apart, each heading → image at the
-     media gap. Both images sit on the centre line (the desktop y nudges would push the proposal's
-     swatches into the next section's heading). */
+  /* --- 2 Market gap · Proposal: two chapters, each image on the centre line (the desktop y nudges
+     would push the proposal's swatches into the next section's heading) with the same gap above and
+     below it (--fm-image-gap), measured to the drawn picture: the desk photo is 1352 × 948 with
+     27px clear above and 24px below; the phone on swatches 1127 × 1396 with 11px each way. The
+     "Proposal" eyebrow starts 6px into its chapter; "Primary market research" at its block's top. */
   main.case[data-work='filo'] section.filo-story {
     gap: var(--fm-section-gap);
   }
@@ -100,52 +102,81 @@
     gap: var(--fm-media-gap);
   }
   main.case[data-work='filo'] .filo-story .fs-film {
-    margin: 0;
     translate: none;
   }
   main.case[data-work='filo'] .filo-story .fs-film--problem {
-    width: min(var(--fm-desk-w), var(--fm-content-w));
+    --w: min(var(--fm-desk-w), var(--fm-content-w));
+    width: var(--w);
+    margin: calc(var(--fm-image-gap) - var(--fm-media-gap) - var(--w) * 27 / 1352) 0
+      calc(var(--fm-image-gap) - var(--fm-section-gap) - var(--w) * 24 / 1352 - 6px);
   }
   main.case[data-work='filo'] .filo-story .fs-film--opportunity {
     --fs-opp-w: min(var(--fm-proposal-w), var(--fm-content-w));
+    margin: calc(var(--fm-image-gap) - var(--fm-media-gap) - var(--fs-opp-w) * 11 / 1127) 0
+      calc(var(--fm-image-gap) - var(--fm-section-gap) - var(--fs-opp-w) * 11 / 1127);
   }
 
-  /* --- 3 Primary research: interview video, quote cards, Miro board, --fm-research-gap apart. */
+  /* --- 3 Primary research: interview video, quote cards, Miro board, each --fm-image-gap from the
+     next, and the interviews the same gap under the copy. */
   main.case[data-work='filo'] .filo-research {
-    gap: var(--fm-research-gap);
+    gap: var(--fm-image-gap);
     max-width: none;
+    margin-top: calc(var(--fm-image-gap) - var(--fm-media-gap));
   }
   main.case[data-work='filo'] .filo-research__interviews {
     width: min(var(--fm-interviews-w), var(--fm-content-w));
+  }
+  /* The quote cards take the hang tag's proportions (560 × 947, measured on the hero tag). The strip
+     is padded for the cards' shadow; taking that padding back out of the layout keeps the cards
+     themselves --fm-image-gap from the interviews and the Miro board. */
+  main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] {
+    height: auto;
+    aspect-ratio: 560 / 947;
+  }
+  main.case[data-work='filo'] .filo-research .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
+    margin-block: calc(-1 * var(--qa-shadow-pad, 0px));
   }
   main.case[data-work='filo'] .filo-research__overview {
     width: min(var(--fm-miro-w), var(--fm-content-w));
   }
 
-  /* --- 4 Steps 01–04. The portal windows at the column width; step 3's phone, its box under it, and
-     step 4's phone at Momo's phone width (Core flows), all on the centre line. */
+  /* --- 4 Steps 01–04. The portal windows at the column width; step 3's box over its phone (at Momo's
+     phone width), all on the centre line. */
   main.case[data-work='filo'] .fss-app:not(.fss-app--phone, .fss-app--scene) {
     width: min(var(--fm-portal-w), var(--fm-content-w));
   }
   main.case[data-work='filo'] .fss-receive {
+    width: 100%;
+    min-width: 0;
     gap: var(--fm-box-gap);
   }
   main.case[data-work='filo'] .fss-app--phone {
     width: var(--fm-phone-w);
   }
+  /* The box photos keep clear space around the box (the unwrapped tissue spills right), so the frame
+     is wider than the column; centred, it overflows both margins evenly. */
   main.case[data-work='filo'] .fss-box {
-    width: min(var(--fm-box-w), var(--fm-content-w));
+    order: -1;
+    flex: none;
+    width: var(--fm-box-w);
+    margin-inline: calc((100% - var(--fm-box-w)) / 2);
     left: 0;
     top: 0;
     margin-top: 0;
   }
-  /* The scene's phone is 390.6px wide on its 900px-high stage, so this height draws it at the phone
-     width. The swatch deck runs off both sides, so the scene spans the screen: its ends leave at the
-     screen's edges instead of being cut at the margins. */
+  /* Step 4's stage is 900px high with the phone 390.6px wide in its middle, and the dealt swatches
+     reach about 590px either side of it; this height draws the phone at --fm-tap-w, which at 140 keeps
+     every swatch at least ~80% on screen (the sheer, tucked under the others, shows about half). The
+     scene spans the screen, so the swatches leave at its edges, not at the margins. */
   main.case[data-work='filo'] .fss-app--scene {
     width: 100vw;
     margin-inline: calc(50% - 50vw);
-    height: calc(var(--fm-phone-w) * 900 / 390.6);
+    height: calc(var(--fm-tap-w) * 900 / 390.6);
+  }
+  /* The prototypes play themselves: on a phone a swipe over one scrolls the page, as everywhere else,
+     instead of being caught by the prototype's own document. */
+  main.case[data-work='filo'] iframe {
+    pointer-events: none;
   }
 
   /* --- 5 A circular future: the product loop, then the two milestone photos rising out from under
