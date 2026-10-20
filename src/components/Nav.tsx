@@ -132,6 +132,10 @@ export function BackLink({ className = '' }: { className?: string }) {
   )
 }
 
+/** Where Davebot's eyes take the page's black: the Work page's top, the About page from My Playground
+ *  on, and every contact block and footer. */
+const INK_EYES = '.landing, .about__dark, .cta, .footer'
+
 export function Nav({ route }: Props) {
   const isProject = PROJECT_ROUTES.includes(route)
   const t = useTuning('Nav', NAV_CONFIG)
@@ -153,6 +157,10 @@ export function Nav({ route }: Props) {
   // page behind any project or playground card, for the Soft fade's colour (mobileContrast › fadeTone).
   const [under, setUnder] = useState<'light' | 'dark'>()
   const [section, setSection] = useState<'light' | 'dark'>()
+  // Davebot's eyes go the page's black (ghost.css) while he is over the Work page's top, the About
+  // playground through its end, or a contact/footer block; elsewhere they stay paper.
+  const [inkEyes, setInkEyes] = useState(false)
+
   // The fade's tone animates only once the nav has its first tone; on mount (each page has its own nav)
   // it takes the page's tone at once, so a page transition's new snapshot shows it from the first frame.
   const [fadeLive, setFadeLive] = useState(false)
@@ -182,6 +190,11 @@ export function Nav({ route }: Props) {
       const sectionLight = isLightUnder(nav, x, y, '.works__card, .pg-card')
       if (sectionLight !== null) setSection(sectionLight ? 'light' : 'dark')
       else setSection((current) => current ?? declared())
+      // The page under Davebot himself (the nav's own boxes skipped); a View Transition hit test sees
+      // only <html>, so that keeps the last answer.
+      const ghost = nav.querySelector('.nav__ghost')?.getBoundingClientRect()
+      const hit = ghost && document.elementsFromPoint(ghost.left + ghost.width / 2, ghost.top + ghost.height / 2).find((el) => !nav.contains(el))
+      if (hit && hit !== document.documentElement) setInkEyes(!!hit.closest(INK_EYES))
       // Edge blur: a sheet's curved edge inside a blur band is blurred toward the screen edge but sharp
       // at its tip, which reads as a flat crop. Such a band clears while an arc is in it (Nav.css): the
       // page's top band, and each sheet's own bottom band, which otherwise rests on the sheet's
@@ -311,7 +324,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>
