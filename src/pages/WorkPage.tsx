@@ -7,6 +7,7 @@ import { TOUCH_LANDING, smallViewportHeight, touchDome } from '../lib/touchLandi
 import { publishNavAlign } from '../lib/navAlign'
 import { Signature } from '../features/signature/Signature'
 import { getSignatureData } from '../features/signature/store'
+import { fontMetrics, settled, textRect } from '../lib/settledLayout'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
@@ -67,48 +68,6 @@ function textWidth(el: Element | null) {
   for (const r of range.getClientRects()) if (r.width) { left = Math.min(left, r.left); right = Math.max(right, r.right) }
   range.detach()
   return right > left ? right - left : 0
-}
-
-/** Painted box of an element's text (its font's line boxes). */
-function textRect(el: Element) {
-  const range = document.createRange()
-  range.selectNodeContents(el)
-  const rect = range.getBoundingClientRect()
-  range.detach()
-  return rect
-}
-
-/** Font metrics of an element's text: line box ascent and descent, and the capital height. */
-let metricsCanvas: CanvasRenderingContext2D | null = null
-function fontMetrics(el: Element) {
-  metricsCanvas ||= document.createElement('canvas').getContext('2d')
-  const ctx = metricsCanvas!
-  const s = getComputedStyle(el)
-  ctx.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`
-  const m = ctx.measureText('I')
-  return { ascent: m.fontBoundingBoxAscent, descent: m.fontBoundingBoxDescent, cap: m.actualBoundingBoxAscent }
-}
-
-/**
- * Vertical offset load-ins add right now: the `translate` and `transform` of the element and its
- * ancestors while an animation runs on them (useEntrance's data-enter, useReveal on the nav links).
- * Standing transforms (the signature's offset dials) are kept.
- */
-function entering(el: Element) {
-  let dy = 0
-  for (let e: Element | null = el; e && e !== document.body; e = e.parentElement) {
-    if (!e.getAnimations().length) continue
-    const style = getComputedStyle(e)
-    if (style.translate !== 'none') dy += parseFloat(style.translate.split(' ')[1] ?? '0') || 0
-    if (style.transform !== 'none') dy += new DOMMatrix(style.transform).m42
-  }
-  return dy
-}
-
-/** A box as it will sit once the load-in settles. */
-function settled(el: Element, rect: DOMRect = el.getBoundingClientRect()) {
-  const dy = entering(el)
-  return { left: rect.left, right: rect.right, top: rect.top - dy, bottom: rect.bottom - dy }
 }
 
 /**

@@ -341,6 +341,35 @@ html[data-about-snap] .about .footer {
   top: var(--play-y, 0px);
 }
 /* The label's `top` is set from script so it sits as far below the sheet edge as Home's label;
+/* Desktop: the four equal end gaps (AboutPage.tsx, spacing.endGapDesktop) as added margins, so the
+   page grows with them. The fit panel no longer centres (it would halve each change) and takes its
+   content's height. */
+@media (min-width: 641px) {
+  .about__play[data-fit] {
+    justify-content: flex-start;
+    min-height: 0;
+  }
+  .about__play[data-fit] .pg-grid {
+    margin-top: calc(var(--play-fit-gap) + var(--gap-a, 0px));
+  }
+  .about__play:not([data-fit]) .pg-grid {
+    margin-top: var(--gap-a, 0px);
+  }
+  .about .cg {
+    margin-top: var(--gap-b, 0px);
+  }
+  .about__play {
+    margin-bottom: calc(var(--play-below, 0px) + var(--gap-c, 0px));
+  }
+  .about .cta {
+    margin-bottom: var(--gap-d, 0px);
+  }
+}
+/* Touch screens (AboutPage.tsx): room above the playground so its first cards start below the fold
+   at the story's end, like Home's first thumbnail. Padding, so it can't collapse through the sheet. */
+.about__dark {
+  padding-top: var(--play-touch-push, 0px);
+}
    `top` leaves the reveal's transform free. */
 #play-title {
   position: relative;

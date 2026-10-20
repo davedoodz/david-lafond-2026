@@ -12,6 +12,7 @@ import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/s
 import { useEntrance } from '../lib/useEntrance'
 import { DOME_CURVES } from '../lib/domeClip'
 import { SAVED_TOUCH_ARC, TOUCH_LANDING, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
+import { capTop, settled } from '../lib/settledLayout'
 import { useFitColumn } from '../lib/useFitColumn'
 import { revealDials, useReveal } from '../lib/useReveal'
 import { storyEntranceDials, useStoryEntrance } from '../features/storyEntrance/storyEntrance'
@@ -102,6 +103,9 @@ const CONFIG = {
     /** Extra space above / below the playground section (px; negative pulls neighbours closer). */
     playSpaceAbove: [0, -200, 400, 1] as [number, number, number, number],
     playSpaceBelow: [0, -200, 400, 1] as [number, number, number, number],
+    /** Desktop: one gap (px) for sheet top → cards, cards → graph, GitHub logo → contact heading
+     * and "Let's chat" → footer links, always equal. */
+    endGapDesktop: [150, 0, 400, 1] as [number, number, number, number],
     /** Snap stops: page top (photos), story end (sheet tip peeking), playground, footer. */
     snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'off' },
   },
@@ -486,6 +490,67 @@ export function AboutPage() {
       clear()
     }
   }, [])
+
+  // Desktop: four equal gaps, set by spacing.endGapDesktop: (A) the dark sheet's top → first row
+  // of cards, (B) last row → graph months, (C) GitHub logo → contact heading, (D) "Let's chat" →
+  // footer links. Each is an added margin (AboutPage.css: --gap-a…d), so the page grows or shrinks
+  // with the dial. Text edges are capital tops; boxes are measured as they sit once reveals settle.
+  // Applied margins are subtracted from each measurement (no reset), so a re-measure writes nothing
+  // unless something really moved.
+  const endGap = t.spacing.endGapDesktop
+  useLayoutEffect(() => {
+    const dark = darkRef.current
+    if (!dark) return
+    const desktop = window.matchMedia('(min-width: 641px)')
+    const keys = ['a', 'b', 'c', 'd'] as const
+    let applied = { a: 0, b: 0, c: 0, d: 0 }
+    let frame = 0
+    const clear = () => {
+      applied = { a: 0, b: 0, c: 0, d: 0 }
+      for (const k of keys) dark.style.removeProperty(`--gap-${k}`)
+    }
+    const measure = () => {
+      frame = 0
+      const grid = dark.querySelector<HTMLElement>('.pg-grid')
+      const month = dark.querySelector('.cg__labels span, .cg__months span')
+      const logo = dark.querySelector('.cg__logo')
+      const title = dark.querySelector('.cta__line, .cta__title')
+      const pill = dark.querySelector('.cta')?.lastElementChild
+      const link = dark.querySelector('.footer__inner a')
+      if (!desktop.matches || !grid || !month || !logo || !title || !pill || !link) return clear()
+      const box = settled(grid)
+      // Each gap without its own margin and without the margins above it, which move both its edges.
+      const natural = {
+        a: box.top - settled(dark).top - applied.a,
+        b: capTop(month) - box.bottom - applied.b,
+        c: capTop(title) - settled(logo).bottom - applied.c,
+        d: capTop(link) - settled(pill).bottom - applied.d,
+      }
+      const next = { a: 0, b: 0, c: 0, d: 0 }
+      for (const k of keys) next[k] = Math.round((endGap - natural[k]) * 2) / 2
+      if (keys.every((k) => Math.abs(next[k] - applied[k]) < 0.5)) return
+      applied = next
+      for (const k of keys) dark.style.setProperty(`--gap-${k}`, `${next[k]}px`)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
+    }
+    measure()
+    const resize = new ResizeObserver(schedule)
+    resize.observe(dark)
+    dark.addEventListener('transitionend', schedule)
+    dark.addEventListener('animationend', schedule)
+    desktop.addEventListener('change', schedule)
+    void document.fonts.ready.then(schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      resize.disconnect()
+      dark.removeEventListener('transitionend', schedule)
+      dark.removeEventListener('animationend', schedule)
+      desktop.removeEventListener('change', schedule)
+      clear()
+    }
+  }, [endGap])
 
   useEffect(() => {
     document.body.dataset.page = 'about'
