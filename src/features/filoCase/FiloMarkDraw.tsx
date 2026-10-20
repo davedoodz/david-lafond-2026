@@ -20,10 +20,10 @@ const PIECES = [
 ]
 const STEM = '283,150 334.4,150 252.8,300 205,300'
 const SRC = '/work/filo/filo-mark.webp'
-/** Pen pace (px of route per ms): the studio's 1.0 at 2×. */
-const SPEED = 2
+/** Pen pace (px of route per ms): the studio's 1.0 at 3×. */
+const SPEED = 3
 /** Pause where the pen lifts between letters (ms), and before it lands (ms). */
-const LIFT = 80
+const LIFT = 53
 const START = 200
 /** Nib radius: inside the stroke's half width, so at the crossing it stays within the stem. */
 const NIB = 17
@@ -104,7 +104,7 @@ export function FiloMarkDraw({ className, style }: { className?: string; style?:
           }
         }
         // The nib lands, rides the front of the ink, then lifts.
-        const grow = Math.min(1, Math.max(0, local / 60)) * Math.min(1, Math.max(0, (s.dur + 70 - local) / 70))
+        const grow = Math.min(1, Math.max(0, local / 40)) * Math.min(1, Math.max(0, (s.dur + 47 - local) / 47))
         const nib = nibs[k]
         if (grow <= 0) return nib.setAttribute('r', '0')
         const piece = pieceAt(s, drawn)
