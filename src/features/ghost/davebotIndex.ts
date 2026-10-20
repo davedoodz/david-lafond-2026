@@ -253,7 +253,3 @@ export function rankEntries(query: string, entries: DavebotEntry[] = DAVEBOT_ENT
     .sort((a, b) => b.score - a.score)
     .map(result => result.entry)
 }
-
-export function isExternalRoute(route: string): boolean {
-  return route.startsWith('mailto:') || /^https?:/.test(route)
-}
