@@ -6,7 +6,8 @@ import { navigate, type Route } from '../../lib/router'
 import { DAVEBOT_CONFIG, DAVEBOT_PANEL, ghostFill } from './davebotConfig'
 import { toMotionTransition } from './motionTransition'
 import { closeDavebot, getDavebotTrigger, openDavebot, takeDavebotQuote, useDavebotOpen } from './davebotStore'
-import { DAVEBOT_ENTRY_BY_ID, rankEntries, type AnswerSegment } from './davebotIndex'
+import { rankEntries, type AnswerSegment } from './davebotIndex'
+import { hasMore, nextQuestions, think, type BrainReply } from './davebotBrain'
 import { GhostMark } from './GhostMark'
 import { ArrowUpRightIcon } from '../../components/icons'
 import './davebot.css'
@@ -24,18 +25,9 @@ type Part = { text: string; emphasis: boolean }
 
 type Answer = { parts: Part[] }
 
-type Phase = 'suggestions' | 'query' | 'thinking' | 'answer' | 'offline'
+type Phase = 'suggestions' | 'query' | 'thinking' | 'answer'
 
 type Tuning = ResolvedValues<typeof DAVEBOT_CONFIG>
-
-const OFFLINE_COPY =
-  "Davebot's cloud connection is out for the moment. Questions about David's work, background, and contact details still work."
-
-const RECOVERY_QUESTIONS: Record<'work' | 'about' | 'contact', string> = {
-  work: 'What work is here?',
-  about: 'Who is David?',
-  contact: 'Can I hire David?',
-}
 
 function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -70,11 +62,13 @@ function buildQueryRows(value: string): Row[] {
   return [{ action: 'ask', query: trimmed, label: `Ask "${truncated}"`, hint: 'enter' }, ...matches]
 }
 
-function buildRecoveryRows(excludeId?: string): Row[] {
-  return (['work', 'about', 'contact'] as const)
-    .filter(id => id !== excludeId)
-    .slice(0, 2)
-    .map(id => ({ action: 'ask', id, query: RECOVERY_QUESTIONS[id], label: RECOVERY_QUESTIONS[id], hint: 'ask' }))
+/** After an answer: open the page it's about, dig deeper, or a fresh question to try. */
+function buildFollowRows(reply: BrainReply | null): Row[] {
+  const rows: Row[] = []
+  if (reply?.link) rows.push({ action: 'nav', id: reply.id, route: reply.link.route, label: reply.link.label, hint: 'jump' })
+  if (reply && hasMore(reply.id)) rows.push({ action: 'ask', query: 'Tell me more', label: 'Tell me more', hint: 'ask' })
+  for (const question of nextQuestions(3 - rows.length, reply?.id)) rows.push({ action: 'ask', query: question, label: question, hint: 'ask' })
+  return rows
 }
 
 /**
@@ -159,11 +153,9 @@ function DavebotPanel() {
   const [liveMessage, setLiveMessage] = useState('')
 
   const answerRunRef = useRef(0)
-  const abortRef = useRef<AbortController | null>(null)
-  const conversationRef = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([])
-  const currentEntryIdRef = useRef<string | undefined>(undefined)
+  const lastReplyRef = useRef<BrainReply | null>(null)
 
-  const streaming = (phase === 'answer' || phase === 'offline') && revealCount < (answer?.parts.length ?? 0)
+  const streaming = phase === 'answer' && revealCount < (answer?.parts.length ?? 0)
 
   // --- open/close ghost flight + panel entrance, imperative because the
   // flight target is a live measurement of the nav trigger, not a fixed value.
@@ -234,7 +226,6 @@ function DavebotPanel() {
     rootRef.current?.removeAttribute('data-surface')
     window.dispatchEvent(new Event('cursor:show'))
     answerRunRef.current += 1
-    abortRef.current?.abort()
     const flight = measureFlight(getDavebotTrigger(), ghostWrapRef.current, ghostX.get(), ghostY.get(), ghostScale.get())
     const dx = flight?.x ?? 0
     const dy = flight?.y ?? 0
@@ -279,7 +270,7 @@ function DavebotPanel() {
     if (!answer || revealCount < answer.parts.length) return
     setReadOnly(false)
     setLiveMessage(answer.parts.map(part => part.text).join(''))
-    setRows(buildRecoveryRows(currentEntryIdRef.current))
+    setRows(buildFollowRows(lastReplyRef.current))
     setSelectedIndex(0)
   }, [answer, revealCount])
 
@@ -290,12 +281,10 @@ function DavebotPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function runQuery(query: string, excludeId?: string) {
+  async function runQuery(query: string) {
     const value = query.trim()
     if (!value) return
     const run = (answerRunRef.current += 1)
-    abortRef.current?.abort()
-    abortRef.current = null
     setInputValue(value)
     setReadOnly(true)
     setPhase('thinking')
@@ -304,51 +293,13 @@ function DavebotPanel() {
     setRows([])
     setLiveMessage('Davebot is thinking')
 
-    const localEntry = rankEntries(value)[0]
-
-    try {
-      const controller = new AbortController()
-      abortRef.current = controller
-      const response = await fetch('/api/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: value,
-          history: conversationRef.current.slice(-6),
-          contextId: localEntry?.id,
-        }),
-        signal: controller.signal,
-      })
-      if (!response.ok) throw new Error(`Davebot API returned ${response.status}`)
-      const payload = (await response.json()) as { answer?: string; source?: { id?: string } }
-      if (!payload.answer) throw new Error('Davebot API returned no answer')
-      if (run !== answerRunRef.current) return
-      conversationRef.current.push({ role: 'user', content: value }, { role: 'assistant', content: payload.answer })
-      const source = payload.source?.id ? DAVEBOT_ENTRY_BY_ID[payload.source.id] : undefined
-      currentEntryIdRef.current = source?.id ?? localEntry?.id ?? excludeId
-      setPhase('answer')
-      setAnswer({ parts: toParts([{ text: payload.answer.trim() }]) })
-    } catch {
-      if (run !== answerRunRef.current) return
-      if (localEntry) {
-        const localAnswer = localEntry.answer.map(segment => segment.text).join('')
-        conversationRef.current.push(
-          { role: 'user', content: value },
-          { role: 'assistant', content: localAnswer },
-        )
-        currentEntryIdRef.current = localEntry.id
-        setPhase('answer')
-        setAnswer({ parts: toParts(localEntry.answer) })
-        setLiveMessage('Davebot is using his pocket notes. The larger filing cabinet is temporarily offline.')
-        return
-      }
-      currentEntryIdRef.current = excludeId
-      setPhase('offline')
-      setAnswer({ parts: toParts([{ text: OFFLINE_COPY }]) })
-      setLiveMessage('Davebot is temporarily offline. Questions about the portfolio still work.')
-    } finally {
-      if (run === answerRunRef.current) abortRef.current = null
-    }
+    // Everything is local and instant; a short, length-scaled pause keeps the "thinking" beat.
+    const reply = think(value)
+    await wait(Math.min(1100, 380 + value.length * 9 + Math.random() * 260))
+    if (run !== answerRunRef.current) return
+    lastReplyRef.current = reply
+    setPhase('answer')
+    setAnswer({ parts: toParts(reply.segments) })
   }
 
   function runRow(row: Row) {
@@ -366,7 +317,7 @@ function DavebotPanel() {
       navigate(row.route as Route)
       return
     }
-    void runQuery(row.query ?? inputValue, row.id)
+    void runQuery(row.query ?? inputValue)
   }
 
   function onInputChange(event: ChangeEvent<HTMLTextAreaElement>) {
@@ -410,7 +361,6 @@ function DavebotPanel() {
   function clearOrClose() {
     if (inputValue.trim() || readOnly) {
       answerRunRef.current += 1
-      abortRef.current?.abort()
       setInputValue('')
       setReadOnly(false)
       setPhase('suggestions')
@@ -554,7 +504,7 @@ function DavebotPanel() {
               </div>
             )}
 
-            {(phase === 'answer' || phase === 'offline') && answer && (
+            {phase === 'answer' && answer && (
               <>
                 <div className="davebot-answer">
                   <p className={`davebot-answer__copy${streaming ? ' is-streaming' : ''}`}>
