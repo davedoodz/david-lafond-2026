@@ -207,6 +207,10 @@
   font-size: calc(var(--text-display) * 1.2 * var(--case-heading-scale));
 }
 
+/* A body written on several lines, one block per line (Filo, CaseStudyPage.tsx); reads as one paragraph. */
+.case__body-line {
+  display: block;
+}
 .case__body {
   margin-top: 20px;
   font-size: calc(var(--text-body) * var(--case-copy-scale));

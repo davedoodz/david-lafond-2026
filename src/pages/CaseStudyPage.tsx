@@ -648,9 +648,23 @@ export function CaseStudyPage({ id }: Props) {
             onChange={edit(`${key}.title`)}
             selectable={id === 'momo' && key === 'outcomes'}
           />
-          {(s.body || import.meta.env.DEV) && (
+          {(s.body || import.meta.env.DEV) && (id === 'filo' && s.body.includes('\n') ? (
+            // Filo: one block per written line, so phones can open a gap between sentences (filoMobile.css).
+            <div className="case__body case__body--lines">
+              {s.body.split('\n').map((line, i, lines) => (
+                <EditableText
+                  key={i}
+                  as="span"
+                  className="case__body-line"
+                  label={`${key} body, line ${i + 1}`}
+                  value={line}
+                  onChange={(next) => edit(`${key}.body`)(lines.map((l, j) => (j === i ? next : l)).join('\n'))}
+                />
+              ))}
+            </div>
+          ) : (
             <EditableText className="case__body" label={`${key} body`} value={s.body} onChange={edit(`${key}.body`)} selectable={id === 'momo' && key === 'outcomes'} />
-          )}
+          ))}
           {isHero && (
             <dl className="case__meta" style={{ '--meta-cols': metaFields.length } as CSSProperties}>
               {metaFields.map((field) => {

@@ -48,6 +48,11 @@
   main.case[data-work='filo'] .filo-story .fs-copy > p:not(.eyebrow) {
     color: rgb(111 107 104);
   }
+  /* Primary research: a blank line's gap between its two written sentences (CaseStudyPage.tsx renders
+     each as its own block). */
+  main.case[data-work='filo'] [data-section='research'] .case__body-line + .case__body-line {
+    margin-top: var(--fm-body-line-gap);
+  }
 
   /* --- 1 Hero. Role, Origin, Program and Team in two even columns, each value centred under its
      label (title → labels stays as on Momo). Partner logos at Momo's logo height, the gap between
