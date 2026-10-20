@@ -269,7 +269,11 @@ export function AboutPage() {
       // last stretch, right as the sheet reaches the top (1 − p⁴ of the full travel).
       const p = reduced ? 1 : Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / rest))
       const r = shape.radius * (1 - p ** 4)
-      const archPx = (shape.arch / 100) * vh * (1 - e)
+      // The eased arch flattens early; a floor keeps a quarter of it visible and shrinks it with the
+      // sheet's distance from the top, so the edge only goes flat as the sheet reaches the top.
+      const full = (shape.arch / 100) * vh
+      const top = Math.max(0, sheet.getBoundingClientRect().top)
+      const archPx = reduced ? 0 : Math.max(full * (1 - e), Math.min(top, full / 4))
       // While the arch is taller than the corners it spans the full width (50%);
       // as it sinks below the corner size the curve narrows into two corners.
       const k = r > 0 ? Math.min(1, Math.max(0, (archPx - r) / r)) : archPx > 0 ? 1 : 0
