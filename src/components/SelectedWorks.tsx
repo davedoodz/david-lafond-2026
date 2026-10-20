@@ -173,6 +173,37 @@ export const SHEET_LABEL_TOP = (() => {
   }
 })()
 
+type Morph = { curve: string; enterDistance: number; startSide: number; startArch: number; startRadius: number }
+/**
+ * The Selected projects sheet's dome as saved in tuning.json: its morph dials (desktop and ≤640px)
+ * and its peek (the Work page's Hero dials). About's playground sheet draws and moves its dome with
+ * them, so both sheets arc and flatten alike.
+ */
+export const SHEET_DOME = (() => {
+  const all = saved as Record<string, Record<string, unknown> | undefined>
+  const works = all['Selected works']
+  const hero = all['Hero']
+  const morph = (key: 'morph' | 'morphMobile'): Morph => {
+    const dials = CONFIG[key]
+    const s = (works?.[key] ?? {}) as Partial<Morph>
+    return {
+      curve: s.curve ?? dials.curve.default,
+      enterDistance: s.enterDistance ?? dials.enterDistance[0],
+      startSide: s.startSide ?? dials.startSide[0],
+      startArch: s.startArch ?? dials.startArch[0],
+      startRadius: s.startRadius ?? dials.startRadius[0],
+    }
+  }
+  const peek = (key: 'peekDesktop' | 'peekMobile', fallback: number) =>
+    typeof hero?.[key] === 'number' ? (hero[key] as number) : fallback
+  return {
+    morph: morph('morph'),
+    morphMobile: morph('morphMobile'),
+    peekDesktop: peek('peekDesktop', 40),
+    peekMobile: peek('peekMobile', 28),
+  }
+})()
+
 const TITLE_KEYS = {
   momo: ['momoDesktop', 'momoMobile'],
   filo: ['filoDesktop', 'filoMobile'],

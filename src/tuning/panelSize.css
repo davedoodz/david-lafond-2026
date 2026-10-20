@@ -1,0 +1,38 @@
+/* DialKit panel size (panelSize.ts). The grip sits on the open panel's top-left corner. */
+.dialkit-panel[data-mode='popover'] .dialkit-panel-wrapper {
+  position: relative;
+}
+.dialkit-size-grip {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 3;
+  width: 22px;
+  height: 22px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+/* Two short diagonal lines in the corner, shown while the pointer is over the panel. */
+.dialkit-size-grip::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-top: 2px solid rgb(255 255 255 / 0.55);
+  border-left: 2px solid rgb(255 255 255 / 0.55);
+  border-top-left-radius: 6px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.dialkit-panel:hover .dialkit-size-grip::before,
+.dialkit-size-grip:active::before {
+  opacity: 1;
+}
+/* Collapsed (launcher only): nothing to resize. */
+.dialkit-panel-wrapper:has(> .dialkit-panel-inner[data-collapsed='true']) > .dialkit-size-grip {
+  display: none;
+}
+/* The saved size, over DialKit's inline width and height, once set. Clamped to the screen. */
+html[data-dialkit-sized] .dialkit-panel[data-mode='popover'] .dialkit-panel-inner[data-collapsed='false']:not([data-folding='true']) {
+  width: min(var(--dialkit-w), calc(100vw - 32px)) !important;
+  height: min(var(--dialkit-h), calc(100vh - 32px)) !important;
+}

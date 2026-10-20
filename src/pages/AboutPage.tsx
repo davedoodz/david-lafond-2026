@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { ContributionGraph } from '../components/ContributionGraph'
-import { SHEET_LABEL_TOP } from '../components/SelectedWorks'
+import { SHEET_DOME, SHEET_LABEL_TOP } from '../components/SelectedWorks'
 import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
 import { ArrowDownIcon } from '../components/icons'
@@ -10,7 +10,7 @@ import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
 import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
 import { useEntrance } from '../lib/useEntrance'
-import { DOME_CURVES } from '../lib/domeClip'
+import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { SAVED_TOUCH_ARC, TOUCH_LANDING, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
 import { capTop, settled } from '../lib/settledLayout'
 import { useFitColumn } from '../lib/useFitColumn'
@@ -46,28 +46,11 @@ const CONFIG = {
   /** Vertical file-sheet presets for the dark playground panel. */
   sheet: sheetDials(),
   /**
-   * Dark sheet arrives as a dome (like the Selected works sheet) and flattens as
-   * it reaches the top. `peek` pulls it up so its tip shows below the story.
+   * Dark sheet arrives as a dome and flattens as it scrolls up, exactly like the Selected projects
+   * sheet on Work: same peek, shape and morph (SelectedWorks.tsx SHEET_DOME, from its saved dials).
    */
   dome: {
     show: true,
-    peekDesktop: [40, 0, 240, 1] as [number, number, number, number],
-    peekMobile: [28, 0, 240, 1] as [number, number, number, number],
-    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'smoother' },
-    /** Viewport heights of scroll from peeking to flat (max 1: flat once the sheet reaches the top). */
-    enterDistance: [1, 0.2, 2.5, 0.01] as [number, number, number, number],
-    side: [14, 0, 45, 0.5] as [number, number, number, number],
-    arch: [40, 0, 100, 1] as [number, number, number, number],
-    /** Top-corner radius (px), held until the sheet is almost at the top, then squared off. */
-    radius: [45, 0, 200, 1] as [number, number, number, number],
-  },
-  /** Same dome shape, used at ≤640px wide (peek stays in Dome). Starts from the tuned desktop values. */
-  domeMobile: {
-    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'expo-out' },
-    enterDistance: [1.75, 0.2, 2.5, 0.01] as [number, number, number, number],
-    side: [0, 0, 45, 0.5] as [number, number, number, number],
-    arch: [70, 0, 100, 1] as [number, number, number, number],
-    radius: [0, 0, 200, 1] as [number, number, number, number],
   },
   /** How the playground label and cards arrive as they scroll into view. */
   reveal: revealDials(),
@@ -79,8 +62,9 @@ const CONFIG = {
     mobile: [14, 10, 32, 1] as [number, number, number, number],
   },
   spacing: {
-    gapDesktop: [214, 40, 600, 1] as [number, number, number, number],
-    gapMobile: [149, 24, 500, 1] as [number, number, number, number],
+    /** Story's last line → the sheet's arc tip (px), with the sheet peeking. */
+    gapDesktop: [174, 0, 600, 1] as [number, number, number, number],
+    gapMobile: [54, 0, 500, 1] as [number, number, number, number],
     stackToHeadingDesktop: [80, 0, 240, 1] as [number, number, number, number],
     stackToHeadingMobile: [78, 0, 240, 1] as [number, number, number, number],
     /** "My playground" label: distance from the top of the dark sheet (px). */
@@ -135,7 +119,7 @@ const CONFIG = {
   /**
    * Desktop: white fade + blur fixed to the bottom of the screen, over the story only: it eases in
    * as the story enters from below and out as its last line rises clear, so it never covers the
-   * cards or the playground sheet. Phones have none (AboutPage.css).
+   * cards or the playground sheet. Phones: blur only, no white, at fixed values (AboutPage.css).
    */
   fade: {
     show: true,
@@ -218,72 +202,46 @@ export function AboutPage() {
     }
   }, [])
 
-  const dome = t.dome
-  const domeMobile = t.domeMobile
-  const domeKey = JSON.stringify([dome, domeMobile])
+  const domeShow = t.dome.show
   useEffect(() => {
     const sheet = darkRef.current
     if (!sheet) return
-    if (!dome.show) {
+    if (!domeShow) {
       sheet.style.removeProperty('--dome-clip')
+      sheet.parentElement?.style.removeProperty('--dome-peek')
       return
     }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let frame = 0
     let svh = smallViewportHeight()
+    const set = (el: HTMLElement | null | undefined, v: string, value: string) => {
+      if (!el || el.style.getPropertyValue(v) === value) return
+      if (value) el.style.setProperty(v, value)
+      else el.style.removeProperty(v)
+    }
+    // The Selected projects sheet's dome (SelectedWorks.tsx), drawn and moved the same way: same
+    // peek, same shape, and the same progress over the same scroll distance from the peek.
     const update = () => {
       frame = 0
       const vh = window.innerHeight
       const vw = document.documentElement.clientWidth
       const mobile = window.matchMedia('(max-width: 640px)').matches
-      const shape = mobile ? domeMobile : dome
-      const curve = DOME_CURVES[shape.curve] ?? DOME_CURVES.smooth
-      // 0 while only the peek shows (same full dome as the Work page's resting tip),
-      // 1 once it has travelled enterDistance. Capped so it is always flat by the
-      // time the sheet top reaches the top of the screen (the snap stop).
       const touch = window.matchMedia(TOUCH_LANDING).matches
-      // Touch screens peek exactly as far as the Work page's white arc (touchDome), not the peek dial.
-      const peek = touch ? touchDome(svh).peek : mobile ? dome.peekMobile : dome.peekDesktop
-      const peekPx = touch ? `${peek.toFixed(2)}px` : ''
-      const extraPx = touch && mobile ? `${Math.max(0, peek - dome.peekMobile).toFixed(2)}px` : ''
-      const set = (el: HTMLElement | null | undefined, v: string, value: string) => {
-        if (!el || el.style.getPropertyValue(v) === value) return
-        if (value) el.style.setProperty(v, value)
-        else el.style.removeProperty(v)
-      }
-      set(sheet, '--dome-peek-d', peekPx)
-      set(sheet, '--dome-peek-m', peekPx)
-      // The story's last line keeps its gap above the taller arc (AboutPage.css).
-      set(lightRef.current, '--peek-extra', extraPx)
+      const morph = mobile || touch ? SHEET_DOME.morphMobile : SHEET_DOME.morph
+      const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
+      const peek = touch ? touchDome(svh).peek : mobile ? SHEET_DOME.peekMobile : SHEET_DOME.peekDesktop
+      // The sheet overlaps the story by the peek (its top margin) and the story's bottom padding
+      // grows by as much (AboutPage.css), so the gap above the arc tip stays the spacing dial.
+      set(sheet.parentElement, '--dome-peek', `${peek.toFixed(2)}px`)
+      // 1 at the peek (the sheet's top at vh − peek), easing to 0 over enterDistance screens.
       const rest = vh - peek
+      const top = reduced ? 0 : 1 - curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / (morph.enterDistance * vh))))
       if (touch) {
-        // Touch screens: the Work page's white arc (same saved touchArc curve), flattened by one
-        // progress value. Travel is capped at the rest distance so it is fully flat when the
-        // sheet snaps to the top (no page showing at the corners).
-        const travel = Math.min(shape.enterDistance * vh, rest)
-        // +1px: a sub-pixel snap position still counts as fully flat.
-        const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest + 1 - sheet.getBoundingClientRect().top) / travel)))
-        sheet.style.setProperty('--dome-clip', touchArcClip(SAVED_TOUCH_ARC, sheet, svh, 1 - e, 0))
+        sheet.style.setProperty('--dome-clip', touchArcClip(SAVED_TOUCH_ARC, sheet, svh, top, 0))
         return
       }
-      const travel = Math.min(shape.enterDistance * vh, rest)
-      const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / travel)))
-      // Top corners stay rounded for the whole approach and only square off in the
-      // last stretch, right as the sheet reaches the top (1 − p⁴ of the full travel).
-      const p = reduced ? 1 : Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / rest))
-      const r = shape.radius * (1 - p ** 4)
-      // The eased arch flattens early; a floor keeps a quarter of it visible and shrinks it with the
-      // sheet's distance from the top, so the edge only goes flat as the sheet reaches the top.
-      const full = (shape.arch / 100) * vh
-      const top = Math.max(0, sheet.getBoundingClientRect().top)
-      const archPx = reduced ? 0 : Math.max(full * (1 - e), Math.min(top, full / 4))
-      // While the arch is taller than the corners it spans the full width (50%);
-      // as it sinks below the corner size the curve narrows into two corners.
-      const k = r > 0 ? Math.min(1, Math.max(0, (archPx - r) / r)) : archPx > 0 ? 1 : 0
-      const x = (r + (vw / 2 - r) * k).toFixed(2)
-      const y = Math.max(r, archPx).toFixed(2)
-      const side = ((shape.side * (1 - e) * vw) / 100).toFixed(2)
-      sheet.style.setProperty('--dome-clip', `inset(0 ${side}px round ${x}px ${x}px 0 0 / ${y}px ${y}px 0 0)`)
+      const shape = { radius: morph.startRadius, arch: morph.startArch }
+      sheet.style.setProperty('--dome-clip', domeClip(((morph.startSide * vw) / 100) * top, shape, top, shape, 0, vh))
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
@@ -304,9 +262,7 @@ export function AboutPage() {
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', resize)
     }
-    // `domeKey` captures every dome dial.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domeKey])
+  }, [domeShow])
 
   // Bottom fade: opacity tracks how much of the story is still below the fade band. It is written
   // to a variable for the two layers, not to the band itself: opacity on the band would make it a
@@ -579,8 +535,6 @@ export function AboutPage() {
     '--grid-y-d': `${t.grid.yDesktop}px`,
     '--grid-x-m': `${t.grid.xMobile}px`,
     '--grid-y-m': `${t.grid.yMobile}px`,
-    '--dome-peek-d': `${t.dome.peekDesktop}px`,
-    '--dome-peek-m': `${t.dome.peekMobile}px`,
     '--cards-x-d': `${t.cards.xDesktop}px`,
     '--cards-y-d': `${t.cards.yDesktop}px`,
     '--cards-x-m': `${t.cards.xMobile}px`,

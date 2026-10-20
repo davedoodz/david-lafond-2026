@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Harvard &amp; MIT · video invite and ratios (phones)</title>
+<style>
+  @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  :root { --ink-950: #0b0a09; --ink-900: #171717; --ink-800: #2d2c2b; --stone-600: #6f6b68; --stone-400: #a6a09c; --paper: #f5f5f5; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f0e0d; color: var(--paper); font-family: Beatrice, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { max-width: 1400px; margin: 0 auto; padding: 56px 32px 8px; }
+  h1 { margin: 0; font-size: 30px; font-weight: 400; letter-spacing: -.02em; }
+  header p, .section p { margin: 10px 0 0; max-width: 780px; color: var(--stone-400); font-size: 16px; line-height: 1.5; }
+  .section { max-width: 1400px; margin: 0 auto; padding: 40px 32px 0; }
+  .section h2 { margin: 0; font-size: 22px; font-weight: 400; letter-spacing: -.01em; }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; padding: 24px 0 8px; }
+  .opt { width: 300px; }
+  .opt h3 { margin: 0 0 4px; font-size: 16px; font-weight: 400; }
+  .opt h3 b { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: var(--ink-800); font-size: 11.5px; font-weight: 400; vertical-align: 2px; }
+  .opt > p { margin: 0 0 12px; min-height: 4.3em; color: var(--stone-400); font-size: 13.5px; line-height: 1.45; }
+
+  /* A 390 × 844 phone screen at 300px wide: the Harvard & MIT video view, under the nav row. */
+  .phone { --s: calc(300 / 390); position: relative; width: 300px; height: calc(844px * 300 / 390); overflow: hidden; border-radius: 34px; background: var(--ink-900); box-shadow: 0 0 0 1px #2a2928, 0 24px 60px rgb(0 0 0 / .45); }
+  .screen { position: absolute; left: 0; top: 0; width: 390px; height: 844px; transform: scale(var(--s)); transform-origin: 0 0; display: flex; flex-direction: column; }
+  .navrow { flex: none; height: 84px; display: flex; align-items: center; justify-content: space-between; padding: 14px 24px 0; font-size: 13px; letter-spacing: .02em; color: var(--stone-400); }
+  .switch { display: flex; gap: 2px; padding: 4px; border: 1px solid rgb(255 255 255 / .12); border-radius: 999px; font-size: 13px; }
+  .switch span { padding: 8px 14px; border-radius: 999px; color: var(--stone-400); }
+  .switch span.on { background: var(--paper); color: var(--ink-900); }
+  .ghost { width: 25px; height: 25px; border-radius: 50% 50% 40% 40%; background: var(--stone-400); }
+  .stage { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 0 20px 70px; }
+  .stage.bleed { padding-inline: 0; }
+  .video { position: relative; width: 100%; aspect-ratio: var(--ratio, 16 / 9); border-radius: 14px; overflow: hidden; background: #000 url('/work/harvard-mit/walkthrough.webp') center / cover; box-shadow: 0 18px 40px rgb(0 0 0 / .4); }
+  .bleed .video { border-radius: 0; }
+  .video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* The invite, in its site look: the dark pill with the up-right arrow. */
+  .pill { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px 11px 20px; border-radius: 999px; background: var(--ink-950); color: var(--paper); box-shadow: 0 0 0 1px rgb(255 255 255 / .14); font-size: 15px; white-space: nowrap; }
+  .pill svg, .link svg, .yt-row svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .pill.light { background: var(--paper); color: var(--ink-900); box-shadow: none; }
+  .pill.small { padding: 8px 13px 8px 15px; font-size: 13px; }
+  .on-video { position: absolute; left: 50%; bottom: 14px; translate: -50% 0; }
+  .on-video.top { top: 14px; bottom: auto; }
+  .link { display: inline-flex; align-items: center; gap: 6px; color: var(--paper); font-size: 15px; text-decoration: underline; text-decoration-color: rgb(255 255 255 / .35); text-underline-offset: 4px; }
+  .eyebrow { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--stone-400); }
+  .stat { text-align: center; }
+  .stat strong { display: block; font-size: 34px; font-weight: 400; letter-spacing: -.02em; line-height: 1; }
+  .stat span { display: block; margin-top: 6px; color: var(--stone-400); font-size: 14px; }
+  .yt-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 2px; font-size: 14.5px; }
+  .ticker span { white-space: nowrap; }
+  .yt-row .muted { color: var(--stone-400); }
+  .yt { display: inline-grid; place-items: center; width: 26px; height: 18px; border-radius: 5px; background: #f03; }
+  .yt::after { content: ''; border-left: 7px solid #fff; border-block: 4.5px solid transparent; margin-left: 2px; }
+  .play { position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; border-radius: 50%; background: rgb(23 23 23 / .72); backdrop-filter: blur(10px); display: grid; place-items: center; box-shadow: 0 0 0 1px rgb(255 255 255 / .16); }
+  .play::after { content: ''; border-left: 18px solid var(--paper); border-block: 11px solid transparent; margin-left: 5px; }
+  .ticker { position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 16px 12px; background: linear-gradient(transparent, rgb(0 0 0 / .75)); display: flex; justify-content: space-between; align-items: flex-end; font-size: 14px; }
+  .bob { animation: bob 2.6s ease-in-out infinite; }
+  @keyframes bob { 50% { translate: 0 -3px; } }
+  .on-video.bob { animation-name: bob-c; }
+  @keyframes bob-c { 0%, 100% { translate: -50% 0; } 50% { translate: -50% -3px; } }
+  .bar { position: absolute; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; gap: 26px; color: var(--stone-400); font-size: 13px; }
+  .bar b { color: var(--paper); font-weight: 400; }
+  footer { max-width: 1400px; margin: 0 auto; padding: 40px 32px 80px; color: var(--stone-400); font-size: 14px; line-height: 1.5; }
+  @media (prefers-reduced-motion: reduce) { .bob { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Video invite and ratios, phones only</h1>
+  <p>On a phone the walkthrough sits under the book, one scroll below the first view, and the "200k+ views on YouTube!" pill never shows: it only appears on hover. Part 1 shows ways to keep an invite visible above, on or under the video, at today's 16:9. Part 2 shows other video shapes for phones, each with the pill under it. Every screen is a 390 × 844 phone at 300px wide, scrolled to the video.</p>
+</header>
+
+<section class="section">
+  <h2>1 · Where the invite sits</h2>
+  <div class="row" id="invite"></div>
+</section>
+
+<section class="section">
+  <h2>2 · Video shape on phones</h2>
+  <p>The walkthrough is landscape (16:9). On a phone it is small with empty space around it; a taller crop fills more of the screen but cuts the sides of the book. The crops keep the middle. The link always opens the full video on YouTube.</p>
+  <div class="row" id="ratios"></div>
+</section>
+
+<footer>All mock-ups use the real poster and walkthrough file. Tap behaviour is the same in every option: anywhere on the video or the invite opens YouTube in a new tab.</footer>
+
+<script>
+const ARROW = '<svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg>'
+const pill = (cls = '') => `<span class="pill ${cls}">200k+ views on YouTube! ${ARROW}</span>`
+const video = (extra = '', playing = false) => `<div class="video">${playing ? '<video src="/work/harvard-mit/walkthrough.mp4#t=4" muted autoplay loop playsinline></video>' : ''}${extra}</div>`
+const phone = (stage, { bleed = false, ratio } = {}) => `
+  <div class="phone"><div class="screen" style="${ratio ? `--ratio:${ratio}` : ''}">
+    <div class="navrow"><span>← BACK</span><span class="ghost"></span></div>
+    <div class="stage ${bleed ? 'bleed' : ''}">${stage}</div>
+  </div></div>`
+
+const INVITE = [
+  ['Pill under the video', 'Today\'s pill, always shown, centred under the video. The closest match to desktop; reads as the video\'s caption and call to action.',
+    phone(video('', true) + pill('bob'))],
+  ['Pill above the video', 'The same pill as a lead-in, then the video. Says why to watch before you see it; the video sits a little lower on the screen.',
+    phone(pill() + video())],
+  ['Pill on the video', 'Floating over the bottom of the video, as the hover state looks on desktop, just always on. Keeps the layout to one object; covers a strip of the video.',
+    phone(video(`<span class="pill small on-video bob">200k+ views on YouTube! ${ARROW}</span>`, true))],
+  ['Play button + pill under', 'A clear play button tells you it is tappable; the pill under it says where it goes. The most obvious tap target.',
+    phone(video('<span class="play"></span>') + pill())],
+  ['Big number above', '"200k+" set large over the video, with the YouTube line under it: the number is the hook. Then a plain link under the video.',
+    phone(`<div class="stat"><strong>200k+</strong><span>views on YouTube</span></div>` + video() + `<span class="link">Watch the walkthrough ${ARROW}</span>`)],
+  ['YouTube row under', 'A caption row like a video app: the YouTube mark and the count on the left, "Watch" on the right. Quieter than a pill; recognisable as YouTube at a glance.',
+    phone(video() + `<div class="yt-row"><span style="display:flex;align-items:center;gap:10px"><span class="yt"></span><span>200k+ views <span class="muted">on YouTube</span></span></span><span style="display:flex;align-items:center;gap:6px">Watch ${ARROW}</span></div>`)],
+  ['Caption over the video', 'Text sits in a soft dark band along the video\'s bottom edge: count on the left, arrow on the right. Nothing outside the video.',
+    phone(video(`<div class="ticker"><span>200k+ views on YouTube</span>${ARROW}</div>`, true))],
+  ['Light pill under', 'The pill in paper white for more contrast on the dark page. Louder; the only white thing on screen besides the switch.',
+    phone(video() + pill('light'))],
+]
+const RATIOS = [
+  ['16:9 (today)', 'The full frame, nothing cropped. About a quarter of the screen tall; lots of empty dark space around it.', '16 / 9', false],
+  ['16:9 full width', 'Same frame, edge to edge with no rounded corners. About 10% bigger, reads as a proper video player.', '16 / 9', true],
+  ['4:3', 'A slight crop of the sides. Noticeably taller while the open book still fits.', '4 / 3', false],
+  ['1:1', 'Square: about twice today\'s height. The spread\'s outer edges are cut; the middle stays.', '1 / 1', false],
+  ['4:5', 'Instagram-portrait shape. Fills most of the screen width and height; a strong crop to the book\'s centre.', '4 / 5', false],
+  ['9:16 full screen', 'Fills the screen like a Short or a Reel. Most immersive; only the centre of each spread shows.', '9 / 16', true],
+]
+document.getElementById('invite').innerHTML = INVITE.map(([name, note, screen], i) => `<div class="opt"><h3><b>${i + 1}</b>${name}</h3><p>${note}</p>${screen}</div>`).join('')
+document.getElementById('ratios').innerHTML = RATIOS.map(([name, note, ratio, bleed], i) => {
+  const stage = bleed && ratio === '9 / 16'
+    ? `<div class="video" style="position:absolute;inset:0;aspect-ratio:auto;border-radius:0"><video src="/work/harvard-mit/walkthrough.mp4#t=4" muted autoplay loop playsinline></video><span class="pill small on-video bob" style="bottom:90px">200k+ views on YouTube! ${ARROW}</span></div>`
+    : video('', i === 0) + pill()
+  return `<div class="opt"><h3><b>${String.fromCharCode(65 + i)}</b>${name}</h3><p>${note}</p>${phone(stage, { bleed, ratio })}</div>`
+}).join('')
+</script>
+</body>
+</html>

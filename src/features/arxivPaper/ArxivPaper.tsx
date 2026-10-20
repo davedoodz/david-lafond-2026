@@ -89,29 +89,40 @@ export function ArxivPaper() {
   const ref = useRef<HTMLAnchorElement>(null)
   const pillRef = useRef<HTMLSpanElement>(null)
   const leaving = useRef<{ timer: number; track: (event: globalThis.PointerEvent) => void } | null>(null)
-  const { show: entrance, trigger } = d.entrance
+  const { show: entrance, trigger, duration: riseTime } = d.entrance
 
   // Pop up from under the footer whenever the section scrolls into view; sink again once it's fully out
   // so the next visit replays. Watches the section, not the paper, because the paper itself moves.
+  // Phones have no hover: the red marker note draws itself as soon as the paper first settles, then stays.
   useEffect(() => {
     const el = ref.current
     const section = el?.parentElement
     if (!el || !section) return
-    if (!entrance) {
-      el.dataset.risen = ''
-      return
-    }
-    delete el.dataset.risen
+    const phone = window.matchMedia('(max-width: 640px)')
+    let markTimer = 0
+    if (entrance) delete el.dataset.risen
+    else el.dataset.risen = ''
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.intersectionRatio >= trigger) el.dataset.risen = ''
-        else if (!entry.isIntersecting) delete el.dataset.risen
+        if (entry.intersectionRatio >= trigger) {
+          el.dataset.risen = ''
+          if (phone.matches && !('marked' in el.dataset) && !markTimer) {
+            markTimer = window.setTimeout(() => { el.dataset.marked = '' }, (entrance ? riseTime : 0) * 1000)
+          }
+        } else if (!entry.isIntersecting) {
+          if (entrance) delete el.dataset.risen
+          window.clearTimeout(markTimer)
+          markTimer = 0
+        }
       },
       { threshold: [0, trigger] },
     )
     observer.observe(section)
-    return () => observer.disconnect()
-  }, [entrance, trigger])
+    return () => {
+      observer.disconnect()
+      window.clearTimeout(markTimer)
+    }
+  }, [entrance, trigger, riseTime])
 
   // The pill lives in a fixed layer on <body>, placed at the pointer's viewport position. Scrolling
   // leaves the pointer where it is, so the pill stays with it; the paper's lift and tilt never resize it.

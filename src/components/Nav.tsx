@@ -304,11 +304,12 @@ export function Nav({ route }: Props) {
   } as CSSProperties
 
   // Edge blur: published on <html> so the About story's bottom band and the optional screen-bottom
-  // blur draw the same blur (AboutPage.css, Nav.css), and the footer clears it (Footer.css).
+  // blur draw the same blur (AboutPage.css, Nav.css), and the footer clears it (Footer.css). Case
+  // studies skip it: their tops and bottoms stay sharp.
   const edge = t.mobileContrast.edgeBlur
   useEffect(() => {
     const root = document.documentElement
-    if (preset !== 'Edge blur') return
+    if (preset !== 'Edge blur' || isProject) return
     root.dataset.edgeBlur = ''
     if (edge.bottom) root.dataset.edgeBlurBottom = ''
     root.style.setProperty('--edge-blur-length', `${edge.length}px`)
@@ -320,12 +321,12 @@ export function Nav({ route }: Props) {
       delete root.dataset.edgeBlurBottom
       for (const p of ['--edge-blur-length', '--edge-blur-solid', '--edge-blur-opacity', '--edge-blur']) root.style.removeProperty(p)
     }
-  }, [preset, edge.length, edge.strength, edge.opacity, edge.blur, edge.bottom])
+  }, [preset, isProject, edge.length, edge.strength, edge.opacity, edge.blur, edge.bottom])
 
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

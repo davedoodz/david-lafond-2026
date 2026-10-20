@@ -450,6 +450,11 @@ export const MOMO_CONFIG = {
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
     /** Size of the Gross model loop (mode pill, picker and info card) next to the WOOP phone; scales in place. */
     pickScale: [1, 0.5, 2, 0.01] as [number, number, number, number],
+    /** Playback speed of each recording (1 = as recorded, 0.5 = half speed): the Gross model loop and the WOOP phone. */
+    speed: {
+      models: [1, 0.25, 3, 0.05] as Tuple,
+      woop: [1, 0.25, 3, 0.05] as Tuple,
+    },
     spacing: sectionSpacingDials(96, 64, 72),
     textReveal: textRevealDials('focus'),
     _collapsed: true,

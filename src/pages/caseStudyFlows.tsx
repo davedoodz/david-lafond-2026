@@ -259,7 +259,8 @@ function StoryItem({ row, speed, children }: { row: string; speed: number; child
 }
 
 /**
- * Phones slide into a section once most of it is visible. Once the section has fully left the
+ * Phones slide into a section once most of it is visible, or, for a section taller than the screen
+ * (the stacked phone layout), once it fills most of the screen. Once the section has fully left the
  * screen, the cards snap (unseen) to the start position on the side it will come back from, so a
  * return never shows them in place first and never fades them out while they are still in view.
  * Cards opt in with `.case__rise` and a `--i` stagger index.
@@ -275,7 +276,8 @@ function useRiseOnView() {
     }
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.intersectionRatio >= 0.6) {
+        const screen = entry.rootBounds?.height ?? window.innerHeight
+        if (entry.intersectionRatio >= 0.6 || entry.intersectionRect.height >= 0.6 * screen) {
           el.dataset.seen = ''
         } else if (!entry.isIntersecting) {
           // Above the viewport now means the return comes scrolling up, from above.
@@ -286,7 +288,7 @@ function useRiseOnView() {
           delete el.dataset.resetting
         }
       },
-      { threshold: [0, 0.6] },
+      { threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6] },
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -359,7 +361,7 @@ export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edi
 
 /* ---------- Guided: WOOP and the Gross model side by side ---------- */
 export type GuidedReveal = 'rise' | 'cascade' | 'focus' | 'from sides' | 'wipe' | 'still'
-export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; pickScale: number; spacing: SectionSpacing; textReveal: TextReveal }
+export type Guided = { eyebrow: string; title: string; body: string; align: 'left' | 'center'; reveal: GuidedReveal; woopLabel: string; modelsLabel: string; pickScale: number; speed: { models: number; woop: number }; spacing: SectionSpacing; textReveal: TextReveal }
 export function GuidedPair({ g, edit, selectable = false }: { g: Guided; edit: Edit; selectable?: boolean }) {
   const ref = useRiseOnView()
   return (
@@ -377,7 +379,7 @@ export function GuidedPair({ g, edit, selectable = false }: { g: Guided; edit: E
           ] as const
         ).map(([name, label, field], i) => (
           <li key={name} className="case__rise" style={{ '--i': i } as CSSProperties}>
-            <PhoneVideo name={name} className={name === 'guided-woop-pick' ? 'case__phone--bare' : ''} controls={name !== 'guided-woop-pick'} />
+            <PhoneVideo name={name} className={name === 'guided-woop-pick' ? 'case__phone--bare' : ''} controls={name !== 'guided-woop-pick'} rate={name === 'guided-woop-pick' ? g.speed.models : g.speed.woop} />
             <EditableText as="p" className="case__phone-label" label={field} value={label} onChange={edit(`guided.${field}`)} />
           </li>
         ))}

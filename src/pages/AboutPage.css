@@ -5,7 +5,8 @@
 .about__light {
   position: relative;
   color: var(--ink-950);
-  padding-bottom: var(--story-gap-d);
+  /* Story gap is measured to the arc tip: the dark sheet overlaps this padding by its peek. */
+  padding-bottom: calc(var(--story-gap-d) + var(--dome-peek, 0px));
 }
 
 /* Cards and text › x/y: left/top on already-relative boxes, so layout, the entrance transforms
@@ -93,7 +94,7 @@
     margin-left: var(--column-inset);
   }
   .about__light {
-    padding-bottom: var(--story-gap-m);
+    padding-bottom: calc(var(--story-gap-m) + var(--dome-peek, 0px));
   }
   .about__stack {
     left: var(--cards-x-m, 0px);
@@ -130,9 +131,14 @@
     padding-top: var(--play-top-m, 25px);
   }
   .about .cta {
-    padding-top: 84px;
-    /* Matches logo → heading to cards → months (AboutPage.tsx); a margin, so it can also pull up. */
-    margin-top: var(--cta-match, 0px);
+    /* Equal end gaps (AboutPage.tsx): the text moves down by --cta-match of top padding and the
+       same amount comes off the bottom padding, so the page keeps its height. Padding, not margin:
+       a margin would collapse into the playground's bottom margin. */
+    padding-top: calc(84px + var(--cta-match, 0px));
+    padding-bottom: calc(var(--cta-bottom-m, 27px) - var(--cta-match, 0px));
+  }
+  .about .cg {
+    translate: var(--cg-x) calc(var(--cg-y-m) + var(--cg-match, 0px));
   }
 }
 
@@ -170,9 +176,20 @@
   opacity: calc(var(--fade-p, 0) * var(--fade-strength, 0.9));
   background: linear-gradient(to top, var(--fade-color, #fff) var(--fade-solid, 15%), transparent);
 }
-/* Phones: no blur or fade at the bottom of the screen. */
+/* Phones: blur only, no white, over the story only. The one bottom blur left on phones: the same band
+   the screen-bottom edge blur drew here (232px, full blur for the bottom 5%, 5.5px), now that the
+   edge blur is off everywhere else. */
 @media (max-width: 640px) {
   .about__fade {
+    height: 232px;
+  }
+  .about__fade::before {
+    -webkit-backdrop-filter: blur(5.5px);
+    backdrop-filter: blur(5.5px);
+    -webkit-mask-image: linear-gradient(to top, #000 5%, transparent);
+    mask-image: linear-gradient(to top, #000 5%, transparent);
+  }
+  .about__fade::after {
     display: none;
   }
 }
@@ -252,17 +269,11 @@ html[data-about-snap] .about .footer {
 
 /* Dome (dome.show): the dark sheet peeks above the fold as an arched tip and
    flattens as it scrolls up. Its own snap area starts at the peek, so the story's
-   end still leaves the tip showing. */
+   end still leaves the tip showing. --dome-peek is set from script (AboutPage.tsx). */
 .about__dark[data-dome] {
-  margin-top: calc(-1 * var(--dome-peek-d));
+  margin-top: calc(-1 * var(--dome-peek, 0px));
   border-radius: 0;
   clip-path: var(--dome-clip, none);
-}
-
-@media (max-width: 640px) {
-  .about__dark[data-dome] {
-    margin-top: calc(-1 * var(--dome-peek-m));
-  }
 }
 
 /* Fit (spacing.playFit): label + grid centred in one screen-tall panel, so the
@@ -311,18 +322,11 @@ html[data-about-snap] .about .footer {
   }
 }
 
-/* About → spacing: playY moves the playground; playSpaceAbove/Below add room around it.
-   --play-touch-push (touch screens, AboutPage.tsx) keeps the first cards below the fold at the peek. */
+/* About → spacing: playY moves the playground; playSpaceAbove/Below add room around it. */
 .about__play {
-  margin-top: calc(var(--play-above, 0px) + var(--play-touch-push, 0px));
+  margin-top: var(--play-above, 0px);
   margin-bottom: var(--play-below, 0px);
 }
-/* Whole section shifts without changing the space it takes in the page. */
-.about__play {
-  position: relative;
-  top: var(--play-y, 0px);
-}
-/* The label's `top` is set from script so it sits as far below the sheet edge as Home's label;
 /* Desktop: the four equal end gaps (AboutPage.tsx, spacing.endGapDesktop) as added margins, so the
    page grows with them. The fit panel no longer centres (it would halve each change) and takes its
    content's height. */
@@ -352,6 +356,12 @@ html[data-about-snap] .about .footer {
 .about__dark {
   padding-top: var(--play-touch-push, 0px);
 }
+/* Whole section shifts without changing the space it takes in the page. */
+.about__play {
+  position: relative;
+  top: var(--play-y, 0px);
+}
+/* The label's `top` is set from script so it sits as far below the sheet edge as Home's label;
    `top` leaves the reveal's transform free. */
 #play-title {
   position: relative;

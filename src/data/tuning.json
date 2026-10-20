@@ -12,11 +12,12 @@
     "titles": {
       "card1": "Liquid Diamond",
       "card2": "Future Fabric",
+      "card3": "macOSdogs",
       "card4": "Bob the Builder",
       "card5": "MIT Sketchbooks",
       "card7": "Decode no 1",
       "card8": "The Dojo",
-      "card9": "Harvard + MIT Portfolio",
+      "card9": "Archi Portfolio",
       "card10": "3D Ink",
       "card11": "Global Interiors",
       "card12": "Testimonials"
@@ -63,7 +64,7 @@
       "gapX": 16,
       "gapY": 16,
       "radius": 14,
-      "topGapDesktop": 119
+      "topGapDesktop": 131
     },
     "restart": {
       "opacity": 0.3,
@@ -80,7 +81,8 @@
     "ghost": {
       "navSize": 30,
       "zoomSize": 190,
-      "color": "gray text",
+      "color": "nav link",
+      "customColor": "#aa9e95",
       "morph": {
         "type": "spring",
         "visualDuration": 0.65,
@@ -496,19 +498,6 @@
       "travel": 1.5,
       "depth": 2
     },
-    "dome": {
-      "peekDesktop": 95,
-      "peekMobile": 95,
-      "curve": "expo-out",
-      "enterDistance": 1.75,
-      "side": 0,
-      "arch": 62,
-      "radius": 0
-    },
-    "domeMobile": {
-      "arch": 20,
-      "radius": 60
-    },
     "reveal": {
       "preset": "deal",
       "repeat": "always"
@@ -525,13 +514,14 @@
       }
     },
     "spacing": {
-      "gapDesktop": 169,
+      "gapDesktop": 74,
       "stackToHeadingDesktop": 76,
       "labelTopDesktop": 99,
       "labelTopMobile": 24,
       "playFitGap": 0,
       "playY": 40,
-      "playSpaceBelow": -93
+      "playSpaceBelow": -93,
+      "endGapDesktop": 281
     },
     "grid": {
       "sizeDesktop": 1.46,
@@ -644,7 +634,7 @@
       "opportunityTitle": "Three technologies just converged ",
       "opportunityBody": "1. Wearables can sense physiological changes.  \n2. Voice can reveal subtle emotional cues.  \n3. Agentic AI can understand personal context.\n",
       "solutionTitle": "Meet Momo",
-      "solutionBody": "A voice-first companion that uses wearable signals and personal context to prompt reflection when it matters most.\n",
+      "solutionBody": "A voice-first companion that uses wearable signals and personal context to prompt reflection .\n",
       "preset": "custom",
       "align": "stretch",
       "textAlign": "center",
@@ -663,6 +653,20 @@
         "opportunity": 1.75,
         "solution": 1.75
       },
+      "timing": {
+        "problem": {
+          "phone": 0.4
+        },
+        "opportunity": {
+          "dot": 0.33
+        },
+        "solution": {
+          "dot": 1.71,
+          "beat": 1.15,
+          "phoneLine": 0.36,
+          "phone": 0.54
+        }
+      },
       "spacing": {
         "top": 233,
         "bottom": 0,
@@ -676,7 +680,7 @@
       }
     },
     "persona": {
-      "body": "Generally independent and capable, but prone to stress and rumination. \nThey want a private, low-friction emotional outlet.",
+      "body": "Generally independent, but prone to stress and rumination. \nThey want a private, low-friction emotional outlet.",
       "align": "center",
       "image": "bottom",
       "imageWidth": 485,
@@ -688,7 +692,7 @@
       "moments": {
         "m2Quote": "“Argh, why did I say that?”",
         "m3Quote": "“There's always so much to do…”",
-        "m4Quote": "“It's happening tomorrow again...”"
+        "m4Quote": "“I'm stressed for tomorrow...”"
       },
       "spacing": {
         "top": 197,
@@ -716,7 +720,7 @@
           "pillsGap": 0,
           "pillsAfter": "title",
           "textGap": -0.46,
-          "floatsDelay": 0.2,
+          "floatsDelay": 0,
           "floatStagger": 0.11
         },
         "bubbles": {
@@ -745,6 +749,9 @@
       "title": "Look back. Talk it out. Move forward.",
       "body": "Your reflections become a record of your experiences \nand a way to turn insight into action.",
       "phoneScale": 1.25,
+      "entriesLabel": "1 – Transcribed Voice Entries",
+      "voiceLabel": "2 – Chat with Momo",
+      "trackerLabel": "3 – Habit Tracker",
       "spacing": {
         "top": 34,
         "contentGap": 75
@@ -1423,7 +1430,7 @@
     },
     "box": {
       "scale": 1.33,
-      "speed": 1.4,
+      "speed": 1.5,
       "x": 30,
       "y": 54
     },
@@ -1431,16 +1438,16 @@
       "x": 34,
       "y": 42,
       "gap": 72,
-      "speed": 1.8
+      "speed": 2.5
     },
     "create": {
       "speed": 1.8
     },
     "share": {
-      "speed": 1.8
+      "speed": 2
     },
     "tap": {
-      "speed": 1.8
+      "speed": 2.4
     }
   },
   "Filo next loop": {
@@ -1448,5 +1455,10 @@
       "size": 950,
       "productScale": 0.97
     }
+  },
+  "Mobile case studies": {
+    "heroTitleSize": 18.4,
+    "heroTitleLineHeight": 1.16,
+    "titleSize": 18.6
   }
 }

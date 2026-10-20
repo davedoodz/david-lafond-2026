@@ -635,15 +635,18 @@ function film(V) {
       const inTalk = S(t, T.talk - 0.9, T.talk + 1.0) * (1 - S(t, T.calm - 0.4, T.hero))
       const inCards = S(t, T.cards - 0.2, T.cards + 0.8) * (1 - S(t, T.calm - 0.5, T.calm + 0.5))
       const IH = CARD_HR.y - 11 + CARD_HR.h0 + extraOf(V), atIsland = S(t, T.det - 0.2, T.det + 0.4) * (1 - S(t, T.buzz - 0.4, T.buzz + 0.2)), lockY = lerp(300, 11 + IH / 2 + 24, atIsland)
-      const z = 1 + lerp(0.6, 0.6 + D.island.zoom * Math.min(1, 196 / (IH - 30)), atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards
+      const pos = a.phonePosition
+      // Phones (`pos.fit`): one fixed shot of the whole phone, centred, as large as the fit box allows
+      // (its resting centre is y 280); desktop leans in on the lock screen, transcript and reflection.
+      const fit = pos.fit ? Math.min(pos.fit.w / pw, pos.fit.h / 500) : 0
+      const z = fit || 1 + lerp(0.6, 0.6 + D.island.zoom * Math.min(1, 196 / (IH - 30)), atIsland) * inLock + 0.42 * inTalk + 0.36 * inCards
       // The camera frames the phone's resting position, so the slide-up reads instead of being followed.
       const restY = scr.y - (py - 280)
       const wsum = inLock + inTalk + inCards, focus = (restY + lockY * u) * inLock + (restY + 560 * u) * inTalk + (restY + 330 * u) * inCards
-      const fx = 480, fy = lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
+      const fx = 480, fy = fit ? 280 : lerp(280, focus / Math.max(1e-6, wsum), clamp(wsum))
       // One camera offset moves bezel, screen, voice band and taps together. Blend by the
       // existing camera weights, so repeated lock-screen sequences share one framing dial.
-      const pos = a.phonePosition
-      const offsetY = lerp(pos.lockScreenY, pos.signalCheckY, atIsland) * inLock + pos.voiceReflectionY * inTalk
+      const offsetY = fit ? 0 : lerp(pos.lockScreenY, pos.signalCheckY, atIsland) * inLock + pos.voiceReflectionY * inTalk
       const view = (c) => { c.translate(480, 270 + offsetY); c.scale(z, z); c.translate(-fx, -fy) }
       const cx = (x) => (x - fx) * z + 480, cy = (y) => (y - fy) * z + 270 + offsetY
 

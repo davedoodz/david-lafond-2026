@@ -176,6 +176,8 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       hero.style.setProperty('padding-block', `${Math.max(8, top * k).toFixed(1)}px ${Math.max(8, bottom * k).toFixed(1)}px`)
     }
     const center = () => {
+      // Left the page (route change): nothing to measure.
+      if (!hero.isConnected) return
       // A centre-aligned hero is already centred line by line.
       if (hero.dataset.align === 'center') return hero.style.removeProperty('--hero-center-x')
       // Painted line widths at the fitted size: the title and role are fixed, the intro ranges with its pills.

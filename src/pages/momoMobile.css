@@ -1,0 +1,226 @@
+/* Momo on phones (≤ 640px): one centred column read top to bottom (momoMobile.ts dials).
+   - Every section sizes to its content and gets the same space above and below, so the gap between
+     any two sections is one value (--mm-section-gap).
+   - Nothing crosses the side margins (--m-side, the Back button's inset, caseMobile.css).
+   - Prototypes shown side by side on desktop stack vertically here, larger, one per swipe.
+   `main.case[data-work='momo']` outranks the page's own phone rules without !important. */
+@media (max-width: 640px) {
+  main.case[data-work='momo'] {
+    --mm-content-w: calc(100vw - 2 * var(--m-side));
+  }
+
+  /* --- Section rhythm: half the gap above and below each section; centred column. */
+  main.case[data-work='momo'] .case__section,
+  main.case[data-work='momo'] .case__section[data-layout] {
+    min-height: 0;
+    height: auto;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    gap: var(--mm-media-gap);
+    padding-block: calc(var(--mm-section-gap) / 2);
+  }
+  /* The hero keeps its top (the braid sits level with the nav, caseMobile.css). */
+  main.case[data-work='momo'] .case__section--hero {
+    padding-top: 67px;
+  }
+
+  /* --- 1 Hero. Partner logos: one row scaled as a whole to --mm-logos-fill of the welcome phone's
+     width below it (never past the side margins); the gap between logos scales with them (gap =
+     logo height, as before: 18px at 18px). --mm-welcome-w is the phone's width (momoMobile.ts).
+     12.88 = the four logos' width/height ratios (1.853 + 2.069 + 2.344 + 3.615) + 3 gaps. */
+  main.case[data-work='momo'] .case__section--hero .case__logos {
+    --logo-h: calc(min(var(--mm-content-w), var(--mm-welcome-w, 100vw) * var(--mm-welcome-scale)) * var(--mm-logos-fill) / 100 / 12.88) !important;
+    flex-wrap: nowrap;
+    column-gap: var(--logo-h);
+    /* Extra space under the logos, so logos → phone matches meta → logos (46px at 390). */
+    margin-bottom: var(--mm-logos-below);
+  }
+  /* Body copy: tighter line spacing than the other case studies (--mm-body-lh). `section.case__section`
+     outranks caseMobile.css's shared body rule. */
+  main.case[data-work='momo'] section.case__section :is(.case__body, .case__story-body, .persona__body) {
+    line-height: var(--mm-body-lh);
+  }
+  /* User outcomes: the two sentences of the result stay on two lines (one per line break in the
+     copy); the text shrinks with the screen so the longer line fits the content width. */
+  main.case[data-work='momo'] [data-section='outcomes'] .case__body {
+    white-space: pre;
+    font-size: min(var(--m-body-size), var(--mm-content-w) * 0.0336);
+  }
+  /* Persona pills ("20s – 30s"…): three per row. Each row keeps its pills' natural widths (a flex
+     row, broken after the third pill by the ::after spacer), and the text shrinks with the screen
+     so the widest row fits inside the margins; --mm-pills-text is the largest it gets. */
+  main.case[data-work='momo'] .case__persona .persona__pills .persona__tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5em;
+    max-width: 100%;
+    font-size: min(var(--mm-pills-text), var(--mm-content-w) * 0.0272);
+  }
+  main.case[data-work='momo'] .case__persona .persona__pills .persona__tags::after {
+    content: '';
+    flex-basis: 100%;
+    order: 1;
+  }
+  main.case[data-work='momo'] .case__persona .persona__pills .persona__tags > li:nth-child(n + 4) {
+    order: 2;
+  }
+  main.case[data-work='momo'] .case__persona .persona__pills .persona__tags > li {
+    font-size: 1em;
+    padding: 0.45em 0.8em;
+    gap: 0.4em;
+    white-space: nowrap;
+  }
+  main.case[data-work='momo'] .case__persona .persona__pills .persona__tags > li > svg {
+    width: 1.15em;
+    height: 1.15em;
+    flex: none;
+  }
+
+  /* --- 5 Core flows: a short title under each stacked phone (desktop hides them). */
+  main.case[data-work='momo'] .case__flows .case__phone-label {
+    display: block;
+    margin-top: var(--mm-flow-label-gap);
+    font-size: var(--mm-flow-label);
+    color: var(--stone-600);
+  }
+  main.case[data-work='momo'] .case__section--hero .case__devices {
+    scale: var(--mm-welcome-scale);
+    transform-origin: 50% 0;
+  }
+
+  /* --- 2 Problem · Opportunity · Solution */
+  main.case[data-work='momo'] .case__story .case__story-cols {
+    width: 100%;
+    gap: var(--mm-story-gap);
+  }
+  main.case[data-work='momo'] .case__story .case__story-cols > li {
+    padding-top: 0;
+    justify-items: center;
+  }
+  main.case[data-work='momo'] .case__story .story-art {
+    justify-self: center;
+    width: min(100%, var(--mm-story-art-w));
+    max-width: none;
+  }
+
+  /* --- 3 User persona: the quote bubbles stay inside the margins; 8px leaves room for their bob. */
+  main.case[data-work='momo'] .case__persona {
+    --persona-img-w: var(--mm-persona-w) !important;
+    --sticker-border: var(--mm-sticker-border) !important;
+    --float-spread: max(0px, (var(--mm-content-w) - var(--mm-persona-w)) / 2 - 8px) !important;
+  }
+  /* Order: title and text, then the pills ("20s – 30s"…), then the sticker with its bubbles.
+     The intro is a grid with a 32px row gap; the text's own bottom margin and the pills' top
+     margin are taken out so that gap is the only space between them. */
+  main.case[data-work='momo'] .case__persona .persona__intro {
+    width: 100%;
+  }
+  main.case[data-work='momo'] .case__persona .persona__who > .persona__body {
+    margin-bottom: 0;
+  }
+  main.case[data-work='momo'] .case__persona .persona__pills {
+    order: 0;
+    margin: 0;
+  }
+  main.case[data-work='momo'] .case__persona .persona__stage {
+    order: 1;
+    margin-block: var(--mm-sticker-drop) var(--mm-sticker-bottom);
+  }
+  /* Quote bubbles: each quote on one line. The text shrinks with the screen so the widest quote
+     ("There's always so much to do…") fits half the row less 8px, so a left and a right bubble
+     never meet; --mm-bubble-quote is the largest it gets. */
+  main.case[data-work='momo'] .persona__float-push,
+  main.case[data-work='momo'] .case__persona[data-bubbles='glass'] .persona__float-push {
+    max-width: calc(var(--mm-content-w) / 2 - 8px);
+    gap: 3px;
+    padding: 6px 8px;
+    border-radius: 12px;
+  }
+  main.case[data-work='momo'] .case__persona .persona__floats :is(.persona__quote, .persona__role) {
+    font-size: min(var(--mm-bubble-quote), var(--mm-content-w) * 0.028);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  main.case[data-work='momo'] .case__persona .persona__floats .persona__tag,
+  main.case[data-work='momo'] .case__persona[data-bubbles='glass'] .persona__float-push .persona__tag {
+    padding: 3px 7px;
+    font-size: var(--mm-bubble-pill);
+    white-space: nowrap;
+  }
+  main.case[data-work='momo'] .case__persona .persona__floats .persona__tag-icon {
+    width: calc(var(--mm-bubble-pill) * 1.15);
+    height: calc(var(--mm-bubble-pill) * 1.15);
+  }
+
+  /* --- 4 Cross-device: watch above the iPhone, the heartbeat line running down between them.
+     The studio row is 300 wide stacked: watch 260 × 414, line, iPhone 300 × 611. */
+  main.case[data-work='momo'] .insights .mc-stage {
+    width: 100%;
+    max-width: none;
+    height: calc((414px + var(--mm-devices-link) + 611px) * var(--mm-devices-scale));
+  }
+  main.case[data-work='momo'] .insights .mc-devices {
+    flex-direction: column;
+    align-self: flex-start;
+    width: 300px;
+    height: auto;
+    transform: scale(var(--mm-devices-scale));
+  }
+  main.case[data-work='momo'] .insights .mc-link {
+    width: var(--mm-devices-link);
+    height: var(--mm-devices-link);
+    rotate: 90deg;
+  }
+
+  /* --- 5 Core flows: the three phones one under another, flat and full size. */
+  main.case[data-work='momo'] .case__flows .case__flows-row {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: var(--mm-flow-gap);
+    margin-top: 0;
+    scale: none;
+  }
+  main.case[data-work='momo'] .case__flows .case__flow-card {
+    width: var(--mm-flow-w);
+    perspective: none;
+  }
+  main.case[data-work='momo'] .case__flows .case__flow-card .case__flow-device {
+    transform: none;
+  }
+
+  /* --- 6 Guided reflection: the model picker above the conversation. */
+  main.case[data-work='momo'] .case__guided .case__guided-row {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--mm-guided-gap);
+  }
+  main.case[data-work='momo'] .case__guided .case__phone {
+    width: var(--mm-chat-w);
+  }
+  main.case[data-work='momo'] .case__guided .case__phone--bare {
+    width: var(--mm-pick-w);
+  }
+  /* Empty captions would add space under the last video. */
+  main.case[data-work='momo'] .case__phone-label:empty {
+    display: none;
+  }
+
+  /* --- 7 User outcomes: the paper keeps its tuck under the dark footer sheet (arxivPaper.css). */
+  main.case[data-work='momo'] .case__section:has(> .arxiv-paper) {
+    padding-bottom: 0;
+  }
+  main.case[data-work='momo'] .arxiv-paper {
+    width: min(100%, var(--mm-paper-w));
+  }
+
+  /* --- Contact: centred like the rest of the page. */
+  main.case[data-work='momo'] .cta.column {
+    text-align: center;
+  }
+  main.case[data-work='momo'] .cta.column > * {
+    margin-inline: auto;
+  }
+}

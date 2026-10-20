@@ -207,6 +207,12 @@ export function VideoCard({ active, look }: { active: boolean; look: ResolvedVal
           </span>
         </span>
       </span>
+      {/* Phones have no hover: the same pill sits under the video as its own link, inviting the tap. */}
+      <a className="viewer__video-under viewer__video-pill" href="https://www.youtube.com/watch?v=Rv-e5doUc0E"
+        target="_blank" rel="noopener noreferrer" aria-label="Watch the walkthrough on YouTube, 200k+ views (opens in a new tab)">
+        <span className="viewer__video-label-text">{look.hoverLabel}</span>
+        <ArrowUpRightIcon className="viewer__video-arrow" />
+      </a>
     </div>
   )
 }

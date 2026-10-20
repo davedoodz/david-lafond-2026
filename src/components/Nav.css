@@ -196,6 +196,11 @@
     padding-top: 7px;
     line-height: 16px;
   }
+  /* Case studies: only "← Back" and Davebot, so each page's lead mark can sit level with them in
+     the middle of the row (caseMobile.css). */
+  .nav[data-project] .nav__links > a:not(.nav__links-back) {
+    display: none;
+  }
 }
 
 /* Phones: scrolling down tucks the links up and out; scrolling up brings them back (Nav.tsx,

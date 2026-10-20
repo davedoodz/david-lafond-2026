@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo logo · pen entrance</title>
+<style>
+  :root { --paper: #f3f3f3; --ink: #171717; --muted: #8a8682; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: var(--paper); color: var(--ink);
+    font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+  main { display: grid; gap: 40px; justify-items: center; padding: 48px 24px; }
+  .stage { width: min(560px, 86vw); aspect-ratio: 990 / 466; position: relative; }
+  .stage svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .guide { opacity: 0; transition: opacity .2s; }
+  body[data-guide] .guide { opacity: 1; }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: center; color: var(--muted); }
+  button {
+    font: inherit; color: var(--ink); background: #fff; border: 1px solid #d9d6d3;
+    border-radius: 999px; padding: 8px 18px; cursor: pointer;
+  }
+  label { display: inline-flex; gap: 8px; align-items: center; }
+  input[type=range] { width: 140px; }
+  .steps { display: flex; gap: 8px; }
+  .steps span {
+    width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 11px; background: #e4e1de; color: var(--muted); transition: background .15s, color .15s;
+  }
+  .steps span[data-on] { background: #e5484d; color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <div class="stage">
+    <!--
+      The real mark (public/work/filo/filo-mark.webp) is revealed through a mask of pen strokes
+      drawn along its centre lines, so the finished frame is the logo itself, pixel for pixel.
+      Stroke order (David's sketch): 1 the hook, over the top and down the stem, 2 round the
+      bottom of the loop, 3 up and across into the bar, 4 down the i; lift; 5 the l, down into its
+      foot; lift; 6 the o, from its top right, anticlockwise.
+    -->
+    <svg viewBox="0 0 990 466" aria-label="Filo">
+      <defs>
+        <!-- The f's stem exactly (its two edges, extended), so where the stem crosses the bar line
+             the pen reveals only the stem, not the ends of the bar and the loop beside it. Released
+             once the pen reaches the bar (script), so the stem's anti-aliased edges fill in. -->
+        <clipPath id="stem" clipPathUnits="userSpaceOnUse">
+          <polygon points="283,150 334.4,150 252.8,300 205,300" />
+        </clipPath>
+        <mask id="pen" maskUnits="userSpaceOnUse" x="-20" y="-20" width="1030" height="506">
+          <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="64">
+            <!-- Stroke 1 (steps 1–4), one pen movement in four pieces: hook and upper stem,
+                 the crossing (clipped to the stem), lower stem and loop, then bar and i. -->
+            <path data-stroke="0" d="
+              M 520 74
+              C 506 46 486 35 452 35
+              C 410 35 382 56 356 92
+              C 340 115 322 142 306 168" />
+            <path data-stroke="0" clip-path="url(#stem)" d="
+              M 306 168
+              C 294 188 282 210 270 232
+              C 259 253 247 273 236 292" />
+            <path data-stroke="0" d="
+              M 236 292
+              C 222 318 205 346 188 372
+              C 164 408 140 438 100 438
+              C 60 438 33 410 33 360
+              C 33 300 80 254 140 238
+              C 165 232 190 229 214 228" />
+            <path data-stroke="0" d="
+              M 214 228
+              L 486 228
+              C 504 228 512 238 512 256
+              L 512 440" />
+            <path data-stroke="1" d="
+              M 604 22
+              L 604 392
+              C 604 424 622 438 652 438
+              L 694 438" />
+            <path data-stroke="2" d="
+              M 912 232
+              C 890 206 860 196 828 196
+              C 762 196 708 250 708 318
+              C 708 386 762 437 828 437
+              C 894 437 947 386 947 318
+              C 947 284 936 256 912 232" />
+          </g>
+        </mask>
+      </defs>
+      <image href="/work/filo/filo-mark.webp" width="990" height="466" mask="url(#pen)" />
+      <g class="guide" fill="none" stroke="#e5484d" stroke-width="2" stroke-dasharray="6 6"></g>
+    </svg>
+  </div>
+
+  <div class="controls">
+    <button id="play">Replay</button>
+    <label>Speed <input id="speed" type="range" min="0.4" max="2" step="0.05" value="1" /> <output id="speedOut">1.00×</output></label>
+    <label><input id="guide" type="checkbox" /> Show stroke paths</label>
+    <div class="steps" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
+  </div>
+</main>
+
+<script>
+  const pieces = [...document.querySelectorAll('[data-stroke]')]
+  const steps = [...document.querySelectorAll('.steps span')]
+  const guide = document.querySelector('.guide')
+  // Guide lines: the same paths, thin and dashed, to check the order against the sketch.
+  for (const s of pieces) {
+    const p = s.cloneNode()
+    p.removeAttribute('data-stroke')
+    p.removeAttribute('clip-path')
+    guide.append(p)
+  }
+
+  // A pen moves at a steady pace: each stroke's time follows its length, eased at both ends
+  // (the pen settles on the paper, runs, lifts). Short pauses where the pen lifts between letters.
+  const PX_PER_MS = 1.15
+  const LIFT_MS = 140
+  const START_MS = 250
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2) * 0.6 + t * 0.4
+
+  // Strokes: the pieces drawn in one pen movement, each piece starting where the last ended.
+  const strokes = []
+  for (const p of pieces) {
+    const i = Number(p.dataset.stroke)
+    const s = (strokes[i] ??= { pieces: [], len: 0 })
+    const len = p.getTotalLength()
+    s.pieces.push({ p, len, start: s.len })
+    s.len += len
+  }
+  // Step boundaries inside the first stroke (fraction of its length), for the step chips.
+  const firstMarks = [0, 0.36, 0.62, 0.86]
+
+  let raf = 0
+  function play() {
+    cancelAnimationFrame(raf)
+    const speed = parseFloat(document.getElementById('speed').value)
+    const plan = []
+    let t = START_MS
+    for (const s of strokes) {
+      const dur = s.len / (PX_PER_MS * speed)
+      plan.push({ s, from: t, to: t + dur })
+      t += dur + LIFT_MS / speed
+      for (const { p, len } of s.pieces) {
+        p.style.strokeDasharray = `${len} ${len + 10}`
+        p.style.strokeDashoffset = `${len}`
+      }
+    }
+    steps.forEach((el) => el.removeAttribute('data-on'))
+    const t0 = performance.now()
+    const tick = (now) => {
+      const el = now - t0
+      let done = true
+      plan.forEach(({ s, from, to }, i) => {
+        const k = Math.min(1, Math.max(0, (el - from) / (to - from)))
+        if (k < 1) done = false
+        const e = ease(k)
+        // Distance the pen has travelled along the whole stroke, shared out over its pieces.
+        const drawn = e * s.len
+        for (const { p, len, start } of s.pieces) {
+          p.style.strokeDashoffset = `${len - Math.min(len, Math.max(0, drawn - start))}`
+          // A piece the pen hasn't reached hides its round cap too.
+          p.style.visibility = drawn > start ? 'visible' : 'hidden'
+        }
+        // Once the pen is on the bar, the crossing is meant to be inked: drop the stem clip.
+        const crossing = s.pieces.find(({ p }) => p.hasAttribute('clip-path') || p.dataset.clip)
+        if (crossing) {
+          const onBar = drawn > s.pieces[s.pieces.length - 1].start
+          crossing.p.dataset.clip = '1'
+          if (onBar) crossing.p.removeAttribute('clip-path')
+          else crossing.p.setAttribute('clip-path', 'url(#stem)')
+        }
+        if (k > 0) {
+          if (i === 0) firstMarks.forEach((m, j) => e >= m && steps[j].setAttribute('data-on', ''))
+          else steps[i + 3].setAttribute('data-on', '')
+        }
+      })
+      if (!done) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+  }
+
+  document.getElementById('play').addEventListener('click', play)
+  document.getElementById('speed').addEventListener('input', (e) => {
+    document.getElementById('speedOut').textContent = `${parseFloat(e.target.value).toFixed(2)}×`
+  })
+  document.getElementById('guide').addEventListener('change', (e) => document.body.toggleAttribute('data-guide', e.target.checked))
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) pieces.forEach((p) => (p.style.strokeDasharray = 'none'))
+  else play()
+</script>
+</body>
+</html>
