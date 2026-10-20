@@ -187,7 +187,8 @@
       "topDesktop": 48,
       "topMobile": 135,
       "arrowSize": 1,
-      "arrowY": -0.5
+      "arrowY": -0.5,
+      "show": false
     },
     "focus": {
       "restScale": 0.95
@@ -352,7 +353,7 @@
       "introToIntroMobile": 19,
       "introToRoleMobile": 18
     },
-    "peekDesktop": 95,
+    "peekDesktop": 113,
     "peekMobile": 95
   },
   "Portfolio book": {

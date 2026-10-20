@@ -188,14 +188,14 @@ export function AboutPage() {
     const place = () => {
       const play = playRef.current
       title.style.top = '0px'
-      play?.style.removeProperty('--play-touch-push')
+      dark.style.removeProperty('--play-touch-push')
       const edge = dark.getBoundingClientRect().top
       const peek = touch.matches ? touchDome(smallViewportHeight()).peek : 0
       // Touch screens: like Home's first thumbnail, the first row of cards starts at the fold, so
       // only the arc and the label show in the peek.
       const grid = play?.querySelector('.pg-grid')
       const push = grid ? peek - (grid.getBoundingClientRect().top - edge) : 0
-      if (play && push > 0) play.style.setProperty('--play-touch-push', `${push.toFixed(1)}px`)
+      if (push > 0) dark.style.setProperty('--play-touch-push', `${push.toFixed(1)}px`)
       const box = title.getBoundingClientRect()
       const natural = box.top - dark.getBoundingClientRect().top
       const want = touch.matches
@@ -241,10 +241,17 @@ export function AboutPage() {
       const touch = window.matchMedia(TOUCH_LANDING).matches
       // Touch screens peek exactly as far as the Work page's white arc (touchDome), not the peek dial.
       const peek = touch ? touchDome(svh).peek : mobile ? dome.peekMobile : dome.peekDesktop
-      for (const v of ['--dome-peek-d', '--dome-peek-m']) {
-        if (touch) sheet.style.setProperty(v, `${peek.toFixed(2)}px`)
-        else sheet.style.removeProperty(v)
+      const peekPx = touch ? `${peek.toFixed(2)}px` : ''
+      const extraPx = touch && mobile ? `${Math.max(0, peek - dome.peekMobile).toFixed(2)}px` : ''
+      const set = (el: HTMLElement | null | undefined, v: string, value: string) => {
+        if (!el || el.style.getPropertyValue(v) === value) return
+        if (value) el.style.setProperty(v, value)
+        else el.style.removeProperty(v)
       }
+      set(sheet, '--dome-peek-d', peekPx)
+      set(sheet, '--dome-peek-m', peekPx)
+      // The story's last line keeps its gap above the taller arc (AboutPage.css).
+      set(lightRef.current, '--peek-extra', extraPx)
       const rest = vh - peek
       if (touch) {
         // Touch screens: the Work page's white arc (same saved touchArc curve), flattened by one
@@ -400,36 +407,57 @@ export function AboutPage() {
     }
   }, [])
 
-  // Phones: the gap from the GitHub logo down to the contact heading always equals the gap from the
-  // playground's last row of cards down to the graph's month labels. Measured on screen (the graph,
-  // its logo and the playground all have position dials), and the contact section's top padding
-  // absorbs the difference through --cta-match (AboutPage.css). Re-measured on resize, on any dial
-  // change (style writes), and when reveal animations settle.
+  // Phones: three equal gaps at the end of the page, (1) last row of cards → graph months,
+  // (2) GitHub logo → contact heading and (3) "Let's chat" → footer links. Their sum stays what the
+  // layout and dials give; it is split in three. The graph moves by --cg-match (a translate) and the
+  // contact text by --cta-match, moved from its bottom padding to its top padding (AboutPage.css), so
+  // the page keeps its height. Applied shifts are subtracted from each measurement (no reset), so a
+  // re-measure writes nothing unless something really moved.
+  // Re-measured on resize, on any dial change (style writes), and when reveal animations settle.
   useLayoutEffect(() => {
     const dark = darkRef.current
     if (!dark) return
     const phone = window.matchMedia('(max-width: 640px)')
-    let shift = 0
+    let applied = { graph: 0, cta: 0 }
     let frame = 0
+    let set = false
+    const clear = () => {
+      if (!set) return
+      set = false
+      applied = { graph: 0, cta: 0 }
+      dark.querySelector<HTMLElement>('.cg')?.style.removeProperty('--cg-match')
+      dark.querySelector<HTMLElement>('.cta')?.style.removeProperty('--cta-match')
+    }
     const measure = () => {
       frame = 0
       const cta = dark.querySelector<HTMLElement>('.cta')
-      const cards = dark.querySelectorAll<HTMLElement>('.pg-card')
+      // The grid's box, not the cards: the cards carry scroll-linked transforms (they fly off).
+      const grid = dark.querySelector<HTMLElement>('.pg-grid')
+      const graph = dark.querySelector<HTMLElement>('.cg')
       const months = dark.querySelector<HTMLElement>('.cg__labels')
       const logo = dark.querySelector<HTMLElement>('.cg__logo')
       const title = dark.querySelector<HTMLElement>('.cta__title')
-      if (!phone.matches || !cta || !cards.length || !months || !logo || !title) {
-        shift = 0
-        cta?.style.removeProperty('--cta-match')
-        return
-      }
-      const lastRow = Math.max(...Array.from(cards, (card) => card.getBoundingClientRect().bottom))
-      const above = months.getBoundingClientRect().top - lastRow
-      const below = title.getBoundingClientRect().top - logo.getBoundingClientRect().bottom - shift
-      const next = Math.round((above - below) * 2) / 2
-      if (Math.abs(next - shift) < 0.5) return
-      shift = next
-      cta.style.setProperty('--cta-match', `${shift}px`)
+      const pill = cta?.lastElementChild
+      const links = Array.from(dark.querySelectorAll('.footer__inner :is(a, button)'), (el) => el.getBoundingClientRect().top)
+      if (!phone.matches || !cta || !grid || !graph || !months || !logo || !title || !pill || !links.length) return clear()
+      const top = (el: Element) => el.getBoundingClientRect().top
+      const bottom = (el: Element) => el.getBoundingClientRect().bottom
+      // Gaps as they would be with no shifts applied.
+      const n1 = top(months) - bottom(grid) - applied.graph
+      const n2 = top(title) - bottom(logo) - applied.cta + applied.graph
+      const n3 = Math.min(...links) - bottom(pill) + applied.cta
+      const style = getComputedStyle(cta)
+      const padTop = parseFloat(style.paddingTop) - applied.cta
+      const padBottom = parseFloat(style.paddingBottom) + applied.cta
+      const gap = (n1 + n2 + n3) / 3
+      // The text moves within the contact section's own padding (top and bottom both stay ≥ 0).
+      const ctaShift = Math.max(-padTop, Math.min(padBottom, Math.round((n3 - gap) * 2) / 2))
+      const next = { graph: Math.round((gap - n1) * 2) / 2, cta: ctaShift }
+      if (Math.abs(next.graph - applied.graph) < 0.5 && Math.abs(next.cta - applied.cta) < 0.5) return
+      applied = next
+      set = true
+      graph.style.setProperty('--cg-match', `${next.graph}px`)
+      cta.style.setProperty('--cta-match', `${next.cta}px`)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure)
@@ -451,7 +479,7 @@ export function AboutPage() {
       dark.removeEventListener('animationend', schedule)
       phone.removeEventListener('change', schedule)
       window.removeEventListener('scroll', schedule)
-      dark.querySelector<HTMLElement>('.cta')?.style.removeProperty('--cta-match')
+      clear()
     }
   }, [])
 
@@ -535,7 +563,8 @@ export function AboutPage() {
       <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined} data-arc-edge>
         <SheetLayers preset={t.sheet.preset} />
         <section ref={playRef} className="about__play" data-fit={t.spacing.playFit || undefined} aria-labelledby="play-title">
-          <h2 ref={playTitleRef} id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor }}>
+          {/* Words hidden, space kept: the cards' spacing is measured from this label. */}
+          <h2 ref={playTitleRef} id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor, visibility: 'hidden' }}>
             <EditableText as="span" label="Playground label" value={t.playgroundLabel} onChange={(next) => setValue('playgroundLabel', next)} /> <ArrowDownIcon />
           </h2>
           <Playground />

@@ -129,34 +129,37 @@ function signatureInk(hero: HTMLElement) {
 }
 
 /**
- * Desktop landing: the Selected projects sheet peeks far enough for its label to read with as much
- * room below it as above it (at least the peekDesktop dial), and the hero sits with equal gaps
- * between the nav links' baseline and the title's capitals, and between the signature's ink and
- * the sheet's tip. Short screens keep a 24px floor; the landing then grows past the fold.
+ * Desktop landing: the Selected projects sheet peeks by the peekDesktop dial, and the hero sits
+ * with equal gaps between the nav links' baseline and the title's capitals, and between the
+ * signature's ink and the sheet's tip. Short screens keep a 24px floor; the landing then grows
+ * past the fold.
  */
 function frameDesktop(hero: HTMLElement, landing: HTMLElement) {
   // One link's own text: the links row also holds animated extras (the Resume arrow, Back).
   const links = document.querySelector('.nav__links a')
   const title = hero.querySelector('.hero__title')
-  const label = document.querySelector<HTMLElement>('.works__eyebrow')
   const ink = signatureInk(hero)
   const first = hero.firstElementChild as HTMLElement | null, last = hero.lastElementChild as HTMLElement | null
-  if (!links || !title || !label || !ink || !first || !last) return
-  const dial = parseFloat(getComputedStyle(landing).getPropertyValue('--peek-d')) || 0
-  const peek = Math.max(dial, 2 * label.offsetTop + label.offsetHeight)
-  const tip = landing.getBoundingClientRect().top + window.innerHeight - peek
+  if (!links || !title || !ink || !first || !last) return
+  // Page coordinates, so a fit while scrolled (a fast scroll during the load-in) lands in the same
+  // place: the hero scrolls with the page; the fixed nav does not.
+  const sy = window.scrollY
+  const navFixed = getComputedStyle(links.closest('.nav') ?? links).position === 'fixed'
+  const peek = parseFloat(getComputedStyle(landing).getPropertyValue('--peek-d')) || 0
+  const tip = landing.getBoundingClientRect().top + sy + window.innerHeight - peek
   const navM = fontMetrics(links), titleM = fontMetrics(title)
-  const navBase = settled(links, textRect(links)).bottom - navM.descent
-  const capTop = settled(title, textRect(title)).top + titleM.ascent - titleM.cap
-  const gap = Math.max(24, (tip - navBase - (ink.bottom - capTop)) / 2)
+  const navBase = settled(links, textRect(links)).bottom - navM.descent + (navFixed ? 0 : sy)
+  const capTop = settled(title, textRect(title)).top + sy + titleM.ascent - titleM.cap
+  const inkBottom = ink.bottom + sy
+  const gap = Math.max(24, (tip - navBase - (inkBottom - capTop)) / 2)
   // Children are placed from the first one's layout box (offsets ignore the load-in and the
   // signature's own transform); the padding then fills the box exactly, so justify-content has no
   // slack left to move them.
-  const heroTop = hero.getBoundingClientRect().top
+  const heroTop = hero.getBoundingClientRect().top + sy
   const top = heroTop + first.offsetTop
   const content = last.offsetTop + last.offsetHeight - first.offsetTop
   const start = navBase + gap - (capTop - top)
-  const end = Math.max(tip, ink.bottom - top + start + gap)
+  const end = Math.max(tip, inkBottom - top + start + gap)
   hero.style.setProperty('padding-block', `${(start - heroTop).toFixed(1)}px ${Math.max(0, end - start - content).toFixed(1)}px`)
   landing.style.minHeight = '0'
 }
