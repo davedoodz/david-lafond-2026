@@ -132,10 +132,6 @@ export function BackLink({ className = '' }: { className?: string }) {
   )
 }
 
-/** Where Davebot's eyes take the page's black: the Work page's top, the About page from My Playground
- *  on, and every contact block and footer. The Harvard & MIT portfolio is black throughout (Nav). */
-const INK_EYES = '.landing, .about__dark, .cta, .footer'
-
 export function Nav({ route }: Props) {
   const isProject = PROJECT_ROUTES.includes(route)
   const t = useTuning('Nav', NAV_CONFIG)
@@ -157,8 +153,9 @@ export function Nav({ route }: Props) {
   // page behind any project or playground card, for the Soft fade's colour (mobileContrast › fadeTone).
   const [under, setUnder] = useState<'light' | 'dark'>()
   const [section, setSection] = useState<'light' | 'dark'>()
-  // Davebot's eyes go the page's black (ghost.css) while he is over the Work page's top, the About
-  // playground through its end, or a contact/footer block; elsewhere they stay paper.
+  // Davebot's eyes go the page's black (ghost.css) while the page right under him is black: on Work
+  // and About that is the Work top, the About playground on, and the contact/footer (project and
+  // playground cards don't count); Harvard & MIT is black throughout; other pages keep paper eyes.
   const [inkEyes, setInkEyes] = useState(false)
 
   // The fade's tone animates only once the nav has its first tone; on mount (each page has its own nav)
@@ -190,12 +187,19 @@ export function Nav({ route }: Props) {
       const sectionLight = isLightUnder(nav, x, y, '.works__card, .pg-card')
       if (sectionLight !== null) setSection(sectionLight ? 'light' : 'dark')
       else setSection((current) => current ?? declared())
-      // The page under Davebot himself (the nav's own boxes skipped); a View Transition hit test sees
-      // only <html>, so that keeps the last answer.
+      // Each link (Back too) takes the tone right under itself, so a sheet's curved edge crossing the
+      // row flips each word as the edge passes it (Nav.css, data-link-tone).
+      for (const link of nav.querySelectorAll<HTMLElement>('.nav__links > a, .nav__links-back')) {
+        const r = link.getBoundingClientRect()
+        const tone = isLightUnder(nav, r.left + r.width / 2, r.top + r.height / 2)
+        if (tone !== null) link.dataset.tone = tone ? 'light' : 'dark'
+      }
+      // The page under Davebot himself, cards passed through. Null (a View Transition) keeps the last answer.
       const ghost = nav.querySelector('.nav__ghost')?.getBoundingClientRect()
-      const hit = ghost && document.elementsFromPoint(ghost.left + ghost.width / 2, ghost.top + ghost.height / 2).find((el) => !nav.contains(el))
+      const ghostLight = ghost ? isLightUnder(nav, ghost.left + ghost.width / 2, ghost.top + ghost.height / 2, '.works__card, .pg-card') : null
       if (route === 'harvard-mit') setInkEyes(true)
-      else if (hit && hit !== document.documentElement) setInkEyes(!!hit.closest(INK_EYES))
+      else if (route !== 'work' && route !== 'about') setInkEyes(false)
+      else if (ghostLight !== null) setInkEyes(!ghostLight)
       // Edge blur: a sheet's curved edge inside a blur band is blurred toward the screen edge but sharp
       // at its tip, which reads as a flat crop. Such a band clears while an arc is in it (Nav.css): the
       // page's top band, and each sheet's own bottom band, which otherwise rests on the sheet's
@@ -213,8 +217,16 @@ export function Nav({ route }: Props) {
       document.documentElement.toggleAttribute('data-edge-clear', band > 0 && topArc)
     }
     const queue = () => (frame ||= requestAnimationFrame(sample))
+    // Sheets redraw their curved edges in their own scroll frame, possibly after this one samples,
+    // so a scroll also re-checks on the frame after: the eyes and links flip with the edge, not a beat late.
+    let settle = 0
+    const onScroll = () => {
+      queue()
+      cancelAnimationFrame(settle)
+      settle = requestAnimationFrame(() => (settle = requestAnimationFrame(sample)))
+    }
     sample()
-    window.addEventListener('scroll', queue, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', queue)
     // Sections also move without scrolling (reveals, snapping), so re-check a few times a second.
     const timer = window.setInterval(queue, 300)
@@ -231,7 +243,8 @@ export function Nav({ route }: Props) {
       window.clearInterval(timer)
       transitionObserver.disconnect()
       cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', queue)
+      cancelAnimationFrame(settle)
+      window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', queue)
     }
   }, [pin, route])
@@ -326,7 +339,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

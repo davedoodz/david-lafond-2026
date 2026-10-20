@@ -123,6 +123,21 @@
     --nav-idle: var(--stone-600);
   }
 }
+/* Each link follows the page right under itself (Nav.tsx sets data-tone per link), so a curved sheet
+   edge crossing the row flips each word as it passes. Off while the Soft fade sets one tone for all. */
+.nav[data-link-tone] .nav__links [data-tone='dark'] {
+  --nav-idle: var(--text-muted);
+  --nav-active: var(--paper);
+}
+.nav[data-link-tone] .nav__links [data-tone='light'] {
+  --nav-idle: var(--stone-400);
+  --nav-active: var(--ink-900);
+}
+@media (max-width: 640px) {
+  .nav[data-link-tone] .nav__links [data-tone='light'] {
+    --nav-idle: var(--stone-600);
+  }
+}
 
 /* Backdrop on its own layer behind the links. */
 .nav[data-pin]::before {

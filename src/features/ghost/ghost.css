@@ -70,7 +70,7 @@
    sections (the top, My Playground, the footer), where the nav sets the page's black (Nav.tsx). */
 .ghost-mark__pupil {
   fill: var(--ghost-eye, var(--paper));
-  transition: fill 300ms ease;
+  /* No fade: the eyes flip the moment he crosses onto the other surface. */
 }
 .nav[data-ghost-eyes='ink'] .ghost-mark {
   --ghost-eye: var(--ink-900);
