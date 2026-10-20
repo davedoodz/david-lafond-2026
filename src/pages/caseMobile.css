@@ -32,6 +32,11 @@
   main.case .case__meta .case__meta-value {
     font-size: var(--m-meta-value-size);
   }
+  /* Each value is set on three lines (threeLines, caseMobile.ts); a line never wraps further. */
+  main.case .case__meta .case__meta-line {
+    display: block;
+    white-space: nowrap;
+  }
   main.case .persona__quote {
     font-size: var(--m-quote-size);
     line-height: var(--m-quote-lh);
@@ -44,6 +49,15 @@
   }
   main:is(.case, .project) .cta__subtitle {
     font-size: var(--m-contact-body-size);
+  }
+  /* Contact sheet (Momo, Filo): the CTA block sits midway between the sheet's top edge and the
+     contact links. The footer drops its minimum height so it ends at the links' top, and the CTA gets
+     the same space above and below; 199px keeps the sheet its earlier height (654px). */
+  main.case .case__dark > .cta.column {
+    padding-block: 199px;
+  }
+  main.case .case__dark > .footer {
+    min-height: 0;
   }
 
   /* --- Text block rhythm: eyebrow → title → body, the same in every block. */
@@ -77,11 +91,16 @@
     margin-top: var(--m-hero-meta-gap);
   }
 
-  /* --- Sections: the same padding, side inset and text-to-media gap everywhere. */
+  /* --- Sections: side margins equal the Back button's inset (the phone nav's text edge, global.css
+     --text-edge, in vw so it resolves against the screen here too). Block padding stays 0, as the
+     pages were laid out with it; each page spaces its own sections. */
+  main.case {
+    --m-side: max(24px, min(50vw - var(--nav-half, 166.8px), 100vw - 24px - var(--nav-wide, 357.3px)));
+  }
   main.case .case__section,
   main.case .case__section[data-layout] {
     gap: var(--m-media-gap);
-    padding: var(--m-section-top) var(--m-side) var(--m-section-bottom);
+    padding: 0 var(--m-side);
   }
 
   /* --- Element sizes and positions */
@@ -108,5 +127,32 @@
     top: var(--m-book-y);
     padding-top: var(--m-book-pad-top);
     padding-inline: var(--m-book-pad-x);
+  }
+
+  /* --- Lead mark on the nav row: the nav shows only "← Back" and Davebot here (Nav.css), so each
+     page's lead mark sits centred between them, its middle level with theirs (49px down). The Momo
+     braid and the Filo mark push their whole hero down with them, so every gap below stays the same;
+     the Harvard & MIT Book/Grid switch leaves the flow and floats on the nav row (below). */
+  main.case[data-work='momo'] .case__section--hero {
+    padding-top: 67px;
+  }
+  main.case[data-work='filo'] .case__section--hero {
+    padding-top: 29px;
+  }
+
+  /* --- Harvard & MIT: the spreads start right under the nav. The hidden second "Back" takes no
+     room, and the Book/Grid switch floats on the nav row instead of sitting above the spreads. */
+  main.project .project__back {
+    display: none;
+  }
+  /* Sticky on the nav row (its middle 49px down) while the viewer is on screen; it leaves with the
+     viewer. Margins net its 44px to zero flow: up 57px into the nav row, then 13px back down. */
+  main.project .viewer__switch {
+    position: sticky;
+    top: 27px;
+    z-index: 51;
+    align-self: center;
+    margin: -57px 0 13px;
+    translate: none;
   }
 }

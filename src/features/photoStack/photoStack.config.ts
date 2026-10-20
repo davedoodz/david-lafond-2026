@@ -5,14 +5,23 @@ export const PHOTO_STACK_CONFIG = {
     height: [362.8, 150, 500, 0.1] as [number, number, number, number],
     radius: [20, 0, 40, 1] as [number, number, number, number],
     shadow: [0.22, 0, 1, 0.01] as [number, number, number, number],
+    /** A white border round each photo, inside the card's size, so the cards read like stickers. */
+    outline: {
+      show: false,
+      width: [6, 0.5, 24, 0.5] as [number, number, number, number],
+    },
   },
-  /** Which photo starts in each position. Duplicates resolve first-wins; unpicked photos fill the gaps. */
+  /** Photo 6 (Nohant): on adds it as a sixth card at the back of the stack. */
+  photo6: {
+    show: false,
+  },
+  /** Which photo starts in each position. Duplicates resolve first-wins; unpicked photos fill the gaps (photo 6 last). */
   order: {
-    front: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 1' },
-    second: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 2' },
-    third: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 3' },
-    fourth: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 4' },
-    back: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5'], default: 'photo 5' },
+    front: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5', 'photo 6'], default: 'photo 1' },
+    second: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5', 'photo 6'], default: 'photo 2' },
+    third: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5', 'photo 6'], default: 'photo 3' },
+    fourth: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5', 'photo 6'], default: 'photo 4' },
+    back: { type: 'select' as const, options: ['photo 1', 'photo 2', 'photo 3', 'photo 4', 'photo 5', 'photo 6'], default: 'photo 5' },
   },
   images: {
     _collapsed: true,
@@ -42,6 +51,10 @@ export const PHOTO_STACK_CONFIG = {
       warmth: [0, 0, 0.6, 0.01] as [number, number, number, number],
       hue: [0, -45, 45, 0.5] as [number, number, number, number],
     },
+    image6: {
+      posX: [50, 0, 100, 0.01] as [number, number, number, number],
+      posY: [50, 0, 100, 0.01] as [number, number, number, number],
+    },
   },
   slots: {
     _collapsed: true,
@@ -69,6 +82,12 @@ export const PHOTO_STACK_CONFIG = {
       x: [168, -50, 240, 0.01] as [number, number, number, number],
       y: [-8, -50, 200, 0.01] as [number, number, number, number],
       rotate: [17.5, -30, 30, 0.01] as [number, number, number, number],
+    },
+    /** Used only while photo 6 is on. */
+    slot5: {
+      x: [206, -50, 280, 0.01] as [number, number, number, number],
+      y: [-16, -50, 200, 0.01] as [number, number, number, number],
+      rotate: [21.5, -30, 30, 0.01] as [number, number, number, number],
     },
   },
   entrance: {
@@ -117,6 +136,12 @@ export const PHOTO_STACK_CONFIG = {
       pullY: [-1, -200, 200, 1] as [number, number, number, number],
       rotate: [1.5, -45, 45, 0.1] as [number, number, number, number],
     },
+    /** The fifth card while photo 6 is on (then `back` is the sixth). */
+    fifth: {
+      pullX: [117, -100, 320, 1] as [number, number, number, number],
+      pullY: [-1, -200, 200, 1] as [number, number, number, number],
+      rotate: [4.2, -45, 45, 0.1] as [number, number, number, number],
+    },
     back: {
       pullX: [134, -100, 320, 1] as [number, number, number, number],
       pullY: [-1, -200, 200, 1] as [number, number, number, number],
@@ -149,6 +174,7 @@ export const PHOTO_STACK_CONFIG = {
       image3: { type: 'text' as const, default: 'Up in the mountains', placeholder: 'Caption for photo 3' },
       image4: { type: 'text' as const, default: 'In the workshop', placeholder: 'Caption for photo 4' },
       image5: { type: 'text' as const, default: 'Tulip season', placeholder: 'Caption for photo 5' },
+      image6: { type: 'text' as const, default: 'Nohant', placeholder: 'Caption for photo 6' },
     },
   },
   cycle: {

@@ -8,6 +8,7 @@ import { MOMO_BRAID_LAYOUT_EVENT, MomoIntro } from '../features/momoIntro/MomoIn
 import { MomoWelcome } from '../features/momoIntro/MomoWelcome'
 import { ReselfFigure } from '../features/reselfDiagrams/ReselfFigure'
 import { ArxivPaper } from '../features/arxivPaper/ArxivPaper'
+import { FiloMarkDraw } from '../features/filoCase/FiloMarkDraw'
 import { FiloMilestones } from '../features/filoCase/FiloMilestones'
 import { FiloPersonaLoop } from '../features/filoCase/FiloPersonaLoop'
 import { FiloQuoteArt } from '../features/filoCase/FiloQuoteArt'
@@ -23,7 +24,10 @@ import { FiloStory, type FiloStorySettings } from './filoStoryArt'
 import { FiloSourceSteps } from '../features/filoCase/FiloSourceSteps'
 import { FiloNext } from '../features/filoCase/FiloNext'
 import { FiloResearchFigure, type FiloResearchSettings } from '../features/filoCase/FiloResearch'
-import { useCaseMobileStyle } from './caseMobile'
+import { threeLines, useCaseMobileStyle } from './caseMobile'
+import { MomoPhoneDials } from './momoMobile'
+import { FiloPhoneDials } from './filoMobile'
+import { useMedia } from '../lib/viewport'
 import './CaseStudyPage.css'
 
 
@@ -335,6 +339,11 @@ export function CaseStudyPage({ id }: Props) {
   const page = base.page
   const hero = base.hero
   const metaFields: HeroField[] = hero.extra || hero.extraLabel ? ['role', 'timeline', 'extra', 'team'] : ['role', 'timeline', 'team']
+  // Phones: Momo sets each hero meta value (Role, Timeline, Team) on three even lines; Filo puts each
+  // member of its team ("1 engineer, 1 designer") on its own line.
+  const phone = useMedia('(max-width: 640px)')
+  const metaLines = (field: HeroField): string[] | null =>
+    !phone ? null : id === 'momo' ? threeLines(hero[field]) : id === 'filo' && field === 'team' ? hero[field].split(/(?<=,)\s+/) : null
   // True while the Momo voice story plays on the stage above the hero.
   const [intro, setIntro] = useState(id === 'momo')
   const allKeys = SECTION_KEYS[id]
@@ -583,15 +592,21 @@ export function CaseStudyPage({ id }: Props) {
         aria-labelledby={`case-${key}`}
       >
         <div className={`case__text${isHero ? '' : ' case__section-copy'}`}>
-          {isHero && <BackLink className="case__back case__back--inline" />}
           {isHero && logos?.show && logos.placement === 'above title' && <LogoRow l={logos} id={id} />}
-          {isHero && mark?.show && (
+          {isHero && mark?.show && mark.logo !== 'Tall l' && (
+            // Loop f draws itself in with a pen when the page opens.
+            <FiloMarkDraw
+              className="case__hero-mark"
+              style={{ '--mark-x': `${mark.x}px`, '--mark-y': `${mark.y}px`, '--mark-scale': mark.scale } as CSSProperties}
+            />
+          )}
+          {isHero && mark?.show && mark.logo === 'Tall l' && (
             <img
               className="case__hero-mark"
-              src={mark.logo === 'Tall l' ? '/work/filo/filo-mark-2.webp' : '/work/filo/filo-mark.webp'}
+              src="/work/filo/filo-mark-2.webp"
               alt=""
-              width={mark.logo === 'Tall l' ? 1090 : 990}
-              height={mark.logo === 'Tall l' ? 564 : 466}
+              width={1090}
+              height={564}
               style={{ '--mark-x': `${mark.x}px`, '--mark-y': `${mark.y}px`, '--mark-scale': mark.scale } as CSSProperties}
             />
           )}
@@ -633,19 +648,42 @@ export function CaseStudyPage({ id }: Props) {
             onChange={edit(`${key}.title`)}
             selectable={id === 'momo' && key === 'outcomes'}
           />
-          {(s.body || import.meta.env.DEV) && (
+          {(s.body || import.meta.env.DEV) && (id === 'filo' && s.body.includes('\n') ? (
+            // Filo: one block per written line, so phones can open a gap between sentences (filoMobile.css).
+            <div className="case__body case__body--lines">
+              {s.body.split('\n').map((line, i, lines) => (
+                <EditableText
+                  key={i}
+                  as="span"
+                  className="case__body-line"
+                  label={`${key} body, line ${i + 1}`}
+                  value={line}
+                  onChange={(next) => edit(`${key}.body`)(lines.map((l, j) => (j === i ? next : l)).join('\n'))}
+                />
+              ))}
+            </div>
+          ) : (
             <EditableText className="case__body" label={`${key} body`} value={s.body} onChange={edit(`${key}.body`)} selectable={id === 'momo' && key === 'outcomes'} />
-          )}
+          ))}
           {isHero && (
             <dl className="case__meta" style={{ '--meta-cols': metaFields.length } as CSSProperties}>
-              {metaFields.map((field) => (
-                <div key={field}>
-                  <dt className="eyebrow">
-                    <EditableText as="span" label={`${field} eyebrow`} value={hero[`${field}Label`]} onChange={edit(`hero.${field}Label`)} />
-                  </dt>
-                  <EditableText as="p" className="case__meta-value" label={field} value={hero[field]} onChange={edit(`hero.${field}`)} />
-                </div>
-              ))}
+              {metaFields.map((field) => {
+                const lines = metaLines(field)
+                return (
+                  <div key={field}>
+                    <dt className="eyebrow">
+                      <EditableText as="span" label={`${field} eyebrow`} value={hero[`${field}Label`]} onChange={edit(`hero.${field}Label`)} />
+                    </dt>
+                    {lines ? (
+                      <p className="case__meta-value">
+                        {lines.map((line, i) => <span key={i} className="case__meta-line">{line}</span>)}
+                      </p>
+                    ) : (
+                      <EditableText as="p" className="case__meta-value" label={field} value={hero[field]} onChange={edit(`hero.${field}`)} />
+                    )}
+                  </div>
+                )
+              })}
             </dl>
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} id={id} />}
@@ -699,6 +737,8 @@ export function CaseStudyPage({ id }: Props) {
       style={{ ...mobile, '--case-content': `${page.contentWidth}px`, '--case-text': `${page.textWidth}px` } as CSSProperties}
     >
       {id === 'momo' && <MomoIntro onDone={() => setIntro(false)} onStart={() => setIntro(true)} />}
+      {id === 'momo' && <MomoPhoneDials target={mainRef} />}
+      {id === 'filo' && <FiloPhoneDials target={mainRef} />}
       <div className="case__light" data-surface="light">
         <Nav route={id} />
         {page.showSidebar && (

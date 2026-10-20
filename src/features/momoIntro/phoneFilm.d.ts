@@ -15,5 +15,7 @@ export function setStatusGaps(dials: { wifi: number; battery: number }): void
 /** VoiceBeam host: the phone screen's rect in film px (960×540), whether the voice is live, and its level 0–1.
  *  `rt` is the braid's phase clock this frame, for the page band to carry on from. */
 export type PhoneBeam = { x: number; y: number; w: number; h: number; active: boolean; level: number; rt: number }
-/** `braidTarget`: the page band's slot in film px, and its idle energy (`env`) for the film band to settle to. */
-export function drawPhoneFilm(ctx: CanvasRenderingContext2D, t: number, m: [number, number, number], braidTarget: { x: number; y: number; width: number; env?: number }, phonePosition: { lockScreenY: number; signalCheckY: number; voiceReflectionY: number }, momoFrames: { awake?: CanvasImageSource; asleep?: CanvasImageSource }, topCtx?: CanvasRenderingContext2D, topM?: [number, number, number]): PhoneBeam
+/** `braidTarget`: the page band's slot in film px, and its idle energy (`env`) for the film band to settle to.
+ *  `phonePosition.fit`: on phones, the box (film px) the whole phone is fitted into, centred, for the
+ *  whole film; it replaces the camera's lean-ins and the vertical offsets. */
+export function drawPhoneFilm(ctx: CanvasRenderingContext2D, t: number, m: [number, number, number], braidTarget: { x: number; y: number; width: number; env?: number }, phonePosition: { lockScreenY: number; signalCheckY: number; voiceReflectionY: number; fit?: { w: number; h: number } }, momoFrames: { awake?: CanvasImageSource; asleep?: CanvasImageSource }, topCtx?: CanvasRenderingContext2D, topM?: [number, number, number]): PhoneBeam

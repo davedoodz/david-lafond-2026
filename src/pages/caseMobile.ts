@@ -29,14 +29,11 @@ const CONFIG = {
   smallSize: [12, 8, 18, 0.5] as Tuple,
   contactTitleSize: [24, 14, 44, 0.5] as Tuple,
   contactBodySize: [14, 9, 24, 0.5] as Tuple,
-  // Spacing (px): inside every text block, around every section.
+  // Spacing (px): inside every text block. Side margins follow the Back button (caseMobile.css).
   eyebrowToTitle: [16, 0, 60, 1] as Tuple,
   titleToBody: [20, 0, 60, 1] as Tuple,
   heroTitleToMeta: [36, 0, 120, 1] as Tuple,
   textToMedia: [28, 0, 120, 1] as Tuple,
-  sectionTop: [88, 0, 200, 1] as Tuple,
-  sectionBottom: [32, 0, 200, 1] as Tuple,
-  sideInset: [39, 8, 64, 1] as Tuple,
   // Element sizes.
   mediaHeight: [52, 20, 80, 1] as Tuple, // svh, every section video and figure
   heroArtScale: [1, 0.5, 1.5, 0.01] as Tuple, // Momo welcome phone / Filo hang tag
@@ -59,6 +56,27 @@ const CONFIG = {
   mediaY: [0, -120, 120, 1] as Tuple,
   bookX: [0, -120, 120, 1] as Tuple,
   bookY: [0, -120, 120, 1] as Tuple,
+}
+
+/**
+ * Splits a short phrase into three lines at word breaks, as even as possible (the longest line, in
+ * characters, is as short as it can be): "March – September 2025" → "March –", "September", "2025".
+ * Phrases of fewer than three words keep one line per word.
+ */
+export function threeLines(text: string): string[] {
+  const words = text.trim().split(/\s+/).filter(Boolean)
+  if (words.length <= 3) return words
+  const join = (from: number, to: number) => words.slice(from, to).join(' ')
+  let best: string[] = []
+  let bestLongest = Infinity
+  for (let a = 1; a < words.length - 1; a++) {
+    for (let b = a + 1; b < words.length; b++) {
+      const lines = [join(0, a), join(a, b), join(b, words.length)]
+      const longest = Math.max(...lines.map((line) => line.length))
+      if (longest < bestLongest) [best, bestLongest] = [lines, longest]
+    }
+  }
+  return best
 }
 
 /** CSS variables for the case study's `<main>`; caseMobile.css applies them on phones only. */
@@ -87,9 +105,7 @@ export function useCaseMobileStyle(): CSSProperties {
     '--m-title-gap': px(t.titleToBody),
     '--m-hero-meta-gap': px(t.heroTitleToMeta),
     '--m-media-gap': px(t.textToMedia),
-    '--m-section-top': px(t.sectionTop),
     '--m-hero-art-scale': t.heroArtScale,
-    '--m-side': px(t.sideInset),
     '--m-media-h': `${t.mediaHeight}svh`,
     '--m-story-art-w': px(t.storyArtWidth),
     '--m-persona-img-w': px(t.personaImageWidth),

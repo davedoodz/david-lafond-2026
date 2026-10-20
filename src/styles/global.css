@@ -83,6 +83,10 @@ html {
   background: var(--ink-900);
   /* No rubber-band pull past the top or bottom of the page. */
   overscroll-behavior: none;
+  /* Set here too so body's clip stays on body: alone, body's overflow moves up to the viewport,
+     which only hides the overflow. Content sliding past the sides (card reveals) then still widens
+     the page, and phones zoom out to fit it, shifting the nav and the page margins. */
+  overflow-x: clip;
 }
 
 body {

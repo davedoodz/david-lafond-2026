@@ -72,9 +72,16 @@ export function at(el, fx = .5, fy = .5) {
 const floatEase = p => { const s = .5 - .5 * Math.cos(Math.PI * p); return .7 * s + .3 * (1 - (1 - p) ** 3) }
 const dragEase = p => p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2
 const vary = (spread) => 1 + (Math.random() - .5) * 2 * spread
-export async function move(t, [x, y], ms) {
+/** A move's natural duration over `d` px. */
+const naturalMs = d => Math.min(1100, 380 + d * .55)
+/** Where the cursor is now. */
+export const here = () => [cx, cy]
+/** Moves the cursor to `to`: a point, or a function returning one each frame (a target still settling). */
+export async function move(t, to, ms) {
+  const end = typeof to === 'function' ? to : () => to
+  let [x, y] = end()
   const sx = cx, sy = cy, dx = x - sx, dy = y - sy, d = Math.hypot(dx, dy)
-  ms ??= Math.min(1100, 380 + d * .55) * vary(.08)
+  ms ??= naturalMs(d) * vary(.08)
   const down = cursor.classList.contains('is-down')
   // Bow 4–9% of the distance (up to 60px), usually to the wrist's side; drags stay straight.
   const side = (dx >= 0 ? -1 : 1) * (Math.random() < .75 ? 1 : -1)
@@ -88,12 +95,27 @@ export async function move(t, [x, y], ms) {
     await sleep(0, t)
     const now = performance.now()
     e += Math.min(50, now - last) * playRate(); last = now
+    ;[x, y] = end()
     const p = ease(Math.min(1, e / ms)), q = 1 - p
     cx = q * q * q * sx + 3 * q * q * p * c1x + 3 * q * p * p * c2x + p * p * p * x
     cy = q * q * q * sy + 3 * q * q * p * c1y + 3 * q * p * p * c2y + p * p * p * y
     draw(cx, cy)
   }
   place(x, y)
+}
+/**
+ * Anticipation: instead of waiting `wait` ms and then setting off, the cursor drifts to `to` across
+ * most of the wait (slower and longer than a plain move) and arrives as it ends, so it never sits
+ * still for long and is already on the next target when it is time to act. Total time stays `wait`
+ * (or the natural move time, if longer).
+ */
+export async function reach(t, to, wait) {
+  const [x, y] = typeof to === 'function' ? to() : to
+  const d = Math.hypot(x - cx, y - cy)
+  if (d < 1) return sleep(wait, t)
+  const ms = Math.min(2400, Math.max(naturalMs(d), wait * .8))
+  await sleep(Math.max(0, wait - ms), t)
+  await move(t, to, ms)
 }
 let hovered = []
 export function hover(...els) { hovered.forEach(e => e.classList.remove('is-hover')); hovered = els.filter(Boolean); hovered.forEach(e => e.classList.add('is-hover')) }

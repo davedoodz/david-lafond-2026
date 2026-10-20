@@ -38,8 +38,9 @@ import { SpreadZoom } from './SpreadZoom'
 import { toMotionTransition } from '../playground/motionTransition'
 import { FlipBook, type BookController, type BookState } from './FlipBook'
 import { PAGE_COUNT, SPREADS, pageLabel } from './bookPages'
-import { SpreadGrid } from './SpreadGrid'
+import { SpreadGrid, SpreadStack } from './SpreadGrid'
 import './book.css'
+import { useMedia } from '../../lib/viewport'
 import { VideoCard, videoDials } from './VideoCard'
 import { LayoutEditor } from './LayoutEditor'
 import { diagramSource } from './layoutDiagram'
@@ -354,6 +355,8 @@ export function BookViewer() {
   }, [t.book.hint.hover, t.book.hint.hoverMs, t.book.hint.attraction, t.book.hint.size])
   const [selectedMode, setMode] = useState<Mode>('video')
   const mode = t.bookGridOnly && selectedMode === 'video' ? 'book' : selectedMode
+  // Phones read the book as a scrolling stack of spreads instead of the flip book.
+  const phone = useMedia('(max-width: 640px)')
   // The grid is only built the first time it is opened.
   const [gridMounted, setGridMounted] = useState(false)
   const [state, setState] = useState<BookState>({ index: 0, orientation: 'landscape', zoom: 1 })
@@ -489,6 +492,7 @@ export function BookViewer() {
     '--video-scale-d': t.video.scaleDesktop,
     '--video-scale-m': t.video.scaleMobile,
     '--video-radius': `${t.video.radius}px`,
+    '--video-radius-n': t.video.radius,
     '--grid-min': `${t.grid.minCard * t.grid.scale}px`,
     '--grid-gap': `${t.grid.gap * t.grid.scale}px`,
     '--grid-side-d': `${t.grid.sideMarginDesktop}px`,
@@ -514,6 +518,7 @@ export function BookViewer() {
         look={t.switch}
       />
 
+      {phone ? (mode === 'book' && <div className="viewer__stack"><SpreadStack /></div>) : (
       <div ref={bookRef} className="viewer__book" aria-hidden={mode !== 'book'} inert={mode !== 'book'}>
         <FlipBook
           look={{ ...t.book, ...t.zoom }}
@@ -544,6 +549,7 @@ export function BookViewer() {
           </div>
         </div>
       </div>
+      )}
 
 
       {gridMounted && (

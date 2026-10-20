@@ -9,12 +9,15 @@
 }
 .fs-chapter { width: min(100%, 800px); margin-inline: auto; }
 .fs-copy { max-width: var(--fs-copy-width, 590px); margin-inline: auto; text-align: center; }
-.fs-copy .eyebrow { color: #777c72; font-size: 12px; letter-spacing: .06em; margin: 0 0 14px; }
-.fs-copy h2 { font-size: clamp(27px, 3vw, 37px); font-weight: 400; line-height: 1.15; letter-spacing: -.04em; text-wrap: balance; margin: 0; white-space: pre-line; }
+/* Eyebrow, heading and body sizes match every other section's text block (.case__section-copy in
+   CaseStudyPage.css), so Market gap and Proposal read at the same scale as the sections around them. */
+.fs-copy .eyebrow { color: #777c72; font-size: var(--text-small); letter-spacing: .04em; margin: 0 0 14px; }
+.fs-copy h2 { font-size: calc(var(--text-display) * var(--case-heading-scale)); font-weight: 400; line-height: 1.15; letter-spacing: -.04em; text-wrap: balance; margin: 0; white-space: pre-line; }
 /* A title written with line breaks keeps one line per break: it may run past the copy width, up to the
    chapter's 800px (and the viewport on phones, where a long line still wraps). */
 .fs-copy h2.fs-lines { margin-inline: calc(50% - min(400px, 50vw - 24px)); text-wrap: wrap; }
-.fs-copy > p:not(.eyebrow) { font-size: clamp(16px, 1.45vw, 18px); line-height: 1.5; color: #72776d; margin: 18px auto 0; text-wrap: pretty; }
+.fs-copy h2.fs-lines > .fs-line { display: block; }
+.fs-copy > p:not(.eyebrow) { font-size: calc(var(--text-body) * var(--case-copy-scale)); line-height: 1.4; color: #72776d; margin: 18px auto 0; text-wrap: pretty; }
 .fs-film { position: relative; width: 100%; aspect-ratio: 800 / 440; margin: 30px auto 0; overflow: clip; isolation: isolate; }
 /* Market gap: the persona's desk loop (FiloPersonaLoop), at its own frame ratio. Scale resizes the
    frame itself (so the section's height follows), centred on the column; x/y only shift it. */

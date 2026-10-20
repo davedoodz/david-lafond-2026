@@ -11,6 +11,8 @@ export const THUMB_CONFIG = {
     /** Crane variant: how each block is lifted, carried and set down. */
     preset: { type: 'select' as const, options: [...PRESETS], default: 'straight' },
     loopSec: [6, 2, 20, 0.1] as Tuple,
+    /** Playback speed on top of the loop length: 2 plays the whole loop twice as fast. */
+    speed: [1, 0.25, 4, 0.05] as Tuple,
     /** Share of each half-loop spent holding a finished mark (0..0.45). */
     hold: [0.24, 0, 0.45, 0.01] as Tuple,
     /** 0 = all pieces move together, higher = a longer wave through them. */

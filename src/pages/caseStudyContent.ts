@@ -424,6 +424,13 @@ export const MOMO_CONFIG = {
     body: { type: 'text' as const, default: 'Your reflections become a record of your experiences and a way to turn insight into action.' },
     align: { type: 'select' as const, options: ['left', 'center'], default: 'center' },
     phoneScale: [1, 0.6, 1.25, 0.01] as Tuple,
+    /** Playback speed of each phone recording (1 = as recorded, 2 = twice as fast). */
+    speed: {
+      entries: [1, 0.25, 3, 0.05] as Tuple,
+      voice: [1, 0.25, 3, 0.05] as Tuple,
+      tracker: [1, 0.25, 3, 0.05] as Tuple,
+      _collapsed: false,
+    },
     entriesLabel: { type: 'text' as const, default: 'Your entries' },
     voiceLabel: { type: 'text' as const, default: 'Say what happened' },
     trackerLabel: { type: 'text' as const, default: 'Keep yourself on track' },
@@ -443,6 +450,11 @@ export const MOMO_CONFIG = {
     modelsLabel: { type: 'text' as const, default: 'Gross model · unpack what happened' },
     /** Size of the Gross model loop (mode pill, picker and info card) next to the WOOP phone; scales in place. */
     pickScale: [1, 0.5, 2, 0.01] as [number, number, number, number],
+    /** Playback speed of each recording (1 = as recorded, 0.5 = half speed): the Gross model loop and the WOOP phone. */
+    speed: {
+      models: [1, 0.25, 3, 0.05] as Tuple,
+      woop: [1, 0.25, 3, 0.05] as Tuple,
+    },
     spacing: sectionSpacingDials(96, 64, 72),
     textReveal: textRevealDials('focus'),
     _collapsed: true,
@@ -458,6 +470,8 @@ export const MOMO_CONFIG = {
       _collapsed: true,
     },
     spacing: sectionSpacingDials(110, 72, 36),
+    /** Playback speed of the Watch → iPhone sequence (1 = as designed, 2 = twice as fast). The device entrance keeps its own duration. */
+    speed: [1, 0.25, 3, 0.05] as Tuple,
     deviceEntrance: {
       preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'handoff' },
       duration: [0.8, 0.25, 1.8, 0.05] as Tuple,

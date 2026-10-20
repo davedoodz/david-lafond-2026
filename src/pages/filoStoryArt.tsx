@@ -258,6 +258,10 @@ function Opportunity({ image, olive, speed, close, products }: { image: string; 
   </>
 }
 
+/** A chapter title written on several lines, one entry per line; the trailing newline some titles
+ *  end with adds no line. Each line is its own block, so phones can open a gap between sentences. */
+const titleLines = (title: string) => title.replace(/\n+$/, '').split('\n')
+
 /** Like Momo: play on entry, stop offscreen, restart from the first frame on return. */
 function StoryFilm({ kind, label, children }: { kind: string; label: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -327,7 +331,16 @@ export function FiloStory({ s, edit }: { s: FiloStorySettings; edit: (path: stri
     >
       <div className="fs-copy" data-text-copy>
         <p className="eyebrow">{label}</p>
-        <EditableText as="h2" className={title.includes('\n') ? 'fs-lines' : undefined} value={title} label={`${label} title`} onChange={edit(`story.${key}Title`)} />
+        {title.includes('\n')
+          ? <h2 className="fs-lines">{titleLines(title).map((line, i, lines) => <EditableText
+              as="span"
+              className="fs-line"
+              key={i}
+              value={line}
+              label={`${label} title, line ${i + 1}`}
+              onChange={(next) => edit(`story.${key}Title`)(lines.map((l, j) => (j === i ? next : l)).join('\n'))}
+            />)}</h2>
+          : <EditableText as="h2" value={title} label={`${label} title`} onChange={edit(`story.${key}Title`)} />}
         <EditableText as="p" value={body} label={`${label} body`} onChange={edit(`story.${key}Body`)} />
       </div>
       <StoryFilm kind={key} label={description}>{visual}</StoryFilm>

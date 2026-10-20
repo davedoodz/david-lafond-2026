@@ -17,6 +17,9 @@ function apply(half: number, wide: number) {
 }
 
 export function publishNavAlign(half: number, wide: number) {
+  // A measure taken while the Work hero is leaving the page reads no width; keep the last good
+  // lengths rather than publishing NaN, which collapses every nav's side margins.
+  if (!(half > 0 && wide > 0 && Number.isFinite(half) && Number.isFinite(wide))) return
   apply(half, wide)
   localStorage.setItem(KEY, JSON.stringify([half, wide]))
 }

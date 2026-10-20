@@ -7,6 +7,7 @@ import { TOUCH_LANDING, smallViewportHeight, touchDome } from '../lib/touchLandi
 import { publishNavAlign } from '../lib/navAlign'
 import { Signature } from '../features/signature/Signature'
 import { getSignatureData } from '../features/signature/store'
+import { fontMetrics, settled, textRect } from '../lib/settledLayout'
 import { useEntrance } from '../lib/useEntrance'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
@@ -69,48 +70,6 @@ function textWidth(el: Element | null) {
   return right > left ? right - left : 0
 }
 
-/** Painted box of an element's text (its font's line boxes). */
-function textRect(el: Element) {
-  const range = document.createRange()
-  range.selectNodeContents(el)
-  const rect = range.getBoundingClientRect()
-  range.detach()
-  return rect
-}
-
-/** Font metrics of an element's text: line box ascent and descent, and the capital height. */
-let metricsCanvas: CanvasRenderingContext2D | null = null
-function fontMetrics(el: Element) {
-  metricsCanvas ||= document.createElement('canvas').getContext('2d')
-  const ctx = metricsCanvas!
-  const s = getComputedStyle(el)
-  ctx.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`
-  const m = ctx.measureText('I')
-  return { ascent: m.fontBoundingBoxAscent, descent: m.fontBoundingBoxDescent, cap: m.actualBoundingBoxAscent }
-}
-
-/**
- * Vertical offset load-ins add right now: the `translate` and `transform` of the element and its
- * ancestors while an animation runs on them (useEntrance's data-enter, useReveal on the nav links).
- * Standing transforms (the signature's offset dials) are kept.
- */
-function entering(el: Element) {
-  let dy = 0
-  for (let e: Element | null = el; e && e !== document.body; e = e.parentElement) {
-    if (!e.getAnimations().length) continue
-    const style = getComputedStyle(e)
-    if (style.translate !== 'none') dy += parseFloat(style.translate.split(' ')[1] ?? '0') || 0
-    if (style.transform !== 'none') dy += new DOMMatrix(style.transform).m42
-  }
-  return dy
-}
-
-/** A box as it will sit once the load-in settles. */
-function settled(el: Element, rect: DOMRect = el.getBoundingClientRect()) {
-  const dy = entering(el)
-  return { left: rect.left, right: rect.right, top: rect.top - dy, bottom: rect.bottom - dy }
-}
-
 /**
  * The signature's ink box: its recorded points mapped into the drawn SVG (viewBox, meet). From the
  * data, not the paths, which are empty until the signing animation draws them.
@@ -129,34 +88,37 @@ function signatureInk(hero: HTMLElement) {
 }
 
 /**
- * Desktop landing: the Selected projects sheet peeks far enough for its label to read with as much
- * room below it as above it (at least the peekDesktop dial), and the hero sits with equal gaps
- * between the nav links' baseline and the title's capitals, and between the signature's ink and
- * the sheet's tip. Short screens keep a 24px floor; the landing then grows past the fold.
+ * Desktop landing: the Selected projects sheet peeks by the peekDesktop dial, and the hero sits
+ * with equal gaps between the nav links' baseline and the title's capitals, and between the
+ * signature's ink and the sheet's tip. Short screens keep a 24px floor; the landing then grows
+ * past the fold.
  */
 function frameDesktop(hero: HTMLElement, landing: HTMLElement) {
   // One link's own text: the links row also holds animated extras (the Resume arrow, Back).
   const links = document.querySelector('.nav__links a')
   const title = hero.querySelector('.hero__title')
-  const label = document.querySelector<HTMLElement>('.works__eyebrow')
   const ink = signatureInk(hero)
   const first = hero.firstElementChild as HTMLElement | null, last = hero.lastElementChild as HTMLElement | null
-  if (!links || !title || !label || !ink || !first || !last) return
-  const dial = parseFloat(getComputedStyle(landing).getPropertyValue('--peek-d')) || 0
-  const peek = Math.max(dial, 2 * label.offsetTop + label.offsetHeight)
-  const tip = landing.getBoundingClientRect().top + window.innerHeight - peek
+  if (!links || !title || !ink || !first || !last) return
+  // Page coordinates, so a fit while scrolled (a fast scroll during the load-in) lands in the same
+  // place: the hero scrolls with the page; the fixed nav does not.
+  const sy = window.scrollY
+  const navFixed = getComputedStyle(links.closest('.nav') ?? links).position === 'fixed'
+  const peek = parseFloat(getComputedStyle(landing).getPropertyValue('--peek-d')) || 0
+  const tip = landing.getBoundingClientRect().top + sy + window.innerHeight - peek
   const navM = fontMetrics(links), titleM = fontMetrics(title)
-  const navBase = settled(links, textRect(links)).bottom - navM.descent
-  const capTop = settled(title, textRect(title)).top + titleM.ascent - titleM.cap
-  const gap = Math.max(24, (tip - navBase - (ink.bottom - capTop)) / 2)
+  const navBase = settled(links, textRect(links)).bottom - navM.descent + (navFixed ? 0 : sy)
+  const capTop = settled(title, textRect(title)).top + sy + titleM.ascent - titleM.cap
+  const inkBottom = ink.bottom + sy
+  const gap = Math.max(24, (tip - navBase - (inkBottom - capTop)) / 2)
   // Children are placed from the first one's layout box (offsets ignore the load-in and the
   // signature's own transform); the padding then fills the box exactly, so justify-content has no
   // slack left to move them.
-  const heroTop = hero.getBoundingClientRect().top
+  const heroTop = hero.getBoundingClientRect().top + sy
   const top = heroTop + first.offsetTop
   const content = last.offsetTop + last.offsetHeight - first.offsetTop
   const start = navBase + gap - (capTop - top)
-  const end = Math.max(tip, ink.bottom - top + start + gap)
+  const end = Math.max(tip, inkBottom - top + start + gap)
   hero.style.setProperty('padding-block', `${(start - heroTop).toFixed(1)}px ${Math.max(0, end - start - content).toFixed(1)}px`)
   landing.style.minHeight = '0'
 }
@@ -214,6 +176,8 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       hero.style.setProperty('padding-block', `${Math.max(8, top * k).toFixed(1)}px ${Math.max(8, bottom * k).toFixed(1)}px`)
     }
     const center = () => {
+      // Left the page (route change): nothing to measure.
+      if (!hero.isConnected) return
       // A centre-aligned hero is already centred line by line.
       if (hero.dataset.align === 'center') return hero.style.removeProperty('--hero-center-x')
       // Painted line widths at the fitted size: the title and role are fixed, the intro ranges with its pills.

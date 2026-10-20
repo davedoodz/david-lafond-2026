@@ -65,8 +65,11 @@
   pointer-events: none;
 }
 
+/* Back lives in the nav, in Work's place (Nav.css). The sidebar's copy keeps its room so the
+   contents list doesn't move, and stays as the persona's scroll marker (casePersona `crossed`). */
 .case__back {
   margin: 0 0 28px;
+  visibility: hidden;
 }
 
 /* Back sits outside .nav here, so give it the nav's light-surface colours (hover was white on paper). */
@@ -98,11 +101,6 @@
 .case__toc button:focus-visible,
 .case__toc button[aria-current] {
   color: var(--ink-950);
-}
-
-/* The hero's inline Back only shows when the sidebar is gone (narrow screens). */
-.case__back--inline {
-  display: none;
 }
 
 /* --- Sections: one full screen each. */
@@ -209,6 +207,10 @@
   font-size: calc(var(--text-display) * 1.2 * var(--case-heading-scale));
 }
 
+/* A body written on several lines, one block per line (Filo, CaseStudyPage.tsx); reads as one paragraph. */
+.case__body-line {
+  display: block;
+}
 .case__body {
   margin-top: 20px;
   font-size: calc(var(--text-body) * var(--case-copy-scale));
@@ -365,17 +367,6 @@ html[data-case-snap] .case .footer {
     --case-frame-edge: var(--edge);
   }
   .case__sidebar {
-    display: none;
-  }
-  .case__back--inline {
-    display: inline-flex;
-    margin-bottom: 24px;
-  }
-}
-
-/* Phones: Back lives in the nav, in Work's place (Nav.css). */
-@media (max-width: 640px) {
-  .case__back--inline {
     display: none;
   }
 }
@@ -2034,10 +2025,11 @@ html[data-case-snap] .case__group > * {
   animation: var(--pe-image-kf, none) var(--pe-dur, 0.7s) var(--pe-image, 0s) cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 /* Floating cards (and the quotes layout) wait for the title to scroll up past the Back link
-   (casePersona `crossed` sets data-floats-in), then play on their own clock from that moment: no
-   entrance offset, hidden and paused until then. Reduced motion shows them still, as before. */
+   (casePersona `crossed` sets data-floats-in), then play on their own clock from that moment, after
+   the float › entrance › floatsDelay dial (--pe-floats-delay); hidden and paused until then. Reduced
+   motion shows them still, as before. */
 .case__persona :is(.persona__floats, .persona__quotes) {
-  --pe-floats: 0s;
+  --pe-floats: var(--pe-floats-delay, 0s);
 }
 @media (prefers-reduced-motion: no-preference) {
   .case__persona:not([data-floats-in]) :is(.persona__floats, .persona__quotes) {

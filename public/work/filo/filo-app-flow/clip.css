@@ -35,9 +35,11 @@
 
 /* ───────── Dynamic Island: shown only while it's busy ─────────
    Display coordinates, offset by --isl-x / --isl-y when the island sits outside the display (over a phone frame).
-   rest = the hardware island; compact = stretched left and right, reading; expanded = the detected card. */
+   rest = the hardware island; compact = stretched left and right, reading; expanded = the detected card.
+   It overhangs the frame's painted island by ~0.5px on every side, so that one's antialiased edge never
+   shows as a sliver under the live island. */
 .island { --spring: cubic-bezier(.3, 1.22, .42, 1);
-  position: absolute; z-index: 12; left: calc(var(--isl-x, 0px) + 133px); top: calc(var(--isl-y, 0px) + 11.2px); width: 124px; height: 36px; border-radius: 18px; background: #000; overflow: hidden;
+  position: absolute; z-index: 12; left: calc(var(--isl-x, 0px) + 132.5px); top: calc(var(--isl-y, 0px) + 10.6px); width: 125px; height: 37.2px; border-radius: 18.6px; background: #000; overflow: hidden;
   opacity: 0; color: #fff; font-family: var(--sys); -webkit-font-smoothing: antialiased;
   transition: left .5s var(--spring), top .5s var(--spring), width .5s var(--spring), height .5s var(--spring), border-radius .5s var(--spring); }
 .island.is-on { opacity: 1; }

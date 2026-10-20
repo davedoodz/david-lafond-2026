@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Filo logo · 10 pen entrances</title>
+<style>
+  :root { --paper: #f3f3f3; --ink: #171717; --muted: #8a8682; --line: #e1dedb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  header { max-width: 1180px; margin: 0 auto; padding: 40px 24px 8px; display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; }
+  h1 { margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+  header p { margin: 4px 0 0; color: var(--muted); max-width: 560px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; color: var(--muted); }
+  button { font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; cursor: pointer; }
+  label { display: inline-flex; gap: 8px; align-items: center; }
+  input[type=range] { width: 120px; }
+  .grid { max-width: 1180px; margin: 0 auto; padding: 24px; display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+  article { background: #f7f7f7; border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 16px; cursor: pointer; display: grid; gap: 12px; }
+  article:hover { border-color: #cfcbc7; }
+  .stage { padding: 18px 26px 10px; }
+  .stage svg { width: 100%; aspect-ratio: 990 / 466; display: block; overflow: visible; }
+  .meta { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: baseline; }
+  .num { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+  h2 { margin: 0; font-size: 15px; font-weight: 500; }
+  .meta p { grid-column: 2; margin: 0; color: var(--muted); font-size: 13px; }
+  .meta small { grid-column: 2; color: #a9a5a1; font-size: 11.5px; letter-spacing: 0.02em; text-transform: uppercase; }
+  #measure { position: absolute; width: 0; height: 0; overflow: hidden; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Filo logo, ten pen entrances</h1>
+    <p>Same six-step order and the same finished mark in every card: each one reveals the real logo
+      (filo-mark.webp) through its pen, so only the flow (how the pen moves) and the stroke (what it
+      leaves) change. Click a card to replay it.</p>
+  </div>
+  <div class="controls">
+    <button id="all">Replay all</button>
+    <label>Speed <input id="speed" type="range" min="0.4" max="2" step="0.05" value="1" /> <output id="speedOut">1.00×</output></label>
+    <label><input id="loop" type="checkbox" /> Loop</label>
+  </div>
+</header>
+<main class="grid" id="grid"></main>
+<svg id="measure" aria-hidden="true"></svg>
+
+<script>
+  const NS = 'http://www.w3.org/2000/svg'
+  const LOGO = '/work/filo/filo-mark.webp'
+  const STEM = '283,150 334.4,150 252.8,300 205,300'
+
+  // The pen route, shared by every variation (same as filo-logo-draw.html). Stroke 0 is steps 1–4 in
+  // one movement (hook, stem, loop, bar and i); its second piece is the stem crossing, clipped to the
+  // stem until the pen reaches the bar. Stroke 1 is the l, stroke 2 the o.
+  const PIECES = [
+    { stroke: 0, d: 'M 520 74 C 506 46 486 35 452 35 C 410 35 382 56 356 92 C 340 115 322 142 306 168' },
+    { stroke: 0, clip: true, d: 'M 306 168 C 294 188 282 210 270 232 C 259 253 247 273 236 292' },
+    { stroke: 0, d: 'M 236 292 C 222 318 205 346 188 372 C 164 408 140 438 100 438 C 60 438 33 410 33 360 C 33 300 80 254 140 238 C 165 232 190 229 214 228' },
+    { stroke: 0, bar: true, d: 'M 214 228 L 486 228 C 504 228 512 238 512 256 L 512 440' },
+    { stroke: 1, d: 'M 604 22 L 604 392 C 604 424 622 438 652 438 L 694 438' },
+    { stroke: 2, d: 'M 912 232 C 890 206 860 196 828 196 C 762 196 708 250 708 318 C 708 386 762 437 828 437 C 894 437 947 386 947 318 C 947 284 936 256 912 232' },
+  ]
+
+  const el = (tag, attrs = {}, parent) => {
+    const n = document.createElementNS(NS, tag)
+    for (const [k, v] of Object.entries(attrs)) if (v != null) n.setAttribute(k, v)
+    parent?.append(n)
+    return n
+  }
+
+  // ---- Geometry: lengths, samples (position, direction, curvature) along each stroke ----
+  const measure = document.getElementById('measure')
+  const measured = PIECES.map((p) => el('path', { d: p.d }, measure))
+  const STROKES = []
+  PIECES.forEach((p, idx) => {
+    const s = (STROKES[p.stroke] ??= { pieces: [], len: 0 })
+    const len = measured[idx].getTotalLength()
+    s.pieces.push({ idx, len, start: s.len, bar: !!p.bar, clip: !!p.clip })
+    s.len += len
+  })
+  const pointAt = (stroke, at) => {
+    const ps = stroke.pieces
+    let piece = ps[ps.length - 1]
+    for (const p of ps) if (at <= p.start + p.len) { piece = p; break }
+    return measured[piece.idx].getPointAtLength(Math.max(0, Math.min(piece.len, at - piece.start)))
+  }
+  for (const s of STROKES) {
+    const pts = []
+    for (let at = 0; at < s.len; at += 4) pts.push({ s: at, ...xy(pointAt(s, at)) })
+    pts.push({ s: s.len, ...xy(pointAt(s, s.len)) })
+    pts.forEach((p, i) => {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)]
+      const dx = b.x - a.x, dy = b.y - a.y, m = Math.hypot(dx, dy) || 1
+      p.tx = dx / m; p.ty = dy / m
+      p.angle = Math.atan2(dy, dx)
+    })
+    pts.forEach((p, i) => {
+      const a = pts[Math.max(0, i - 2)], b = pts[Math.min(pts.length - 1, i + 2)]
+      let d = b.angle - a.angle
+      while (d > Math.PI) d -= 2 * Math.PI
+      while (d < -Math.PI) d += 2 * Math.PI
+      p.curv = Math.abs(d) / Math.max(1, b.s - a.s)
+    })
+    s.samples = pts
+  }
+  function xy(p) { return { x: p.x, y: p.y } }
+
+  // ---- Flow: pen speed (px per ms at 1×) at each point of a stroke → time-to-distance map ----
+  const ramp = (s, len, r = 50, floor = 0.3) =>
+    Math.min(1, floor + ((1 - floor) * s) / r) * Math.min(1, floor + ((1 - floor) * (len - s)) / r)
+  const FLOWS = {
+    // Even pace, eased where the pen lands and lifts.
+    steady: (base) => (p, s) => base * ramp(p.s, s.len),
+    // A hand: downstrokes run, upstrokes drag, tight curves slow the pen.
+    hand: (base) => (p, s) => (base * ramp(p.s, s.len, 40) * (0.78 + 0.45 * p.ty)) / (1 + 22 * p.curv),
+    // Starts careful and speeds up into a flick at the end of each stroke.
+    flick: (base) => (p, s) => base * Math.min(1, 0.3 + p.s / 40) * (0.35 + 1.5 * (p.s / s.len) ** 1.6),
+  }
+  function profile(stroke, v) {
+    const S = stroke.samples, T = [0]
+    for (let i = 1; i < S.length; i++) T.push(T[i - 1] + (S[i].s - S[i - 1].s) / ((v(S[i - 1], stroke) + v(S[i], stroke)) / 2))
+    const dur = T[T.length - 1]
+    return {
+      dur,
+      at(t) {
+        if (t <= 0) return 0
+        if (t >= dur) return stroke.len
+        let lo = 0, hi = T.length - 1
+        while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (T[mid] <= t) lo = mid; else hi = mid }
+        return S[lo].s + ((t - T[lo]) / (T[hi] - T[lo])) * (S[hi].s - S[lo].s)
+      },
+    }
+  }
+  const sequential = (lift) => (durs) => { let t = 0; return durs.map((d) => { const s = t; t += d + lift; return s }) }
+
+  // ---- Stroke fields: what the pen leaves. Each returns extra defs/overlays and per-frame updates ----
+  const filterBox = { filterUnits: 'userSpaceOnUse', x: -60, y: -60, width: 1110, height: 586 }
+
+  const VARIATIONS = [
+    {
+      name: 'Fountain pen', flow: 'steady', stroke: 'nib leads',
+      desc: 'An even, unhurried pace. A round nib rides the front of the ink and lifts between letters.',
+      speed: FLOWS.steady(1.0), lift: 160, nib: 17,
+    },
+    {
+      name: 'Natural hand', flow: 'direction + curvature', stroke: 'solid ink',
+      desc: 'Downstrokes run, upstrokes drag, the pen slows into the tight turns of the loop and the o.',
+      speed: FLOWS.hand(1.25), lift: 180,
+    },
+    {
+      name: 'Tapered nib', flow: 'direction + curvature', stroke: 'taper',
+      desc: 'The line starts thin at the tip and swells to full weight just behind it, like pressure on a brush pen.',
+      speed: FLOWS.hand(1.2), lift: 180,
+      layers: [{ width: 14, lag: 0 }, { width: 32, lag: 45 }, { width: 50, lag: 95 }, { width: 64, lag: 150 }],
+    },
+    {
+      name: 'Wet ink', flow: 'steady', stroke: 'soft wet front',
+      desc: 'A soft, blooming front edge that dries crisp a beat behind the pen.',
+      speed: FLOWS.steady(0.9), lift: 200,
+      layers: [{ width: 64, lag: 0, filter: 'wet' }, { width: 64, lag: 220 }],
+      defs: (defs, id) => { const f = el('filter', { id: `${id}-wet`, ...filterBox }, defs); el('feGaussianBlur', { stdDeviation: 5 }, f) },
+    },
+    {
+      name: 'Dry brush', flow: 'direction + curvature', stroke: 'bristle texture',
+      desc: 'A dry brush leaves streaky, broken ink at the front; it fills in solid as it settles.',
+      speed: FLOWS.hand(1.15), lift: 200,
+      layers: [{ width: 64, lag: 0, filter: 'dry' }, { width: 64, lag: 320 }],
+      defs: (defs, id) => {
+        const f = el('filter', { id: `${id}-dry`, ...filterBox }, defs)
+        el('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.32 0.06', numOctaves: 2, seed: 4, result: 'n' }, f)
+        el('feColorMatrix', { in: 'n', type: 'matrix', values: '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 3.2 -1.1', result: 'a' }, f)
+        el('feComposite', { in: 'SourceGraphic', in2: 'a', operator: 'in' }, f)
+      },
+    },
+    {
+      name: 'Pencil, then ink', flow: 'two passes', stroke: 'underdrawing',
+      desc: 'A fast pencil line sketches the whole route, then the ink follows it and the pencil fades.',
+      speed: FLOWS.steady(1.25), lift: 120, pencil: { speed: 2.6, lift: 60 },
+    },
+    {
+      name: 'Flow field', flow: 'steady', stroke: 'turbulent reveal',
+      desc: 'The ink edge is pushed around by a moving noise field that calms to stillness as the mark completes.',
+      speed: FLOWS.steady(1.0), lift: 160, field: 110,
+      defs: (defs, id) => {
+        const f = el('filter', { id: `${id}-field`, ...filterBox }, defs)
+        el('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.012', numOctaves: 2, seed: 7, result: 'n' }, f)
+        el('feDisplacementMap', { in: 'SourceGraphic', in2: 'n', scale: 0, xChannelSelector: 'R', yChannelSelector: 'G' }, f)
+      },
+    },
+    {
+      name: 'Comet trace', flow: 'steady', stroke: 'light leads ink',
+      desc: 'A warm point of light runs ahead along the route; the ink follows a moment later.',
+      speed: FLOWS.steady(1.05), lift: 160, comet: { length: 110, color: '#ff6a3d' },
+      layers: [{ width: 64, lag: 150 }],
+      defs: (defs, id) => {
+        const f = el('filter', { id: `${id}-glow`, ...filterBox }, defs)
+        el('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 5, result: 'b' }, f)
+        const m = el('feMerge', {}, f); el('feMergeNode', { in: 'b' }, m); el('feMergeNode', { in: 'SourceGraphic' }, m)
+      },
+    },
+    {
+      name: 'Two hands', flow: 'concurrent', stroke: 'nib leads',
+      desc: 'One hand writes the f and i while a second starts the l and then the o: same order per hand, half the time.',
+      speed: FLOWS.hand(1.05), nib: 17,
+      schedule: (durs) => [0, 420, 420 + durs[1] + 140],
+    },
+    {
+      name: 'Flick', flow: 'accelerating', stroke: 'solid ink',
+      desc: 'Each stroke starts slow and deliberate, then speeds up and flicks off, with a breath between letters.',
+      speed: FLOWS.flick(1.15), lift: 300,
+    },
+  ]
+
+  // ---- Build a card ----
+  const grid = document.getElementById('grid')
+  const cards = VARIATIONS.map((v, i) => build(v, i))
+
+  function build(v, i) {
+    const id = `v${i}`
+    const article = document.createElement('article')
+    const stage = document.createElement('div')
+    stage.className = 'stage'
+    const meta = document.createElement('div')
+    meta.className = 'meta'
+    meta.innerHTML = `<span class="num">${String(i + 1).padStart(2, '0')}</span><h2>${v.name}</h2><small>Flow: ${v.flow} · Stroke: ${v.stroke}</small><p>${v.desc}</p>`
+    article.append(stage, meta)
+    grid.append(article)
+
+    const svg = el('svg', { viewBox: '0 0 990 466', 'aria-label': 'Filo' }, stage)
+    const defs = el('defs', {}, svg)
+    const clip = el('clipPath', { id: `${id}-stem`, clipPathUnits: 'userSpaceOnUse' }, defs)
+    el('polygon', { points: STEM }, clip)
+    v.defs?.(defs, id)
+    const mask = el('mask', { id: `${id}-pen`, maskUnits: 'userSpaceOnUse', x: -60, y: -60, width: 1110, height: 586 }, defs)
+    const field = el('g', {}, mask)
+    const layers = (v.layers ?? [{ width: 64, lag: 0 }]).map((L) => {
+      const g = el('g', { fill: 'none', stroke: '#fff', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': L.width, filter: L.filter ? `url(#${id}-${L.filter})` : null }, field)
+      return { ...L, g, paths: PIECES.map((p) => el('path', { d: p.d }, g)) }
+    })
+    const under = el('g', {}, svg)
+    el('image', { href: LOGO, width: 990, height: 466, mask: `url(#${id}-pen)` }, svg)
+    const over = el('g', {}, svg)
+
+    // Timing.
+    const profs = STROKES.map((s) => profile(s, v.speed))
+    let inkStart = 0
+    let pencil
+    if (v.pencil) {
+      const pp = STROKES.map((s) => profile(s, FLOWS.steady(v.pencil.speed)))
+      const starts = sequential(v.pencil.lift)(pp.map((p) => p.dur))
+      const g = el('g', { fill: 'none', stroke: '#9a958f', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, under)
+      pencil = { profs: pp, starts, g, paths: PIECES.map((p) => el('path', { d: p.d }, g)) }
+      inkStart = starts[2] + pp[2].dur + 180
+    }
+    const starts = (v.schedule ?? sequential(v.lift ?? 160))(profs.map((p) => p.dur)).map((t) => t + inkStart)
+    const maxLag = Math.max(...layers.map((l) => l.lag))
+    const end = Math.max(...starts.map((s, k) => s + profs[k].dur)) + maxLag
+    const total = end + (v.pencil ? 450 : 0)
+
+    // Overlays.
+    // Nibs sit inside the stroke (smaller than its half width, so at the f's crossing they stay in
+    // the stem) and are cut to the logo's own shape, so they never round off its flat cut ends.
+    let nibs = null
+    if (v.nib) {
+      const shape = el('mask', { id: `${id}-shape`, maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: 990, height: 466, style: 'mask-type: alpha' }, defs)
+      el('image', { href: LOGO, width: 990, height: 466 }, shape)
+      const g = el('g', { mask: `url(#${id}-shape)` }, over)
+      nibs = STROKES.map(() => el('circle', { r: 0, fill: '#000' }, g))
+    }
+    let comets = null
+    if (v.comet) {
+      const g = el('g', { fill: 'none', stroke: v.comet.color, 'stroke-width': 12, 'stroke-linecap': 'round', filter: `url(#${id}-glow)` }, over)
+      comets = PIECES.map((p) => el('path', { d: p.d }, g))
+    }
+    const fieldMap = v.field ? svg.querySelector(`#${id}-field feDisplacementMap`) : null
+    const fieldNoise = v.field ? svg.querySelector(`#${id}-field feTurbulence`) : null
+
+    const dash = (path, len, drawn) => {
+      path.style.strokeDasharray = `${len} ${len + 10}`
+      path.style.strokeDashoffset = `${len - Math.min(len, Math.max(0, drawn))}`
+      path.style.visibility = drawn > 0 ? 'visible' : 'hidden'
+    }
+
+    function render(t) {
+      const done = t >= total
+      if (fieldMap) {
+        if (done) field.removeAttribute('filter')
+        else {
+          field.setAttribute('filter', `url(#${id}-field)`)
+          const p = Math.min(1, t / end)
+          fieldMap.setAttribute('scale', (v.field * (1 - p) ** 1.6).toFixed(2))
+          fieldNoise.setAttribute('baseFrequency', (0.012 + 0.004 * Math.sin(t / 380)).toFixed(4))
+        }
+      }
+      for (const L of layers) {
+        STROKES.forEach((s, k) => {
+          const drawn = done ? s.len : profs[k].at(t - starts[k] - L.lag)
+          for (const p of s.pieces) {
+            const path = L.paths[p.idx]
+            dash(path, p.len, drawn - p.start)
+            if (p.clip) {
+              const bar = s.pieces.find((q) => q.bar)
+              if (drawn > bar.start) path.removeAttribute('clip-path')
+              else path.setAttribute('clip-path', `url(#${id}-stem)`)
+            }
+          }
+        })
+      }
+      if (done) {
+        // Finished frame is the plain logo: no dashes, filters or overlays left over.
+        for (const L of layers) { L.g.removeAttribute('filter'); for (const p of L.paths) p.removeAttribute('style') }
+      } else for (const L of layers) if (L.filter) L.g.setAttribute('filter', `url(#${id}-${L.filter})`)
+
+      if (nibs) STROKES.forEach((s, k) => {
+        const local = t - starts[k]
+        const grow = Math.min(1, Math.max(0, local / 120)) * Math.min(1, Math.max(0, (profs[k].dur + 140 - local) / 140))
+        if (done || grow <= 0) return nibs[k].setAttribute('r', 0)
+        const pt = pointAt(s, profs[k].at(local))
+        nibs[k].setAttribute('cx', pt.x); nibs[k].setAttribute('cy', pt.y)
+        nibs[k].setAttribute('r', (v.nib * grow).toFixed(2))
+      })
+      if (comets) STROKES.forEach((s, k) => {
+        const local = t - starts[k]
+        const head = profs[k].at(local)
+        const tail = head - v.comet.length
+        const fade = Math.min(1, Math.max(0, (profs[k].dur + 260 - local) / 260))
+        for (const p of s.pieces) {
+          const path = comets[p.idx]
+          const a = Math.max(0, tail - p.start), b = Math.min(p.len, head - p.start)
+          if (done || local <= 0 || b <= a || fade <= 0) { path.style.visibility = 'hidden'; continue }
+          path.style.visibility = 'visible'
+          path.style.opacity = fade
+          path.style.strokeDasharray = `${b - a} ${p.len * 2 + 10}`
+          path.style.strokeDashoffset = `${-a}`
+        }
+      })
+      if (pencil) {
+        STROKES.forEach((s, k) => {
+          const drawn = pencil.profs[k].at(t - pencil.starts[k])
+          for (const p of s.pieces) dash(pencil.paths[p.idx], p.len, drawn - p.start)
+        })
+        pencil.g.style.opacity = done ? 0 : Math.min(1, Math.max(0, 1 - (t - end) / 400))
+      }
+      return done
+    }
+
+    const card = { render, total, t0: 0, running: false }
+    article.addEventListener('click', () => play(card))
+    return card
+  }
+
+  // ---- Playback ----
+  const speedInput = document.getElementById('speed')
+  const loop = document.getElementById('loop')
+  let raf = 0
+  function tick(now) {
+    const speed = parseFloat(speedInput.value)
+    let any = false
+    for (const c of cards) {
+      if (!c.running) continue
+      const done = c.render((now - c.t0) * speed)
+      if (done) {
+        c.running = false
+        if (loop.checked) setTimeout(() => play(c), 1400)
+      } else any = true
+    }
+    raf = any ? requestAnimationFrame(tick) : 0
+  }
+  function play(card) {
+    card.t0 = performance.now()
+    card.running = true
+    card.render(0)
+    if (!raf) raf = requestAnimationFrame(tick)
+  }
+  document.getElementById('all').addEventListener('click', () => cards.forEach(play))
+  speedInput.addEventListener('input', () => (document.getElementById('speedOut').textContent = `${parseFloat(speedInput.value).toFixed(2)}×`))
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) cards.forEach((c) => c.render(Infinity))
+  else cards.forEach(play)
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@
  * Pointer push-tilt lives on the inner surface, starts after entry settles, and
  * resets before return completes; it never competes with the outer zoom transform.
  */
-import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, type Transition } from 'motion/react'
 import { PAGE_ASPECT, pageLabel, pageUrl, pageSurface } from './bookPages'
@@ -85,16 +85,21 @@ export function SpreadZoom({ pages, source, originRect, gridRadius, closing, loo
   // One interpolated transform keeps translation and scale on the same timeline.
   // Independent springs reach their rest thresholds at different times.
   const pose = (p: typeof origin) => `translate(${p.x}px, ${p.y}px) scale(${p.scaleX}, ${p.scaleY})`
-  const rest = { transform: pose({ x: 0, y: 0, scaleX: 1, scaleY: 1 }), borderRadius: look.radius }
+  // Phones show the spread ~3× smaller than desktop, so the same corner reads far rounder: halve it.
+  const radius = vw <= 640 ? look.radius / 2 : look.radius
+  const rest = { transform: pose({ x: 0, y: 0, scaleX: 1, scaleY: 1 }), borderRadius: radius }
 
   // Lock only while viewing. The return frame captures the viewport's document
   // position before this lock is released, so no scroll listeners or chasing springs
   // are needed to keep the closing image and its destination in the same coordinates.
+  // The locked position follows the arrows (below), so the grid behind the blur is
+  // already at the current spread when the view closes.
+  const lockedY = useRef(0)
   useLayoutEffect(() => {
     if (closing) return
     const root = document.documentElement
     const body = document.body
-    const lockedY = window.scrollY
+    lockedY.current = window.scrollY
     const previous = {
       rootOverflow: root.style.overflow,
       rootOverscroll: root.style.overscrollBehavior,
@@ -104,7 +109,7 @@ export function SpreadZoom({ pages, source, originRect, gridRadius, closing, loo
     }
     const preventScroll = (event: Event) => event.preventDefault()
     const holdScrollPosition = () => {
-      if (window.scrollY !== lockedY) window.scrollTo({ top: lockedY, behavior: 'instant' })
+      if (window.scrollY !== lockedY.current) window.scrollTo({ top: lockedY.current, behavior: 'instant' })
     }
     root.dataset.spreadZoomOpen = 'true'
     root.style.overflow = 'hidden'
@@ -125,9 +130,20 @@ export function SpreadZoom({ pages, source, originRect, gridRadius, closing, loo
       root.style.scrollSnapType = previous.rootSnap
       body.style.overflow = previous.bodyOverflow
       body.style.overscrollBehavior = previous.bodyOverscroll
-      window.scrollTo({ top: lockedY, behavior: 'instant' })
+      window.scrollTo({ top: lockedY.current, behavior: 'instant' })
     }
   }, [closing])
+
+  // Arrow navigation: centre the new spread's card in the grid behind the blur.
+  const firstSource = useRef(source)
+  useLayoutEffect(() => {
+    if (closing || source === firstSource.current) return
+    const rect = source.getBoundingClientRect()
+    const max = document.documentElement.scrollHeight - window.innerHeight
+    const top = Math.round(Math.min(max, Math.max(0, window.scrollY + rect.top - (window.innerHeight - rect.height) / 2)))
+    lockedY.current = top
+    window.scrollTo({ top, behavior: 'instant' })
+  }, [source, closing])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -156,6 +172,7 @@ export function SpreadZoom({ pages, source, originRect, gridRadius, closing, loo
           width: vw, height: vh, right: 'auto', bottom: 'auto', pointerEvents: 'none',
         } : {}),
         '--sz-nav-inset': `${Math.max(24, target.x - 68)}px`,
+        '--sz-below': `${target.y + target.height + 20}px`,
         '--sz-tilt-angle': `${look.tilt.enabled ? look.tilt.angle : 0}deg`,
         '--sz-tilt-scale': 1 - (look.tilt.enabled ? look.tilt.push : 0),
         '--sz-perspective': `${look.tilt.perspective}px`,

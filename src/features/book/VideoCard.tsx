@@ -18,9 +18,11 @@ export const videoDials = {
     arrowScale: [1, 0.25, 2.5, 0.05] as Tuple,
     arrowX: [0, -40, 40, 1] as Tuple,
     arrowY: [0, -40, 40, 1] as Tuple,
+    /** none: the pill simply appears and the idle starts at once. fade … unfold: quiet, small-travel
+     *  entrances that land on scale 1 so the pulse takes over without a jump (book.css). The rest are loud. */
     entrance: {
       type: 'select' as const,
-      options: ['burst', 'slingshot', 'stamp', 'whip', 'cannonball', 'uppercut', 'rubberband', 'flip', 'ricochet', 'spin-in'],
+      options: ['none', 'fade', 'rise', 'bloom', 'beat', 'focus', 'unfold', 'burst', 'slingshot', 'stamp', 'whip', 'cannonball', 'uppercut', 'rubberband', 'flip', 'ricochet', 'spin-in'],
       default: 'burst',
     },
     duration: [480, 150, 1000, 10] as Tuple,
@@ -38,6 +40,10 @@ export const videoDials = {
       holdMs: [0, 0, 2000, 10] as Tuple,
       shrinkMs: [140, 50, 3000, 10] as Tuple,
       pauseMs: [800, 0, 5000, 50] as Tuple,
+      /** A soft ring that swells and fades with each beat, on the pulse's own timing. */
+      halo: false,
+      haloSize: [6, 2, 16, 0.5] as Tuple,
+      haloOpacity: [0.22, 0.05, 0.6, 0.01] as Tuple,
     },
   },
   tilt: {
@@ -160,10 +166,14 @@ export function VideoCard({ active, look }: { active: boolean; look: ResolvedVal
     '--arrow-x': `${look.label.arrowX}px`,
     '--arrow-y': `${look.label.arrowY}px`,
     '--pill-ms': `${look.label.duration}ms`,
+    // With no entrance the idle starts as soon as the pill shows.
+    '--pill-idle-delay': look.label.entrance === 'none' ? '0ms' : `${look.label.duration}ms`,
     '--pill-idle-ms': `${look.label.idleDuration}ms`,
     '--pill-idle-strength': look.label.idleIntensity,
     '--pill-pulse-ms': `${pulseTotal / pulse.speed}ms`,
     '--pill-pulse-ease': pulseEase,
+    '--pill-halo-size': `${pulse.haloSize}px`,
+    '--pill-halo-opacity': pulse.haloOpacity,
     '--tilt-angle': `${look.tilt.enabled ? look.tilt.angle : 0}deg`,
     '--tilt-scale': 1 - (look.tilt.enabled ? look.tilt.push : 0),
     '--tilt-perspective': `${look.tilt.perspective}px`,
@@ -174,7 +184,7 @@ export function VideoCard({ active, look }: { active: boolean; look: ResolvedVal
 
   return (
     <div ref={pane} className="viewer__video" data-pill={look.pill} data-entrance={look.label.entrance}
-      data-idle={look.label.idle} style={style} aria-hidden={!active} inert={!active}>
+      data-idle={look.label.idle} data-halo={look.label.idle === 'pulse' && pulse.halo ? '' : undefined} style={style} aria-hidden={!active} inert={!active}>
       <a ref={link} className="viewer__video-frame" href="https://www.youtube.com/watch?v=Rv-e5doUc0E"
         target="_blank" rel="noopener noreferrer" aria-label="Watch the Harvard & MIT portfolio walkthrough on YouTube (opens in a new tab)"
         onPointerEnter={(event) => {
@@ -207,6 +217,12 @@ export function VideoCard({ active, look }: { active: boolean; look: ResolvedVal
           </span>
         </span>
       </span>
+      {/* Phones have no hover: the same pill sits under the video as its own link, inviting the tap. */}
+      <a className="viewer__video-under viewer__video-pill" href="https://www.youtube.com/watch?v=Rv-e5doUc0E"
+        target="_blank" rel="noopener noreferrer" aria-label="Watch the walkthrough on YouTube, 200k+ views (opens in a new tab)">
+        <span className="viewer__video-label-text">{look.hoverLabel}</span>
+        <ArrowUpRightIcon className="viewer__video-arrow" />
+      </a>
     </div>
   )
 }

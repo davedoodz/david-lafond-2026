@@ -205,7 +205,7 @@
 </div>
 
 <script type="module">
-import { $$, k, W, H, cursor, reduce, playRate, sleep, at, move, click, chapter, boot } from './filo-app-flow/player.js'
+import { $$, k, W, H, cursor, reduce, playRate, sleep, at, move, reach, here, click, chapter, boot } from './filo-app-flow/player.js'
 const phone = k('phone'), display = k('display'), island = k('island'), clip = k('clip')
 const record = k('record'), scroll = k('scroll'), tabs = k('tabs'), file = k('file'), inf = k('inf')
 const PHONE_SCALE = .9
@@ -315,11 +315,15 @@ const glide = (t, to, ms) => { const from = scroll.scrollTop; return tween(t, ms
 async function drag(t, x, y, dy, ms = 850) {
   const to = Math.max(0, Math.min(scroll.scrollHeight - scroll.clientHeight, scroll.scrollTop + dy))
   const real = (to - scroll.scrollTop) * PHONE_SCALE
-  await move(t, [x, y]); cursor.classList.add('is-down'); await sleep(60, t)
+  await go(t, [x, y]); cursor.classList.add('is-down'); await sleep(30, t)
   await Promise.all([move(t, [x, y - real], ms), glide(t, to, ms)])
-  cursor.classList.remove('is-down'); await sleep(40, t)
+  cursor.classList.remove('is-down')
 }
-async function tap(t, el, fx = .5, fy = .5) { await move(t, at(el, fx, fy)); await sleep(40, t); await click(t, el) }
+/** Moves only if the cursor isn't there already (reach usually brought it). */
+async function go(t, p) { const [x, y] = here(); if (Math.hypot(p[0] - x, p[1] - y) > 1) await move(t, p) }
+async function tap(t, el, fx = .5, fy = .5) { await go(t, at(el, fx, fy)); await click(t, el) }
+/* Flow: every hold drifts the cursor toward what it touches next (reach), so it arrives as the hold
+   ends and acts straight away, never parking before or after a tap. */
 
 /* ── Scene state ── */
 function resetPhone() {
@@ -370,7 +374,7 @@ async function detect(t) {
   chapter(2)
   island.classList.remove('is-compact')
   island.classList.add('is-expanded')
-  await sleep(1300, t)
+  await reach(t, () => at(k('open')), 1300)
   await tap(t, k('open'))
   island.classList.remove('is-expanded', 'is-reading')
   display.classList.add('is-app')
@@ -382,21 +386,20 @@ async function detect(t) {
 /* ── 04 · The record: overview, documents, photos, samples. ── */
 async function tour(t) {
   chapter(3)
-  await sleep(1500, t)
+  await reach(t, () => at(k('t-1')), 1500)
   await tap(t, k('t-1'))
   pickTab(1)
-  await sleep(1900, t)
+  await reach(t, () => at(k('t-2')), 1900)
   await tap(t, k('t-2'))
   pickTab(2)
-  await glide(t, TITLE_TOP(), 650)
-  await sleep(700, t)
   const [x, y] = at(display, .62, .82)
+  await Promise.all([glide(t, TITLE_TOP(), 650), reach(t, [x, y], 1350)])
   await drag(t, x, y, 420)
-  await sleep(1100, t)
+  await reach(t, () => at(k('t-3')), 1100)
   await tap(t, k('t-3'))
   pickTab(3)
   await glide(t, TITLE_TOP(), 500)
-  await sleep(1300, t)
+  await reach(t, () => at(k('bc001'), .4, .5), 1300)
 }
 
 /* ── 05 · BC-001's Technical File; then the phone leaves and the swatches gather back up. ── */
@@ -404,8 +407,7 @@ async function technicalFile(t) {
   chapter(4)
   await tap(t, k('bc001'), .4, .5)
   clip.classList.add('is-pushed'); file.classList.add('is-in')
-  await sleep(2900, t)
-  await move(t, [W * .58, H + 90], 750)
+  await reach(t, [W * .58, H + 90], 2900)
   await sleep(250, t)
   tellPhone(false)
   await tween(t, 1000, p => posePhone(OFF * p), inCubic)

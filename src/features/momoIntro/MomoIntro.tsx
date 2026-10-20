@@ -52,6 +52,8 @@ const CONFIG = {
     _collapsed: false,
   },
   speed: [1, 0.1, 1.5, 0.05] as Tuple,
+  /** Seconds the empty stage holds before the phone slides up (on load, from the work grid, and on replay). */
+  startDelay: [1, 0, 3, 0.1] as Tuple,
   /** Tap the nudge → Momo opens: the app window grows out of the notification. Film seconds; live. */
   appLaunch: {
     duration: [0.7, 0.2, 2.5, 0.05] as Tuple,
@@ -101,6 +103,13 @@ const CONFIG = {
     lockScreenY: [24, -120, 120, 1] as Tuple,
     signalCheckY: [0, -120, 120, 1] as Tuple,
     voiceReflectionY: [0, -120, 120, 1] as Tuple,
+    _collapsed: false,
+  },
+  /** Phones (≤ 640px wide): the camera holds the whole phone, centred, as large as these margins
+   *  allow, instead of the desktop lean-ins (which crop it off-centre on a tall screen). */
+  mobileFrame: {
+    sideMargin: [24, 0, 80, 1] as Tuple, // px, left and right of the phone
+    topBottomMargin: [80, 0, 200, 1] as Tuple, // px, clears the nav above and Skip intro below
     _collapsed: false,
   },
   hero: {
@@ -293,7 +302,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const root = document.documentElement
     let vw = 0, vh = 0, dpr = 1, filmDpr = 1, stageH = 1, landingY = 1, slotY = 0, slotX = 0
     let ready = false, disposed = false, playing = false, paused = false
-    let time = START, rt = 0, raf = 0, last = 0, handoffY: number | null = null
+    let time = START, rt = 0, raf = 0, last = 0, handoffY: number | null = null, holdLeft = 0
     let interrupted = false, enteredStage = false, handedOff = false, handoffCancelled = false, handoffSettled = false
     // `sequenceProgress` is 0–1 through the current sequence, so a speed dial can change mid-scene
     // without the film jumping.
@@ -441,6 +450,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const start = () => {
       if (!ready) return
       playing = true; paused = false; time = START; handoffY = null; interrupted = false; handedOff = false; handoffCancelled = false; handoffSettled = false
+      holdLeft = tRef.current.startDelay
       ceil = window.scrollY
       sequenceIndex = 0; sequenceProgress = 0
       for (const video of videos) video.currentTime = 0
@@ -472,7 +482,10 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
         completeHandoff()
       }
       if (playing) {
-        sequenceProgress += dt / sequenceSeconds(sequenceIndex)
+        // The opening hold runs on real seconds (not `speed`); the phone stays below the frame until it ends.
+        const hold = Math.min(holdLeft, realDt * (paused ? 0 : 1))
+        holdLeft -= hold
+        sequenceProgress += holdLeft > 0 ? 0 : (dt - hold * s.speed) / sequenceSeconds(sequenceIndex)
         while (sequenceIndex < SEQUENCES.length && sequenceProgress >= 1) {
           const spill = (sequenceProgress - 1) * sequenceSeconds(sequenceIndex)
           sequenceIndex++
@@ -520,7 +533,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
           y: (slotY - window.scrollY - vh / 2) / scale + 270,
           width: Math.min(s.hero.width, vw * .72) / scale,
           env: s.hero.energy,
-        }, s.phonePosition, momoFrames, topCtx, [scale * dpr, ox * dpr, oy * dpr])
+        }, { ...s.phonePosition, fit: vw <= 640 ? { w: (vw - 2 * s.mobileFrame.sideMargin) / scale, h: (vh - 2 * s.mobileFrame.topBottomMargin) / scale } : undefined }, momoFrames, topCtx, [scale * dpr, ox * dpr, oy * dpr])
         // The page band carries on from the film band's phase, so the hand-off cross-fade lines up.
         rt = beam.rt
         topCanvas.style.opacity = String(filmAlpha)

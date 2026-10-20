@@ -157,7 +157,8 @@
 }
 
 /* Red marker note: hidden at rest; on hover the loop, note and arrow are drawn in order, like a pen.
-   Leaving fades it out first, then resets the strokes so the next hover draws again. */
+   Leaving fades it out first, then resets the strokes so the next hover draws again. Phones set
+   [data-marked] as soon as the paper has settled (ArxivPaper), which draws it the same way and keeps it. */
 @font-face {
   font-family: 'Permanent Marker';
   src: url('/fonts/PermanentMarker-Regular.woff2') format('woff2');
@@ -188,7 +189,7 @@
     stroke-dashoffset 0s 180ms,
     opacity 0s 180ms;
 }
-.arxiv-paper:is(:hover, :focus-visible) .arxiv-paper__mark {
+.arxiv-paper:is(:hover, :focus-visible, [data-marked]) .arxiv-paper__mark {
   stroke-dashoffset: 0;
   opacity: 0.92;
   transition:
@@ -217,10 +218,10 @@
   clip-path: inset(0 100% 0 0);
   transition: clip-path 0s 180ms;
 }
-.arxiv-paper:is(:hover, :focus-visible) .arxiv-paper__marks {
+.arxiv-paper:is(:hover, :focus-visible, [data-marked]) .arxiv-paper__marks {
   opacity: 1;
 }
-.arxiv-paper:is(:hover, :focus-visible) .arxiv-paper__note {
+.arxiv-paper:is(:hover, :focus-visible, [data-marked]) .arxiv-paper__note {
   clip-path: inset(0 -10% 0 -10%);
   transition: clip-path 380ms steps(9, end) 820ms;
 }
@@ -252,7 +253,7 @@
     rotate: none;
     animation: none;
   }
-  .arxiv-paper:is(:hover, :focus-visible) :is(.arxiv-paper__mark, .arxiv-paper__note) {
+  .arxiv-paper:is(:hover, :focus-visible, [data-marked]) :is(.arxiv-paper__mark, .arxiv-paper__note) {
     transition: none;
   }
 }

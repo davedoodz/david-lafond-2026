@@ -47,12 +47,13 @@ const NAV_CONFIG = {
     y: [0, -12, 12, 0.5] as Tuple,
     _collapsed: false,
   },
-  /** Phones only: how the links and Davebot stand off busy content under them (Nav.css, data-contrast). */
+  /** Phones only: how the links and Davebot stand off busy content under them (Nav.css, data-contrast).
+   *  Off by default: phones show no blur or fade at the top or bottom; the links tuck away on scroll instead. */
   mobileContrast: {
-    preset: { type: 'select' as const, options: ['Off', 'Edge blur', 'Soft fade', 'Fade scrim', 'Pill', 'Text halo', 'Strong text'], default: 'Edge blur' },
+    preset: { type: 'select' as const, options: ['Off', 'Edge blur', 'Soft fade', 'Fade scrim', 'Pill', 'Text halo', 'Strong text'], default: 'Off' },
     /**
      * Edge blur: no colour, only a blur strongest at the screen edge that thins out. Drawn at the top
-     * under the nav, and at the bottom over the About story (AboutPage.css .about__fade).
+     * under the nav.
      * length: band height (px). strength: share of it held at full blur before thinning (0–1).
      * opacity: how much of the blur shows (0–1). blur: the blur at the edge (px).
      * bottom: the same blur pinned to the bottom of the screen on every page (Nav.css). The dither
@@ -152,6 +153,11 @@ export function Nav({ route }: Props) {
   // page behind any project or playground card, for the Soft fade's colour (mobileContrast › fadeTone).
   const [under, setUnder] = useState<'light' | 'dark'>()
   const [section, setSection] = useState<'light' | 'dark'>()
+  // Davebot's eyes go the page's black (ghost.css) while the page right under him is black: on Work
+  // and About that is the Work top, the About playground on, and the contact/footer (project and
+  // playground cards don't count); Harvard & MIT is black throughout; other pages keep paper eyes.
+  const [inkEyes, setInkEyes] = useState(false)
+
   // The fade's tone animates only once the nav has its first tone; on mount (each page has its own nav)
   // it takes the page's tone at once, so a page transition's new snapshot shows it from the first frame.
   const [fadeLive, setFadeLive] = useState(false)
@@ -181,6 +187,19 @@ export function Nav({ route }: Props) {
       const sectionLight = isLightUnder(nav, x, y, '.works__card, .pg-card')
       if (sectionLight !== null) setSection(sectionLight ? 'light' : 'dark')
       else setSection((current) => current ?? declared())
+      // Each link (Back too) takes the tone right under itself, so a sheet's curved edge crossing the
+      // row flips each word as the edge passes it (Nav.css, data-link-tone).
+      for (const link of nav.querySelectorAll<HTMLElement>('.nav__links > a, .nav__links-back')) {
+        const r = link.getBoundingClientRect()
+        const tone = isLightUnder(nav, r.left + r.width / 2, r.top + r.height / 2)
+        if (tone !== null) link.dataset.tone = tone ? 'light' : 'dark'
+      }
+      // The page under Davebot himself, cards passed through. Null (a View Transition) keeps the last answer.
+      const ghost = nav.querySelector('.nav__ghost')?.getBoundingClientRect()
+      const ghostLight = ghost ? isLightUnder(nav, ghost.left + ghost.width / 2, ghost.top + ghost.height / 2, '.works__card, .pg-card') : null
+      if (route === 'harvard-mit') setInkEyes(true)
+      else if (route !== 'work' && route !== 'about') setInkEyes(false)
+      else if (ghostLight !== null) setInkEyes(!ghostLight)
       // Edge blur: a sheet's curved edge inside a blur band is blurred toward the screen edge but sharp
       // at its tip, which reads as a flat crop. Such a band clears while an arc is in it (Nav.css): the
       // page's top band, and each sheet's own bottom band, which otherwise rests on the sheet's
@@ -198,8 +217,16 @@ export function Nav({ route }: Props) {
       document.documentElement.toggleAttribute('data-edge-clear', band > 0 && topArc)
     }
     const queue = () => (frame ||= requestAnimationFrame(sample))
+    // Sheets redraw their curved edges in their own scroll frame, possibly after this one samples,
+    // so a scroll also re-checks on the frame after: the eyes and links flip with the edge, not a beat late.
+    let settle = 0
+    const onScroll = () => {
+      queue()
+      cancelAnimationFrame(settle)
+      settle = requestAnimationFrame(() => (settle = requestAnimationFrame(sample)))
+    }
     sample()
-    window.addEventListener('scroll', queue, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', queue)
     // Sections also move without scrolling (reveals, snapping), so re-check a few times a second.
     const timer = window.setInterval(queue, 300)
@@ -216,7 +243,8 @@ export function Nav({ route }: Props) {
       window.clearInterval(timer)
       transitionObserver.disconnect()
       cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', queue)
+      cancelAnimationFrame(settle)
+      window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', queue)
     }
   }, [pin, route])
@@ -226,6 +254,48 @@ export function Nav({ route }: Props) {
   const { preset, fadeTone, fadeLinks } = t.mobileContrast
   const fadeSurface = fadeTone === 'Light' ? 'light' : fadeTone === 'Dark' ? 'dark' : section
   const surface = phone && preset === 'Soft fade' && fadeLinks === 'Match fade' ? fadeSurface : under
+
+  // Phones: the links tuck away while you scroll down and come back as soon as you scroll up (or
+  // reach the top); Davebot stays. Direction is judged over a few pixels of travel so jitter and
+  // iOS overscroll at either end don't flicker them (Nav.css, data-tucked). Only your own scrolling
+  // (a drag, wheel or scroll key in the last 1.5s, which covers a flick's momentum) tucks them: the
+  // Momo intro's glide or a jump to a section leaves them shown, even when a tap (Skip) started it.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav || !phone) return
+    const max = () => document.documentElement.scrollHeight - window.innerHeight
+    let last = Math.min(Math.max(window.scrollY, 0), max())
+    let travel = 0
+    let input = -Infinity
+    const onInput = (event: Event) => {
+      // Enter or Space on a button or link presses it; it doesn't scroll the page.
+      if (event.type === 'keydown' && (event.target as Element | null)?.closest?.('button, a, input, textarea, select')) return
+      input = performance.now()
+    }
+    const onScroll = () => {
+      const y = Math.min(Math.max(window.scrollY, 0), max())
+      const dy = y - last
+      last = y
+      if (y < 40) {
+        travel = 0
+        nav.removeAttribute('data-tucked')
+        return
+      }
+      if (!dy) return
+      travel = Math.sign(dy) === Math.sign(travel) ? travel + dy : dy
+      if (travel > 12 && performance.now() - input < 1500) nav.setAttribute('data-tucked', '')
+      else if (travel < -12) nav.removeAttribute('data-tucked')
+    }
+    // No touchstart: a tap (Skip, Replay) isn't a scroll, and the glide it starts shouldn't tuck.
+    const inputs = ['touchmove', 'wheel', 'keydown'] as const
+    for (const type of inputs) window.addEventListener(type, onInput, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      for (const type of inputs) window.removeEventListener(type, onInput)
+      window.removeEventListener('scroll', onScroll)
+      nav.removeAttribute('data-tucked')
+    }
+  }, [phone])
 
   const style = {
     '--nav-tracking-d': `${t.letterSpacing.desktop}px`,
@@ -250,11 +320,12 @@ export function Nav({ route }: Props) {
   } as CSSProperties
 
   // Edge blur: published on <html> so the About story's bottom band and the optional screen-bottom
-  // blur draw the same blur (AboutPage.css, Nav.css), and the footer clears it (Footer.css).
+  // blur draw the same blur (AboutPage.css, Nav.css), and the footer clears it (Footer.css). Case
+  // studies skip it: their tops and bottoms stay sharp.
   const edge = t.mobileContrast.edgeBlur
   useEffect(() => {
     const root = document.documentElement
-    if (preset !== 'Edge blur') return
+    if (preset !== 'Edge blur' || isProject) return
     root.dataset.edgeBlur = ''
     if (edge.bottom) root.dataset.edgeBlurBottom = ''
     root.style.setProperty('--edge-blur-length', `${edge.length}px`)
@@ -266,12 +337,12 @@ export function Nav({ route }: Props) {
       delete root.dataset.edgeBlurBottom
       for (const p of ['--edge-blur-length', '--edge-blur-solid', '--edge-blur-opacity', '--edge-blur']) root.style.removeProperty(p)
     }
-  }, [preset, edge.length, edge.strength, edge.opacity, edge.blur, edge.bottom])
+  }, [preset, isProject, edge.length, edge.strength, edge.opacity, edge.blur, edge.bottom])
 
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

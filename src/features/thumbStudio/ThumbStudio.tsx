@@ -90,7 +90,7 @@ export function ThumbStudio() {
     const tick = (now: number) => {
       const cur = valuesRef.current
       const live = cur.preview.playing || recording.current
-      const t = live ? (((now - clock.current) / (cur.motion.loopSec * 1000)) % 1 + 1) % 1 : cur.preview.scrub
+      const t = live ? (((now - clock.current) / ((cur.motion.loopSec * 1000) / cur.motion.speed)) % 1 + 1) % 1 : cur.preview.scrub
       for (const format of ['desktop', 'mobile'] as Format[]) {
         const canvas = canvases.current[format]
         const ctx = canvas?.getContext('2d')
@@ -123,7 +123,7 @@ export function ThumbStudio() {
       return
     }
     const cur = valuesRef.current
-    const seconds = cur.record.loops * cur.motion.loopSec
+    const seconds = (cur.record.loops * cur.motion.loopSec) / cur.motion.speed
     const stream = canvas.captureStream(cur.record.fps)
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: cur.record.mbps * 1_000_000 })
     const chunks: Blob[] = []

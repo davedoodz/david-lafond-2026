@@ -3,6 +3,7 @@ import 'dialkit/styles.css'
 import { DialRoot } from 'dialkit'
 import { useEffect } from 'react'
 import { rememberPanelState } from './panelMemory'
+import { rememberPanelSize } from './panelSize'
 
 /** While the panel is open, `<html data-dialkit-open>` pauses page interactions such as ink. */
 const onOpenChange = (open: boolean) => {
@@ -12,5 +13,7 @@ const onOpenChange = (open: boolean) => {
 export default function DevRoot() {
   // Open folders and scroll position survive closing the panel and reloading the page.
   useEffect(rememberPanelState, [])
+  // Drag the open panel's top-left corner to resize it; the size is remembered.
+  useEffect(rememberPanelSize, [])
   return <DialRoot position="bottom-right" theme="dark" defaultOpen={false} onOpenChange={onOpenChange} />
 }

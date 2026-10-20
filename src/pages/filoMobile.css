@@ -1,0 +1,279 @@
+/* Filo on phones (≤ 640px): one centred column read top to bottom (filoMobile.ts dials), built the
+   same way as Momo's (momoMobile.css), so both case studies share one rhythm:
+   - Every section sizes to its content and gets the same space above and below, so the gap between
+     any two sections is one value (--fm-section-gap); heading → image is --fm-media-gap.
+   - Nothing crosses the side margins (--m-side, the Back button's inset, caseMobile.css), except the
+     interview quotes (a marquee) and step 4's swatch deck, which run to the screen's edges.
+   - Desktop nudges (x / y dials, side-by-side placement) are dropped, so every image sits on the
+     page's centre line and the eye only moves down.
+   `main.case[data-work='filo']` outranks the page's own phone rules without !important. */
+@media (max-width: 640px) {
+  main.case[data-work='filo'] {
+    --fm-content-w: calc(100vw - 2 * var(--m-side));
+  }
+
+  /* --- Section rhythm: half the gap above and below each section; centred column. */
+  main.case[data-work='filo'] section.case__section,
+  main.case[data-work='filo'] section.case__section[data-layout] {
+    min-height: 0;
+    height: auto;
+    justify-content: flex-start;
+    align-content: start;
+    align-items: center;
+    text-align: center;
+    gap: var(--fm-media-gap);
+    padding: calc(var(--fm-section-gap) / 2) var(--m-side);
+  }
+  /* The hero keeps its top: the Filo mark sits level with the nav (caseMobile.css). */
+  main.case[data-work='filo'] section.case__section--hero[data-layout] {
+    padding-top: 29px;
+  }
+
+  /* --- Text: the same sizes as Momo (caseMobile.css), the same tighter body spacing, balanced lines
+     so no heading or paragraph ends on one stray word. The story chapters drop their green-grey
+     tint for the page's greys, so every eyebrow, heading and paragraph on the page matches. */
+  main.case[data-work='filo'] section.case__section :is(.case__body, .fs-copy > p:not(.eyebrow)) {
+    line-height: var(--fm-body-lh);
+    text-wrap: balance;
+  }
+  main.case[data-work='filo'] section.case__section :is(.case__title, .fs-copy > h2) {
+    text-wrap: balance;
+  }
+  main.case[data-work='filo'] .filo-story :is(.fs-copy, .fs-copy > h2) {
+    color: var(--ink-900);
+  }
+  main.case[data-work='filo'] .filo-story .fs-copy > .eyebrow {
+    color: rgb(166 160 156);
+  }
+  main.case[data-work='filo'] .filo-story .fs-copy > p:not(.eyebrow) {
+    color: rgb(111 107 104);
+  }
+  /* A title written on several lines (one block per line, filoStoryArt.tsx) opens a gap between its
+     sentences. */
+  main.case[data-work='filo'] .fs-copy h2.fs-lines > .fs-line + .fs-line {
+    margin-top: var(--fm-title-line-gap);
+  }
+  /* Primary research: a blank line's gap between its two written sentences (CaseStudyPage.tsx renders
+     each as its own block). */
+  main.case[data-work='filo'] [data-section='research'] .case__body-line + .case__body-line {
+    margin-top: var(--fm-body-line-gap);
+  }
+  /* Primary research and step 04 keep to the content column at the normal body size, balanced:
+     research's first sentence in two lines, and step 04 ignores its written line break (made for
+     desktop) so it reads in three. */
+  main.case[data-work='filo'] .fss-step[aria-labelledby$='step4'] .case__body {
+    white-space: normal;
+  }
+  main.case[data-work='filo'] .fss-step[aria-labelledby$='step4'] .case__body br {
+    display: none;
+  }
+
+  /* --- 1 Hero. Role, Origin, Program and Team in two even columns, each value centred under its
+     label (title → labels stays as on Momo). Partner logos at Momo's logo height, the gap between
+     them equal to it (as on Momo), and the same space above and below the row (--fm-logos-gap). */
+  main.case[data-work='filo'] .case__section--hero .case__meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+  main.case[data-work='filo'] .case__section--hero .case__meta-value {
+    text-wrap: balance;
+  }
+  main.case[data-work='filo'] .case__section--hero .case__logos {
+    /* The row is 8.75 logo heights wide (three logos + two gaps), so it never passes the margins. */
+    --logo-h: min(var(--fm-logo-h), var(--fm-content-w) / 8.75) !important;
+    flex-wrap: nowrap;
+    column-gap: var(--logo-h);
+    translate: none;
+    /* The meta row is drawn --hero-meta-y higher than its layout box (a hero dial), so measure from where it shows. */
+    margin-top: calc(var(--fm-logos-gap) + var(--hero-meta-y, 0px));
+  }
+  /* The Filo mark on the nav row, scaled about its centre so it stays level with Back and Davebot. */
+  main.case[data-work='filo'] .case__section--hero .case__hero-mark {
+    scale: calc(var(--mark-scale, 1) * var(--fm-mark-scale));
+  }
+  /* The tag photo is a 1024 × 1536 cut-out with clear space around the tag: 286px above it and 138px
+     below its shadow. The margins take that space back so the tag has the same gap above (to the
+     logos) and below (to "Market gap"): --fm-image-gap, in place of the section gap under the hero. */
+  main.case[data-work='filo'] .case__section--hero .case__devices {
+    width: var(--fm-tag-w);
+    max-width: 100%;
+    margin-top: calc(var(--fm-image-gap) - var(--fm-media-gap) - var(--fm-tag-w) * 286 / 1024);
+    /* − 6px: "Market gap" starts 6px into its chapter (caseMobile.css), so the gap reads to its letters. */
+    margin-bottom: calc(var(--fm-image-gap) - var(--fm-section-gap) - var(--fm-tag-w) * 138 / 1024 - 6px);
+  }
+  main.case[data-work='filo'] .filo-hero-tag {
+    width: 100%;
+    transform: none;
+  }
+
+  /* --- 2 Market gap · Proposal: two chapters, each image on the centre line (the desktop y nudges
+     would push the proposal's swatches into the next section's heading) with the same gap above and
+     below it (--fm-image-gap), measured to the drawn picture: the desk photo is 1352 × 948 with
+     27px clear above and 24px below; the phone on swatches 1127 × 1396 with 11px each way. The
+     "Proposal" eyebrow starts 6px into its chapter; "Primary market research" at its block's top. */
+  main.case[data-work='filo'] section.filo-story {
+    gap: var(--fm-section-gap);
+  }
+  main.case[data-work='filo'] .filo-story .fs-chapter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fm-media-gap);
+  }
+  main.case[data-work='filo'] .filo-story .fs-film {
+    translate: none;
+  }
+  main.case[data-work='filo'] .filo-story .fs-film--problem {
+    --w: min(var(--fm-desk-w), var(--fm-content-w));
+    width: var(--w);
+    margin: calc(var(--fm-image-gap) - var(--fm-media-gap) - var(--w) * 27 / 1352) 0
+      calc(var(--fm-image-gap) - var(--fm-section-gap) - var(--w) * 24 / 1352 - 6px);
+  }
+  main.case[data-work='filo'] .filo-story .fs-film--opportunity {
+    --fs-opp-w: min(var(--fm-proposal-w), var(--fm-content-w));
+    margin: calc(var(--fm-image-gap) - var(--fm-media-gap) - var(--fs-opp-w) * 11 / 1127) 0
+      calc(var(--fm-image-gap) - var(--fm-section-gap) - var(--fs-opp-w) * 11 / 1127);
+  }
+
+  /* --- 3 Primary research: interview video, quote cards, Miro board, each --fm-image-gap from the
+     next, and the interviews the same gap under the copy. */
+  main.case[data-work='filo'] .filo-research {
+    gap: var(--fm-image-gap);
+    max-width: none;
+    margin-top: calc(var(--fm-image-gap) - var(--fm-media-gap));
+  }
+  main.case[data-work='filo'] .filo-research__interviews {
+    width: min(var(--fm-interviews-w), var(--fm-content-w));
+  }
+  /* The quote cards take the hang tag's proportions (560 × 947, measured on the hero tag). The strip
+     is padded for the cards' shadow; taking that padding back out of the layout keeps the cards
+     themselves --fm-image-gap from the interviews and the Miro board. */
+  main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] {
+    width: min(var(--qa-card-w, 640px), var(--fm-card-w) * 1vw);
+    height: auto;
+    aspect-ratio: 560 / 947;
+    gap: var(--fm-quote-gap);
+    border-radius: var(--fm-card-radius);
+  }
+  main.case[data-work='filo'] .filo-research .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
+    margin-block: calc(-1 * var(--qa-shadow-pad, 0px));
+  }
+  /* The whole strip (cards, text, art) at --fm-cards-scale of its size; it zooms rather than
+     transforms, so the section's height follows the cards. The text sizes below are the full-size
+     card's and shrink with it. */
+  main.case[data-work='filo'] .persona__quotes:has([data-filo-quote]) .persona__marquee-track {
+    zoom: calc(var(--qa-strip-scale, 1) * var(--fm-cards-scale));
+    animation-duration: calc(var(--quote-loop, 40s) / (var(--qa-speed, 1) * var(--fm-cards-speed)));
+  }
+  main.case[data-work='filo'] .persona__quotes:has([data-filo-quote]) .persona__marquee-track ul {
+    gap: var(--fm-cards-gap);
+    padding-right: var(--fm-cards-gap);
+  }
+  /* Quote text, layout B of public/work/filo/studio/quote-card-text.html: big and left, like the
+     desktop card. Sizes are the ones seen on screen; the strip draws everything at --qa-strip-scale,
+     so each is divided by it. */
+  main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] {
+    padding: calc(var(--fm-card-pad-y) / var(--qa-strip-scale, 1)) calc(var(--fm-card-pad-x) / var(--qa-strip-scale, 1));
+    text-align: left;
+  }
+  main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] .persona__quote {
+    font-size: calc(var(--fm-quote-size) / var(--qa-strip-scale, 1));
+    font-weight: var(--fm-quote-weight);
+    line-height: var(--fm-quote-lh);
+    letter-spacing: calc(var(--fm-quote-ls) * 1em);
+    text-wrap: balance;
+  }
+  main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] .persona__role {
+    font-size: calc(var(--fm-role-size) / var(--qa-strip-scale, 1));
+  }
+  /* Card art on phones: centred on the card, --a-w of its width, --a-x px right of centre and --a-y px
+     above the card's bottom edge, one set per card (filoMobile.ts › Quote card art). The desktop art
+     dials (size, x, y in desktop px) don't apply here. */
+  main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] .filo-quote-art {
+    left: 50%;
+    right: auto;
+    bottom: var(--a-y);
+    width: var(--a-w);
+    transform: translateX(calc(-50% + var(--a-shift, 0%) + var(--a-x)));
+  }
+  /* The four care-label icons sit 47px right of the 900px art's middle: shift by that share so the
+     icon row, not the whole picture, is on the card's centre line. */
+  main.case[data-work='filo'] .filo-quote-art[src*='technical-designer'] {
+    --a-w: var(--fm-art1-w); --a-x: var(--fm-art1-x); --a-y: var(--fm-art1-y);
+    --a-shift: calc(-47 / 900 * 100%);
+  }
+  main.case[data-work='filo'] .filo-quote-art[src*='quote-art-designer'] {
+    --a-w: var(--fm-art2-w); --a-x: var(--fm-art2-x); --a-y: var(--fm-art2-y);
+  }
+  main.case[data-work='filo'] .filo-quote-art[src*='product-lead'] {
+    --a-w: var(--fm-art3-w); --a-x: var(--fm-art3-x); --a-y: var(--fm-art3-y);
+  }
+  main.case[data-work='filo'] .filo-quote-art[src*='merchandiser'] {
+    --a-w: var(--fm-art4-w); --a-x: var(--fm-art4-x); --a-y: var(--fm-art4-y);
+  }
+  main.case[data-work='filo'] .filo-research__overview {
+    width: min(var(--fm-miro-w), var(--fm-content-w));
+  }
+
+  /* --- 4 Steps 01–04. The portal windows at the column width; step 3's box over its phone (at Momo's
+     phone width), all on the centre line. */
+  main.case[data-work='filo'] .fss-app:not(.fss-app--phone, .fss-app--scene) {
+    width: min(var(--fm-portal-w), var(--fm-content-w));
+  }
+  main.case[data-work='filo'] .fss-receive {
+    width: 100%;
+    min-width: 0;
+    gap: var(--fm-box-gap);
+  }
+  main.case[data-work='filo'] .fss-app--phone {
+    width: var(--fm-phone-w);
+  }
+  /* The box photos keep clear space around the box (the unwrapped tissue spills right), so the frame
+     is wider than the column; centred, it overflows both margins evenly. */
+  main.case[data-work='filo'] .fss-box {
+    order: -1;
+    flex: none;
+    width: var(--fm-box-w);
+    margin-inline: calc((100% - var(--fm-box-w)) / 2);
+    left: 0;
+    top: 0;
+    margin-top: 0;
+  }
+  /* Step 4's stage is 900px high with the phone 390.6px wide in its middle, and the dealt swatches
+     reach about 590px either side of it; this height draws the phone at --fm-tap-w, which at 140 keeps
+     every swatch at least ~80% on screen (the sheer, tucked under the others, shows about half). The
+     scene spans the screen, so the swatches leave at its edges, not at the margins. */
+  main.case[data-work='filo'] .fss-app--scene {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    height: calc(var(--fm-tap-w) * 900 / 390.6);
+  }
+  /* The prototypes play themselves: on a phone a swipe over one scrolls the page, as everywhere else,
+     instead of being caught by the prototype's own document. */
+  main.case[data-work='filo'] iframe {
+    pointer-events: none;
+  }
+
+  /* --- 5 A circular future: the product loop, then the two milestone photos rising out from under
+     the footer sheet, kept inside the side margins. The tap scene's stage runs ~68px below its phone,
+     so the mark, title and loop sit 34px higher (and the photos' gap grows by the same) to leave
+     equal space between the phone above and the photos below. */
+  main.case[data-work='filo'] section.case__section[data-section='outcomes'] {
+    padding-top: calc(var(--fm-section-gap) / 2 - 34px);
+    padding-bottom: 0;
+  }
+  main.case[data-work='filo'] .filo-next {
+    width: min(var(--fm-loop-w), var(--fm-content-w));
+  }
+  main.case[data-work='filo'] .filo-milestones {
+    padding: var(--fm-milestones-gap) var(--m-side) 0;
+  }
+
+  /* --- Contact: centred like the rest of the page (as on Momo). */
+  main.case[data-work='filo'] .cta.column {
+    text-align: center;
+  }
+  main.case[data-work='filo'] .cta.column > * {
+    margin-inline: auto;
+  }
+}

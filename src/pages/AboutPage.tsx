@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ContactCta } from '../components/ContactCta'
 import { ContributionGraph } from '../components/ContributionGraph'
-import { SHEET_LABEL_TOP } from '../components/SelectedWorks'
+import { SHEET_DOME, SHEET_LABEL_TOP } from '../components/SelectedWorks'
 import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
 import { ArrowDownIcon } from '../components/icons'
@@ -10,8 +10,9 @@ import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
 import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
 import { useEntrance } from '../lib/useEntrance'
-import { DOME_CURVES } from '../lib/domeClip'
+import { DOME_CURVES, domeClip } from '../lib/domeClip'
 import { SAVED_TOUCH_ARC, TOUCH_LANDING, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
+import { capTop, settled } from '../lib/settledLayout'
 import { useFitColumn } from '../lib/useFitColumn'
 import { revealDials, useReveal } from '../lib/useReveal'
 import { storyEntranceDials, useStoryEntrance } from '../features/storyEntrance/storyEntrance'
@@ -45,28 +46,11 @@ const CONFIG = {
   /** Vertical file-sheet presets for the dark playground panel. */
   sheet: sheetDials(),
   /**
-   * Dark sheet arrives as a dome (like the Selected works sheet) and flattens as
-   * it reaches the top. `peek` pulls it up so its tip shows below the story.
+   * Dark sheet arrives as a dome and flattens as it scrolls up, exactly like the Selected projects
+   * sheet on Work: same peek, shape and morph (SelectedWorks.tsx SHEET_DOME, from its saved dials).
    */
   dome: {
     show: true,
-    peekDesktop: [40, 0, 240, 1] as [number, number, number, number],
-    peekMobile: [28, 0, 240, 1] as [number, number, number, number],
-    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'smoother' },
-    /** Viewport heights of scroll from peeking to flat (max 1: flat once the sheet reaches the top). */
-    enterDistance: [1, 0.2, 2.5, 0.01] as [number, number, number, number],
-    side: [14, 0, 45, 0.5] as [number, number, number, number],
-    arch: [40, 0, 100, 1] as [number, number, number, number],
-    /** Top-corner radius (px), held until the sheet is almost at the top, then squared off. */
-    radius: [45, 0, 200, 1] as [number, number, number, number],
-  },
-  /** Same dome shape, used at ≤640px wide (peek stays in Dome). Starts from the tuned desktop values. */
-  domeMobile: {
-    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'expo-out' },
-    enterDistance: [1.75, 0.2, 2.5, 0.01] as [number, number, number, number],
-    side: [0, 0, 45, 0.5] as [number, number, number, number],
-    arch: [70, 0, 100, 1] as [number, number, number, number],
-    radius: [0, 0, 200, 1] as [number, number, number, number],
   },
   /** How the playground label and cards arrive as they scroll into view. */
   reveal: revealDials(),
@@ -78,8 +62,9 @@ const CONFIG = {
     mobile: [14, 10, 32, 1] as [number, number, number, number],
   },
   spacing: {
-    gapDesktop: [214, 40, 600, 1] as [number, number, number, number],
-    gapMobile: [149, 24, 500, 1] as [number, number, number, number],
+    /** Story's last line → the sheet's arc tip (px), with the sheet peeking. */
+    gapDesktop: [174, 0, 600, 1] as [number, number, number, number],
+    gapMobile: [54, 0, 500, 1] as [number, number, number, number],
     stackToHeadingDesktop: [80, 0, 240, 1] as [number, number, number, number],
     stackToHeadingMobile: [78, 0, 240, 1] as [number, number, number, number],
     /** "My playground" label: distance from the top of the dark sheet (px). */
@@ -102,6 +87,9 @@ const CONFIG = {
     /** Extra space above / below the playground section (px; negative pulls neighbours closer). */
     playSpaceAbove: [0, -200, 400, 1] as [number, number, number, number],
     playSpaceBelow: [0, -200, 400, 1] as [number, number, number, number],
+    /** Desktop: one gap (px) for sheet top → cards, cards → graph, GitHub logo → contact heading
+     * and "Let's chat" → footer links, always equal. */
+    endGapDesktop: [150, 0, 400, 1] as [number, number, number, number],
     /** Snap stops: page top (photos), story end (sheet tip peeking), playground, footer. */
     snap: { type: 'select' as const, options: ['off', 'proximity', 'mandatory'], default: 'off' },
   },
@@ -129,14 +117,13 @@ const CONFIG = {
     yMobile: [0, -300, 300, 1] as [number, number, number, number],
   },
   /**
-   * White fade + blur fixed to the bottom of the screen, over the story only: it eases in as the
-   * story enters from below and out as its last line rises clear, so it never covers the cards or
-   * the playground sheet.
+   * Desktop: white fade + blur fixed to the bottom of the screen, over the story only: it eases in
+   * as the story enters from below and out as its last line rises clear, so it never covers the
+   * cards or the playground sheet. Phones: blur only, no white, at fixed values (AboutPage.css).
    */
   fade: {
     show: true,
     heightDesktop: [160, 40, 480, 1] as [number, number, number, number],
-    heightMobile: [120, 40, 360, 1] as [number, number, number, number],
     /** Blur at the bottom edge (px); it thins out toward the top of the fade. */
     blur: [6, 0, 30, 0.5] as [number, number, number, number],
     color: { type: 'color' as const, default: '#FFFFFF' },
@@ -188,14 +175,14 @@ export function AboutPage() {
     const place = () => {
       const play = playRef.current
       title.style.top = '0px'
-      play?.style.removeProperty('--play-touch-push')
+      dark.style.removeProperty('--play-touch-push')
       const edge = dark.getBoundingClientRect().top
       const peek = touch.matches ? touchDome(smallViewportHeight()).peek : 0
       // Touch screens: like Home's first thumbnail, the first row of cards starts at the fold, so
       // only the arc and the label show in the peek.
       const grid = play?.querySelector('.pg-grid')
       const push = grid ? peek - (grid.getBoundingClientRect().top - edge) : 0
-      if (play && push > 0) play.style.setProperty('--play-touch-push', `${push.toFixed(1)}px`)
+      if (push > 0) dark.style.setProperty('--play-touch-push', `${push.toFixed(1)}px`)
       const box = title.getBoundingClientRect()
       const natural = box.top - dark.getBoundingClientRect().top
       const want = touch.matches
@@ -215,61 +202,46 @@ export function AboutPage() {
     }
   }, [])
 
-  const dome = t.dome
-  const domeMobile = t.domeMobile
-  const domeKey = JSON.stringify([dome, domeMobile])
+  const domeShow = t.dome.show
   useEffect(() => {
     const sheet = darkRef.current
     if (!sheet) return
-    if (!dome.show) {
+    if (!domeShow) {
       sheet.style.removeProperty('--dome-clip')
+      sheet.parentElement?.style.removeProperty('--dome-peek')
       return
     }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let frame = 0
     let svh = smallViewportHeight()
+    const set = (el: HTMLElement | null | undefined, v: string, value: string) => {
+      if (!el || el.style.getPropertyValue(v) === value) return
+      if (value) el.style.setProperty(v, value)
+      else el.style.removeProperty(v)
+    }
+    // The Selected projects sheet's dome (SelectedWorks.tsx), drawn and moved the same way: same
+    // peek, same shape, and the same progress over the same scroll distance from the peek.
     const update = () => {
       frame = 0
       const vh = window.innerHeight
       const vw = document.documentElement.clientWidth
       const mobile = window.matchMedia('(max-width: 640px)').matches
-      const shape = mobile ? domeMobile : dome
-      const curve = DOME_CURVES[shape.curve] ?? DOME_CURVES.smooth
-      // 0 while only the peek shows (same full dome as the Work page's resting tip),
-      // 1 once it has travelled enterDistance. Capped so it is always flat by the
-      // time the sheet top reaches the top of the screen (the snap stop).
       const touch = window.matchMedia(TOUCH_LANDING).matches
-      // Touch screens peek exactly as far as the Work page's white arc (touchDome), not the peek dial.
-      const peek = touch ? touchDome(svh).peek : mobile ? dome.peekMobile : dome.peekDesktop
-      for (const v of ['--dome-peek-d', '--dome-peek-m']) {
-        if (touch) sheet.style.setProperty(v, `${peek.toFixed(2)}px`)
-        else sheet.style.removeProperty(v)
-      }
+      const morph = mobile || touch ? SHEET_DOME.morphMobile : SHEET_DOME.morph
+      const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
+      const peek = touch ? touchDome(svh).peek : mobile ? SHEET_DOME.peekMobile : SHEET_DOME.peekDesktop
+      // The sheet overlaps the story by the peek (its top margin) and the story's bottom padding
+      // grows by as much (AboutPage.css), so the gap above the arc tip stays the spacing dial.
+      set(sheet.parentElement, '--dome-peek', `${peek.toFixed(2)}px`)
+      // 1 at the peek (the sheet's top at vh − peek), easing to 0 over enterDistance screens.
       const rest = vh - peek
+      const top = reduced ? 0 : 1 - curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / (morph.enterDistance * vh))))
       if (touch) {
-        // Touch screens: the Work page's white arc (same saved touchArc curve), flattened by one
-        // progress value. Travel is capped at the rest distance so it is fully flat when the
-        // sheet snaps to the top (no page showing at the corners).
-        const travel = Math.min(shape.enterDistance * vh, rest)
-        // +1px: a sub-pixel snap position still counts as fully flat.
-        const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest + 1 - sheet.getBoundingClientRect().top) / travel)))
-        sheet.style.setProperty('--dome-clip', touchArcClip(SAVED_TOUCH_ARC, sheet, svh, 1 - e, 0))
+        sheet.style.setProperty('--dome-clip', touchArcClip(SAVED_TOUCH_ARC, sheet, svh, top, 0))
         return
       }
-      const travel = Math.min(shape.enterDistance * vh, rest)
-      const e = reduced ? 1 : curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / travel)))
-      // Top corners stay rounded for the whole approach and only square off in the
-      // last stretch, right as the sheet reaches the top (1 − p⁴ of the full travel).
-      const p = reduced ? 1 : Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / rest))
-      const r = shape.radius * (1 - p ** 4)
-      const archPx = (shape.arch / 100) * vh * (1 - e)
-      // While the arch is taller than the corners it spans the full width (50%);
-      // as it sinks below the corner size the curve narrows into two corners.
-      const k = r > 0 ? Math.min(1, Math.max(0, (archPx - r) / r)) : archPx > 0 ? 1 : 0
-      const x = (r + (vw / 2 - r) * k).toFixed(2)
-      const y = Math.max(r, archPx).toFixed(2)
-      const side = ((shape.side * (1 - e) * vw) / 100).toFixed(2)
-      sheet.style.setProperty('--dome-clip', `inset(0 ${side}px round ${x}px ${x}px 0 0 / ${y}px ${y}px 0 0)`)
+      const shape = { radius: morph.startRadius, arch: morph.startArch }
+      sheet.style.setProperty('--dome-clip', domeClip(((morph.startSide * vw) / 100) * top, shape, top, shape, 0, vh))
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
@@ -290,9 +262,7 @@ export function AboutPage() {
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', resize)
     }
-    // `domeKey` captures every dome dial.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domeKey])
+  }, [domeShow])
 
   // Bottom fade: opacity tracks how much of the story is still below the fade band. It is written
   // to a variable for the two layers, not to the band itself: opacity on the band would make it a
@@ -400,36 +370,57 @@ export function AboutPage() {
     }
   }, [])
 
-  // Phones: the gap from the GitHub logo down to the contact heading always equals the gap from the
-  // playground's last row of cards down to the graph's month labels. Measured on screen (the graph,
-  // its logo and the playground all have position dials), and the contact section's top padding
-  // absorbs the difference through --cta-match (AboutPage.css). Re-measured on resize, on any dial
-  // change (style writes), and when reveal animations settle.
+  // Phones: three equal gaps at the end of the page, (1) last row of cards → graph months,
+  // (2) GitHub logo → contact heading and (3) "Let's chat" → footer links. Their sum stays what the
+  // layout and dials give; it is split in three. The graph moves by --cg-match (a translate) and the
+  // contact text by --cta-match, moved from its bottom padding to its top padding (AboutPage.css), so
+  // the page keeps its height. Applied shifts are subtracted from each measurement (no reset), so a
+  // re-measure writes nothing unless something really moved.
+  // Re-measured on resize, on any dial change (style writes), and when reveal animations settle.
   useLayoutEffect(() => {
     const dark = darkRef.current
     if (!dark) return
     const phone = window.matchMedia('(max-width: 640px)')
-    let shift = 0
+    let applied = { graph: 0, cta: 0 }
     let frame = 0
+    let set = false
+    const clear = () => {
+      if (!set) return
+      set = false
+      applied = { graph: 0, cta: 0 }
+      dark.querySelector<HTMLElement>('.cg')?.style.removeProperty('--cg-match')
+      dark.querySelector<HTMLElement>('.cta')?.style.removeProperty('--cta-match')
+    }
     const measure = () => {
       frame = 0
       const cta = dark.querySelector<HTMLElement>('.cta')
-      const cards = dark.querySelectorAll<HTMLElement>('.pg-card')
+      // The grid's box, not the cards: the cards carry scroll-linked transforms (they fly off).
+      const grid = dark.querySelector<HTMLElement>('.pg-grid')
+      const graph = dark.querySelector<HTMLElement>('.cg')
       const months = dark.querySelector<HTMLElement>('.cg__labels')
       const logo = dark.querySelector<HTMLElement>('.cg__logo')
       const title = dark.querySelector<HTMLElement>('.cta__title')
-      if (!phone.matches || !cta || !cards.length || !months || !logo || !title) {
-        shift = 0
-        cta?.style.removeProperty('--cta-match')
-        return
-      }
-      const lastRow = Math.max(...Array.from(cards, (card) => card.getBoundingClientRect().bottom))
-      const above = months.getBoundingClientRect().top - lastRow
-      const below = title.getBoundingClientRect().top - logo.getBoundingClientRect().bottom - shift
-      const next = Math.round((above - below) * 2) / 2
-      if (Math.abs(next - shift) < 0.5) return
-      shift = next
-      cta.style.setProperty('--cta-match', `${shift}px`)
+      const pill = cta?.lastElementChild
+      const links = Array.from(dark.querySelectorAll('.footer__inner :is(a, button)'), (el) => el.getBoundingClientRect().top)
+      if (!phone.matches || !cta || !grid || !graph || !months || !logo || !title || !pill || !links.length) return clear()
+      const top = (el: Element) => el.getBoundingClientRect().top
+      const bottom = (el: Element) => el.getBoundingClientRect().bottom
+      // Gaps as they would be with no shifts applied.
+      const n1 = top(months) - bottom(grid) - applied.graph
+      const n2 = top(title) - bottom(logo) - applied.cta + applied.graph
+      const n3 = Math.min(...links) - bottom(pill) + applied.cta
+      const style = getComputedStyle(cta)
+      const padTop = parseFloat(style.paddingTop) - applied.cta
+      const padBottom = parseFloat(style.paddingBottom) + applied.cta
+      const gap = (n1 + n2 + n3) / 3
+      // The text moves within the contact section's own padding (top and bottom both stay ≥ 0).
+      const ctaShift = Math.max(-padTop, Math.min(padBottom, Math.round((n3 - gap) * 2) / 2))
+      const next = { graph: Math.round((gap - n1) * 2) / 2, cta: ctaShift }
+      if (Math.abs(next.graph - applied.graph) < 0.5 && Math.abs(next.cta - applied.cta) < 0.5) return
+      applied = next
+      set = true
+      graph.style.setProperty('--cg-match', `${next.graph}px`)
+      cta.style.setProperty('--cta-match', `${next.cta}px`)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure)
@@ -451,9 +442,70 @@ export function AboutPage() {
       dark.removeEventListener('animationend', schedule)
       phone.removeEventListener('change', schedule)
       window.removeEventListener('scroll', schedule)
-      dark.querySelector<HTMLElement>('.cta')?.style.removeProperty('--cta-match')
+      clear()
     }
   }, [])
+
+  // Desktop: four equal gaps, set by spacing.endGapDesktop: (A) the dark sheet's top → first row
+  // of cards, (B) last row → graph months, (C) GitHub logo → contact heading, (D) "Let's chat" →
+  // footer links. Each is an added margin (AboutPage.css: --gap-a…d), so the page grows or shrinks
+  // with the dial. Text edges are capital tops; boxes are measured as they sit once reveals settle.
+  // Applied margins are subtracted from each measurement (no reset), so a re-measure writes nothing
+  // unless something really moved.
+  const endGap = t.spacing.endGapDesktop
+  useLayoutEffect(() => {
+    const dark = darkRef.current
+    if (!dark) return
+    const desktop = window.matchMedia('(min-width: 641px)')
+    const keys = ['a', 'b', 'c', 'd'] as const
+    let applied = { a: 0, b: 0, c: 0, d: 0 }
+    let frame = 0
+    const clear = () => {
+      applied = { a: 0, b: 0, c: 0, d: 0 }
+      for (const k of keys) dark.style.removeProperty(`--gap-${k}`)
+    }
+    const measure = () => {
+      frame = 0
+      const grid = dark.querySelector<HTMLElement>('.pg-grid')
+      const month = dark.querySelector('.cg__labels span, .cg__months span')
+      const logo = dark.querySelector('.cg__logo')
+      const title = dark.querySelector('.cta__line, .cta__title')
+      const pill = dark.querySelector('.cta')?.lastElementChild
+      const link = dark.querySelector('.footer__inner a')
+      if (!desktop.matches || !grid || !month || !logo || !title || !pill || !link) return clear()
+      const box = settled(grid)
+      // Each gap without its own margin and without the margins above it, which move both its edges.
+      const natural = {
+        a: box.top - settled(dark).top - applied.a,
+        b: capTop(month) - box.bottom - applied.b,
+        c: capTop(title) - settled(logo).bottom - applied.c,
+        d: capTop(link) - settled(pill).bottom - applied.d,
+      }
+      const next = { a: 0, b: 0, c: 0, d: 0 }
+      for (const k of keys) next[k] = Math.round((endGap - natural[k]) * 2) / 2
+      if (keys.every((k) => Math.abs(next[k] - applied[k]) < 0.5)) return
+      applied = next
+      for (const k of keys) dark.style.setProperty(`--gap-${k}`, `${next[k]}px`)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
+    }
+    measure()
+    const resize = new ResizeObserver(schedule)
+    resize.observe(dark)
+    dark.addEventListener('transitionend', schedule)
+    dark.addEventListener('animationend', schedule)
+    desktop.addEventListener('change', schedule)
+    void document.fonts.ready.then(schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      resize.disconnect()
+      dark.removeEventListener('transitionend', schedule)
+      dark.removeEventListener('animationend', schedule)
+      desktop.removeEventListener('change', schedule)
+      clear()
+    }
+  }, [endGap])
 
   useEffect(() => {
     document.body.dataset.page = 'about'
@@ -483,8 +535,6 @@ export function AboutPage() {
     '--grid-y-d': `${t.grid.yDesktop}px`,
     '--grid-x-m': `${t.grid.xMobile}px`,
     '--grid-y-m': `${t.grid.yMobile}px`,
-    '--dome-peek-d': `${t.dome.peekDesktop}px`,
-    '--dome-peek-m': `${t.dome.peekMobile}px`,
     '--cards-x-d': `${t.cards.xDesktop}px`,
     '--cards-y-d': `${t.cards.yDesktop}px`,
     '--cards-x-m': `${t.cards.xMobile}px`,
@@ -494,7 +544,6 @@ export function AboutPage() {
     '--text-x-m': `${t.text.xMobile}px`,
     '--text-y-m': `${t.text.yMobile}px`,
     '--fade-h-d': `${t.fade.heightDesktop}px`,
-    '--fade-h-m': `${t.fade.heightMobile}px`,
     '--fade-blur': `${t.fade.blur}px`,
     '--fade-color': t.fade.color,
     '--fade-strength': t.fade.strength,
@@ -535,7 +584,8 @@ export function AboutPage() {
       <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined} data-arc-edge>
         <SheetLayers preset={t.sheet.preset} />
         <section ref={playRef} className="about__play" data-fit={t.spacing.playFit || undefined} aria-labelledby="play-title">
-          <h2 ref={playTitleRef} id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor }}>
+          {/* Words hidden, space kept: the cards' spacing is measured from this label. */}
+          <h2 ref={playTitleRef} id="play-title" className="eyebrow column" style={{ color: t.playgroundLabelColor, visibility: 'hidden' }}>
             <EditableText as="span" label="Playground label" value={t.playgroundLabel} onChange={(next) => setValue('playgroundLabel', next)} /> <ArrowDownIcon />
           </h2>
           <Playground />

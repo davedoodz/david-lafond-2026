@@ -56,6 +56,15 @@ figcaption small { display: block; margin-top: 4px; color: var(--text); font-siz
 .place input[type=range] { width: 100%; accent-color: #8a6a55; }
 .place__bar { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--mute); }
 .place__bar button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 6px; background: #e9e9e6; color: var(--ink); }
+.place__sway { grid-column: 1 / -1; display: grid; grid-template-columns: 52px minmax(0, 320px); align-items: center; gap: 12px; font-size: 12px; }
+.place__sway > b { font-weight: 500; color: var(--ink); }
+.place__sway label { grid-template-columns: 40px 1fr 40px; }
+/* Picked layout's stacking: portal at the back, the phone over it, the tag over both. */
+.pick .fg .desk { z-index: 1; }
+.pick .fg .phone { z-index: 2; }
+.pick .fg .tag { z-index: 3; }
+.pick .fg .tag { animation-duration: var(--sway-dur, 6.5s); }
+.pick[data-still] .fg .tag { animation-play-state: paused; }
 
 /* ── The card ── */
 .card { position: relative; width: 867px; height: 493px; margin: 0 auto; border-radius: 24px; overflow: clip; contain: layout paint;
@@ -135,6 +144,19 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .card:not(.is-in) .chip { animation: none; }
 .card .thread { transition: opacity 0.6s ease 1.3s; }
 .card:not(.is-in) .thread { opacity: 0; transition: none; }
+/* Exit, for the picked layout's loop: the entrance reversed, so the tag lifts out first, then the portal, then the phone. */
+.card.is-out .tag { translate: 0 -125%; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0s; }
+.card.is-out .desk { translate: 110% 0; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0.15s; }
+.card.is-out .phone { translate: 0 110%; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0.3s; }
+/* Picked layout: its slide speed (--k scales every duration and delay; 2 = half speed) and an "always there" mode. */
+.pick .card .phone { transition: translate calc(1.1s * var(--k, 1)) cubic-bezier(.2, .8, .2, 1) calc(0.05s * var(--k, 1)); }
+.pick .card .desk { transition: translate calc(1.1s * var(--k, 1)) cubic-bezier(.2, .8, .2, 1) calc(0.3s * var(--k, 1)); }
+.pick .card .tag { transition: translate calc(1.3s * var(--k, 1)) cubic-bezier(.3, 1.25, .5, 1) calc(0.55s * var(--k, 1)); }
+.pick .card:not(.is-in) :is(.phone, .desk, .tag) { transition: none; }
+.pick .card.is-out .tag { transition: translate calc(0.9s * var(--k, 1)) cubic-bezier(.55, 0, .8, .2) 0s; }
+.pick .card.is-out .desk { transition: translate calc(0.9s * var(--k, 1)) cubic-bezier(.55, 0, .8, .2) calc(0.15s * var(--k, 1)); }
+.pick .card.is-out .phone { transition: translate calc(0.9s * var(--k, 1)) cubic-bezier(.55, 0, .8, .2) calc(0.3s * var(--k, 1)); }
+.pick[data-motion='still'] .card :is(.phone, .desk, .tag) { transition: none; }
 /* Stage: devices turned toward the tag. */
 .stage3d { position: absolute; inset: 0; perspective: 1100px; perspective-origin: 50% 38%; }
 .floor { position: absolute; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgb(70 50 30 / 0.22), transparent); filter: blur(2px); }
@@ -199,8 +221,12 @@ const SNIPPETS = {
   ],
 }
 
+/* Top-bar choices: defaults, then what was last chosen in this browser, then the link's query (which wins). */
+const CONTROLS_KEY = 'filo-thumb-controls'
 const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-materials', zoom: 'window', layers: 'on' },
-  Object.fromEntries(new URLSearchParams(location.search)))
+  JSON.parse(localStorage.getItem(CONTROLS_KEY) ?? '{}'), Object.fromEntries(new URLSearchParams(location.search)))
+/** The morph style the fabric switch brings back after "Products only". */
+let lastMorph = S.morph !== 'off' ? S.morph : 'turn'
 
 const CONTROLS = [
   ['morph', 'Morph', [['turn', 'Turn'], ['threads', 'Threads'], ['melt', 'Melt'], ['off', 'Off']]],
@@ -316,7 +342,24 @@ const PICK_DEFAULT = {
   m: { phone: { x: 12, y: 150, size: 270 }, tag: { x: 154, y: 38, size: 132 }, desk: { x: 172, y: 150, size: 210 } },
 }
 const PICK_KEY = 'filo-thumb-pick'
-const PICK = JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)
+const PICK = { sway: 1, slide: 1, motion: 'loop', ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
+/* Picked layout's loop: `hold` = seconds the layers rest after the phone snippet ends; `exit` = the slide out at 1×
+   (scaled by the slide speed); `gap` = a beat of empty wall before they come back. */
+const LAYER_LOOP = { hold: 0.4, exit: 1.2, gap: 0.5 }
+const MOTIONS = [['loop', 'Slide in and out'], ['still', 'Always there']]
+/** Applies the slide settings to the picked figure and restarts its cards' loops (if in view). */
+function setSlide(fig) {
+  fig.style.setProperty('--k', String(1 / PICK.slide))
+  fig.dataset.motion = PICK.motion
+  fig.querySelectorAll('button[data-motion]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.motion === PICK.motion)))
+  for (const c of cards) if (c.el.closest('.pick') === fig) c.loopLayers(c.inView)
+}
+/* Tag sway speed: 1 = one swing out and back every 6.5s; 0 holds it still. */
+const SWAY_PERIOD = 6.5
+function setSway(fig, speed) {
+  fig.style.setProperty('--sway-dur', `${SWAY_PERIOD / Math.max(speed, 0.01)}s`)
+  fig.toggleAttribute('data-still', speed === 0)
+}
 const PICK_RANGE = {
   d: { x: [-300, 1100], y: [-300, 700], size: { phone: [150, 800], tag: [60, 420], desk: [200, 900] } },
   m: { x: [-200, 500], y: [-200, 600], size: { phone: [100, 600], tag: [40, 320], desk: [100, 600] } },
@@ -350,12 +393,32 @@ function buildPick(L) {
     </div>
     <div class="place">
       ${['d', 'm'].map(v => `<div><h4>${v === 'd' ? 'Desktop card' : 'Mobile card'}</h4>${['phone', 'tag', 'desk'].map(k => group(v, k)).join('')}</div>`).join('')}
+      <div class="place__sway"><b>Tag sway</b><label><span>speed</span><input type="range" min="0" max="3" step="0.05" value="${PICK.sway}" data-sway><output>${PICK.sway}×</output></label></div>
+      <div class="place__sway"><b>Slide</b><div class="seg">${MOTIONS.map(([v, l]) => `<button type="button" data-motion="${v}" aria-pressed="${PICK.motion === v}">${l}</button>`).join('')}</div></div>
+      <div class="place__sway"><b></b><label><span>speed</span><input type="range" min="0.25" max="3" step="0.05" value="${PICK.slide}" data-slide><output>${PICK.slide}×</output></label></div>
+      <div class="place__sway"><b>Fabric</b><div class="seg">${[['on', 'Products turn to fabric'], ['off', 'Products only']].map(([v, l]) => `<button type="button" data-fabric="${v}" aria-pressed="${(S.morph !== 'off') === (v === 'on')}">${l}</button>`).join('')}</div></div>
       <div class="place__bar"><button data-act="copy">Copy values</button><button data-act="reset">Reset</button><span data-out></span></div>
     </div>`
   const [cd, cm] = fig.querySelectorAll('.card')
   const cardOf = { d: cd, m: cm }
-  placeAll(cd, 'd'); placeAll(cm, 'm')
+  placeAll(cd, 'd'); placeAll(cm, 'm'); setSway(fig, PICK.sway); fig.style.setProperty('--k', String(1 / PICK.slide)); fig.dataset.motion = PICK.motion
+  // Fabric switch: drives the top bar's Morph control, so the two never disagree; "on" brings back the last morph style.
+  fig.addEventListener('click', e => {
+    const v = e.target.closest('button[data-fabric]')?.dataset.fabric
+    if (v) controlsEl.querySelector(`button[data-key="morph"][data-v="${v === 'on' ? lastMorph : 'off'}"]`).click()
+    const m = e.target.closest('button[data-motion]')?.dataset.motion
+    if (m) { PICK.motion = m; localStorage.setItem(PICK_KEY, JSON.stringify(PICK)); setSlide(fig) }
+  })
   fig.querySelector('.place').addEventListener('input', e => {
+    if ('sway' in e.target.dataset || 'slide' in e.target.dataset) {
+      const key = 'sway' in e.target.dataset ? 'sway' : 'slide'
+      PICK[key] = Number(e.target.value)
+      e.target.nextElementSibling.value = `${PICK[key]}×`
+      if (key === 'sway') setSway(fig, PICK.sway)
+      else fig.style.setProperty('--k', String(1 / PICK.slide)) // the running loop picks it up on its next pass
+      localStorage.setItem(PICK_KEY, JSON.stringify(PICK))
+      return
+    }
     const { v, k, a } = e.target.dataset
     if (!v) return
     PICK[v][k][a] = Number(e.target.value)
@@ -368,9 +431,10 @@ function buildPick(L) {
     const out = fig.querySelector('[data-out]')
     if (act === 'copy') { await navigator.clipboard.writeText(JSON.stringify(PICK, null, 2)); out.textContent = 'Copied as JSON.' }
     if (act === 'reset') {
-      Object.assign(PICK, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
-      fig.querySelectorAll('input[type=range]').forEach(i => { i.value = PICK[i.dataset.v][i.dataset.k][i.dataset.a]; i.nextElementSibling.value = i.value })
-      placeAll(cd, 'd'); placeAll(cm, 'm'); out.textContent = 'Back to the defaults.'
+      Object.assign(PICK, { sway: 1, slide: 1, motion: 'loop' }, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
+      fig.querySelectorAll('input[data-v]').forEach(i => { i.value = PICK[i.dataset.v][i.dataset.k][i.dataset.a]; i.nextElementSibling.value = i.value })
+      for (const k of ['sway', 'slide']) { const s = fig.querySelector(`input[data-${k}]`); s.value = 1; s.nextElementSibling.value = '1×' }
+      placeAll(cd, 'd'); placeAll(cm, 'm'); setSway(fig, 1); setSlide(fig); out.textContent = 'Back to the defaults.'
     }
   })
   return fig
@@ -397,7 +461,10 @@ function apply() {
     if (!v.src.endsWith(src)) { v.src = src; v.load() }
     v.style.setProperty('--fx', dk.fx); v.style.setProperty('--fy', dk.fy)
   })
+  if (S.morph !== 'off') lastMorph = S.morph
+  document.querySelectorAll('button[data-fabric]').forEach(b => b.setAttribute('aria-pressed', String((S.morph !== 'off') === (b.dataset.fabric === 'on'))))
   history.replaceState(null, '', `?${new URLSearchParams(S)}`)
+  localStorage.setItem(CONTROLS_KEY, JSON.stringify(S))
   for (const c of cards) c.dirty()
   for (const c of cells) c.key = ''
 }
@@ -570,11 +637,40 @@ class Card {
       this.visible = e.isIntersecting
       el.querySelectorAll('video').forEach(v => this.visible ? v.play().catch(() => {}) : v.pause())
     }, { rootMargin: '100px' }).observe(el)
-    // Replays the layers' entrance whenever the card comes back into view.
+    // Replays the layers' entrance whenever the card comes back into view. The picked layout loops instead:
+    // in, the phone snippet plays once, out, in again.
+    const pick = el.closest('.pick')
     new IntersectionObserver(([e]) => {
+      this.inView = e.isIntersecting
+      if (pick) return this.loopLayers(e.isIntersecting)
       if (e.isIntersecting && !el.classList.contains('is-in')) el.querySelectorAll('video').forEach(v => { v.currentTime = 0 })
       el.classList.toggle('is-in', e.isIntersecting)
     }, { threshold: 0.4 }).observe(el)
+  }
+  /** Picked layout, while the card is in view. "Slide in and out" loops: in, the phone snippet plays once, out,
+   *  in again; the snippet ends on its first frame (crossfaded seam), so it leaves on the screen it returns with.
+   *  "Always there" keeps the layers in place with both snippets looping. */
+  loopLayers(on) {
+    clearTimeout(this.cycleTimer)
+    const el = this.el, ph = el.querySelector('video[data-kind="phone"]')
+    el.classList.remove('is-out')
+    if (!on) { el.classList.remove('is-in'); return }
+    ph.loop = PICK.motion === 'still'
+    if (PICK.motion === 'still') {
+      el.classList.add('is-in')
+      if (ph.paused) ph.play().catch(() => {})
+      return
+    }
+    const enter = () => {
+      el.classList.remove('is-out')
+      el.querySelectorAll('video').forEach(v => { v.currentTime = 0; v.play().catch(() => {}) })
+      el.classList.add('is-in')
+      this.cycleTimer = setTimeout(() => {
+        el.classList.replace('is-in', 'is-out')
+        this.cycleTimer = setTimeout(enter, (LAYER_LOOP.exit / PICK.slide + LAYER_LOOP.gap) * 1000)
+      }, ((ph.duration || 6) + LAYER_LOOP.hold) * 1000)
+    }
+    enter()
   }
   dirty() { this.tiles.forEach(t => (t.key = '')) }
   morph(i, cx, cy, t) {

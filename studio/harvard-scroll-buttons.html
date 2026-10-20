@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Harvard &amp; MIT · top and bottom buttons (phones)</title>
+<style>
+  @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  :root { --ink-950: #0b0a09; --ink-900: #171717; --ink-800: #2d2c2b; --stone-400: #a6a09c; --paper: #f5f5f5; --ease-out: cubic-bezier(.23, 1, .32, 1); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f0e0d; color: var(--paper); font-family: Beatrice, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { max-width: 1400px; margin: 0 auto; padding: 56px 32px 8px; }
+  h1 { margin: 0; font-size: 30px; font-weight: 400; letter-spacing: -.02em; }
+  header p { margin: 10px 0 0; max-width: 780px; color: var(--stone-400); font-size: 16px; line-height: 1.5; }
+  main { max-width: 1400px; margin: 0 auto; padding: 28px 32px 96px; display: flex; flex-wrap: wrap; gap: 32px; }
+  .opt { width: 300px; }
+  .opt h2 { margin: 0 0 4px; font-size: 16px; font-weight: 400; }
+  .opt h2 b { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: var(--ink-800); font-size: 11.5px; font-weight: 400; vertical-align: 2px; }
+  .opt > p { margin: 0 0 12px; min-height: 4.3em; color: var(--stone-400); font-size: 13.5px; line-height: 1.45; }
+
+  /* A real-size 390 × 844 phone shown at 300 wide. The page scrolls inside it: try the buttons. */
+  .phone { position: relative; width: 300px; height: calc(844px * 300 / 390); overflow: hidden; border-radius: 34px; box-shadow: 0 0 0 1px #2a2928, 0 24px 60px rgb(0 0 0 / .45); }
+  .screen { position: absolute; left: 0; top: 0; width: 390px; height: 844px; transform: scale(calc(300 / 390)); transform-origin: 0 0; background: var(--ink-900); }
+  .scroller { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+  .scroller::-webkit-scrollbar { display: none; }
+  .navrow { position: absolute; z-index: 5; left: 0; right: 0; top: 0; height: 84px; display: flex; align-items: center; justify-content: space-between; padding: 14px 24px 0; font-size: 13px; letter-spacing: .02em; color: var(--stone-400); pointer-events: none; }
+  .ghost { width: 25px; height: 25px; border-radius: 50% 50% 40% 40%; background: var(--stone-400); }
+  .stack { list-style: none; margin: 0; padding: 116px 24px 140px; display: grid; gap: 16px; }
+  .stack li { display: flex; width: 100%; margin-inline: auto; border-radius: 3px; overflow: hidden; }
+  .stack li.cover { width: 50%; }
+  .stack img { display: block; flex: 1; min-width: 0; aspect-ratio: 1600 / 2263; object-fit: cover; background: var(--ink-800); }
+
+  /* The Book / Grid switch, exactly: 44px tall, 4px inset, frosted ink, hairline border. */
+  .glass { display: flex; align-items: center; height: 44px; padding: 4px; border-radius: 999px; background: rgb(23 23 23 / .72); border: 1px solid rgb(255 255 255 / .12); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 34px; min-width: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: var(--stone-400); font: 12px Beatrice, system-ui, sans-serif; letter-spacing: .01em; white-space: nowrap; cursor: pointer; transition: background .2s var(--ease-out), color .2s var(--ease-out); }
+  .btn.icon { padding: 0; width: 34px; }
+  .btn:hover { color: var(--paper); background: rgb(255 255 255 / .08); }
+  .btn:active { background: var(--paper); color: var(--ink-900); }
+  .btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .sep { width: 1px; height: 18px; background: rgb(255 255 255 / .12); }
+  .meter { padding: 0 6px; min-width: 52px; text-align: center; color: var(--paper); font: 12px Beatrice, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  .meter span { color: var(--stone-400); }
+
+  .dock { position: absolute; z-index: 6; }
+  .bc { left: 50%; bottom: 28px; translate: -50% 0; }
+  .br { right: 20px; bottom: 28px; }
+  .bl { left: 20px; bottom: 28px; }
+  .rs { right: 14px; top: 50%; translate: 0 -50%; }
+  .col { flex-direction: column; height: auto; width: 44px; }
+  .split { left: 20px; right: 20px; bottom: 28px; display: flex; justify-content: space-between; }
+  .solo { width: 44px; justify-content: center; }
+  .fade { transition: opacity .25s ease, translate .25s var(--ease-out); }
+  .hide { opacity: 0; pointer-events: none; translate: 0 8px; }
+  .bc.hide { translate: -50% 8px; }
+  .devdial { position: absolute; z-index: 7; right: 20px; bottom: 26px; width: 44px; height: 44px; border-radius: 50%; background: #1d1c1b; box-shadow: 0 0 0 1px #333; opacity: .0; }
+  footer { max-width: 1400px; margin: 0 auto; padding: 0 32px 80px; color: var(--stone-400); font-size: 14px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Top and bottom buttons, phones</h1>
+  <p>The Harvard &amp; MIT Book tab as it is now on a phone: 31 spreads stacked. Each phone below scrolls for real, and its buttons work: up glides to the front cover, down to the back cover. Every control uses the Book / Grid switch's look: 44px frosted pill, hairline border, stone icons that turn paper-white on press.</p>
+</header>
+<main id="opts"></main>
+<footer>On the site the down button would land with the back cover centred, and the up button with the cover under the nav. Hidden buttons (options 3 and 6) fade in once you leave the end they point to.</footer>
+
+<script>
+const UP = '<svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>'
+const DOWN = '<svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg>'
+const TOP = '<svg viewBox="0 0 24 24"><path d="M5 4h14M12 20V9M7 13l5-5 5 5"/></svg>'
+const END = '<svg viewBox="0 0 24 24"><path d="M5 20h14M12 4v11M7 11l5 5 5-5"/></svg>'
+const pages = [[1], ...Array.from({ length: 29 }, (_, i) => [2 + i * 2, 3 + i * 2]), [60]]
+const pad = n => String(n).padStart(2, '0')
+const stack = `<ol class="stack">${pages.map(p => `<li class="${p.length === 1 ? 'cover' : ''}">${p.map(n => `<img src="/work/harvard-mit/thumbs/page-${pad(n)}.webp" alt="" loading="lazy">`).join('')}</li>`).join('')}</ol>`
+const up = (cls = 'icon', label = '') => `<button class="btn ${cls}" data-go="top" aria-label="Back to the cover">${UP}${label}</button>`
+const down = (cls = 'icon', label = '') => `<button class="btn ${cls}" data-go="end" aria-label="Go to the back cover">${DOWN}${label}</button>`
+
+const OPTIONS = [
+  ['Pill, bottom centre', 'Up and down in one pill, centred like the Book / Grid switch above. The most direct echo of the switch.',
+    `<div class="dock glass bc">${up()}${down()}</div>`],
+  ['Pill with labels', 'Same pill with "Cover" and "Back cover" next to the arrows. Says exactly where each goes; wider.',
+    `<div class="dock glass bc">${up('', 'Cover')}<span class="sep"></span>${down('', 'Back cover')}</div>`],
+  ['Pill, smart ends', 'Same pill, but at the top only the down arrow shows and at the bottom only the up arrow. Never offers a move that does nothing.',
+    `<div class="dock glass bc fade" data-smart>${up()}${down()}</div>`],
+  ['Stacked, bottom right', 'A narrow vertical pill in the thumb corner: up above down, like a scroll bar\'s ends. Clears the spreads\' centre.',
+    `<div class="dock glass col br">${up()}${down()}</div>`],
+  ['Stacked, right edge', 'The vertical pill parked on the right edge, mid screen, like a page rail. Always in reach while scrolling; overlaps the spreads\' edge.',
+    `<div class="dock glass col rs">${up()}${down()}</div>`],
+  ['Two pills, split corners', 'Up on the left, down on the right, each its own small pill. Reads as "back / forward" through the book.',
+    `<div class="dock split"><div class="glass solo fade" data-only="top">${up()}</div><div class="glass solo fade" data-only="end">${down()}</div></div>`],
+  ['Pill with progress', 'Up, the spread you are on ("12 / 31"), down. The middle shows where you are in the stack, like the old page counter.',
+    `<div class="dock glass bc">${up()}<span class="meter" data-meter>1 <span>/ 31</span></span>${down()}</div>`],
+  ['Jump-to-end icons', 'The pill with "to the very top / bottom" icons (an arrow to a line) instead of plain arrows: says "all the way", not "one step".',
+    `<div class="dock glass bc"><button class="btn icon" data-go="top" aria-label="Back to the cover">${TOP}</button><button class="btn icon" data-go="end" aria-label="Go to the back cover">${END}</button></div>`],
+]
+
+document.getElementById('opts').innerHTML = OPTIONS.map(([name, note, dock], i) => `
+  <section class="opt"><h2><b>${i + 1}</b>${name}</h2><p>${note}</p>
+    <div class="phone"><div class="screen">
+      <div class="scroller">${stack}</div>
+      <div class="navrow"><span>← BACK</span><span class="ghost"></span></div>
+      ${dock}
+    </div></div>
+  </section>`).join('')
+
+for (const screen of document.querySelectorAll('.screen')) {
+  const sc = screen.querySelector('.scroller')
+  const items = [...sc.querySelectorAll('.stack li')]
+  screen.addEventListener('click', e => {
+    const b = e.target.closest('[data-go]'); if (!b) return
+    sc.scrollTo({ top: b.dataset.go === 'top' ? 0 : sc.scrollHeight, behavior: 'smooth' })
+  })
+  const update = () => {
+    const atTop = sc.scrollTop < 40, atEnd = sc.scrollTop > sc.scrollHeight - sc.clientHeight - 40
+    const smart = screen.querySelector('[data-smart]')
+    if (smart) {
+      smart.querySelector('[data-go="top"]').style.display = atTop ? 'none' : ''
+      smart.querySelector('[data-go="end"]').style.display = atEnd ? 'none' : ''
+    }
+    screen.querySelector('[data-only="top"]')?.classList.toggle('hide', atTop)
+    screen.querySelector('[data-only="end"]')?.classList.toggle('hide', atEnd)
+    const meter = screen.querySelector('[data-meter]')
+    if (meter) {
+      const mid = sc.scrollTop + sc.clientHeight / 2
+      const n = items.findIndex(li => li.offsetTop + li.offsetHeight > mid) + 1 || items.length
+      meter.innerHTML = `${n} <span>/ ${items.length}</span>`
+    }
+  }
+  sc.addEventListener('scroll', update, { passive: true }); update()
+}
+</script>
+</body>
+</html>
