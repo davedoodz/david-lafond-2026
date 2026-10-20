@@ -16,6 +16,7 @@
 /* A title written with line breaks keeps one line per break: it may run past the copy width, up to the
    chapter's 800px (and the viewport on phones, where a long line still wraps). */
 .fs-copy h2.fs-lines { margin-inline: calc(50% - min(400px, 50vw - 24px)); text-wrap: wrap; }
+.fs-copy h2.fs-lines > .fs-line { display: block; }
 .fs-copy > p:not(.eyebrow) { font-size: calc(var(--text-body) * var(--case-copy-scale)); line-height: 1.4; color: #72776d; margin: 18px auto 0; text-wrap: pretty; }
 .fs-film { position: relative; width: 100%; aspect-ratio: 800 / 440; margin: 30px auto 0; overflow: clip; isolation: isolate; }
 /* Market gap: the persona's desk loop (FiloPersonaLoop), at its own frame ratio. Scale resizes the

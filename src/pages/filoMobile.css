@@ -48,10 +48,29 @@
   main.case[data-work='filo'] .filo-story .fs-copy > p:not(.eyebrow) {
     color: rgb(111 107 104);
   }
+  /* A title written on several lines (one block per line, filoStoryArt.tsx) opens a gap between its
+     sentences. */
+  main.case[data-work='filo'] .fs-copy h2.fs-lines > .fs-line + .fs-line {
+    margin-top: var(--fm-title-line-gap);
+  }
   /* Primary research: a blank line's gap between its two written sentences (CaseStudyPage.tsx renders
      each as its own block). */
   main.case[data-work='filo'] [data-section='research'] .case__body-line + .case__body-line {
     margin-top: var(--fm-body-line-gap);
+  }
+  /* Primary research reads in three lines and step 04 in two: each written line keeps to one screen
+     line, so these paragraphs run out to 10px from the screen's edges, and on narrow phones the text
+     shrinks just enough for the longest written line to fit (--fit-em: its width in em). The
+     research's second sentence still wraps, balanced, into two lines. */
+  main.case[data-work='filo'] :is([data-section='research'], .fss-step[aria-labelledby$='step4']) .case__section-copy > .case__body {
+    --fit-em: 30.6;
+    width: calc(100vw - 20px);
+    max-width: none;
+    margin-inline: calc(50% - 50vw + 10px);
+    font-size: min(var(--m-body-size), calc((100vw - 20px) / var(--fit-em)));
+  }
+  main.case[data-work='filo'] .fss-step[aria-labelledby$='step4'] .case__section-copy > .case__body {
+    --fit-em: 29.5;
   }
 
   /* --- 1 Hero. Role, Origin, Program and Team in two even columns, each value centred under its
@@ -238,8 +257,11 @@
   }
 
   /* --- 5 A circular future: the product loop, then the two milestone photos rising out from under
-     the footer sheet, kept inside the side margins. */
+     the footer sheet, kept inside the side margins. The tap scene's stage runs ~68px below its phone,
+     so the mark, title and loop sit 34px higher (and the photos' gap grows by the same) to leave
+     equal space between the phone above and the photos below. */
   main.case[data-work='filo'] section.case__section[data-section='outcomes'] {
+    padding-top: calc(var(--fm-section-gap) / 2 - 34px);
     padding-bottom: 0;
   }
   main.case[data-work='filo'] .filo-next {

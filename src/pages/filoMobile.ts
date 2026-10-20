@@ -16,6 +16,7 @@ const DIALS: PhoneDialTable = {
     'Heading to image gap': ['--fm-media-gap', 32, 0, 120, 1, 'px'],
     'Body text line spacing': ['--fm-body-lh', 1.25, 1, 1.8, 0.01, ''],
     'Gap above and below images': ['--fm-image-gap', 80, 0, 200, 1, 'px'],
+    'Gap between title sentences': ['--fm-title-line-gap', 12, 0, 40, 1, 'px'],
   },
   '1 Hero · title and hang tag': {
     'Filo mark size': ['--fm-mark-scale', 0.75, 0.3, 1.2, 0.01, ''],
@@ -30,8 +31,8 @@ const DIALS: PhoneDialTable = {
   '3 Primary research': {
     'Interview video width': ['--fm-interviews-w', 342, 200, 400, 2, 'px'],
     'Miro board width': ['--fm-miro-w', 342, 200, 400, 2, 'px'],
-    'Quote cards scale': ['--fm-cards-scale', 0.5, 0.3, 1.2, 0.01, ''],
     'Gap between body sentences': ['--fm-body-line-gap', 15, 0, 40, 1, 'px'],
+    'Quote cards scale': ['--fm-cards-scale', 0.5, 0.3, 1.2, 0.01, ''],
   },
   '3 Primary research · quote card art': {
     'Technical designer art size': ['--fm-art1-w', 92, 40, 140, 1, '%'],
@@ -47,7 +48,6 @@ const DIALS: PhoneDialTable = {
     'Merchandiser art x': ['--fm-art4-x', 0, -150, 150, 1, 'px'],
     'Merchandiser art y': ['--fm-art4-y', 16, -100, 250, 1, 'px'],
   },
-  '4 Steps 01–04 · prototypes': {
   /** Every dial below is in the full-size card's units: Quote cards scale shrinks the whole strip. */
   '3 Primary research · quote cards': {
     'Scroll speed': ['--fm-cards-speed', 1, 0.2, 3, 0.05, ''],
@@ -63,15 +63,16 @@ const DIALS: PhoneDialTable = {
     'Quote to name gap': ['--fm-quote-gap', 16, 0, 60, 1, 'px'],
     'Name text size': ['--fm-role-size', 12, 8, 20, 0.5, 'px'],
   },
+  '4 Steps 01–04 · prototypes': {
     'Portal window width': ['--fm-portal-w', 342, 200, 400, 2, 'px'],
-    'Phone width': ['--fm-phone-w', 250, 180, 320, 2, 'px'],
+    'Phone width': ['--fm-phone-w', 125, 80, 320, 1, 'px'],
     'Sample box width': ['--fm-box-w', 390, 200, 700, 2, 'px'],
     'Box to phone gap': ['--fm-box-gap', 40, 0, 120, 2, 'px'],
-    'Tap scene phone width': ['--fm-tap-w', 140, 100, 250, 2, 'px'],
+    'Tap scene phone width': ['--fm-tap-w', 175, 100, 250, 1, 'px'],
   },
   '5 A circular future · milestones': {
     'Product loop width': ['--fm-loop-w', 342, 200, 400, 2, 'px'],
-    'Loop to photos gap': ['--fm-milestones-gap', 72, 0, 200, 2, 'px'],
+    'Loop to photos gap': ['--fm-milestones-gap', 106, 0, 200, 2, 'px'],
   },
 }
 
