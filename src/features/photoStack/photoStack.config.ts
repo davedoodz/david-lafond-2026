@@ -5,6 +5,11 @@ export const PHOTO_STACK_CONFIG = {
     height: [362.8, 150, 500, 0.1] as [number, number, number, number],
     radius: [20, 0, 40, 1] as [number, number, number, number],
     shadow: [0.22, 0, 1, 0.01] as [number, number, number, number],
+    /** A white border round each photo, inside the card's size, so the cards read like stickers. */
+    outline: {
+      show: false,
+      width: [6, 0.5, 24, 0.5] as [number, number, number, number],
+    },
   },
   /** Which photo starts in each position. Duplicates resolve first-wins; unpicked photos fill the gaps. */
   order: {

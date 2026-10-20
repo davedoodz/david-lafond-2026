@@ -516,6 +516,12 @@ export function PhotoStack({ className }: { className?: string }) {
                   width,
                   height,
                   borderRadius: values.card.radius,
+                  // Sticker outline: a white border inside the card's box; the photo is clipped to the inner
+                  // rounded edge, and the grey placeholder stays under the photo only (no grey fringe).
+                  ...(values.card.outline.show && {
+                    border: `${values.card.outline.width}px solid #fff`,
+                    backgroundClip: 'padding-box',
+                  }),
                   boxShadow: `0 ${Math.round(height * 0.11)}px ${Math.round(height * 0.22)}px rgba(23, 23, 23, ${values.card.shadow})`,
                   zIndex: zIndices[cardId],
                   x,
