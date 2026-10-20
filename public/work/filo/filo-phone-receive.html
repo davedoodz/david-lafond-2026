@@ -390,10 +390,11 @@ async function photos(t) {
   chapter(3)
   await tap(t, k('t-2'), .4, .5)
   pickTab(2); page.scrollTop = stuck()
-  await reach(t, [250, 690], 1400)
-  await drag(t, 250, 690, 200, 800)
-  // The finger lifts away before the loop goes back to the email.
-  await reach(t, [W * .62, H + 60], 1700)
+  // No last press: the page settles onto the supplier as the cursor carries on out of the frame,
+  // so nothing reads as a tap on the supplier card before the loop goes back to the email.
+  await sleep(900, t)
+  const to = Math.min(page.scrollHeight - page.clientHeight, page.scrollTop + 200)
+  await Promise.all([glide(t, page, to, 1100), reach(t, [W * .62, H + 60], 1700)])
   await sleep(500, t)
 }
 
