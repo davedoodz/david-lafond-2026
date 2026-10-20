@@ -153,10 +153,6 @@ export function Nav({ route }: Props) {
   // page behind any project or playground card, for the Soft fade's colour (mobileContrast › fadeTone).
   const [under, setUnder] = useState<'light' | 'dark'>()
   const [section, setSection] = useState<'light' | 'dark'>()
-  // Davebot's eyes go the page's black (ghost.css) while the page right under him is black: on Work
-  // and About that is the Work top, the About playground on, and the contact/footer (project and
-  // playground cards don't count); Harvard & MIT is black throughout; other pages keep paper eyes.
-  const [inkEyes, setInkEyes] = useState(false)
 
   // The fade's tone animates only once the nav has its first tone; on mount (each page has its own nav)
   // it takes the page's tone at once, so a page transition's new snapshot shows it from the first frame.
@@ -194,12 +190,6 @@ export function Nav({ route }: Props) {
         const tone = isLightUnder(nav, r.left + r.width / 2, r.top + r.height / 2)
         if (tone !== null) link.dataset.tone = tone ? 'light' : 'dark'
       }
-      // The page under Davebot himself, cards passed through. Null (a View Transition) keeps the last answer.
-      const ghost = nav.querySelector('.nav__ghost')?.getBoundingClientRect()
-      const ghostLight = ghost ? isLightUnder(nav, ghost.left + ghost.width / 2, ghost.top + ghost.height / 2, '.works__card, .pg-card') : null
-      if (route === 'harvard-mit') setInkEyes(true)
-      else if (route !== 'work' && route !== 'about') setInkEyes(false)
-      else if (ghostLight !== null) setInkEyes(!ghostLight)
       // Edge blur: a sheet's curved edge inside a blur band is blurred toward the screen edge but sharp
       // at its tip, which reads as a flat crop. Such a band clears while an arc is in it (Nav.css): the
       // page's top band, and each sheet's own bottom band, which otherwise rests on the sheet's
@@ -342,7 +332,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
+      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

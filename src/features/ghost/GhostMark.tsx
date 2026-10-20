@@ -6,13 +6,15 @@ import './ghost.css'
 /**
  * Davebot, drawn on a 32 grid — ported from ditto's DavebotGhost.tsx.
  *
- * The eyes sit inside a group clipped to the head dome. `ghostGaze` measures
- * that clip path every frame to cap how far the pupils may travel, so the
- * clip is load-bearing geometry rather than decoration.
+ * The eyes are holes: they are cut out of the body by a mask, so whatever is behind him shows
+ * through them, on every surface. They never blink or change shape.
  *
- * Every mounted mark self-registers with the single shared gaze tracker, so
- * the nav ghost and the opened palette ghost both track the pointer without
- * any coordination from their parents.
+ * The eye cut-outs sit inside a group clipped to the head dome. `ghostGaze` measures that clip
+ * path every frame to cap how far the holes may travel, so the clip is load-bearing geometry
+ * rather than decoration.
+ *
+ * Every mounted mark self-registers with the single shared gaze tracker, so the nav ghost and
+ * the opened palette ghost both track the pointer without any coordination from their parents.
  */
 
 const HEAD_CLIP = 'M4 14.2a12 12.2 0 1 0 24 0a12 12.2 0 1 0 -24 0Z'
@@ -23,58 +25,19 @@ const EYES = [
   'M17.8 13.4a2.5 3.1 0 1 0 5 0a2.5 3.1 0 1 0 -5 0Z',
 ] as const
 
-/** Blink on a randomised beat: a metronomic interval reads mechanical, and a
- * double blink lands occasionally for the same reason. */
-function useBlink(eyesRef: React.RefObject<SVGGElement | null>) {
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const eyes = eyesRef.current
-    if (!eyes) return
-
-    const timers = new Set<number>()
-    const later = (fn: () => void, ms: number): void => {
-      const id = window.setTimeout(() => {
-        timers.delete(id)
-        fn()
-      }, ms)
-      timers.add(id)
-    }
-    const blink = (hold: number): void => {
-      eyes.classList.add('is-blinking')
-      later(() => eyes.classList.remove('is-blinking'), hold)
-    }
-    const schedule = (): void => {
-      later(() => {
-        if (!document.hidden) {
-          blink(120)
-          if (Math.random() < 0.22) later(() => blink(110), 300)
-        }
-        schedule()
-      }, 2200 + Math.random() * 4000)
-    }
-    schedule()
-
-    return () => {
-      for (const id of timers) window.clearTimeout(id)
-      eyes.classList.remove('is-blinking')
-    }
-  }, [eyesRef])
-}
-
 export type GhostMarkProps = {
   /** Mark size in px. Defaults to CSS-driven sizing via `--ghost-size`. */
   size?: number
   className?: string
-  /** Hovering the body makes him happy (^ ^ eyes, blush). Only the centred Davebot opts in. */
+  /** Hovering the body makes him blush. Only the centred Davebot opts in. */
   happy?: HappyLook & { blushColor: string }
   /** Body colour override (any CSS colour, incl. var()). Unset keeps the stylesheet default. */
   fill?: string
 }
 
 export function GhostMark({ size, className, happy, fill }: GhostMarkProps) {
-  const clipId = `ghost-clip-${useId().replaceAll(':', '')}`
+  const id = `ghost-${useId().replaceAll(':', '')}`
   const mountRef = useRef<HTMLSpanElement>(null)
-  const eyesRef = useRef<SVGGElement>(null)
 
   useEffect(() => {
     const mount = mountRef.current
@@ -84,11 +47,7 @@ export function GhostMark({ size, className, happy, fill }: GhostMarkProps) {
     return () => gaze.untrack(mount)
   }, [])
 
-  useBlink(eyesRef)
-
   const shellRef = useRef<SVGPathElement>(null)
-  const arcLRef = useRef<SVGPathElement>(null)
-  const arcRRef = useRef<SVGPathElement>(null)
   const blushLRef = useRef<SVGEllipseElement>(null)
   const blushRRef = useRef<SVGEllipseElement>(null)
   const blushCoreRef = useRef<SVGStopElement>(null)
@@ -97,17 +56,9 @@ export function GhostMark({ size, className, happy, fill }: GhostMarkProps) {
   const isHappy = happy !== undefined
 
   const parts = (): HappyParts | null => {
-    const [shell, eyes, arcL, arcR, blushL, blushR, blushCore] = [
-      shellRef.current,
-      eyesRef.current,
-      arcLRef.current,
-      arcRRef.current,
-      blushLRef.current,
-      blushRRef.current,
-      blushCoreRef.current,
-    ]
-    if (!shell || !eyes || !arcL || !arcR || !blushL || !blushR || !blushCore) return null
-    return { shell, eyes, arcs: [arcL, arcR], blush: [blushL, blushR], blushCore }
+    const [shell, blushL, blushR, blushCore] = [shellRef.current, blushLRef.current, blushRRef.current, blushCoreRef.current]
+    if (!shell || !blushL || !blushR || !blushCore) return null
+    return { shell, blush: [blushL, blushR], blushCore }
   }
 
   useEffect(() => {
@@ -132,38 +83,37 @@ export function GhostMark({ size, className, happy, fill }: GhostMarkProps) {
       <span className="ghost-mark__body">
         <svg viewBox="0 0 32 32" aria-hidden="true">
           <defs>
-            <clipPath id={clipId}>
+            <clipPath id={`${id}-head`}>
               <path d={HEAD_CLIP} />
             </clipPath>
+            {/* White keeps the body, black cuts it: the eyes are holes through body and blush. */}
+            <mask id={`${id}-eyes`} maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+              <rect width="32" height="32" fill="#fff" />
+              {/* The gaze tracker moves exactly these two paths (g[clip-path] > path). */}
+              <g clipPath={`url(#${id}-head)`}>
+                {EYES.map((d, index) => (
+                  <path key={index} d={d} fill="#000" />
+                ))}
+              </g>
+            </mask>
             {happy && (
-              <radialGradient id={`${clipId}-blush`}>
+              <radialGradient id={`${id}-blush`}>
                 <stop ref={blushCoreRef} offset="0" stopColor={happy.blushColor} />
                 <stop offset="1" stopColor={happy.blushColor} stopOpacity="0" />
               </radialGradient>
             )}
           </defs>
-          <path ref={shellRef} className="ghost-mark__shell" d={BODY} />
-          {happy && (
-            <>
-              <ellipse ref={blushLRef} className="ghost-mark__blush" fill={`url(#${clipId}-blush)`} opacity="0" />
-              <ellipse ref={blushRRef} className="ghost-mark__blush" fill={`url(#${clipId}-blush)`} opacity="0" />
-            </>
-          )}
-          <g ref={eyesRef} className="ghost-mark__eyes" clipPath={`url(#${clipId})`}>
-            {EYES.map((d, index) => (
-              <path key={index} className="ghost-mark__pupil" d={d} />
-            ))}
+          <g mask={`url(#${id}-eyes)`}>
+            <path ref={shellRef} className="ghost-mark__shell" d={BODY} />
+            {happy && (
+              <>
+                <ellipse ref={blushLRef} className="ghost-mark__blush" fill={`url(#${id}-blush)`} opacity="0" />
+                <ellipse ref={blushRRef} className="ghost-mark__blush" fill={`url(#${id}-blush)`} opacity="0" />
+              </>
+            )}
           </g>
-          {/* Outside the clipped group: the gaze tracker expects exactly two paths there. */}
-          {happy && (
-            <g className="ghost-mark__happy">
-              <path ref={arcLRef} className="ghost-mark__arc" pathLength={1} />
-              <path ref={arcRRef} className="ghost-mark__arc" pathLength={1} />
-            </g>
-          )}
         </svg>
       </span>
     </span>
   )
 }
-
