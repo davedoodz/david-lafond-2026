@@ -339,8 +339,11 @@ export function CaseStudyPage({ id }: Props) {
   const page = base.page
   const hero = base.hero
   const metaFields: HeroField[] = hero.extra || hero.extraLabel ? ['role', 'timeline', 'extra', 'team'] : ['role', 'timeline', 'team']
-  // Momo on phones sets each hero meta value (Role, Timeline, Team) on three even lines.
-  const metaLines = useMedia('(max-width: 640px)') && id === 'momo'
+  // Phones: Momo sets each hero meta value (Role, Timeline, Team) on three even lines; Filo puts each
+  // member of its team ("1 engineer, 1 designer") on its own line.
+  const phone = useMedia('(max-width: 640px)')
+  const metaLines = (field: HeroField): string[] | null =>
+    !phone ? null : id === 'momo' ? threeLines(hero[field]) : id === 'filo' && field === 'team' ? hero[field].split(/(?<=,)\s+/) : null
   // True while the Momo voice story plays on the stage above the hero.
   const [intro, setIntro] = useState(id === 'momo')
   const allKeys = SECTION_KEYS[id]
@@ -650,20 +653,23 @@ export function CaseStudyPage({ id }: Props) {
           )}
           {isHero && (
             <dl className="case__meta" style={{ '--meta-cols': metaFields.length } as CSSProperties}>
-              {metaFields.map((field) => (
-                <div key={field}>
-                  <dt className="eyebrow">
-                    <EditableText as="span" label={`${field} eyebrow`} value={hero[`${field}Label`]} onChange={edit(`hero.${field}Label`)} />
-                  </dt>
-                  {metaLines ? (
-                    <p className="case__meta-value">
-                      {threeLines(hero[field]).map((line, i) => <span key={i} className="case__meta-line">{line}</span>)}
-                    </p>
-                  ) : (
-                    <EditableText as="p" className="case__meta-value" label={field} value={hero[field]} onChange={edit(`hero.${field}`)} />
-                  )}
-                </div>
-              ))}
+              {metaFields.map((field) => {
+                const lines = metaLines(field)
+                return (
+                  <div key={field}>
+                    <dt className="eyebrow">
+                      <EditableText as="span" label={`${field} eyebrow`} value={hero[`${field}Label`]} onChange={edit(`hero.${field}Label`)} />
+                    </dt>
+                    {lines ? (
+                      <p className="case__meta-value">
+                        {lines.map((line, i) => <span key={i} className="case__meta-line">{line}</span>)}
+                      </p>
+                    ) : (
+                      <EditableText as="p" className="case__meta-value" label={field} value={hero[field]} onChange={edit(`hero.${field}`)} />
+                    )}
+                  </div>
+                )
+              })}
             </dl>
           )}
           {isHero && logos?.show && logos.placement === 'below meta' && <LogoRow l={logos} id={id} />}

@@ -60,12 +60,17 @@
     text-wrap: balance;
   }
   main.case[data-work='filo'] .case__section--hero .case__logos {
-    --logo-h: var(--fm-logo-h) !important;
+    /* The row is 8.75 logo heights wide (three logos + two gaps), so it never passes the margins. */
+    --logo-h: min(var(--fm-logo-h), var(--fm-content-w) / 8.75) !important;
     flex-wrap: nowrap;
-    column-gap: var(--fm-logo-h);
+    column-gap: var(--logo-h);
     translate: none;
     /* The meta row is drawn --hero-meta-y higher than its layout box (a hero dial), so measure from where it shows. */
     margin-top: calc(var(--fm-logos-gap) + var(--hero-meta-y, 0px));
+  }
+  /* The Filo mark on the nav row, scaled about its centre so it stays level with Back and Davebot. */
+  main.case[data-work='filo'] .case__section--hero .case__hero-mark {
+    scale: calc(var(--mark-scale, 1) * var(--fm-mark-scale));
   }
   /* The tag photo is a 1024 × 1536 cut-out with clear space around the tag: 287px above it and 142px
      below. The margins take that space back, so logos → tag matches meta → logos and the gap to the
