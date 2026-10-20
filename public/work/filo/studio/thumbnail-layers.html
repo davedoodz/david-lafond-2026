@@ -210,6 +210,8 @@ const SNIPPETS = {
 
 const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-materials', zoom: 'window', layers: 'on' },
   Object.fromEntries(new URLSearchParams(location.search)))
+/** The morph style the fabric switch brings back after "Products only". */
+let lastMorph = S.morph !== 'off' ? S.morph : 'turn'
 
 const CONTROLS = [
   ['morph', 'Morph', [['turn', 'Turn'], ['threads', 'Threads'], ['melt', 'Melt'], ['off', 'Off']]],
@@ -366,11 +368,17 @@ function buildPick(L) {
     <div class="place">
       ${['d', 'm'].map(v => `<div><h4>${v === 'd' ? 'Desktop card' : 'Mobile card'}</h4>${['phone', 'tag', 'desk'].map(k => group(v, k)).join('')}</div>`).join('')}
       <div class="place__sway"><b>Tag sway</b><label><span>speed</span><input type="range" min="0" max="3" step="0.05" value="${PICK.sway}" data-sway><output>${PICK.sway}×</output></label></div>
+      <div class="place__sway"><b>Fabric</b><div class="seg">${[['on', 'Products turn to fabric'], ['off', 'Products only']].map(([v, l]) => `<button type="button" data-fabric="${v}" aria-pressed="${(S.morph !== 'off') === (v === 'on')}">${l}</button>`).join('')}</div></div>
       <div class="place__bar"><button data-act="copy">Copy values</button><button data-act="reset">Reset</button><span data-out></span></div>
     </div>`
   const [cd, cm] = fig.querySelectorAll('.card')
   const cardOf = { d: cd, m: cm }
   placeAll(cd, 'd'); placeAll(cm, 'm'); setSway(fig, PICK.sway)
+  // Fabric switch: drives the top bar's Morph control, so the two never disagree; "on" brings back the last morph style.
+  fig.addEventListener('click', e => {
+    const v = e.target.closest('button[data-fabric]')?.dataset.fabric
+    if (v) controlsEl.querySelector(`button[data-key="morph"][data-v="${v === 'on' ? lastMorph : 'off'}"]`).click()
+  })
   fig.querySelector('.place').addEventListener('input', e => {
     if ('sway' in e.target.dataset) {
       PICK.sway = Number(e.target.value)
@@ -421,6 +429,8 @@ function apply() {
     if (!v.src.endsWith(src)) { v.src = src; v.load() }
     v.style.setProperty('--fx', dk.fx); v.style.setProperty('--fy', dk.fy)
   })
+  if (S.morph !== 'off') lastMorph = S.morph
+  document.querySelectorAll('button[data-fabric]').forEach(b => b.setAttribute('aria-pressed', String((S.morph !== 'off') === (b.dataset.fabric === 'on'))))
   history.replaceState(null, '', `?${new URLSearchParams(S)}`)
   for (const c of cards) c.dirty()
   for (const c of cells) c.key = ''
