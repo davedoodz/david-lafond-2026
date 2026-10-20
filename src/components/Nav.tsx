@@ -133,7 +133,7 @@ export function BackLink({ className = '' }: { className?: string }) {
 }
 
 /** Where Davebot's eyes take the page's black: the Work page's top, the About page from My Playground
- *  on, and every contact block and footer. */
+ *  on, and every contact block and footer, except on the Harvard & MIT portfolio, where they stay white. */
 const INK_EYES = '.landing, .about__dark, .cta, .footer'
 
 export function Nav({ route }: Props) {
@@ -194,7 +194,7 @@ export function Nav({ route }: Props) {
       // only <html>, so that keeps the last answer.
       const ghost = nav.querySelector('.nav__ghost')?.getBoundingClientRect()
       const hit = ghost && document.elementsFromPoint(ghost.left + ghost.width / 2, ghost.top + ghost.height / 2).find((el) => !nav.contains(el))
-      if (hit && hit !== document.documentElement) setInkEyes(!!hit.closest(INK_EYES))
+      if (hit && hit !== document.documentElement) setInkEyes(route !== 'harvard-mit' && !!hit.closest(INK_EYES))
       // Edge blur: a sheet's curved edge inside a blur band is blurred toward the screen edge but sharp
       // at its tip, which reads as a flat crop. Such a band clears while an arc is in it (Nav.css): the
       // page's top band, and each sheet's own bottom band, which otherwise rests on the sheet's
