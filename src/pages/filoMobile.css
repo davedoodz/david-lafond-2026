@@ -1,0 +1,164 @@
+/* Filo on phones (≤ 640px): one centred column read top to bottom (filoMobile.ts dials), built the
+   same way as Momo's (momoMobile.css), so both case studies share one rhythm:
+   - Every section sizes to its content and gets the same space above and below, so the gap between
+     any two sections is one value (--fm-section-gap); heading → image is --fm-media-gap.
+   - Nothing crosses the side margins (--m-side, the Back button's inset, caseMobile.css), except the
+     interview quotes (a marquee) and step 4's swatch deck, which run to the screen's edges.
+   - Desktop nudges (x / y dials, side-by-side placement) are dropped, so every image sits on the
+     page's centre line and the eye only moves down.
+   `main.case[data-work='filo']` outranks the page's own phone rules without !important. */
+@media (max-width: 640px) {
+  main.case[data-work='filo'] {
+    --fm-content-w: calc(100vw - 2 * var(--m-side));
+  }
+
+  /* --- Section rhythm: half the gap above and below each section; centred column. */
+  main.case[data-work='filo'] section.case__section,
+  main.case[data-work='filo'] section.case__section[data-layout] {
+    min-height: 0;
+    height: auto;
+    justify-content: flex-start;
+    align-content: start;
+    align-items: center;
+    text-align: center;
+    gap: var(--fm-media-gap);
+    padding: calc(var(--fm-section-gap) / 2) var(--m-side);
+  }
+  /* The hero keeps its top: the Filo mark sits level with the nav (caseMobile.css). */
+  main.case[data-work='filo'] section.case__section--hero[data-layout] {
+    padding-top: 29px;
+  }
+
+  /* --- Text: the same sizes as Momo (caseMobile.css), the same tighter body spacing, balanced lines
+     so no heading or paragraph ends on one stray word. The story chapters drop their green-grey
+     tint for the page's greys, so every eyebrow, heading and paragraph on the page matches. */
+  main.case[data-work='filo'] section.case__section :is(.case__body, .fs-copy > p:not(.eyebrow)) {
+    line-height: var(--fm-body-lh);
+    text-wrap: balance;
+  }
+  main.case[data-work='filo'] section.case__section :is(.case__title, .fs-copy > h2) {
+    text-wrap: balance;
+  }
+  main.case[data-work='filo'] .filo-story :is(.fs-copy, .fs-copy > h2) {
+    color: var(--ink-900);
+  }
+  main.case[data-work='filo'] .filo-story .fs-copy > .eyebrow {
+    color: rgb(166 160 156);
+  }
+  main.case[data-work='filo'] .filo-story .fs-copy > p:not(.eyebrow) {
+    color: rgb(111 107 104);
+  }
+
+  /* --- 1 Hero. Role, Origin, Program and Team in two even columns, each value centred under its
+     label (title → labels stays as on Momo). Partner logos at Momo's logo height, the gap between
+     them equal to it (as on Momo), and the same space above and below the row (--fm-logos-gap). */
+  main.case[data-work='filo'] .case__section--hero .case__meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+  main.case[data-work='filo'] .case__section--hero .case__meta-value {
+    text-wrap: balance;
+  }
+  main.case[data-work='filo'] .case__section--hero .case__logos {
+    --logo-h: var(--fm-logo-h) !important;
+    flex-wrap: nowrap;
+    column-gap: var(--fm-logo-h);
+    translate: none;
+    /* The meta row is drawn --hero-meta-y higher than its layout box (a hero dial), so measure from where it shows. */
+    margin-top: calc(var(--fm-logos-gap) + var(--hero-meta-y, 0px));
+  }
+  /* The tag photo is a 1024 × 1536 cut-out with clear space around the tag: 287px above it and 142px
+     below. The margins take that space back, so logos → tag matches meta → logos and the gap to the
+     next section is measured from the tag itself. */
+  main.case[data-work='filo'] .case__section--hero .case__devices {
+    width: var(--fm-tag-w);
+    max-width: 100%;
+    margin-top: calc(var(--fm-logos-gap) - var(--fm-media-gap) - var(--fm-tag-w) * 287 / 1024);
+    margin-bottom: calc(var(--fm-tag-w) * -142 / 1024);
+  }
+  main.case[data-work='filo'] .filo-hero-tag {
+    width: 100%;
+    transform: none;
+  }
+
+  /* --- 2 Market gap · Proposal: two chapters, a section gap apart, each heading → image at the
+     media gap. Both images sit on the centre line (the desktop y nudges would push the proposal's
+     swatches into the next section's heading). */
+  main.case[data-work='filo'] section.filo-story {
+    gap: var(--fm-section-gap);
+  }
+  main.case[data-work='filo'] .filo-story .fs-chapter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fm-media-gap);
+  }
+  main.case[data-work='filo'] .filo-story .fs-film {
+    margin: 0;
+    translate: none;
+  }
+  main.case[data-work='filo'] .filo-story .fs-film--problem {
+    width: min(var(--fm-desk-w), var(--fm-content-w));
+  }
+  main.case[data-work='filo'] .filo-story .fs-film--opportunity {
+    --fs-opp-w: min(var(--fm-proposal-w), var(--fm-content-w));
+  }
+
+  /* --- 3 Primary research: interview video, quote cards, Miro board, --fm-research-gap apart. */
+  main.case[data-work='filo'] .filo-research {
+    gap: var(--fm-research-gap);
+    max-width: none;
+  }
+  main.case[data-work='filo'] .filo-research__interviews {
+    width: min(var(--fm-interviews-w), var(--fm-content-w));
+  }
+  main.case[data-work='filo'] .filo-research__overview {
+    width: min(var(--fm-miro-w), var(--fm-content-w));
+  }
+
+  /* --- 4 Steps 01–04. The portal windows at the column width; step 3's phone, its box under it, and
+     step 4's phone at Momo's phone width (Core flows), all on the centre line. */
+  main.case[data-work='filo'] .fss-app:not(.fss-app--phone, .fss-app--scene) {
+    width: min(var(--fm-portal-w), var(--fm-content-w));
+  }
+  main.case[data-work='filo'] .fss-receive {
+    gap: var(--fm-box-gap);
+  }
+  main.case[data-work='filo'] .fss-app--phone {
+    width: var(--fm-phone-w);
+  }
+  main.case[data-work='filo'] .fss-box {
+    width: min(var(--fm-box-w), var(--fm-content-w));
+    left: 0;
+    top: 0;
+    margin-top: 0;
+  }
+  /* The scene's phone is 390.6px wide on its 900px-high stage, so this height draws it at the phone
+     width. The swatch deck runs off both sides, so the scene spans the screen: its ends leave at the
+     screen's edges instead of being cut at the margins. */
+  main.case[data-work='filo'] .fss-app--scene {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+    height: calc(var(--fm-phone-w) * 900 / 390.6);
+  }
+
+  /* --- 5 A circular future: the product loop, then the two milestone photos rising out from under
+     the footer sheet, kept inside the side margins. */
+  main.case[data-work='filo'] section.case__section[data-section='outcomes'] {
+    padding-bottom: 0;
+  }
+  main.case[data-work='filo'] .filo-next {
+    width: min(var(--fm-loop-w), var(--fm-content-w));
+  }
+  main.case[data-work='filo'] .filo-milestones {
+    padding: var(--fm-milestones-gap) var(--m-side) 0;
+  }
+
+  /* --- Contact: centred like the rest of the page (as on Momo). */
+  main.case[data-work='filo'] .cta.column {
+    text-align: center;
+  }
+  main.case[data-work='filo'] .cta.column > * {
+    margin-inline: auto;
+  }
+}

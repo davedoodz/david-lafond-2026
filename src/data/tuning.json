@@ -996,7 +996,7 @@
       "offset": 28
     },
     "story": {
-      "problemTitle": "Tagged swatches can identify a material.\nThey can’t tell you if it’s production-ready.\n",
+      "problemTitle": "Tagged swatches can identify a material.\nThey can’t tell you if it’s production‑ready.\n",
       "problemBody": "Technical designers still have to verify supplier claims, test unknowns and document constraints across emails, spreadsheets, lab reports and PLMs before a factory can use it.",
       "opportunityTitle": "Turn the swatch into \nan active material record.",
       "opportunityBody": "One tap connects each physical sample to a living Technical File, bringing its evidence, constraints and next actions.\n",

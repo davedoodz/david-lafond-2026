@@ -2,19 +2,14 @@
  * "Momo · phone layout": DialKit panel for the Momo case study on phones (≤ 640px) only.
  * Folders follow the page from top to bottom and are named after each section's heading; every dial
  * names the exact image, video or words it moves. Text sizes stay in "Mobile case studies", shared by
- * every case study. Each dial sets one CSS variable on <main> that momoMobile.css reads inside its
- * phone media query, so desktop never changes.
+ * every case study. Each dial sets one CSS variable on <main> (phoneLayoutDials.ts) that
+ * momoMobile.css reads inside its phone media query, so desktop never changes.
  */
 import { useEffect, type RefObject } from 'react'
-import { useTuning } from '../tuning/useTuning'
+import { usePhoneLayoutDials, type PhoneDialTable } from './phoneLayoutDials'
 import './momoMobile.css'
 
-type Tuple = [number, number, number, number]
-
-/** Folder → dial label → [CSS variable, default, min, max, step, unit]. DialKit spaces out capitals
- *  that follow another letter ("MIT" → "M I T"), so labels use capitals only at word starts, and stay
- *  short enough to show beside their value. */
-const DIALS: Record<string, Record<string, [string, number, number, number, number, 'px' | '']>> = {
+const DIALS: PhoneDialTable = {
   'Whole page': {
     'Gap between sections': ['--mm-section-gap', 112, 40, 240, 2, 'px'],
     'Heading to image gap': ['--mm-media-gap', 32, 0, 120, 1, 'px'],
@@ -58,30 +53,9 @@ const DIALS: Record<string, Record<string, [string, number, number, number, numb
   },
 }
 
-const CONFIG = Object.fromEntries(
-  Object.entries(DIALS).map(([folder, dials]) => [
-    folder,
-    Object.fromEntries(Object.entries(dials).map(([label, [, ...range]]) => [label, range.slice(0, 4) as Tuple])),
-  ]),
-) as Record<string, Record<string, Tuple>>
-
-/** Mounted only on the Momo page, so its panel shows only there. Writes the dials to `target`.
- *  Passive effects throughout: this sits inside <main>, whose ref attaches after children's
- *  layout effects run. */
+/** Mounted only on the Momo page, so its panel shows only there. Writes the dials to `target`. */
 export function MomoPhoneDials({ target }: { target: RefObject<HTMLElement | null> }) {
-  const t = useTuning('Momo · phone layout', CONFIG) as unknown as Record<string, Record<string, number>>
-  useEffect(() => {
-    const el = target.current
-    if (!el) return
-    const set: string[] = []
-    for (const [folder, dials] of Object.entries(DIALS)) {
-      for (const [label, [name, , , , , unit]] of Object.entries(dials)) {
-        el.style.setProperty(name, `${t[folder][label]}${unit}`)
-        set.push(name)
-      }
-    }
-    return () => set.forEach((name) => el.style.removeProperty(name))
-  }, [t, target])
+  usePhoneLayoutDials('Momo · phone layout', DIALS, target)
   // The partner logos above the welcome phone span no wider than the phone (momoMobile.css), so its
   // laid-out width (before the size dial's scale) is published as --mm-welcome-w. The phone mounts
   // after this page (once the intro hands off) and the hero may re-render, so the whole page is
