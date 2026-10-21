@@ -6,7 +6,8 @@ import './ghost.css'
 /**
  * Davebot, drawn on a 32 grid — ported from ditto's DavebotGhost.tsx.
  *
- * The eyes are plain black ovals on every surface. They never blink or change shape.
+ * The eyes are plain black ovals on every surface. With a pointer they follow it and never blink;
+ * on touch screens they look around and blink on their own (`ghostGaze`).
  *
  * They sit inside a group clipped to the head dome. `ghostGaze` measures that clip path every
  * frame to cap how far the eyes may travel, so the clip is load-bearing geometry rather than
