@@ -105,11 +105,19 @@
   left: 0;
   right: 0;
 }
-/* Phones: Work / About / Resume stay at the top of the page and scroll away with it. Absolute keeps
-   the same box (the spacer still holds its room); case studies keep their pinned Back. */
+/* Phones, every page: Work / About / Resume stay at the top of the page and scroll away with it,
+   while Davebot stays on screen. Absolute keeps the same box (the spacer, where there is one, still
+   holds its room); Davebot's column is fixed to the spot it starts in (same padding, same margins).
+   Momo and Filo pin their nav in CaseStudyPage.css, hence the longer second selector. */
 @media (max-width: 640px) {
-  .nav[data-pin='fixed']:not([data-project]) {
+  .nav[data-pin='fixed'],
+  main.case > .case__light > .nav[data-pin='fixed'] {
     position: absolute;
+  }
+  .nav[data-pin] .nav__start {
+    position: fixed;
+    top: calc(34px + env(safe-area-inset-top));
+    left: var(--text-edge);
   }
 }
 /* Pinned over another section: colours follow the page under the links (set in Nav.tsx). */
