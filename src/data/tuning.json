@@ -133,8 +133,9 @@
       "color": "#A6A09C"
     },
     "playback": {
-      "speed": 3.7,
-      "startDelayMs": 1610
+      "speed": 7.4,
+      "startDelayMs": 805,
+      "maxGapMs": 175
     },
     "layout": {
       "desktopWidth": 316,
@@ -171,8 +172,8 @@
       "preset": "Round"
     },
     "intro": {
-      "delayMs": 3010,
-      "durationMs": 960,
+      "delayMs": 1505,
+      "durationMs": 480,
       "bounce": 0.4
     },
     "spacing": {
@@ -278,8 +279,9 @@
     }
   },
   "Entrance": {
-    "durationMs": 1040,
-    "staggerMs": 200,
+    "durationMs": 520,
+    "delayMs": 75,
+    "staggerMs": 100,
     "blur": 6.5,
     "ease": "linear-ish"
   },
@@ -545,18 +547,19 @@
   },
   "Header intro": {
     "shader": {
-      "durationMs": 3040
+      "durationMs": 1520
     },
     "ghost": {
       "preset": "spin",
-      "delayMs": 2000,
-      "durationMs": 1940,
+      "delayMs": 1000,
+      "durationMs": 970,
       "bounce": 0.65
     },
     "links": {
       "preset": "drop",
-      "delayMs": 1360,
-      "durationMs": 1750
+      "delayMs": 680,
+      "durationMs": 875,
+      "staggerMs": 35
     }
   },
   "Contributions": {
