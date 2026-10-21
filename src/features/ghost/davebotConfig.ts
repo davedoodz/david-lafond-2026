@@ -6,7 +6,7 @@
 
 export const DAVEBOT_PANEL = 'Davebot'
 
-/** Graphite: dark warm grey body (#3A3836), on dark and light pages alike. The eyes are always paper (ghost.css). */
+/** Graphite: dark warm grey body (#3A3836), on dark and light pages alike. The eyes are always black (ghost.css). */
 const GRAPHITE = '#3a3836'
 
 /** CSS fill for the ghost body from the 'ghost → color' dial; undefined keeps the stylesheet default. */
@@ -39,7 +39,7 @@ export const DAVEBOT_CONFIG = {
     offsetX: [0, -300, 300, 1] as [number, number, number, number],
     offsetY: [0, -200, 200, 1] as [number, number, number, number],
     paletteWidth: [560, 360, 720, 4] as [number, number, number, number],
-    /** Body colour (the eyes are always paper). default: light gray (darker on light pages);
+    /** Body colour (the eyes are always black). default: light gray (darker on light pages);
      *  graphite: dark warm grey; nav link: the idle nav links' colour (RESUME); gray text: the site's
      *  muted text gray (--text-muted, e.g. "a product designer."); custom: the colour below. */
     color: { type: 'select' as const, options: ['default', 'graphite', 'nav link', 'gray text', 'custom'], default: 'default' },

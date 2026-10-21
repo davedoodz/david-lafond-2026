@@ -52,11 +52,10 @@ html[data-safari-edges][data-safari-bottom='dark'] .edge-bottom::before {
   }
 }
 
-/* Work on mobile has no viewport overlays, including the solid strip across footer content.
-   Document background colors still follow the page for Safari's own controls. */
+/* Work on mobile has no fades over its content; it keeps only the 5px solid sampling strips, which
+   sit under Safari's status bar and toolbar, so Safari paints both bars the page's own edge colour. */
 @media (hover: none) and (pointer: coarse) {
-  html[data-safari-page='work'] :is(.edge-top, .edge-bottom)::before,
-  html[data-safari-page='work'] :is(.edge-top, .edge-bottom)::after {
+  html[data-safari-page='work'] :is(.edge-top, .edge-bottom)::before {
     display: none;
     content: none;
   }

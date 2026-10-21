@@ -183,9 +183,9 @@ export function Nav({ route }: Props) {
       const sectionLight = isLightUnder(nav, x, y, '.works__card, .pg-card')
       if (sectionLight !== null) setSection(sectionLight ? 'light' : 'dark')
       else setSection((current) => current ?? declared())
-      // Each link (Back too) takes the tone right under itself, so a sheet's curved edge crossing the
-      // row flips each word as the edge passes it (Nav.css, data-link-tone).
-      for (const link of nav.querySelectorAll<HTMLElement>('.nav__links > a, .nav__links-back')) {
+      // Each link takes the tone right under itself, so a sheet's curved edge crossing the row flips
+      // each word as the edge passes it (Nav.css, data-link-tone).
+      for (const link of nav.querySelectorAll<HTMLElement>('.nav__links > a')) {
         const r = link.getBoundingClientRect()
         const tone = isLightUnder(nav, r.left + r.width / 2, r.top + r.height / 2)
         if (tone !== null) link.dataset.tone = tone ? 'light' : 'dark'
@@ -246,48 +246,6 @@ export function Nav({ route }: Props) {
   const fadeSurface = fadeTone === 'Light' ? 'light' : fadeTone === 'Dark' ? 'dark' : section
   const surface = phone && preset === 'Soft fade' && fadeLinks === 'Match fade' ? fadeSurface : under
 
-  // Phones: the links tuck away while you scroll down and come back as soon as you scroll up (or
-  // reach the top); Davebot stays. Direction is judged over a few pixels of travel so jitter and
-  // iOS overscroll at either end don't flicker them (Nav.css, data-tucked). Only your own scrolling
-  // (a drag, wheel or scroll key in the last 1.5s, which covers a flick's momentum) tucks them: the
-  // Momo intro's glide or a jump to a section leaves them shown, even when a tap (Skip) started it.
-  useEffect(() => {
-    const nav = navRef.current
-    if (!nav || !phone) return
-    const max = () => document.documentElement.scrollHeight - window.innerHeight
-    let last = Math.min(Math.max(window.scrollY, 0), max())
-    let travel = 0
-    let input = -Infinity
-    const onInput = (event: Event) => {
-      // Enter or Space on a button or link presses it; it doesn't scroll the page.
-      if (event.type === 'keydown' && (event.target as Element | null)?.closest?.('button, a, input, textarea, select')) return
-      input = performance.now()
-    }
-    const onScroll = () => {
-      const y = Math.min(Math.max(window.scrollY, 0), max())
-      const dy = y - last
-      last = y
-      if (y < 40) {
-        travel = 0
-        nav.removeAttribute('data-tucked')
-        return
-      }
-      if (!dy) return
-      travel = Math.sign(dy) === Math.sign(travel) ? travel + dy : dy
-      if (travel > 12 && performance.now() - input < 1500) nav.setAttribute('data-tucked', '')
-      else if (travel < -12) nav.removeAttribute('data-tucked')
-    }
-    // No touchstart: a tap (Skip, Replay) isn't a scroll, and the glide it starts shouldn't tuck.
-    const inputs = ['touchmove', 'wheel', 'keydown'] as const
-    for (const type of inputs) window.addEventListener(type, onInput, { passive: true })
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      for (const type of inputs) window.removeEventListener(type, onInput)
-      window.removeEventListener('scroll', onScroll)
-      nav.removeAttribute('data-tucked')
-    }
-  }, [phone])
-
   const style = {
     '--nav-tracking-d': `${t.letterSpacing.desktop}px`,
     '--nav-tracking-m': `${t.letterSpacing.mobile}px`,
@@ -338,8 +296,6 @@ export function Nav({ route }: Props) {
           <GhostButton className="nav__ghost" />
         </div>
         <nav className="nav__links" aria-label="Primary">
-          {/* Phones, project pages: "← Back" takes Work's place (Nav.css). */}
-          {isProject && <BackLink className="nav__links-back" />}
           <a className="nav__work" href="/" aria-current={route === 'work' ? 'page' : isProject ? 'true' : undefined} onClick={internalLink('work')}>
             Work
           </a>
