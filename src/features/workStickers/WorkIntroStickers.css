@@ -189,9 +189,11 @@
   pointer-events: none;
 }
 
-/* A mobile tap changes the phrase inside its reserved slot, never the surrounding layout. */
+/* A mobile tap changes the phrase without moving the copy: each line keeps the width it has with every
+   pill at its longest phrase (--ws-line-width, WorkIntroStickers.tsx), so the column, its centring and
+   the nav stay put, while the pill itself hugs the phrase it shows. */
 @media (max-width: 640px), (hover: none) and (pointer: coarse) {
-  .work-intro-stickers__p .ws-pill {
-    width: var(--ws-mobile-width, auto) !important;
+  .work-intro-stickers__p .ws-line {
+    min-width: var(--ws-line-width, auto);
   }
 }
