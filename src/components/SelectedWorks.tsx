@@ -498,17 +498,9 @@ export function SelectedWorks() {
           duration: intro.durationMs, delay: intro.delayMs, fill: 'backwards',
         })
       : null
-    // The intro is a landing flourish only. Once the user scrolls, jump to rest so the
-    // lowered sheet (and the dark gap above it) never shows at a scroll or snap stop.
-    const skip = () => {
-      if (window.scrollY > 10) {
-        if (animation.playState !== 'finished') animation.finish()
-        if (contentAnimation && contentAnimation.playState !== 'finished') contentAnimation.finish()
-      }
-    }
-    window.addEventListener('scroll', skip, { passive: true })
+    // Never finish the entrance on scroll: the section's normal document movement carries the
+    // still-running arc upward with the gesture. Finishing here made the arc pop into place.
     return () => {
-      window.removeEventListener('scroll', skip)
       animation.cancel()
       contentAnimation?.cancel()
     }
