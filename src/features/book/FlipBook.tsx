@@ -165,13 +165,17 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
       return page
     })
 
+    // Under a sharp page still downloading (medium ~1 MB, detail more), the bundled 5 KB thumb shows
+    // instead of the blank page colour, so the book never arrives with a white cover.
+    const backdrop = (i: number, level: PageQuality | 'none') =>
+      level === 'medium' || level === 'detail' ? `url("${pageUrl(i + 1, 'thumb')}")` : ''
     const setQuality = (i: number, next: PageQuality) => {
       if (quality[i] === next) return
       quality[i] = next
       const original = pageUrl(i + 1, next)
       images[i].dataset.layoutOriginal = original
       images[i].src = diagramRef.current?.[i + 1] ?? original
-      images[i].style.backgroundImage = diagramRef.current ? `url("${original}")` : ''
+      images[i].style.backgroundImage = diagramRef.current ? `url("${original}")` : backdrop(i, next)
     }
     refreshDiagrams.current = () => {
       images.forEach((image, i) => {
@@ -179,7 +183,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
         const level = quality[i]
         const original = pageUrl(i + 1, level === 'none' ? 'thumb' : level)
         image.dataset.layoutOriginal = original
-        image.style.backgroundImage = source && level !== 'none' ? `url("${original}")` : ''
+        image.style.backgroundImage = source && level !== 'none' ? `url("${original}")` : backdrop(i, level)
         if (source) image.src = source
         else if (level !== 'none') image.src = pageUrl(i + 1, level)
         else image.removeAttribute('src')

@@ -323,6 +323,10 @@
   overflow: hidden;
   background: #f3f1ec;
 }
+/* The black covers (and black spreads) wait on their own colour, never on the cream page's. */
+.book-page[data-surface='dark'] {
+  background: #090909;
+}
 
 /* Round page nodes, never the host: turning leaves must remain unclipped.
    Open spreads keep square inner corners along their binding. */
