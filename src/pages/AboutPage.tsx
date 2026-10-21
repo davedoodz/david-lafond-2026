@@ -234,9 +234,10 @@ export function AboutPage() {
       // The sheet overlaps the story by the peek (its top margin) and the story's bottom padding
       // grows by as much (AboutPage.css), so the gap above the arc tip stays the spacing dial.
       set(sheet.parentElement, '--dome-peek', `${peek.toFixed(2)}px`)
-      // 1 at the peek (the sheet's top at vh − peek), easing to 0 over enterDistance screens.
+      // 1 at the peek (the sheet's top at vh − peek), easing to 0 over enterDistance rises (the
+      // distance from the peek to the screen top), exactly like the Selected projects sheet.
       const rest = vh - peek
-      const top = reduced ? 0 : 1 - curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / (morph.enterDistance * vh))))
+      const top = reduced ? 0 : 1 - curve(Math.min(1, Math.max(0, (rest - sheet.getBoundingClientRect().top) / (morph.enterDistance * Math.max(1, rest)))))
       if (touch) {
         sheet.style.setProperty('--dome-clip', touchArcClip(SAVED_TOUCH_ARC, sheet, svh, top, 0))
         return
