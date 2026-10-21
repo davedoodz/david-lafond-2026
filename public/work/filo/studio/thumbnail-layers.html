@@ -156,10 +156,11 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .card.is-out .tag { translate: 0 -125%; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0s; }
 .card.is-out .desk { translate: 110% 0; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0.15s; }
 .card.is-out .phone { translate: 0 110%; transition: translate 0.9s cubic-bezier(.55, 0, .8, .2) 0.3s; }
-/* Picked layout: its slide speed (--k scales every duration and delay; 2 = half speed) and an "always there" mode. */
-.pick .card .phone { transition: translate calc(1.1s * var(--k, 1)) cubic-bezier(.2, .8, .2, 1) calc(0.05s * var(--k, 1)); }
-.pick .card .desk { transition: translate calc(1.1s * var(--k, 1)) cubic-bezier(.2, .8, .2, 1) calc(0.3s * var(--k, 1)); }
-.pick .card .tag { transition: translate calc(1.3s * var(--k, 1)) cubic-bezier(.3, 1.25, .5, 1) calc(0.55s * var(--k, 1)); }
+/* Picked layout: its slide speed (--k scales every duration; 2 = half speed), each layer's own entrance delay
+   (--d-phone, --d-desk, --d-tag, in seconds, from the pick panel) and an "always there" mode. */
+.pick .card .phone { transition: translate calc(1.1s * var(--k, 1)) cubic-bezier(.2, .8, .2, 1) var(--d-phone, 0.05s); }
+.pick .card .desk { transition: translate calc(1.1s * var(--k, 1)) cubic-bezier(.2, .8, .2, 1) var(--d-desk, 0.3s); }
+.pick .card .tag { transition: translate calc(1.3s * var(--k, 1)) cubic-bezier(.3, 1.25, .5, 1) var(--d-tag, 0.55s); }
 .pick .card:not(.is-in) :is(.phone, .desk, .tag) { transition: none; }
 .pick .card.is-out .tag { transition: translate calc(0.9s * var(--k, 1)) cubic-bezier(.55, 0, .8, .2) 0s; }
 .pick .card.is-out .desk { transition: translate calc(0.9s * var(--k, 1)) cubic-bezier(.55, 0, .8, .2) calc(0.15s * var(--k, 1)); }
@@ -350,20 +351,26 @@ const PICK_DEFAULT = {
   m: { phone: { x: 12, y: 150, size: 270 }, tag: { x: 154, y: 38, size: 132 }, desk: { x: 172, y: 150, size: 210 } },
 }
 const PICK_KEY = 'filo-thumb-pick'
-const PICK = { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging', ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
+/* Seconds after the slide-in starts before each layer moves; its snippet starts playing as it moves. */
+const DELAY_DEFAULT = { phoneDelay: 0.05, deskDelay: 0.3, tagDelay: 0.55 }
+const PICK = { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging', ...DELAY_DEFAULT, ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
 /* Picked layout's loop: `hold` = seconds the layers rest after the phone snippet ends (when PICK.stay is 0, "until
    the phone clip ends"); `exit` = the slide out at 1× (scaled by the slide speed). PICK.stay sets the seconds the
    layers stay in instead; PICK.away is the empty wall before they come back. */
 const LAYER_LOOP = { hold: 0.4, exit: 1.2 }
 /* Pick panel sliders beyond placement: [key, label, min, max, step, format]. */
 const TIMING = [
+  ['phoneDelay', 'Phone arrives after', 0, 4, 0.05, v => `${v} s`],
+  ['tagDelay', 'Tag arrives after', 0, 4, 0.05, v => `${v} s`],
+  ['deskDelay', 'Desktop arrives after', 0, 4, 0.05, v => `${v} s`],
   ['phoneRate', 'Phone clip', 0.25, 2, 0.05, v => `${v}×`],
   ['deskRate', 'Desktop clip', 0.25, 2, 0.05, v => `${v}×`],
   ['stay', 'Stays in', 0, 20, 0.5, v => (v ? `${v} s` : 'phone clip')],
   ['away', 'Away for', 0, 6, 0.1, v => `${v} s`],
 ]
-/** Clip speeds for the picked cards. defaultPlaybackRate survives a snippet swap (a new src resets playbackRate to it). */
+/** Clip speeds and entrance delays for the picked cards. defaultPlaybackRate survives a snippet swap (a new src resets playbackRate to it). */
 function setRates(fig) {
+  for (const k of ['phone', 'desk', 'tag']) fig.style.setProperty(`--d-${k}`, `${PICK[`${k}Delay`]}s`)
   for (const [kind, key] of [['phone', 'phoneRate'], ['desk', 'deskRate']])
     fig.querySelectorAll(`video[data-kind="${kind}"]`).forEach(v => { v.defaultPlaybackRate = v.playbackRate = PICK[key] })
 }
@@ -431,7 +438,7 @@ function buildPick(L) {
       <div class="place__sway"><b>Tag sway</b><label><span>speed</span><input type="range" min="0" max="3" step="0.05" value="${PICK.sway}" data-sway><output>${PICK.sway}×</output></label></div>
       <div class="place__sway"><b>Slide</b><div class="seg">${MOTIONS.map(([v, l]) => `<button type="button" data-motion="${v}" aria-pressed="${PICK.motion === v}">${l}</button>`).join('')}</div></div>
       <div class="place__sway"><b></b><label><span>speed</span><input type="range" min="0.25" max="3" step="0.05" value="${PICK.slide}" data-slide><output>${PICK.slide}×</output></label></div>
-      ${TIMING.map(([key, label, min, max, step, fmt]) => `<div class="place__sway"><b>${label}</b><label><span>${key.endsWith('Rate') ? 'speed' : 'time'}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${PICK[key]}" data-timing="${key}"><output>${fmt(PICK[key])}</output></label></div>`).join('')}
+      ${TIMING.map(([key, label, min, max, step, fmt]) => `<div class="place__sway"><b>${label}</b><label><span>${key.endsWith('Rate') ? 'speed' : key.endsWith('Delay') ? 'delay' : 'time'}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${PICK[key]}" data-timing="${key}"><output>${fmt(PICK[key])}</output></label></div>`).join('')}
       <div class="place__sway"><b>Tag</b><div class="seg">${Object.entries(TAG_ART).map(([v, a]) => `<button type="button" data-tagart="${v}" aria-pressed="${PICK.tagArt === v}">${a.label}</button>`).join('')}</div></div>
       <div class="place__sway"><b>Fabric</b><div class="seg">${[['on', 'Products turn to fabric'], ['off', 'Products only']].map(([v, l]) => `<button type="button" data-fabric="${v}" aria-pressed="${(S.morph !== 'off') === (v === 'on')}">${l}</button>`).join('')}</div></div>
       <div class="place__bar"><button data-act="copy">Copy values</button><button data-act="reset">Reset</button><span data-out></span></div>
@@ -453,8 +460,8 @@ function buildPick(L) {
     if (tk) {
       PICK[tk] = Number(e.target.value)
       e.target.nextElementSibling.value = TIMING.find(([key]) => key === tk)[5](PICK[tk])
-      if (tk.endsWith('Rate')) setRates(fig)
-      else for (const c of cards) if (c.el.closest('.pick') === fig) c.loopLayers(c.inView) // restart with the new timing
+      setRates(fig)
+      if (!tk.endsWith('Rate')) for (const c of cards) if (c.el.closest('.pick') === fig) c.loopLayers(c.inView) // replay the entrance with the new timing
       localStorage.setItem(PICK_KEY, JSON.stringify(PICK))
       return
     }
@@ -479,7 +486,7 @@ function buildPick(L) {
     const out = fig.querySelector('[data-out]')
     if (act === 'copy') { await navigator.clipboard.writeText(JSON.stringify(PICK, null, 2)); out.textContent = 'Copied as JSON.' }
     if (act === 'reset') {
-      Object.assign(PICK, { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging' }, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
+      Object.assign(PICK, { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging', ...DELAY_DEFAULT }, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
       setTagArt(fig)
       fig.querySelectorAll('input[data-v]').forEach(i => { i.value = PICK[i.dataset.v][i.dataset.k][i.dataset.a]; i.nextElementSibling.value = i.value })
       for (const k of ['sway', 'slide']) { const s = fig.querySelector(`input[data-${k}]`); s.value = 1; s.nextElementSibling.value = '1×' }
@@ -685,7 +692,8 @@ class Card {
     this.visible = false
     new IntersectionObserver(([e]) => {
       this.visible = e.isIntersecting
-      el.querySelectorAll('video').forEach(v => this.visible ? v.play().catch(() => {}) : v.pause())
+      // The picked layout's loop starts its clips itself (each as its layer moves in).
+      el.querySelectorAll('video').forEach(v => this.visible ? el.closest('.pick') || v.play().catch(() => {}) : v.pause())
     }, { rootMargin: '100px' }).observe(el)
     // Replays the layers' entrance whenever the card comes back into view. The picked layout loops instead:
     // in, the phone snippet plays once, out, in again.
@@ -701,7 +709,7 @@ class Card {
    *  in again; the snippet ends on its first frame (crossfaded seam), so it leaves on the screen it returns with.
    *  "Always there" keeps the layers in place with both snippets looping. */
   loopLayers(on) {
-    clearTimeout(this.cycleTimer)
+    clearTimeout(this.cycleTimer); (this.playTimers ?? []).forEach(clearTimeout); this.playTimers = []
     const el = this.el, ph = el.querySelector('video[data-kind="phone"]')
     el.classList.remove('is-out')
     if (!on) { el.classList.remove('is-in'); return }
@@ -709,14 +717,18 @@ class Card {
     ph.loop = PICK.motion === 'still' || PICK.stay > 0
     if (PICK.motion === 'still') {
       el.classList.add('is-in')
-      if (ph.paused) ph.play().catch(() => {})
+      el.querySelectorAll('video').forEach(v => { if (v.paused) v.play().catch(() => {}) })
       return
     }
     const enter = () => {
-      el.classList.remove('is-out')
-      el.querySelectorAll('video').forEach(v => { v.currentTime = 0; v.play().catch(() => {}) })
+      el.classList.remove('is-out', 'is-in'); void el.offsetWidth // snap out (no transition), so the entrance replays
+      // Each snippet starts from its first frame as its layer begins to move in.
+      el.querySelectorAll('video').forEach(v => {
+        v.pause(); v.currentTime = 0
+        this.playTimers.push(setTimeout(() => v.play().catch(() => {}), PICK[`${v.dataset.kind}Delay`] * 1000))
+      })
       el.classList.add('is-in')
-      const stay = PICK.stay || (ph.duration || 6) / PICK.phoneRate + LAYER_LOOP.hold
+      const stay = PICK.stay || PICK.phoneDelay + (ph.duration || 6) / PICK.phoneRate + LAYER_LOOP.hold
       this.cycleTimer = setTimeout(() => {
         el.classList.replace('is-in', 'is-out')
         this.cycleTimer = setTimeout(enter, (LAYER_LOOP.exit / PICK.slide + PICK.away) * 1000)
