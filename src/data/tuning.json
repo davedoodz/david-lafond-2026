@@ -155,14 +155,15 @@
       "filoMobile": "Filo – Next-Gen Textiles Software"
     },
     "morph": {
-      "curve": "expo-out",
-      "enterDistance": 1.75,
+      "curve": "smooth",
+      "enterDistance": 1,
       "startSide": 0,
       "startArch": 70,
       "startRadius": 0
     },
     "morphMobile": {
-      "enterDistance": 1.73,
+      "curve": "smooth",
+      "enterDistance": 1,
       "startArch": 20,
       "startRadius": 60
     },

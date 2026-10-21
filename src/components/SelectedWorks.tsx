@@ -8,8 +8,9 @@
  * The page's tail (contact + footer) is at least as tall as the landing, so that mirror state is
  * reachable.
  *
- *   top k:    1 at scroll 0, flat once the panel top travels `enterDistance`·vh
- *   bottom k: 1 when the panel bottom is `peek` from the viewport top, flat `enterDistance`·vh lower
+ *   top k:    1 at scroll 0, flat once the panel top has risen `enterDistance` × its rise (the
+ *             distance from the peek to the screen top), so at 1 it lands flat on the top edge
+ *   bottom k: 1 when the panel bottom is `peek` from the viewport top, flat the same distance lower
  *
  * Only a clip-path on a flat background layer changes, so cards never re-layout.
  * Optional scroll snap centres one project per stop.
@@ -59,9 +60,13 @@ const CONFIG = {
     shadeStart: [50, 0, 100, 1] as Tuple,
     _collapsed: true,
   },
-  /** One dome for both ends: the bottom mirrors the top. Side in % of viewport width, arch in % of viewport height. */
+  /**
+   * One dome for both ends: the bottom mirrors the top. Side in % of viewport width, arch in % of
+   * viewport height. enterDistance is in rises (peek → screen top): 1 flattens it exactly as its
+   * edge reaches the top. `smooth` eases in and out, so the dome lifts off and lands without a jolt.
+   */
   morph: {
-    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'smoother' },
+    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'smooth' },
     enterDistance: [1, 0.2, 2.5, 0.01] as Tuple,
     startSide: [14, 0, 45, 0.5] as Tuple,
     startArch: [40, 0, 100, 1] as Tuple,
@@ -70,8 +75,8 @@ const CONFIG = {
   },
   /** Same dome, used at ≤640px wide (touch screens use lib/touchLanding's shape). */
   morphMobile: {
-    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'expo-out' },
-    enterDistance: [1.75, 0.2, 2.5, 0.01] as Tuple,
+    curve: { type: 'select' as const, options: Object.keys(DOME_CURVES), default: 'smooth' },
+    enterDistance: [1, 0.2, 2.5, 0.01] as Tuple,
     startSide: [0, 0, 45, 0.5] as Tuple,
     startArch: [70, 0, 100, 1] as Tuple,
     startRadius: [0, 0, 200, 1] as Tuple,
@@ -255,7 +260,8 @@ export function SelectedWorks() {
       const morph = mobile.matches || touch.matches ? morphMobile : morphDesktop
       const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
       const peek = Math.max(0, vh - panelTop)
-      const travel = morph.enterDistance * vh
+      // The rise: how far the panel top travels from the peek to the screen top.
+      const travel = morph.enterDistance * Math.max(1, vh - peek)
       const top = reduced ? 0 : 1 - curve(clamp01(window.scrollY / travel))
       const bottom = reduced ? 0 : 1 - curve(clamp01((panelTop + panelHeight - window.scrollY - peek) / travel))
       let clip: string
