@@ -51,6 +51,9 @@ export function MeshCard() {
   const t = useTuning('Momo shader', CONFIG)
   const hostRef = useRef<HTMLDivElement>(null)
   const mountRef = useRef<ShaderMount | null>(null)
+  const activeRef = useRef(false)
+  const speedRef = useRef(t.speed)
+  speedRef.current = t.speed
 
   const uniforms = {
     u_colors: [t.color1, t.color2, t.color3, t.color4].map((c) => getShaderColorFromString(c)),
@@ -76,10 +79,26 @@ export function MeshCard() {
     const host = hostRef.current
     if (!host) return
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const mount = new ShaderMount(host, meshGradientFragmentShader, uniformsRef.current, undefined, reduced ? 0 : t.speed, t.frame, 1)
+    const mount = new ShaderMount(host, meshGradientFragmentShader, uniformsRef.current, undefined, 0, t.frame, 1)
     mountRef.current = mount
     meshes.set(host, { uniforms: uniformsRef.current, speed: reduced ? 0 : t.speed, mount })
+    let visible = false
+    const sync = () => {
+      activeRef.current = visible && !document.hidden && !reduced
+      const speed = activeRef.current ? speedRef.current : 0
+      mount.setSpeed(speed)
+      const state = meshes.get(host)
+      if (state) state.speed = speed
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting
+      sync()
+    })
+    observer.observe(host)
+    document.addEventListener('visibilitychange', sync)
     return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', sync)
       meshes.delete(host)
       releaseShader(mount)
       mountRef.current = null
@@ -95,10 +114,10 @@ export function MeshCard() {
   }, [uniformKey])
 
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    mountRef.current?.setSpeed(reduced ? 0 : t.speed)
+    const speed = activeRef.current ? t.speed : 0
+    mountRef.current?.setSpeed(speed)
     const state = hostRef.current && meshes.get(hostRef.current)
-    if (state) state.speed = reduced ? 0 : t.speed
+    if (state) state.speed = speed
   }, [t.speed])
 
   useEffect(() => {

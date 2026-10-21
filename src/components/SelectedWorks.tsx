@@ -16,9 +16,9 @@
  */
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
-import { DOME_CURVES, domeClip } from '../lib/domeClip'
+import { DOME_CURVES, arcClip, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
-import { TOUCH_ARCS, TOUCH_LANDING as TOUCH, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
+import { TOUCH_ARCS, TOUCH_LANDING as TOUCH, smallViewportHeight, touchDome } from '../lib/touchLanding'
 import saved from '../data/tuning.json'
 import { useTuningController } from '../tuning/useTuning'
 import { EditableText } from './EditableText'
@@ -232,42 +232,62 @@ export function SelectedWorks() {
     const mobile = window.matchMedia('(max-width: 640px)')
     const touch = window.matchMedia(TOUCH)
     let frame = 0
-    let svh = smallViewportHeight()
+    let vh = window.innerHeight
+    let vw = document.documentElement.clientWidth
+    let panelTop = 0
+    let panelHeight = 0
+    let arch = 0
+    let lastClip = ''
+    const measure = () => {
+      vh = window.innerHeight
+      vw = document.documentElement.clientWidth
+      panelTop = section.getBoundingClientRect().top + window.scrollY
+      panelHeight = section.offsetHeight
+      const height = touchArc.preset === 'Ellipse (before)' ? 0.36
+        : touchArc.preset === 'Custom' ? touchArc.height / 100
+        : TOUCH_ARCS[touchArc.preset as keyof typeof TOUCH_ARCS] ?? TOUCH_ARCS.Soft
+      arch = touchDome(smallViewportHeight(), height).arch
+    }
 
     const update = () => {
       frame = 0
       const morph = mobile.matches || touch.matches ? morphMobile : morphDesktop
-      const vh = window.innerHeight
-      const vw = document.documentElement.clientWidth
-      const rect = section.getBoundingClientRect()
       const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
-      // The top domes from wherever the panel sits at scroll 0 (its peek), so the dome tip shows on load.
-      const restTop = rect.top + window.scrollY
-      const peek = Math.max(0, vh - restTop)
+      const peek = Math.max(0, vh - panelTop)
       const travel = morph.enterDistance * vh
-      const top = reduced ? 0 : 1 - curve(clamp01((restTop - rect.top) / travel))
-      // Mirror: the bottom is as domed at `peek` below the viewport top as the top is at `peek` above its bottom.
-      const bottom = reduced ? 0 : 1 - curve(clamp01((rect.bottom - peek) / travel))
+      const top = reduced ? 0 : 1 - curve(clamp01(window.scrollY / travel))
+      const bottom = reduced ? 0 : 1 - curve(clamp01((panelTop + panelHeight - window.scrollY - peek) / travel))
+      let clip: string
       if (touch.matches) {
-        bg.style.setProperty('--works-clip', touchArcClip(touchArc, bg, svh, top, bottom))
-        return
+        if (touchArc.preset === 'Ellipse (before)') {
+          const edge = { radius: 0, arch: arch / vh * 100 }
+          clip = domeClip(0, edge, top, edge, bottom, vh)
+        } else clip = arcClip(vw, panelHeight, arch * top, arch * bottom)
+      } else {
+        const shape = { radius: morph.startRadius, arch: morph.startArch }
+        const side = ((morph.startSide * vw) / 100) * Math.max(top, bottom)
+        clip = domeClip(side, shape, top, shape, bottom, vh)
       }
-      const shape = { radius: morph.startRadius, arch: morph.startArch }
-      const side = ((morph.startSide * vw) / 100) * Math.max(top, bottom)
-      bg.style.setProperty('--works-clip', domeClip(side, shape, top, shape, bottom, vh))
+      // Geometry is measured only when layout changes. Flat sections need no style writes.
+      if (clip !== lastClip) {
+        bg.style.setProperty('--works-clip', clip)
+        lastClip = clip
+      }
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
     }
     const resize = () => {
-      svh = smallViewportHeight()
+      measure()
       schedule()
     }
 
+    measure()
     update()
     // The touch arc's clip is drawn in px over the background's box, so redraw when it resizes.
-    const sized = new ResizeObserver(schedule)
-    sized.observe(bg)
+    const sized = new ResizeObserver(resize)
+    sized.observe(section)
+    if (section.previousElementSibling) sized.observe(section.previousElementSibling)
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', resize)
     touch.addEventListener('change', resize)

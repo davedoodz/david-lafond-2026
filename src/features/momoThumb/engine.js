@@ -289,7 +289,8 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
   // holds a designed still frame.
   let paused = false
   let pausedAt = 0
-  const running = () => motion && !paused
+  const visible = new Set()
+  const running = () => motion && !paused && visible.size > 0 && !document.hidden
   // The timeline clock: stops while paused.
   const clock = (now) => (paused ? pausedAt : now)
   let watchLine = WATCH_LINES[0]
@@ -390,7 +391,6 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
       for (const el of root.querySelectorAll(`span[data-ty="${CSS.escape(label)}"]`)) el.style.top = `${y + textY}px`
   }
 
-  const visible = new Set()
   const play = (video) => void video.play().catch(() => {})
   const pause = (video) => video.pause()
 
@@ -442,15 +442,22 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
   const momos = cards.map((card) => ({
     card,
     pairs: [
-      [card.querySelector('.mt-face--awake'), awake.canvas],
-      [card.querySelector('.mt-face--asleep'), asleep.canvas],
-    ].map(([el, src]) => ({ el, ctx: el.getContext('2d'), src })),
+      [card.querySelector('.mt-face--awake'), awake.canvas, awake.video],
+      [card.querySelector('.mt-face--asleep'), asleep.canvas, asleep.video],
+    ].map(([el, src, video]) => ({ el, ctx: el.getContext('2d'), src, video, lastFrame: -1, width: 0, height: 0 })),
   }))
   const drawMomo = () => {
     for (const { card, pairs } of momos) {
       if (!visible.has(card)) continue
-      for (const { el, ctx, src } of pairs) {
-        if (!src.width) continue
+      for (const pair of pairs) {
+        const { el, ctx, src, video } = pair
+        if (!src.width || video.readyState < 2) continue
+        // A 120Hz display need not copy the same decoded video frame twice.
+        const decodedFrame = video.getVideoPlaybackQuality?.().totalVideoFrames ?? video.currentTime
+        if (pair.lastFrame === decodedFrame && pair.width === el.width && pair.height === el.height) continue
+        pair.lastFrame = decodedFrame
+        pair.width = el.width
+        pair.height = el.height
         ctx.clearRect(0, 0, el.width, el.height)
         ctx.drawImage(src, 0, 0, el.width, el.height)
       }
@@ -619,6 +626,13 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
     { rootMargin: '120px 0px' },
   )
   cards.forEach((c) => io.observe(c))
+  const onVisibility = () => {
+    media()
+    meshes.forEach((m) => m.setSpeed(running() ? MESH_SPEED : 0))
+    if (running()) start()
+    else { cancelAnimationFrame(frame); frame = 0 }
+  }
+  document.addEventListener('visibilitychange', onVisibility)
   const onClip = () => render(performance.now())
   for (const { video } of [awake, asleep]) video.addEventListener('loadeddata', onClip)
   const ro = new ResizeObserver(() => {
@@ -766,6 +780,7 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
       destroyed = true
       cancelAnimationFrame(frame)
       io.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
       ro.disconnect()
       if (keys) removeEventListener('keydown', onKey)
       cards.forEach(unmountMesh)
