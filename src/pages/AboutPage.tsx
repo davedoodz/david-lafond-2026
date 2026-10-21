@@ -275,14 +275,21 @@ export function AboutPage() {
     const story = storyRef.current
     if (!fadeShow || !fade || !story) return
     let frame = 0
+    const phone = window.matchMedia('(max-width: 640px)')
     const update = () => {
       frame = 0
-      const vh = window.visualViewport?.height ?? window.innerHeight
-      const h = Math.max(0, vh - fade.getBoundingClientRect().top)
+      const viewport = window.visualViewport
+      const edge = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight)
+      const h = phone.matches ? 116 : fade.offsetHeight
       const { top, bottom } = story.getBoundingClientRect()
       const clamp = (v: number) => Math.min(1, Math.max(0, v))
-      // In as the story's first line enters the band; out as its last line clears the band.
-      const p = h > 0 ? Math.min(clamp((vh - top) / h), clamp((bottom - (vh - h)) / h)) : 0
+      // Keep the same story-only fade while the mobile document layer extends under browser UI.
+      const p = h > 0 ? Math.min(clamp((edge - top) / h), clamp((bottom - (edge - h)) / h)) : 0
+      if (phone.matches) {
+        // Park the invisible layer at the page top so it cannot extend the footer's scroll range.
+        const pageTop = p > 0 ? window.scrollY + edge - h : 0
+        fade.style.setProperty('--fade-page-top', `${pageTop.toFixed(2)}px`)
+      } else fade.style.removeProperty('--fade-page-top')
       fade.style.setProperty('--fade-p', p.toFixed(3))
     }
     const schedule = () => {
