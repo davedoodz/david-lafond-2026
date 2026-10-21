@@ -361,13 +361,19 @@ export function SelectedWorks() {
     if (!section || !tail) return
     let frame = 0
     const phone = window.matchMedia('(max-width: 640px)')
+    const touch = window.matchMedia(TOUCH)
+    // Touch: Safari's toolbar collapsing at the page end changes innerHeight and fires resize; fitting
+    // against that shrank the end padding under the finger and pulled the page back up. The small
+    // viewport height never changes with the toolbar, so the page end stays put.
+    const viewHeight = () => (touch.matches ? smallViewportHeight() : window.innerHeight)
+    let width = window.innerWidth
     const fit = () => {
       frame = 0
       for (const p of ['min-height', 'padding-top', 'padding-bottom']) tail.style.removeProperty(p)
       const doc = document.documentElement
       const top = section.getBoundingClientRect().top + window.scrollY
       const below = doc.scrollHeight - (section.getBoundingClientRect().bottom + window.scrollY)
-      let short = Math.min(top, window.innerHeight) - below
+      let short = Math.min(top, viewHeight()) - below
       if (short > 0.5) tail.style.minHeight = `${(tail.offsetHeight + short).toFixed(1)}px`
       for (const side of ['top', 'bottom'] as const) {
         if (short >= -0.5) break
@@ -394,16 +400,21 @@ export function SelectedWorks() {
       tail.style.setProperty('padding-bottom', `${Math.max(0, padBottom - shift).toFixed(1)}px`)
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
+    const resized = () => {
+      if (touch.matches && window.innerWidth === width) return
+      width = window.innerWidth
+      schedule()
+    }
     fit()
     const resize = new ResizeObserver(schedule)
     if (section.previousElementSibling) resize.observe(section.previousElementSibling)
-    addEventListener('resize', schedule)
+    addEventListener('resize', resized)
     phone.addEventListener('change', schedule)
     void document.fonts.ready.then(schedule)
     return () => {
       cancelAnimationFrame(frame)
       resize.disconnect()
-      removeEventListener('resize', schedule)
+      removeEventListener('resize', resized)
       phone.removeEventListener('change', schedule)
       for (const p of ['min-height', 'padding-top', 'padding-bottom']) tail.style.removeProperty(p)
     }
@@ -486,19 +497,23 @@ export function SelectedWorks() {
         : intro.preset === 'float'
           ? [{ translate: `0 ${d}px`, opacity: 0 }, { translate: '0 0', opacity: 1 }]
           : [{ translate: `0 ${d}px` }, { translate: '0 0' }]
-    const easing =
-      intro.preset === 'spring'
+    // Touch: one long, overshoot-free glide. The sheet travels a whole screen there, so the shared
+    // spring read as a pop.
+    const easing = touch
+      ? 'cubic-bezier(0.22, 1, 0.36, 1)'
+      : intro.preset === 'spring'
         ? springEasing(intro.bounce)
         : intro.preset === 'float'
           ? 'cubic-bezier(0.16, 1, 0.3, 1)'
           : intro.preset === 'rise'
             ? 'cubic-bezier(0.22, 1, 0.36, 1)'
             : 'linear'
-    const animation = bg.animate(frames, { duration: intro.durationMs, delay: intro.delayMs, easing, fill: 'backwards' })
+    const duration = touch ? Math.max(intro.durationMs, 1100) : intro.durationMs
+    const animation = bg.animate(touch ? [{ translate: `0 ${d}px` }, { translate: '0 0' }] : frames, { duration, delay: intro.delayMs, easing, fill: 'backwards' })
     const inner = sectionRef.current?.querySelector<HTMLElement>('.works__inner')
     const contentAnimation = touch && inner
       ? inner.animate([{ visibility: 'hidden' }, { visibility: 'hidden' }], {
-          duration: intro.durationMs, delay: intro.delayMs, fill: 'backwards',
+          duration, delay: intro.delayMs, fill: 'backwards',
         })
       : null
     // Scrolling before the sheet has risen starts the rise at once, so the arc never trails the

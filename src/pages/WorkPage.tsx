@@ -250,9 +250,19 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       publishNavAlign((narrowFull + wideFull) / 4, wideFull)
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
+    // Touch: Safari's toolbar showing or hiding only changes the height. Refitting then resized the
+    // landing above the reader and pulled the page (most visibly at the footer), so touch screens
+    // refit only when the width changes; the first fit already framed the landing.
+    let viewWidth = document.documentElement.clientWidth
+    const resized = () => {
+      const next = document.documentElement.clientWidth
+      if (touch.matches && next === viewWidth) return
+      viewWidth = next
+      schedule()
+    }
     fit()
-    addEventListener('resize', schedule)
-    window.visualViewport?.addEventListener('resize', schedule)
+    addEventListener('resize', resized)
+    window.visualViewport?.addEventListener('resize', resized)
     touch.addEventListener('change', schedule)
     void document.fonts.ready.then(schedule)
     // Faces first used after `ready` (italic, sticker pills) load later and re-measure the lines.
@@ -282,8 +292,8 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     for (const child of hero.children) signed.observe(child)
     return () => {
       cancelAnimationFrame(frame)
-      removeEventListener('resize', schedule)
-      window.visualViewport?.removeEventListener('resize', schedule)
+      removeEventListener('resize', resized)
+      window.visualViewport?.removeEventListener('resize', resized)
       landing.parentElement?.style.removeProperty('--works-peek')
       touch.removeEventListener('change', schedule)
       document.fonts.removeEventListener('loadingdone', schedule)

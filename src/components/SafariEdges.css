@@ -3,8 +3,10 @@
 html[data-safari-edges] {
   background: var(--edge-top-background, var(--ink-900));
 }
+/* Body too: with no fixed sampling strips, iOS Safari tints its status bar and draws its top fade
+   from the body color, so a white sheet at the bottom must never whiten it. */
 html[data-safari-edges] body {
-  background: var(--edge-bottom-background, var(--ink-900));
+  background: var(--edge-top-background, var(--ink-900));
 }
 .safari-edges {
   pointer-events: none;
