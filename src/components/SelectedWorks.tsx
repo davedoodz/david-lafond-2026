@@ -16,9 +16,9 @@
  */
 import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { WORKS } from '../data/works'
-import { DOME_CURVES, domeClip } from '../lib/domeClip'
+import { DOME_CURVES, arcClip, domeClip } from '../lib/domeClip'
 import { springEasing } from '../lib/springEasing'
-import { TOUCH_ARCS, TOUCH_LANDING as TOUCH, smallViewportHeight, touchArcClip, touchDome } from '../lib/touchLanding'
+import { TOUCH_ARCS, TOUCH_LANDING as TOUCH, smallViewportHeight, touchDome } from '../lib/touchLanding'
 import saved from '../data/tuning.json'
 import { useTuningController } from '../tuning/useTuning'
 import { EditableText } from './EditableText'
@@ -233,42 +233,62 @@ export function SelectedWorks() {
     const mobile = window.matchMedia('(max-width: 640px)')
     const touch = window.matchMedia(TOUCH)
     let frame = 0
-    let svh = smallViewportHeight()
+    let vh = window.innerHeight
+    let vw = document.documentElement.clientWidth
+    let panelTop = 0
+    let panelHeight = 0
+    let arch = 0
+    let lastClip = ''
+    const measure = () => {
+      vh = window.innerHeight
+      vw = document.documentElement.clientWidth
+      panelTop = section.getBoundingClientRect().top + window.scrollY
+      panelHeight = section.offsetHeight
+      const height = touchArc.preset === 'Ellipse (before)' ? 0.36
+        : touchArc.preset === 'Custom' ? touchArc.height / 100
+        : TOUCH_ARCS[touchArc.preset as keyof typeof TOUCH_ARCS] ?? TOUCH_ARCS.Soft
+      arch = Math.min(touchDome(smallViewportHeight(), height).arch, Math.max(0, vh - panelTop) * 0.85)
+    }
 
     const update = () => {
       frame = 0
       const morph = mobile.matches || touch.matches ? morphMobile : morphDesktop
-      const vh = window.innerHeight
-      const vw = document.documentElement.clientWidth
-      const rect = section.getBoundingClientRect()
       const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
-      // The top domes from wherever the panel sits at scroll 0 (its peek), so the dome tip shows on load.
-      const restTop = rect.top + window.scrollY
-      const peek = Math.max(0, vh - restTop)
+      const peek = Math.max(0, vh - panelTop)
       const travel = morph.enterDistance * vh
-      const top = reduced ? 0 : 1 - curve(clamp01((restTop - rect.top) / travel))
-      // Mirror: the bottom is as domed at `peek` below the viewport top as the top is at `peek` above its bottom.
-      const bottom = reduced ? 0 : 1 - curve(clamp01((rect.bottom - peek) / travel))
+      const top = reduced ? 0 : 1 - curve(clamp01(window.scrollY / travel))
+      const bottom = reduced ? 0 : 1 - curve(clamp01((panelTop + panelHeight - window.scrollY - peek) / travel))
+      let clip: string
       if (touch.matches) {
-        bg.style.setProperty('--works-clip', touchArcClip(touchArc, bg, svh, top, bottom))
-        return
+        if (touchArc.preset === 'Ellipse (before)') {
+          const edge = { radius: 0, arch: arch / vh * 100 }
+          clip = domeClip(0, edge, top, edge, bottom, vh)
+        } else clip = arcClip(vw, panelHeight, arch * top, arch * bottom)
+      } else {
+        const shape = { radius: morph.startRadius, arch: morph.startArch }
+        const side = ((morph.startSide * vw) / 100) * Math.max(top, bottom)
+        clip = domeClip(side, shape, top, shape, bottom, vh)
       }
-      const shape = { radius: morph.startRadius, arch: morph.startArch }
-      const side = ((morph.startSide * vw) / 100) * Math.max(top, bottom)
-      bg.style.setProperty('--works-clip', domeClip(side, shape, top, shape, bottom, vh))
+      // Geometry is measured only when layout changes. Flat sections need no style writes.
+      if (clip !== lastClip) {
+        bg.style.setProperty('--works-clip', clip)
+        lastClip = clip
+      }
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
     }
     const resize = () => {
-      svh = smallViewportHeight()
+      measure()
       schedule()
     }
 
+    measure()
     update()
     // The touch arc's clip is drawn in px over the background's box, so redraw when it resizes.
-    const sized = new ResizeObserver(schedule)
-    sized.observe(bg)
+    const sized = new ResizeObserver(resize)
+    sized.observe(section)
+    if (section.previousElementSibling) sized.observe(section.previousElementSibling)
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', resize)
     touch.addEventListener('change', resize)
@@ -284,8 +304,7 @@ export function SelectedWorks() {
   }, [morphKey])
 
   // Touch landing (see touchDome): the peek is written on the page (WorkPage.css reads --works-peek),
-  // the label is centred in it and the first thumbnail's top (at its resting focus scale) sits on the fold.
-  const restScale = t.focus.mode === 'off' ? 1 : t.focus.restScale
+  // the label is centred in it and the first thumbnail stays below the visible fold.
   useLayoutEffect(() => {
     const section = sectionRef.current
     const page = section?.parentElement
@@ -293,31 +312,37 @@ export function SelectedWorks() {
     const first = section?.querySelector<HTMLElement>('.works__list > li')
     if (!section || !page || !label || !first) return
     const touch = window.matchMedia(TOUCH)
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const clear = () => {
       delete section.dataset.touchLanding
-      page.style.removeProperty('--works-peek')
       for (const v of ['--works-touch-label-top', '--works-touch-first']) section.style.removeProperty(v)
     }
     const place = () => {
       if (!touch.matches) return clear()
-      const { peek } = touchDome(smallViewportHeight())
-      const scale = reduced ? 1 : restScale
+      const measuredPeek = parseFloat(getComputedStyle(page).getPropertyValue('--works-peek'))
+      const peek = Number.isFinite(measuredPeek) ? measuredPeek : touchDome(smallViewportHeight()).peek
       section.dataset.touchLanding = ''
-      page.style.setProperty('--works-peek', `${peek.toFixed(2)}px`)
       section.style.setProperty('--works-touch-label-top', `${(peek / 2 - label.offsetHeight / 2).toFixed(2)}px`)
-      section.style.setProperty('--works-touch-first', `${(peek - ((1 - scale) / 2) * first.offsetHeight).toFixed(2)}px`)
+      // Safari's visible viewport can be taller than 100svh when its toolbar retracts.
+      // Keep the unscaled card below that viewport too; focus scaling must never expose it.
+      const fold = Math.max(smallViewportHeight(), window.innerHeight, window.visualViewport?.height ?? 0)
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY
+      section.style.setProperty('--works-touch-first', `${Math.max(peek, fold - sectionTop + 24).toFixed(2)}px`)
     }
     place()
+    const landingResize = new ResizeObserver(place)
+    if (section.previousElementSibling) landingResize.observe(section.previousElementSibling)
     window.addEventListener('resize', place)
+    window.visualViewport?.addEventListener('resize', place)
     touch.addEventListener('change', place)
     void document.fonts.ready.then(place)
     return () => {
+      landingResize.disconnect()
       window.removeEventListener('resize', place)
+      window.visualViewport?.removeEventListener('resize', place)
       touch.removeEventListener('change', place)
       clear()
     }
-  }, [restScale])
+  }, [])
   // Mirror reach: the page below the panel (contact + footer) is exactly as tall as the landing above
   // it (capped at one viewport), so scrolling to the end brings the panel's bottom to `peek` below the
   // viewport top, where its bottom dome matches the landing's top dome. The section right after the
@@ -429,6 +454,7 @@ export function SelectedWorks() {
   }, [focusKey])
 
   // Sheet intro: only the background layer moves, so cards and scroll math are untouched.
+  // Keep the content hidden during the intro so a settling layout cannot flash a thumbnail.
   // Layout effect, so the sheet is already lowered on the first painted frame; and it starts
   // fully below the fold (at least the dial distance), so no white shows before it springs up.
   const intro = t.intro
@@ -438,7 +464,8 @@ export function SelectedWorks() {
     if (!bg || intro.preset === 'none') return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.scrollY > 10) return
     // 24px spare: the hero can still settle a little after this runs (WorkPage's useHeroFit).
-    const d = Math.max(intro.distance, window.innerHeight - bg.getBoundingClientRect().top + 24)
+    const touch = window.matchMedia(TOUCH).matches
+    const d = Math.max(intro.distance, window.innerHeight - bg.getBoundingClientRect().top + 24, touch ? window.innerHeight + 24 : 0)
     const frames: Keyframe[] =
       intro.preset === 'bounce'
         ? [
@@ -459,15 +486,25 @@ export function SelectedWorks() {
             ? 'cubic-bezier(0.22, 1, 0.36, 1)'
             : 'linear'
     const animation = bg.animate(frames, { duration: intro.durationMs, delay: intro.delayMs, easing, fill: 'backwards' })
+    const inner = sectionRef.current?.querySelector<HTMLElement>('.works__inner')
+    const contentAnimation = touch && inner
+      ? inner.animate([{ visibility: 'hidden' }, { visibility: 'hidden' }], {
+          duration: intro.durationMs, delay: intro.delayMs, fill: 'backwards',
+        })
+      : null
     // The intro is a landing flourish only. Once the user scrolls, jump to rest so the
     // lowered sheet (and the dark gap above it) never shows at a scroll or snap stop.
     const skip = () => {
-      if (window.scrollY > 10 && animation.playState !== 'finished') animation.finish()
+      if (window.scrollY > 10) {
+        if (animation.playState !== 'finished') animation.finish()
+        if (contentAnimation && contentAnimation.playState !== 'finished') contentAnimation.finish()
+      }
     }
     window.addEventListener('scroll', skip, { passive: true })
     return () => {
       window.removeEventListener('scroll', skip)
       animation.cancel()
+      contentAnimation?.cancel()
     }
     // `introKey` captures every intro dial.
     // eslint-disable-next-line react-hooks/exhaustive-deps

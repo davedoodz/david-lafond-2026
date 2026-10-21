@@ -3,7 +3,7 @@ import { ContactCta } from '../components/ContactCta'
 import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
 import { DEFAULT_INTRO_TEXT, WorkIntroStickers, introLineSpan } from '../features/workStickers/WorkIntroStickers'
-import { TOUCH_LANDING, smallViewportHeight, touchDome } from '../lib/touchLanding'
+import { TOUCH_LANDING } from '../lib/touchLanding'
 import { publishNavAlign } from '../lib/navAlign'
 import { Signature } from '../features/signature/Signature'
 import { getSignatureData } from '../features/signature/store'
@@ -74,13 +74,13 @@ function textWidth(el: Element | null) {
  * The signature's ink box: its recorded points mapped into the drawn SVG (viewBox, meet). From the
  * data, not the paths, which are empty until the signing animation draws them.
  */
-function signatureInk(hero: HTMLElement) {
+function signatureInk(hero: HTMLElement, painted = false) {
   const svg = hero.querySelector('.hero__signature svg')
   const { strokes, width, height } = getSignatureData()
   if (!svg || !strokes.length) return null
   let x0 = Infinity, x1 = -Infinity, y1 = -Infinity
   for (const { points } of strokes) for (const [x, y] of points) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y1 = Math.max(y1, y) }
-  const box = settled(svg)
+  const box = painted ? svg.getBoundingClientRect() : settled(svg)
   const scale = Math.min((box.right - box.left) / width, (box.bottom - box.top) / height)
   const left = box.left + ((box.right - box.left) - width * scale) / 2
   const top = box.top + ((box.bottom - box.top) - height * scale) / 2
@@ -123,6 +123,52 @@ function frameDesktop(hero: HTMLElement, landing: HTMLElement) {
   landing.style.minHeight = '0'
 }
 
+/** Center the painted mobile hero in the visible viewport, then mirror the navigation gap
+ * below its signature to locate the sheet tip. No fixed phone-specific peek or top padding. */
+function frameTouch(hero: HTMLElement, landing: HTMLElement) {
+  // Measure the block without flex centering slack before positioning its painted bounds.
+  hero.style.flex = 'none'
+  hero.style.justifyContent = 'flex-start'
+  landing.style.minHeight = '0'
+  const links = document.querySelector('.nav__links a')
+  const title = hero.querySelector('.hero__title')
+  const ink = signatureInk(hero, true)
+  const first = hero.firstElementChild as HTMLElement | null
+  const last = hero.lastElementChild as HTMLElement | null
+  if (!links || !title || !ink || !first || !last) return
+  const sy = window.scrollY
+  const vh = window.visualViewport?.height ?? window.innerHeight
+  const navFixed = getComputedStyle(links.closest('.nav') ?? links).position === 'fixed'
+  const navM = fontMetrics(links), titleM = fontMetrics(title)
+  const navBase = textRect(links).bottom - navM.descent + (navFixed ? 0 : sy)
+  const capTop = textRect(title).top + sy + titleM.ascent - titleM.cap
+  const inkBottom = ink.bottom + sy
+  const paintedHeight = inkBottom - capTop
+  const gap = Math.max(16, (vh - paintedHeight) / 2 - navBase)
+  const desiredTop = navBase + gap
+  const tip = desiredTop + paintedHeight + gap
+  const heroTop = hero.getBoundingClientRect().top + sy
+  const layoutTop = heroTop + first.offsetTop
+  const start = desiredTop - (capTop - layoutTop)
+  const pageTop = landing.getBoundingClientRect().top + sy
+  hero.style.setProperty('padding-block', `${Math.max(0, start - heroTop).toFixed(2)}px 0px`)
+  hero.style.height = `${Math.max(0, tip - heroTop).toFixed(2)}px`
+  hero.style.flex = 'none'
+  hero.style.justifyContent = 'flex-start'
+  landing.style.minHeight = '0'
+  landing.style.height = `${Math.max(0, tip - (landing.getBoundingClientRect().top + sy)).toFixed(2)}px`
+  // Signature sizing can settle when the fixed frame replaces flex sizing; correct from the final paint.
+  const finalInk = signatureInk(hero, true)
+  if (finalInk) {
+    const finalTop = textRect(title).top + sy + titleM.ascent - titleM.cap
+    const delta = vh / 2 - (finalTop + finalInk.bottom + sy) / 2
+    const padding = parseFloat(getComputedStyle(hero).paddingTop)
+    hero.style.setProperty('padding-block', `${Math.max(0, padding + delta).toFixed(2)}px 0px`)
+  }
+  // Shared with SelectedWorks: its label, first thumbnail and arc follow the measured tip.
+  landing.parentElement?.style.setProperty('--works-peek', `${Math.max(0, vh - (tip - pageTop)).toFixed(2)}px`)
+}
+
 /**
  * Hero text fit, at every width. The sticker intro and the role line always share one size
  * (--hero-body-fit scales both), shrunk only when their widest line (pills at their longest phrase)
@@ -134,8 +180,8 @@ function frameDesktop(hero: HTMLElement, landing: HTMLElement) {
  * narrowest and widest phrase combinations, every line keeping one left edge. It never moves as the
  * pills change phrase, and sits no further off centre one way than the other. On phones the widest
  * line fills the screen, so the side insets pin it.
- * Touch landing (lib/touchLanding): when the hero is too tall for the sheet's peek to show, its
- * vertical padding shrinks (down to 8px) until it fits.
+ * Touch landing: center the painted block in the visible viewport and derive the arc tip
+ * from equal gaps between the navigation, text/signature block and sheet.
  */
 function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
   useLayoutEffect(() => {
@@ -147,8 +193,11 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     let frame = 0
     const fit = () => {
       frame = 0
-      for (const v of ['--hero-title-fit', '--hero-body-fit', '--column-fit', 'padding-block']) hero.style.removeProperty(v)
+      hero.toggleAttribute('data-mobile-frame', touch.matches)
+      hero.style.removeProperty('padding-top')
+      for (const v of ['--hero-title-fit', '--hero-body-fit', '--column-fit', 'padding-block', 'height', 'flex', 'justify-content']) hero.style.removeProperty(v)
       landing.style.removeProperty('min-height')
+      landing.style.removeProperty('height')
       const avail = document.documentElement.clientWidth - 2 * parseFloat(getComputedStyle(hero).getPropertyValue('--column-inset'))
       const body = Math.max(textWidth(hero.querySelector('.hero__role')), introLineSpan(hero)[1])
       const bodyFit = body > avail ? avail / body : 1
@@ -162,18 +211,7 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       center()
       if (desktop()) return frameDesktop(hero, landing)
       if (!touch.matches) return
-      const svh = smallViewportHeight()
-      const items = Array.from(hero.children) as HTMLElement[]
-      const first = items[0], last = items[items.length - 1]
-      if (!first || !last) return
-      const content = last.offsetTop + last.offsetHeight - first.offsetTop
-      const above = hero.getBoundingClientRect().top - landing.getBoundingClientRect().top
-      const style = getComputedStyle(hero)
-      const top = parseFloat(style.paddingTop), bottom = parseFloat(style.paddingBottom)
-      const room = svh - touchDome(svh).peek - above - content
-      if (room >= top + bottom) return
-      const k = Math.max(0, room) / (top + bottom)
-      hero.style.setProperty('padding-block', `${Math.max(8, top * k).toFixed(1)}px ${Math.max(8, bottom * k).toFixed(1)}px`)
+      frameTouch(hero, landing)
     }
     const center = () => {
       // Left the page (route change): nothing to measure.
@@ -212,14 +250,19 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fit) }
     fit()
     addEventListener('resize', schedule)
+    window.visualViewport?.addEventListener('resize', schedule)
     touch.addEventListener('change', schedule)
     void document.fonts.ready.then(schedule)
     // Faces first used after `ready` (italic, sticker pills) load later and re-measure the lines.
     document.fonts.addEventListener('loadingdone', schedule)
     // The load-in (text rising in, pills growing in) moves what the frame and centring measure; refit
     // once each piece settles. Later pill phrase changes refit to the same place.
-    hero.addEventListener('animationend', schedule)
-    hero.addEventListener('transitionend', schedule)
+    const onSettled = (event: Event) => {
+      if (touch.matches && event.target instanceof Element && event.target.closest('.work-intro-stickers__p')) return
+      schedule()
+    }
+    hero.addEventListener('animationend', onSettled)
+    hero.addEventListener('transitionend', onSettled)
     // The nav's and page's own load-ins sit outside the hero; refit once everything running settles.
     void Promise.allSettled(document.getAnimations().map((a) => a.finished)).then(schedule)
     // The column re-centres once useFitColumn measures; the intro's room depends on where it starts.
@@ -234,13 +277,16 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     const sig = hero.querySelector('.hero__signature')
     const signed = new ResizeObserver(schedule)
     if (sig) signed.observe(sig)
+    for (const child of hero.children) signed.observe(child)
     return () => {
       cancelAnimationFrame(frame)
       removeEventListener('resize', schedule)
+      window.visualViewport?.removeEventListener('resize', schedule)
+      landing.parentElement?.style.removeProperty('--works-peek')
       touch.removeEventListener('change', schedule)
       document.fonts.removeEventListener('loadingdone', schedule)
-      hero.removeEventListener('animationend', schedule)
-      hero.removeEventListener('transitionend', schedule)
+      hero.removeEventListener('animationend', onSettled)
+      hero.removeEventListener('transitionend', onSettled)
       resize.disconnect()
       signed.disconnect()
     }

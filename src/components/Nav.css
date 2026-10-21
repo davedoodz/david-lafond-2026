@@ -443,3 +443,34 @@
     font-weight: 500;
   }
 }
+
+/* Davebot's drawn body takes Work's former left edge; Resume mirrors that outer margin.
+   The SVG body spans x=4..28 in its 32px viewBox, inside a centred 36px button. */
+.nav[data-back-to-top] {
+  flex-direction: row;
+  padding-inline: var(--edge);
+  gap: 16px;
+}
+.nav[data-back-to-top] .nav__ghost {
+  margin-left: calc(-1 * ((36px - var(--nav-ghost-size, 28px)) / 2 + var(--nav-ghost-size, 28px) / 8));
+}
+.nav[data-back-to-top] .nav__links {
+  margin-left: auto;
+}
+@media (max-width: 640px) {
+  .nav[data-back-to-top] {
+    padding-inline: var(--text-edge);
+  }
+  .nav[data-back-to-top] .nav__ghost {
+    margin-top: -2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav[data-route='work']::before,
+  .nav[data-route='work']::after {
+    display: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

@@ -1,10 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { DitherBand } from './components/DitherBand'
 import { Footer } from './components/Footer'
+import { SafariEdges } from './components/SafariEdges'
 import { SelectionHighlight } from './components/SelectionHighlight'
 import { ControlledScroll } from './features/controlledScroll/ControlledScroll'
 import { CursorLayer } from './features/cursor/CursorLayer'
-import { useDavebotOpen } from './features/ghost/davebotStore'
 import { useHeaderIntro } from './features/headerIntro/useHeaderIntro'
 import { PageTransitions } from './features/pageTransition/PageTransitions'
 import { useRoute } from './lib/router'
@@ -13,12 +13,10 @@ import { aboutChunk, caseStudyChunk, harvardMitChunk } from './lib/routeChunks'
 import { WorkPage } from './pages/WorkPage'
 
 // Code the landing view does not need ships as separate chunks. They are fetched
-// once the browser goes idle, so later navigation and Davebot feel instant.
-const loadDavebot = () => import('./features/ghost/DavebotLayer')
+// once the browser goes idle, so later navigation feels instant.
 const LazyAboutPage = lazy(() => aboutChunk.load().then((m) => ({ default: m.AboutPage })))
 const LazyHarvardMitPage = lazy(() => harvardMitChunk.load().then((m) => ({ default: m.HarvardMitPage })))
 const LazyCaseStudyPage = lazy(() => caseStudyChunk.load().then((m) => ({ default: m.CaseStudyPage })))
-const DavebotLayer = lazy(() => loadDavebot().then((m) => ({ default: m.DavebotLayer })))
 
 const DevRoot = import.meta.env.DEV ? lazy(() => import('./tuning/DevRoot')) : null
 
@@ -67,7 +65,6 @@ export function App() {
     document.documentElement.style.setProperty('--text-muted', textColors.muted)
   }, [textColors.muted])
   const idle = useIdle()
-  const davebotOpen = useDavebotOpen()
   useHeaderIntro()
 
   useEffect(() => {
@@ -120,11 +117,7 @@ export function App() {
           </>
         )}
       </div>
-      {(idle || davebotOpen) && (
-        <Suspense fallback={null}>
-          <DavebotLayer />
-        </Suspense>
-      )}
+      <SafariEdges />
       <SelectionHighlight />
       <CursorLayer />
       <ControlledScroll />

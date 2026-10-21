@@ -1,0 +1,63 @@
+/* Solid 5px sampling edges with inward fades: Safari extends these colors behind its UI.
+   Keep them outside transformed ancestors and let taps pass through to the page. */
+html[data-safari-edges] {
+  background: var(--edge-top-background, var(--ink-900));
+}
+html[data-safari-edges] body {
+  background: var(--edge-bottom-background, var(--ink-900));
+}
+.safari-edges {
+  pointer-events: none;
+}
+html[data-safari-edges] :is(.edge-top, .edge-bottom)::before,
+html[data-safari-edges] :is(.edge-top, .edge-bottom)::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 48;
+}
+html[data-safari-edges] :is(.edge-top, .edge-bottom)::after {
+  height: 12px;
+}
+html[data-safari-edges] .edge-top::after {
+  top: -7px;
+  background: var(--edge-top-background);
+}
+html[data-safari-edges] .edge-bottom::after {
+  bottom: -7px;
+  background: var(--edge-bottom-background);
+}
+html[data-safari-edges] :is(.edge-top, .edge-bottom)::before {
+  height: 48px;
+}
+html[data-safari-edges] .edge-top::before {
+  top: 5px;
+  background: linear-gradient(to bottom, var(--edge-top-background), transparent);
+}
+html[data-safari-edges] .edge-bottom::before {
+  bottom: 5px;
+  background: linear-gradient(to top, var(--edge-bottom-background), transparent);
+}
+
+/* Dark sections keep Safari's thin sampling strip without a black gradient over content. */
+html[data-safari-edges][data-safari-bottom='dark'] .edge-bottom::before {
+  display: none;
+}
+@media (max-width: 640px) {
+  html[data-safari-bottom='dark'][data-edge-blur-bottom] body::after,
+  html[data-edge-blur-bottom] .about__dark::after {
+    display: none;
+  }
+}
+
+/* Work on mobile has no viewport overlays, including the solid strip across footer content.
+   Document background colors still follow the page for Safari's own controls. */
+@media (hover: none) and (pointer: coarse) {
+  html[data-safari-page='work'] :is(.edge-top, .edge-bottom)::before,
+  html[data-safari-page='work'] :is(.edge-top, .edge-bottom)::after {
+    display: none;
+    content: none;
+  }
+}

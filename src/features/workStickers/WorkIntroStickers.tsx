@@ -10,6 +10,7 @@
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createLoopScheduler, createStickerEngine, turn as engineTurn, type Look, type StickerRecord } from './engine.js'
 import config from './workStickers.live.json'
+import { TOUCH_LANDING } from '../../lib/touchLanding'
 import { bindIntroSelection } from './introSelection'
 import './WorkIntroStickers.css'
 
@@ -98,6 +99,31 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left' }:
       parts.button.addEventListener('focus', () => engine.hover(record, true), { signal })
       parts.button.addEventListener('blur', () => engine.hover(record, false), { signal })
     }
+
+    // Reserve each mobile pill's longest authored face, so turns never move adjacent copy.
+    const lockMobileWidths = () => {
+      for (const record of records) {
+        const pill = record.button
+        const label = record.label
+        const style = getComputedStyle(label)
+        const em = parseFloat(getComputedStyle(pill).fontSize)
+        const probe = document.createElement('span')
+        probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none'
+        probe.style.font = style.font
+        probe.style.letterSpacing = style.letterSpacing
+        probe.style.fontFeatureSettings = style.fontFeatureSettings
+        pill.append(probe)
+        const widths = (facesById.get(record.id) ?? []).map(face => {
+          probe.textContent = face.label
+          return probe.getBoundingClientRect().width / em + 1.35 + face.pad
+        })
+        probe.remove()
+        pill.style.setProperty('--ws-mobile-width', `${Math.max(0, ...widths).toFixed(4)}em`)
+      }
+    }
+    lockMobileWidths()
+    void document.fonts.ready.then(() => { if (!controller.signal.aborted) lockMobileWidths() })
+    document.fonts.addEventListener('loadingdone', lockMobileWidths, { signal: controller.signal })
 
     const loop = createLoopScheduler({
       list: () => records,
@@ -222,6 +248,33 @@ const facesById = new Map(Object.entries(config.stickers).map(([id, sticker]) =>
  * plus padding). Phrases are measured in a hidden probe styled like the pill's label (canvas
  * ignores letter-spacing and over-measures). */
 function lineSpan(line: HTMLElement): [number, number] {
+  if (matchMedia(TOUCH_LANDING).matches) {
+    // Mobile pills reserve their longest face; their animated letter spans are never fit inputs.
+    const style = getComputedStyle(line)
+    const children = Array.from(line.childNodes)
+    const probe = document.createElement('span')
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none'
+    probe.style.font = style.font
+    probe.style.letterSpacing = style.letterSpacing
+    probe.style.fontFeatureSettings = style.fontFeatureSettings
+    line.append(probe)
+    let total = 0
+    for (const child of children) {
+      if (child instanceof HTMLElement && child.matches('.ws-pill')) {
+        const em = parseFloat(getComputedStyle(child).fontSize)
+        const widths = (facesById.get(child.dataset.pill!) ?? []).map(face => {
+          probe.textContent = face.label
+          return probe.getBoundingClientRect().width + (1.35 + face.pad) * em
+        })
+        total += Math.max(0, ...widths)
+      } else {
+        probe.textContent = child.textContent
+        total += probe.getBoundingClientRect().width
+      }
+    }
+    probe.remove()
+    return [total, total]
+  }
   const width = line.getBoundingClientRect().width
   let min = width, max = width
   for (const pill of line.querySelectorAll<HTMLElement>('.ws-pill[data-pill]')) {

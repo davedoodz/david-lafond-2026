@@ -188,3 +188,10 @@
   position: absolute;
   pointer-events: none;
 }
+
+/* A mobile tap changes the phrase inside its reserved slot, never the surrounding layout. */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) {
+  .work-intro-stickers__p .ws-pill {
+    width: var(--ws-mobile-width, auto) !important;
+  }
+}

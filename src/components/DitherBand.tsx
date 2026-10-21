@@ -21,6 +21,7 @@ import {
 } from '@paper-design/shaders'
 import { releaseShader } from '../lib/releaseShader'
 import { useRoute } from '../lib/router'
+import { useMedia } from '../lib/viewport'
 import { useTuningController } from '../tuning/useTuning'
 import './DitherBand.css'
 
@@ -172,7 +173,12 @@ const CONFIG = {
 
 type Props = { position: 'header' | 'footer' }
 
-export function DitherBand({ position }: Props) {
+export function DitherBand(props: Props) {
+  const mobile = useMedia('(max-width: 640px), (hover: none) and (pointer: coarse)')
+  return mobile ? null : <DesktopDitherBand {...props} />
+}
+
+function DesktopDitherBand({ position }: Props) {
   const { values: all, setValue } = useTuningController('Dither bands', CONFIG)
   const route = useRoute()
   const page = position === 'header' && route in PAGE_GROUP ? (route as ProjectPage) : null
