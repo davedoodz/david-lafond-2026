@@ -201,11 +201,17 @@ export function ArxivPaper() {
           src="/work/momo/paper/arxiv-paper-1600.webp"
           width={1600}
           height={2071}
-          loading="lazy"
+          loading="eager"
+          fetchPriority="high"
           decoding="async"
           alt="First page of “Breaking Negative Cycles: A Reflection-To-Action System For Adaptive Change”, arXiv:2604.06477"
           draggable={false}
-          onLoad={(event) => { event.currentTarget.dataset.loaded = '' }}
+          onLoad={(event) => {
+            const image = event.currentTarget
+            void image.decode().catch(() => undefined).then(() => {
+              image.closest('.arxiv-paper')?.setAttribute('data-page-loaded', '')
+            })
+          }}
         />
         {d.marker.show && (
           <svg className="arxiv-paper__marks" viewBox="0 0 100 129.44" aria-hidden="true">
