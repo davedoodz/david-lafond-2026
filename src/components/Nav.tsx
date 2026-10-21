@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
-import { GhostButton } from '../features/ghost/GhostButton'
 import { RESUME_URL } from '../data/contact'
 import { ArrowDownIcon, ArrowUpRightIcon, ChevronLeftIcon } from './icons'
 import { hasInAppHistory, navigate, type Route } from '../lib/router'
@@ -343,9 +342,7 @@ export function Nav({ route }: Props) {
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
       <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-ghost-side={t.order === 'Davebot · links' ? undefined : 'end'} data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
-        <div className="nav__start">
-          <GhostButton className="nav__ghost" />
-        </div>
+        <div className="nav__start" aria-hidden="true" />
         <nav className="nav__links" aria-label="Primary">
           {/* Phones, project pages: "← Back" takes Work's place (Nav.css). */}
           {isProject && <BackLink className="nav__links-back" />}
