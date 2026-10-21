@@ -283,8 +283,7 @@ export function SelectedWorks() {
   }, [morphKey])
 
   // Touch landing (see touchDome): the peek is written on the page (WorkPage.css reads --works-peek),
-  // the label is centred in it and the first thumbnail's top (at its resting focus scale) sits on the fold.
-  const restScale = t.focus.mode === 'off' ? 1 : t.focus.restScale
+  // the label is centred in it and the first thumbnail stays below the visible fold.
   useLayoutEffect(() => {
     const section = sectionRef.current
     const page = section?.parentElement
@@ -292,7 +291,6 @@ export function SelectedWorks() {
     const first = section?.querySelector<HTMLElement>('.works__list > li')
     if (!section || !page || !label || !first) return
     const touch = window.matchMedia(TOUCH)
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const clear = () => {
       delete section.dataset.touchLanding
       page.style.removeProperty('--works-peek')
@@ -301,22 +299,30 @@ export function SelectedWorks() {
     const place = () => {
       if (!touch.matches) return clear()
       const { peek } = touchDome(smallViewportHeight())
-      const scale = reduced ? 1 : restScale
       section.dataset.touchLanding = ''
       page.style.setProperty('--works-peek', `${peek.toFixed(2)}px`)
       section.style.setProperty('--works-touch-label-top', `${(peek / 2 - label.offsetHeight / 2).toFixed(2)}px`)
-      section.style.setProperty('--works-touch-first', `${(peek - ((1 - scale) / 2) * first.offsetHeight).toFixed(2)}px`)
+      // Safari's visible viewport can be taller than 100svh when its toolbar retracts.
+      // Keep the unscaled card below that viewport too; focus scaling must never expose it.
+      const fold = Math.max(smallViewportHeight(), window.innerHeight, window.visualViewport?.height ?? 0)
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY
+      section.style.setProperty('--works-touch-first', `${Math.max(peek, fold - sectionTop + 24).toFixed(2)}px`)
     }
     place()
+    const landingResize = new ResizeObserver(place)
+    if (section.previousElementSibling) landingResize.observe(section.previousElementSibling)
     window.addEventListener('resize', place)
+    window.visualViewport?.addEventListener('resize', place)
     touch.addEventListener('change', place)
     void document.fonts.ready.then(place)
     return () => {
+      landingResize.disconnect()
       window.removeEventListener('resize', place)
+      window.visualViewport?.removeEventListener('resize', place)
       touch.removeEventListener('change', place)
       clear()
     }
-  }, [restScale])
+  }, [])
   // Mirror reach: the page below the panel (contact + footer) is exactly as tall as the landing above
   // it (capped at one viewport), so scrolling to the end brings the panel's bottom to `peek` below the
   // viewport top, where its bottom dome matches the landing's top dome. The section right after the
@@ -428,6 +434,7 @@ export function SelectedWorks() {
   }, [focusKey])
 
   // Sheet intro: only the background layer moves, so cards and scroll math are untouched.
+  // Keep the content hidden during the intro so a settling layout cannot flash a thumbnail.
   // Layout effect, so the sheet is already lowered on the first painted frame; and it starts
   // fully below the fold (at least the dial distance), so no white shows before it springs up.
   const intro = t.intro
@@ -437,7 +444,8 @@ export function SelectedWorks() {
     if (!bg || intro.preset === 'none') return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.scrollY > 10) return
     // 24px spare: the hero can still settle a little after this runs (WorkPage's useHeroFit).
-    const d = Math.max(intro.distance, window.innerHeight - bg.getBoundingClientRect().top + 24)
+    const touch = window.matchMedia(TOUCH).matches
+    const d = Math.max(intro.distance, window.innerHeight - bg.getBoundingClientRect().top + 24, touch ? window.innerHeight + 24 : 0)
     const frames: Keyframe[] =
       intro.preset === 'bounce'
         ? [
@@ -458,15 +466,25 @@ export function SelectedWorks() {
             ? 'cubic-bezier(0.22, 1, 0.36, 1)'
             : 'linear'
     const animation = bg.animate(frames, { duration: intro.durationMs, delay: intro.delayMs, easing, fill: 'backwards' })
+    const inner = sectionRef.current?.querySelector<HTMLElement>('.works__inner')
+    const contentAnimation = touch && inner
+      ? inner.animate([{ visibility: 'hidden' }, { visibility: 'hidden' }], {
+          duration: intro.durationMs, delay: intro.delayMs, fill: 'backwards',
+        })
+      : null
     // The intro is a landing flourish only. Once the user scrolls, jump to rest so the
     // lowered sheet (and the dark gap above it) never shows at a scroll or snap stop.
     const skip = () => {
-      if (window.scrollY > 10 && animation.playState !== 'finished') animation.finish()
+      if (window.scrollY > 10) {
+        if (animation.playState !== 'finished') animation.finish()
+        if (contentAnimation && contentAnimation.playState !== 'finished') contentAnimation.finish()
+      }
     }
     window.addEventListener('scroll', skip, { passive: true })
     return () => {
       window.removeEventListener('scroll', skip)
       animation.cancel()
+      contentAnimation?.cancel()
     }
     // `introKey` captures every intro dial.
     // eslint-disable-next-line react-hooks/exhaustive-deps
