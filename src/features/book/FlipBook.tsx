@@ -14,7 +14,7 @@
  * thumb, the closest get the 1600 px medium, and while zoomed the visible
  * pages swap to the 4961 px detail scan once it has decoded.
  */
-import { useEffect, useRef, type CSSProperties, type RefObject } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { PageFlip, type Orientation } from 'page-flip'
 import { PAGE_COUNT, PAGE_ASPECT, pageUrl, pageSurface, type PageQuality } from './bookPages'
 
@@ -78,6 +78,9 @@ function visiblePages(index: number, orientation: Orientation): number[] {
   return [left, left + 1]
 }
 
+/** The screen's pixel ratio, 1–3: the book's base supersampling (book.css › .book__shift). */
+const screenPixelRatio = () => Math.min(3, Math.max(1, window.devicePixelRatio || 1))
+
 export function FlipBook({ look, startIndex, active, controllerRef, onChange, diagramSources }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const tiltRef = useRef<HTMLDivElement>(null)
@@ -110,6 +113,20 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
   useEffect(() => {
     relayoutRef.current?.()
   }, [look.scale])
+
+  // Supersampling (book.css › .book__shift): the screen's pixel ratio times the zoom the book last
+  // settled at, so a zoomed spread is as sharp as a flat one. The ratio is re-read when the window
+  // moves to another screen; the zoom updates only once it settles, since each change re-lays out
+  // the book. Capped at 6 (a 4× zoom on a 1.5× screen) to bound the raster's memory.
+  const [pixelRatio, setPixelRatio] = useState(screenPixelRatio)
+  const [rasterZoom, setRasterZoom] = useState(1)
+  const supersample = Math.min(6, pixelRatio * rasterZoom)
+  useEffect(() => {
+    const query = matchMedia(`(resolution: ${devicePixelRatio}dppx)`)
+    const update = () => setPixelRatio(screenPixelRatio())
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [pixelRatio])
 
   useEffect(() => {
     const stage = stageRef.current!
@@ -307,6 +324,8 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
       stage.style.setProperty('--tilt-x', (tiltNow.x - lookRef.current.tiltRestX).toFixed(3))
       stage.style.setProperty('--tilt-y', (tiltNow.y - lookRef.current.tiltRestY).toFixed(3))
       if (moving) schedule()
+      // Once a zoom settles, draw at its resolution too (see the supersample state above).
+      else setRasterZoom(view.zoom)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(tick)
@@ -755,6 +774,7 @@ export function FlipBook({ look, startIndex, active, controllerRef, onChange, di
           '--hint-size': `${look.hint.size}px`,
           '--hint-inset': `${look.hint.inset}px`,
           '--hint-duration': `${1600 / look.hint.speed}ms`,
+          '--book-ss': supersample,
         } as CSSProperties
       }
     >

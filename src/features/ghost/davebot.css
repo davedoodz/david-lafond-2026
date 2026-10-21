@@ -30,14 +30,19 @@ body.davebot-open {
   cursor: pointer;
 }
 
+/* Two rows. Row 1 ends at the ghost's visible bottom, sized so the ghost's centre sits on the
+   viewport's centre. Row 2 is the rest of the screen, and the panel is centred in it, so the gap
+   between ghost and panel always equals the gap between panel and the screen's bottom, whatever
+   the panel's height. --davebot-ghost-size is set on .davebot-layer from the zoomSize dial. */
 .davebot-stack {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
+  display: grid;
+  /* The body spans y 2 → 27.2 of the mark's 32-unit box: centre 14.6, bottom 27.2. Row 1 ends at
+     the body's bottom, 12.6 units below its centre (50dvh). */
+  grid-template-rows: calc(50dvh + var(--davebot-ghost-size) * 12.6 / 32) minmax(0, 1fr);
+  justify-items: center;
+  padding: 0 16px env(safe-area-inset-bottom);
   pointer-events: none;
 }
 
@@ -45,11 +50,11 @@ body.davebot-open {
   --davebot-ghost-size: 160px;
   width: var(--davebot-ghost-size);
   height: var(--davebot-ghost-size);
-  flex: none;
-  /* The 32-grid mark leaves ~15% empty below the body, so the boxes overlap
-     to seat the character on the panel edge rather than float above it.
-     Fine positioning comes from the 'Davebot → ghost → offsetX/Y' dials (translate). */
-  margin-bottom: calc(var(--davebot-ghost-size) * -0.11);
+  align-self: end;
+  /* The box hangs 4.8 of its 32 units (the empty space under the body) past row 1, so the visible
+     body ends on the row edge and is centred on screen. Nudges come from the
+     'Davebot → ghost → offsetX/Y' dials (translate). */
+  margin-bottom: calc(var(--davebot-ghost-size) * -4.8 / 32);
 }
 
 .davebot-ghost .ghost-mark {
@@ -60,7 +65,8 @@ body.davebot-open {
 .davebot-panel {
   position: relative;
   width: min(560px, 100%);
-  max-height: min(520px, calc(100dvh - 112px));
+  align-self: center;
+  max-height: min(520px, calc(100% - 32px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -346,19 +352,13 @@ body.davebot-open {
 }
 
 @media (max-width: 639px) {
-  /* Same layout and flight as desktop: the ghost sits above a centred palette. The top padding
-     reserves the ghost's upward offset (Davebot › ghost › offsetY) and the palette's height cap
-     leaves room for the ghost, so neither is pushed off screen by a long answer. */
+  /* Same two-row layout as desktop: ghost centred on screen, palette centred in the space below. */
   .davebot-stack {
-    padding: calc(max(8px, env(safe-area-inset-top)) + var(--davebot-ghost-lift, 0px)) 8px
-      max(8px, env(safe-area-inset-bottom));
+    padding: 0 8px env(safe-area-inset-bottom);
   }
   .davebot-panel {
     width: 100% !important;
-    max-height: calc(
-      100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom)) - var(--davebot-ghost-size) * 0.89 -
-        var(--davebot-ghost-lift, 0px)
-    );
+    max-height: calc(100% - 16px);
   }
   .davebot-form {
     min-height: 52px;

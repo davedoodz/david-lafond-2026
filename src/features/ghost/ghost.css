@@ -66,53 +66,23 @@
   }
 }
 
-/* Eyes (and the happy arcs): the About page's white background, except on the Work page's dark
-   sections (the top, My Playground, the footer), where the nav sets the page's black (Nav.tsx). */
-.ghost-mark__pupil {
-  fill: var(--ghost-eye, var(--paper));
-  /* No fade: the eyes flip the moment he crosses onto the other surface. */
-}
-.nav[data-ghost-eyes='ink'] .ghost-mark {
-  --ghost-eye: var(--ink-900);
-}
-
-/* Blink scales the clipped eye group about its own box, so it reads as lids
-   closing rather than pupils shrinking. Gaze translates the two paths inside
-   this group, and the two transforms compose. */
-.ghost-mark__eyes {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 90ms ease-in;
-}
-
-.ghost-mark__eyes.is-blinking {
-  transform: scaleY(0.08);
-}
-
 /* Happy hover (centred Davebot only): the body is the hover target. */
 .ghost-mark--happy .ghost-mark__shell {
   pointer-events: auto;
 }
 
-.ghost-mark__blush,
-.ghost-mark__happy {
-  pointer-events: none;
+/* Eyes: black on every surface, no blink, no expressions. */
+.ghost-mark__eye {
+  fill: var(--ink-900);
 }
 
-.ghost-mark__arc {
-  fill: none;
-  stroke: var(--ghost-eye, var(--paper));
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0;
+.ghost-mark__blush {
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ghost-mark__body {
     animation: none;
-  }
-  .ghost-mark__eyes {
-    transition: none;
   }
 }
 

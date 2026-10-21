@@ -226,16 +226,20 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       const inset = parseFloat(style.getPropertyValue('--column-inset')) || 0
       // Layout position (the hero is centred by its margins), not the rect, which includes the shift.
       const left = (vw - hero.offsetWidth) / 2 + parseFloat(style.paddingLeft)
-      // Desktop: centre the whole block, signature ink included, at its widest, so it reads centred
-      // on the page. Phones: centre the middle width. Keep the widest line inside the right inset,
-      // and never pass the left one.
+      // Desktop: put the signature ink's middle on the page's middle, the dome's tip below it, so the
+      // signature reads as resting on the sheet, and slide the text (not the signature) so the role
+      // line's middle sits over the ink's. Phones: centre the middle width. Keep the widest line inside
+      // the right inset, and never pass the left one.
       const ink = signatureInk(hero)
       const textLeft = hero.getBoundingClientRect().left + parseFloat(style.paddingLeft)
-      const from = desktop() && ink ? Math.min(0, ink.left - textLeft) : 0
-      const to = desktop() && ink ? Math.max(wide, ink.right - textLeft) : wide
-      const target = Math.min(desktop() ? (vw - to - from) / 2 : vw / 2 - (narrow + wide) / 4, vw - inset - to)
+      const inkMiddle = desktop() && ink ? (ink.left + ink.right) / 2 - textLeft : 0
+      const textX = desktop() && ink ? inkMiddle - textWidth(hero.querySelector('.hero__role')) / 2 : 0
+      const from = desktop() && ink ? Math.min(0, textX, ink.left - textLeft) : 0
+      const to = desktop() && ink ? Math.max(textX + wide, ink.right - textLeft) : wide
+      const target = Math.min(desktop() && ink ? vw / 2 - inkMiddle : vw / 2 - (narrow + wide) / 4, vw - inset - to)
       const start = Math.max(inset - from, target)
       hero.style.setProperty('--hero-center-x', `${(start - left).toFixed(1)}px`)
+      hero.style.setProperty('--hero-text-x', `${textX.toFixed(1)}px`)
       // Every page's phone nav follows this start (lib/navAlign): the same lengths at full type size.
       const bodyFit = parseFloat(hero.style.getPropertyValue('--hero-body-fit')) || 1
       const titleFit = parseFloat(hero.style.getPropertyValue('--hero-title-fit')) || 1

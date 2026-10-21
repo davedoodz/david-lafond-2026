@@ -438,9 +438,8 @@ function DavebotPanel() {
       style={{
         ['--davebot-highlight' as string]: tuning.highlight.show ? tuning.highlight.color : 'transparent',
         ['--davebot-veil' as string]: `rgb(0 0 0 / ${tuning.box.backdropOpacity})`,
-        // Read by the phone layout (davebot.css) to keep room for the ghost above the palette.
+        // Read by .davebot-stack (davebot.css) to centre the ghost and the palette below it.
         ['--davebot-ghost-size' as string]: `${tuning.ghost.zoomSize}px`,
-        ['--davebot-ghost-lift' as string]: `${Math.max(0, -tuning.ghost.offsetY)}px`,
       }}
     >
       <motion.div className="davebot-veil" style={{ opacity: veilOpacity }} onClick={requestClose} />

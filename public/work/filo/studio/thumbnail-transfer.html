@@ -58,8 +58,8 @@ figcaption small { display: block; margin-top: 4px; color: var(--text); font-siz
 .phone { position: absolute; height: var(--h); aspect-ratio: 434 / 884; }
 .phone::before { content: ''; position: absolute; left: 3.1843%; right: 2.954%; top: 1.19%; bottom: 1.2%; border-radius: 17% / 8%; background: #f1f1f1;
   box-shadow: 0 26px 50px rgb(60 44 28 / 0.2), 0 6px 14px rgb(60 44 28 / 0.1), 0 0 0 1px rgb(40 30 20 / 0.08); }
-.phone video { position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; object-fit: cover; background: #050505;
-  box-shadow: 0 0 0 1px rgb(40 30 20 / 0.08); }
+.phone video { position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; object-fit: cover; background: #f1f1f1; }
+.phone::after { content: ''; position: absolute; left: 5.1843%; top: 2.1719%; width: 89.862%; height: 95.645%; border-radius: 15.385% / 7.096%; box-shadow: inset 0 0 0 1.5px #f1f1f1; pointer-events: none; }
 
 /* Desktop: the portal window. */
 .desk { position: absolute; width: var(--w); aspect-ratio: 3 / 2; border-radius: 12px; overflow: hidden; background: #fff;
@@ -229,9 +229,9 @@ const PICK_DEFAULT = { phone: { x: 42, y: 116, size: 432 }, tag: { x: 433, y: 98
 const stored = (() => { try { return JSON.parse(localStorage.getItem('filo-thumb-pick') ?? 'null') } catch { return null } })()
 const P = stored?.d?.phone && stored.d.tag && stored.d.desk ? stored.d : PICK_DEFAULT
 
-// phone-tap.mp4: the island reads the tag from 0.3 s and expands to "Material tag detected" at DETECT.
+// phone-detect.mp4: the island reads the tag from 0.3 s and expands to "Material tag detected" at DETECT.
 const DETECT = 3.0
-const phone = (p, extra = '') => `<div class="phone" style="left:${p.x}px;top:${p.y}px;--h:${p.size}px;${extra}"><video muted loop playsinline preload="auto" data-kind="phone" src="/work/filo/thumb/phone-tap.mp4"></video></div>`
+const phone = (p, extra = '') => `<div class="phone" style="left:${p.x}px;top:${p.y}px;--h:${p.size}px;${extra}"><video muted loop playsinline preload="auto" data-kind="phone" src="/work/filo/thumb/phone-detect.mp4"></video></div>`
 const desk = (p, extra = '') => `<div class="desk" style="left:${p.x}px;top:${p.y}px;--w:${p.size}px;${extra}"><div class="desk__bar"><i></i><i></i><i></i><b>portal.filo.app</b></div><video muted loop autoplay playsinline preload="auto" data-kind="desk" src="/work/filo/thumb/desk-materials.mp4"></video></div>`
 const tag = (p, extra = '') => {
   const w = p.size * 368 / 653, imgTop = p.y - p.size * 245 / 653
@@ -361,7 +361,7 @@ for (const v of VARIANTS) {
       <div class="pool"></div>
       <div class="fg">${desk(P.desk)}${phone(P.phone)}${tag(P.tag)}${v.fx()}</div>
       <div class="card-shade"></div>
-      <h3 class="card-title">Filo — Software for Taking New Materials from Sample to Production</h3>
+      <h3 class="card-title">Filo — Software for Next-Gen Textiles, from Sample to Apparel Production</h3>
     </div>`
   main.append(fig)
 }

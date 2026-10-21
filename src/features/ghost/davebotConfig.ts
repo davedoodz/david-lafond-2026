@@ -47,15 +47,10 @@ export const DAVEBOT_CONFIG = {
     morph: springField(0.4, 0.15),
     _collapsed: false,
   },
-  /** Hovering the centred Davebot's body: eyes squint into ^ ^ arcs and the cheeks blush. */
+  /** Hovering the centred Davebot's body: the cheeks blush. */
   happy: {
     inTime: [0.1, 0.05, 1.5, 0.01] as [number, number, number, number],
     outTime: [0.1, 0.05, 2, 0.01] as [number, number, number, number],
-    arcCurve: [2.2, 0.4, 4, 0.05] as [number, number, number, number],
-    arcWidth: [3.85, 2.5, 5.5, 0.05] as [number, number, number, number],
-    arcStroke: [2, 0.8, 2.4, 0.05] as [number, number, number, number],
-    arcRaise: [0.2, -1.5, 1.5, 0.05] as [number, number, number, number],
-    squint: [0.31, 0, 0.6, 0.01] as [number, number, number, number],
     blushColor: colorField('#e9b4c0'),
     blushAmount: [1, 0, 1, 0.01] as [number, number, number, number],
     blushWidth: [2.2, 0.8, 4, 0.05] as [number, number, number, number],
