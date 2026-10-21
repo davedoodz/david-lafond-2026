@@ -65,6 +65,8 @@ const BACK_OUT = (p: number) => `cubic-bezier(0.34, ${(1 + 0.56 * p).toFixed(2)}
 const EXPO_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)'
 const RISE = 'cubic-bezier(0.2, 0.7, 0.4, 1)'
 const SWAY = 'ease-in-out'
+/** Longest stagger (ms) across copy that a scroll brings into view at once (play › hurry). */
+const SPREAD_MS = 160
 
 function keyframes(preset: Preset, d: number, p: number): { frames: Keyframe[]; easing: string } {
   switch (preset) {
@@ -240,7 +242,29 @@ function play(el: HTMLElement, s: EntranceSettings) {
     animations.forEach((a) => a.cancel())
     restore()
   }
-  return { finished, cancel }
+  // Scrolling ahead of the run: every piece that is (or is about to be) on screen starts now, in
+  // the same order and motion, only faster, so the reader never scrolls onto blank copy. However
+  // many lines come into view at once, their stagger fits in SPREAD_MS.
+  const fast = Math.min(s.durationMs, Math.max(200, 0.4 * s.durationMs))
+  const hurried = new Set<number>()
+  const hurry = (limit: number) => {
+    const waiting: number[] = []
+    animations.forEach((a, i) => {
+      if (hurried.has(i) || a.playState === 'finished' || pieces[i].getBoundingClientRect().top > limit) return
+      hurried.add(i)
+      const timing = a.effect!.getTiming()
+      if (Number(a.currentTime ?? 0) < (timing.delay ?? 0)) waiting.push(i)
+      else a.updatePlaybackRate(Math.max(1, Number(timing.duration) / fast))
+    })
+    if (!waiting.length) return
+    const first = order[waiting[0]]
+    const step = Math.min(s.staggerMs, 24, SPREAD_MS / Math.max(1, order[waiting[waiting.length - 1]] - first))
+    for (const i of waiting) {
+      const a = animations[i]
+      a.effect!.updateTiming({ delay: Number(a.currentTime ?? 0) + (order[i] - first) * step, duration: fast })
+    }
+  }
+  return { finished, cancel, hurry }
 }
 
 /**
@@ -260,15 +284,31 @@ export function useStoryEntrance(
   useLayoutEffect(() => {
     const host = root.current
     if (!host || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const runs: { finished: Promise<void>; cancel: () => void }[] = []
+    const runs: ReturnType<typeof play>[] = []
     for (const key of ['heading', 'body'] as const) {
       const s = settingsRef.current[key]
       const el = host.querySelector<HTMLElement>(targets[key])
       if (el && s.preset !== 'soft' && s.preset !== 'none') runs.push(play(el, s))
     }
     let done = false
-    void Promise.all(runs.map((r) => r.finished)).then(() => (done = true))
+    let frame = 0
+    const hurry = () => {
+      frame = 0
+      const limit = window.innerHeight * 1.15
+      runs.forEach((r) => r.hurry(limit))
+    }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(hurry) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    const stop = () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', onScroll)
+    }
+    void Promise.all(runs.map((r) => r.finished)).then(() => {
+      done = true
+      stop()
+    })
     return () => {
+      stop()
       if (!done) runs.forEach((r) => r.cancel())
     }
   }, [root, targets.heading, targets.body, settings.heading.preset, settings.body.preset, run])

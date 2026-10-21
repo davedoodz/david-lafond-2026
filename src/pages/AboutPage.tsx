@@ -120,7 +120,7 @@ const CONFIG = {
   /**
    * Desktop: white fade + blur fixed to the bottom of the screen, over the story only: it eases in
    * as the story enters from below and out as its last line rises clear, so it never covers the
-   * cards or the playground sheet. Phones: blur only, no white, at fixed values (AboutPage.css).
+   * cards or the playground sheet. Phones have no fade (AboutPage.css).
    */
   fade: {
     show: true,
@@ -276,21 +276,14 @@ export function AboutPage() {
     const story = storyRef.current
     if (!fadeShow || !fade || !story) return
     let frame = 0
-    const phone = window.matchMedia('(max-width: 640px)')
     const update = () => {
       frame = 0
       const viewport = window.visualViewport
       const edge = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight)
-      const h = phone.matches ? 116 : fade.offsetHeight
+      const h = fade.offsetHeight
       const { top, bottom } = story.getBoundingClientRect()
       const clamp = (v: number) => Math.min(1, Math.max(0, v))
-      // Keep the same story-only fade while the mobile document layer extends under browser UI.
       const p = h > 0 ? Math.min(clamp((edge - top) / h), clamp((bottom - (edge - h)) / h)) : 0
-      if (phone.matches) {
-        // Park the invisible layer at the page top so it cannot extend the footer's scroll range.
-        const pageTop = p > 0 ? window.scrollY + edge - h : 0
-        fade.style.setProperty('--fade-page-top', `${pageTop.toFixed(2)}px`)
-      } else fade.style.removeProperty('--fade-page-top')
       fade.style.setProperty('--fade-p', p.toFixed(3))
     }
     const schedule = () => {
