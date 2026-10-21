@@ -98,6 +98,17 @@
 .work .hero[data-align] {
   translate: var(--hero-center-x, 0px) 0;
 }
+/* Desktop: the text slides on its own (WorkPage.tsx center) so the role line is centred over the
+   signature; `left`, not translate, because the load-in animates translate. */
+.work .hero[data-align] > :not(.hero__signature) {
+  position: relative;
+  left: var(--hero-text-x, 0px);
+}
+/* useFitColumn measures each line from its own left edge; the slide would shrink the column. */
+[data-fit-measuring] .work .hero[data-align] > :not(.hero__signature),
+.work[data-fit-measuring] .hero[data-align] > :not(.hero__signature) {
+  left: 0;
+}
 
 .hero {
   position: relative;
