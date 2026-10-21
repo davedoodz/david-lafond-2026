@@ -232,7 +232,7 @@ const SNIPPETS = {
 
 /* Top-bar choices: defaults, then what was last chosen in this browser, then the link's query (which wins). */
 const CONTROLS_KEY = 'filo-thumb-controls'
-const S = Object.assign({ morph: 'turn', timing: 'stagger', phone: 'phone-tap', desk: 'desk-materials', zoom: 'window', layers: 'on' },
+const S = Object.assign({ morph: 'off', timing: 'stagger', phone: 'phone-tap', desk: 'desk-materials', zoom: 'window', layers: 'on' },
   JSON.parse(localStorage.getItem(CONTROLS_KEY) ?? '{}'), Object.fromEntries(new URLSearchParams(location.search)))
 /** The morph style the fabric switch brings back after "Products only". */
 let lastMorph = S.morph !== 'off' ? S.morph : 'turn'
@@ -329,6 +329,8 @@ controlsEl.addEventListener('click', e => {
   apply()
 })
 
+/* The site's card titles (src/data/tuning.json: workTitles.filoDesktop / filoMobile). */
+const TITLE = { desktop: 'Filo — Software for Next-Gen Textiles, from Sample to Apparel Production', mobile: 'Filo – Next-Gen Textiles Software' }
 const main = document.getElementById('main')
 const cardHTML = (L, fg, cls = '') => {
   const [px, py, pool] = L.pool ?? [50, 45, 0]
@@ -339,7 +341,7 @@ const cardHTML = (L, fg, cls = '') => {
       ${L.fixed ? '' : `<div class="pool" style="--px:${px}%;--py:${py}%;--pool:${pool}"></div>`}
       <div class="fg">${fg}</div>
       <div class="card-shade"></div>
-      <h3 class="card-title">Filo — Software for Taking New Materials from Sample to Production</h3>
+      <h3 class="card-title">${cls.includes('card--m') ? TITLE.mobile : TITLE.desktop}</h3>
     </div>`
 }
 
@@ -347,13 +349,15 @@ const cardHTML = (L, fg, cls = '') => {
    Phone and portal: x, y = top-left; size = phone height / portal width. Tag: x = centre, y = top of the tag body,
    size = body height. Edited with the sliders, kept in localStorage. */
 const PICK_DEFAULT = {
-  d: { phone: { x: 42, y: 116, size: 432 }, tag: { x: 433, y: 98, size: 214 }, desk: { x: 566, y: 56, size: 430 } },
-  m: { phone: { x: 12, y: 150, size: 270 }, tag: { x: 154, y: 38, size: 132 }, desk: { x: 172, y: 150, size: 210 } },
+  d: { phone: { x: 9, y: 139, size: 432 }, tag: { x: 377, y: 63, size: 220 }, desk: { x: 559, y: 142, size: 794 } },
+  m: { phone: { x: -11, y: 197, size: 287 }, tag: { x: 83, y: 43, size: 119 }, desk: { x: 171, y: 21, size: 406 } },
 }
 const PICK_KEY = 'filo-thumb-pick'
 /* Seconds after the slide-in starts before each layer moves; its snippet starts playing as it moves. */
-const DELAY_DEFAULT = { phoneDelay: 0.05, deskDelay: 0.3, tagDelay: 0.55 }
-const PICK = { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging', ...DELAY_DEFAULT, ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
+const DELAY_DEFAULT = { phoneDelay: 0.6, deskDelay: 0.6, tagDelay: 0 }
+/* The rest of the picked layout's settings, as David set them on Oct 21. */
+const PICK_BASE = { sway: 3, slide: 1.3, motion: 'loop', phoneRate: 1.4, deskRate: 1.4, stay: 6.5, away: 2.5, tagArt: 'hanging', ...DELAY_DEFAULT }
+const PICK = { ...PICK_BASE, ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
 /* Picked layout's loop: `hold` = seconds the layers rest after the phone snippet ends (when PICK.stay is 0, "until
    the phone clip ends"); `exit` = the slide out at 1× (scaled by the slide speed). PICK.stay sets the seconds the
    layers stay in instead; PICK.away is the empty wall before they come back. */
@@ -486,12 +490,12 @@ function buildPick(L) {
     const out = fig.querySelector('[data-out]')
     if (act === 'copy') { await navigator.clipboard.writeText(JSON.stringify(PICK, null, 2)); out.textContent = 'Copied as JSON.' }
     if (act === 'reset') {
-      Object.assign(PICK, { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging', ...DELAY_DEFAULT }, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
+      Object.assign(PICK, PICK_BASE, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
       setTagArt(fig)
       fig.querySelectorAll('input[data-v]').forEach(i => { i.value = PICK[i.dataset.v][i.dataset.k][i.dataset.a]; i.nextElementSibling.value = i.value })
-      for (const k of ['sway', 'slide']) { const s = fig.querySelector(`input[data-${k}]`); s.value = 1; s.nextElementSibling.value = '1×' }
+      for (const k of ['sway', 'slide']) { const s = fig.querySelector(`input[data-${k}]`); s.value = PICK[k]; s.nextElementSibling.value = `${PICK[k]}×` }
       for (const [key, , , , , fmt] of TIMING) { const s = fig.querySelector(`input[data-timing="${key}"]`); s.value = PICK[key]; s.nextElementSibling.value = fmt(PICK[key]) }
-      placeAll(cd, 'd'); placeAll(cm, 'm'); setSway(fig, 1); setRates(fig); setSlide(fig); out.textContent = 'Back to the defaults.'
+      placeAll(cd, 'd'); placeAll(cm, 'm'); setSway(fig, PICK.sway); setRates(fig); setSlide(fig); out.textContent = 'Back to the defaults.'
     }
   })
   return fig
