@@ -43,6 +43,21 @@ function buildValues(sticker: LiveSticker): StickerRecord['values'] {
   return values
 }
 
+/** Decoded sticker artwork by URL. The images stay referenced so the browser keeps them decoded. */
+const decodedArt = new Map<string, { image: HTMLImageElement; ready: Promise<void> }>()
+function faceImage(face: { image?: string } | undefined): Promise<void> {
+  const src = face?.image
+  if (!src) return Promise.resolve()
+  let entry = decodedArt.get(src)
+  if (!entry) {
+    const image = new Image()
+    image.src = src
+    entry = { image, ready: image.decode().catch(() => {}) }
+    decodedArt.set(src, entry)
+  }
+  return entry.ready
+}
+
 interface Parts {
   button?: HTMLButtonElement
   icon?: HTMLSpanElement
@@ -136,11 +151,23 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left' }:
 
     const paragraphElements = paragraphsRef.current.filter(Boolean)
 
+    // Every face's artwork decodes now, so a turn never lands on an empty sticker, and the intro holds
+    // its entrance (data-art-pending, WorkIntroStickers.css) until the faces it opens on are ready.
+    // Their downloads start with the HTML (vite.config.ts, stickerPreload). A failed image releases
+    // too; the cap only guards a stalled connection from hiding the copy.
+    for (const sticker of Object.values(config.stickers) as LiveSticker[]) for (const face of sticker.faces) faceImage(face)
+    const opening = records.map(record => faceImage((config.stickers as Record<string, LiveSticker>)[record.id].faces[0]))
+    for (const p of paragraphElements) p.setAttribute('data-art-pending', '')
+    const release = () => { for (const p of paragraphElements) p.removeAttribute('data-art-pending') }
+    const cap = setTimeout(release, 6000)
+    void Promise.all(opening).then(() => { clearTimeout(cap); release() })
+
     const recordsByButton = new Map(records.map(record => [record.button as HTMLElement, record]))
     bindIntroSelection(paragraphElements, pill => recordsByButton.get(pill)?.current ?? pill.textContent ?? '', controller.signal)
 
     return () => {
       controller.abort()
+      clearTimeout(cap)
       loop.stop()
       for (const record of records) {
         record.animations.forEach(a => a.stop())

@@ -8,6 +8,12 @@
   font-size: var(--intro-size-d, var(--text-body));
   line-height: var(--intro-leading, 1.2);
 }
+/* Held, entrance paused, until the opening stickers decode (WorkIntroStickers.tsx), so the copy
+   never shows with empty pills. Outranks the entrance rule's animation shorthand (global.css). */
+.hero .hero__intro.work-intro-stickers__p[data-art-pending] {
+  visibility: hidden;
+  animation-play-state: paused;
+}
 /* Selection band (introSelection.ts): white blocks in `difference`, like the site's .selection-hl,
    above the text and pills but under the stickers, so the artwork keeps its colors. */
 .ws-hl {
