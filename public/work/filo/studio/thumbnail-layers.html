@@ -114,6 +114,10 @@ body[data-zoom='in'] .desk video { top: 22px; height: calc(100% - 22px); }
 .tag img { display: block; width: 100%; filter: drop-shadow(0 18px 18px rgb(70 50 30 / 0.2)) drop-shadow(0 3px 4px rgb(70 50 30 / 0.12)); }
 .tag i { position: absolute; left: 0; right: 0; bottom: 100%; height: var(--hang, 120px); background: url('/work/filo/thumb/tag-cord.webp') 50% 100% / 100% auto no-repeat; }
 @keyframes sway { 0%, 100% { rotate: -2.2deg; } 50% { rotate: 2.2deg; } }
+/* "Tag on its swatch": the tag lying on a square of its fabric. No cord to hang from, so it tilts about its own centre. */
+.tag--swatch { transform-origin: 50% 50%; animation-name: tilt; }
+.tag--swatch i { display: none; }
+@keyframes tilt { 0%, 100% { rotate: -1.2deg; } 50% { rotate: 1.2deg; } }
 .hero-tag { position: absolute; width: var(--tw); animation: bob 7s ease-in-out infinite; filter: drop-shadow(0 26px 26px rgb(70 50 30 / 0.22)) drop-shadow(0 4px 6px rgb(70 50 30 / 0.12)); }
 @keyframes bob { 0%, 100% { translate: 0 -5px; rotate: -1.5deg; } 50% { translate: 0 5px; rotate: 1.5deg; } }
 
@@ -346,7 +350,7 @@ const PICK_DEFAULT = {
   m: { phone: { x: 12, y: 150, size: 270 }, tag: { x: 154, y: 38, size: 132 }, desk: { x: 172, y: 150, size: 210 } },
 }
 const PICK_KEY = 'filo-thumb-pick'
-const PICK = { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
+const PICK = { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging', ...(JSON.parse(localStorage.getItem(PICK_KEY) ?? 'null') ?? structuredClone(PICK_DEFAULT)) }
 /* Picked layout's loop: `hold` = seconds the layers rest after the phone snippet ends (when PICK.stay is 0, "until
    the phone clip ends"); `exit` = the slide out at 1× (scaled by the slide speed). PICK.stay sets the seconds the
    layers stay in instead; PICK.away is the empty wall before they come back. */
@@ -382,11 +386,25 @@ const PICK_RANGE = {
   m: { x: [-200, 500], y: [-200, 600], size: { phone: [100, 600], tag: [40, 320], desk: [100, 600] } },
 }
 const LAYER_NAME = { phone: 'Phone', tag: 'Tag', desk: 'Desktop' }
+/* Tag art. Placement is the same for both: x = centre of the tag body, y = its top, size = its height.
+   w, h: image px; top, height, cx: the tag body inside the image. */
+const TAG_ART = {
+  hanging: { src: '/work/filo/filo-app-flow/filo-tag.webp', label: 'Hanging tag', w: 368, h: 900, top: 245, height: 653, cx: 184 },
+  swatch: { src: '/work/filo/thumb/tag-swatch.webp', label: 'Tag on its swatch', w: 1262, h: 1246, top: 250, height: 802, cx: 636 },
+}
+/** Re-places both picked cards' tags in the chosen art and presses its button. */
+function setTagArt(fig) {
+  fig.querySelectorAll('button[data-tagart]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tagart === PICK.tagArt)))
+  const [cd, cm] = fig.querySelectorAll('.card')
+  place(cd, 'tag', PICK.d.tag); place(cm, 'tag', PICK.m.tag)
+}
 function place(card, which, p) {
   const el = card.querySelector(`.fg .${which}`)
   if (which === 'tag') {
-    const w = p.size * 368 / 653, imgTop = p.y - p.size * 245 / 653
-    el.style.left = `${p.x - w / 2}px`; el.style.top = `${imgTop}px`
+    const A = TAG_ART[PICK.tagArt] ?? TAG_ART.hanging, k = p.size / A.height, w = A.w * k, imgTop = p.y - A.top * k
+    const img = el.querySelector('img'); if (!img.src.endsWith(A.src)) img.src = A.src
+    el.classList.toggle('tag--swatch', A === TAG_ART.swatch)
+    el.style.left = `${p.x - A.cx * k}px`; el.style.top = `${imgTop}px`
     el.style.setProperty('--tw', `${w}px`); el.style.setProperty('--hang', `${Math.max(0, imgTop + 12)}px`)
     el.dataset.origin = `${p.x},${p.y + p.size / 2}`
   } else {
@@ -414,6 +432,7 @@ function buildPick(L) {
       <div class="place__sway"><b>Slide</b><div class="seg">${MOTIONS.map(([v, l]) => `<button type="button" data-motion="${v}" aria-pressed="${PICK.motion === v}">${l}</button>`).join('')}</div></div>
       <div class="place__sway"><b></b><label><span>speed</span><input type="range" min="0.25" max="3" step="0.05" value="${PICK.slide}" data-slide><output>${PICK.slide}×</output></label></div>
       ${TIMING.map(([key, label, min, max, step, fmt]) => `<div class="place__sway"><b>${label}</b><label><span>${key.endsWith('Rate') ? 'speed' : 'time'}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${PICK[key]}" data-timing="${key}"><output>${fmt(PICK[key])}</output></label></div>`).join('')}
+      <div class="place__sway"><b>Tag</b><div class="seg">${Object.entries(TAG_ART).map(([v, a]) => `<button type="button" data-tagart="${v}" aria-pressed="${PICK.tagArt === v}">${a.label}</button>`).join('')}</div></div>
       <div class="place__sway"><b>Fabric</b><div class="seg">${[['on', 'Products turn to fabric'], ['off', 'Products only']].map(([v, l]) => `<button type="button" data-fabric="${v}" aria-pressed="${(S.morph !== 'off') === (v === 'on')}">${l}</button>`).join('')}</div></div>
       <div class="place__bar"><button data-act="copy">Copy values</button><button data-act="reset">Reset</button><span data-out></span></div>
     </div>`
@@ -426,6 +445,8 @@ function buildPick(L) {
     if (v) controlsEl.querySelector(`button[data-key="morph"][data-v="${v === 'on' ? lastMorph : 'off'}"]`).click()
     const m = e.target.closest('button[data-motion]')?.dataset.motion
     if (m) { PICK.motion = m; localStorage.setItem(PICK_KEY, JSON.stringify(PICK)); setSlide(fig) }
+    const art = e.target.closest('button[data-tagart]')?.dataset.tagart
+    if (art) { PICK.tagArt = art; localStorage.setItem(PICK_KEY, JSON.stringify(PICK)); setTagArt(fig) }
   })
   fig.querySelector('.place').addEventListener('input', e => {
     const tk = e.target.dataset.timing
@@ -458,7 +479,8 @@ function buildPick(L) {
     const out = fig.querySelector('[data-out]')
     if (act === 'copy') { await navigator.clipboard.writeText(JSON.stringify(PICK, null, 2)); out.textContent = 'Copied as JSON.' }
     if (act === 'reset') {
-      Object.assign(PICK, { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5 }, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
+      Object.assign(PICK, { sway: 1, slide: 1, motion: 'loop', phoneRate: 1, deskRate: 1, stay: 0, away: 0.5, tagArt: 'hanging' }, structuredClone(PICK_DEFAULT)); localStorage.removeItem(PICK_KEY)
+      setTagArt(fig)
       fig.querySelectorAll('input[data-v]').forEach(i => { i.value = PICK[i.dataset.v][i.dataset.k][i.dataset.a]; i.nextElementSibling.value = i.value })
       for (const k of ['sway', 'slide']) { const s = fig.querySelector(`input[data-${k}]`); s.value = 1; s.nextElementSibling.value = '1×' }
       for (const [key, , , , , fmt] of TIMING) { const s = fig.querySelector(`input[data-timing="${key}"]`); s.value = PICK[key]; s.nextElementSibling.value = fmt(PICK[key]) }
