@@ -36,6 +36,9 @@ const STRAP = '#96b6d4' // case study tuning: dynamic.watch.strapColor
 const VOICE = '/work/momo/flows/voice.mp4'
 // The tracker variant taps "One free hour every morning" (reself-voice-prototypes tracker.html?tap=hour).
 const TRACKER = '/work/momo/flows/tracker-hour.mp4'
+// First frames (the tracker's at TRACKER_FROM), shown until each recording can play.
+const VOICE_POSTER = '/work/momo/flows/voice.webp'
+const TRACKER_POSTER = '/work/momo/flows/tracker-hour.webp'
 const VOICE_RATIO = 1080 / 530
 const VOICE_STILL = 6 // s: a frame with the transcript on screen, held when motion is off
 // s: the tracker starts at its top — "Your Tracker", the September calendar with the 24th ringed —
@@ -250,8 +253,8 @@ export function sceneHTML(key, { chrome = true } = {}) {
       <svg class="mt-hb" viewBox="0 0 ${W} ${H}" style="width:${W}px;height:${H}px">${'<path class="mt-hb-base" pathLength="100"/><path class="mt-hb-live" pathLength="100"/>'.repeat(2)}</svg>
       <div class="mt-el" data-el="phone">
         <div class="mt-phone" style="left:${-p.w / 2}px;top:${-ph / 2}px;width:${p.w}px;height:${ph}px">
-          <video class="mt-pv mt-scr-in" src="${VOICE}" muted loop playsinline preload="auto" aria-hidden="true"></video>
-          <video class="mt-pv mt-pv--out mt-scr-out" src="${TRACKER}" muted playsinline preload="auto" aria-hidden="true"></video>
+          <video class="mt-pv mt-scr-in" src="${VOICE}" poster="${VOICE_POSTER}" muted loop playsinline preload="auto" aria-hidden="true"></video>
+          <video class="mt-pv mt-pv--out mt-scr-out" src="${TRACKER}" poster="${TRACKER_POSTER}" muted playsinline preload="auto" aria-hidden="true"></video>
         </div>
       </div>
       <div class="mt-el" data-el="watch">

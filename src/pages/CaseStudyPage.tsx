@@ -28,6 +28,7 @@ import { threeLines, useCaseMobileStyle } from './caseMobile'
 import { MomoPhoneDials } from './momoMobile'
 import { FiloPhoneDials } from './filoMobile'
 import { useMedia } from '../lib/viewport'
+import { useMediaWarmup } from '../lib/mediaWarmup'
 import './CaseStudyPage.css'
 
 
@@ -417,6 +418,7 @@ export function CaseStudyPage({ id }: Props) {
 
   // Sidebar: highlight the section crossing the middle of the screen; hide over the dark footer sheet.
   const mainRef = useRef<HTMLElement>(null)
+  useMediaWarmup(mainRef)
   const [active, setActive] = useState<string>('hero')
   const [onDark, setOnDark] = useState(false)
   useEffect(() => {

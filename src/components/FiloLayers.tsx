@@ -73,14 +73,9 @@ export function FiloLayers() {
     })
     resize.observe(host)
 
-    // Clips load once the card is near the screen.
-    const near = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
-      phone.src = FILO_MEDIA.phone
-      desk.src = FILO_MEDIA.desk
-      near.disconnect()
-    }, { rootMargin: '600px 0px' })
-    near.observe(host)
+    // Clips load with the page, so the card never shows an empty screen (lib/mediaWarmup).
+    phone.src = FILO_MEDIA.phone
+    desk.src = FILO_MEDIA.desk
 
     const enter = () => {
       stage.classList.remove('is-out', 'is-in')
@@ -112,7 +107,6 @@ export function FiloLayers() {
     return () => {
       stop()
       resize.disconnect()
-      near.disconnect()
       seen.disconnect()
     }
   }, [L])
@@ -122,10 +116,10 @@ export function FiloLayers() {
     <div ref={hostRef} className="fl-host" aria-hidden="true">
       <div ref={stageRef} className="fl-stage" style={{ '--fl-k': 1 / FILO_MOTION.slide } as CSSProperties}>
         <div className="fl-desk" style={s.desk}>
-          <video ref={deskRef} muted loop playsInline preload="auto" />
+          <video ref={deskRef} poster={FILO_MEDIA.deskPoster} muted loop playsInline preload="auto" />
         </div>
         <div className="fl-phone" style={s.phone}>
-          <video ref={phoneRef} muted loop playsInline preload="auto" />
+          <video ref={phoneRef} poster={FILO_MEDIA.phonePoster} muted loop playsInline preload="auto" />
         </div>
         <div className="fl-tag" style={s.tag}>
           <i />
