@@ -190,18 +190,6 @@
   translate: -3px 0;
 }
 
-/* "← Back" inside the links: on project pages it replaces Work at every width. The links' gap is
-   unchanged, so Back → About and About → Resume keep the same spacing. */
-.nav__links .nav__links-back {
-  display: inline-flex;
-  /* The arrow's tip sits where Work's first letter would. */
-  margin-left: var(--back-arrow-inset, 0px);
-  line-height: inherit;
-}
-.nav__links:has(.nav__links-back) .nav__work {
-  display: none;
-}
-
 @media (max-width: 640px) {
   .nav {
     padding: calc(34px + env(safe-area-inset-top)) var(--edge) 0 36px;
@@ -211,29 +199,10 @@
     padding-top: 7px;
     line-height: 16px;
   }
-  /* Case studies: only "← Back" and Davebot, so each page's lead mark can sit level with them in
-     the middle of the row (caseMobile.css). */
-  .nav[data-project] .nav__links > a:not(.nav__links-back) {
+  /* Case studies: only Work and Davebot, so each page's lead mark can sit level with them in the
+     middle of the row (caseMobile.css). */
+  .nav[data-project] .nav__links > a:not(.nav__work) {
     display: none;
-  }
-}
-
-/* Phones: scrolling down tucks the links up and out; scrolling up brings them back (Nav.tsx,
-   data-tucked). Davebot is outside .nav__links, so he always stays in the corner. Keyboard focus
-   inside the nav keeps the links shown. */
-@media (max-width: 640px) {
-  .nav__links {
-    transition: opacity 220ms ease, translate 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-  .nav[data-tucked]:not(:focus-within) .nav__links {
-    opacity: 0;
-    translate: 0 -12px;
-    pointer-events: none;
-  }
-}
-@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
-  .nav[data-tucked]:not(:focus-within) .nav__links {
-    translate: none;
   }
 }
 

@@ -1,5 +1,5 @@
-/* Back lives in the nav, in Work's place (Nav.css). This copy stays invisible so its room on
-   narrow screens keeps the book where it was. */
+/* The nav's Work link leads back to the list. This Back stays invisible so its room on narrow
+   screens keeps the book where it was. */
 .project__back {
   position: absolute;
   z-index: 3;
