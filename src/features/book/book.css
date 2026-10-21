@@ -1390,7 +1390,7 @@
     container-type: inline-size;
     grid-template-rows: auto auto;
     row-gap: 14px;
-    padding-block: 118px;
+    padding-block: var(--hm-end-gap, 118px);
   }
   /* The corners keep the desktop video's look: the radius dial is set on the 744px-wide desktop frame
      (1440 × 900), so a phone frame takes the same share of its own width (20 → about 8px at 390). */
