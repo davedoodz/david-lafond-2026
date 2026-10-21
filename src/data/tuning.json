@@ -551,8 +551,8 @@
     },
     "ghost": {
       "preset": "spin",
-      "delayMs": 1000,
-      "durationMs": 970,
+      "delayMs": 680,
+      "durationMs": 875,
       "bounce": 0.65
     },
     "links": {

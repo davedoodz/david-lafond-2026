@@ -501,9 +501,18 @@ export function SelectedWorks() {
           duration: intro.durationMs, delay: intro.delayMs, fill: 'backwards',
         })
       : null
-    // Never finish the entrance on scroll: the section's normal document movement carries the
-    // still-running arc upward with the gesture. Finishing here made the arc pop into place.
+    // Scrolling before the sheet has risen starts the rise at once, so the arc never trails the
+    // first thumbnail. It keeps the same spring rather than jumping to rest.
+    const hurry = () => {
+      window.removeEventListener('scroll', hurry)
+      for (const a of [animation, contentAnimation]) {
+        if (!a || a.playState === 'finished') continue
+        if (Number(a.currentTime ?? 0) < intro.delayMs) a.currentTime = intro.delayMs
+      }
+    }
+    window.addEventListener('scroll', hurry, { passive: true })
     return () => {
+      window.removeEventListener('scroll', hurry)
       animation.cancel()
       contentAnimation?.cancel()
     }
