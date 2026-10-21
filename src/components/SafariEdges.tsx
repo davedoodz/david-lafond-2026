@@ -49,6 +49,7 @@ export function SafariEdges() {
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(sample) }
     root.dataset.safariEdges = ''
+    root.dataset.safariPage = route
     sample()
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
@@ -66,6 +67,7 @@ export function SafariEdges() {
       window.visualViewport?.removeEventListener('resize', schedule)
       window.visualViewport?.removeEventListener('scroll', schedule)
       delete root.dataset.safariEdges
+      delete root.dataset.safariPage
       delete root.dataset.safariBottom
       for (const [name, value] of previous) {
         if (value) root.style.setProperty(name, value)

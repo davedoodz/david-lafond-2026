@@ -251,7 +251,8 @@ export function Nav({ route }: Props) {
 
   // Phones with Soft fade and fadeLinks › Match fade: the links and cursor take the fade's tone.
   const phone = useMedia('(max-width: 640px)')
-  const { preset, fadeTone, fadeLinks } = t.mobileContrast
+  const { preset: savedPreset, fadeTone, fadeLinks } = t.mobileContrast
+  const preset = phone && route === 'work' ? 'Off' : savedPreset
   const fadeSurface = fadeTone === 'Light' ? 'light' : fadeTone === 'Dark' ? 'dark' : section
   const surface = phone && preset === 'Soft fade' && fadeLinks === 'Match fade' ? fadeSurface : under
 
@@ -342,7 +343,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
-      <header ref={navRef} className="nav" data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-back-to-top="" data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
+      <header ref={navRef} className="nav" data-route={route} data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-ghost-eyes={inkEyes ? 'ink' : undefined} data-back-to-top="" data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

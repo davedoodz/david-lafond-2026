@@ -465,3 +465,12 @@
     margin-top: -2px;
   }
 }
+
+@media (max-width: 640px) {
+  .nav[data-route='work']::before,
+  .nav[data-route='work']::after {
+    display: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
