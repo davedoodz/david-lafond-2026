@@ -81,8 +81,8 @@
     "ghost": {
       "navSize": 30,
       "zoomSize": 190,
-      "color": "nav link",
-      "customColor": "#aa9e95",
+      "color": "custom",
+      "customColor": "#a6a09c",
       "morph": {
         "type": "spring",
         "visualDuration": 0.65,
