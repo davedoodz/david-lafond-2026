@@ -409,21 +409,19 @@ export function SelectedWorks() {
   }, [])
 
   // Project focus scale, written as --focus-scale on each <li> (the card's own
-  // `scale` stays free for hover).
+  // `scale` stays free for hover). Phones keep every card at full size while scrolling.
   const listRef = useRef<HTMLUListElement>(null)
   const focus = t.focus
   const focusKey = JSON.stringify(focus)
   useEffect(() => {
     const items = Array.from(listRef.current?.children ?? []) as HTMLElement[]
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const phone = window.matchMedia('(max-width: 640px)')
     const clear = () => items.forEach((li) => li.style.removeProperty('--focus-scale'))
-    if (focus.mode === 'off' || reduced) {
-      clear()
-      return
-    }
     let frame = 0
     const update = () => {
       frame = 0
+      if (focus.mode === 'off' || reduced.matches || phone.matches) return clear()
       const mid = window.innerHeight / 2
       const distances = items.map((li) => {
         const r = li.getBoundingClientRect()
@@ -449,10 +447,14 @@ export function SelectedWorks() {
     update()
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
+    phone.addEventListener('change', schedule)
+    reduced.addEventListener('change', schedule)
     return () => {
       cancelAnimationFrame(frame)
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
+      phone.removeEventListener('change', schedule)
+      reduced.removeEventListener('change', schedule)
       clear()
     }
     // `focusKey` captures every focus dial.
