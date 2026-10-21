@@ -20,9 +20,10 @@
     gap: var(--mm-media-gap);
     padding-block: calc(var(--mm-section-gap) / 2);
   }
-  /* The hero keeps its top (the braid sits level with the nav, caseMobile.css). */
-  main.case[data-work='momo'] .case__section--hero {
-    padding-top: 67px;
+  /* The hero top: the braid sits just under the nav row (Work / About / Resume), so the hero gets
+     56px more than the section's own half gap. */
+  main.case[data-work='momo'] section.case__section--hero[data-layout] {
+    padding-top: calc(var(--mm-section-gap) / 2 + 56px);
   }
 
   /* --- 1 Hero. Partner logos: one row scaled as a whole to --mm-logos-fill of the welcome phone's
