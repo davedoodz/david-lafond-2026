@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { DitherBand } from './components/DitherBand'
 import { Footer } from './components/Footer'
+import { SafariEdges } from './components/SafariEdges'
 import { SelectionHighlight } from './components/SelectionHighlight'
 import { ControlledScroll } from './features/controlledScroll/ControlledScroll'
 import { CursorLayer } from './features/cursor/CursorLayer'
@@ -116,6 +117,7 @@ export function App() {
           </>
         )}
       </div>
+      <SafariEdges />
       <SelectionHighlight />
       <CursorLayer />
       <ControlledScroll />

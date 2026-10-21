@@ -2,3 +2,11 @@
   position: relative;
   min-height: 100dvh;
 }
+
+/* Keep page surfaces independent of Safari's separately sampled document edge colors. */
+.site {
+  background: var(--ink-900);
+}
+.site[data-surface='light'] {
+  background: var(--paper);
+}
