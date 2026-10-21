@@ -328,11 +328,12 @@ export function SelectedWorks() {
       const peek = Number.isFinite(measuredPeek) ? measuredPeek : touchDome(smallViewportHeight()).peek
       section.dataset.touchLanding = ''
       section.style.setProperty('--works-touch-label-top', `${(peek / 2 - label.offsetHeight / 2).toFixed(2)}px`)
-      // Safari's visible viewport can be taller than 100svh when its toolbar retracts.
-      // Keep the unscaled card below that viewport too; focus scaling must never expose it.
+      // Safari's translucent bottom toolbar can show content below the visible viewport. Keep the
+      // first card past both the landing peek and a conservative phone-toolbar clearance.
       const fold = Math.max(smallViewportHeight(), window.innerHeight, window.visualViewport?.height ?? 0)
       const sectionTop = section.getBoundingClientRect().top + window.scrollY
-      section.style.setProperty('--works-touch-first', `${Math.max(peek, fold - sectionTop + 24).toFixed(2)}px`)
+      const chromeClearance = Math.max(peek, 96)
+      section.style.setProperty('--works-touch-first', `${Math.max(chromeClearance, fold - sectionTop + chromeClearance).toFixed(2)}px`)
     }
     place()
     const landingResize = new ResizeObserver(place)
@@ -500,9 +501,18 @@ export function SelectedWorks() {
           duration: intro.durationMs, delay: intro.delayMs, fill: 'backwards',
         })
       : null
-    // Never finish the entrance on scroll: the section's normal document movement carries the
-    // still-running arc upward with the gesture. Finishing here made the arc pop into place.
+    // Scrolling before the sheet has risen starts the rise at once, so the arc never trails the
+    // first thumbnail. It keeps the same spring rather than jumping to rest.
+    const hurry = () => {
+      window.removeEventListener('scroll', hurry)
+      for (const a of [animation, contentAnimation]) {
+        if (!a || a.playState === 'finished') continue
+        if (Number(a.currentTime ?? 0) < intro.delayMs) a.currentTime = intro.delayMs
+      }
+    }
+    window.addEventListener('scroll', hurry, { passive: true })
     return () => {
+      window.removeEventListener('scroll', hurry)
       animation.cancel()
       contentAnimation?.cancel()
     }

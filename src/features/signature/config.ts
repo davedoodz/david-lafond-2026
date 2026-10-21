@@ -18,7 +18,7 @@ export const SIGNATURE_CONFIG = {
   },
   playback: {
     _collapsed: true,
-    speed: [2.35, 0.1, 4, 0.05],
+    speed: [2.35, 0.1, 8, 0.05],
     startDelayMs: [250, 0, 2000, 10],
     maxGapMs: [350, 0, 2000, 10],
     replay: { type: 'action', label: 'Replay' },

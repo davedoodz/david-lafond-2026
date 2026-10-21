@@ -74,13 +74,13 @@ function textWidth(el: Element | null) {
  * The signature's ink box: its recorded points mapped into the drawn SVG (viewBox, meet). From the
  * data, not the paths, which are empty until the signing animation draws them.
  */
-function signatureInk(hero: HTMLElement, painted = false) {
+function signatureInk(hero: HTMLElement) {
   const svg = hero.querySelector('.hero__signature svg')
   const { strokes, width, height } = getSignatureData()
   if (!svg || !strokes.length) return null
   let x0 = Infinity, x1 = -Infinity, y1 = -Infinity
   for (const { points } of strokes) for (const [x, y] of points) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y1 = Math.max(y1, y) }
-  const box = painted ? svg.getBoundingClientRect() : settled(svg)
+  const box = settled(svg)
   const scale = Math.min((box.right - box.left) / width, (box.bottom - box.top) / height)
   const left = box.left + ((box.right - box.left) - width * scale) / 2
   const top = box.top + ((box.bottom - box.top) - height * scale) / 2
@@ -123,8 +123,10 @@ function frameDesktop(hero: HTMLElement, landing: HTMLElement) {
   landing.style.minHeight = '0'
 }
 
-/** Center the painted mobile hero in the visible viewport, then mirror the navigation gap
- * below its signature to locate the sheet tip. No fixed phone-specific peek or top padding. */
+/** Center the mobile hero in the visible viewport, then mirror the navigation gap below its
+ * signature to locate the sheet tip. No fixed phone-specific peek or top padding. Everything is
+ * measured where it rests once the load-ins settle (settledLayout), so a fit that runs mid-entrance
+ * lands the block where it ends up and it never shifts as the text rises in or settles. */
 function frameTouch(hero: HTMLElement, landing: HTMLElement) {
   // Measure the block without flex centering slack before positioning its painted bounds.
   hero.style.flex = 'none'
@@ -132,7 +134,7 @@ function frameTouch(hero: HTMLElement, landing: HTMLElement) {
   landing.style.minHeight = '0'
   const links = document.querySelector('.nav__links a')
   const title = hero.querySelector('.hero__title')
-  const ink = signatureInk(hero, true)
+  const ink = signatureInk(hero)
   const first = hero.firstElementChild as HTMLElement | null
   const last = hero.lastElementChild as HTMLElement | null
   if (!links || !title || !ink || !first || !last) return
@@ -140,8 +142,8 @@ function frameTouch(hero: HTMLElement, landing: HTMLElement) {
   const vh = window.visualViewport?.height ?? window.innerHeight
   const navFixed = getComputedStyle(links.closest('.nav') ?? links).position === 'fixed'
   const navM = fontMetrics(links), titleM = fontMetrics(title)
-  const navBase = textRect(links).bottom - navM.descent + (navFixed ? 0 : sy)
-  const capTop = textRect(title).top + sy + titleM.ascent - titleM.cap
+  const navBase = settled(links, textRect(links)).bottom - navM.descent + (navFixed ? 0 : sy)
+  const capTop = settled(title, textRect(title)).top + sy + titleM.ascent - titleM.cap
   const inkBottom = ink.bottom + sy
   const paintedHeight = inkBottom - capTop
   const gap = Math.max(16, (vh - paintedHeight) / 2 - navBase)
@@ -157,10 +159,10 @@ function frameTouch(hero: HTMLElement, landing: HTMLElement) {
   hero.style.justifyContent = 'flex-start'
   landing.style.minHeight = '0'
   landing.style.height = `${Math.max(0, tip - (landing.getBoundingClientRect().top + sy)).toFixed(2)}px`
-  // Signature sizing can settle when the fixed frame replaces flex sizing; correct from the final paint.
-  const finalInk = signatureInk(hero, true)
+  // Signature sizing can settle when the fixed frame replaces flex sizing; correct from the new layout.
+  const finalInk = signatureInk(hero)
   if (finalInk) {
-    const finalTop = textRect(title).top + sy + titleM.ascent - titleM.cap
+    const finalTop = settled(title, textRect(title)).top + sy + titleM.ascent - titleM.cap
     const delta = vh / 2 - (finalTop + finalInk.bottom + sy) / 2
     const padding = parseFloat(getComputedStyle(hero).paddingTop)
     hero.style.setProperty('padding-block', `${Math.max(0, padding + delta).toFixed(2)}px 0px`)

@@ -133,8 +133,9 @@
       "color": "#A6A09C"
     },
     "playback": {
-      "speed": 3.7,
-      "startDelayMs": 1610
+      "speed": 7.4,
+      "startDelayMs": 805,
+      "maxGapMs": 175
     },
     "layout": {
       "desktopWidth": 316,
@@ -171,8 +172,8 @@
       "preset": "Round"
     },
     "intro": {
-      "delayMs": 3010,
-      "durationMs": 960,
+      "delayMs": 1505,
+      "durationMs": 480,
       "bounce": 0.4
     },
     "spacing": {
@@ -278,8 +279,9 @@
     }
   },
   "Entrance": {
-    "durationMs": 1040,
-    "staggerMs": 200,
+    "durationMs": 520,
+    "delayMs": 75,
+    "staggerMs": 100,
     "blur": 6.5,
     "ease": "linear-ish"
   },
@@ -501,7 +503,7 @@
   },
   "About": {
     "heading": "A short love letter to design",
-    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nI always had trouble fitting within a single box, often feeling like some imposter\n\n\nFrom working as a pre-med in Canadian hospitals to working as an architect across continents, and eventually pitching prototypes as a researcher at MIT.\n\n(with a few failed ventures sprinkled in between)\n\nI’ve changed \"careers\" more than once.\n\nBut it's usually because I found something new I couldn’t stop obsessing about.\n\nAnd right now, that thing is product design. \n\nI'm completely addicted to the craft.\n\nYes, there's still so much to learn.\n\nYes, the world is moving fast.\n\nAnd yes, the future can feel uncertain.\n\nBut despite all this, I've never felt more empowered to get better and build faster.\n\nSo to all artists, designers, and builders –\n\nIt truly is an incredible time to be alive.\n\nBecause right now, the possibilities feel endless.\n\nAnd so maybe being a misfit isn't so bad after all?\n\nTo designing the future.\n\n- DL",
+    "story": "I’ve always felt like a bit of a misfit.\n\nCurious, restless, and never quite good at accepting “that’s just how it is.”\n\nI always had trouble fitting within a single box, often feeling like some imposter\n\nFrom working as a pre-med in Canadian hospitals to working as an architect across continents, and eventually pitching prototypes as a researcher at MIT.\n\n(with a few failed ventures sprinkled in between)\n\nI’ve changed \"careers\" more than once.\n\nBut it's usually because I found something new I couldn’t stop obsessing about.\n\nAnd right now, that thing is product design. \n\nI'm completely addicted to the craft.\n\nYes, there's still so much to learn.\n\nYes, the world is moving fast.\n\nAnd yes, the future can feel uncertain.\n\nBut despite all this, I've never felt more empowered to get better and build faster.\n\nSo to all artists, designers, and builders –\n\nIt truly is an incredible time to be alive.\n\nBecause right now, the possibilities feel endless.\n\nAnd so maybe being a misfit isn't so bad after all?\n\nTo designing the future.\n\n- DL",
     "sheet": {
       "travel": 1.5,
       "depth": 2
@@ -545,18 +547,19 @@
   },
   "Header intro": {
     "shader": {
-      "durationMs": 3040
+      "durationMs": 1520
     },
     "ghost": {
       "preset": "spin",
-      "delayMs": 2000,
-      "durationMs": 1940,
+      "delayMs": 680,
+      "durationMs": 875,
       "bounce": 0.65
     },
     "links": {
       "preset": "drop",
-      "delayMs": 1360,
-      "durationMs": 1750
+      "delayMs": 680,
+      "durationMs": 875,
+      "staggerMs": 35
     }
   },
   "Contributions": {
