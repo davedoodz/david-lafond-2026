@@ -253,8 +253,12 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
     document.fonts.addEventListener('loadingdone', schedule)
     // The load-in (text rising in, pills growing in) moves what the frame and centring measure; refit
     // once each piece settles. Later pill phrase changes refit to the same place.
-    hero.addEventListener('animationend', schedule)
-    hero.addEventListener('transitionend', schedule)
+    const onSettled = (event: Event) => {
+      if (touch.matches && event.target instanceof Element && event.target.closest('.work-intro-stickers__p')) return
+      schedule()
+    }
+    hero.addEventListener('animationend', onSettled)
+    hero.addEventListener('transitionend', onSettled)
     // The nav's and page's own load-ins sit outside the hero; refit once everything running settles.
     void Promise.allSettled(document.getAnimations().map((a) => a.finished)).then(schedule)
     // The column re-centres once useFitColumn measures; the intro's room depends on where it starts.
@@ -277,8 +281,8 @@ function useHeroFit(heroRef: RefObject<HTMLElement | null>, key: string) {
       landing.parentElement?.style.removeProperty('--works-peek')
       touch.removeEventListener('change', schedule)
       document.fonts.removeEventListener('loadingdone', schedule)
-      hero.removeEventListener('animationend', schedule)
-      hero.removeEventListener('transitionend', schedule)
+      hero.removeEventListener('animationend', onSettled)
+      hero.removeEventListener('transitionend', onSettled)
       resize.disconnect()
       signed.disconnect()
     }
