@@ -354,9 +354,10 @@ export function BookViewer() {
     }
   }, [t.book.hint.hover, t.book.hint.hoverMs, t.book.hint.attraction, t.book.hint.size])
   const [selectedMode, setMode] = useState<Mode>('video')
-  const mode = t.bookGridOnly && selectedMode === 'video' ? 'book' : selectedMode
-  // Phones read the book as a scrolling stack of spreads instead of the flip book.
+  // Phones read the book as a scrolling stack of spreads instead of the flip book, with no Book / Grid
+  // switch: the stack's own column scrubber (SpreadStack) stands in for the grid.
   const phone = useMedia('(max-width: 640px)')
+  const mode = phone ? 'book' : t.bookGridOnly && selectedMode === 'video' ? 'book' : selectedMode
   // The grid is only built the first time it is opened.
   const [gridMounted, setGridMounted] = useState(false)
   const [state, setState] = useState<BookState>({ index: 0, orientation: 'landscape', zoom: 1 })
@@ -507,16 +508,18 @@ export function BookViewer() {
 
   return (
     <section className="viewer" data-mode={mode} data-layout={t.bookGridOnly ? 'book-grid' : 'tabs'} style={style} aria-label="Harvard & MIT architecture portfolio">
-      <ViewSwitch
-        items={[
-          ...(!t.bookGridOnly ? [{ key: 'video', label: 'Video', icon: <YouTubeIcon /> }] : []),
-          { key: 'book', label: 'Book', icon: <BookIcon /> },
-          { key: 'grid', label: 'Grid', icon: <GridIcon /> },
-        ]}
-        active={mode}
-        onSelect={(key) => switchTo(key as Mode)}
-        look={t.switch}
-      />
+      {!phone && (
+        <ViewSwitch
+          items={[
+            ...(!t.bookGridOnly ? [{ key: 'video', label: 'Video', icon: <YouTubeIcon /> }] : []),
+            { key: 'book', label: 'Book', icon: <BookIcon /> },
+            { key: 'grid', label: 'Grid', icon: <GridIcon /> },
+          ]}
+          active={mode}
+          onSelect={(key) => switchTo(key as Mode)}
+          look={t.switch}
+        />
+      )}
 
       {phone ? (mode === 'book' && <div className="viewer__stack"><SpreadStack /></div>) : (
       <div ref={bookRef} className="viewer__book" aria-hidden={mode !== 'book'} inert={mode !== 'book'}>

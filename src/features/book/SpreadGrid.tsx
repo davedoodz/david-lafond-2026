@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { SPREADS, pageLabel, pageUrl, pageSurface, PAGE_COUNT } from './bookPages'
 
@@ -53,14 +53,19 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
 })
 
 /**
- * Phones' Book tab: every spread stacked top to bottom at full width, to read by scrolling.
- * The spreads are not interactive (no flipping, no zoom); the covers sit centred on their own.
- * A pill at the bottom shows the spread at the screen's middle and jumps to either cover.
+ * Phones' book: every spread stacked top to bottom, to read by scrolling. The spreads are not
+ * interactive (no flipping, no zoom); the covers sit centred on their own. At the bottom, a scrub bar
+ * sets how many spreads sit side by side (1–4) above a pill that shows the spread at the screen's
+ * middle and jumps to either cover.
  */
 export const SpreadStack = memo(function SpreadStack() {
   const list = useRef<HTMLOListElement>(null)
+  const pill = useRef<HTMLElement>(null)
   const [current, setCurrent] = useState(0)
   const [shown, setShown] = useState(true)
+  const [columns, setColumns] = useState(1)
+  const currentRef = useRef(0)
+  currentRef.current = current
 
   useEffect(() => {
     const ol = list.current
@@ -90,6 +95,17 @@ export const SpreadStack = memo(function SpreadStack() {
     }
   }, [])
 
+  // A new column count keeps the spread being read at the screen's middle.
+  const previousColumns = useRef(columns)
+  useLayoutEffect(() => {
+    if (previousColumns.current === columns) return
+    previousColumns.current = columns
+    const item = list.current?.children[currentRef.current]
+    if (!item || window.scrollY < 8) return
+    const box = item.getBoundingClientRect()
+    window.scrollTo({ top: window.scrollY + box.top + box.height / 2 - window.innerHeight / 2, behavior: 'auto' })
+  }, [columns])
+
   const go = (to: 'cover' | 'back', button: HTMLElement) => {
     // :active only lasts as long as the press, which a quick tap barely shows while the page starts
     // gliding; every tap gets the same white flash instead, held briefly then eased out.
@@ -105,12 +121,18 @@ export const SpreadStack = memo(function SpreadStack() {
     if (!ol) return
     const smooth = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
     if (to === 'cover') return window.scrollTo({ top: 0, behavior: smooth })
-    ol.lastElementChild?.scrollIntoView({ block: 'center', behavior: smooth })
+    // Down lands with this pill centred on the back cover.
+    const back = ol.lastElementChild?.getBoundingClientRect()
+    const bar = pill.current?.getBoundingClientRect()
+    if (!back || !bar) return
+    const top = window.scrollY + back.top + back.height / 2 - (bar.top + bar.height / 2)
+    window.scrollTo({ top: Math.min(top, document.documentElement.scrollHeight - window.innerHeight), behavior: smooth })
   }
 
   return (
     <>
-      <ol ref={list} className="spread-stack" aria-label="All spreads, cover to back cover">
+      <ol ref={list} className="spread-stack" aria-label="All spreads, cover to back cover"
+        style={{ '--stack-columns': columns } as CSSProperties}>
         {SPREADS.map((pages, spread) => {
           const side = pages[0] === 1 ? 'front' : pages[0] === PAGE_COUNT ? 'back' : 'open'
           return (
@@ -124,17 +146,37 @@ export const SpreadStack = memo(function SpreadStack() {
         })}
       </ol>
       {/* Portalled: an ancestor's transform would otherwise trap `position: fixed`. */}
-      {createPortal(<nav className="spread-stack__pill" data-shown={shown} aria-label="Book position" inert={!shown}>
-        <button type="button" onClick={(event) => go('cover', event.currentTarget)} aria-label="Back to the cover">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
-        </button>
-        <span className="spread-stack__count">
-          {current + 1} <span>/ {SPREADS.length}</span>
-        </span>
-        <button type="button" onClick={(event) => go('back', event.currentTarget)} aria-label="Go to the back cover">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
-        </button>
-      </nav>, document.body)}
+      {createPortal(
+        <div className="spread-stack__controls" data-shown={shown} inert={!shown}>
+          <label className="spread-stack__columns">
+            <span className="visually-hidden">Spreads per row</span>
+            <span className="spread-stack__stops" aria-hidden="true">
+              {[0, 1, 2, 3].map((stop) => <i key={stop} style={{ '--stop': stop / 3 } as CSSProperties} />)}
+            </span>
+            <input
+              type="range"
+              min={1}
+              max={4}
+              step={1}
+              value={columns}
+              onChange={(event) => setColumns(Number(event.currentTarget.value))}
+              style={{ '--stack-fill': (columns - 1) / 3 } as CSSProperties}
+            />
+          </label>
+          <nav ref={pill} className="spread-stack__pill" aria-label="Book position">
+            <button type="button" onClick={(event) => go('cover', event.currentTarget)} aria-label="Back to the cover">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+            </button>
+            <span className="spread-stack__count">
+              {current + 1} <span>/ {SPREADS.length}</span>
+            </span>
+            <button type="button" onClick={(event) => go('back', event.currentTarget)} aria-label="Go to the back cover">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+            </button>
+          </nav>
+        </div>,
+        document.body,
+      )}
     </>
   )
 })
