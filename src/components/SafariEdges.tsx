@@ -40,6 +40,8 @@ export function SafariEdges() {
         if (meta) meta.content = nextTop
         topColor = nextTop
       }
+      const bottomTone = nextBottom === color(false) ? 'dark' : 'light'
+      if (root.dataset.safariBottom !== bottomTone) root.dataset.safariBottom = bottomTone
       if (nextBottom !== bottomColor) {
         root.style.setProperty('--edge-bottom-background', nextBottom)
         bottomColor = nextBottom
@@ -64,6 +66,7 @@ export function SafariEdges() {
       window.visualViewport?.removeEventListener('resize', schedule)
       window.visualViewport?.removeEventListener('scroll', schedule)
       delete root.dataset.safariEdges
+      delete root.dataset.safariBottom
       for (const [name, value] of previous) {
         if (value) root.style.setProperty(name, value)
         else root.style.removeProperty(name)

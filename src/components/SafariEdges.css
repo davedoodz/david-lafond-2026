@@ -40,3 +40,14 @@ html[data-safari-edges] .edge-bottom::before {
   bottom: 5px;
   background: linear-gradient(to top, var(--edge-bottom-background), transparent);
 }
+
+/* Dark sections keep Safari's thin sampling strip without a black gradient over content. */
+html[data-safari-edges][data-safari-bottom='dark'] .edge-bottom::before {
+  display: none;
+}
+@media (max-width: 640px) {
+  html[data-safari-bottom='dark'][data-edge-blur-bottom] body::after,
+  html[data-edge-blur-bottom] .about__dark::after {
+    display: none;
+  }
+}
