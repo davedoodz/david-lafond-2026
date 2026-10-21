@@ -25,6 +25,7 @@ import { EditableText } from './EditableText'
 import { ArrowDownIcon, ArrowDownRightIcon } from './icons'
 import { HarvardMitCard } from './HarvardMitCard'
 import { FiloCard } from './FiloCard'
+import { FiloLayers } from './FiloLayers'
 import { MeshCard } from './MeshCard'
 import { MomoThumb } from './MomoThumb'
 import { useProjectOpen } from '../features/projectOpen/useProjectOpen'
@@ -557,6 +558,7 @@ export function SelectedWorks() {
                   {work.id === 'momo' && <MeshCard />}
                   {work.id === 'momo' && <MomoThumb />}
                   {work.id === 'filo' && <FiloCard />}
+                  {work.id === 'filo' && <FiloLayers />}
                   {work.id === 'harvard-mit' && <HarvardMitCard />}
                   <div className="card-shade" />
                   <h3 className="card-title works__title">
