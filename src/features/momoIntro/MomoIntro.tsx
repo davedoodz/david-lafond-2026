@@ -227,6 +227,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   const beamLevel = useRef(0)
   const readBeamLevel = useRef(() => beamLevel.current).current
   const [beamActive, setBeamActive] = useState(false)
+  // The beam library repaints its filtered layers every frame while mounted, even at opacity 0 (about
+  // a fifth of the film's GPU time), so it only mounts for the voice screen, where it can show.
+  const [beamMounted, setBeamMounted] = useState(false)
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const lastPlayhead = useRef(0)
   const tuning = useTuningController('Momo intro', CONFIG, {
@@ -426,10 +429,10 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const measure = () => {
       if (disposed) return
       vw = window.innerWidth; vh = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1)
-      // The camera zooms deep into the phone (the notification fills the screen), so both the
-      // display canvas and the offscreen film render at the device's pixel ratio (up to 2×):
-      // at 1× the zoomed text and glass were upscaled and read soft.
-      filmDpr = dpr
+      // Keep the page band and top controls at the device ratio, but cap the animated film raster:
+      // 2× makes a 1440×900 film canvas 2880×1800 and saturates Chrome's GPU. 1.5× preserves the
+      // zoomed text and glass while drawing 44% fewer film pixels than 2×.
+      filmDpr = Math.min(1.5, dpr)
       canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr)
       topCanvas.width = canvas.width; topCanvas.height = canvas.height
       filmCanvas.width = Math.round(vw * filmDpr); filmCanvas.height = Math.round(vh * filmDpr)
@@ -517,7 +520,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height)
       const ending = playing ? smooth(clamp((time - PHONE_TIMELINE.hero + .35) / .35)) : 1
       const filmAlpha = playing ? (handoffY !== null && !handoffCancelled ? 1 : smooth(p)) : 0
-      syncMomo(playing && !paused && !document.hidden && filmAlpha > .001 && time >= PHONE_TIMELINE.voice - .2 && time < PHONE_TIMELINE.calm + 1)
+      const voiceScreen = playing && filmAlpha > .001 && time >= PHONE_TIMELINE.voice - .2 && time < PHONE_TIMELINE.calm + 1
+      syncMomo(voiceScreen && !paused && !document.hidden)
+      setBeamMounted(voiceScreen)
       // A painted clip canvas keeps its last frame (preserveDrawingBuffer), so use it even while the
       // video seeks at its loop point: falling back to the still for that frame read as a glitch.
       momoFrames.awake = canvases[0].width > 1 ? canvases[0] : undefined
@@ -694,7 +699,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
   return <>
     <div ref={stageRef} className="momo-stage" aria-hidden="true" />
     <canvas ref={canvasRef} className="momo-intro" aria-hidden="true" />
-    <MomoVoiceBeam ref={beamRef} active={beamActive} level={readBeamLevel} />
+    {beamMounted && <MomoVoiceBeam ref={beamRef} active={beamActive} level={readBeamLevel} />}
     {/* The phone's bottom controls and tap cursor, above the beam. */}
     <canvas ref={topRef} className="momo-intro" aria-hidden="true" />
     {t.skip.enabled && <button
