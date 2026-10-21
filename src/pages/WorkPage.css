@@ -103,3 +103,28 @@
   position: relative;
   z-index: 1;
 }
+
+/* Preserve the measured text/signature height inside the mobile viewport frame. */
+.hero[data-mobile-frame] > * {
+  flex-shrink: 0;
+}
+.hero[data-mobile-frame] {
+  transition: none !important;
+}
+
+/* Landscape phones need a shorter block to preserve the same centered composition. */
+@media (max-height: 480px) and (pointer: coarse) {
+  .hero[data-mobile-frame] .hero__title {
+    font-size: min(24px, 5vh);
+  }
+  .hero[data-mobile-frame] :is(.hero__intro.work-intro-stickers__p, .hero__role) {
+    font-size: min(14px, 3vh);
+    margin-top: 8px;
+  }
+  .hero[data-mobile-frame] .hero__signature {
+    --sig-w: 150px !important;
+    --sig-h: 32px !important;
+    --sig-scale: 1 !important;
+    margin-top: 8px;
+  }
+}

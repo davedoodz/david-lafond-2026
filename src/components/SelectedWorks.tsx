@@ -246,7 +246,7 @@ export function SelectedWorks() {
       const height = touchArc.preset === 'Ellipse (before)' ? 0.36
         : touchArc.preset === 'Custom' ? touchArc.height / 100
         : TOUCH_ARCS[touchArc.preset as keyof typeof TOUCH_ARCS] ?? TOUCH_ARCS.Soft
-      arch = touchDome(smallViewportHeight(), height).arch
+      arch = Math.min(touchDome(smallViewportHeight(), height).arch, Math.max(0, vh - panelTop) * 0.85)
     }
 
     const update = () => {
@@ -313,14 +313,13 @@ export function SelectedWorks() {
     const touch = window.matchMedia(TOUCH)
     const clear = () => {
       delete section.dataset.touchLanding
-      page.style.removeProperty('--works-peek')
       for (const v of ['--works-touch-label-top', '--works-touch-first']) section.style.removeProperty(v)
     }
     const place = () => {
       if (!touch.matches) return clear()
-      const { peek } = touchDome(smallViewportHeight())
+      const measuredPeek = parseFloat(getComputedStyle(page).getPropertyValue('--works-peek'))
+      const peek = Number.isFinite(measuredPeek) ? measuredPeek : touchDome(smallViewportHeight()).peek
       section.dataset.touchLanding = ''
-      page.style.setProperty('--works-peek', `${peek.toFixed(2)}px`)
       section.style.setProperty('--works-touch-label-top', `${(peek / 2 - label.offsetHeight / 2).toFixed(2)}px`)
       // Safari's visible viewport can be taller than 100svh when its toolbar retracts.
       // Keep the unscaled card below that viewport too; focus scaling must never expose it.
