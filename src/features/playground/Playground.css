@@ -107,17 +107,19 @@
   display: contents;
 }
 
+/* The poster is also painted as the element's own background, fitted like the video, so a card
+   shows its still frame even when iOS refuses or drops playback and draws nothing (CardVideo.tsx). */
 .pg-video {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
-  background: #fff;
+  background: #fff var(--pg-poster, none) center / contain no-repeat;
 }
 
 .pg-video--cover {
   object-fit: cover;
-  background: transparent;
+  background: transparent var(--pg-poster, none) center / cover no-repeat;
 }
 
 .pg-video-frame {
@@ -387,7 +389,7 @@
 }
 
 .pg-portfolio-spread > .pg-video-slot > .pg-video {
-  background: transparent;
+  background-color: transparent;
 }
 
 /* Gutter: pages dip into the spine (dark fold, soft highlight on each side) and curve off at the fore-edges.
