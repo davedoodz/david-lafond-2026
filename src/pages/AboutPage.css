@@ -176,28 +176,10 @@
   opacity: calc(var(--fade-p, 0) * var(--fade-strength, 0.9));
   background: linear-gradient(to top, var(--fade-color, #fff) var(--fade-solid, 15%), transparent);
 }
-/* Extend beyond Safari's bottom edge so the blur's sampling boundary stays off screen.
-   The final visible pixels fade into paper, including behind the collapsed toolbar. */
+/* Phones: no bottom fade over the story. */
 @media (max-width: 640px) {
   .about__fade {
-    --fade-overscan: max(160px, calc(100lvh - 100svh + env(safe-area-inset-bottom) + 32px));
-    /* A document layer continues beneath Safari chrome; fixed backdrops can be clipped there. */
-    position: absolute;
-    top: var(--fade-page-top, 0px);
-    bottom: auto;
-    height: calc(116px + var(--fade-overscan));
-  }
-  .about__fade::before {
-    -webkit-backdrop-filter: blur(5.5px);
-    backdrop-filter: blur(5.5px);
-    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 calc(100% - var(--fade-overscan) - 16px));
-    mask-image: linear-gradient(to bottom, transparent, #000 calc(100% - var(--fade-overscan) - 16px));
-  }
-  .about__fade::after {
-    opacity: var(--fade-p, 0);
-    background: linear-gradient(to bottom,
-      transparent calc(100% - var(--fade-overscan) - 24px),
-      var(--paper) calc(100% - var(--fade-overscan)));
+    display: none;
   }
 }
 

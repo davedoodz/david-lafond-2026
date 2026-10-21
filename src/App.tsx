@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { DitherBand } from './components/DitherBand'
 import { Footer } from './components/Footer'
 import { SafariEdges } from './components/SafariEdges'
@@ -56,6 +56,17 @@ const TITLES = {
   filo: 'Filo — David Lafond',
 }
 
+/**
+ * One visit to a chunked page. A loaded chunk renders its module directly (`direct`), so page
+ * transitions never capture an empty fallback; otherwise the page loads through Suspense. The path
+ * is fixed when the visit starts: switching it later (the chunk finished loading and App re-rendered,
+ * e.g. on idle) would remount the page and replay its entrance.
+ */
+function ChunkPage({ direct, lazy: lazyPage, fallback = null }: { direct: ReactNode | undefined; lazy: ReactNode; fallback?: ReactNode }) {
+  const [isDirect] = useState(direct !== undefined)
+  return isDirect ? direct : <Suspense fallback={fallback}>{lazyPage}</Suspense>
+}
+
 export function App() {
   const route = useRoute()
   const headerBand = useTuning('Header band', HEADER_BAND_CONFIG)
@@ -77,37 +88,21 @@ export function App() {
     void harvardMitChunk.load()
   }, [idle])
 
+  const About = aboutChunk.module?.AboutPage
+  const CaseStudy = caseStudyChunk.module?.CaseStudyPage
+  const HarvardMit = harvardMitChunk.module?.HarvardMitPage
   return (
     <>
       <div className="site" data-surface={route === 'about' || route === 'momo' || route === 'filo' ? 'light' : 'dark'}>
         {headerBand[route as keyof typeof headerBand] !== false && <DitherBand position="header" />}
         {route === 'about' ? (
-          // Render the loaded module directly so page transitions never capture a fallback.
-          aboutChunk.module ? (
-            <aboutChunk.module.AboutPage />
-          ) : (
-            <Suspense fallback={null}>
-              <LazyAboutPage />
-            </Suspense>
-          )
+          <ChunkPage key="about" direct={About && <About />} lazy={<LazyAboutPage />} />
         ) : route === 'momo' || route === 'filo' ? (
-          caseStudyChunk.module ? (
-            <caseStudyChunk.module.CaseStudyPage id={route} />
-          ) : (
-            <Suspense fallback={null}>
-              <LazyCaseStudyPage id={route} />
-            </Suspense>
-          )
+          <ChunkPage key="case" direct={CaseStudy && <CaseStudy id={route} />} lazy={<LazyCaseStudyPage id={route} />} />
         ) : route === 'harvard-mit' ? (
           <>
-            {harvardMitChunk.module ? (
-              <harvardMitChunk.module.HarvardMitPage />
-            ) : (
-              // A screen-tall placeholder keeps the footer below the fold while the chunk loads (no layout jump).
-              <Suspense fallback={<div style={{ minHeight: '100svh' }} />}>
-                <LazyHarvardMitPage />
-              </Suspense>
-            )}
+            {/* A screen-tall placeholder keeps the footer below the fold while the chunk loads (no layout jump). */}
+            <ChunkPage key="harvard-mit" direct={HarvardMit && <HarvardMit />} lazy={<LazyHarvardMitPage />} fallback={<div style={{ minHeight: '100svh' }} />} />
             <Footer />
           </>
         ) : (
