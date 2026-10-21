@@ -52,11 +52,12 @@ html[data-safari-edges][data-safari-bottom='dark'] .edge-bottom::before {
   }
 }
 
-/* Work on mobile has no viewport overlays. Document background colors still follow the page so
-   Safari can tint its own controls without drawing solid or faded strips over portfolio content. */
+/* Safari can flatten fixed translucent gradients into opaque white/black bands while its mobile
+   toolbar expands or collapses. Touch phones therefore use only the document background colors
+   above; those still tint Safari's chrome without placing anything over portfolio content. */
 @media (hover: none) and (pointer: coarse) {
-  html[data-safari-page='work'] :is(.edge-top, .edge-bottom)::before,
-  html[data-safari-page='work'] :is(.edge-top, .edge-bottom)::after {
+  html[data-safari-edges] :is(.edge-top, .edge-bottom)::before,
+  html[data-safari-edges] :is(.edge-top, .edge-bottom)::after {
     display: none;
     content: none;
   }
