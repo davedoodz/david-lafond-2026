@@ -24,9 +24,9 @@
     gap: var(--fm-media-gap);
     padding: calc(var(--fm-section-gap) / 2) var(--m-side);
   }
-  /* The hero keeps its top: the Filo mark sits level with the nav (caseMobile.css). */
+  /* The hero top: the Filo mark sits just under the nav row (Work / About / Resume). */
   main.case[data-work='filo'] section.case__section--hero[data-layout] {
-    padding-top: 29px;
+    padding-top: 85px;
   }
 
   /* --- Text: the same sizes as Momo (caseMobile.css), the same tighter body spacing, balanced lines
@@ -87,7 +87,7 @@
     /* The meta row is drawn --hero-meta-y higher than its layout box (a hero dial), so measure from where it shows. */
     margin-top: calc(var(--fm-logos-gap) + var(--hero-meta-y, 0px));
   }
-  /* The Filo mark on the nav row, scaled about its centre so it stays level with Back and Davebot. */
+  /* The Filo mark under the nav row, scaled about its centre so it stays where the hero places it. */
   main.case[data-work='filo'] .case__section--hero .case__hero-mark {
     scale: calc(var(--mark-scale, 1) * var(--fm-mark-scale));
   }

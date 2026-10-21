@@ -199,11 +199,6 @@
     padding-top: 7px;
     line-height: 16px;
   }
-  /* Case studies: only Work and Davebot, so each page's lead mark can sit level with them in the
-     middle of the row (caseMobile.css). */
-  .nav[data-project] .nav__links > a:not(.nav__work) {
-    display: none;
-  }
 }
 
 @media (max-width: 360px) {

@@ -129,30 +129,24 @@
     padding-inline: var(--m-book-pad-x);
   }
 
-  /* --- Lead mark on the nav row: the nav shows only "← Back" and Davebot here (Nav.css), so each
-     page's lead mark sits centred between them, its middle level with theirs (49px down). The Momo
-     braid and the Filo mark push their whole hero down with them, so every gap below stays the same;
-     the Harvard & MIT Book/Grid switch leaves the flow and floats on the nav row (below). */
-  main.case[data-work='momo'] .case__section--hero {
-    padding-top: 67px;
-  }
-  main.case[data-work='filo'] .case__section--hero {
-    padding-top: 29px;
-  }
+  /* --- Lead mark under the nav: the nav row holds Davebot and Work / About / Resume on every page,
+     so each page's lead mark starts just under it and pushes everything below it down: the Momo
+     braid (momoMobile.css), the Filo mark (filoMobile.css) and the Harvard & MIT Book/Grid switch
+     (below). */
 
-  /* --- Harvard & MIT: the spreads start right under the nav. The hidden second "Back" takes no
-     room, and the Book/Grid switch floats on the nav row instead of sitting above the spreads. */
+  /* --- Harvard & MIT: the hidden second "Back" takes no room. */
   main.project .project__back {
     display: none;
   }
-  /* Sticky on the nav row (its middle 49px down) while the viewer is on screen; it leaves with the
-     viewer. Margins net its 44px to zero flow: up 57px into the nav row, then 13px back down. */
+  /* The Book/Grid switch sits just under the nav and sticks there while the viewer is on screen;
+     it leaves with the viewer. Margins: up 1px to meet the nav's bottom edge, 13px down to the
+     first spread. */
   main.project .viewer__switch {
     position: sticky;
-    top: 27px;
+    top: 83px;
     z-index: 51;
     align-self: center;
-    margin: -57px 0 13px;
+    margin: -1px 0 13px;
     translate: none;
   }
 }
