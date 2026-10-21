@@ -137,8 +137,12 @@ export function openProject(card: HTMLElement, route: Route, spec: OpenSpec) {
   if (running) return
   if (route === 'harvard-mit') scheduleThumbnailPlacement()
   const pageReady = preloadRoute(route)
-  // The book opens on its cover; start that download while the card grows.
-  if (route === 'harvard-mit') new Image().src = pageUrl(1, 'medium')
+  // The book opens on its cover; start that download while the card grows. The 5 KB thumb stands in
+  // under it until the sharp one arrives (FlipBook.tsx), so fetch it first.
+  if (route === 'harvard-mit') {
+    new Image().src = pageUrl(1, 'thumb')
+    new Image().src = pageUrl(1, 'medium')
+  }
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     void pageReady.then(commit)
     return

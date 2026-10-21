@@ -100,25 +100,12 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left' }:
       parts.button.addEventListener('blur', () => engine.hover(record, false), { signal })
     }
 
-    // Reserve each mobile pill's longest authored face, so turns never move adjacent copy.
+    // Mobile: each line keeps the width it has with every pill at its longest phrase, so a turn never
+    // moves the copy, the column or the nav, while the pill itself hugs the phrase it shows.
     const lockMobileWidths = () => {
-      for (const record of records) {
-        const pill = record.button
-        const label = record.label
-        const style = getComputedStyle(label)
-        const em = parseFloat(getComputedStyle(pill).fontSize)
-        const probe = document.createElement('span')
-        probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none'
-        probe.style.font = style.font
-        probe.style.letterSpacing = style.letterSpacing
-        probe.style.fontFeatureSettings = style.fontFeatureSettings
-        pill.append(probe)
-        const widths = (facesById.get(record.id) ?? []).map(face => {
-          probe.textContent = face.label
-          return probe.getBoundingClientRect().width / em + 1.35 + face.pad
-        })
-        probe.remove()
-        pill.style.setProperty('--ws-mobile-width', `${Math.max(0, ...widths).toFixed(4)}em`)
+      for (const line of paragraphsRef.current.flatMap(p => (p ? Array.from(p.querySelectorAll<HTMLElement>('.ws-line')) : []))) {
+        const em = parseFloat(getComputedStyle(line).fontSize)
+        line.style.setProperty('--ws-line-width', `${(reservedLineWidth(line) / em).toFixed(4)}em`)
       }
     }
     lockMobileWidths()
@@ -244,35 +231,40 @@ function toLines(paragraph: Token[]): Token[][] {
 // the pill pads by 1.2em + gap + ends before the label and 0.15em + ends after it (CSS --art-pad,
 // --text-pad), and the gap and ends change with the face.
 const facesById = new Map(Object.entries(config.stickers).map(([id, sticker]) => [id, sticker.faces.map(face => ({ label: face.label.trim(), pad: face.gap + 2 * face.ends }))]))
+/** Width (px) of an intro line with each pill showing its longest phrase: what a mobile line reserves. */
+function reservedLineWidth(line: HTMLElement): number {
+  const style = getComputedStyle(line)
+  const probe = document.createElement('span')
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none'
+  probe.style.font = style.font
+  probe.style.letterSpacing = style.letterSpacing
+  probe.style.fontFeatureSettings = style.fontFeatureSettings
+  const children = Array.from(line.childNodes)
+  line.append(probe)
+  let total = 0
+  for (const child of children) {
+    if (child instanceof HTMLElement && child.matches('.ws-pill')) {
+      const em = parseFloat(getComputedStyle(child).fontSize)
+      const widths = (facesById.get(child.dataset.pill!) ?? []).map(face => {
+        probe.textContent = face.label
+        return probe.getBoundingClientRect().width + (1.35 + face.pad) * em
+      })
+      total += Math.max(0, ...widths)
+    } else {
+      probe.textContent = child.textContent
+      total += probe.getBoundingClientRect().width
+    }
+  }
+  probe.remove()
+  return total
+}
 /** Width of an intro line with each of its pills at its narrowest and at its widest face (phrase
  * plus padding). Phrases are measured in a hidden probe styled like the pill's label (canvas
  * ignores letter-spacing and over-measures). */
 function lineSpan(line: HTMLElement): [number, number] {
   if (matchMedia(TOUCH_LANDING).matches) {
-    // Mobile pills reserve their longest face; their animated letter spans are never fit inputs.
-    const style = getComputedStyle(line)
-    const children = Array.from(line.childNodes)
-    const probe = document.createElement('span')
-    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none'
-    probe.style.font = style.font
-    probe.style.letterSpacing = style.letterSpacing
-    probe.style.fontFeatureSettings = style.fontFeatureSettings
-    line.append(probe)
-    let total = 0
-    for (const child of children) {
-      if (child instanceof HTMLElement && child.matches('.ws-pill')) {
-        const em = parseFloat(getComputedStyle(child).fontSize)
-        const widths = (facesById.get(child.dataset.pill!) ?? []).map(face => {
-          probe.textContent = face.label
-          return probe.getBoundingClientRect().width + (1.35 + face.pad) * em
-        })
-        total += Math.max(0, ...widths)
-      } else {
-        probe.textContent = child.textContent
-        total += probe.getBoundingClientRect().width
-      }
-    }
-    probe.remove()
+    // Mobile lines reserve their widest phrases; the animated letter spans are never fit inputs.
+    const total = reservedLineWidth(line)
     return [total, total]
   }
   const width = line.getBoundingClientRect().width
