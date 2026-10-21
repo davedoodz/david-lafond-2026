@@ -176,21 +176,25 @@
   opacity: calc(var(--fade-p, 0) * var(--fade-strength, 0.9));
   background: linear-gradient(to top, var(--fade-color, #fff) var(--fade-solid, 15%), transparent);
 }
-/* Phones: blur only, no white, over the story only. The one bottom blur left on phones: the same band
-   the screen-bottom edge blur drew here (232px, full blur for the bottom 5%, 5.5px), now that the
-   edge blur is off everywhere else. */
+/* Extend beyond Safari's bottom edge so the blur's sampling boundary stays off screen.
+   The final visible pixels fade into paper, including behind the collapsed toolbar. */
 @media (max-width: 640px) {
   .about__fade {
-    height: 232px;
+    --fade-overscan: max(80px, calc(env(safe-area-inset-bottom) + 32px));
+    bottom: calc(-1 * var(--fade-overscan));
+    height: calc(232px + var(--fade-overscan));
   }
   .about__fade::before {
     -webkit-backdrop-filter: blur(5.5px);
     backdrop-filter: blur(5.5px);
-    -webkit-mask-image: linear-gradient(to top, #000 5%, transparent);
-    mask-image: linear-gradient(to top, #000 5%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 calc(100% - var(--fade-overscan) - 32px));
+    mask-image: linear-gradient(to bottom, transparent, #000 calc(100% - var(--fade-overscan) - 32px));
   }
   .about__fade::after {
-    display: none;
+    opacity: var(--fade-p, 0);
+    background: linear-gradient(to bottom,
+      transparent calc(100% - var(--fade-overscan) - 48px),
+      var(--paper) calc(100% - var(--fade-overscan)));
   }
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { ContactCta } from '../components/ContactCta'
 import { ContributionGraph } from '../components/ContributionGraph'
 import { SHEET_DOME, SHEET_LABEL_TOP } from '../components/SelectedWorks'
@@ -276,8 +277,8 @@ export function AboutPage() {
     let frame = 0
     const update = () => {
       frame = 0
-      const h = fade.offsetHeight
-      const vh = window.innerHeight
+      const vh = window.visualViewport?.height ?? window.innerHeight
+      const h = Math.max(0, vh - fade.getBoundingClientRect().top)
       const { top, bottom } = story.getBoundingClientRect()
       const clamp = (v: number) => Math.min(1, Math.max(0, v))
       // In as the story's first line enters the band; out as its last line clears the band.
@@ -293,11 +294,15 @@ export function AboutPage() {
     resize.observe(story)
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
+    window.visualViewport?.addEventListener('resize', schedule)
+    window.visualViewport?.addEventListener('scroll', schedule)
     return () => {
       cancelAnimationFrame(frame)
       resize.disconnect()
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
+      window.visualViewport?.removeEventListener('resize', schedule)
+      window.visualViewport?.removeEventListener('scroll', schedule)
     }
   }, [fadeShow])
 
@@ -578,7 +583,7 @@ export function AboutPage() {
             links={[{ text: t.storyLink.text, href: t.storyLink.url }]}
           />
         </section>
-        {fadeShow && <div ref={fadeRef} className="about__fade" aria-hidden="true" />}
+        {fadeShow && createPortal(<div ref={fadeRef} className="about__fade" style={style} aria-hidden="true" />, document.body)}
         <div className="about__peek-stop" aria-hidden="true" />
       </div>
       <div ref={darkRef} className="about__dark" data-surface="dark" data-dome={t.dome.show || undefined} data-arc-edge>
