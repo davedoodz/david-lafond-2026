@@ -34,3 +34,29 @@ html[data-project-snap] .project > .nav__spacer {
 html[data-project-snap] body:has(.project) .footer {
   scroll-snap-align: end;
 }
+
+@media (max-width: 640px) {
+  /* One gap down the page end: back cover → video, video pill → CTA title, CTA button → contact
+     links. The video's padding uses it too (book.css); the footer drops its minimum height so the
+     links sit right under the CTA's bottom padding. */
+  .project {
+    --hm-end-gap: 118px;
+  }
+  .project > .cta {
+    padding-bottom: var(--hm-end-gap);
+  }
+  body:has(.project) .footer {
+    min-height: 0;
+  }
+}
+
+/* No Safari edge overlays here on touch phones: the top fade washed over the first spread and the
+   bottom strip drew a black band across the spreads above Safari's toolbar. The document background
+   colours (SafariEdges.css) still tint Safari's own bars. */
+@media (hover: none) and (pointer: coarse) {
+  html[data-safari-edges][data-safari-page='harvard-mit'] :is(.edge-top, .edge-bottom)::before,
+  html[data-safari-edges][data-safari-page='harvard-mit'] :is(.edge-top, .edge-bottom)::after {
+    display: none;
+    content: none;
+  }
+}
