@@ -80,7 +80,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  background: var(--ink-900);
+  background-color: var(--ink-900);
   /* No rubber-band pull past the top or bottom of the page. */
   overscroll-behavior: none;
   /* Set here too so body's clip stays on body: alone, body's overflow moves up to the viewport,
