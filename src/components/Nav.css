@@ -105,6 +105,13 @@
   left: 0;
   right: 0;
 }
+/* Phones: Work / About / Resume stay at the top of the page and scroll away with it. Absolute keeps
+   the same box (the spacer still holds its room); case studies keep their pinned Back. */
+@media (max-width: 640px) {
+  .nav[data-pin='fixed']:not([data-project]) {
+    position: absolute;
+  }
+}
 /* Pinned over another section: colours follow the page under the links (set in Nav.tsx). */
 .nav[data-under='dark'] {
   --nav-idle: var(--text-muted);
