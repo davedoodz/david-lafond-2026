@@ -328,11 +328,12 @@ export function SelectedWorks() {
       const peek = Number.isFinite(measuredPeek) ? measuredPeek : touchDome(smallViewportHeight()).peek
       section.dataset.touchLanding = ''
       section.style.setProperty('--works-touch-label-top', `${(peek / 2 - label.offsetHeight / 2).toFixed(2)}px`)
-      // Safari's visible viewport can be taller than 100svh when its toolbar retracts.
-      // Keep the unscaled card below that viewport too; focus scaling must never expose it.
+      // Safari's translucent bottom toolbar can show content below the visible viewport. Keep the
+      // first card past both the landing peek and a conservative phone-toolbar clearance.
       const fold = Math.max(smallViewportHeight(), window.innerHeight, window.visualViewport?.height ?? 0)
       const sectionTop = section.getBoundingClientRect().top + window.scrollY
-      section.style.setProperty('--works-touch-first', `${Math.max(peek, fold - sectionTop + 24).toFixed(2)}px`)
+      const chromeClearance = Math.max(peek, 96)
+      section.style.setProperty('--works-touch-first', `${Math.max(chromeClearance, fold - sectionTop + chromeClearance).toFixed(2)}px`)
     }
     place()
     const landingResize = new ResizeObserver(place)

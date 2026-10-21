@@ -31,8 +31,13 @@ export function SafariEdges() {
       const fallback = route === 'about' || route === 'momo' || route === 'filo'
       // Read both edges before writing styles. Ignore foreground cards and navigation chrome.
       const pass = '.nav, .works__card, .pg-card, .footer__inner'
-      const top = isLightUnder(host, x, Math.max(0, Math.min(innerHeight - 1, y + 5)), pass)
-      const bottom = isLightUnder(host, x, Math.max(0, Math.min(innerHeight - 1, y + height - 6)), pass)
+      const topY = Math.max(0, Math.min(innerHeight - 1, y + 5))
+      const bottomY = Math.max(0, Math.min(innerHeight - 1, y + height - 6))
+      const workSheet = route === 'work' ? document.querySelector<HTMLElement>('.works') : null
+      // Until the white sheet reaches the viewport top, Work is dark there. Sampling through to
+      // body would otherwise reuse the white bottom-edge color and turn Safari's top chrome white.
+      const top = workSheet && workSheet.getBoundingClientRect().top > topY ? false : isLightUnder(host, x, topY, pass)
+      const bottom = isLightUnder(host, x, bottomY, pass)
       const nextTop = top === null && topColor ? topColor : color(top ?? fallback)
       const nextBottom = bottom === null && bottomColor ? bottomColor : color(bottom ?? fallback)
       if (nextTop !== topColor) {
