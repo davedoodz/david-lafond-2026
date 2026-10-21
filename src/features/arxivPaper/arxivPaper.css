@@ -33,7 +33,9 @@
 .arxiv-paper__sheet {
   position: relative;
   display: block;
-  background: #fff;
+  /* Inline preview of the actual first page: visible immediately while the lazy responsive image
+     downloads and decodes, so the sheet never flashes as a blank white rectangle. */
+  background: #fff url('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABcQERQRDhcUEhQaGBcbIjklIh8fIkYyNSk5UkhXVVFIUE5bZoNvW2F8Yk5QcptzfIeLkpSSWG2grJ+OqoOPko3/2wBDARgaGiIeIkMlJUONXlBejY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY3/wAARCAA+ADADASIAAhEBAxEB/8QAGgAAAgMBAQAAAAAAAAAAAAAAAAMCBAUBBv/EACoQAAEEAQMDAgYDAAAAAAAAAAEAAgMREgQhcQUTMSJBIzJSYZGhM0NR/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/APWIXDdGvKrtiOfyN/AQN78f1hd70dXkFCWNob6WC+ERxtcwhzB+EDkKuYTdYspPF1vV/ZBy9nWT59klop94uH3T2+/K491t9LhfKCMzbb4JRCKF0QeURZ3uQRzaJA87tIA5QJeRmdv2rLTbRtSi2q9WNqfCBT3sjhkfI7FjbJd4oLK6R1A6t0sb9U2RxcSwtaAQ3haOtjbLppIH3jK0tse1rE6f0OPQ6ps41Ej3N8CgOUG+z+Q7lV+o69ui7QyjykeBi91be5TO8A69/wBLM6t02PqkrHue5haKoC7QaoNyYgn/AG62T1mwxNgrB8tAVRdYV6KUSXQqkENTn6MA0775C11oY7+tOQgX2m/QErtkE/DBHtasoQVwHDxEE2PLfJobwpoQf//Z') center / 100% 100% no-repeat;
   box-shadow: var(--paper-shadow, 0 24px 80px rgb(0 0 0 / 0.14));
   transform-origin: 50% 100%;
   transition:
@@ -45,7 +47,12 @@
   display: block;
   width: 100%;
   height: auto;
+  opacity: 0;
+  transition: opacity 140ms ease-out;
   user-select: none;
+}
+.arxiv-paper__page[data-loaded] {
+  opacity: 1;
 }
 
 /* Playful hover: the paper hops up out of the footer, tilts, and wobbles once as it lands. */
@@ -239,6 +246,9 @@
   }
   .arxiv-paper__sheet {
     transition: opacity 120ms ease;
+  }
+  .arxiv-paper__page {
+    transition: none;
   }
   .arxiv-paper__pill .arxiv-paper__pill-box,
   .arxiv-paper__pill[data-state] .arxiv-paper__pill-box,
