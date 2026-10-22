@@ -1371,6 +1371,16 @@
     object-fit: cover;
     background: var(--ink-800);
   }
+  /* Single pages (the scrub bar's far left): the spread boxes dissolve so every page is its own
+     full-width card, cover to back cover. */
+  .spread-stack[data-view='pages'] .spread-stack__spread {
+    display: contents;
+  }
+  .spread-stack[data-view='pages'] img {
+    width: 100%;
+    border-radius: var(--grid-radius, 3px);
+    box-shadow: 0 18px 32px -14px rgb(0 0 0 / 0.6);
+  }
 
   .spread-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1431,49 +1441,32 @@
   }
 }
 
-/* Phones' book controls, fixed at the bottom: the spreads-per-row scrub bar above up / "8 / 31" / down.
-   The grid is as wide as the pill, so the bar matches it. */
-.spread-stack__controls {
+/* Phones' book: the spreads-per-row scrub bar, fixed at the bottom in a 44px frosted pill. Its white
+   circle (34px, like the pill buttons it replaced) slides freely; the fill line follows it. */
+.spread-stack__columns {
+  --thumb: 34px;
   position: fixed;
   z-index: 40;
   left: 50%;
   bottom: calc(24px + env(safe-area-inset-bottom));
-  display: grid;
-  gap: 8px;
-  translate: -50% 0;
-  transition: opacity 240ms ease, translate 320ms var(--ease-out);
-}
-.spread-stack__controls[data-shown='false'] {
-  opacity: 0;
-  translate: -50% 12px;
-  pointer-events: none;
-}
-.spread-stack__pill,
-.spread-stack__columns {
+  display: block;
+  width: 168px;
+  height: 44px;
+  padding: 4px;
   border-radius: 999px;
   background: rgb(23 23 23 / 0.72);
   border: 1px solid rgb(255 255 255 / 0.12);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
+  translate: -50% 0;
+  transition: opacity 240ms ease, translate 320ms var(--ease-out);
 }
-.spread-stack__pill {
-  display: flex;
-  align-items: center;
-  height: 44px;
-  padding: 4px;
-}
-
-/* The scrub bar: a track with a stop per column count (1 at the left, 4 at the right) and a white
-   circle to drag or tap along it. The thumb is 22px, so its centre runs 11px in from each end. */
-.spread-stack__columns {
-  --thumb: 22px;
-  position: relative;
-  display: block;
-  height: 32px;
-  padding: 0 6px;
+.spread-stack__columns[data-shown='false'] {
+  opacity: 0;
+  translate: -50% 12px;
+  pointer-events: none;
 }
 .spread-stack__columns input {
-  position: relative;
   display: block;
   width: 100%;
   height: 100%;
@@ -1488,21 +1481,6 @@
   touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
 }
-.spread-stack__stops {
-  position: absolute;
-  inset: 0 calc(6px + var(--thumb) / 2);
-  pointer-events: none;
-}
-.spread-stack__stops i {
-  position: absolute;
-  top: 50%;
-  left: calc(var(--stop) * 100%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.45);
-  translate: -50% -50%;
-}
 .spread-stack__columns input::-webkit-slider-thumb {
   width: var(--thumb);
   height: var(--thumb);
@@ -1515,7 +1493,7 @@
   transition: scale 160ms var(--ease-out);
 }
 .spread-stack__columns input:active::-webkit-slider-thumb {
-  scale: 1.12;
+  scale: 0.92;
 }
 .spread-stack__columns input::-moz-range-thumb {
   width: var(--thumb);
@@ -1527,48 +1505,6 @@
 }
 .spread-stack__columns input:focus-visible {
   outline: 2px solid var(--paper);
-  outline-offset: 4px;
-  border-radius: 999px;
-}
-.spread-stack__pill button {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: var(--stone-400);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 200ms var(--ease-out), color 200ms var(--ease-out);
-}
-.spread-stack__pill button:active {
-  background: var(--paper);
-  color: var(--ink-900);
-}
-.spread-stack__pill button:focus-visible {
-  outline: 2px solid var(--paper);
   outline-offset: 2px;
-}
-.spread-stack__pill svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.spread-stack__count {
-  min-width: 52px;
-  padding: 0 6px;
-  text-align: center;
-  color: var(--paper);
-  font-size: var(--m-small-size, 12px);
-  font-weight: 500;
-}
-.spread-stack__count span {
-  color: var(--stone-400);
+  border-radius: 999px;
 }

@@ -7,6 +7,7 @@
  */
 import { useLayoutEffect, useRef, type RefObject } from 'react'
 import './storyEntrance.css'
+import { entranceSplits } from '../../lib/entranceSplit'
 
 type Tuple = [number, number, number, number]
 type Unit = 'letters' | 'words' | 'lines'
@@ -154,6 +155,7 @@ function split(el: HTMLElement, unit: Unit, masked: boolean) {
   const pieces: HTMLElement[] = []
   const wordOf: HTMLElement[] = []
   const next: Node[] = []
+  const boxed: [HTMLElement, Node][] = []
   for (const node of original) {
     if (node.nodeType !== Node.TEXT_NODE) {
       // An inline element (a text link) rises as one word; <br>s stay put. `original` keeps it,
@@ -161,6 +163,7 @@ function split(el: HTMLElement, unit: Unit, masked: boolean) {
       if (node instanceof HTMLElement && node.tagName !== 'BR') {
         const piece = box(null, 'se-w', masked)
         piece.firstChild!.appendChild(node)
+        boxed.push([piece.firstChild as HTMLElement, node])
         pieces.push(piece)
         wordOf.push(piece)
         next.push(piece)
@@ -196,9 +199,26 @@ function split(el: HTMLElement, unit: Unit, masked: boolean) {
   // hold the original wrapping so the text doesn't jump when it is put back.
   const whiteSpace = el.style.whiteSpace
   if (el.getBoundingClientRect().height > height + 1) el.style.whiteSpace = 'nowrap'
+  const splitWhiteSpace = el.style.whiteSpace
+  // useFitColumn measures the real text through these (lib/entranceSplit): word spans measure a
+  // hair differently, so the centred column would shift sideways when the text goes back.
+  el.setAttribute('data-entrance-split', '')
+  entranceSplits.set(el, {
+    showOriginal: () => {
+      el.style.whiteSpace = whiteSpace
+      el.replaceChildren(...original)
+    },
+    showSplit: () => {
+      el.replaceChildren(...next)
+      for (const [inner, node] of boxed) inner.appendChild(node)
+      el.style.whiteSpace = splitWhiteSpace
+    },
+  })
   // Only put the text back if nothing else rewrote the element meanwhile (a live edit).
   const restore = () => {
     el.style.whiteSpace = whiteSpace
+    el.removeAttribute('data-entrance-split')
+    entranceSplits.delete(el)
     if (pieces[0]?.isConnected && el.contains(pieces[0])) el.replaceChildren(...original)
   }
   return { pieces, wordOf, restore }

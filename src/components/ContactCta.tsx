@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
-import { useTuning } from '../tuning/useTuning'
+import { useTuningController } from '../tuning/useTuning'
+import { EditableText } from './EditableText'
 import { LetsChat } from './LetsChat'
 import './ContactCta.css'
 
@@ -37,8 +38,10 @@ function twoLines(title: string): [string, string] {
   return [words.slice(0, best).join(' '), words.slice(best).join(' ')]
 }
 
+/** Title and subtitle are editable on the page in dev (EditableText), and in DialKit › Contact CTA. */
 export function ContactCta() {
-  const t = useTuning('Contact CTA', CONFIG)
+  const { values: t, setValue } = useTuningController('Contact CTA', CONFIG)
+  const lines = twoLines(t.title)
   return (
     <section
       id="contact"
@@ -57,11 +60,19 @@ export function ContactCta() {
       aria-labelledby="cta-title"
     >
       <h2 id="cta-title" className="cta__title" data-selectable>
-        {twoLines(t.title).map((line, i) => (
-          <span key={i} className="cta__line">{line}</span>
+        {lines.map((line, i) => (
+          <EditableText
+            key={i}
+            as="span"
+            className="cta__line"
+            label={`Contact title, line ${i + 1}`}
+            value={line}
+            // Saved with the break where it shows, so each line stays the line you edited.
+            onChange={(next) => setValue('title', lines.map((l, j) => (j === i ? next : l)).join('\n'))}
+          />
         ))}
       </h2>
-      <p className="cta__subtitle" data-selectable>{t.subtitle}</p>
+      <EditableText as="p" className="cta__subtitle" label="Contact subtitle" value={t.subtitle} onChange={(next) => setValue('subtitle', next)} selectable />
       <LetsChat />
     </section>
   )

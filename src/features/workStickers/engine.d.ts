@@ -88,6 +88,8 @@ export declare function createLoopScheduler(options: {
 export declare function createStickerEngine(options: {
   getLook: () => Look
   reducedMotion: MediaQueryList
+  /** Whether a hover may lift the sticker (default: always). The live page passes a fine-pointer check. */
+  canHover?: () => boolean
 }): {
   transition: (delay?: number) => Record<string, unknown>
   run: (record: StickerRecord, element: Element, values: Record<string, unknown>, options?: Record<string, unknown>) => { stop(): void; then: Promise<void>['then'] }

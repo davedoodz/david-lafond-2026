@@ -33,6 +33,9 @@ export const FILO_MOTION = {
 export const FILO_MEDIA = {
   phone: '/work/filo/thumb/phone-tap.mp4',
   desk: '/work/filo/thumb/desk-materials.mp4',
+  /** First frames, shown until each clip can play, so the screens are never empty. */
+  phonePoster: '/work/filo/thumb/phone-tap.webp',
+  deskPoster: '/work/filo/thumb/desk-materials.webp',
   tag: '/work/filo/filo-app-flow/filo-tag.webp',
   cord: '/work/filo/thumb/tag-cord.webp',
 }

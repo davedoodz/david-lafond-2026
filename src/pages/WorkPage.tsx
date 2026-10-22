@@ -9,9 +9,12 @@ import { Signature } from '../features/signature/Signature'
 import { getSignatureData } from '../features/signature/store'
 import { fontMetrics, settled, textRect } from '../lib/settledLayout'
 import { useEntrance } from '../lib/useEntrance'
+import { useMediaWarmup } from '../lib/mediaWarmup'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
 import './WorkPage.css'
+
+const CASE_HEROES = ['/work/filo/hero-tag.webp']
 
 const CONFIG = {
   headlineLead: { type: 'text' as const, default: 'I’m' },
@@ -312,6 +315,8 @@ export function WorkPage() {
   const entrance = useEntrance()
   useHeroFit(heroRef, JSON.stringify([t.headlineLead, t.headlineName, t.headlineTagline, t.introText1, t.introText2, t.role, t.introSize, t.align]))
   useFitColumn(mainRef)
+  // Thumbnails' clips and images load ahead; then the case-study heroes the cards open.
+  useMediaWarmup(mainRef, CASE_HEROES)
   return (
     <main ref={mainRef} className="work">
       <div

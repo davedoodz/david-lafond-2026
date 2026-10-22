@@ -408,7 +408,7 @@
       "speed": 10,
       "label": {
         "pillScale": 1.45,
-        "entrance": "uppercut",
+        "entrance": "none",
         "duration": 930,
         "idleIntensity": 2
       },

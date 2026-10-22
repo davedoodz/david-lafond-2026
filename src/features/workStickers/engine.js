@@ -256,7 +256,7 @@ export function createLoopScheduler({ list, turn: turnRecord, skip, getTiming, l
  * presets, hover, and render. Each caller (the studio, the live page) gets its own instance
  * so turn-in-progress pacing never leaks between independent sticker sets.
  */
-export function createStickerEngine({ getLook, reducedMotion }) {
+export function createStickerEngine({ getLook, reducedMotion, canHover = () => true }) {
   // A turn runs at its pill's own duration; everything else (hover, previews outside a turn)
   // uses the global spring. While letters animate, the spring loses its bounce so words settle
   // without overshooting.
@@ -525,7 +525,7 @@ export function createStickerEngine({ getLook, reducedMotion }) {
     record.hoverAnimation?.stop()
     const p = getLook()
     const face = currentFace(record)
-    const lifted = active && !reducedMotion.matches
+    const lifted = active && canHover() && !reducedMotion.matches
     const em = lifted ? parseFloat(getComputedStyle(record.button).fontSize) : 0
     record.hoverAnimation = animate(element, {
       y: lifted ? -p.motion.lift - face.hoverY * em : 0,

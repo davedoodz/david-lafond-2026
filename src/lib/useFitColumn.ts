@@ -1,4 +1,5 @@
 import { useLayoutEffect, type RefObject } from 'react'
+import { withOriginalText } from './entranceSplit'
 
 /** Non-text boxes that count toward a block's width (buttons, signature). */
 const BOX_SELECTOR = '.chat, .sig-root'
@@ -17,7 +18,7 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
     const root = rootRef.current
     if (!root) return
 
-    const measure = () => {
+    const fit = () => {
       root.style.removeProperty('--column-fit')
       const columns = root.querySelectorAll<HTMLElement>('.column')
       const own = Array.from(columns).filter((col) => col.hasAttribute('data-fit-own'))
@@ -48,6 +49,14 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
       root.style.setProperty('--column-fit', `${Math.ceil(width)}px`)
     }
 
+    // A load-in may have a column's text split into spans (storyEntrance); measure the real text
+    // so the column never shifts sideways when the split starts or ends. The swap's own mutations
+    // are dropped, or every measure would schedule the next.
+    const measure = () => {
+      withOriginalText(root, fit)
+      mutations.takeRecords()
+    }
+
     let frame = 0
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(() => {
@@ -56,7 +65,6 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
       })
     }
 
-    measure()
     let lastWidth = root.clientWidth
     const resize = new ResizeObserver(() => {
       if (root.clientWidth === lastWidth) return
@@ -74,12 +82,16 @@ export function useFitColumn(rootRef: RefObject<HTMLElement | null>) {
       if (inColumn) schedule()
     })
     mutations.observe(root, { subtree: true, childList: true, characterData: true })
+    measure()
     void document.fonts.ready.then(schedule)
+    // Faces load as text first uses them, after `ready` too; each changes line widths.
+    document.fonts.addEventListener('loadingdone', schedule)
 
     return () => {
       cancelAnimationFrame(frame)
       resize.disconnect()
       mutations.disconnect()
+      document.fonts.removeEventListener('loadingdone', schedule)
     }
   }, [rootRef])
 }

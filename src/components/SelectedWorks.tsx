@@ -372,7 +372,10 @@ export function SelectedWorks() {
       for (const p of ['min-height', 'padding-top', 'padding-bottom']) tail.style.removeProperty(p)
       const doc = document.documentElement
       const top = section.getBoundingClientRect().top + window.scrollY
-      const below = doc.scrollHeight - (section.getBoundingClientRect().bottom + window.scrollY)
+      // From the layout box, not scrollHeight: the sheet's entrance translates it a whole screen down
+      // at mount, and that overflow made the tail look tall enough, so the page end showed far more
+      // white than the landing's peek (and the last card's bottom).
+      const below = doc.getBoundingClientRect().bottom - section.getBoundingClientRect().bottom
       let short = Math.min(top, viewHeight()) - below
       if (short > 0.5) tail.style.minHeight = `${(tail.offsetHeight + short).toFixed(1)}px`
       for (const side of ['top', 'bottom'] as const) {
