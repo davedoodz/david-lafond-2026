@@ -1652,6 +1652,10 @@ html[data-case-snap] .case__group > * {
   /* Line breaks typed into the copy (tuning.json) start a new line. */
   white-space: pre-line;
 }
+/* Momo's persona: each sentence of the body keeps to one line (phones shrink it to fit, momoMobile.css). */
+main.case[data-work='momo'] .case__persona .persona__who > .persona__body {
+  white-space: pre;
+}
 
 .persona__tags {
   display: flex;
