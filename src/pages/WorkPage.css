@@ -94,9 +94,13 @@
   }
 }
 
-/* Centred once on its widest possible line, so the block holds still as the pills change phrase (useHeroFit). */
+/* Centred once on its widest possible line, so the block holds still as the pills change phrase (useHeroFit).
+   `left`, not translate: the shift is fractional (0.2px on a 402px iPhone), and a fractional transform
+   is applied by the compositor. Each time a sticker turn composited the hero, iOS resampled every glyph
+   and sticker in it off the pixel grid, so the whole intro went soft and shifted for the turn, then
+   snapped back. A layout offset is painted on the pixel grid in both states. */
 .work .hero[data-align] {
-  translate: var(--hero-center-x, 0px) 0;
+  left: var(--hero-center-x, 0px);
 }
 /* Desktop: the text slides on its own (WorkPage.tsx center) so the role line is centred over the
    signature; `left`, not translate, because the load-in animates translate. */
