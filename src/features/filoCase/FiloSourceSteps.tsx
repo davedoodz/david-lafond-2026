@@ -254,15 +254,17 @@ type SectionLook = { align: 'left' | 'center'; spacing: SectionSpacing; textReve
 export function FiloSourceSteps({ section }: { section: SectionLook }) {
   const { values: dials, setValue } = useTuningController('Filo source steps', CONFIG)
   const refs = useRef<(HTMLElement | null)[]>([])
-  // The box's CSS loop runs only while its step is on screen. The prototypes watch themselves (AppFlow).
+  // The box's CSS loop runs only while its step is on screen: it starts once a fifth of the step shows and
+  // stops (back to the closed box, filoSourceSteps.css) only when the step is fully off screen, so it never
+  // jumps while in view. The prototypes watch themselves (AppFlow).
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
-      for (const { target, isIntersecting } of entries) {
+      for (const { target, isIntersecting, intersectionRatio } of entries) {
         const step = target as HTMLElement
-        if (isIntersecting) step.dataset.playing = ''
-        else delete step.dataset.playing
+        if (intersectionRatio >= 0.2) step.dataset.playing = ''
+        else if (!isIntersecting) delete step.dataset.playing
       }
-    }, { threshold: 0.2 })
+    }, { threshold: [0, 0.2] })
     for (const step of refs.current) if (step) observer.observe(step)
     return () => observer.disconnect()
   }, [])
