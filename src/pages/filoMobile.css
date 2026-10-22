@@ -87,9 +87,12 @@
     /* The meta row is drawn --hero-meta-y higher than its layout box (a hero dial), so measure from where it shows. */
     margin-top: calc(var(--fm-logos-gap) + var(--hero-meta-y, 0px));
   }
-  /* The Filo mark under the nav row, scaled about its centre so it stays where the hero places it. */
+  /* The Filo mark under the nav row, scaled about its centre so it stays where the hero places it.
+     The extra 7px down (visual only, the title stays put) centres its ink between the nav text and
+     the title: measured on iPhone it sat 29.8px under the nav and 43.2px over the title. */
   main.case[data-work='filo'] .case__section--hero .case__hero-mark {
     scale: calc(var(--mark-scale, 1) * var(--fm-mark-scale));
+    translate: var(--mark-x, 0px) calc(var(--mark-y, 0px) + 7px);
   }
   /* The tag photo is a 1024 × 1536 cut-out with clear space around the tag: 286px above it and 138px
      below its shadow. The margins take that space back so the tag has the same gap above (to the
