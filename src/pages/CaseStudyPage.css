@@ -430,6 +430,10 @@ html[data-case-snap] .case .footer {
 }
 
 @media (max-width: 640px) {
+  /* Under the dark sheet's last fractional row: footer-dark, not paper (see site.css, phones). */
+  .case {
+    background: linear-gradient(to top, var(--ink-900) 48px, var(--paper) 48px);
+  }
   .case__dark {
     border-radius: 20px 20px 0 0;
   }
