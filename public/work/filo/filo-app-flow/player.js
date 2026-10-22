@@ -181,21 +181,34 @@ export async function boot({ scenes, home }) {
       for (let i = 0; ; i++) await scenes[i % scenes.length](t)
     } catch (e) { if (!(e instanceof Stop)) throw e }
   }
+  /* Jumps every one-shot animation in the stage (the screens' CSS crossfades, scripted bars) to its end,
+     so the frame holds one resolved screen, never a crossfade caught halfway. Endless loops keep going.
+     Run on pause, on restart and before a fresh start: a fade frozen by a pause, or left part-way while
+     iOS Safari held back an off-screen frame's updates, otherwise stayed on screen as two or more
+     screens stacked at odd opacities. getAnimations() flushes styles first, so a reset's new fades are
+     caught too. */
+  function settle() {
+    stage.getAnimations({ subtree: true }).forEach(a => {
+      if (a.playState !== 'finished' && a.effect?.getComputedTiming().endTime !== Infinity) a.finish()
+    })
+  }
   function setPaused(p) {
     paused = p
+    if (p) settle()
     // Resume only what this pause stopped; finished animations (fill: forwards) stay put.
     stage.getAnimations({ subtree: true }).forEach(a => p ? a.playState === 'running' && a.pause() : a.playState === 'paused' && a.play())
   }
   function play() {
     if (reduce) return
     if (started) return setPaused(false)
-    started = true; paused = false; run()
+    started = true; paused = false; settle(); run()
   }
   /** Back to the first screen with the cursor out of view; the next play starts the flow over. */
   function restart() {
     setPaused(false)
     token++; started = false
     home(); place(...HOME); cursor.classList.add('is-hidden')
+    settle()
   }
 
   await document.fonts.ready
