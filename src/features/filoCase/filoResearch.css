@@ -81,6 +81,16 @@
   margin: 0 calc(50% - min(620px, 50vw));
   animation: none;
 }
+/* "The bottleneck was proving…" between the interview video and the cards: the figure's row gap on
+   both sides, measured to the cards themselves, so the strip's shadow padding is taken back above.
+   (The section body's own top margin is dropped here.) */
+.filo-research p.filo-research__bridge {
+  margin: 0;
+  text-align: center;
+}
+.filo-research .filo-research__bridge + .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
+  margin-top: calc(-1 * var(--qa-shadow-pad, 0px));
+}
 
 @media (max-width: 640px) {
   .case__section[data-section='research'] {

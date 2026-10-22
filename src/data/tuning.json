@@ -1009,7 +1009,7 @@
     },
     "story": {
       "problemTitle": "Tagged swatches can identify materials.\nBut, can’t tell you if it’s production‑ready.\n",
-      "problemBody": "Technical designers still have to verify supplier claims, test unknowns and document constraints across emails, spreadsheets, lab reports and PLMs before a factory can use it.",
+      "problemBody": "Technical designers still verify supplier claims and test unknowns across emails, spreadsheets and lab reports before production.",
       "opportunityTitle": "Turn the swatch into \na dynamic material record.",
       "opportunityBody": "One tap connects each physical sample to a living Technical File, bringing its evidence, constraints and next actions.\n",
       "gapImage": {
@@ -1034,7 +1034,7 @@
     "research": {
       "eyebrow": "PRIMARY MARKET RESEARCH",
       "title": "Validating performance was the biggest pain point.",
-      "body": "We interviewed industry experts to see where biomaterials stall. \nThe bottleneck was proving they could survive testing, production, and scale.",
+      "body": "We interviewed industry experts to see where biomaterials stall.",
       "primaryVisual": "video",
       "miroVideo": {
         "speed": 2,

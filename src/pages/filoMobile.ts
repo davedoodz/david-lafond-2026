@@ -16,7 +16,7 @@ const DIALS: PhoneDialTable = {
     'Heading to image gap': ['--fm-media-gap', 32, 0, 120, 1, 'px'],
     'Body text line spacing': ['--fm-body-lh', 1.25, 1, 1.8, 0.01, ''],
     'Gap above and below images': ['--fm-image-gap', 80, 0, 200, 1, 'px'],
-    'Gap between title sentences': ['--fm-title-line-gap', 12, 0, 40, 1, 'px'],
+    'Gap between title sentences': ['--fm-title-line-gap', 0, 0, 40, 1, 'px'],
   },
   '1 Hero · title and hang tag': {
     'Filo mark size': ['--fm-mark-scale', 0.75, 0.3, 1.2, 0.01, ''],

@@ -145,13 +145,25 @@
   main.case[data-work='filo'] .filo-research__interviews {
     width: min(var(--fm-interviews-w), var(--fm-content-w));
   }
-  /* The quote cards take the hang tag's proportions (560 × 947, measured on the hero tag). The strip
-     is padded for the cards' shadow; taking that padding back out of the layout keeps the cards
-     themselves --fm-image-gap from the interviews and the Miro board. */
+  /* "The bottleneck was proving…" sits between the interview video and the quote cards, --fm-image-gap
+     from each (the research figure's own gap), in the content column like the section's body. */
+  main.case[data-work='filo'] .filo-research__bridge {
+    max-width: var(--fm-content-w);
+    margin: 0;
+    line-height: var(--fm-body-lh);
+    text-wrap: balance;
+  }
+  /* The quote cards take the hang tag's proportions (560 × 947, measured on the hero tag), the
+     desktop card's tall format. The height is written out rather than left to aspect-ratio: in the
+     marquee's flex row Safari stretches each card to the row instead, which drew them wide and short.
+     The strip is padded for the cards' shadow; taking that padding back out of the layout keeps the
+     cards themselves --fm-image-gap from the copy above and the Miro board below. */
   main.case[data-work='filo'] [data-quotes] .persona__quote-item[data-filo-quote] {
-    width: min(var(--qa-card-w, 640px), var(--fm-card-w) * 1vw);
-    height: auto;
-    aspect-ratio: 560 / 947;
+    --card-w: min(var(--qa-card-w, 640px), var(--fm-card-w) * 1vw);
+    width: var(--card-w);
+    height: calc(var(--card-w) * 947 / 560);
+    aspect-ratio: auto;
+    align-self: flex-start;
     gap: var(--fm-quote-gap);
     border-radius: var(--fm-card-radius);
   }
