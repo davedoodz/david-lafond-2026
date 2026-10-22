@@ -62,7 +62,11 @@
   background: none;
   cursor: pointer;
   translate: calc(var(--momo-skip-tx) + var(--momo-skip-x)) var(--momo-skip-y);
+  /* Hidden = visibility too, not just opacity: iOS 26 Safari tints its floating bottom bar from fixed
+     elements near that edge even at opacity 0, so this white glass pill turned the bar white over the
+     dark footer at the page end. Visibility flips after the fade-out, and at once on show. */
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -71,10 +75,13 @@
     scale 160ms cubic-bezier(0.22, 1, 0.36, 1),
     background-color 220ms ease,
     color 220ms ease,
-    box-shadow 260ms ease;
+    box-shadow 260ms ease,
+    visibility 0s linear var(--momo-skip-hide-delay, 320ms);
 }
 .momo-skip[data-shown] {
+  --momo-skip-hide-delay: 0s;
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 .momo-skip:focus-visible {
@@ -164,9 +171,9 @@
 
 /* Click feel */
 .momo-skip[data-click-feel='press']:active { scale: 0.95; }
-.momo-skip[data-click-feel='squish'] { transition-property: opacity, transform, scale, background-color, color, box-shadow; }
-.momo-skip[data-click-feel='squish']:active { scale: 0.88 1.04; transition-duration: 320ms, 260ms, 90ms, 220ms, 220ms, 260ms; }
-.momo-skip[data-click-feel='squish']:not(:active) { transition-timing-function: ease, cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.34, 1.8, 0.5, 1), ease, ease, ease; transition-duration: 320ms, 260ms, 420ms, 220ms, 220ms, 260ms; }
+.momo-skip[data-click-feel='squish'] { transition-property: opacity, transform, scale, background-color, color, box-shadow, visibility; }
+.momo-skip[data-click-feel='squish']:active { scale: 0.88 1.04; transition-duration: 320ms, 260ms, 90ms, 220ms, 220ms, 260ms, 0s; }
+.momo-skip[data-click-feel='squish']:not(:active) { transition-timing-function: ease, cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.34, 1.8, 0.5, 1), ease, ease, ease, linear; transition-duration: 320ms, 260ms, 420ms, 220ms, 220ms, 260ms, 0s; }
 .momo-skip[data-click-feel='sink']:active {
   scale: 0.985;
   box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 0 0 rgb(0 0 0 / 0);
