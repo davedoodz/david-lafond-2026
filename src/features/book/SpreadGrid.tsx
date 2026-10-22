@@ -54,35 +54,24 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
 
 /**
  * Phones' book: every spread stacked top to bottom, to read by scrolling. The spreads are not
- * interactive (no flipping, no zoom); the covers sit centred on their own. At the bottom, a scrub bar
- * sets how many spreads sit side by side (1–4) above a pill that shows the spread at the screen's
- * middle and jumps to either cover.
+ * interactive (no flipping, no zoom); the covers sit centred on their own. A scrub bar fixed at the
+ * bottom sets how many spreads sit side by side: its circle slides freely from 1 (left) to 4 (right)
+ * and the column count follows the nearest whole number.
  */
 export const SpreadStack = memo(function SpreadStack() {
   const list = useRef<HTMLOListElement>(null)
-  const pill = useRef<HTMLElement>(null)
-  const [current, setCurrent] = useState(0)
   const [shown, setShown] = useState(true)
-  const [columns, setColumns] = useState(1)
-  const currentRef = useRef(0)
-  currentRef.current = current
+  const [scrub, setScrub] = useState(1)
+  const columns = Math.round(scrub)
 
   useEffect(() => {
     const ol = list.current
     if (!ol) return
     let frame = 0
+    // Leave once the back cover has scrolled above the middle: the bar would sit over the video.
     const measure = () => {
       frame = 0
-      const mid = window.innerHeight / 2
-      const items = ol.children
-      // At the very top the cover counts as current even though it ends above the middle.
-      let index = window.scrollY < 8 ? 0 : items.length - 1
-      for (let i = 0; i < items.length && index !== 0; i++) {
-        if (items[i].getBoundingClientRect().bottom > mid) { index = i; break }
-      }
-      setCurrent(index)
-      // Leave once the back cover has scrolled above the middle: the pill would sit over the video.
-      setShown(ol.getBoundingClientRect().bottom > mid)
+      setShown(ol.getBoundingClientRect().bottom > window.innerHeight / 2)
     }
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(measure) }
     measure()
@@ -95,39 +84,26 @@ export const SpreadStack = memo(function SpreadStack() {
     }
   }, [])
 
-  // A new column count keeps the spread being read at the screen's middle.
+  // A new column count keeps the spread at the screen's middle there: it is found before the grid
+  // reflows (the render phase still has the old layout in the DOM) and scrolled back after.
+  const anchor = useRef<number | null>(null)
   const previousColumns = useRef(columns)
+  if (previousColumns.current !== columns && list.current && anchor.current === null && window.scrollY >= 8) {
+    const mid = window.innerHeight / 2
+    const items = [...list.current.children]
+    const index = items.findIndex((item) => item.getBoundingClientRect().bottom > mid)
+    anchor.current = index === -1 ? items.length - 1 : index
+  }
   useLayoutEffect(() => {
     if (previousColumns.current === columns) return
     previousColumns.current = columns
-    const item = list.current?.children[currentRef.current]
-    if (!item || window.scrollY < 8) return
+    const index = anchor.current
+    anchor.current = null
+    const item = index === null ? null : list.current?.children[index]
+    if (!item) return
     const box = item.getBoundingClientRect()
     window.scrollTo({ top: window.scrollY + box.top + box.height / 2 - window.innerHeight / 2, behavior: 'auto' })
   }, [columns])
-
-  const go = (to: 'cover' | 'back', button: HTMLElement) => {
-    // :active only lasts as long as the press, which a quick tap barely shows while the page starts
-    // gliding; every tap gets the same white flash instead, held briefly then eased out.
-    button.animate(
-      [
-        { background: 'var(--paper)', color: 'var(--ink-900)' },
-        { background: 'var(--paper)', color: 'var(--ink-900)', offset: 0.35 },
-        { background: 'transparent', color: 'var(--stone-400)' },
-      ],
-      { duration: 520, easing: 'ease-out' },
-    )
-    const ol = list.current
-    if (!ol) return
-    const smooth = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-    if (to === 'cover') return window.scrollTo({ top: 0, behavior: smooth })
-    // Down lands with this pill centred on the back cover.
-    const back = ol.lastElementChild?.getBoundingClientRect()
-    const bar = pill.current?.getBoundingClientRect()
-    if (!back || !bar) return
-    const top = window.scrollY + back.top + back.height / 2 - (bar.top + bar.height / 2)
-    window.scrollTo({ top: Math.min(top, document.documentElement.scrollHeight - window.innerHeight), behavior: smooth })
-  }
 
   return (
     <>
@@ -147,34 +123,26 @@ export const SpreadStack = memo(function SpreadStack() {
       </ol>
       {/* Portalled: an ancestor's transform would otherwise trap `position: fixed`. */}
       {createPortal(
-        <div className="spread-stack__controls" data-shown={shown} inert={!shown}>
-          <label className="spread-stack__columns">
-            <span className="visually-hidden">Spreads per row</span>
-            <span className="spread-stack__stops" aria-hidden="true">
-              {[0, 1, 2, 3].map((stop) => <i key={stop} style={{ '--stop': stop / 3 } as CSSProperties} />)}
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={4}
-              step={1}
-              value={columns}
-              onChange={(event) => setColumns(Number(event.currentTarget.value))}
-              style={{ '--stack-fill': (columns - 1) / 3 } as CSSProperties}
-            />
-          </label>
-          <nav ref={pill} className="spread-stack__pill" aria-label="Book position">
-            <button type="button" onClick={(event) => go('cover', event.currentTarget)} aria-label="Back to the cover">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
-            </button>
-            <span className="spread-stack__count">
-              {current + 1} <span>/ {SPREADS.length}</span>
-            </span>
-            <button type="button" onClick={(event) => go('back', event.currentTarget)} aria-label="Go to the back cover">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
-            </button>
-          </nav>
-        </div>,
+        <label className="spread-stack__columns" data-shown={shown} inert={!shown}>
+          <span className="visually-hidden">Spreads per row</span>
+          <input
+            type="range"
+            min={1}
+            max={4}
+            step="any"
+            value={scrub}
+            aria-valuetext={`${columns} per row`}
+            onChange={(event) => setScrub(Number(event.currentTarget.value))}
+            onKeyDown={(event) => {
+              // Arrow keys step whole columns; dragging stays free.
+              const delta = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[event.key]
+              if (!delta) return
+              event.preventDefault()
+              setScrub(Math.min(4, Math.max(1, columns + delta)))
+            }}
+            style={{ '--stack-fill': (scrub - 1) / 3 } as CSSProperties}
+          />
+        </label>,
         document.body,
       )}
     </>
