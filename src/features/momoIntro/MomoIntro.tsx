@@ -584,15 +584,23 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       const hintScale = h.braid === 'swell' || h.braid === 'pulse' ? .14 * a * wave : h.braid === 'breathe' ? .08 * a * wave : 0
       const hintEnv = h.braid === 'swell' || h.braid === 'pulse' ? .3 * a * wave : h.braid === 'breathe' ? .15 * a * wave : h.braid === 'shimmer' ? .6 * a : 0
       const hintY = h.braid === 'bob' ? -6 * a * wave : 0
-      if (ay > -200 && ay < vh + 200) {
+      const bandNear = ay > -200 && ay < vh + 200
+      if (bandNear) {
         const scale = Math.min(s.hero.width, vw * .72) / (2 * 320 * .87) * (1 + .14 * swell + hintScale)
         setRT(rt)
         drawBraid(ctx, [scale * dpr, (slotX - 480 * scale) * dpr, (ay + hintY - 245 * scale) * dpr], { env: s.hero.energy + .3 * swell + hintEnv, alpha: Math.max(ending, 1 - filmAlpha) })
       }
+      // Empty canvases still cover the whole screen as fixed layers, and iOS 26 Safari reads a fixed
+      // layer at the bottom edge as its toolbar color: over the dark footer the bar went light. Hide
+      // them (visibility, not opacity) whenever this frame drew nothing into them.
+      const filmHidden = filmAlpha <= .001 ? 'hidden' : ''
+      if (topCanvas.style.visibility !== filmHidden) topCanvas.style.visibility = filmHidden
+      const bandHidden = filmAlpha <= .001 && !bandNear ? 'hidden' : ''
+      if (canvas.style.visibility !== bandHidden) canvas.style.visibility = bandHidden
       root.toggleAttribute('data-momo-stage', p > .5)
       showSkip(playing && handoffY === null && time < PHONE_TIMELINE.calm && p > .5)
       if (skipShown) skipBtnRef.current?.style.setProperty('--momo-skip-p', String(clamp((time - START) / (PHONE_TIMELINE.calm - START))))
-      if (!document.hidden && (playing || (ay > -200 && ay < vh + 200))) raf = requestAnimationFrame(frame)
+      if (!document.hidden && (playing || bandNear)) raf = requestAnimationFrame(frame)
       else last = 0
     }
     function wake() { if (!raf && !disposed) raf = requestAnimationFrame(frame) }
