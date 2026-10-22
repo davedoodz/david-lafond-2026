@@ -46,11 +46,14 @@ const CONFIG = {
   /** Vertical file-sheet presets for the dark playground panel. */
   sheet: sheetDials(),
   /**
-   * Dark sheet arrives as a dome and flattens as it scrolls up, exactly like the Selected projects
-   * sheet on Work: same peek, shape and morph (SelectedWorks.tsx SHEET_DOME, from its saved dials).
+   * Dark sheet arrives as a dome and flattens as it scrolls up, like the Selected projects sheet on
+   * Work: same shape and morph (SelectedWorks.tsx SHEET_DOME). Desktop peek is About's own: Work's
+   * Hero peek is measured from below the nav, so the same number shows a different arc there.
    */
   dome: {
     show: true,
+    /** Desktop: how far the arc tip peeks above the fold (px). */
+    peekDesktop: [113, 0, 240, 1] as [number, number, number, number],
   },
   /** How the playground label and cards arrive as they scroll into view. */
   reveal: revealDials(),
@@ -203,6 +206,7 @@ export function AboutPage() {
   }, [])
 
   const domeShow = t.dome.show
+  const peekDesktop = t.dome.peekDesktop
   useEffect(() => {
     const sheet = darkRef.current
     if (!sheet) return
@@ -229,7 +233,7 @@ export function AboutPage() {
       const touch = window.matchMedia(TOUCH_LANDING).matches
       const morph = mobile || touch ? SHEET_DOME.morphMobile : SHEET_DOME.morph
       const curve = DOME_CURVES[morph.curve] ?? DOME_CURVES.smooth
-      const peek = touch ? touchDome(svh).peek : mobile ? SHEET_DOME.peekMobile : SHEET_DOME.peekDesktop
+      const peek = touch ? touchDome(svh).peek : mobile ? SHEET_DOME.peekMobile : peekDesktop
       // The sheet overlaps the story by the peek (its top margin) and the story's bottom padding
       // grows by as much (AboutPage.css), so the gap above the arc tip stays the spacing dial.
       set(sheet.parentElement, '--dome-peek', `${peek.toFixed(2)}px`)
@@ -263,7 +267,7 @@ export function AboutPage() {
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', resize)
     }
-  }, [domeShow])
+  }, [domeShow, peekDesktop])
 
   // Bottom fade: opacity tracks how much of the story is still below the fade band. It is written
   // to a variable for the two layers, not to the band itself: opacity on the band would make it a
