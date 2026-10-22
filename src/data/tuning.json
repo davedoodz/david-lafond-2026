@@ -177,7 +177,7 @@
       "bounce": 0.4
     },
     "spacing": {
-      "firstDesktop": 207,
+      "firstDesktop": 237,
       "gapDesktop": 13,
       "lastDesktop": 347,
       "firstMobile": 183,
@@ -364,7 +364,7 @@
       "introToIntroMobile": 19,
       "introToRoleMobile": 18
     },
-    "peekDesktop": 113,
+    "peekDesktop": 143,
     "peekMobile": 95
   },
   "Portfolio book": {

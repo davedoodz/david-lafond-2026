@@ -57,6 +57,8 @@ export function bindIntroSelection(
         }
       }
       layer.innerHTML = blocks.join('')
+      // Lit paragraphs keep turning pills under the band (WorkIntroStickers.css), so they stay inverted.
+      p.toggleAttribute('data-hl', blocks.length > 0)
     }
   }
   const schedule = () => { frame ||= requestAnimationFrame(draw) }
