@@ -78,7 +78,7 @@ type Settings = { preset: Preset; mirror: boolean; projectBack: string; pinNav: 
 const PROJECT_ROUTES: Route[] = ['momo', 'filo', 'harvard-mit']
 
 /** Pin an element only if it is on screen; an off-screen pin would fly in from its scrolled position. */
-function pinIfVisible(selector: string, attribute: string) {
+export function pinIfVisible(selector: string, attribute: string) {
   const el = document.querySelector(selector)
   if (!el) return
   const rect = el.getBoundingClientRect()
@@ -92,7 +92,6 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
     typeof document.startViewTransition !== 'function' ||
     window.matchMedia(REDUCED_MOTION).matches
   if (skip) {
-    root.removeAttribute('data-vt-hide-nav')
     update()
     return
   }
@@ -105,11 +104,7 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
       : settings.mirror && back
         ? 'back'
         : 'forward'
-  // Project Back: the nav stays empty while the pages slide, then replays its
-  // entrance once the destination has landed.
-  const projectBack = back && PROJECT_ROUTES.includes(from)
-  const sideways = root.dataset.vtDir === 'left' || root.dataset.vtDir === 'right'
-  if (settings.pinNav && !sideways) pinIfVisible('.nav', 'data-vt-pin-nav')
+  if (settings.pinNav) pinIfVisible('.nav', 'data-vt-pin-nav')
   if (settings.pinShader) pinIfVisible('.dither-band--header', 'data-vt-pin-shader')
 
   // Finish loading the destination before starting the visual transition so
@@ -117,10 +112,6 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
   const routeReady = preloadRoute(to)
   const startTransition = async () => {
     await routeReady
-    // Set before the old snapshot is captured so neither page shows nav items.
-    // Toggle, so an interrupted project Back cannot leave the nav hidden.
-    root.toggleAttribute('data-vt-hide-nav', projectBack)
-
     const transition = document.startViewTransition(() => {
       flushSync(update)
     })
@@ -131,13 +122,6 @@ function run(settings: Settings, update: () => void, to: Route, from: Route) {
       delete root.dataset.vtDir
       root.removeAttribute('data-vt-pin-nav')
       root.removeAttribute('data-vt-pin-shader')
-
-      if (projectBack) {
-        // Same task: the entrance animations start from their hidden first
-        // frame (fill: backwards) before the items become visible again.
-        window.dispatchEvent(new Event('project-slide-settled'))
-        root.removeAttribute('data-vt-hide-nav')
-      }
     })
   }
 

@@ -88,7 +88,3 @@
   --vt-back-out-opacity: var(--po-slide-opacity);
   animation: vt-drift-left var(--po-slide-out-dur) var(--po-slide-ease) var(--po-slide-out-delay) both;
 }
-
-:root[data-po-nav='held'] .nav {
-  visibility: hidden;
-}

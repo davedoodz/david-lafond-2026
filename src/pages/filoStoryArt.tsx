@@ -245,7 +245,7 @@ function Opportunity({ image, olive, speed, close, products }: { image: string; 
             title="Filo App Clip: the tag is read and Bacterial Cellulose's material record opens."
             width={GLIMPSE.width}
             height={GLIMPSE.height}
-            style={{ scale: `${SCREEN_BOX.width / GLIMPSE.width} ${SCREEN_BOX.height / GLIMPSE.height}` }}
+            style={{ transform: `scale(${SCREEN_BOX.width / GLIMPSE.width}, ${SCREEN_BOX.height / GLIMPSE.height})` }}
             loading="lazy"
             tabIndex={-1}
           />

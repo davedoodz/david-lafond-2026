@@ -97,7 +97,11 @@
   /* Step 3 stacks: the phone, then the box under it, each sized in layout (scale capped to the column).
      The phone stays centred: inbox › x / y place it beside the box, which only exists on desktop. */
   .fss-receive { flex-direction: column; gap: 40px; }
-  .fss-app--phone { width: min(calc(300px * var(--fss-inbox-scale, 1)), 70vw); scale: none; left: 0; top: 0; }
+  /* Width is overridden by filoMobile.css (Filo · phone layout › Phone width), which is always present
+     on this page; aspect-ratio collapses this box to 0 on iOS Safari when a flex item's cross size
+     comes from a React effect's CSS variable (the known WebKit aspect-ratio/flex bug), so the height
+     is computed explicitly from the same variable instead of left for aspect-ratio to derive. */
+  .fss-app--phone { width: min(calc(300px * var(--fss-inbox-scale, 1)), 70vw); aspect-ratio: auto; height: calc(var(--fm-phone-w, min(calc(300px * var(--fss-inbox-scale, 1)), 70vw)) * 884 / 434); scale: none; left: 0; top: 0; }
   .fss-box { width: min(100%, calc(var(--fss-box-w, 489px) * var(--fss-box-scale, 1))); scale: none; }
   /* Step 4 goes tall: the stage fits the frame's height, and its phone is 390.6px wide on a 900px-high
      stage, so this height puts the phone at step 3's width (min(300px, 70vw)) and the deck runs off both sides. */

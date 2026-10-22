@@ -99,6 +99,15 @@
   }
 }
 
+/* While a pill turns (its old art and letters linger as .sticker-ghost), it paints above every other
+   sticker. Its animations run on the compositor; anything painted after them that might overlap gets
+   composited for the turn too, and on iOS a composited sticker draws its rotation and drop-shadows
+   differently, so the other stickers visibly shifted and changed shade until the turn ended. With
+   nothing painted after the turning pill, nothing else changes. */
+.ws-pill:has(.sticker-ghost) {
+  z-index: 3;
+}
+
 .ws-pill-art {
   position: absolute;
   inset: 0;

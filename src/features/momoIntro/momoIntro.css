@@ -102,6 +102,17 @@
 .momo-skip[data-placement$='left'] { left: var(--momo-skip-inset); }
 .momo-skip[data-placement$='right'] { right: var(--momo-skip-inset); }
 .momo-skip[data-placement$='center'] { left: 50%; --momo-skip-tx: -50%; }
+/* Phones: the film holds its phone mobileFrame › topBottomMargin (--momo-frame-margin) above the
+   page's bottom edge, and Safari's floating bottom bar starts --momo-skip-bar-gap below that edge
+   (16px, measured on iOS 26 Safari). A bottom Skip centres itself in the space between the phone
+   and the bar, so the gap above it equals the gap below it; the inset dial still sets desktop. */
+@media (max-width: 640px) {
+  .momo-skip[data-placement^='bottom'] {
+    --momo-skip-bar-gap: 16px;
+    bottom: calc((var(--momo-frame-margin, 80px) - var(--momo-skip-bar-gap)) / 2);
+    translate: calc(var(--momo-skip-tx) + var(--momo-skip-x)) calc(50% + var(--momo-skip-y));
+  }
+}
 
 /* Button UI */
 .momo-skip[data-style='glass'],
@@ -163,13 +174,15 @@
 }
 
 /* While the stage fills the screen, the nav and Back stay on top of the film (canvas z 50,
-   Skip z 51) and stay clickable, so you can leave or move on mid-intro. */
+   Skip z 51) and stay clickable, so you can leave or move on mid-intro. Nav is a single shared
+   instance (App.tsx), no longer a DOM child of .case, hence data-route instead of `.case .nav`. */
 html[data-momo-stage] .case__sidebar,
-html[data-momo-stage] .case .nav {
+html[data-momo-stage] .nav[data-route='momo'] {
   z-index: 52;
 }
 .case__sidebar,
-.case .nav {
+.nav[data-route='momo'],
+.nav[data-route='filo'] {
   transition: opacity 240ms ease;
 }
 /* Hero: the band's slot above the title, in place of the eyebrow. Once the intro has played it is

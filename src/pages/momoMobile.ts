@@ -7,6 +7,8 @@
  */
 import { useEffect, type RefObject } from 'react'
 import { usePhoneLayoutDials, type PhoneDialTable } from './phoneLayoutDials'
+import { capTop, settled, textRect } from '../lib/settledLayout'
+import { MOMO_BRAID_LAYOUT_EVENT } from '../features/momoIntro/MomoIntro'
 import './momoMobile.css'
 
 const DIALS: PhoneDialTable = {
@@ -83,5 +85,96 @@ export function MomoPhoneDials({ target }: { target: RefObject<HTMLElement | nul
       el.style.removeProperty('--mm-welcome-w')
     }
   }, [target])
+  useMomoWaveGapFix(target)
   return null
+}
+
+// Rest-state glow geometry for the hero braid (src/features/momoIntro/braid.js BAND + the hero
+// "energy" dial, src/data/tuning.json under "Momo intro" › hero.energy = 0.28): the half-width the
+// scale is fit to (BRAID_W = 2 × 320 × 0.87), and the amplitude/thickness the glow can ever reach at
+// rest (no hover, no idle "replay" hint swell). If that energy dial or the braid's BAND constants
+// move, these two need to move with them.
+const MOMO_BRAID_W = 2 * 320 * 0.87
+const MOMO_HERO_ENERGY = 0.28
+
+/**
+ * The braid's gap above (nav text bottom → wave ink top) must equal its gap below (wave ink bottom
+ * → title cap top). The braid canvas breathes continuously and isn't part of document flow (it's
+ * translated by the "y › braid" dial), so the two gaps don't track each other on their own: this
+ * computes the glow's rest-state painted extent from its known geometry (not a canvas pixel sample —
+ * the band never stops breathing, so any single sample would be a snapshot of one phase, not its
+ * settled reach) and pushes the hero's top padding down by the shortfall, once. It only ever adds
+ * padding (the top gap never shrinks below its natural size), and settled() corrects for any
+ * in-flight entrance so a mid-animation read can't skew the result.
+ */
+function useMomoWaveGapFix(target: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    let disposed = false
+    let lastWidth = window.innerWidth
+
+    const measure = () => {
+      if (disposed) return
+      const main = target.current
+      const hero = main?.querySelector<HTMLElement>('.case__section--hero')
+      if (!main || !hero) return
+      if (!mq.matches) { hero.style.removeProperty('--mm-wave-gap-fix'); return }
+      // Queried from the document, not `main`: the nav is a page-level persistent element, not
+      // necessarily a descendant of this case study's root.
+      const navLink = document.querySelector<HTMLElement>('.nav__links a')
+      const slot = main.querySelector<HTMLElement>('.case__section--hero .case__braid-slot')
+      const title = main.querySelector<HTMLElement>('.case__section--hero .case__title--hero')
+      if (!navLink || !slot || !title) return
+      // Re-measuring from a blank slate: an earlier correction would otherwise be baked into the
+      // slot's current position, since the hero's padding (and so the slot under it) has moved.
+      hero.style.removeProperty('--mm-wave-gap-fix')
+      const slotRect = settled(slot)
+      const slotWidth = slotRect.right - slotRect.left, slotHeight = slotRect.bottom - slotRect.top
+      if (slotWidth === 0 && slotHeight === 0) return // not laid out yet
+      const heroWidthPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--braid-w')) || 280
+      const scale = Math.min(heroWidthPx, window.innerWidth * 0.72) / MOMO_BRAID_W
+      // amp/thick follow braid.js's BAND formula at rest (env = MOMO_HERO_ENERGY, no swell/hint):
+      // amp = BAND.amp + BAND.ampReact·env, th = BAND.thick + BAND.thickReact·env + 4 (its loudest
+      // idle moment). The top edge sits amp+th/2 above center; the bottom edge carries an extra
+      // th·0.3 asymmetric wobble, so it reaches amp+th·0.8 below center.
+      const amp = 18 + 44 * MOMO_HERO_ENERGY
+      const thick = 9 + 20 * MOMO_HERO_ENERGY + 4
+      const ay = slotRect.top + slotHeight / 2
+      const waveTop = ay - (amp + thick / 2) * scale
+      const waveBottom = ay + (amp + thick * 0.8) * scale
+      // The nav row's text (WORK / ABOUT / RESUME), not the nav box, whose padding sits lower.
+      const navBottom = settled(navLink, textRect(navLink)).bottom
+      const gapAbove = waveTop - navBottom
+      const gapBelow = capTop(title) - waveBottom
+      const correction = Math.max(0, gapBelow - gapAbove)
+      if (correction < 0.5) return
+      hero.style.setProperty('--mm-wave-gap-fix', `${Math.round(correction)}px`)
+      // The box just moved (the padding above it changed): tell the canvas to redraw the band at its
+      // new position so the painted glow follows the slot it was just computed from.
+      window.dispatchEvent(new Event(MOMO_BRAID_LAYOUT_EVENT))
+    }
+
+    // One-shot: measured once per trigger, not on a timer. Height-only changes (the iOS toolbar
+    // showing/hiding) are ignored — only an actual width or orientation change, or fonts finishing
+    // layout, is worth a re-measure.
+    const onResize = () => {
+      const w = window.innerWidth
+      if (w === lastWidth) return
+      lastWidth = w
+      measure()
+    }
+    const onOrientation = () => { lastWidth = window.innerWidth; measure() }
+    measure()
+    document.fonts?.ready.then(() => { if (!disposed) measure() })
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onOrientation)
+    mq.addEventListener('change', onResize)
+    return () => {
+      disposed = true
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onOrientation)
+      mq.removeEventListener('change', onResize)
+      target.current?.querySelector<HTMLElement>('.case__section--hero')?.style.removeProperty('--mm-wave-gap-fix')
+    }
+  }, [target])
 }

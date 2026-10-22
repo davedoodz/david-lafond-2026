@@ -108,11 +108,14 @@
 /* Phones, every page: Work / About / Resume stay at the top of the page and scroll away with it,
    while Davebot stays on screen. Absolute keeps the same box (the spacer, where there is one, still
    holds its room); Davebot's column is fixed to the spot it starts in (same padding, same margins).
-   Momo and Filo pin their nav in CaseStudyPage.css, hence the longer second selector. */
+   Momo and Filo pin their nav in CaseStudyPage.css at equal specificity (both target .nav by
+   data-route, Nav no longer nests under .case__light), hence the extra `html` to still win the tie. */
 @media (max-width: 640px) {
   .nav[data-pin='fixed'],
-  main.case > .case__light > .nav[data-pin='fixed'] {
+  html .nav[data-route='momo'][data-pin='fixed'],
+  html .nav[data-route='filo'][data-pin='fixed'] {
     position: absolute;
+    top: var(--nav-case-top, 0px);
   }
   .nav[data-pin] .nav__start {
     position: fixed;

@@ -48,13 +48,6 @@
   animation-timing-function: var(--vt-in-ease);
 }
 
-/* Project Back: the nav bar stays empty while the pages slide; the header
-   intro replays the Davebot and link entrances once the destination lands. */
-:root[data-vt-hide-nav] .nav__ghost,
-:root[data-vt-hide-nav] .nav__links {
-  visibility: hidden;
-}
-
 /* fade — straight crossfade */
 :root[data-vt='fade']::view-transition-old(root) {
   mix-blend-mode: plus-lighter;

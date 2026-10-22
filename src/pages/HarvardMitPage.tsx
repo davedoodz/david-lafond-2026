@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react'
 import { ContactCta } from '../components/ContactCta'
-import { BackLink, Nav } from '../components/Nav'
+import { BackLink } from '../components/Nav'
 import { BookViewer } from '../features/book/BookViewer'
 import { useFitColumn } from '../lib/useFitColumn'
 import { useTuning } from '../tuning/useTuning'
@@ -31,7 +31,6 @@ export function HarvardMitPage() {
 
   return (
     <main ref={mainRef} className="project" data-surface="dark" style={mobile}>
-      <Nav route="harvard-mit" />
       <BackLink className="project__back" />
       <h1 className="visually-hidden">The Architecture Portfolio that Got Me Into Harvard &amp; MIT</h1>
       <BookViewer />

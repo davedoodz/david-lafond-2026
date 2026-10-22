@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { DitherBand } from './components/DitherBand'
 import { Footer } from './components/Footer'
+import { Nav } from './components/Nav'
 import { SafariEdges } from './components/SafariEdges'
 import { SelectionHighlight } from './components/SelectionHighlight'
 import { ControlledScroll } from './features/controlledScroll/ControlledScroll'
@@ -94,6 +95,11 @@ export function App() {
   return (
     <>
       <div className="site" data-surface={route === 'about' || route === 'momo' || route === 'filo' ? 'light' : 'dark'}>
+        {/* One Nav instance for every route, so it never unmounts (and never replays its entrance)
+            while navigating between pages — including into/out of Momo and Filo; only the first page
+            load does. Momo/Filo overlay it on their first snap stop via data-route selectors in
+            CaseStudyPage.css, since it's no longer a DOM child of .case__light. */}
+        <Nav route={route} />
         {headerBand[route as keyof typeof headerBand] !== false && <DitherBand position="header" />}
         {route === 'about' ? (
           <ChunkPage key="about" direct={About && <About />} lazy={<LazyAboutPage />} />

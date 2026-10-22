@@ -452,8 +452,8 @@ export const MOMO_CONFIG = {
     pickScale: [1, 0.5, 2, 0.01] as [number, number, number, number],
     /** Playback speed of each recording (1 = as recorded, 0.5 = half speed): the Gross model loop and the WOOP phone. */
     speed: {
-      models: [1, 0.25, 3, 0.05] as Tuple,
-      woop: [1, 0.25, 3, 0.05] as Tuple,
+      models: [1.5, 0.25, 3, 0.05] as Tuple,
+      woop: [1.5, 0.25, 3, 0.05] as Tuple,
     },
     spacing: sectionSpacingDials(96, 64, 72),
     textReveal: textRevealDials('focus'),

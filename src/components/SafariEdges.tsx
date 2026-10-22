@@ -16,10 +16,11 @@ export function SafariEdges() {
     const root = document.documentElement
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
     const originalTheme = meta?.content
-    const previous = ['--edge-top-background', '--edge-bottom-background'].map((name) => [name, root.style.getPropertyValue(name)])
+    const previous = ['--edge-top-background', '--edge-bottom-background', '--edge-body-background'].map((name) => [name, root.style.getPropertyValue(name)])
     let frame = 0
     let topColor = ''
     let bottomColor = ''
+    let bodyColor = ''
     const sample = () => {
       frame = 0
       const viewport = window.visualViewport
@@ -50,6 +51,16 @@ export function SafariEdges() {
       if (nextBottom !== bottomColor) {
         root.style.setProperty('--edge-bottom-background', nextBottom)
         bottomColor = nextBottom
+      }
+      // Body paints both rubber-band ends (no fixed strips on touch, see SafariEdges.css), so it must
+      // track whichever edge the scroll position is actually near, not always the top: at the page
+      // end the viewport's top row is still mid-page content, and reusing that for body would tint
+      // the dark footer's overscroll/toolbar area with the page's own (often light) background.
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight)
+      const nextBody = maxScroll - window.scrollY <= window.scrollY ? nextBottom : nextTop
+      if (nextBody !== bodyColor) {
+        root.style.setProperty('--edge-body-background', nextBody)
+        bodyColor = nextBody
       }
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(sample) }

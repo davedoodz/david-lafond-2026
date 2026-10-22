@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react'
 import { ContactCta } from '../components/ContactCta'
-import { Nav } from '../components/Nav'
 import { SelectedWorks } from '../components/SelectedWorks'
 import { DEFAULT_INTRO_TEXT, WorkIntroStickers, introLineSpan } from '../features/workStickers/WorkIntroStickers'
 import { TOUCH_LANDING } from '../lib/touchLanding'
@@ -323,7 +322,6 @@ export function WorkPage() {
         className="landing"
         style={{ '--peek-d': `${t.peekDesktop}px`, '--peek-m': `${t.peekMobile}px` } as CSSProperties}
       >
-        <Nav route="work" />
         <section
           ref={heroRef}
           className={`hero column ${entrance.className}`}
