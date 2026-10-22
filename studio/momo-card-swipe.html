@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Momo · WOOP card swipe on Next</title>
+<style>
+  @font-face { font-family: Beatrice; src: url('/fonts/Beatrice-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+  :root { --ink: #1d1d1f; --muted: #8e8e93; --stone-400: #a6a09c; --accent: #4a90d9; --page: #f5f5f5; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: Beatrice, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { max-width: 1100px; margin: 0 auto; padding: 48px 24px 8px; }
+  h1 { margin: 0; font-size: 28px; font-weight: 400; letter-spacing: -.02em; }
+  header p { margin: 10px 0 0; max-width: 720px; color: #6b6762; font-size: 15px; line-height: 1.5; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
+  .bar button, .bar label { font: inherit; font-size: 14px; border: 0; border-radius: 999px; padding: 9px 16px; background: #fff; color: var(--ink); box-shadow: 0 0 0 1px rgb(0 0 0 / .08), 0 2px 8px rgb(0 0 0 / .05); cursor: pointer; }
+  .bar button.primary { background: var(--ink); color: #fff; box-shadow: none; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 24px 96px; display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+  .opt { width: 300px; }
+  .opt h2 { margin: 0 0 4px; font-size: 16px; font-weight: 400; }
+  .opt h2 b { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: #e4e2df; font-size: 11.5px; font-weight: 400; vertical-align: 2px; }
+  .opt > p { margin: 0 0 12px; min-height: 4.4em; color: #6b6762; font-size: 13px; line-height: 1.45; }
+  .opt[data-pick] h2 b { background: var(--ink); color: #fff; }
+
+  /* A real-size 390 × 844 phone screen shown at 300 wide. */
+  .phone { position: relative; width: 300px; height: calc(844px * 300 / 390); overflow: hidden; border-radius: 40px; background: #fff; box-shadow: 0 0 0 8px #1c1c1e, 0 0 0 9px #3a3a3c, 0 24px 60px rgb(0 0 0 / .18); margin: 9px; width: 282px; height: calc(844px * 282 / 390); }
+  .screen { position: absolute; left: 0; top: 0; width: 390px; height: 844px; transform: scale(calc(282 / 390)); transform-origin: 0 0; background: #fafafa; font-family: system-ui, -apple-system, 'SF Pro Text', sans-serif; overflow: hidden; }
+  .status { position: absolute; top: 18px; left: 44px; right: 36px; display: flex; justify-content: space-between; font-size: 16px; font-weight: 600; }
+  .island { position: absolute; top: 12px; left: 50%; width: 120px; height: 34px; margin-left: -60px; border-radius: 20px; background: #000; }
+  .back { position: absolute; top: 64px; left: 22px; width: 40px; height: 40px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .05), 0 2px 6px rgb(0 0 0 / .05); display: grid; place-items: center; color: #555; font-size: 18px; }
+  .chip { position: absolute; top: 110px; left: 50%; translate: -50% 0; padding: 7px 14px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .06); font-size: 13px; color: #555; white-space: nowrap; }
+  .chip::before { content: ''; display: inline-block; width: 12px; height: 10px; margin-right: 7px; border-radius: 50%; background: linear-gradient(135deg, #8fc4f5, #4a90d9); vertical-align: -1px; }
+
+  .deck { position: absolute; top: 153px; left: 24px; right: 24px; height: 128px; }
+  .card { position: absolute; inset: 0; padding: 18px 20px; border-radius: 24px; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .04), 0 4px 12px -10px rgb(0 50 70 / .07), 0 10px 24px rgb(0 0 0 / .04); }
+  .ghost { transform: translateY(calc(var(--d) * 7px)) scale(calc(1 - var(--d) * .05)); transform-origin: 50% 100%; z-index: calc(-1 * var(--d)); opacity: calc(1 - var(--d) * .18); transition: transform 600ms cubic-bezier(.22, 1, .36, 1), opacity 600ms; }
+  .front { z-index: 2; }
+  .leaving { z-index: 3; transform-origin: 50% 100%; pointer-events: none; }
+  .q { margin: 0; max-width: 260px; font-size: 22px; font-weight: 500; line-height: 1.22; letter-spacing: -.01em; }
+  .hint { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+  .skip { position: absolute; top: 14px; right: 14px; padding: 4px 10px; border-radius: 999px; background: #f2f2f4; font-size: 12px; color: #6d6d72; }
+  .dots { position: absolute; top: 306px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: #dfe6ee; transition: background 300ms; }
+  .dots i[data-on] { background: #8fc0ec; }
+  .momo { position: absolute; top: 400px; left: 50%; width: 120px; margin-left: -60px; }
+  .controls { position: absolute; bottom: 44px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; }
+  .mode { padding: 11px 18px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / .06); font-size: 15px; }
+  .next { width: 52px; height: 52px; border: 0; border-radius: 50%; background: #1d1d1f; color: #fff; font-size: 22px; cursor: pointer; display: grid; place-items: center; }
+  .next:active { scale: .92; }
+  .home { position: absolute; bottom: 9px; left: 50%; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: #111; }
+  .params { margin-top: 12px; font: 12px/1.6 ui-monospace, SFMono-Regular, monospace; color: #8b8782; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Momo · the WOOP card swipe on Next</h1>
+  <p>Tap → in a phone (or Next all) to send the card away. <b>1</b> is today's motion, played at the new 1.5× speed. <b>2</b> and <b>3</b> are slower and gentler, also shown at the speed they'll play on the site. Pick one, and I'll set the prototype to it and re-record the WOOP video.</p>
+  <div class="bar">
+    <button class="primary" id="all" type="button">Next all →</button>
+    <button id="reset" type="button">Reset</button>
+    <label><input id="slow" type="checkbox" /> Slow motion (¼ speed)</label>
+  </div>
+</header>
+<main id="opts"></main>
+<script>
+  // Card motion. All times are as seen on the site (the recording plays at 1.5×).
+  // leave: the answered card lifts (to -lift at `peak`), turns, blurs and fades off the top.
+  // rise: the next card comes forward from slightly below and smaller.
+  const OPTIONS = [
+    {
+      name: 'Now', note: 'Today\u2019s swipe at the new 1.5× speed: a fast fling past the top of the screen with a strong turn and blur.',
+      leave: { ms: 130, lift: 130, tilt: 6.5, blur: 16, scale: .97, peak: .45, ease: 'cubic-bezier(.45, 0, .2, 1)' },
+      rise: { ms: 430, delay: 0, y: 10, scale: .95, opacity: .7, ease: 'cubic-bezier(.22, 1, .36, 1)' },
+    },
+    {
+      name: 'Slow lift', note: 'About 5× slower. The card rises a short way, barely turns and softens as it fades; the next one settles in behind it.',
+      leave: { ms: 650, lift: 56, tilt: 2, blur: 6, scale: .98, peak: .5, ease: 'cubic-bezier(.45, 0, .2, 1)' },
+      rise: { ms: 560, delay: 120, y: 10, scale: .96, opacity: .7, ease: 'cubic-bezier(.22, 1, .36, 1)' },
+    },
+    {
+      name: 'Soft fade', note: 'The calmest. No turn, a small drift up, and mostly a fade; the next card eases forward a beat later.',
+      leave: { ms: 800, lift: 28, tilt: 0, blur: 4, scale: .985, peak: .5, ease: 'cubic-bezier(.33, 0, .2, 1)' },
+      rise: { ms: 620, delay: 180, y: 8, scale: .97, opacity: .6, ease: 'cubic-bezier(.22, 1, .36, 1)' },
+    },
+  ]
+  const STEPS = [
+    ['What do you want to work toward this week?', 'Something challenging but possible.'],
+    ['What would be the best result? Picture it.', 'Imagine it as vividly as you can.'],
+    ['What in you is most likely to get in the way?', 'A habit, feeling, or belief, not the weather.'],
+    ['If that obstacle shows up, what will you do?', 'Say it as \u201cIf\u2026, then I will\u2026\u201d'],
+  ]
+  const DEPTH = 4
+  const slow = () => (document.getElementById('slow').checked ? 4 : 1)
+  const html = (step) => `<span class="skip">Skip</span><p class="q">${STEPS[step][0]}</p><p class="hint">${STEPS[step][1]}</p>`
+
+  const phones = OPTIONS.map((o, i) => {
+    const el = document.createElement('section')
+    el.className = 'opt'
+    el.innerHTML = `
+      <h2><b>${i + 1}</b>${o.name}</h2>
+      <p>${o.note}</p>
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="status"><span>9:41</span><span>\u25CF\u25CF\u25CF \u25AE</span></div>
+        <div class="back">\u2039</div>
+        <div class="chip">Oettingen\u2019s WOOP Method \u2304</div>
+        <div class="deck"></div>
+        <div class="dots">${STEPS.map(() => '<i></i>').join('')}</div>
+        <img class="momo" src="/work/momo/intro/momo.webp" alt="" />
+        <div class="controls"><span class="mode">Guided \u2304</span><button class="next" type="button" aria-label="Next card">\u2192</button></div>
+        <div class="home"></div>
+      </div></div>
+      <div class="params">leave ${o.leave.ms}ms · lift ${o.leave.lift * 2}px · turn ${+(o.leave.tilt * 1.5).toFixed(1)}° · blur ${o.leave.blur}px</div>`
+    document.getElementById('opts').append(el)
+    const deck = el.querySelector('.deck')
+    const state = { step: 0, busy: false }
+    const render = () => {
+      deck.querySelectorAll('.ghost, .front').forEach((n) => n.remove())
+      const ghosts = Math.min(DEPTH, STEPS.length - 1 - state.step)
+      for (let d = ghosts; d >= 1; d--) {
+        const g = document.createElement('div')
+        g.className = 'card ghost'
+        g.style.setProperty('--d', d)
+        deck.append(g)
+      }
+      const front = document.createElement('div')
+      front.className = 'card front'
+      front.innerHTML = html(state.step)
+      deck.append(front)
+      el.querySelectorAll('.dots i').forEach((dot, k) => dot.toggleAttribute('data-on', k <= state.step))
+      return front
+    }
+    render()
+    const next = () => {
+      if (state.busy) return
+      const k = slow(), L = o.leave, R = o.rise
+      const old = deck.querySelector('.front')
+      const leaving = old.cloneNode(true)
+      leaving.className = 'card leaving'
+      deck.append(leaving)
+      state.step = (state.step + 1) % STEPS.length
+      if (state.step === 0) { leaving.remove(); render(); return }
+      state.busy = true
+      const front = render()
+      leaving.animate([
+        { transform: 'none', opacity: 1, filter: 'blur(0px)' },
+        { transform: `translateY(${-L.lift}px) rotate(${L.tilt}deg) scale(${L.scale})`, offset: L.peak },
+        { transform: `translateY(${-2 * L.lift}px) rotate(${L.tilt * 1.5}deg) scale(${L.scale})`, opacity: 0, filter: `blur(${L.blur}px)` },
+      ], { duration: L.ms * k, easing: L.ease, fill: 'forwards' }).finished.then(() => leaving.remove())
+      front.animate([
+        { transform: `translateY(${R.y}px) scale(${R.scale})`, opacity: R.opacity },
+        { transform: 'none', opacity: 1 },
+      ], { duration: R.ms * k, delay: R.delay * k, easing: R.ease, fill: 'backwards' })
+      setTimeout(() => { state.busy = false }, Math.max(L.ms, R.delay + R.ms) * k)
+    }
+    el.querySelector('.next').addEventListener('click', next)
+    return { next, reset: () => { state.step = 0; state.busy = false; deck.querySelectorAll('.leaving').forEach((n) => n.remove()); render() } }
+  })
+  document.getElementById('all').addEventListener('click', () => phones.forEach((p) => p.next()))
+  document.getElementById('reset').addEventListener('click', () => phones.forEach((p) => p.reset()))
+</script>
+</body>
+</html>

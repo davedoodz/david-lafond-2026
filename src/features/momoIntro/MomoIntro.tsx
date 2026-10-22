@@ -713,7 +713,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       data-hover-feel={t.skip.hover}
       data-click-feel={t.skip.click}
       data-placement={t.skip.placement}
-      style={{ '--momo-skip-inset': `${t.skip.inset}px`, '--momo-skip-x': `${t.skip.x}px`, '--momo-skip-y': `${t.skip.y}px` } as CSSProperties}
+      style={{ '--momo-skip-inset': `${t.skip.inset}px`, '--momo-skip-x': `${t.skip.x}px`, '--momo-skip-y': `${t.skip.y}px`, '--momo-frame-margin': `${t.mobileFrame.topBottomMargin}px` } as CSSProperties}
       onClick={() => skipRef.current()}
     >
       {t.skip.style === 'progress' && <svg className="momo-skip__ring" viewBox="0 0 16 16" aria-hidden="true">
