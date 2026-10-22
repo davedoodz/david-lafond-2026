@@ -65,4 +65,10 @@ html[data-safari-edges][data-safari-bottom='dark'] .edge-bottom::before {
     display: none;
     content: none;
   }
+  /* The root paints too, wherever the body's box stops short: at the page end a light top sample
+     (Filo's light page above its dark footer) showed as a hairline across the bottom, between the
+     footer's last fractional pixel and Safari's toolbar. Follow the body's nearest-edge color. */
+  html[data-safari-edges] {
+    background: var(--edge-body-background, var(--edge-top-background, var(--ink-900)));
+  }
 }
