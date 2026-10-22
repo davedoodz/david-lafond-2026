@@ -752,6 +752,9 @@ export function CaseStudyPage({ id }: Props) {
     <main
       ref={mainRef}
       className="case"
+      // Every piece of copy can be highlighted; CaseStudyPage.css turns it off again for media,
+      // device prototypes and controls.
+      data-selectable
       data-work={id}
       data-intro={intro || undefined}
       data-text-size={page.textSize}
