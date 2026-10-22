@@ -79,7 +79,10 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left' }:
 
   useLayoutEffect(() => {
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
-    const engine = createStickerEngine({ getLook: () => look, reducedMotion })
+    // Touch screens: no hover lift. A tap would set it off and iOS keeps :hover after the tap, so
+    // the sticker would bob up and stay raised; on phones a sticker only moves when its own pill turns.
+    const finePointer = matchMedia('(hover: hover) and (pointer: fine)')
+    const engine = createStickerEngine({ getLook: () => look, reducedMotion, canHover: () => finePointer.matches })
     const controller = new AbortController()
     const records: StickerRecord[] = []
 
@@ -108,7 +111,11 @@ export function WorkIntroStickers({ text = DEFAULT_INTRO_TEXT, align = 'left' }:
       engine.render(record)
 
       const { signal } = controller
-      parts.button.addEventListener('click', () => engineTurn(record, setFace), { signal })
+      parts.button.addEventListener('click', () => {
+        engineTurn(record, setFace)
+        // The loop waits a full turn after a tap, so no other pill changes along with this one.
+        loop.schedule((record.values.timing.duration + record.values.timing.hold) * 1000)
+      }, { signal })
       parts.button.addEventListener('pointerenter', () => engine.hover(record, true), { signal })
       parts.button.addEventListener('pointerleave', () => engine.hover(record, false), { signal })
       parts.button.addEventListener('focus', () => engine.hover(record, true), { signal })
