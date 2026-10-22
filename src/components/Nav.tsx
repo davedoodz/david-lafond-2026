@@ -193,12 +193,19 @@ export function Nav({ route }: Props) {
     const nav = navRef.current
     if (!nav) return
     let frame = 0
-    // Hit tests see nothing during a page transition, when each page mounts its own nav. A new nav then
-    // starts from the surface its page declares, so the transition's new snapshot already shows the
-    // destination's tone and cross-fades into it.
-    const declared = () => {
-      const surface = nav.parentElement?.closest<HTMLElement>('[data-surface]')?.dataset.surface
-      return surface === 'light' || surface === 'dark' ? surface : undefined
+    // Hit tests see nothing during a page transition (isLightUnder returns null), yet the transition's
+    // new snapshot is taken right then, with the destination already laid out. So the fallback reads the
+    // layout instead: the innermost section declaring a surface (data-surface) whose box holds the point,
+    // or the dark page itself. Tapping About then shows About dark over the light page from the first
+    // frame of the wipe, instead of white until the wipe ends.
+    const declaredAt = (x: number, y: number): 'light' | 'dark' => {
+      let tone: 'light' | 'dark' = 'dark'
+      for (const el of document.querySelectorAll<HTMLElement>('[data-surface]')) {
+        if (nav.contains(el)) continue
+        const r = el.getBoundingClientRect()
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) tone = el.dataset.surface === 'light' ? 'light' : 'dark'
+      }
+      return tone
     }
     const sample = () => {
       frame = 0
@@ -206,17 +213,17 @@ export function Nav({ route }: Props) {
       if (!links) return
       const [x, y] = [links.left + links.width / 2, links.top + links.height / 2]
       const light = isLightUnder(nav, x, y)
-      if (light !== null) setUnder(light ? 'light' : 'dark')
-      else setUnder((current) => current ?? declared())
+      setUnder(light === null ? declaredAt(x, y) : light ? 'light' : 'dark')
       const sectionLight = isLightUnder(nav, x, y, '.works__card, .pg-card')
       if (sectionLight !== null) setSection(sectionLight ? 'light' : 'dark')
-      else setSection((current) => current ?? declared())
+      else setSection((current) => current ?? declaredAt(x, y))
       // Each link takes the tone right under itself, so a sheet's curved edge crossing the row flips
       // each word as the edge passes it (Nav.css, data-link-tone).
       for (const link of nav.querySelectorAll<HTMLElement>('.nav__links > a')) {
         const r = link.getBoundingClientRect()
-        const tone = isLightUnder(nav, r.left + r.width / 2, r.top + r.height / 2)
-        if (tone !== null) link.dataset.tone = tone ? 'light' : 'dark'
+        const [lx, ly] = [r.left + r.width / 2, r.top + r.height / 2]
+        const tone = isLightUnder(nav, lx, ly)
+        link.dataset.tone = tone === null ? declaredAt(lx, ly) : tone ? 'light' : 'dark'
       }
       // Edge blur: a sheet's curved edge inside a blur band is blurred toward the screen edge but sharp
       // at its tip, which reads as a flat crop. Such a band clears while an arc is in it (Nav.css): the
