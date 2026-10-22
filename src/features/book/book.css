@@ -1530,7 +1530,13 @@
 .spread-stack__columns[data-dragging] .spread-stack__thumb::after {
   opacity: 0.08;
 }
-.spread-stack__columns:focus-visible {
-  outline: 2px solid var(--paper);
-  outline-offset: 2px;
+/* Touch never shows a focus ring (iOS paints :focus-visible after a tap); a keyboard still does. */
+.spread-stack__columns:focus {
+  outline: none;
+}
+@media (hover: hover) {
+  .spread-stack__columns:focus-visible {
+    outline: 2px solid var(--paper);
+    outline-offset: 2px;
+  }
 }
