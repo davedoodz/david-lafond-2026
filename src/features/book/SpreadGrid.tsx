@@ -52,6 +52,9 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
   )
 })
 
+const VIEWS = 4
+const viewLabel = (view: number) => (view === 0 ? 'Single pages' : `${view} spreads per row`)
+
 /**
  * Phones' book: every spread stacked top to bottom, to read by scrolling. The spreads are not
  * interactive (no flipping, no zoom); the covers sit centred on their own. A scrub bar fixed at the
@@ -60,10 +63,101 @@ export const SpreadGrid = memo(function SpreadGrid({ current, onOpen, showPageNu
  */
 export const SpreadStack = memo(function SpreadStack() {
   const list = useRef<HTMLOListElement>(null)
+  const bar = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(true)
-  const [scrub, setScrub] = useState(2)
   // 0 = single pages; 1–4 = spreads per row.
-  const columns = Math.round(scrub)
+  const [columns, setColumns] = useState(2)
+  const columnsRef = useRef(columns)
+  columnsRef.current = columns
+
+  /*
+   * View changes must never stall on image decoding. The 1600px "medium" pages decode to ~14 MB each,
+   * and iOS drops decoded images under memory pressure, so a view that brought a dozen of them on
+   * screen at a new size used to hitch. Pages are only ~80–110 px wide at 2–4 per row, so those views
+   * use the 480px thumbs (2.3 MB for the whole book, all loaded up front); single pages and one spread
+   * per row use medium, painted over its thumb so a page is never blank while it sharpens.
+   */
+  const sharp = columns <= 1
+
+  /*
+   * The scrubber is driven straight from pointer events: the circle's position is a CSS variable
+   * written once per frame, with no React render, so it tracks the finger at full frame rate. React
+   * only hears about it when the nearest whole view changes. (A native range input on iOS needs the
+   * thumb grabbed precisely and fights the page's scroll; this one takes a drag anywhere on the bar.)
+   */
+  useEffect(() => {
+    const el = bar.current
+    if (!el) return
+    let value = columnsRef.current
+    let grab = 0
+    let frame = 0
+    let dragging = false
+    const paint = () => {
+      frame = 0
+      el.style.setProperty('--scrub', String(value / VIEWS))
+      const next = Math.round(value)
+      if (next !== columnsRef.current) setColumns(next)
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(paint) }
+    // Measured once per press (not per move): the circle's centre runs from `left` over `width` px.
+    let geometry = { left: 0, width: 1 }
+    const measureTrack = () => {
+      const box = el.getBoundingClientRect()
+      const style = getComputedStyle(el)
+      const thumb = parseFloat(style.getPropertyValue('--thumb')) || 34
+      const inset = parseFloat(style.paddingLeft) || 0
+      geometry = { left: box.left + el.clientLeft + inset + thumb / 2, width: el.clientWidth - inset * 2 - thumb }
+    }
+    const at = (x: number) => Math.min(VIEWS, Math.max(0, ((x - geometry.left) / geometry.width) * VIEWS))
+    const down = (event: PointerEvent) => {
+      if (event.button !== 0) return
+      event.preventDefault()
+      el.setPointerCapture(event.pointerId)
+      el.focus({ preventScroll: true })
+      dragging = true
+      el.dataset.dragging = 'true'
+      measureTrack()
+      // Grabbing the circle keeps it under the finger; pressing the track brings it there.
+      const offset = ((at(event.clientX) - value) / VIEWS) * geometry.width
+      grab = Math.abs(offset) <= 22 ? at(event.clientX) - value : 0
+      value = Math.min(VIEWS, Math.max(0, at(event.clientX) - grab))
+      schedule()
+    }
+    const move = (event: PointerEvent) => {
+      if (!dragging) return
+      value = Math.min(VIEWS, Math.max(0, at(event.clientX) - grab))
+      schedule()
+    }
+    const up = () => {
+      if (!dragging) return
+      dragging = false
+      delete el.dataset.dragging
+    }
+    const key = (event: KeyboardEvent) => {
+      const delta = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[event.key]
+      const to = event.key === 'Home' ? 0 : event.key === 'End' ? VIEWS : delta === undefined ? null : Math.round(value) + delta
+      if (to === null) return
+      event.preventDefault()
+      value = Math.min(VIEWS, Math.max(0, to))
+      schedule()
+    }
+    el.style.setProperty('--scrub', String(value / VIEWS))
+    el.addEventListener('pointerdown', down)
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerup', up)
+    el.addEventListener('pointercancel', up)
+    el.addEventListener('lostpointercapture', up)
+    el.addEventListener('keydown', key)
+    return () => {
+      cancelAnimationFrame(frame)
+      el.removeEventListener('pointerdown', down)
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerup', up)
+      el.removeEventListener('pointercancel', up)
+      el.removeEventListener('lostpointercapture', up)
+      el.removeEventListener('keydown', key)
+    }
+  }, [])
 
   useEffect(() => {
     const ol = list.current
@@ -116,7 +210,14 @@ export const SpreadStack = memo(function SpreadStack() {
             <li key={spread} className="spread-stack__spread" data-side={side} data-surface={pageSurface(pages[0])}
               aria-label={side === 'front' ? 'Cover' : side === 'back' ? 'Back cover' : `Pages ${pageLabel(pages)}`}>
               {pages.map((page) => (
-                <img key={page} src={pageUrl(page, 'medium')} alt="" loading={spread < 2 ? 'eager' : 'lazy'} decoding="async" />
+                <img
+                  key={page}
+                  src={pageUrl(page, sharp ? 'medium' : 'thumb')}
+                  alt=""
+                  loading={sharp && spread >= 2 ? 'lazy' : 'eager'}
+                  decoding="async"
+                  style={sharp ? { backgroundImage: `url(${pageUrl(page, 'thumb')})` } : undefined}
+                />
               ))}
             </li>
           )
@@ -124,26 +225,21 @@ export const SpreadStack = memo(function SpreadStack() {
       </ol>
       {/* Portalled: an ancestor's transform would otherwise trap `position: fixed`. */}
       {createPortal(
-        <label className="spread-stack__columns" data-shown={shown} inert={!shown}>
-          <span className="visually-hidden">Book view</span>
-          <input
-            type="range"
-            min={0}
-            max={4}
-            step="any"
-            value={scrub}
-            aria-valuetext={columns === 0 ? 'Single pages' : `${columns} spreads per row`}
-            onChange={(event) => setScrub(Number(event.currentTarget.value))}
-            onKeyDown={(event) => {
-              // Arrow keys step whole views; dragging stays free.
-              const delta = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[event.key]
-              if (!delta) return
-              event.preventDefault()
-              setScrub(Math.min(4, Math.max(0, columns + delta)))
-            }}
-            style={{ '--stack-fill': scrub / 4 } as CSSProperties}
-          />
-        </label>,
+        <div
+          ref={bar}
+          className="spread-stack__columns"
+          data-shown={shown}
+          inert={!shown}
+          role="slider"
+          tabIndex={0}
+          aria-label="Book view"
+          aria-valuemin={0}
+          aria-valuemax={VIEWS}
+          aria-valuenow={columns}
+          aria-valuetext={viewLabel(columns)}
+        >
+          <span className="spread-stack__thumb" aria-hidden="true" />
+        </div>,
         document.body,
       )}
     </>
