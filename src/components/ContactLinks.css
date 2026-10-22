@@ -28,7 +28,7 @@
 .contact-links__icon {
   /* `top` (not translate) carries the Y dial, so it stacks with the hover slide below. */
   position: relative;
-  top: var(--icon-arrow-y, 0px);
+  top: calc(var(--icon-arrow-y, 0px) + var(--icon-nudge, 0px));
   width: 1em;
   height: 1em;
   opacity: 0;

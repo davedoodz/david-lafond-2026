@@ -12,11 +12,12 @@ const CONFIG = {
   },
 }
 
+/** `nudge`: optical fix for this label's arrow on top of the shared Y dial, in px (+ lowers it). */
 const LINKS = [
-  { label: 'Resume', href: RESUME_URL },
-  { label: 'LinkedIn', href: SOCIAL.linkedin },
-  { label: 'Github', href: SOCIAL.github },
-  { label: 'X', href: SOCIAL.x },
+  { label: 'Resume', href: RESUME_URL, nudge: 1 },
+  { label: 'LinkedIn', href: SOCIAL.linkedin, nudge: 0 },
+  { label: 'Github', href: SOCIAL.github, nudge: 0 },
+  { label: 'X', href: SOCIAL.x, nudge: -1 },
 ]
 
 export function ContactLinks() {
@@ -31,7 +32,7 @@ export function ContactLinks() {
     <ul className="contact-links" style={style}>
       {LINKS.map((link) => (
         <li key={link.label} className="contact-links__row">
-          <a className="contact-links__link" href={link.href} target="_blank" rel="noopener noreferrer">
+          <a className="contact-links__link" href={link.href} target="_blank" rel="noopener noreferrer" style={link.nudge ? ({ '--icon-nudge': `${link.nudge}px` } as CSSProperties) : undefined}>
             {link.label}
             <ArrowUpRightIcon className="contact-links__icon" />
           </a>
