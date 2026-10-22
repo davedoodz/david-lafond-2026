@@ -20,6 +20,8 @@
      edge: the bottom 150px (below the phone's resting frame, which ends at 848) fade to clear. Hosts size the
      frame for the 900 scene and let the extra 100 hang below it (filoSourceSteps.css, .fss-app--scene). */
   .stage { width: 1440px; height: 1000px; mask-image: linear-gradient(#000 850px, transparent 1000px); }
+  /* A finger on glass leaves no mark: the cursor's click ring (app.css › .ring) is the portal's, not the phone's. */
+  .ring { display: none; }
 
   /* ───────── The swatches: placed by script (translate + rotate), centred on the stage ───────── */
   .swatch { position: absolute; left: 720px; top: 450px; width: 280px; height: auto; translate: -50% -50%;
