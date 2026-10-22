@@ -182,8 +182,8 @@ export const SHEET_LABEL_TOP = (() => {
 type Morph = { curve: string; enterDistance: number; startSide: number; startArch: number; startRadius: number }
 /**
  * The Selected projects sheet's dome as saved in tuning.json: its morph dials (desktop and ≤640px)
- * and its peek (the Work page's Hero dials). About's playground sheet draws and moves its dome with
- * them, so both sheets arc and flatten alike.
+ * and its phone peek (the Work page's Hero dial). About's playground sheet draws and moves its dome
+ * with them, so both sheets arc and flatten alike.
  */
 export const SHEET_DOME = (() => {
   const all = saved as Record<string, Record<string, unknown> | undefined>
@@ -200,13 +200,11 @@ export const SHEET_DOME = (() => {
       startRadius: s.startRadius ?? dials.startRadius[0],
     }
   }
-  const peek = (key: 'peekDesktop' | 'peekMobile', fallback: number) =>
-    typeof hero?.[key] === 'number' ? (hero[key] as number) : fallback
+  const peekMobile = typeof hero?.peekMobile === 'number' ? hero.peekMobile : 28
   return {
     morph: morph('morph'),
     morphMobile: morph('morphMobile'),
-    peekDesktop: peek('peekDesktop', 40),
-    peekMobile: peek('peekMobile', 28),
+    peekMobile,
   }
 })()
 
