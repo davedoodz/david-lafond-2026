@@ -142,8 +142,14 @@ function useMomoWaveGapFix(target: RefObject<HTMLElement | null>) {
       const ay = slotRect.top + slotHeight / 2
       const waveTop = ay - (amp + thick / 2) * scale
       const waveBottom = ay + (amp + thick * 0.8) * scale
-      // The nav row's text (WORK / ABOUT / RESUME), not the nav box, whose padding sits lower.
-      const navBottom = settled(navLink, textRect(navLink)).bottom
+      // The nav row's text (WORK / ABOUT / RESUME), not the nav box, whose padding sits lower. The
+      // nav rests at the case page's top (.case__light), but during the intro it waits fixed at the
+      // viewport top (Nav.tsx, data-over-intro), so measure the text against the nav box and place
+      // it at the case top rather than reading where it is right now.
+      const nav = navLink.closest<HTMLElement>('.nav')
+      const light = main.querySelector<HTMLElement>('.case__light')
+      const linkBottom = settled(navLink, textRect(navLink)).bottom
+      const navBottom = nav && light ? light.getBoundingClientRect().top + (linkBottom - nav.getBoundingClientRect().top) : linkBottom
       const gapAbove = waveTop - navBottom
       const gapBelow = capTop(title) - waveBottom
       const correction = Math.max(0, gapBelow - gapAbove)
