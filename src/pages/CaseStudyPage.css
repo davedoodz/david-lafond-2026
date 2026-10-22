@@ -348,6 +348,20 @@
   user-select: none;
 }
 
+/* Selection: .case is data-selectable (CaseStudyPage.tsx), so all copy can be highlighted, eyebrows
+   included (global.css turns them off elsewhere). Media, the screen prototypes (Momo welcome phone,
+   watch + phone demo, the paper) and controls stay out: a drag across them must not light up
+   interface text. */
+.case[data-selectable] .eyebrow {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.case[data-selectable] :is(video, canvas, img, svg, button, .case__back, .case__braid-hint, .case__devices, .mc-stage, .arxiv-paper, .chat, .footer),
+.case[data-selectable] :is(button, .case__back, .case__braid-hint, .case__devices, .mc-stage, .arxiv-paper, .chat, .footer) * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* --- Snap (page.snap): one stop per section, then the footer. */
 html[data-case-snap='proximity'] {
   scroll-snap-type: y proximity;

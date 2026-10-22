@@ -113,6 +113,11 @@ export function SelectionHighlight() {
       if (!raf) raf = requestAnimationFrame(draw)
     }
     redrawRef.current = schedule
+    // Copy that rises in as it scrolls into view (a drag auto-scrolls into it) moves after the last
+    // selectionchange; redraw when it lands so the fill stays on the text.
+    const settle = (): void => {
+      if (host.childElementCount) schedule()
+    }
 
     const dismissOnClick = (event: PointerEvent): void => {
       if (event.button !== 0 || (event.target instanceof Element && event.target.closest('.ghost-button.is-cued'))) return
@@ -125,12 +130,16 @@ export function SelectionHighlight() {
     document.addEventListener('selectionchange', schedule)
     document.addEventListener('pointerdown', dismissOnClick, true)
     window.addEventListener('resize', schedule)
+    document.addEventListener('animationend', settle)
+    document.addEventListener('transitionend', settle)
     return () => {
       cancelAnimationFrame(raf)
       redrawRef.current = null
       document.removeEventListener('selectionchange', schedule)
       document.removeEventListener('pointerdown', dismissOnClick, true)
       window.removeEventListener('resize', schedule)
+      document.removeEventListener('animationend', settle)
+      document.removeEventListener('transitionend', settle)
     }
   }, [])
 
