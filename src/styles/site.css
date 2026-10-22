@@ -16,3 +16,12 @@
 .site[data-surface='light'] {
   background: var(--paper);
 }
+/* Phones: the paper surfaces (.site here, .case in CaseStudyPage.css) end on the same fractional pixel
+   as the dark footer. iOS Safari snaps the paper's edge outward and the footer's inward, so a third of a
+   device row of paper showed as a light hairline under Filo's footer. The bottom band of each paper
+   surface is footer-dark; the footer (far taller than the band) always covers it, so nothing else shows. */
+@media (max-width: 640px) {
+  .site[data-surface='light'] {
+    background: linear-gradient(to top, var(--ink-900) 48px, var(--paper) 48px);
+  }
+}
