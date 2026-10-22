@@ -12,9 +12,12 @@ export const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /* Fill the window with the stage. A stage marked data-fit="height" fills the window's height instead and
    centres across it, so a wide scene keeps its middle and crops its sides in a narrow window.
-   Opened on its own, this fits the prototype to the tab. Embedded, the Filo case study lays the frame
-   out at the stage's own size and scales the frame itself (FiloSourceSteps.tsx › STAGE), so this
-   settles on scale 1. A 0×0 read is skipped rather than latched in as a zero scale. */
+   Opened on its own (or in a studio frame), this fits the prototype to its window. The Filo case study
+   lays each frame out at the stage's own size and scales the frame itself (FiloSourceSteps.tsx › STAGE,
+   filoStoryArt.tsx › GLIMPSE), and marks it with ?hostfit: then the stage never fits itself and stays at
+   scale 1. Fitting there was a no-op at best, and iOS Safari could hand a lazy frame a passing small
+   size while the page loaded or transitioned; the stage shrank to it and stayed shrunk under the
+   host's own scale. A 0×0 read is skipped rather than latched in as a zero scale. */
 let scale = 1
 const byHeight = stage.dataset.fit === 'height'
 function fit() {
@@ -24,9 +27,11 @@ function fit() {
   stage.style.scale = scale
   if (byHeight) stage.style.left = `${(w - W * scale) / 2}px`
 }
-addEventListener('resize', fit)
-new ResizeObserver(fit).observe(document.documentElement)
-fit()
+if (!new URLSearchParams(location.search).has('hostfit')) {
+  addEventListener('resize', fit)
+  new ResizeObserver(fit).observe(document.documentElement)
+  fit()
+}
 
 /* ── Timing: every wait checks the run token, so a jump or pause stops the script cleanly. ── */
 let token = 0, paused = false

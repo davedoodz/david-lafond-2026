@@ -241,7 +241,7 @@ function Opportunity({ image, olive, speed, close, products }: { image: string; 
         <div className="fs-opp-warp" style={{ width: SCREEN_BOX.width, height: SCREEN_BOX.height, transform: photo.warp }}>
           <iframe
             ref={frameRef}
-            src={GLIMPSE.src}
+            src={`${GLIMPSE.src}?hostfit`}
             title="Filo App Clip: the tag is read and Bacterial Cellulose's material record opens."
             width={GLIMPSE.width}
             height={GLIMPSE.height}
