@@ -17,6 +17,19 @@
     font-size: var(--m-hero-title-size);
     line-height: var(--m-hero-title-lh);
   }
+  /* Momo and Filo: the case title reads clearly above the section titles (--m-title-size) and never
+     takes more than two lines. It runs wider than the text column, to 24px from each screen edge
+     (the column's own margin, --m-side, grows past 24px on wider phones), and its size follows that
+     width. Momo's title sets the limit: its best two-line split ("A Novel Multimodal AI Reflection /
+     System for Behavioral Change") is 15.65em on the longer line, and its glyphs overhang that by up
+     to ~1%, so width ÷ 16.3 always fits two lines inside the margins; both pages share the size so
+     their titles match. */
+  main.case:is([data-work='momo'], [data-work='filo']) .case__title.case__title--hero {
+    justify-self: stretch;
+    width: auto;
+    margin-inline: calc(24px - var(--m-side));
+    font-size: min(26px, (100vw - 48px) / 16.3);
+  }
   main.case :is(.case__title:not(.case__title--hero), .case__story-title, .persona__title, .fs-copy > h2) {
     font-size: var(--m-title-size);
     line-height: var(--m-title-lh);
