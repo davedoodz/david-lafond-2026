@@ -62,12 +62,14 @@ function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; ti
       if (event.source !== frameRef.current?.contentWindow) return
       if (event.data?.filoAppFlow === 'phone') host.toggleAttribute('data-phone', !!event.data.on)
       if (event.data?.filoAppFlow !== 'ready') return
+      tellFlow(frameRef.current, 'fit')
       tellSpeed(frameRef.current, speedRef.current)
       syncFlow(frameRef.current, live.current)
     }
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.intersectionRatio >= 0.2) {
         live.current.visible = true
+        tellFlow(frameRef.current, 'fit')
         syncFlow(frameRef.current, live.current)
       } else if (!entry.isIntersecting) {
         live.current = { visible: false, userPaused: false }
@@ -75,10 +77,15 @@ function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; ti
         tellFlow(frameRef.current, 'restart')
       }
     }, { threshold: [0, 0.2] })
+    // iOS Safari doesn't tell a frame's own document when the frame grows (player.js › fit), so every
+    // change to the frame's box is passed in from here.
+    const sizes = new ResizeObserver(() => tellFlow(frameRef.current, 'fit'))
     window.addEventListener('message', onMessage)
     observer.observe(host)
+    if (frameRef.current) sizes.observe(frameRef.current)
     return () => {
       observer.disconnect()
+      sizes.disconnect()
       window.removeEventListener('message', onMessage)
     }
   }, [])

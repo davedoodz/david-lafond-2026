@@ -1,5 +1,6 @@
 /** Messages to an embedded Filo prototype (public/work/filo/*.html, driven by filo-app-flow/player.js). */
-export type FlowCommand = 'play' | 'pause' | 'restart'
+/** 'fit': the frame's box changed; the prototype rescales its stage to it (player.js). */
+export type FlowCommand = 'play' | 'pause' | 'restart' | 'fit'
 
 export const tellFlow = (frame: HTMLIFrameElement | null, command: FlowCommand) =>
   frame?.contentWindow?.postMessage({ filoAppFlow: command }, window.location.origin)

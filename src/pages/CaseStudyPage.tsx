@@ -715,6 +715,15 @@ export function CaseStudyPage({ id }: Props) {
           ) : s.media.figure === 'research' ? (
             <FiloResearchFigure
               settings={s as unknown as FiloResearchSettings}
+              bridge={id === 'filo' && (s as { bridge?: string }).bridge ? (
+                <EditableText
+                  as="p"
+                  className="case__body filo-research__bridge"
+                  label={`${key} bridge`}
+                  value={(s as { bridge?: string }).bridge ?? ''}
+                  onChange={edit(`${key}.bridge`)}
+                />
+              ) : undefined}
               quotes={id === 'filo' ? researchQuotes() : undefined}
             />
           ) : s.media.figure === 'next' ? (

@@ -595,6 +595,8 @@ export const FILO_CONFIG = {
     }, NO_VIDEO),
     spacing: sectionSpacingDials(88, 64, 36),
     textReveal: textRevealDials(),
+    /** The sentence between the interview video and the quote cards. */
+    bridge: txt('The bottleneck was proving they could survive testing, production, and scale.'),
     primaryVisual: { type: 'select' as const, options: ['image', 'video'], default: 'image' },
     miroVideo: {
       speed: [1, 0.25, 4, 0.05] as Tuple,

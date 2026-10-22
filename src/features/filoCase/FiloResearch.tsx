@@ -120,8 +120,9 @@ function ResearchVideo({ src, poster, width, height, label, speed, cropRight = 0
   )
 }
 
-/** `quotes`: the interview quote carousel, placed under the primary-research video. */
-export function FiloResearchFigure({ settings, quotes }: { settings?: FiloResearchSettings; quotes?: ReactNode }) {
+/** `bridge`: the sentence between the interview video and the quote cards; `quotes`: the interview
+    quote carousel, placed under it. */
+export function FiloResearchFigure({ settings, bridge, quotes }: { settings?: FiloResearchSettings; bridge?: ReactNode; quotes?: ReactNode }) {
   const primaryVisual = settings?.primaryVisual ?? 'image'
   const miroSpeed = settings?.miroVideo?.speed ?? 1
   const miroScale = settings?.miroVideo?.scale ?? 1
@@ -148,6 +149,8 @@ export function FiloResearchFigure({ settings, quotes }: { settings?: FiloResear
           />
         </div>
       </figure>
+
+      {bridge}
 
       {quotes && <div className="filo-research__quotes" data-quotes="marquee">{quotes}</div>}
 
