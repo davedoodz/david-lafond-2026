@@ -6,6 +6,12 @@
 /* Keep page surfaces independent of Safari's separately sampled document edge colors. */
 .site {
   background: var(--ink-900);
+  /* Every page ends with the dark footer, on a fractional pixel. The last device row below it showed the
+     document colour: white on About, or Safari's light top-edge colour elsewhere, as a thin white line.
+     This shadow paints the footer colour down past the page end. Offset = spread, so it starts at the top
+     of .site, under the page's own background. Shadows add no scroll height. It sits here, not on the
+     footer, because the About dome and the case sheets clip-path their footer at that same fractional edge. */
+  box-shadow: 0 100vh 0 100vh var(--ink-900);
 }
 .site[data-surface='light'] {
   background: var(--paper);

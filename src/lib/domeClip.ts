@@ -36,12 +36,15 @@ export function domeClip(sidePx: number, top: DomeEdge, topK: number, bottom: Do
  * Full-width sheet whose top and bottom edges are circular arcs (a true circle segment, not the
  * ellipse of `domeClip`, whose sides turn vertical and read as stretched). `topSag` / `bottomSag`
  * are each arc's height in px at its middle; 0 is a flat edge. `w` × `h` is the clipped box.
+ * A flat bottom edge sits 1px below `h`: callers pass `offsetHeight`, which rounds, and an edge at the
+ * rounded height trims up to half a pixel off the box. On About that cut the footer at the page end and
+ * showed the light page behind it as a white line on phones.
  */
 export function arcClip(w: number, h: number, topSag: number, bottomSag: number) {
   const r = (s: number) => n(((w * w) / 4 + s * s) / (2 * s))
   const n = (v: number) => v.toFixed(2)
   const yb = h - bottomSag
   const top = topSag > 0.5 ? `M0 ${n(topSag)} A${r(topSag)} ${r(topSag)} 0 0 1 ${n(w)} ${n(topSag)}` : `M0 0 L${n(w)} 0`
-  const bottom = bottomSag > 0.5 ? `L${n(w)} ${n(yb)} A${r(bottomSag)} ${r(bottomSag)} 0 0 1 0 ${n(yb)}` : `L${n(w)} ${n(h)} L0 ${n(h)}`
+  const bottom = bottomSag > 0.5 ? `L${n(w)} ${n(yb)} A${r(bottomSag)} ${r(bottomSag)} 0 0 1 0 ${n(yb)}` : `L${n(w)} ${n(h + 1)} L0 ${n(h + 1)}`
   return `path('${top} ${bottom} Z')`
 }
