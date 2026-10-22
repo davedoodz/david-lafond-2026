@@ -79,7 +79,7 @@
 /* Step 3: the box closed → open → unwrapped, crossfading every --fss-box-cycle (Filo source steps ›
    box › speed). The frames are transparent cut-outs on one canvas, each fading in over the last in
    place; the open frame drops out once the unwrapped one covers it, so the return is one clean
-   unwrapped → closed fade. It plays only while the step is on screen, and holds unwrapped with
+   unwrapped → closed fade. It runs only while the step is on screen, and holds unwrapped with
    reduced motion. Box › scale and x / y: see step 3 above. */
 .fss-box { position: relative; left: var(--fss-box-x, 0px); top: var(--fss-box-y, 0px); display: grid; width: min(100%, var(--fss-box-w, 489px)); scale: var(--fss-box-scale, 1); margin-top: -8px; }
 .fss-box__frame { grid-area: 1 / 1; display: block; width: 100%; height: auto; user-select: none; pointer-events: none; }
@@ -88,7 +88,12 @@
 @keyframes fss-box-open { 0%, 22% { opacity: 0; } 30%, 58% { opacity: 1; } 66%, 100% { opacity: 0; } }
 @keyframes fss-box-unwrapped { 0%, 50% { opacity: 0; } 58%, 86% { opacity: 1; } 96%, 100% { opacity: 0; } }
 
-.fss-step:not([data-playing]) :is(.fss-box__frame--open, .fss-box__frame--unwrapped) { animation-play-state: paused; }
+/* Off screen the loop is removed, not paused: a pause could catch two photos part-way through a crossfade
+   and hold them stacked at odd opacities. Without it the box rests on the closed frame (the loop's 0%),
+   and each return to the step starts the loop over from there with no jump. */
+@media (prefers-reduced-motion: no-preference) {
+  .fss-step:not([data-playing]) :is(.fss-box__frame--open, .fss-box__frame--unwrapped) { animation: none; opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
   :is(.fss-box__frame--open, .fss-box__frame--unwrapped) { animation: none; }
 }
