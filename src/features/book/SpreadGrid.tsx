@@ -113,7 +113,6 @@ export const SpreadStack = memo(function SpreadStack() {
       if (event.button !== 0) return
       event.preventDefault()
       el.setPointerCapture(event.pointerId)
-      el.focus({ preventScroll: true })
       dragging = true
       el.dataset.dragging = 'true'
       measureTrack()
