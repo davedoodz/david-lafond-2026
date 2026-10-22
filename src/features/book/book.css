@@ -1441,16 +1441,20 @@
   }
 }
 
-/* Phones' book: the spreads-per-row scrub bar, fixed at the bottom in a 44px frosted pill. Its white
-   circle (34px, like the pill buttons it replaced) slides freely; the fill line follows it. */
+/* Phones' book: the view scrub bar, fixed at the bottom in a 44px frosted pill. Its white circle
+   (34px, like the pill buttons it replaced) follows the finger: SpreadStack writes --scrub (0–1) once
+   per frame and the circle and fill line move by transform only, on their own layers, so a drag never
+   repaints the blurred pill. */
 .spread-stack__columns {
+  --bar-w: 168px;
   --thumb: 34px;
+  --travel: calc(var(--bar-w) - 2px - 8px - var(--thumb));
   position: fixed;
   z-index: 40;
   left: 50%;
   bottom: calc(24px + env(safe-area-inset-bottom));
   display: block;
-  width: 168px;
+  width: var(--bar-w);
   height: 44px;
   padding: 4px;
   border-radius: 999px;
@@ -1460,51 +1464,67 @@
   backdrop-filter: blur(14px);
   translate: -50% 0;
   transition: opacity 240ms ease, translate 320ms var(--ease-out);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .spread-stack__columns[data-shown='false'] {
   opacity: 0;
   translate: -50% 12px;
   pointer-events: none;
 }
-.spread-stack__columns input {
-  display: block;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  background:
-    linear-gradient(rgb(255 255 255 / 0.55) 0 0) calc(var(--thumb) / 2) 50% /
-      calc((100% - var(--thumb)) * var(--stack-fill, 0)) 2px no-repeat,
-    linear-gradient(rgb(255 255 255 / 0.16) 0 0) 50% 50% / calc(100% - var(--thumb)) 2px no-repeat;
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: pointer;
-  touch-action: pan-y;
-  -webkit-tap-highlight-color: transparent;
+/* Track and fill: a hairline between the circle's two end positions. */
+.spread-stack__columns::before,
+.spread-stack__columns::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: calc(4px + var(--thumb) / 2);
+  width: var(--travel);
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  pointer-events: none;
 }
-.spread-stack__columns input::-webkit-slider-thumb {
+.spread-stack__columns::before {
+  background: rgb(255 255 255 / 0.16);
+}
+.spread-stack__columns::after {
+  background: rgb(255 255 255 / 0.55);
+  transform-origin: left center;
+  transform: scaleX(var(--scrub, 0.5));
+  will-change: transform;
+}
+.spread-stack__thumb {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  left: 4px;
   width: var(--thumb);
   height: var(--thumb);
-  border: 0;
   border-radius: 50%;
   background: var(--paper);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.45);
-  -webkit-appearance: none;
-  appearance: none;
-  transition: scale 160ms var(--ease-out);
+  transform: translateX(calc(var(--scrub, 0.5) * var(--travel)));
+  will-change: transform;
+  pointer-events: none;
 }
-.spread-stack__columns input:active::-webkit-slider-thumb {
-  scale: 0.92;
+.spread-stack__thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ink-900);
+  opacity: 0;
+  transition: opacity 160ms var(--ease-out);
 }
-.spread-stack__columns input::-moz-range-thumb {
-  width: var(--thumb);
-  height: var(--thumb);
-  border: 0;
-  border-radius: 50%;
-  background: var(--paper);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.45);
+.spread-stack__columns[data-dragging] .spread-stack__thumb::after {
+  opacity: 0.08;
 }
-.spread-stack__columns input:focus-visible {
+.spread-stack__columns:focus-visible {
   outline: 2px solid var(--paper);
   outline-offset: 2px;
-  border-radius: 999px;
 }
