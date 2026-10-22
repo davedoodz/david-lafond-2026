@@ -667,6 +667,17 @@ export function CaseStudyPage({ id }: Props) {
           ) : (
             <EditableText className="case__body" label={`${key} body`} value={s.body} onChange={edit(`${key}.body`)} selectable={id === 'momo' && key === 'outcomes'} />
           ))}
+          {id === 'filo' && (s as { bridge?: string }).bridge && (
+            // Desktop reads "The bottleneck was proving…" right under the body; phones place it between
+            // the interview video and the quote cards instead (FiloResearchFigure, filoResearch.css).
+            <EditableText
+              as="p"
+              className="case__body case__body-bridge"
+              label={`${key} bridge`}
+              value={(s as { bridge?: string }).bridge ?? ''}
+              onChange={edit(`${key}.bridge`)}
+            />
+          )}
           {isHero && (
             <dl className="case__meta" style={{ '--meta-cols': metaFields.length } as CSSProperties}>
               {metaFields.map((field) => {

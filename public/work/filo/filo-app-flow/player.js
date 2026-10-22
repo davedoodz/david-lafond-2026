@@ -10,27 +10,15 @@ export const stage = $('#stage'), cursor = $('#cursor')
 export const W = stage.offsetWidth, H = stage.offsetHeight
 export const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/* Fill the frame with the stage. A stage marked data-fit="height" fills the frame's height instead and
-   centres across it, so a wide scene keeps its middle and crops its sides in a narrow frame.
-   The host's own box can settle in more than one step on a phone: its width often comes from a CSS
-   variable a React effect sets after the first paint, and a flex item with an aspect ratio can hand
-   WebKit a 0×0 box on its very first layout before correcting itself. On iOS Safari neither this
-   window's `resize` nor a ResizeObserver in here reliably fires when the frame grows afterwards, which
-   left a prototype latched at a tiny first-layout scale in the frame's corner. So the size is read from
-   the frame element itself (same origin) when it can be, and the host page, which watches the frame's
-   box with its own ResizeObserver, posts { filoAppFlow: 'fit' } on every change. A 0×0 read is skipped
-   rather than latched in as a permanent zero scale. */
+/* Fill the window with the stage. A stage marked data-fit="height" fills the window's height instead and
+   centres across it, so a wide scene keeps its middle and crops its sides in a narrow window.
+   Opened on its own, this fits the prototype to the tab. Embedded, the Filo case study lays the frame
+   out at the stage's own size and scales the frame itself (FiloSourceSteps.tsx › STAGE), so this
+   settles on scale 1. A 0×0 read is skipped rather than latched in as a zero scale. */
 let scale = 1
 const byHeight = stage.dataset.fit === 'height'
-function frameSize() {
-  try {
-    const frame = window.frameElement
-    if (frame) return [frame.clientWidth, frame.clientHeight]
-  } catch {}
-  return [innerWidth, innerHeight]
-}
 function fit() {
-  const [w, h] = frameSize()
+  const w = innerWidth, h = innerHeight
   if (!w || !h) return
   scale = byHeight ? h / H : Math.min(w / W, h / H)
   stage.style.scale = scale
@@ -38,9 +26,6 @@ function fit() {
 }
 addEventListener('resize', fit)
 new ResizeObserver(fit).observe(document.documentElement)
-addEventListener('message', ({ source, origin, data }) => {
-  if (source === parent && origin === location.origin && data?.filoAppFlow === 'fit') fit()
-})
 fit()
 
 /* ── Timing: every wait checks the run token, so a jump or pause stops the script cleanly. ── */

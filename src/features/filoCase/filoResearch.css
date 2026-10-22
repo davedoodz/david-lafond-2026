@@ -81,15 +81,29 @@
   margin: 0 calc(50% - min(620px, 50vw));
   animation: none;
 }
-/* "The bottleneck was proving…" between the interview video and the cards: the figure's row gap on
-   both sides, measured to the cards themselves, so the strip's shadow padding is taken back above.
-   (The section body's own top margin is dropped here.) */
+/* "The bottleneck was proving…": on phones it sits between the interview video and the cards, the
+   figure's row gap on both sides, measured to the cards themselves, so the strip's shadow padding is
+   taken back above (the section body's own top margin is dropped). On desktop it stays in the copy,
+   right under the body (CaseStudyPage › .case__body-bridge). */
 .filo-research p.filo-research__bridge {
   margin: 0;
   text-align: center;
 }
-.filo-research .filo-research__bridge + .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
-  margin-top: calc(-1 * var(--qa-shadow-pad, 0px));
+.case__body.case__body-bridge {
+  margin-top: 0;
+}
+@media (min-width: 641px) {
+  .filo-research p.filo-research__bridge {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .case__body.case__body-bridge {
+    display: none;
+  }
+  .filo-research .filo-research__bridge + .filo-research__quotes .persona__quotes:has([data-filo-quote]) {
+    margin-top: calc(-1 * var(--qa-shadow-pad, 0px));
+  }
 }
 
 @media (max-width: 640px) {
