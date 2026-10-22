@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { ContactCta } from '../components/ContactCta'
 import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
-import { BackLink, Nav } from '../components/Nav'
+import { BackLink } from '../components/Nav'
 import type { Work } from '../data/works'
 import { MOMO_BRAID_LAYOUT_EVENT, MomoIntro } from '../features/momoIntro/MomoIntro'
 import { MomoWelcome } from '../features/momoIntro/MomoWelcome'
@@ -742,7 +742,6 @@ export function CaseStudyPage({ id }: Props) {
       {id === 'momo' && <MomoPhoneDials target={mainRef} />}
       {id === 'filo' && <FiloPhoneDials target={mainRef} />}
       <div className="case__light" data-surface="light">
-        <Nav route={id} />
         {page.showSidebar && (
           <aside className="case__sidebar" data-hidden={onDark || active === 'moment' || undefined} aria-label="Sections">
             <BackLink className="case__back" />

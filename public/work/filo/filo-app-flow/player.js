@@ -11,15 +11,24 @@ export const W = stage.offsetWidth, H = stage.offsetHeight
 export const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /* Fill the frame with the stage. A stage marked data-fit="height" fills the frame's height instead and
-   centres across it, so a wide scene keeps its middle and crops its sides in a narrow frame. */
+   centres across it, so a wide scene keeps its middle and crops its sides in a narrow frame.
+   The host's own box can settle in more than one step on a phone: its width often comes from a CSS
+   variable a React effect sets after the first paint, and a flex item with an aspect ratio can hand
+   WebKit a 0×0 box on its very first layout before correcting itself. A `resize` on this window alone
+   isn't a safe signal for either, so a ResizeObserver on the document watches the box directly and a
+   0×0 read is skipped rather than latched in as a permanent zero scale. */
 let scale = 1
 const byHeight = stage.dataset.fit === 'height'
 function fit() {
-  scale = byHeight ? innerHeight / H : Math.min(innerWidth / W, innerHeight / H)
+  const w = innerWidth, h = innerHeight
+  if (!w || !h) return
+  scale = byHeight ? h / H : Math.min(w / W, h / H)
   stage.style.scale = scale
-  if (byHeight) stage.style.left = `${(innerWidth - W * scale) / 2}px`
+  if (byHeight) stage.style.left = `${(w - W * scale) / 2}px`
 }
-addEventListener('resize', fit); fit()
+addEventListener('resize', fit)
+new ResizeObserver(fit).observe(document.documentElement)
+fit()
 
 /* ── Timing: every wait checks the run token, so a jump or pause stops the script cleanly. ── */
 let token = 0, paused = false

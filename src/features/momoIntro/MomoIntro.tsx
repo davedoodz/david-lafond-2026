@@ -444,7 +444,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       slotX = box ? box.left + box.width / 2 : vw / 2
       // Desktop landing matches the hero composition: band level with the navigation,
       // centered phone continuing below the fold. Keep the narrow-screen band below the nav.
-      const nav = document.querySelector('.case .nav')?.getBoundingClientRect()
+      // Queried from the document, not `.case`: the nav is a page-level persistent element, not
+      // necessarily a descendant of this case study's root (momoMobile.ts has the same note).
+      const nav = document.querySelector('.nav')?.getBoundingClientRect()
       const previousLanding = landingY
       landingY = vw > 800 && box && nav ? Math.max(stageH, slotY - (nav.top + nav.height / 2) - tRef.current.hero.topGap) : stageH
       if (locked) setFloor(floor >= previousLanding ? landingY : Math.min(floor, landingY))

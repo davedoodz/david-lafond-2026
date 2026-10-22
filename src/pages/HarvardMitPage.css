@@ -26,8 +26,9 @@ html[data-project-snap='mandatory'] {
 }
 
 /* The top stop is the small nav spacer, not .project: a snap area taller than the screen
-   lets the page rest anywhere inside it, which would make mandatory a no-op. */
-html[data-project-snap] .project > .nav__spacer {
+   lets the page rest anywhere inside it, which would make mandatory a no-op. Nav is a single
+   shared instance (App.tsx), no longer a DOM child of .project, hence data-route. */
+html[data-project-snap] .nav__spacer[data-route='harvard-mit'] {
   scroll-snap-align: start;
 }
 

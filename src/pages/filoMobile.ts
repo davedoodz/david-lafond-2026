@@ -72,7 +72,7 @@ const DIALS: PhoneDialTable = {
   },
   '5 A circular future · milestones': {
     'Product loop width': ['--fm-loop-w', 342, 200, 400, 2, 'px'],
-    'Loop to photos gap': ['--fm-milestones-gap', 106, 0, 200, 2, 'px'],
+    'Loop to photos gap': ['--fm-milestones-gap', 38, 0, 200, 2, 'px'],
   },
 }
 

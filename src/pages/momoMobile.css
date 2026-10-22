@@ -21,9 +21,10 @@
     padding-block: calc(var(--mm-section-gap) / 2);
   }
   /* The hero top: the braid sits just under the nav row (Work / About / Resume), so the hero gets
-     56px more than the section's own half gap. */
+     56px more than the section's own half gap. --mm-wave-gap-fix (momoMobile.ts) adds whatever
+     extra is needed so the gap above the braid's painted ink equals the gap below it. */
   main.case[data-work='momo'] section.case__section--hero[data-layout] {
-    padding-top: calc(var(--mm-section-gap) / 2 + 56px);
+    padding-top: calc(var(--mm-section-gap) / 2 + 56px + var(--mm-wave-gap-fix, 0px));
   }
 
   /* --- 1 Hero. Partner logos: one row scaled as a whole to --mm-logos-fill of the welcome phone's

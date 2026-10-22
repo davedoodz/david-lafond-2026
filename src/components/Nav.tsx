@@ -148,6 +148,34 @@ export function Nav({ route }: Props) {
     return () => observer.disconnect()
   }, [pin])
 
+  // Momo/Filo overlay the hero (.case__light), not the document top: Nav is a single shared
+  // instance (App.tsx) now anchored to .site, so its absolute `top: 0` (CaseStudyPage.css) would
+  // otherwise sit above the intro stage. Measure .case__light's offset from Nav's own containing
+  // block and feed it back in as --nav-case-top.
+  const [caseTop, setCaseTop] = useState(0)
+  useLayoutEffect(() => {
+    if (route !== 'momo' && route !== 'filo') return
+    const nav = navRef.current
+    if (!nav) return
+    const measure = () => {
+      const light = document.querySelector('.case__light')
+      const offsetParent = nav.offsetParent
+      if (!light || !offsetParent) return
+      setCaseTop(light.getBoundingClientRect().top - offsetParent.getBoundingClientRect().top)
+    }
+    measure()
+    const target = document.querySelector('.case')
+    const observer = target ? new ResizeObserver(measure) : undefined
+    if (target) observer!.observe(target)
+    window.addEventListener('resize', measure)
+    const timer = window.setInterval(measure, 300)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', measure)
+      window.clearInterval(timer)
+    }
+  }, [route])
+
   // Follow the actual background, including pages that pin the nav through their own CSS.
   // Expose the same sampled surface to both link styling and the custom cursor. `section` is the
   // page behind any project or playground card, for the Soft fade's colour (mobileContrast › fadeTone).
@@ -260,6 +288,7 @@ export function Nav({ route }: Props) {
     '--nav-fade-length': `${t.mobileContrast.fadeLength}px`,
     '--nav-fade-time': `${t.mobileContrast.fadeTime}ms`,
     '--nav-fade-solid': `${t.mobileContrast.fadeSolid * 100}%`,
+    '--nav-case-top': `${caseTop}px`,
     ...(pin && {
       '--nav-h': `${height}px`,
       '--nav-backdrop-opacity': t.backdrop === 'none' ? 0 : t.backdropOpacity,
@@ -290,7 +319,7 @@ export function Nav({ route }: Props) {
 
   return (
     <>
-      {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" style={{ height }} />}
+      {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" data-route={route} style={{ height }} />}
       <header ref={navRef} className="nav" data-route={route} data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-back-to-top="" data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />

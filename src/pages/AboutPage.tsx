@@ -6,7 +6,6 @@ import { SHEET_DOME, SHEET_LABEL_TOP } from '../components/SelectedWorks'
 import { EditableText } from '../components/EditableText'
 import { Footer } from '../components/Footer'
 import { ArrowDownIcon } from '../components/icons'
-import { Nav } from '../components/Nav'
 import { PhotoStack } from '../features/photoStack/PhotoStack'
 import { Playground } from '../features/playground/Playground'
 import { SheetLayers, sheetDials, useSheetDepth } from '../features/sheetDepth/sheetDepth'
@@ -561,7 +560,6 @@ export function AboutPage() {
       <div ref={lightRef} className="about__light" data-surface="light">
         {/* Snap stops 1 and 2: page top, and the story's end with the sheet tip peeking. */}
         <div className="about__top-stop" aria-hidden="true" />
-        <Nav route="about" />
         <PhotoStack className="about__stack" />
         <section ref={storyRef} className={`about__story column ${entrance.className}`} style={entrance.style} data-align={t.align} aria-labelledby="about-title">
           <EditableText

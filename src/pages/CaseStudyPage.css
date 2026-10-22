@@ -32,22 +32,31 @@
   color: var(--ink-950);
 }
 
-/* The nav rides over the first snap stop instead of pushing it down. */
-.case__light > .nav {
+/* The nav rides over the first snap stop instead of pushing it down. Nav is a single shared instance
+   (App.tsx), no longer nested under .case__light, so these target it by data-route; --nav-case-top
+   (Nav.tsx) stands in for the removed DOM nesting, measuring .case__light's offset from Nav's own
+   containing block (the intro stage above it otherwise pushes the hero past Nav's top: 0). */
+.nav[data-route='momo'],
+.nav[data-route='filo'] {
   position: absolute;
   inset-inline: 0;
-  top: 0;
+  top: var(--nav-case-top, 0px);
 }
 
-/* Pinned (Nav → position): still overlays the first stop, so no spacer and no pushed layout. */
-.case__light > .nav[data-pin='sticky'] {
+/* Pinned (Nav → position): viewport-anchored, so the measured offset does not apply. */
+.nav[data-route='momo'][data-pin='sticky'],
+.nav[data-route='filo'][data-pin='sticky'] {
   position: sticky;
+  top: 0;
   margin-bottom: calc(-1 * var(--nav-h, 0px));
 }
-.case__light > .nav[data-pin='fixed'] {
+.nav[data-route='momo'][data-pin='fixed'],
+.nav[data-route='filo'][data-pin='fixed'] {
   position: fixed;
+  top: 0;
 }
-.case__light > .nav__spacer {
+.nav__spacer[data-route='momo'],
+.nav__spacer[data-route='filo'] {
   display: none;
 }
 

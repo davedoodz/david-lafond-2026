@@ -163,13 +163,15 @@
 }
 
 /* While the stage fills the screen, the nav and Back stay on top of the film (canvas z 50,
-   Skip z 51) and stay clickable, so you can leave or move on mid-intro. */
+   Skip z 51) and stay clickable, so you can leave or move on mid-intro. Nav is a single shared
+   instance (App.tsx), no longer a DOM child of .case, hence data-route instead of `.case .nav`. */
 html[data-momo-stage] .case__sidebar,
-html[data-momo-stage] .case .nav {
+html[data-momo-stage] .nav[data-route='momo'] {
   z-index: 52;
 }
 .case__sidebar,
-.case .nav {
+.nav[data-route='momo'],
+.nav[data-route='filo'] {
   transition: opacity 240ms ease;
 }
 /* Hero: the band's slot above the title, in place of the eyebrow. Once the intro has played it is

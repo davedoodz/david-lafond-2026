@@ -3,10 +3,12 @@
 html[data-safari-edges] {
   background: var(--edge-top-background, var(--ink-900));
 }
-/* Body too: with no fixed sampling strips, iOS Safari tints its status bar and draws its top fade
-   from the body color, so a white sheet at the bottom must never whiten it. */
+/* Body too: with no fixed sampling strips, iOS Safari tints its chrome (status bar, bottom
+   toolbar) from the body color. It tracks whichever edge scroll is nearest (SafariEdges.tsx):
+   the top sample at the page start, the bottom (footer) sample at the page end, so a light
+   mid-page sheet never whitens the dark footer's overscroll/toolbar area, and vice versa. */
 html[data-safari-edges] body {
-  background: var(--edge-top-background, var(--ink-900));
+  background: var(--edge-body-background, var(--ink-900));
 }
 .safari-edges {
   pointer-events: none;
