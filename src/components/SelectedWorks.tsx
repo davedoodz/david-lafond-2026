@@ -518,12 +518,16 @@ export function SelectedWorks() {
         })
       : null
     // Scrolling before the sheet has risen starts the rise at once, so the arc never trails the
-    // first thumbnail. It keeps the same spring rather than jumping to rest.
+    // first thumbnail; the sheet keeps its glide rather than jumping to rest (finishing it made
+    // WebKit drop the fling back to the top). The touch content hide ends outright: it lasts the
+    // whole glide (1.1s+), so a fast fling reached the cards while they were still invisible and
+    // showed a blank white sheet.
     const hurry = () => {
       window.removeEventListener('scroll', hurry)
       for (const a of [animation, contentAnimation]) {
         if (!a || a.playState === 'finished') continue
-        if (Number(a.currentTime ?? 0) < intro.delayMs) a.currentTime = intro.delayMs
+        if (touch && a === contentAnimation) a.finish()
+        else if (Number(a.currentTime ?? 0) < intro.delayMs) a.currentTime = intro.delayMs
       }
     }
     window.addEventListener('scroll', hurry, { passive: true })

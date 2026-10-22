@@ -52,6 +52,8 @@ const STAGE: Record<FlowVariant, { w: number; h: number; fitHeight?: number }> =
   phone: { w: 434, h: 884 },
   scene: { w: 1440, h: 1000, fitHeight: 900 },
 }
+/** Marks a prototype URL as host-scaled (player.js › fit), so its document never fits itself. */
+const hostFit = (src: string) => `${src}${src.includes('?') ? '&' : '?'}hostfit`
 function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; title: string; speedKey: SpeedKey; variant?: FlowVariant }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
@@ -137,7 +139,7 @@ function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; ti
     <iframe
       ref={frameRef}
       className="fss-app__frame"
-      src={src}
+      src={hostFit(src)}
       title={title}
       width={STAGE[variant].w}
       height={STAGE[variant].h}
