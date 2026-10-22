@@ -71,6 +71,15 @@ export const SpreadStack = memo(function SpreadStack() {
   columnsRef.current = columns
 
   /*
+   * View changes must never stall on image decoding. The 1600px "medium" pages decode to ~14 MB each,
+   * and iOS drops decoded images under memory pressure, so a view that brought a dozen of them on
+   * screen at a new size used to hitch. Pages are only ~80–110 px wide at 2–4 per row, so those views
+   * use the 480px thumbs (2.3 MB for the whole book, all loaded up front); single pages and one spread
+   * per row use medium, painted over its thumb so a page is never blank while it sharpens.
+   */
+  const sharp = columns <= 1
+
+  /*
    * The scrubber is driven straight from pointer events: the circle's position is a CSS variable
    * written once per frame, with no React render, so it tracks the finger at full frame rate. React
    * only hears about it when the nearest whole view changes. (A native range input on iOS needs the
@@ -201,7 +210,14 @@ export const SpreadStack = memo(function SpreadStack() {
             <li key={spread} className="spread-stack__spread" data-side={side} data-surface={pageSurface(pages[0])}
               aria-label={side === 'front' ? 'Cover' : side === 'back' ? 'Back cover' : `Pages ${pageLabel(pages)}`}>
               {pages.map((page) => (
-                <img key={page} src={pageUrl(page, 'medium')} alt="" loading={spread < 2 ? 'eager' : 'lazy'} decoding="async" />
+                <img
+                  key={page}
+                  src={pageUrl(page, sharp ? 'medium' : 'thumb')}
+                  alt=""
+                  loading={sharp && spread >= 2 ? 'lazy' : 'eager'}
+                  decoding="async"
+                  style={sharp ? { backgroundImage: `url(${pageUrl(page, 'thumb')})` } : undefined}
+                />
               ))}
             </li>
           )

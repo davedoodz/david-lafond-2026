@@ -1369,7 +1369,8 @@
     height: auto;
     aspect-ratio: var(--page-aspect, 0.7071);
     object-fit: cover;
-    background: var(--ink-800);
+    /* SpreadStack sets the thumb as background-image under a sharpening medium page. */
+    background: var(--ink-800) center / cover no-repeat;
   }
   /* Single pages (the scrub bar's far left): the spread boxes dissolve so every page is its own
      full-width card, cover to back cover. */
