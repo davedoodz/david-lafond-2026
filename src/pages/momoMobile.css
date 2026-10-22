@@ -49,6 +49,20 @@
     white-space: pre;
     font-size: min(var(--m-body-size), var(--mm-content-w) * 0.0336);
   }
+  /* Opportunity: each numbered point stays on one line (one per line break in the copy); the block
+     is as wide as its longest line, centred, and the text shrinks with the screen so that line fits
+     the content width (24.4em, plus the copy's trailing spaces). */
+  main.case[data-work='momo'] .case__story li[data-row='opportunity'] .case__story-body {
+    white-space: pre;
+    width: max-content;
+    max-width: none;
+    margin-inline: auto;
+    font-size: min(var(--m-body-size), var(--mm-content-w) / 25);
+  }
+  /* Persona: each sentence on one line (CaseStudyPage.css); the longer one is 25.9em wide. */
+  main.case[data-work='momo'] .case__persona .persona__who > .persona__body {
+    font-size: min(var(--m-body-size), var(--mm-content-w) / 26.3);
+  }
   /* Persona pills ("20s – 30s"…): three per row. Each row keeps its pills' natural widths (a flex
      row, broken after the third pill by the ::after spacer), and the text shrinks with the screen
      so the widest row fits inside the margins; --mm-pills-text is the largest it gets. */
