@@ -122,6 +122,12 @@ html[data-vt] .nav__links a {
     position: absolute;
     top: var(--nav-case-top, 0px);
   }
+  /* Above the case page (the Momo intro and its slide up into the page) the links wait at the top
+     beside Davebot; at the case top the absolute box lines up with them, so the hand-off is seamless. */
+  html .nav[data-over-intro][data-pin='fixed'] {
+    position: fixed;
+    top: 0;
+  }
   .nav[data-pin] .nav__start {
     position: fixed;
     top: calc(34px + env(safe-area-inset-top));
