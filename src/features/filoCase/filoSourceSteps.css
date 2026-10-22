@@ -22,13 +22,15 @@
   background: #f9f9f9;
   box-shadow: 0 0 0 1px rgb(23 23 23 / .06), 0 30px 60px -28px rgb(23 23 23 / .28);
 }
+/* The frame is its document's stage at source size (width / height attributes) and AppFlow scales it
+   into the host from the top-left corner (FiloSourceSteps.tsx › STAGE). */
 .fss-app__frame {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   display: block;
-  width: 100%;
-  height: 100%;
   border: 0;
+  transform-origin: 0 0;
 }
 /* Step 3: the designer's phone prototype on the left, the box on the right, centred together. The phone
    document carries its own frame on a transparent ground, so the host drops the window's chrome and
@@ -53,22 +55,22 @@
   box-shadow: none;
   filter: drop-shadow(0 22px 30px rgb(23 23 23 / .16));
 }
-/* Step 4: the tap scene. Its document is a 1440 × 900 scene on a transparent ground that fills the frame's
-   height and centres across it (player.js data-fit="height"), so a narrower frame crops the deck's ends
-   and keeps the phone whole. 1106px wide puts its phone at step 3's 300px. It draws its own shadows.
-   Its stage runs 100px below the scene, where the phone rises out of a fade, so the frame is 10/9 of the
-   host's height and hangs below it: the scene keeps the host's scale (host height / 900) and the replay
-   and hover maths, and the phone never meets a hard edge. The frame takes no pointer; the host does. */
+/* Step 4: the tap scene. Its document is a 1440 × 900 scene on a transparent ground that fills the host's
+   height and centres across it (AppFlow, STAGE.scene), so a narrower host crops the deck's ends (clipped
+   sideways here) and keeps the phone whole. 1106px wide puts its phone at step 3's 300px. It draws its
+   own shadows. Its stage runs 100px below the scene, where the phone rises out of a fade, so the frame
+   hangs below the host: the scene keeps the host's scale (host height / 900) and the replay and hover
+   maths, and the phone never meets a hard edge. The frame takes no pointer; the host does. */
 .fss-app--scene {
   width: min(100%, 1106px);
   aspect-ratio: 1440 / 900;
-  overflow: visible;
+  overflow-x: clip;
+  overflow-y: visible;
   border-radius: 0;
   background: none;
   box-shadow: none;
 }
 .fss-app--scene .fss-app__frame {
-  height: calc(100% * 1000 / 900);
   pointer-events: none;
 }
 /* The page runs color-scheme: dark and the phone documents declare none; Chrome paints an opaque canvas

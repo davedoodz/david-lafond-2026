@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
 import { useTuningController } from '../../tuning/useTuning'
 import { EditableText } from '../../components/EditableText'
@@ -38,6 +38,20 @@ const PHONE_FLOW = { src: '/work/filo/filo-phone-receive.html', title: 'A design
 const TAP_FLOW = { src: '/work/filo/filo-phone-tap.html', title: 'Six tagged swatches are dealt out; a phone comes over the bacterial cellulose one, its Dynamic Island reads the tag, and Open shows the record in an App Clip: overview, documents, photos, samples, then BC-001’s Technical File.' }
 /** window: the portal in its window chrome. phone: step 3's phone on a clear ground. scene: step 4's wide scene on a clear ground. */
 type FlowVariant = 'window' | 'phone' | 'scene'
+/**
+ * Each document's stage at its source size (its `.stage` CSS). The frame is laid out at exactly this
+ * size and the host scales it into place, as the Proposal's glimpse phone does (filoStoryArt.tsx): the
+ * document never measures or fits itself. iOS Safari left self-fitting documents latched at a tiny
+ * first-layout scale (step 4's scene, whose stage also overflowed its frame, stayed tiny even when told
+ * to refit), while a frame at its document's own size and a host transform renders the same everywhere.
+ * The window and phone fit inside the host; the scene fills the host's height (its 900px scene; the
+ * stage runs 100px deeper, hanging below the host) and centres across it, cropping its sides.
+ */
+const STAGE: Record<FlowVariant, { w: number; h: number; fitHeight?: number }> = {
+  window: { w: 1536, h: 1024 },
+  phone: { w: 434, h: 884 },
+  scene: { w: 1440, h: 1000, fitHeight: 900 },
+}
 function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; title: string; speedKey: SpeedKey; variant?: FlowVariant }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
@@ -53,6 +67,24 @@ function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; ti
     tellSpeed(frameRef.current, speed)
   }, [speed])
 
+  // Scale the native-size frame into the host on every change to the host's box. Observed in a layout
+  // effect so the first fit lands before the first paint.
+  useLayoutEffect(() => {
+    const host = hostRef.current, frame = frameRef.current
+    if (!host || !frame) return
+    const { w, h, fitHeight } = STAGE[variant]
+    const place = () => {
+      const hw = host.clientWidth, hh = host.clientHeight
+      if (!hw || !hh) return
+      const s = fitHeight ? hh / fitHeight : Math.min(hw / w, hh / h)
+      frame.style.transform = `translateX(${((hw - w * s) / 2).toFixed(2)}px) scale(${s.toFixed(5)})`
+    }
+    place()
+    const sizes = new ResizeObserver(place)
+    sizes.observe(host)
+    return () => sizes.disconnect()
+  }, [variant])
+
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
@@ -62,14 +94,12 @@ function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; ti
       if (event.source !== frameRef.current?.contentWindow) return
       if (event.data?.filoAppFlow === 'phone') host.toggleAttribute('data-phone', !!event.data.on)
       if (event.data?.filoAppFlow !== 'ready') return
-      tellFlow(frameRef.current, 'fit')
       tellSpeed(frameRef.current, speedRef.current)
       syncFlow(frameRef.current, live.current)
     }
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.intersectionRatio >= 0.2) {
         live.current.visible = true
-        tellFlow(frameRef.current, 'fit')
         syncFlow(frameRef.current, live.current)
       } else if (!entry.isIntersecting) {
         live.current = { visible: false, userPaused: false }
@@ -77,15 +107,10 @@ function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; ti
         tellFlow(frameRef.current, 'restart')
       }
     }, { threshold: [0, 0.2] })
-    // iOS Safari doesn't tell a frame's own document when the frame grows (player.js › fit), so every
-    // change to the frame's box is passed in from here.
-    const sizes = new ResizeObserver(() => tellFlow(frameRef.current, 'fit'))
     window.addEventListener('message', onMessage)
     observer.observe(host)
-    if (frameRef.current) sizes.observe(frameRef.current)
     return () => {
       observer.disconnect()
-      sizes.disconnect()
       window.removeEventListener('message', onMessage)
     }
   }, [])
@@ -114,6 +139,8 @@ function AppFlow({ src, title, speedKey, variant = 'window' }: { src: string; ti
       className="fss-app__frame"
       src={src}
       title={title}
+      width={STAGE[variant].w}
+      height={STAGE[variant].h}
       loading="lazy"
       tabIndex={-1}
     />

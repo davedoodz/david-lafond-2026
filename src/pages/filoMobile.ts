@@ -61,7 +61,7 @@ const DIALS: PhoneDialTable = {
     'Quote line spacing': ['--fm-quote-lh', 1.16, 0.9, 1.6, 0.01, ''],
     'Quote letter spacing': ['--fm-quote-ls', -0.045, -0.1, 0.05, 0.005, ''],
     'Quote to name gap': ['--fm-quote-gap', 16, 0, 60, 1, 'px'],
-    'Name text size': ['--fm-role-size', 12, 8, 20, 0.5, 'px'],
+    'Name text size': ['--fm-role-size', 14, 8, 20, 0.5, 'px'],
   },
   '4 Steps 01–04 · prototypes': {
     'Portal window width': ['--fm-portal-w', 342, 200, 400, 2, 'px'],
