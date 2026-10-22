@@ -471,7 +471,7 @@ export const MOMO_CONFIG = {
     },
     spacing: sectionSpacingDials(110, 72, 36),
     /** Playback speed of the Watch → iPhone sequence (1 = as designed, 2 = twice as fast). The device entrance keeps its own duration. */
-    speed: [1, 0.25, 3, 0.05] as Tuple,
+    speed: [1.25, 0.25, 3, 0.05] as Tuple,
     deviceEntrance: {
       preset: { type: 'select' as const, options: ['handoff', 'rise together', 'split sides', 'scale in', 'focus', 'still'], default: 'handoff' },
       duration: [0.8, 0.25, 1.8, 0.05] as Tuple,

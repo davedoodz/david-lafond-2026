@@ -153,6 +153,9 @@ export function Nav({ route }: Props) {
   // otherwise sit above the intro stage. Measure .case__light's offset from Nav's own containing
   // block and feed it back in as --nav-case-top.
   const [caseTop, setCaseTop] = useState(0)
+  // While the case page's top is still below the viewport top (the Momo intro, then its slide up
+  // into the page), phones hold the links at the top beside Davebot instead of riding up with it.
+  const [overIntro, setOverIntro] = useState(false)
   useLayoutEffect(() => {
     if (route !== 'momo' && route !== 'filo') return
     const nav = navRef.current
@@ -160,19 +163,24 @@ export function Nav({ route }: Props) {
     const measure = () => {
       const light = document.querySelector('.case__light')
       const offsetParent = nav.offsetParent
-      if (!light || !offsetParent) return
-      setCaseTop(light.getBoundingClientRect().top - offsetParent.getBoundingClientRect().top)
+      if (!light) return
+      const top = light.getBoundingClientRect().top
+      setOverIntro(top > 0.5)
+      if (offsetParent) setCaseTop(top - offsetParent.getBoundingClientRect().top)
     }
     measure()
     const target = document.querySelector('.case')
     const observer = target ? new ResizeObserver(measure) : undefined
     if (target) observer!.observe(target)
     window.addEventListener('resize', measure)
+    window.addEventListener('scroll', measure, { passive: true })
     const timer = window.setInterval(measure, 300)
     return () => {
       observer?.disconnect()
       window.removeEventListener('resize', measure)
+      window.removeEventListener('scroll', measure)
       window.clearInterval(timer)
+      setOverIntro(false)
     }
   }, [route])
 
@@ -295,7 +303,8 @@ export function Nav({ route }: Props) {
     '--nav-fade-length': `${t.mobileContrast.fadeLength}px`,
     '--nav-fade-time': `${t.mobileContrast.fadeTime}ms`,
     '--nav-fade-solid': `${t.mobileContrast.fadeSolid * 100}%`,
-    '--nav-case-top': `${caseTop}px`,
+    // Only Momo and Filo measure it; elsewhere the last measurement would push the nav down the page.
+    '--nav-case-top': `${route === 'momo' || route === 'filo' ? caseTop : 0}px`,
     ...(pin && {
       '--nav-h': `${height}px`,
       '--nav-backdrop-opacity': t.backdrop === 'none' ? 0 : t.backdropOpacity,
@@ -327,7 +336,7 @@ export function Nav({ route }: Props) {
   return (
     <>
       {pin === 'fixed' && <div className="nav__spacer" aria-hidden="true" data-route={route} style={{ height }} />}
-      <header ref={navRef} className="nav" data-route={route} data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-back-to-top="" data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
+      <header ref={navRef} className="nav" data-route={route} data-pin={pin} data-under={surface} data-surface={surface} data-link-tone={surface === under ? '' : undefined} data-project={isProject || undefined} data-over-intro={overIntro || undefined} data-back-to-top="" data-contrast={preset === 'Off' ? undefined : preset} data-fade-live={fadeLive || undefined} style={style}>
         <div className="nav__start">
           <GhostButton className="nav__ghost" />
         </div>

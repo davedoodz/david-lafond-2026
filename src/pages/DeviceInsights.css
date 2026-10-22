@@ -256,7 +256,8 @@
 .mc-note__row { display: flex; align-items: baseline; gap: 1.5cqw; }
 .mc-note__app { font-weight: 600; color: #4d6a88; }
 .mc-note__time { margin-left: auto; color: #6d87a3; }
-.mc-note__copy { grid-column: 2; }
+/* Notification text reads left to right like iOS, even inside a centred section (phones centre theirs). */
+.mc-note__copy { grid-column: 2; text-align: start; }
 .mc-note__title { margin: .15cqw 0 0; font-size: 4.05cqw; font-weight: 700; }
 .mc-note__text { margin: .2cqw 0 0; color: #41617f; }
 /* Nudge timeline: note in .3s → buttons open 1.4s → touch arrives 2.4s → press ≈2.95s → fades by 3.6s, when the sequence restarts. */
