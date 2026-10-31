@@ -24,9 +24,9 @@ type Tuple = [number, number, number, number]
 const CONFIG = {
   show: true,
   /** How many calendar months show, ending with the snapshot's month; each month is shown whole. */
-  months: [4, 1, 12, 1] as Tuple,
+  months: [5, 1, 12, 1] as Tuple,
   /** Graph width (px); it shrinks to fit narrower screens. */
-  widthDesktop: [560, 200, 1200, 1] as Tuple,
+  widthDesktop: [692, 200, 1200, 1] as Tuple,
   widthMobile: [340, 160, 700, 1] as Tuple,
   /** Space between the playground grid and the graph (px). */
   topGapDesktop: [40, 0, 240, 1] as Tuple,
