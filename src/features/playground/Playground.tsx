@@ -4,6 +4,7 @@ import { AnimatePresence, useReducedMotion } from 'motion/react'
 import type { DialConfig } from 'dialkit'
 import { useTuningController } from '../../tuning/useTuning'
 import { playgroundItems } from '../../data/playground'
+import { liteMedia } from '../../lib/liteMedia'
 import { CardVideo } from './CardVideo'
 import { CriticalActionMedia, JournalMedia, PhoneMedia, PortfolioMedia, type PhoneFrame } from './SpecialCardMedia'
 import { PlaygroundCard } from './PlaygroundCard'
@@ -545,7 +546,8 @@ export function Playground({ className }: { className?: string }) {
         const inZoom = isInZoom(item.id)
         const target = (inZoom ? entry?.zoom : null) ?? entry?.grid ?? null
         if (!target) return null
-        const shouldPlay = inZoom || visibleIds.has(item.id)
+        // The grid autoplays only with full motion and full media; an opened (zoomed) card always plays.
+        const shouldPlay = inZoom || (visibleIds.has(item.id) && !reducedMotion && !liteMedia)
         const playbackRate = videoLoopSpeeds[controlKeyById[item.id]] ?? 1
         const mediaScale = mediaScales[controlKeyById[item.id]] ?? 1
         const recorded = values.phone.frame === 'recorded' ? item.recordedFrame : undefined

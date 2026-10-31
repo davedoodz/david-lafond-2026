@@ -208,6 +208,11 @@ const CONFIG = {
 /** The playhead is a dev scrubber, never a tuned value. */
 const SESSION_ONLY = ['playhead'] as const
 const round2 = (v: number) => Math.round(v * 100) / 100
+/** Set once the film has been watched or skipped in this tab; later visits open on the hero, and only
+ *  Replay intro plays it again. Session-scoped: a new tab or visit gets the intro once more. */
+const SEEN_KEY = 'momo-intro-seen'
+const introSeen = () => { try { return sessionStorage.getItem(SEEN_KEY) === '1' } catch { return false } }
+const markIntroSeen = () => { try { sessionStorage.setItem(SEEN_KEY, '1') } catch { /* storage blocked: intro plays again */ } }
 
 /** Approved phone film on the stage; its final voice band hands off to the live hero. */
 export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: () => void }) {
@@ -331,7 +336,9 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     // scroll right after a refresh used to slip under the stage before the film could start. The
     // ceiling ratchets down with any upward scroll (Replay's glide), and every downward input is
     // cancelled before it scrolls; programmatic scrolls (skip, handoff) run after the hold ends.
-    let loading = true
+    // Already seen: no hold, the page opens on the hero (below).
+    const seen = introSeen()
+    let loading = !seen
     let ceil = window.scrollY
     const holding = () => (loading || playing) && handoffY === null
     const holdFloor = () => {
@@ -373,6 +380,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     const completeHandoff = () => {
       if (handedOff) return
       handedOff = true
+      if (ready) markIntroSeen()
       lock(true)
       cbRef.current.onDone()
     }
@@ -652,10 +660,20 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
       wake()
     }
     measure()
+    // Seen already: open on the hero exactly as Skip's cut does. Next frame, after the router has
+    // scrolled the new page to the top; the band becomes replayable once the film loads.
+    let openFrame = 0
+    if (seen) openFrame = requestAnimationFrame(() => {
+      if (disposed) return
+      playing = false; handoffSettled = true
+      completeHandoff()
+      window.scrollTo({ top: landingY, behavior: 'instant' })
+      wake()
+    })
     void loadPhoneFilm().then(() => {
       if (disposed) return
       ready = true; loading = false
-      if (progress() > tRef.current.startAt) start()
+      if (!seen && progress() > tRef.current.startAt) start()
       else { setReplayable(true); completeHandoff() }
       wake()
     }).catch((error) => {
@@ -688,7 +706,7 @@ export function MomoIntro({ onDone, onStart }: { onDone: () => void; onStart?: (
     if (hero) ro.observe(hero)
     void document.fonts.ready.then(measure)
     return () => {
-      disposed = true; cancelAnimationFrame(raf); ro.disconnect()
+      disposed = true; cancelAnimationFrame(raf); cancelAnimationFrame(openFrame); ro.disconnect()
       syncMomo(false); stopDecoders.forEach(stop => stop())
       window.removeEventListener('scroll', wake); window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', holdFloor); window.removeEventListener('wheel', blockWheel, { capture: true })

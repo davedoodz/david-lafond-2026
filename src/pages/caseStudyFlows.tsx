@@ -4,6 +4,7 @@ import { PlaybackToggle, RestartButton } from '../features/playback/VideoPlaybac
 import { OpportunityArt, ProblemArt, SolutionArt, type StoryArtText, type StoryTiming } from './storyArt'
 import type { SectionSpacing, TextReveal } from './caseStudyContent'
 import { cardSurface, useSystemBase, type GlassDials } from '../features/momoSystem/systemSurface'
+import { liteMedia } from '../lib/liteMedia'
 
 /** Phone-only recordings (public/work/momo/flows): `<name>.mp4` is the 2x master (1060 wide for the phones),
  *  `<name>-<width>.mp4` the same recording scaled down (lanczos). The tilted phones are drawn in 3D, where the
@@ -20,13 +21,13 @@ function flowWidth(host: HTMLElement) {
   return FLOW_WIDTHS.find((w) => w >= px) ?? null
 }
 
-/** A phone recording that plays only while on screen (and not for reduced motion). It rewinds once fully off screen, so each return starts from the beginning without a visible jump. `controls`: clicking the phone pauses and plays it (the shared playback toggle), and hovering it shows the replay circle, which plays the recording again from the start. */
+/** A phone recording that plays only while on screen (and not for reduced motion). It rewinds once fully off screen, so each return starts from the beginning without a visible jump. `controls`: clicking the phone pauses and plays it (the shared playback toggle), and hovering it shows the replay circle, which plays the recording again from the start. Lite media starts it paused on its poster, as if clicked; phones hide the controls, so there it stays on the poster. */
 export function PhoneVideo({ name, className = '', controls = true, rate = 1 }: { name: string; className?: string; controls?: boolean; rate?: number }) {
   const host = useRef<HTMLSpanElement>(null)
   const ref = useRef<HTMLVideoElement>(null)
   const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   // A click pause holds until the phone leaves the screen, so scrolling a little never restarts it.
-  const userPaused = useRef(false)
+  const userPaused = useRef(liteMedia)
   useEffect(() => {
     const video = ref.current
     if (!video || reduced) return
@@ -37,7 +38,7 @@ export function PhoneVideo({ name, className = '', controls = true, rate = 1 }: 
         if (e.intersectionRatio >= 0.3) {
           if (!userPaused.current) void video.play().catch(() => {})
         } else if (!e.isIntersecting) {
-          userPaused.current = false
+          userPaused.current = liteMedia
           video.pause()
           video.currentTime = 0
         }
@@ -74,7 +75,7 @@ export function PhoneVideo({ name, className = '', controls = true, rate = 1 }: 
   // The wrapper carries size and shadow; the video is clipped to the phone outline (see .case__phone-video).
   return (
     <span ref={host} className={`case__phone ${className}`.trim()}>
-      <video ref={ref} className="case__phone-video" src={width === undefined ? undefined : src} poster={poster} muted loop playsInline preload="metadata" aria-hidden="true" />
+      <video ref={ref} className="case__phone-video" src={width === undefined ? undefined : src} poster={poster} muted loop playsInline preload={liteMedia ? 'none' : 'metadata'} aria-hidden="true" />
       {controls && (
         <>
           <PlaybackToggle host={host} videoSelector="video" reducedMotion={reduced} feedbackOnMediaEvents={false} onUserToggle={(paused) => { userPaused.current = paused }} />
@@ -302,7 +303,7 @@ export function CoreFlows({ f, edit, selectable = false }: { f: Flows; edit: Edi
   const ref = useRiseOnView()
   useEffect(() => {
     const section = ref.current
-    if (!section || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!section || liteMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const videos = Array.from(section.querySelectorAll('video'))
     let armed = true
     const observer = new IntersectionObserver(([entry]) => {

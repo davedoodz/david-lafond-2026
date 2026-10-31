@@ -1,6 +1,7 @@
 import { useEffect, useRef, type CSSProperties, type PointerEvent } from 'react'
 import type { ResolvedValues } from 'dialkit'
 import { ArrowUpRightIcon } from '../../components/icons'
+import { liteMedia } from '../../lib/liteMedia'
 
 type Tuple = [number, number, number, number]
 
@@ -91,7 +92,7 @@ export function VideoCard({ active, look }: { active: boolean; look: ResolvedVal
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
     let visible = false
     let disposed = false
-    const shouldPlay = () => active && visible && look.autoplay && !reduced.matches && !document.hidden && !disposed
+    const shouldPlay = () => active && visible && look.autoplay && !liteMedia && !reduced.matches && !document.hidden && !disposed
     const sync = () => {
       if (!shouldPlay()) media.pause()
       else void media.play().then(() => { if (!shouldPlay()) media.pause() }).catch(() => {
@@ -203,7 +204,7 @@ export function VideoCard({ active, look }: { active: boolean; look: ResolvedVal
         }}>
         <span className="viewer__video-surface">
           <video ref={video} src={`/work/harvard-mit/walkthrough.mp4#t=${VIDEO_START_SECONDS}`} poster="/work/harvard-mit/walkthrough.webp"
-            muted playsInline preload="metadata" disablePictureInPicture aria-hidden="true" />
+            muted playsInline preload={liteMedia ? 'none' : 'metadata'} disablePictureInPicture aria-hidden="true" />
           <span className="viewer__video-glare" />
         </span>
       </a>
