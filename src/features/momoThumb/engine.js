@@ -24,6 +24,7 @@ import { createElement } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { stackedAlpha } from '../../lib/stackedAlpha'
+import { liteMedia } from '../../lib/liteMedia'
 import { MomoMark } from '../momoIntro/MomoMark'
 import { WATCH_LINES, watchLogoVars } from './config'
 import './momoThumb.css'
@@ -253,8 +254,8 @@ export function sceneHTML(key, { chrome = true } = {}) {
       <svg class="mt-hb" viewBox="0 0 ${W} ${H}" style="width:${W}px;height:${H}px">${'<path class="mt-hb-base" pathLength="100"/><path class="mt-hb-live" pathLength="100"/>'.repeat(2)}</svg>
       <div class="mt-el" data-el="phone">
         <div class="mt-phone" style="left:${-p.w / 2}px;top:${-ph / 2}px;width:${p.w}px;height:${ph}px">
-          <video class="mt-pv mt-scr-in" src="${VOICE}" poster="${VOICE_POSTER}" muted loop playsinline preload="auto" aria-hidden="true"></video>
-          <video class="mt-pv mt-pv--out mt-scr-out" src="${TRACKER}" poster="${TRACKER_POSTER}" muted playsinline preload="auto" aria-hidden="true"></video>
+          <video class="mt-pv mt-scr-in" src="${VOICE}" poster="${VOICE_POSTER}" muted loop playsinline preload="${liteMedia ? 'none' : 'auto'}" aria-hidden="true"></video>
+          <video class="mt-pv mt-pv--out mt-scr-out" src="${TRACKER}" poster="${TRACKER_POSTER}" muted playsinline preload="${liteMedia ? 'none' : 'auto'}" aria-hidden="true"></video>
         </div>
       </div>
       <div class="mt-el" data-el="watch">
@@ -286,8 +287,9 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
   let LOOP = 12600
   const at = (phase) => STEPS.find(([c]) => c === phase)[1]
 
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
-  let motion = !reduced
+  // Reduced motion and lite media start on the designed still frame.
+  const startStill = liteMedia || matchMedia('(prefers-reduced-motion: reduce)').matches
+  let motion = !startStill
   // Pause freezes the loop where it is (timeline, videos, mesh, CSS animations); motion off instead
   // holds a designed still frame.
   let paused = false
@@ -729,8 +731,10 @@ export function mountMomoThumb({ root, cards, mesh = false, keys = false }) {
   const applyValues = (v) => {
     const first = !prev
     const changed = (pick) => first || JSON.stringify(pick(v)) !== JSON.stringify(pick(prev))
-    // Reduced-motion users start still, whatever the saved value says; the toggle still works after.
-    const wantMotion = first ? v.motion && !reduced : v.motion
+    // Reduced-motion and lite-media visitors start still, whatever the saved value says. Later applies
+    // (MomoThumb re-applies the same values right after mounting) change motion only when the motion
+    // value itself changes, so the toggle still works after without undoing the still start.
+    const wantMotion = first ? v.motion && !startStill : changed((d) => d.motion) ? v.motion : motion
     if (wantMotion !== motion) {
       motion = wantMotion
       syncMotion()

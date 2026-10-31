@@ -1,25 +1,27 @@
 /**
  * Keeps a page's images, videos and embedded prototypes loaded ahead of the reader, so nothing
- * paints blank while scrolling, on slow phone networks too.
+ * paints blank while scrolling.
  *
  * One queue, nearest first: a few loads at a time, always the media closest to the screen (ahead of
  * it before behind it), re-picked as the reader scrolls. Starting a load means lazy images and
  * iframes switch to eager and videos to preload="auto". Media mounted later (sections that render
  * on demand, a source picked after measuring) joins the queue as it appears. After the page's own
  * media, the `extra` URLs follow (for example the case-study heroes a thumbnail opens).
- * Save-Data limits it to the next two screens.
+ * Lite media (slow connection, Save-Data, low-memory phone) leaves videos alone, since they stay on
+ * their posters there, and loads images and iframes for the next two screens only.
  */
 import { useEffect, type RefObject } from 'react'
+import { liteMedia } from './liteMedia'
 
 /** Loads in flight at once: few enough that the nearest one gets most of a slow connection. */
 const PARALLEL = 3
 /** A load that stalls longer than this frees its slot for the next one. */
 const STALL_MS = 8000
-/** Save-Data: how far ahead to load, in screens. */
-const SAVE_DATA_AHEAD = 2
+/** Lite media: how far ahead to load, in screens. */
+const LITE_AHEAD = 2
 
 type Media = HTMLImageElement | HTMLVideoElement | HTMLIFrameElement
-const SELECTOR = 'img, video, iframe'
+const SELECTOR = liteMedia ? 'img, iframe' : 'img, video, iframe'
 
 const started = new WeakSet<Media>()
 
@@ -70,14 +72,13 @@ export function useMediaWarmup(ref: RefObject<HTMLElement | null>, extra: readon
   useEffect(() => {
     const root = ref.current
     if (!root) return
-    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true
     let alive = true
     let running = 0
     let extrasDone = false
 
     const pump = () => {
       if (!alive) return
-      const limit = saveData ? SAVE_DATA_AHEAD * window.innerHeight : Infinity
+      const limit = liteMedia ? LITE_AHEAD * window.innerHeight : Infinity
       const waiting = [...root.querySelectorAll<Media>(SELECTOR)]
         .filter((el) => !started.has(el))
         .map((el) => [el, distance(el)] as const)
@@ -91,7 +92,7 @@ export function useMediaWarmup(ref: RefObject<HTMLElement | null>, extra: readon
           pump()
         })
       }
-      if (!waiting.length && !running && !extrasDone && !saveData) {
+      if (!waiting.length && !running && !extrasDone && !liteMedia) {
         extrasDone = true
         void (async () => { for (const url of extra) if (alive) await prefetch(url) })()
       }

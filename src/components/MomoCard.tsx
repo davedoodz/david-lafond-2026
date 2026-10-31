@@ -15,6 +15,7 @@
  * reads as one continuous animation.
  */
 import { stackedAlpha } from '../lib/stackedAlpha'
+import { liteMedia } from '../lib/liteMedia'
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { useTuningController } from '../tuning/useTuning'
 import './momo.css'
@@ -126,7 +127,8 @@ export function Momo({ mode, size, x, y }: MomoProps) {
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // Reduced motion and lite media hold the first frame (stackedAlpha paints it once the clip loads).
+    const still = liteMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const order: Clip[] = mode === 'both' ? CLIPS : [CLIP_BY_MODE[mode]]
     let active = 0
     let visible = false
@@ -154,7 +156,7 @@ export function Momo({ mode, size, x, y }: MomoProps) {
     }
     const play = () => {
       const v = videos.current[order[active]]
-      if (!v || reduced || !visible) return
+      if (!v || still || !visible) return
       void v.play().catch(() => {})
       if (order.length > 1 && !frame) frame = requestAnimationFrame(tick)
     }

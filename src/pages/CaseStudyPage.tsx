@@ -29,6 +29,7 @@ import { MomoPhoneDials } from './momoMobile'
 import { FiloPhoneDials } from './filoMobile'
 import { useMedia } from '../lib/viewport'
 import { useMediaWarmup } from '../lib/mediaWarmup'
+import { liteMedia } from '../lib/liteMedia'
 import './CaseStudyPage.css'
 
 
@@ -270,14 +271,14 @@ function resolveGroups(order: string[], keep: Record<string, string> | undefined
   return owners.map((owner) => [owner, ...order.filter((k) => mode(k) === mergeLabel(owner))])
 }
 
-/** One prototype recording: plays only while its section is on screen. */
+/** One prototype recording: plays only while its section is on screen; lite media keeps the poster. */
 function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
   const name = media.video as ProtoVideo
   useEffect(() => {
     const video = ref.current
     if (!video) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (liteMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) void video.play().catch(() => {})
@@ -300,7 +301,7 @@ function ProtoMedia({ media, eager = false }: { media: Media; eager?: boolean })
       muted
       loop
       playsInline
-      preload={eager ? 'auto' : 'metadata'}
+      preload={liteMedia ? 'none' : eager ? 'auto' : 'metadata'}
       aria-hidden="true"
       style={
         {

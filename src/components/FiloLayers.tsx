@@ -3,10 +3,12 @@
  * record, the tag hangs on its cord in the middle, the portal (right) clicks through Samples and
  * Orders. While the card is in view they slide in one by one, stay, slide out and come back.
  * Placement and timing are the studio's picked layout (src/features/filoThumb/config.ts); the
- * desktop or mobile layout follows the card's mobile breakpoint. Reduced motion: layers stay put, clips still.
+ * desktop or mobile layout follows the card's mobile breakpoint. Reduced motion and lite media: layers stay
+ * put; lite media also keeps the clips on their posters without loading them.
  */
 import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from 'react'
 import { FILO_LAYOUT, FILO_MEDIA, FILO_MOTION, TAG_ART, type Layout } from '../features/filoThumb/config'
+import { liteMedia } from '../lib/liteMedia'
 import './FiloLayers.css'
 
 // The Selected Works mobile card (100 : 134) starts at this width (SelectedWorks.css).
@@ -99,7 +101,7 @@ export function FiloLayers() {
         for (const [v] of clips) v.pause()
         return
       }
-      if (reduced.matches) stage.classList.add('is-in')
+      if (reduced.matches || liteMedia) stage.classList.add('is-in')
       else enter()
     }, { threshold: 0.4 })
     seen.observe(host)
@@ -116,10 +118,10 @@ export function FiloLayers() {
     <div ref={hostRef} className="fl-host" aria-hidden="true">
       <div ref={stageRef} className="fl-stage" style={{ '--fl-k': 1 / FILO_MOTION.slide } as CSSProperties}>
         <div className="fl-desk" style={s.desk}>
-          <video ref={deskRef} poster={FILO_MEDIA.deskPoster} muted loop playsInline preload="auto" />
+          <video ref={deskRef} poster={FILO_MEDIA.deskPoster} muted loop playsInline preload={liteMedia ? 'none' : 'auto'} />
         </div>
         <div className="fl-phone" style={s.phone}>
-          <video ref={phoneRef} poster={FILO_MEDIA.phonePoster} muted loop playsInline preload="auto" />
+          <video ref={phoneRef} poster={FILO_MEDIA.phonePoster} muted loop playsInline preload={liteMedia ? 'none' : 'auto'} />
         </div>
         <div className="fl-tag" style={s.tag}>
           <i />

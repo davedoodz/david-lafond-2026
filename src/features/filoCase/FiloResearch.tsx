@@ -1,5 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { PlaybackToggle, RestartButton } from '../playback/VideoPlayback'
+import { liteMedia } from '../../lib/liteMedia'
 import './filoResearch.css'
 
 type ResearchVisual = 'image' | 'video'
@@ -36,7 +37,8 @@ type ResearchVideoProps = {
 function ResearchVideo({ src, poster, width, height, label, speed, cropRight = 0, cropTop = 0 }: ResearchVideoProps) {
   const ref = useRef<HTMLVideoElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
-  const userPaused = useRef(false)
+  // Lite media starts as if the reader had paused it: the poster shows until the toggle plays it (phones hide the toggle).
+  const userPaused = useRef(liteMedia)
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const right = cropRight / 100
   const top = cropTop / 100
@@ -101,7 +103,7 @@ function ResearchVideo({ src, poster, width, height, label, speed, cropRight = 0
         muted
         loop
         playsInline
-        preload="metadata"
+        preload={liteMedia ? 'none' : 'metadata'}
         disablePictureInPicture
         aria-label={label}
         style={mediaStyle}
