@@ -63,34 +63,33 @@ const smooth = (a: number, b: number, x: number) => {
 
 export class Encounter {
   private time = Infinity
+  private spawn: [number, number] = [0, 0]
   private path: [number, number][] = []
   private appear: Appear = APPEAR.pop
   private size = 1
   private openAtStart = 0
   private total = 0
 
-  /**
-   * @param spawn tile (week, row) it rises from
-   * @param hasGrass whether a tile has a grass patch, for picking where it runs
-   */
-  constructor(
-    private spawn: [number, number],
-    private hasGrass: (x: number, z: number) => boolean,
-  ) {}
+  /** @param hasGrass whether a tile has a grass patch, for picking where it runs */
+  constructor(private hasGrass: (x: number, z: number) => boolean) {}
 
   get active() {
     return this.time < this.total
   }
 
-  /** @param openAtStart how parted the patch already is (e.g. the pointer is resting in it), 0-1 */
-  start(settings: EncounterSettings, openAtStart = 0) {
+  /**
+   * @param spawn tile (week, row) it rises from
+   * @param openAtStart how parted the patch already is (e.g. the pointer is resting in it), 0-1
+   */
+  start(spawn: [number, number], settings: EncounterSettings, openAtStart = 0) {
     const a = APPEAR[settings.appear] ?? APPEAR.pop
     const k = settings.appearTime
     this.appear = { ...a, part: a.part * k, peekRise: a.peekRise * k, peekHold: a.peekHold * k, rise: a.rise * k }
     this.size = settings.size
     this.openAtStart = Math.min(1, Math.max(0, openAtStart))
     this.time = 0
-    this.path = [this.spawn]
+    this.spawn = spawn
+    this.path = [spawn]
     let heading: [number, number] = [Math.random() < 0.5 ? -1 : 1, 0]
     for (let i = 0; i < settings.hops; i++) {
       const [x, z] = this.path[this.path.length - 1]

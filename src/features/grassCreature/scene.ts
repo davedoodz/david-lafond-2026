@@ -1,8 +1,9 @@
 /**
- * The creature living in the contribution grass: it hides in the busiest day's patch, and when the
+ * The creature living in the contribution grass: it hides in a random busy, well-surrounded patch, and when the
  * pointer reaches that patch it appears, startles ("!" over its head), darts through neighbouring
- * patches and dives back in. Owns the encounter, the pointer hand-off and the "!" element; the
- * host owns the grass renderer, the render loop and the pointer state.
+ * patches and dives back in, then hides in a new random patch. Owns the encounter, the pointer
+ * hand-off and the "!" element; the host owns the grass renderer, the render loop and the pointer
+ * state.
  *
  * Used by components/ContributionGraph.tsx (About page) and the studio page.
  */
@@ -19,12 +20,18 @@ export type GrassPointer = { x: number; z: number; strength: number; tx: number;
 const OPEN_REACH = 1.5
 /** A beat after a run before it can be startled again (ms). */
 const COOLDOWN = 1200
+/** A hideout needs at least this many grass patches among its 8 neighbours (diagonals count). */
+const MIN_GRASS_NEIGHBOURS = 4
+/** A hideout must also rank in this top share of grass patches by contributions (ties included). */
+const TOP_SHARE = 0.3
 
 export class CreatureScene {
   paused = false
   private renderer: CreatureRenderer
   private encounter: Encounter
   private spawn: [number, number] = [0, 0]
+  /** Patches it may hide in: among the busiest, with enough grass around to run into. */
+  private hideouts: [number, number][] = []
   private settings: CreatureValues
   private look: CreatureLook = DEFAULT_LOOK
   private armed = true
@@ -35,7 +42,7 @@ export class CreatureScene {
 
   /**
    * @param gl the grass field's WebGL2 context; the creature draws after the grass, depth-tested
-   * @param days the field's days (weeks x weekdays), to find the busiest patch and where it can run
+   * @param days the field's days (weeks x weekdays), to find where it can hide and run
    * @param exclaim the "!" element (`.gc-exclaim` with a `.gc-exclaim__mark` child), over the canvas
    */
   constructor(
@@ -44,17 +51,30 @@ export class CreatureScene {
     settings: CreatureValues,
     private exclaim: HTMLElement,
   ) {
+    const hasGrass = (x: number, z: number) => (days[x]?.[z]?.count ?? 0) > 0
     let busiest = -1
+    const counts: number[] = []
+    const dense: { at: [number, number]; count: number }[] = []
     days.forEach((week, x) =>
       week.forEach((day, z) => {
-        if (day && day.count > busiest) {
+        if (!day || !hasGrass(x, z)) return
+        counts.push(day.count)
+        if (day.count > busiest) {
           busiest = day.count
           this.spawn = [x, z]
         }
+        let neighbours = 0
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) if ((dx || dz) && hasGrass(x + dx, z + dz)) neighbours++
+        if (neighbours >= MIN_GRASS_NEIGHBOURS) dense.push({ at: [x, z], count: day.count })
       }),
     )
+    counts.sort((a, b) => b - a)
+    const cutoff = counts[Math.max(0, Math.ceil(counts.length * TOP_SHARE) - 1)] ?? Infinity
+    this.hideouts = dense.filter((d) => d.count >= cutoff).map((d) => d.at)
+    // A field with no hideout keeps it in the busiest patch.
+    this.hide()
     this.renderer = new CreatureRenderer(gl)
-    this.encounter = new Encounter(this.spawn, (x, z) => (days[x]?.[z]?.count ?? 0) > 0)
+    this.encounter = new Encounter(hasGrass)
     this.frame = this.encounter.update(0)
     this.mark = exclaim.querySelector<HTMLElement>('.gc-exclaim__mark')!
     this.settings = settings
@@ -83,6 +103,13 @@ export class CreatureScene {
     this.exclaim.toggleAttribute('data-paused', paused)
   }
 
+  /** Moves it to a random hideout, never the one it just left when there's another. */
+  private hide() {
+    const [sx, sz] = this.spawn
+    const options = this.hideouts.length > 1 ? this.hideouts.filter(([x, z]) => x !== sx || z !== sz) : this.hideouts
+    if (options.length) this.spawn = options[Math.floor(Math.random() * options.length)]
+  }
+
   /** Starts a run unless one is going, it's cooling down or paused. */
   trigger(pointer: GrassPointer) {
     if (this.paused || this.encounter.active || performance.now() < this.cooldownUntil) return
@@ -90,6 +117,7 @@ export class CreatureScene {
     // Starts from how parted the patch already is near the spawn, so a hovering pointer doesn't snap it shut.
     const near = 1 - Math.min(1, Math.hypot(pointer.x - this.spawn[0], pointer.z - this.spawn[1]) / OPEN_REACH)
     this.encounter.start(
+      this.spawn,
       { appear: appear.preset as AppearPreset, appearTime: appear.time, hops: motion.hops, size: motion.size },
       pointer.strength * near,
     )
@@ -110,7 +138,7 @@ export class CreatureScene {
     // Jump to a fresh pointer only while the grass is closed; otherwise glide, so the dent never teleports.
     if (pointer.strength < 0.05 && !this.encounter.active) Object.assign(pointer, { x, z })
     pointer.target = 1
-    // Only the busiest day's own tile wakes it; leaving that tile re-arms it.
+    // Only the hideout's own tile wakes it; leaving that tile re-arms it.
     const onPatch = Math.round(x) === this.spawn[0] && Math.round(z) === this.spawn[1]
     if (!onPatch) this.armed = true
     else if (this.armed) this.trigger(pointer)
@@ -140,6 +168,7 @@ export class CreatureScene {
     if (this.wasActive) {
       this.cooldownUntil = now + COOLDOWN
       this.wasActive = false
+      this.hide()
     }
     const ease = 1 - Math.exp(-dt * 10)
     pointer.x += (pointer.tx - pointer.x) * ease
