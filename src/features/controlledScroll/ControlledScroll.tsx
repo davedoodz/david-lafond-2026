@@ -4,11 +4,13 @@ import { useTuning } from '../../tuning/useTuning'
 type Tuple = [number, number, number, number]
 
 /**
- * Wheel / trackpad scrolling with a speed limit, so a hard swipe glides instead of flinging
+ * Trackpad scrolling with a speed limit, so a hard swipe glides instead of flinging
  * the page. Each wheel event is capped (`maxStep`), the page eases toward the target
- * (`ease`) and never moves faster than `downSpeed` / `upSpeed`. Keyboard, scrollbar and touch scrolling
- * stay native. Inner scroll areas, zoom (ctrl+wheel) and anything that already handled the
- * wheel (flip book, project-open overlay) are left alone.
+ * (`ease`) and never moves faster than `downSpeed` / `upSpeed`. Mouse wheels, keyboard,
+ * scrollbar and touch scrolling stay native: the browser already glides each notch, and
+ * the dials (tuned on a trackpad) made a notch short and jumpy. Inner scroll areas, zoom
+ * (ctrl+wheel) and anything that already handled the wheel (flip book, project-open
+ * overlay) are left alone.
  */
 type Feel = { snap: 'none' | 'proximity' | 'mandatory' | 'stop'; maxStep?: number; speed?: number; ease?: number; reach?: number }
 /**
@@ -28,12 +30,12 @@ const FEELS: Record<string, Feel> = {
 }
 
 const SCROLL_CONFIG = {
-  /** controlled: capped, eased wheel scrolling. native: the browser's own; every dial below is then ignored. */
+  /** controlled: capped, eased trackpad scrolling. native: the browser's own; every dial below is then ignored. Mouse wheels are always native. */
   mode: {
     type: 'select' as const,
     options: [
       { value: 'controlled', label: 'controlled' },
-      { value: 'scaled', label: 'native, scaled (multiplier + max step)' },
+      { value: 'scaled', label: 'native, trackpad scaled (multiplier + max step)' },
       { value: 'native', label: 'native (dials off)' },
     ],
     default: 'controlled',
@@ -71,6 +73,22 @@ function scrollableAncestor(start: EventTarget | null, dy: number): boolean {
   return false
 }
 
+/**
+ * Whether a wheel event came from a notched mouse wheel rather than a trackpad. Browsers
+ * don't say, so this reads the deltas: Firefox reports a wheel in lines or pages; Chrome
+ * and Safari send a wheel's legacy `wheelDeltaY` as notches × 120 (even when macOS
+ * accelerates `deltaY` to odd px like 4.0002 or 52.03), and a trackpad's as exactly
+ * −3 × `deltaY`. An event fitting both (e.g. 40 px ↔ −120) keeps the previous verdict.
+ */
+function isMouseWheel(e: WheelEvent, previous: boolean): boolean {
+  if (e.deltaMode !== 0) return true
+  const legacy = (e as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY
+  if (!legacy) return false
+  const notches = legacy % 120 === 0
+  const trackpad = Math.abs(legacy + 3 * e.deltaY) < 1.5
+  return notches && trackpad ? previous : notches
+}
+
 export function ControlledScroll() {
   const t = useTuning('Scroll', SCROLL_CONFIG)
   const preset = FEELS[t.feel]
@@ -100,6 +118,8 @@ export function ControlledScroll() {
     let last = 0
     let gestureEnd = 0
     let snapHeld = false
+    // Last wheel verdict, for events that read as either device.
+    let mouse = false
     // Snap is paused while gliding (it would yank each step) and restored afterwards, so the
     // page still settles on a section.
     const holdSnap = () => {
@@ -151,9 +171,10 @@ export function ControlledScroll() {
       const mode = ref.current.mode
       if (mode === 'native') return
       if (e.defaultPrevented || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+      mouse = isMouseWheel(e, mouse)
+      if (mouse) return
       const { maxStep, multiplier, downDistance, upDistance } = ref.current
-      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1
-      const dy = Math.max(-maxStep, Math.min(maxStep, e.deltaY * unit * multiplier))
+      const dy = Math.max(-maxStep, Math.min(maxStep, e.deltaY * multiplier))
       if (!dy || scrollableAncestor(e.target, dy)) return
       e.preventDefault()
       // Scaled: each trackpad/wheel event moves the page straight away, so the OS momentum
