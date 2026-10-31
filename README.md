@@ -1,14 +1,5 @@
 <div align="center">
 
-<pre>
-       .-""""-.
-      /  o  o  \        davidlafond.xyz
-     |    ~~    |       ───────────────
-     |          |       product designer,
-     |  ,  ,  , |       occasional ghost
-      \/ \/ \/ \/
-</pre>
-
 **David Lafond's portfolio.** Hand-built, scroll-driven, slightly haunted.
 
 [davidlafond.xyz](https://davidlafond.xyz) · [Work](https://davidlafond.xyz) · [About](https://davidlafond.xyz/about)
